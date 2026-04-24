@@ -151,8 +151,9 @@ public class StoredBlockMetadata {
 
   private static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
       final Optional<SignedBeaconBlock> maybeBlock) {
-    // TODO-GLOAS: populate payloadBlockNumber here once SignedExecutionPayloadEnvelope storage is
-    // persisted through the DB layer and available alongside StoredBlockMetadata creation.
+    // TODO-GLOAS: keep this helper bid-only. The DB rebuild path should enrich
+    // payloadBlockNumber from the persisted SignedBlindedExecutionPayloadEnvelope when
+    // KvStoreDatabase builds StoredBlockMetadata with synchronous DAO access.
     return maybeBlock
         .flatMap(
             block ->
