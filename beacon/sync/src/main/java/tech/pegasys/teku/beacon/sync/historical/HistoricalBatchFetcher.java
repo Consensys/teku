@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutio
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -628,15 +629,12 @@ public class HistoricalBatchFetcher {
             previousBlock.getRoot(), previousBlock.getSlot()));
   }
 
-  private void validateExecutionPayloadEnvelope(
+  @VisibleForTesting
+  void validateExecutionPayloadEnvelope(
       final SignedBlindedExecutionPayloadEnvelope signedEnvelope, final SignedBeaconBlock block) {
     final BlindedExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
-    if (!envelope.getSlot().equals(block.getSlot())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Execution payload envelope slot %s does not match block slot %s for block root %s",
-              envelope.getSlot(), block.getSlot(), envelope.getBeaconBlockRoot()));
-    }
+    final Bytes32 blockRoot = envelope.getBeaconBlockRoot();
+    requireEqual("slot", envelope.getSlot(), block.getSlot(), blockRoot);
     final ExecutionPayloadBid bid =
         block
             .getMessage()
@@ -650,27 +648,35 @@ public class HistoricalBatchFetcher {
                             block.getRoot(), block.getSlot())))
             .getSignedExecutionPayloadBid()
             .getMessage();
-    if (!envelope.getBuilderIndex().equals(bid.getBuilderIndex())) {
+    final ExecutionPayloadHeader payloadHeader = envelope.getPayloadHeader();
+    requireEqual("builder index", envelope.getBuilderIndex(), bid.getBuilderIndex(), blockRoot);
+    requireEqual(
+        "parent block hash", payloadHeader.getParentHash(), bid.getParentBlockHash(), blockRoot);
+    requireEqual("block hash", payloadHeader.getBlockHash(), bid.getBlockHash(), blockRoot);
+    requireEqual("prev randao", payloadHeader.getPrevRandao(), bid.getPrevRandao(), blockRoot);
+    requireEqual(
+        "fee recipient",
+        payloadHeader.getFeeRecipient().getWrappedBytes(),
+        bid.getFeeRecipient().getWrappedBytes(),
+        blockRoot);
+    requireEqual("gas limit", payloadHeader.getGasLimit(), bid.getGasLimit(), blockRoot);
+    requireEqual(
+        "execution requests root",
+        envelope.getExecutionRequests().hashTreeRoot(),
+        bid.getExecutionRequestsRoot(),
+        blockRoot);
+  }
+
+  private static void requireEqual(
+      final String fieldName,
+      final Object envelopeValue,
+      final Object expectedValue,
+      final Bytes32 blockRoot) {
+    if (!envelopeValue.equals(expectedValue)) {
       throw new IllegalArgumentException(
           String.format(
-              "Execution payload envelope builder index %s does not match bid builder index %s for block root %s",
-              envelope.getBuilderIndex(), bid.getBuilderIndex(), envelope.getBeaconBlockRoot()));
-    }
-    final Bytes32 payloadBlockHash = envelope.getPayloadHeader().getBlockHash();
-    if (!payloadBlockHash.equals(bid.getBlockHash())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Execution payload envelope block hash %s does not match bid block hash %s for block root %s",
-              payloadBlockHash, bid.getBlockHash(), envelope.getBeaconBlockRoot()));
-    }
-    final Bytes32 executionRequestsRoot = envelope.getExecutionRequests().hashTreeRoot();
-    if (!executionRequestsRoot.equals(bid.getExecutionRequestsRoot())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Execution payload envelope execution requests root %s does not match bid execution requests root %s for block root %s",
-              executionRequestsRoot,
-              bid.getExecutionRequestsRoot(),
-              envelope.getBeaconBlockRoot()));
+              "Execution payload envelope %s %s does not match expected %s for block root %s",
+              fieldName, envelopeValue, expectedValue, blockRoot));
     }
   }
 

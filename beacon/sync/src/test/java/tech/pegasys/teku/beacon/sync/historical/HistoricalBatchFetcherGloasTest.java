@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -204,6 +205,51 @@ public class HistoricalBatchFetcherGloasTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing execution payload envelope")
         .hasMessageContaining(lastBlockInBatch.getRoot().toHexString());
+  }
+
+  @TestTemplate
+  public void validateExecutionPayloadEnvelope_acceptsMatchingEnvelope() {
+    final SignedBeaconBlock block = chainBuilder.getBlockAtSlot(15);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(block.getSlot()).getSchemaDefinitions());
+    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
+        chainBuilder.getExecutionPayload(block.getRoot()).orElseThrow().blind(schemaDefinitions);
+
+    fetcher.validateExecutionPayloadEnvelope(blindedEnvelope, block);
+  }
+
+  @TestTemplate
+  public void validateExecutionPayloadEnvelope_throwsWhenFieldsDoNotMatchBid() {
+    // Blind the envelope from slot 15 but pair it with the block at slot 16: every payload-header
+    // field (parent hash, block hash, prev randao, fee recipient, gas limit) and the builder index
+    // will disagree with the block's bid.
+    final SignedBeaconBlock block = chainBuilder.getBlockAtSlot(16);
+    final SignedBeaconBlock otherBlock = chainBuilder.getBlockAtSlot(15);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(otherBlock.getSlot()).getSchemaDefinitions());
+    final SignedBlindedExecutionPayloadEnvelope originalBlindedEnvelope =
+        chainBuilder
+            .getExecutionPayload(otherBlock.getRoot())
+            .orElseThrow()
+            .blind(schemaDefinitions);
+    // Rebuild the blinded envelope with the target block's slot + beaconBlockRoot so only the
+    // payloadHeader / builderIndex mismatches fire (not the slot/blockRoot preconditions)
+    final BlindedExecutionPayloadEnvelope tamperedEnvelope =
+        schemaDefinitions
+            .getBlindedExecutionPayloadEnvelopeSchema()
+            .create(
+                originalBlindedEnvelope.getMessage().getPayloadHeader(),
+                originalBlindedEnvelope.getMessage().getExecutionRequests(),
+                originalBlindedEnvelope.getMessage().getBuilderIndex(),
+                block.getRoot());
+    final SignedBlindedExecutionPayloadEnvelope signedTampered =
+        schemaDefinitions
+            .getSignedBlindedExecutionPayloadEnvelopeSchema()
+            .create(tamperedEnvelope, originalBlindedEnvelope.getSignature());
+
+    assertThatThrownBy(() -> fetcher.validateExecutionPayloadEnvelope(signedTampered, block))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(block.getRoot().toHexString());
   }
 
   @TestTemplate
