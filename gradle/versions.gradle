@@ -155,7 +155,7 @@ dependencyManagement {
 			entry "junit-jupiter"
 		}
 
-		dependency 'io.consensys.protocols:discovery:26.4.0'
+		dependency 'io.consensys.protocols:discovery:26.4.1'
 
 		dependencySet(group: 'org.jupnp', version: '3.0.4') {
 			entry "org.jupnp"
