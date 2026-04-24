@@ -127,7 +127,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -1196,18 +1195,17 @@ public class Spec {
   // get_ptc_assignment
   public Optional<UInt64> getPtcAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
-    return atEpoch(epoch).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
+    return atState(state).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
   }
 
   public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
-    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
+    return atState(state).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
   }
 
   // get_ptc
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
-    return BeaconStateAccessorsGloas.required(atSlot(slot).beaconStateAccessors())
-        .getPtc(state, slot);
+    return atState(state).beaconStateAccessors().getPtc(state, slot);
   }
 
   // Builder Utils

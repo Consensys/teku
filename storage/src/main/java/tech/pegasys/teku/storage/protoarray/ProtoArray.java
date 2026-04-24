@@ -314,7 +314,6 @@ public class ProtoArray {
   }
 
   public void markNodeValid(final ForkChoiceNode nodeIdentity) {
-    LOG.info("Marking node {} as valid", nodeIdentity);
     final Optional<ProtoNode> maybeNode = getNode(nodeIdentity);
     if (maybeNode.isEmpty()) {
       // Most likely just pruned prior to the validation result being received.

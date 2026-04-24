@@ -269,11 +269,21 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
         // Could also be because the first execution payload requested is above our head slot
         return SafeFuture.completedFuture(Optional.empty());
       } else {
-        // TODO-GLOAS: https://github.com/Consensys/teku/issues/9974 implement when we support
-        // finalized execution payload lookup
-        return SafeFuture.failedFuture(
-            new UnsupportedOperationException(
-                "Lookup of finalized execution payload envelopes is not implemented yet"));
+        // Finalized slot: look up the canonical block then its execution payload envelope
+        return combinedChainDataClient
+            .getBlockAtSlotExact(slot)
+            .thenCompose(
+                maybeBlock ->
+                    maybeBlock
+                        .map(
+                            block ->
+                                combinedChainDataClient.getExecutionPayloadByBlockRoot(
+                                    block.getRoot()))
+                        .orElse(SafeFuture.completedFuture(Optional.empty())))
+            .thenApply(
+                maybeExecutionPayload ->
+                    maybeExecutionPayload.filter(
+                        executionPayload -> executionPayload.getSlot().equals(slot)));
       }
     }
   }

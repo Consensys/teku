@@ -110,6 +110,15 @@ class ProtoArrayScoreCalculator {
         validatorIndexInt < newBalances.size() ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
     final UInt64 effectiveNewBalance = vote.isNextEquivocating() ? UInt64.ZERO : newBalance;
 
+    final boolean isVoteRootUnchanged = vote.getCurrentRoot().equals(vote.getNextRoot());
+    final boolean isVoteTargetUnchanged =
+        isVoteRootUnchanged
+            && vote.getCurrentSlot().equals(vote.getNextSlot())
+            && vote.isCurrentFullPayloadHint() == vote.isNextFullPayloadHint();
+    if (isVoteTargetUnchanged && oldBalance.equals(effectiveNewBalance)) {
+      return;
+    }
+
     final Optional<ForkChoiceNode> currentNode =
         forkChoiceModel.resolveVoteNode(
             vote.getCurrentRoot(),
@@ -127,7 +136,7 @@ class ProtoArrayScoreCalculator {
 
     // A vote update matters if the validator moved roots, resolved to a different node variant,
     // or their effective balance changed.
-    if (!vote.getCurrentRoot().equals(vote.getNextRoot())
+    if (!isVoteRootUnchanged
         || !currentNode.equals(nextNode)
         || !oldBalance.equals(effectiveNewBalance)) {
       if (vote.isNextEquivocating()) {

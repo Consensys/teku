@@ -173,6 +173,7 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    *
    * <p>*Note*: `get_ptc` uses the cached `ptc_window` for lookups.
    */
+  @Override
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
