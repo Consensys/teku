@@ -702,8 +702,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                           block.getRoot(),
                           slot,
                           payloadPresent,
-                          // TODO-GLOAS: hardcoding `blob_data_available` to payloadPresent for now
-                          payloadPresent);
+                          // if execution payload is in the store, blob data is available
+                          combinedChainDataClient
+                              .getStore()
+                              .getExecutionPayloadIfAvailable(block.getRoot())
+                              .isPresent());
               return Optional.of(payloadAttestationData);
             });
   }
