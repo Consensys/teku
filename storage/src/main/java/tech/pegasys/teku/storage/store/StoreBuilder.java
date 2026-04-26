@@ -74,7 +74,19 @@ public class StoreBuilder {
     final UInt64 time = spec.computeTimeAtSlot(slot, genesisTime).max(currentTime);
 
     Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
-    blockInfo.put(anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(spec, anchor));
+    blockInfo.put(
+        anchor.getRoot(),
+        new StoredBlockMetadata(
+            slot,
+            anchor.getRoot(),
+            anchor.getParentRoot(),
+            anchor.getState().hashTreeRoot(),
+            anchor.getExecutionBlockNumber(),
+            anchor.getExecutionBlockHash(),
+            Optional.of(spec.calculateBlockCheckpoints(anchor.getState())),
+            anchor
+                .getSignedBeaconBlock()
+                .flatMap(StoredBlockMetadata::extractGloasForkChoiceRebuildData)));
 
     return new OnDiskStoreData(
         time,
