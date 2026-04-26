@@ -693,16 +693,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                 return Optional.empty();
               }
               final SignedBeaconBlock block = maybeBlock.get();
+              final boolean payloadPresent =
+                  executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot());
               final PayloadAttestationData payloadAttestationData =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getPayloadAttestationDataSchema()
                       .create(
                           block.getRoot(),
                           slot,
-                          executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot()),
-                          // TODO-GLOAS: `blob_data_available` field usage not spec yet, so
-                          // hardcoding it to false
-                          false);
+                          payloadPresent,
+                          // TODO-GLOAS: hardcoding `blob_data_available` to payloadPresent for now
+                          payloadPresent);
               return Optional.of(payloadAttestationData);
             });
   }
