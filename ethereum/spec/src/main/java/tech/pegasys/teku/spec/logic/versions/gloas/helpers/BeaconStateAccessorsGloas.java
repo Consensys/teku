@@ -175,9 +175,6 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    */
   @Override
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
-    if (state.toVersionGloas().isEmpty()) {
-      return computePtc(state, slot).toIntList();
-    }
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
     final int cacheIndex;
@@ -198,7 +195,11 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
           epoch.minusMinZero(stateEpoch).plus(1).times(config.getSlotsPerEpoch()).intValue();
       cacheIndex = slot.mod(config.getSlotsPerEpoch()).plus(offset).intValue();
     }
-    return BeaconStateGloas.required(state).getPtcWindow().get(cacheIndex).toIntList();
+    return state
+        .toVersionGloas()
+        .map(stateGloas -> stateGloas.getPtcWindow().get(cacheIndex).toIntList())
+        // Fork boundary edge case
+        .orElseGet(() -> computePtc(state, slot).toIntList());
   }
 
   /**
