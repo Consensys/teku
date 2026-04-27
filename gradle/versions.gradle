@@ -64,7 +64,7 @@ dependencyManagement {
 			entry 'oshi-core-java11'
 		}
 
-		dependencySet(group: 'io.netty', version: '4.2.12.Final') {
+		dependencySet(group: 'io.netty', version: '4.2.10.Final') {
 			entry 'netty-handler'
 			entry 'netty-codec-http'
 		}
@@ -155,7 +155,7 @@ dependencyManagement {
 			entry "junit-jupiter"
 		}
 
-		dependency 'io.consensys.protocols:discovery:26.4.0'
+		dependency 'io.consensys.protocols:discovery:26.4.1'
 
 		dependencySet(group: 'org.jupnp', version: '3.0.4') {
 			entry "org.jupnp"

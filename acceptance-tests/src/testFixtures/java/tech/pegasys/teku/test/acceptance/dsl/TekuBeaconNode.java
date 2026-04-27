@@ -834,7 +834,6 @@ public class TekuBeaconNode extends TekuNode {
               block.getMessage().getBody().getAttestations().stream()
                   .map(a -> spec.getAttestingIndices(state, a))
                   .flatMap(Collection::stream)
-                  .map(UInt64::valueOf)
                   .collect(toSet());
 
           if (node1Validators.contains(proposerIndex)) {

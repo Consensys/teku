@@ -116,10 +116,10 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
         .getIndexedAttestation()
         .ifPresent(
             attestation -> {
-              final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
-              attestation
-                  .getAttestingIndices()
-                  .forEach((validatorIndex) -> touch(validatorIndex.get(), epoch));
+              final UInt64 epoch = spec.computeEpochAtSlot(attestation.data().getSlot());
+              for (final UInt64 validatorIndex : attestation.attestingIndices()) {
+                touch(validatorIndex, epoch);
+              }
             });
   }
 

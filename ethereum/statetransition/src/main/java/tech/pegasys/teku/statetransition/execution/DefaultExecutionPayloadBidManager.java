@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -129,9 +128,11 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
         getPayloadResponse.getExecutionRequests().orElseThrow().hashTreeRoot();
     final Bytes32 parentRoot = state.getLatestBlockHeader().getRoot();
     final boolean shouldExtendPayload =
-        ForkChoiceUtilGloas.required(specVersion.getForkChoiceUtil())
+        recentChainData
+                .getStore()
+                .getForkChoiceStrategy()
                 .shouldExtendPayload(recentChainData.getStore(), parentRoot)
-            // handle Gloas fork boundary edge case
+            // Handle the Gloas bootstrap case before a parent payload has ever been committed.
             || state.getLatestExecutionPayloadBid().getParentBlockHash().equals(Bytes32.ZERO);
     final Bytes32 parentBlockHash =
         shouldExtendPayload
