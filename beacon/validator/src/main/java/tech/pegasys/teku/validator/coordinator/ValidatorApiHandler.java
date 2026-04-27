@@ -695,18 +695,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final SignedBeaconBlock block = maybeBlock.get();
               final boolean payloadPresent =
                   executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot());
+              // if execution payload is in the store, blob data is available
+              final boolean blobDataAvailable =
+                  combinedChainDataClient
+                      .getStore()
+                      .getExecutionPayloadIfAvailable(block.getRoot())
+                      .isPresent();
               final PayloadAttestationData payloadAttestationData =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getPayloadAttestationDataSchema()
-                      .create(
-                          block.getRoot(),
-                          slot,
-                          payloadPresent,
-                          // if execution payload is in the store, blob data is available
-                          combinedChainDataClient
-                              .getStore()
-                              .getExecutionPayloadIfAvailable(block.getRoot())
-                              .isPresent());
+                      .create(block.getRoot(), slot, payloadPresent, blobDataAvailable);
               return Optional.of(payloadAttestationData);
             });
   }
