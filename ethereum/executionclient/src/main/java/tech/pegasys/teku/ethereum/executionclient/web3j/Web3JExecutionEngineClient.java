@@ -46,6 +46,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -303,6 +304,57 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionListTransactions) {
+    final List<String> expectedBlobVersionedHashes =
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
+    final List<String> executionRequestsHexList =
+        executionRequests.stream().map(Bytes::toHexString).toList();
+    final List<String> inclusionListTransactionHexList =
+        inclusionListTransactions.stream().map(Bytes::toHexString).toList();
+    final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_newPayloadV6",
+            list(
+                executionPayload,
+                expectedBlobVersionedHashes,
+                parentBeaconBlockRoot.toHexString(),
+                executionRequestsHexList,
+                inclusionListTransactionHexList),
+            web3JClient.getWeb3jService(),
+            PayloadStatusV1Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV5> payloadAttributes) {
+    final Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_forkchoiceUpdatedV5",
+            list(forkChoiceState, payloadAttributes.orElse(null)),
+            web3JClient.getWeb3jService(),
+            ForkChoiceUpdatedResultWeb3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<List<Bytes>>> getInclusionListV1(final Bytes32 parentHash) {
+    final Request<?, GetInclusionListV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getInclusionListV1",
+            Collections.singletonList(parentHash.toHexString()),
+            web3JClient.getWeb3jService(),
+            GetInclusionListV1Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
     final Request<?, ExchangeCapabilitiesWeb3jResponse> web3jRequest =
         new Request<>(
@@ -404,6 +456,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetPayloadBodiesByHashV2Web3jResponse
       extends org.web3j.protocol.core.Response<List<ExecutionPayloadBodyV2>> {}
+
+  static class GetInclusionListV1Web3jResponse
+      extends org.web3j.protocol.core.Response<List<Bytes>> {}
 
   /**
    * Returns a list that supports null items.

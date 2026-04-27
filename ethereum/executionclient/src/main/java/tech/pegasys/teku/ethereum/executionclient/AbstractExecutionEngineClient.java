@@ -59,6 +59,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -255,6 +256,40 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   }
 
   @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionListTransactions) {
+    final List<String> versionedHashHexes =
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
+    final List<String> executionRequestHexes =
+        executionRequests.stream().map(Bytes::toHexString).toList();
+    final List<String> inclusionListTransactionHexes =
+        inclusionListTransactions.stream().map(Bytes::toHexString).toList();
+    return doRequest(
+        "engine_newPayloadV6",
+        list(
+            executionPayload,
+            versionedHashHexes,
+            parentBeaconBlockRoot.toHexString(),
+            executionRequestHexes,
+            inclusionListTransactionHexes),
+        PayloadStatusV1.class,
+        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<List<Bytes>>> getInclusionListV1(final Bytes32 parentHash) {
+    return doRequest(
+        "engine_getInclusionListV1",
+        Collections.singletonList(parentHash.toHexString()),
+        objectMapper.getTypeFactory().constructCollectionType(List.class, Bytes.class),
+        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       final ForkChoiceStateV1 forkChoiceState,
       final Optional<PayloadAttributesV1> payloadAttributes) {
@@ -293,6 +328,17 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
       final Optional<PayloadAttributesV4> payloadAttributes) {
     return doRequest(
         "engine_forkchoiceUpdatedV4",
+        list(forkChoiceState, payloadAttributes.orElse(null)),
+        ForkChoiceUpdatedResult.class,
+        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV5> payloadAttributes) {
+    return doRequest(
+        "engine_forkchoiceUpdatedV5",
         list(forkChoiceState, payloadAttributes.orElse(null)),
         ForkChoiceUpdatedResult.class,
         EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);

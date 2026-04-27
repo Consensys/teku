@@ -39,6 +39,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -77,6 +78,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
   public static final String NEW_PAYLOAD_V4_METHOD = "new_payloadV4";
   public static final String NEW_PAYLOAD_V5_METHOD = "new_payloadV5";
+  public static final String NEW_PAYLOAD_V6_METHOD = "new_payloadV6";
+  public static final String FORKCHOICE_UPDATED_V5_METHOD = "forkchoice_updatedV5";
+  public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V5_METHOD =
+      "forkchoice_updated_with_attributesV5";
+  public static final String GET_INCLUSION_LIST_V1_METHOD = "get_inclusion_listV1";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
@@ -231,6 +237,41 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
         payloadAttributes.isPresent()
             ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V4_METHOD
             : FORKCHOICE_UPDATED_V4_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionListTransactions) {
+    return countRequest(
+        () ->
+            delegate.newPayloadV6(
+                executionPayload,
+                blobVersionedHashes,
+                parentBeaconBlockRoot,
+                executionRequests,
+                inclusionListTransactions),
+        NEW_PAYLOAD_V6_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV5> payloadAttributes) {
+    return countRequest(
+        () -> delegate.forkChoiceUpdatedV5(forkChoiceState, payloadAttributes),
+        payloadAttributes.isPresent()
+            ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V5_METHOD
+            : FORKCHOICE_UPDATED_V5_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<List<Bytes>>> getInclusionListV1(final Bytes32 parentHash) {
+    return countRequest(
+        () -> delegate.getInclusionListV1(parentHash), GET_INCLUSION_LIST_V1_METHOD);
   }
 
   @Override

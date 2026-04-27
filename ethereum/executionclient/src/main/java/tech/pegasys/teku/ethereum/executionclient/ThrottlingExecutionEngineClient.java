@@ -39,6 +39,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -182,6 +183,36 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final Optional<PayloadAttributesV4> payloadAttributes) {
     return taskQueue.queueTask(
         () -> delegate.forkChoiceUpdatedV4(forkChoiceState, payloadAttributes));
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionListTransactions) {
+    return taskQueue.queueTask(
+        () ->
+            delegate.newPayloadV6(
+                executionPayload,
+                blobVersionedHashes,
+                parentBeaconBlockRoot,
+                executionRequests,
+                inclusionListTransactions));
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV5> payloadAttributes) {
+    return taskQueue.queueTask(
+        () -> delegate.forkChoiceUpdatedV5(forkChoiceState, payloadAttributes));
+  }
+
+  @Override
+  public SafeFuture<Response<List<Bytes>>> getInclusionListV1(final Bytes32 parentHash) {
+    return taskQueue.queueTask(() -> delegate.getInclusionListV1(parentHash));
   }
 
   @Override
