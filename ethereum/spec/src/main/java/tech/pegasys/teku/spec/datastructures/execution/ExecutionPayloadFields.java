@@ -47,7 +47,9 @@ public enum ExecutionPayloadFields implements SszFieldName {
   VALUE,
   EXECUTION_PAYMENT,
   BLOB_KZG_COMMITMENTS,
-  EXECUTION_REQUESTS_ROOT;
+  EXECUTION_REQUESTS_ROOT,
+  // Heze
+  INCLUSION_LIST_BITS;
 
   private final String sszFieldName;
 

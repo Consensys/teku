@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.logic.versions.fulu.util.BlockProposalUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadVerifierGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
@@ -53,6 +52,8 @@ import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
+import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class SpecLogicHeze extends AbstractSpecLogic {
@@ -63,11 +64,12 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<ExecutionPayloadVerifier> executionPayloadVerifier;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
+  private final Optional<InclusionListUtil> inclusionListUtil;
 
   private SpecLogicHeze(
       final PredicatesGloas predicates,
       final MiscHelpersGloas miscHelpers,
-      final BeaconStateAccessorsGloas beaconStateAccessors,
+      final BeaconStateAccessorsHeze beaconStateAccessors,
       final BeaconStateMutatorsGloas beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
@@ -87,7 +89,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final LightClientUtil lightClientUtil,
       final ExecutionPayloadProposalUtil executionPayloadProposalUtil,
       final HezeStateUpgrade stateUpgrade,
-      final DataColumnSidecarUtil dataColumnSidecarUtil) {
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
+      final InclusionListUtil inclusionListUtil) {
     super(
         predicates,
         miscHelpers,
@@ -112,6 +115,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.executionPayloadVerifier = Optional.of(executionPayloadVerifier);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
+    this.inclusionListUtil = Optional.of(inclusionListUtil);
   }
 
   public static SpecLogicHeze create(
@@ -122,8 +126,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     final PredicatesGloas predicates = new PredicatesGloas(config);
     final MiscHelpersGloas miscHelpers =
         new MiscHelpersGloas(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsGloas beaconStateAccessors =
-        new BeaconStateAccessorsGloas(config, schemaDefinitions, predicates, miscHelpers);
+    final BeaconStateAccessorsHeze beaconStateAccessors =
+        new BeaconStateAccessorsHeze(config, schemaDefinitions, predicates, miscHelpers);
     final BeaconStateMutatorsGloas beaconStateMutators =
         new BeaconStateMutatorsGloas(config, miscHelpers, beaconStateAccessors, schemaDefinitions);
 
@@ -226,6 +230,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     // Data column sidecar util
     final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas(miscHelpers);
 
+    // Inclusion list util
+    final InclusionListUtil inclusionListUtil =
+        new InclusionListUtil(config, beaconStateAccessors, miscHelpers);
+
     return new SpecLogicHeze(
         predicates,
         miscHelpers,
@@ -249,7 +257,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         lightClientUtil,
         executionPayloadProposalUtil,
         stateUpgrade,
-        dataColumnSidecarUtil);
+        dataColumnSidecarUtil,
+        inclusionListUtil);
   }
 
   @Override
@@ -290,5 +299,9 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   @Override
   public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
     return dataColumnSidecarUtil;
+  }
+
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return inclusionListUtil;
   }
 }

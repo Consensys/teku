@@ -26,7 +26,9 @@ public enum GossipTopicName {
   EXECUTION_PAYLOAD,
   PAYLOAD_ATTESTATION_MESSAGE,
   EXECUTION_PAYLOAD_BID,
-  PROPOSER_PREFERENCES;
+  PROPOSER_PREFERENCES,
+  // Heze
+  INCLUSION_LIST;
 
   @Override
   public String toString() {

@@ -2009,6 +2009,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedProposerPreferencesProcessor(
                 (signedProposerPreferences, arrivalTimestamp) ->
                     proposerPreferencesManager.addRemote(signedProposerPreferences))
+            .gossipedInclusionListProcessor(
+                (signedInclusionList, arrivalTimestamp) ->
+                    SafeFuture.completedFuture(InternalValidationResult.ACCEPT))
             .gossipDasLogger(dasGossipLogger)
             .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
