@@ -92,6 +92,11 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.size());
 
     final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
+    final UInt64 minServableEpoch =
+        currentEpoch
+            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
+            .max(spec.getSpecConfig(currentEpoch).getGloasForkEpoch());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
 
@@ -104,7 +109,9 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
                       .thenCompose(
                           maybeExecutionPayloadEnvelope ->
                               maybeExecutionPayloadEnvelope
-                                  .filter(this::isEnvelopeWithinServableRange)
+                                  .filter(
+                                      envelope ->
+                                          isEnvelopeWithinServableRange(envelope, minServableEpoch))
                                   .map(
                                       executionPayloadEnvelope ->
                                           callback
@@ -125,14 +132,9 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
         err -> handleError(err, callback, "execution payload envelopes by root"));
   }
 
-  private boolean isEnvelopeWithinServableRange(final SignedExecutionPayloadEnvelope envelope) {
-    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
-    final UInt64 gloasForkEpoch = spec.getSpecConfig(currentEpoch).getGloasForkEpoch();
-    final UInt64 minServableEpoch =
-        currentEpoch
-            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
-            .max(gloasForkEpoch);
-    final UInt64 envelopeEpoch = spec.computeEpochAtSlot(envelope.getMessage().getSlot());
-    return envelopeEpoch.isGreaterThanOrEqualTo(minServableEpoch);
+  private boolean isEnvelopeWithinServableRange(
+      final SignedExecutionPayloadEnvelope envelope, final UInt64 minServableEpoch) {
+    return spec.computeEpochAtSlot(envelope.getMessage().getSlot())
+        .isGreaterThanOrEqualTo(minServableEpoch);
   }
 }

@@ -114,13 +114,17 @@ public class BlobSidecarsByRootMessageHandler
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
+    final UInt64 minServableEpoch =
+        spec.getCurrentEpoch(combinedChainDataClient.getStore())
+            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
 
     for (final BlobIdentifier identifier : message) {
       future =
           future
               .thenCompose(__ -> retrieveBlobSidecar(identifier))
               .thenComposeChecked(
-                  maybeSidecar -> validateMinAndMaxRequestEpoch(identifier, maybeSidecar))
+                  maybeSidecar ->
+                      validateMinAndMaxRequestEpoch(identifier, maybeSidecar, minServableEpoch))
               .thenComposeChecked(
                   maybeSidecar ->
                       maybeSidecar
@@ -157,7 +161,9 @@ public class BlobSidecarsByRootMessageHandler
    * </ul>
    */
   private SafeFuture<Optional<BlobSidecar>> validateMinAndMaxRequestEpoch(
-      final BlobIdentifier identifier, final Optional<BlobSidecar> maybeSidecar) {
+      final BlobIdentifier identifier,
+      final Optional<BlobSidecar> maybeSidecar,
+      final UInt64 minServableEpoch) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
         .orElse(combinedChainDataClient.getSlotByBlockRoot(identifier.getBlockRoot()))
@@ -168,10 +174,6 @@ public class BlobSidecarsByRootMessageHandler
                 return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
-              final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
-              final UInt64 minServableEpoch =
-                  currentEpoch.minusMinZero(
-                      spec.getNetworkingConfig().getMinEpochsForBlockRequests());
               if (requestedEpoch.isLessThan(minServableEpoch)) {
                 return SafeFuture.failedFuture(
                     new RpcException.ResourceUnavailableException(
