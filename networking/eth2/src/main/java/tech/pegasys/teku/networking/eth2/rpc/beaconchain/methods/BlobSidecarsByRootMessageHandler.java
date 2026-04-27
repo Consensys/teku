@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
- * <a
- * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#blobsidecarsbyroot-v1">BlobSidecarsByRoot
+ * <a href=
+ * "https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#blobsidecarsbyroot-v1">BlobSidecarsByRoot
  * v1</a>
  */
 public class BlobSidecarsByRootMessageHandler
@@ -114,7 +114,9 @@ public class BlobSidecarsByRootMessageHandler
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
-    final UInt64 finalizedEpoch = getFinalizedEpoch();
+    final UInt64 minServableEpoch =
+        spec.getCurrentEpoch(combinedChainDataClient.getStore())
+            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
 
     for (final BlobIdentifier identifier : message) {
       future =
@@ -122,7 +124,7 @@ public class BlobSidecarsByRootMessageHandler
               .thenCompose(__ -> retrieveBlobSidecar(identifier))
               .thenComposeChecked(
                   maybeSidecar ->
-                      validateMinAndMaxRequestEpoch(identifier, maybeSidecar, finalizedEpoch))
+                      validateMinAndMaxRequestEpoch(identifier, maybeSidecar, minServableEpoch))
               .thenComposeChecked(
                   maybeSidecar ->
                       maybeSidecar
@@ -150,13 +152,6 @@ public class BlobSidecarsByRootMessageHandler
     return SpecConfigDeneb.required(spec.atEpoch(epoch).getConfig()).getMaxRequestBlobSidecars();
   }
 
-  private UInt64 getFinalizedEpoch() {
-    return combinedChainDataClient
-        .getFinalizedBlockSlot()
-        .map(spec::computeEpochAtSlot)
-        .orElse(UInt64.ZERO);
-  }
-
   /**
    * Validations:
    *
@@ -168,7 +163,7 @@ public class BlobSidecarsByRootMessageHandler
   private SafeFuture<Optional<BlobSidecar>> validateMinAndMaxRequestEpoch(
       final BlobIdentifier identifier,
       final Optional<BlobSidecar> maybeSidecar,
-      final UInt64 finalizedEpoch) {
+      final UInt64 minServableEpoch) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
         .orElse(combinedChainDataClient.getSlotByBlockRoot(identifier.getBlockRoot()))
@@ -179,14 +174,12 @@ public class BlobSidecarsByRootMessageHandler
                 return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
-              if (!spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
-                      combinedChainDataClient.getStore(), requestedEpoch)
-                  || requestedEpoch.isLessThan(finalizedEpoch)) {
-                throw new RpcException(
-                    INVALID_REQUEST_CODE,
-                    String.format(
-                        "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: %s",
-                        identifier.getBlockRoot(), maybeSlot.get()));
+              if (requestedEpoch.isLessThan(minServableEpoch)) {
+                return SafeFuture.failedFuture(
+                    new RpcException.ResourceUnavailableException(
+                        String.format(
+                            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: %s",
+                            identifier.getBlockRoot(), maybeSlot.get())));
               }
               return SafeFuture.completedFuture(maybeSidecar);
             });

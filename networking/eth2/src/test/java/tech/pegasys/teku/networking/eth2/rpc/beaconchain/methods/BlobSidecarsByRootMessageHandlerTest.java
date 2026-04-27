@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +65,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class BlobSidecarsByRootMessageHandlerTest {
 
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
-  private final UInt64 currentForkEpoch = UInt64.valueOf(1);
+  private final UInt64 currentForkEpoch = UInt64.valueOf(40000);
   private BlobSidecarsByRootRequestMessageSchema messageSchema;
   private final ArgumentCaptor<BlobSidecar> blobSidecarCaptor =
       ArgumentCaptor.forClass(BlobSidecar.class);
@@ -128,9 +129,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
     reset(combinedChainDataClient);
     when(combinedChainDataClient.getSlotByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(currentForkFirstSlot)));
-    // deneb fork epoch is finalized
-    when(combinedChainDataClient.getFinalizedBlockSlot())
-        .thenReturn(Optional.of(currentForkFirstSlot));
     when(combinedChainDataClient.getStore()).thenReturn(store);
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
@@ -273,7 +271,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     final RpcException rpcException = rpcExceptionCaptor.getValue();
 
-    assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
+    assertThat(rpcException.getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
             "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
@@ -301,19 +299,121 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     // Requesting 3 blob sidecars
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
-    // Be protective: do not adjust due to error
-    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
 
     final RpcException rpcException = rpcExceptionCaptor.getValue();
 
-    assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
+    assertThat(rpcException.getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
             "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.getFirst().getBlockRoot());
+  }
+
+  @TestTemplate
+  public void shouldServeIfBlobSidecarIsAtExactMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 exactBoundarySlot = spec.computeStartSlotAtEpoch(minServableEpoch);
+
+    final BlobSidecar blobSidecar = mock(BlobSidecar.class);
+    when(blobSidecar.getSlot()).thenReturn(exactBoundarySlot);
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback).respond(blobSidecar);
+    verify(callback).completeSuccessfully();
+    verify(callback, never()).completeWithErrorResponse(any());
+  }
+
+  @TestTemplate
+  public void shouldSendResourceUnavailableIfBlobSidecarIsJustBelowMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 oneBelowSlot = spec.computeStartSlotAtEpoch(minServableEpoch.minus(1));
+
+    final BlobSidecar blobSidecar = mock(BlobSidecar.class);
+    when(blobSidecar.getSlot()).thenReturn(oneBelowSlot);
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+    assertThat(rpcExceptionCaptor.getValue().getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
+  }
+
+  @TestTemplate
+  public void shouldServeIfBlockRootReferencesSlotAtExactMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 exactBoundarySlot = spec.computeStartSlotAtEpoch(minServableEpoch);
+
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getSlotByBlockRoot(blobIdentifiers.getFirst().getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(exactBoundarySlot)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeSuccessfully();
+    verify(callback, never()).completeWithErrorResponse(any());
+  }
+
+  @TestTemplate
+  public void shouldSendResourceUnavailableIfBlockRootReferencesSlotJustBelowMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 oneBelowSlot = spec.computeStartSlotAtEpoch(minServableEpoch.minus(1));
+
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getSlotByBlockRoot(blobIdentifiers.getFirst().getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(oneBelowSlot)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+    assertThat(rpcExceptionCaptor.getValue().getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
   }
 
   @TestTemplate
