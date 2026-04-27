@@ -114,9 +114,11 @@ public class BlobSidecarsByRootMessageHandler
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
-    final UInt64 minServableEpoch =
-        spec.getCurrentEpoch(combinedChainDataClient.getStore())
-            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
+    final int minEpochsForBlobSidecarsRequests =
+        SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig())
+            .getMinEpochsForBlobSidecarsRequests();
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlobSidecarsRequests);
 
     for (final BlobIdentifier identifier : message) {
       future =
