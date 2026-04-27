@@ -337,7 +337,7 @@ public class SlotProcessor {
         .getChainHead()
         .ifPresent(
             (head) ->
-                eventLog.slotEvent(
+                eventLog.slotBlockEvent(
                     nodeSlot.getValue(),
                     head.getSlot(),
                     head.getRoot(),
@@ -351,6 +351,16 @@ public class SlotProcessor {
   private void processSlotPayloadAttestation() {
     onTickSlotPayloadAttestation = nodeSlot.getValue();
     forkChoiceNotifier.onPayloadAttestationsDue(onTickSlotPayloadAttestation);
+    recentChainData
+        .getChainHead()
+        .ifPresent(
+            (head) ->
+                eventLog.slotPayloadEvent(
+                    nodeSlot.getValue(),
+                    head.getSlot(),
+                    head.getExecutionBlockHash(),
+                    head.getForkChoiceNode().payloadStatus().getShortName(),
+                    p2pNetwork.getPeerCount()));
   }
 
   @VisibleForTesting

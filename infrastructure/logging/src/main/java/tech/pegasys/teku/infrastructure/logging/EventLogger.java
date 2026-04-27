@@ -253,7 +253,7 @@ public class EventLogger {
     warn(weakSubjectivityFailedEventLog, Color.RED);
   }
 
-  public void slotEvent(
+  public void slotBlockEvent(
       final UInt64 nodeSlot,
       final UInt64 headSlot,
       final Bytes32 bestBlockRoot,
@@ -264,11 +264,28 @@ public class EventLogger {
     if (nodeSlot.equals(headSlot)) {
       blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
     }
-    final String slotEventLog =
+    final String slotBlockEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
+            "Slot Block Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
             nodeSlot, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
-    info(slotEventLog, Color.WHITE);
+    info(slotBlockEventLog, Color.WHITE);
+  }
+
+  public void slotPayloadEvent(
+      final UInt64 nodeSlot,
+      final UInt64 headSlot,
+      final Bytes32 bestExecutionBlockHash,
+      final String payloadStatus,
+      final int numPeers) {
+    String executionBlockHash = "                                                       ... empty";
+    if (nodeSlot.equals(headSlot)) {
+      executionBlockHash = LogFormatter.formatHashRoot(bestExecutionBlockHash);
+    }
+    final String slotPayloadEventLog =
+        String.format(
+            "Slot Payload Event  *** Slot: %s, Execution Block: %s, Payload Status: %s, Peers: %d",
+            nodeSlot, executionBlockHash, payloadStatus, numPeers);
+    info(slotPayloadEventLog, Color.WHITE);
   }
 
   public void reorgEvent(

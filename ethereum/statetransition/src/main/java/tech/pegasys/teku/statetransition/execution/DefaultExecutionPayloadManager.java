@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -137,9 +138,16 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload);
               } else {
-                LOG.debug(
-                    "Failed to import execution payload for reason {}: {}",
+                LOG.warn(
+                    "Failed to import execution payload for reason {}{}: {}",
                     result::getFailureReason,
+                    () ->
+                        result
+                            .getFailureCause()
+                            .map(ExceptionUtil::getRootCauseMessage)
+                            .filter(causeMessage -> !causeMessage.isBlank())
+                            .map(causeMessage -> " (" + causeMessage + ")")
+                            .orElse(""),
                     signedExecutionPayload::toLogString);
               }
             })
