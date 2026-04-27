@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -56,4 +57,6 @@ public interface ExecutionClientHandler {
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
+
+  SafeFuture<List<Bytes>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
 }
