@@ -175,6 +175,9 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    */
   @Override
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    if (state.toVersionGloas().isEmpty()) {
+      return computePtc(state, slot).toIntList();
+    }
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
     final int cacheIndex;

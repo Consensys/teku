@@ -1200,7 +1200,7 @@ public class Spec {
 
   public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
-    return atState(state).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
   }
 
   // get_ptc
