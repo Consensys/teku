@@ -316,9 +316,11 @@ public class BlobSidecarsByRootMessageHandlerTest {
   public void shouldServeIfBlobSidecarIsAtExactMinServableEpoch() {
     final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
     final UInt64 currentEpoch = currentForkEpoch.increment();
-    final UInt64 minEpochsForBlockRequests =
-        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
-    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 minEpochsForBlobSidecarsRequests =
+        UInt64.valueOf(
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMinEpochsForBlobSidecarsRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlobSidecarsRequests);
     final UInt64 exactBoundarySlot = spec.computeStartSlotAtEpoch(minServableEpoch);
 
     final BlobSidecar blobSidecar = mock(BlobSidecar.class);
