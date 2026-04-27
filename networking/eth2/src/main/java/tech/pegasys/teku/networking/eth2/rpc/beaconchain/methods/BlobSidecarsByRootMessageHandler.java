@@ -118,8 +118,7 @@ public class BlobSidecarsByRootMessageHandler
     final int minEpochsForBlobSidecarsRequests =
         SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig())
             .getMinEpochsForBlobSidecarsRequests();
-    final UInt64 minServableEpoch =
-        currentEpoch.minusMinZero(minEpochsForBlobSidecarsRequests);
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlobSidecarsRequests);
 
     for (final BlobIdentifier identifier : message) {
       future =
