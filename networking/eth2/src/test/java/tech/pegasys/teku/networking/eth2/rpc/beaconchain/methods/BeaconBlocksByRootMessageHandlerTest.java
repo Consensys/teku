@@ -249,6 +249,36 @@ public class BeaconBlocksByRootMessageHandlerTest {
     verify(peer).adjustBlocksRequest(any(), eq(1L));
   }
 
+  @Test
+  public void onIncomingMessage_shouldServeBlockAtExactMinServableEpoch() {
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 currentEpoch = minEpochsForBlockRequests.plus(10);
+
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
+
+    final List<SignedBeaconBlock> blocks = buildChain(1);
+    final SignedBeaconBlock block = blocks.getFirst();
+
+    // Slot at exactly minServableEpoch — the inclusive lower boundary
+    final UInt64 exactBoundarySlot =
+        spec.computeStartSlotAtEpoch(currentEpoch.minus(minEpochsForBlockRequests));
+
+    final SignedBeaconBlock mockedBlock = mock(SignedBeaconBlock.class);
+    when(mockedBlock.getSlot()).thenReturn(exactBoundarySlot);
+    when(mockedBlock.getRoot()).thenReturn(block.getRoot());
+
+    when(recentChainData.retrieveSignedBlockByRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(mockedBlock)));
+
+    final BeaconBlocksByRootRequestMessage message = createRequest(List.of(mockedBlock));
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    verify(callback).respond(mockedBlock);
+    verify(callback).completeSuccessfully();
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
+  }
+
   private BeaconBlocksByRootRequestMessage createRequest(final List<SignedBeaconBlock> forBlocks) {
     final List<Bytes32> blockHashes =
         forBlocks.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());

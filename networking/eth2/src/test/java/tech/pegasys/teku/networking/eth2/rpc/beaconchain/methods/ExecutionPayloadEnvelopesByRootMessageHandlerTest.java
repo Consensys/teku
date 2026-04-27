@@ -241,6 +241,41 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(1L));
   }
 
+  @Test
+  public void onIncomingMessage_shouldServeEnvelopeAtExactMinServableEpoch() {
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 currentEpoch = minEpochsForBlockRequests.plus(10);
+
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
+
+    final List<SignedExecutionPayloadEnvelope> envelopes = buildChain(1);
+    final SignedExecutionPayloadEnvelope envelope = envelopes.get(0);
+
+    // gloasForkEpoch = 0 in createMinimalGloas(), so minServableEpoch = max(10, 0) = 10
+    final UInt64 exactBoundarySlot =
+        spec.computeStartSlotAtEpoch(currentEpoch.minus(minEpochsForBlockRequests));
+
+    final SignedExecutionPayloadEnvelope mockedEnvelope =
+        mock(SignedExecutionPayloadEnvelope.class);
+    final ExecutionPayloadEnvelope mockedMessage = mock(ExecutionPayloadEnvelope.class);
+    when(mockedEnvelope.getMessage()).thenReturn(mockedMessage);
+    when(mockedMessage.getSlot()).thenReturn(exactBoundarySlot);
+    when(mockedMessage.getBeaconBlockRoot()).thenReturn(envelope.getMessage().getBeaconBlockRoot());
+
+    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(
+            envelope.getMessage().getBeaconBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(mockedEnvelope)));
+
+    final ExecutionPayloadEnvelopesByRootRequestMessage message =
+        createRequestFromBeaconBlockRoots(List.of(envelope.getMessage().getBeaconBlockRoot()));
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    verify(callback).respond(mockedEnvelope);
+    verify(callback).completeSuccessfully();
+    verify(peer, never()).adjustExecutionPayloadEnvelopesRequest(any(), anyLong());
+  }
+
   private ExecutionPayloadEnvelopesByRootRequestMessage createRequestFromExecutionPayloadEnvelopes(
       final List<SignedExecutionPayloadEnvelope> executionPayloadEnvelopes) {
     final List<Bytes32> beaconBlockRoots =

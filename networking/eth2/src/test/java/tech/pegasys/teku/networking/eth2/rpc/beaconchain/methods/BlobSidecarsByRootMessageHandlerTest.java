@@ -313,6 +313,110 @@ public class BlobSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
+  public void shouldServeIfBlobSidecarIsAtExactMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 exactBoundarySlot = spec.computeStartSlotAtEpoch(minServableEpoch);
+
+    final BlobSidecar blobSidecar = mock(BlobSidecar.class);
+    when(blobSidecar.getSlot()).thenReturn(exactBoundarySlot);
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback).respond(blobSidecar);
+    verify(callback).completeSuccessfully();
+    verify(callback, never()).completeWithErrorResponse(any());
+  }
+
+  @TestTemplate
+  public void shouldSendResourceUnavailableIfBlobSidecarIsJustBelowMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 oneBelowSlot = spec.computeStartSlotAtEpoch(minServableEpoch.minus(1));
+
+    final BlobSidecar blobSidecar = mock(BlobSidecar.class);
+    when(blobSidecar.getSlot()).thenReturn(oneBelowSlot);
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+    assertThat(rpcExceptionCaptor.getValue().getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
+  }
+
+  @TestTemplate
+  public void shouldServeIfBlockRootReferencesSlotAtExactMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 exactBoundarySlot = spec.computeStartSlotAtEpoch(minServableEpoch);
+
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getSlotByBlockRoot(blobIdentifiers.getFirst().getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(exactBoundarySlot)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeSuccessfully();
+    verify(callback, never()).completeWithErrorResponse(any());
+  }
+
+  @TestTemplate
+  public void shouldSendResourceUnavailableIfBlockRootReferencesSlotJustBelowMinServableEpoch() {
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(1);
+    final UInt64 currentEpoch = currentForkEpoch.increment();
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 minServableEpoch = currentEpoch.minusMinZero(minEpochsForBlockRequests);
+    final UInt64 oneBelowSlot = spec.computeStartSlotAtEpoch(minServableEpoch.minus(1));
+
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getSlotByBlockRoot(blobIdentifiers.getFirst().getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(oneBelowSlot)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+    assertThat(rpcExceptionCaptor.getValue().getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
+  }
+
+  @TestTemplate
   public void shouldSendToPeerRequestedBlobSidecars() {
     final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(5);
 
