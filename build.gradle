@@ -588,6 +588,86 @@ tasks.register('cleanRefTests') {
 	dependsOn cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange
 }
 
+// Fork-choice compliance test suites
+// (https://github.com/ethereum/consensus-specs/tree/master/tests/generators/compliance_runners/fork_choice).
+//
+// The artifact lives in a separate "Compliance Tests" workflow (not the regular release tarballs),
+// so it is opt-in: not part of `expandRefTests`.
+//
+// Resolve a tarball from one of (in priority order):
+//   -PcomplianceFcTarball=<path>   local .tar.gz (no network)
+//   -PcomplianceFcUrl=<url>        download via curl-equivalent (no token)
+//   -PcomplianceFcRunId=<id>       fetch from a workflow run (requires GITHUB_TOKEN)
+// Default run resolves the latest successful "Compliance Tests" run on master.
+def complianceFcDownloadDir = "${buildDir}/complianceFcRefTests"
+
+tasks.register('downloadComplianceFcRefTests') {
+	doLast {
+		def localTarball = providers.gradleProperty('complianceFcTarball').getOrNull()
+		if (localTarball) {
+			println "Using local compliance tarball: ${localTarball}"
+			file(complianceFcDownloadDir).mkdirs()
+			def target = new File(complianceFcDownloadDir, 'small.tar.gz')
+			java.nio.file.Files.copy(file(localTarball).toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+			return
+		}
+
+		def url = providers.gradleProperty('complianceFcUrl').getOrNull()
+		if (url) {
+			println "Downloading compliance tarball from URL: ${url}"
+			file(complianceFcDownloadDir).mkdirs()
+			def target = new File(complianceFcDownloadDir, 'small.tar.gz')
+			new URL(url).withInputStream { input ->
+				target.withOutputStream { output -> output << input }
+			}
+			return
+		}
+
+		def repo = "ethereum/consensus-specs"
+		def githubToken = System.getenv("GITHUB_TOKEN")
+		if (!githubToken) {
+			throw new GradleException(
+				"No tarball source. Set -PcomplianceFcTarball=<path>, -PcomplianceFcUrl=<url>, " +
+				"or GITHUB_TOKEN (with optional -PcomplianceFcRunId=<id>).")
+		}
+		def runId = providers.gradleProperty('complianceFcRunId').getOrNull()
+		if (!runId) {
+			runId = getLatestRunId(repo, "compliance_tests.yml", "master", githubToken)
+			if (!runId) {
+				throw new GradleException("Failed to resolve latest Compliance Tests run on master")
+			}
+		}
+		println "Downloading compliance artifacts from ${repo} run ${runId}"
+		file(complianceFcDownloadDir).mkdirs()
+		def artifactsApiUrl = "https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts"
+		def artifactsConn = new URL(artifactsApiUrl).openConnection()
+		artifactsConn.setRequestProperty("Authorization", "token ${githubToken}")
+		artifactsConn.setRequestProperty("Accept", "application/vnd.github.v3+json")
+		def response = new JsonSlurper().parse(artifactsConn.getInputStream())
+		def artifact = response.artifacts?.find { it.name == 'small.tar.gz' }
+		if (!artifact) {
+			throw new GradleException("No 'small.tar.gz' artifact in run ${runId}. Available: " + response.artifacts*.name)
+		}
+		// GitHub serves artifacts as zip-wrapped; the inside file is named 'small.tar.gz'.
+		def zipOutput = new File(complianceFcDownloadDir, 'artifact.zip')
+		downloadFile(artifact.archive_download_url, githubToken, zipOutput)
+		ant.unzip(src: zipOutput, dest: complianceFcDownloadDir)
+		zipOutput.delete()
+	}
+}
+
+tasks.register('cleanRefTestsCompliance', Delete) {
+	delete fileTree(dir: "${refTestExpandDir}/tests").matching {
+		include '**/fork_choice_compliance/**'
+	}
+}
+
+tasks.register('expandRefTestsCompliance', Copy) {
+	dependsOn cleanRefTestsCompliance, downloadComplianceFcRefTests
+	from tarTree("${complianceFcDownloadDir}/small.tar.gz")
+	into refTestExpandDir
+}
+
 tasks.register('deploy') {}
 
 // https://github.com/jk1/Gradle-License-Report/issues/337#issuecomment-3241442179
