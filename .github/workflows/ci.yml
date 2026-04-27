@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -106,7 +106,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -123,7 +123,7 @@ jobs:
           New-Item -ItemType Directory -Force build\test-results
           Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
       - name: Publish Windows Test Results and Reports
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           if-no-files-found: ignore
@@ -138,7 +138,7 @@ jobs:
       publish-version: ${{ steps.projectDetails.outputs.publish-version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: get workflow_details
@@ -158,21 +158,21 @@ jobs:
         run: |
           ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
       - name: Upload distribution tar
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: distribution-tar
           path: |
             build/distributions/*.tar.gz
           retention-days: 14
       - name: Upload distribution zip
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: distribution-zip
           path: |
             build/distributions/*.zip
           retention-days: 7          
       - name: Upload workspace build
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: assemble-output
           path: |
@@ -187,13 +187,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -221,7 +221,7 @@ jobs:
           kill $TEKU_PID
           exit $EXIT_CODE
       - name: Upload openapi spec
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: openapi-spec
           path: |
@@ -239,13 +239,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download openapi spec
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: openapi-spec
           path: ${{ github.workspace }}/.openapidoc/spec
@@ -253,7 +253,7 @@ jobs:
         run: |
           ls -R .openapidoc/spec/
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache-dependency-path: .openapidoc/package-lock.json 
@@ -312,7 +312,7 @@ jobs:
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -357,7 +357,7 @@ jobs:
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -402,7 +402,7 @@ jobs:
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()       
@@ -447,7 +447,7 @@ jobs:
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()          
@@ -459,13 +459,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -473,7 +473,7 @@ jobs:
           name: assemble-output
           merge-multiple: true
           path: ${{ github.workspace }}          
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}
@@ -492,7 +492,7 @@ jobs:
         run: |
           ./gradlew --no-daemon --parallel compileReferenceTestJava
       - name: Caching reference tests 
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}
@@ -501,7 +501,7 @@ jobs:
         run: |
           tar -cf reftests.tar ./eth-reference-tests/
       - name: Upload reftests
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: reftests
           path: reftests.tar
@@ -517,13 +517,13 @@ jobs:
         total: [8]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -531,12 +531,12 @@ jobs:
           name: assemble-output
           merge-multiple: true
           path: ${{ github.workspace }}
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}
       - name: Download reftests
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -580,7 +580,7 @@ jobs:
             referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
       - name: Upload JUnit XML + HTML for ReferenceTests
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: reference-reports-${{ matrix.shard }}
           path: |
@@ -611,7 +611,7 @@ jobs:
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()    
