@@ -940,8 +940,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
-              receivedExecutionPayloadBidEventsChannelPublisher,
-              recentChainData);
+              receivedExecutionPayloadBidEventsChannelPublisher);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
