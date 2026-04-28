@@ -16,5 +16,5 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public interface MessageWithValidatorId extends SszData {
-  int getValidatorId();
+  long getValidatorId();
 }

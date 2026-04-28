@@ -73,7 +73,7 @@ public class SignedVoluntaryExit
   }
 
   @Override
-  public int getValidatorId() {
-    return getMessage().getValidatorIndex().intValue();
+  public long getValidatorId() {
+    return getMessage().getValidatorIndex().longValue();
   }
 }

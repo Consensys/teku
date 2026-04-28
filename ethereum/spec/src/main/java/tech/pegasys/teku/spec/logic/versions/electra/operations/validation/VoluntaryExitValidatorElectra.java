@@ -53,7 +53,7 @@ public class VoluntaryExitValidatorElectra extends VoluntaryExitValidator {
   @VisibleForTesting
   Optional<OperationInvalidReason> validateElectraConditions(
       final BeaconStateElectra stateElectra, final SignedVoluntaryExit exit) {
-    final int validatorId = exit.getValidatorId();
+    final int validatorId = Math.toIntExact(exit.getValidatorId());
     return check(
         stateAccessorsElectra
             .getPendingBalanceToWithdraw(stateElectra, validatorId)

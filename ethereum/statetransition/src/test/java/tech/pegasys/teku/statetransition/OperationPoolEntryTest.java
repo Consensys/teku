@@ -58,8 +58,8 @@ public class OperationPoolEntryTest {
     }
 
     @Override
-    public int getValidatorId() {
-      return this.get().getWrappedBytes().toInt();
+    public long getValidatorId() {
+      return Integer.toUnsignedLong(this.get().getWrappedBytes().toInt());
     }
   }
 }

@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
@@ -213,18 +214,23 @@ public class NodeDataProvider {
                 beaconStateSafeFuture
                     .thenApply(
                         state -> {
+                          final long validatorId = exit.getValidatorId();
+                          // Builder exits (ePBS/Gloas) carry BUILDER_INDEX_FLAG in the index and
+                          // are not in state.validators. Skip the validators-list check; the
+                          // downstream VoluntaryExitValidatorGloas handles them correctly.
+                          if ((validatorId & SpecConfigGloas.BUILDER_INDEX_FLAG.longValue()) != 0) {
+                            return InternalValidationResult.ACCEPT;
+                          }
                           final SszList<Validator> validators = state.getValidators();
-                          final int validatorId = exit.getValidatorId();
                           if (validators.size() <= validatorId) {
                             return InternalValidationResult.reject(
-                                "Validator index %s was not found", exit.getValidatorId());
+                                "Validator index %s was not found", validatorId);
                           } else if (validators
-                              .get(validatorId)
+                              .get((int) validatorId)
                               .getExitEpoch()
                               .isLessThan(FAR_FUTURE_EPOCH)) {
                             return InternalValidationResult.reject(
-                                "Validator index %s is already exiting (or exited)",
-                                exit.getValidatorId());
+                                "Validator index %s is already exiting (or exited)", validatorId);
                           }
                           return InternalValidationResult.ACCEPT;
                         })
