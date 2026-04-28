@@ -3,12 +3,12 @@
 ## Progress
 
 ```
-████████████████████████████████░░░░░░░░ 81%
+██████████████████████████████░░░░░░░░░░ 75%
 ```
 
-**114 items total** — 92 ✅ done · 4 🚧 in progress · 12 ⚠️ partial/verify · 6 ❌ missing
+**122 items total** — 93 ✅ done · 3 🚧 in progress · 13 ⚠️ partial/verify · 13 ❌ missing
 
-> Strict done % = ✅ / total. If ⚠️ partial items are counted as half-credit, effective progress is ~86%.
+> Strict done % = ✅ / total. If ⚠️ partial items are counted as half-credit, effective progress is ~81%.
 
 ---
 
@@ -47,10 +47,11 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 
 | Item | Description | Status |
 |---|---|---|
-| Bare-bones Gloas fork | Fork added, basis-points config, upgrade fn cleanup | ✅ [#9801](https://github.com/Consensys/teku/pull/9801), [#8800](https://github.com/Consensys/teku/pull/8800) |
+| Bare-bones Gloas fork | Fork added, basis-points config, upgrade fn cleanup | ✅ [#9801](https://github.com/Consensys/teku/pull/9801), [#8800](https://github.com/Consensys/teku/pull/8800) (issue [#9819](https://github.com/Consensys/teku/issues/9819)) |
 | Gloas state upgrade | Fork transition / state upgrade function | ✅ [#9886](https://github.com/Consensys/teku/pull/9886) |
 | Spec config tracking | Refreshes through alpha.2 → alpha.5 | ✅ [#10141](https://github.com/Consensys/teku/pull/10141), [#10323](https://github.com/Consensys/teku/pull/10323), [#10503](https://github.com/Consensys/teku/pull/10503), [#10581](https://github.com/Consensys/teku/pull/10581) |
 | Specrefs & test scaffolding | Specrefs + new-fork unit-test detector + property-test fixes | ✅ [#10115](https://github.com/Consensys/teku/pull/10115), [#9804](https://github.com/Consensys/teku/pull/9804), [#9864](https://github.com/Consensys/teku/pull/9864) |
+| Post-Gloas spec config cleanup | Remove compatibility constants no longer needed after devnet-0 (e.g. `ATTESTATION_SUBNET_PREFIX_BITS`, `MAX_REQUEST_BLOB_SIDECARS*`) | ❌ [#10499](https://github.com/Consensys/teku/issues/10499) |
 
 ### Data structures (SSZ containers)
 
@@ -87,13 +88,13 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 
 | Item | Description | Status |
 |---|---|---|
-| (1/7) Reorg + timeliness extracted | Logic extraction | ✅ [#10548](https://github.com/Consensys/teku/pull/10548) |
+| (1/7) Reorg + timeliness extracted | Logic extraction | ✅ [#10548](https://github.com/Consensys/teku/pull/10548) (issue [#9878](https://github.com/Consensys/teku/issues/9878)) |
 | (2/7) `ForkChoiceNode` identity | Identity plumbing | ✅ [#10569](https://github.com/Consensys/teku/pull/10569) |
 | (3/7) Slot-aware vote tracking | Vote-update plumbing | ✅ [#10573](https://github.com/Consensys/teku/pull/10573) |
 | (4/7) Phase0 forkchoice model seam | Model abstraction | ✅ [#10590](https://github.com/Consensys/teku/pull/10590) |
 | (5/7) Dormant Gloas helpers | Spec helpers + fork-gated utilities | ✅ [#10600](https://github.com/Consensys/teku/pull/10600) |
-| (6/7) Dormant Gloas model + rebuild | Forkchoice model + rebuild support, blinded-envelope rebuild, anchor-state metadata, default-model rename | ✅ [#10610](https://github.com/Consensys/teku/pull/10610) (on branch via [`2dcd5e7`](https://github.com/Consensys/teku/commit/2dcd5e700b112279714a9d858aa9df2bd825780b), [`f89ad8c`](https://github.com/Consensys/teku/commit/f89ad8ce983d6dff0e2212b870d022128135deeb), [`608d529`](https://github.com/Consensys/teku/commit/608d5296ba), [`108a4ba`](https://github.com/Consensys/teku/commit/108a4ba9d2), [`c36b8e4`](https://github.com/Consensys/teku/commit/c36b8e4a40)) |
-| (7/7) Live model swap | `ForkChoiceModelFactory.forSlot` routes Gloas slots to `ForkChoiceModelGloas` (no longer dormant) | ✅ on branch (verified in `ForkChoiceModelFactory`) |
+| (6/7) Dormant Gloas model + rebuild | Forkchoice model + rebuild support, blinded-envelope rebuild, anchor-state metadata, default-model rename | ✅ [#10610](https://github.com/Consensys/teku/pull/10610) (on branch via [`2dcd5e7`](https://github.com/Consensys/teku/commit/2dcd5e700b112279714a9d858aa9df2bd825780b), [`f89ad8c`](https://github.com/Consensys/teku/commit/f89ad8ce983d6dff0e2212b870d022128135deeb), [`608d529`](https://github.com/Consensys/teku/commit/608d5296ba), [`108a4ba`](https://github.com/Consensys/teku/commit/108a4ba9d2), [`c36b8e4`](https://github.com/Consensys/teku/commit/c36b8e4a40)) (issue [#10556](https://github.com/Consensys/teku/issues/10556)) |
+| (7/7) Live model swap | `ForkChoiceModelFactory.forSlot` routes Gloas slots to `ForkChoiceModelGloas` (no longer dormant) | ✅ on branch (verified in `ForkChoiceModelFactory`) (issue [#10557](https://github.com/Consensys/teku/issues/10557)) |
 | Avoid resolving unchanged votes | Optimization | ✅ [#10604](https://github.com/Consensys/teku/pull/10604) |
 | Update head on imported payload | Head-update path | ✅ [#10478](https://github.com/Consensys/teku/pull/10478) |
 | `notify_ptc_messages` integration | PTC observation feeds `PtcVoteTracker`; consumed by Gloas head-selection helpers | ✅ on branch (in `ForkChoiceModelGloas` + `PtcVoteTracker`) |
@@ -121,16 +122,17 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 
 | Item | Description | Status |
 |---|---|---|
-| Boilerplate Gloas req/resp | Skeleton | ✅ [#9975](https://github.com/Consensys/teku/pull/9975) |
-| Forward sync | Gloas forward sync | ✅ [#10388](https://github.com/Consensys/teku/pull/10388) |
+| Boilerplate Gloas req/resp | Skeleton | ✅ [#9975](https://github.com/Consensys/teku/pull/9975) (issue [#9974](https://github.com/Consensys/teku/issues/9974), [#10301](https://github.com/Consensys/teku/issues/10301)) |
+| Forward sync | Gloas forward sync | ✅ [#10388](https://github.com/Consensys/teku/pull/10388) (issue [#10069](https://github.com/Consensys/teku/issues/10069)) |
 | BeaconBlocksByRange/Root v3 | Gloas envelope variant | ✅ [#10420](https://github.com/Consensys/teku/pull/10420), [#10422](https://github.com/Consensys/teku/pull/10422) |
 | DataColumnSidecarsByRange/Root | Gloas variants | ✅ [#10429](https://github.com/Consensys/teku/pull/10429), [#10442](https://github.com/Consensys/teku/pull/10442), [#10382](https://github.com/Consensys/teku/pull/10382) |
 | `ExecutionPayloadEnvelopesByRange` | Impl + tests | ✅ [#10374](https://github.com/Consensys/teku/pull/10374) |
 | `ExecutionPayloadEnvelopesByRoot` | Handler present | ✅ |
 | Serve finalized envelopes by range | Cold-store serve path | ✅ [#10605](https://github.com/Consensys/teku/pull/10605) |
 | Avoid SSZ-backed `IndexedAttestation` | Memory optimisation | ✅ [#10599](https://github.com/Consensys/teku/pull/10599) |
-| Extend `*ByRoot` serve range | Match `ByRange` for Gloas fork-boundary | 🚧 [#10598](https://github.com/Consensys/teku/pull/10598) - needs review @lucassaldanha |
+| Extend `*ByRoot` serve range | Match `ByRange` for Gloas fork-boundary | ✅ [#10598](https://github.com/Consensys/teku/pull/10598), [#10616](https://github.com/Consensys/teku/pull/10616) |
 | Execution payload historical sync | Backfill envelopes | 🚧 [#10592](https://github.com/Consensys/teku/pull/10592) (issue [#10069](https://github.com/Consensys/teku/issues/10069)) - needs review @lucassaldanha |
+| `ExecutionPayloadEnvelopes` req/resp integration tests | `ExecutionPayloadEnvelopesByRange/RootIntegrationTest` not yet written | ❌ [#9974](https://github.com/Consensys/teku/issues/9974) |
 
 ### Pools / managers
 
@@ -170,6 +172,9 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 | Wire proposer preferences into proposer duties | Gloas-only flow | 🚧 [#10596](https://github.com/Consensys/teku/pull/10596) - review @lucassaldanha |
 | PTC duty end-to-end signing | Verify against `DOMAIN_PTC_ATTESTER` | ✅ |
 | Block proposer bid-selection | Bid threshold + `BUILDER_PAYMENT_THRESHOLD_NUMERATOR/DENOMINATOR` | ❌ |
+| Block production state selection | Proper state selection during block production (post `ValidatorApiHandlerGloas` removal) | ❌ [#10352](https://github.com/Consensys/teku/issues/10352) |
+| `BlockProductionPerformance` Gloas enhancements | Capture payload-attestation aggregation + bid-retrieval timing | ❌ [#10129](https://github.com/Consensys/teku/issues/10129) |
+| Self-build execution payload timing | Better delay heuristics (currently hardcoded 500 ms) for execution payload duty when self-built bid chosen | ❌ [#10018](https://github.com/Consensys/teku/issues/10018) |
 | Honest builder client | Decision: ship builder mode or rely on MEV-Boost? | ❌ open question |
 
 ### REST API
@@ -182,8 +187,9 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 | `POST /eth/v1/beacon/pool/payload_attestations` | Pool publish | ✅ [#10534](https://github.com/Consensys/teku/pull/10534) |
 | Gloas event-stream additions | + version field | ✅ [#10383](https://github.com/Consensys/teku/pull/10383), [#10481](https://github.com/Consensys/teku/pull/10481) |
 | `ExecutionPayloadBidEvent`, `PayloadAttestationMessageEvent` SSE | Events | ✅ |
-| `GloasRestApiBuilderAddon` | Routing | ✅ |
-| `GET /eth/v1/beacon/execution_payload_envelope/{block_id}` + publish endpoint | Read + `block_validation` query param | 🚧 [#10537](https://github.com/Consensys/teku/pull/10537) - review @lucassaldanha |
+| `GloasRestApiBuilderAddon` | Routing | ✅ (issue [#9997](https://github.com/Consensys/teku/issues/9997)) |
+| `GET /eth/v1/beacon/execution_payload_envelope/{block_id}` + publish endpoint | Read + `block_validation` query param | 🚧 [#10537](https://github.com/Consensys/teku/pull/10537) (issue [#10416](https://github.com/Consensys/teku/issues/10416)) - review @lucassaldanha |
+| `GET /eth/v4/validator/blocks/{slot}` | Gloas proposer block endpoint (beacon-APIs PR [#580](https://github.com/ethereum/beacon-APIs/pull/580)) | ❌ [#10414](https://github.com/Consensys/teku/issues/10414), [#10092](https://github.com/Consensys/teku/issues/10092) |
 | `POST /eth/v1/validator/duties/ptc/{epoch}` | Integration test exists; main handler not located | ⚠️ verify |
 | Honest-builder REST endpoints | Publish envelope / register builder | ❌ |
 
@@ -236,6 +242,8 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 | `RespondingEth2Peer` Gloas | Test peer adapted | ✅ [#10108](https://github.com/Consensys/teku/pull/10108) |
 | `ChainBuilder` Gloas support | Test fixtures | ✅ [#10107](https://github.com/Consensys/teku/pull/10107) |
 | Reference tests for Gloas (excl. fork_choice) | Spec tests enabled | ✅ [#9957](https://github.com/Consensys/teku/pull/9957) |
+| Remove test ignore flags for Gloas | Unit / property / integration tests re-enabled; one acceptance test remains | ⚠️ [#9833](https://github.com/Consensys/teku/issues/9833) — `MergedGenesisInteropModeAcceptanceTest` still pending |
+| Enable Gloas in `DataColumnSidecars*IntegrationTests` | `DataColumnSidecarsByRoot/RangeIntegrationTest` require Gloas-aware `ChainBuilder` strategy | ❌ [#9803](https://github.com/Consensys/teku/issues/9803) |
 
 ---
 
@@ -245,9 +253,11 @@ Branch: tracking branch `upstream/glamsterdam-devnet-0` at `6740e41a0d` (19 comm
 |---|---|
 | Fork choice | Land branch back to master (PRs `#10610`, `#10568`); confirm `apply_parent_execution_payload` rename; tighten partial verifications |
 | State transition | Builder lifecycle (deposit / exit / settle), slashing surface, `apply_parent_execution_payload` rename audit |
-| Validator/VC | Block proposer bid-selection flow; PTC end-to-end signing; proposer-prefs ([#10596](https://github.com/Consensys/teku/pull/10596)) |
-| Networking | `single_attestation` Gloas review; proposer-prefs subscribe/publish (blocked on [#10596](https://github.com/Consensys/teku/pull/10596)) |
-| REST API | `GET execution_payload_envelope` ([#10537](https://github.com/Consensys/teku/pull/10537)); validator PTC duties handler verification; honest-builder REST endpoints |
-| Engine API | Gloas-specific newPayload/getPayloadV5 method group; `engine_getBlobs` envelope variant |
+| Validator/VC | Block proposer bid-selection flow ([#10352](https://github.com/Consensys/teku/issues/10352)); PTC end-to-end signing; proposer-prefs ([#10596](https://github.com/Consensys/teku/pull/10596)); self-build timing ([#10018](https://github.com/Consensys/teku/issues/10018)); `BlockProductionPerformance` ([#10129](https://github.com/Consensys/teku/issues/10129)) |
+| Networking | `single_attestation` Gloas review; proposer-prefs subscribe/publish (blocked on [#10596](https://github.com/Consensys/teku/pull/10596)); Req/Resp integration tests ([#9974](https://github.com/Consensys/teku/issues/9974)) |
+| REST API | `GET execution_payload_envelope` ([#10537](https://github.com/Consensys/teku/pull/10537)); `GET /eth/v4/validator/blocks/{slot}` ([#10414](https://github.com/Consensys/teku/issues/10414)); validator PTC duties handler verification; honest-builder REST endpoints |
+| Engine API | `engine_getBlobs` envelope variant |
 | Builder client | Open question: does Teku ship a honest-builder mode? |
 | Storage | Long-term envelope/attestation pruning policy; finalized payload-attestation persistence |
+| Testing | `MergedGenesisInteropModeAcceptanceTest` Gloas ([#9833](https://github.com/Consensys/teku/issues/9833)); `DataColumnSidecars*IntegrationTests` ([#9803](https://github.com/Consensys/teku/issues/9803)) |
+| Post-devnet-0 | Spec config cleanup ([#10499](https://github.com/Consensys/teku/issues/10499)) |
