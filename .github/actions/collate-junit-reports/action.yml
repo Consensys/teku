@@ -38,7 +38,7 @@ runs:
         # all/none/failed
 
     - name: Setup Node.js
-      uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: '22'
 
