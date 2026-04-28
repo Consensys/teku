@@ -190,6 +190,7 @@ public class BlockOperationSelectorFactory {
                 .thenCompose(
                     executionPayloadContext ->
                         setExecutionPayloadBid(
+                            parentRoot,
                             executionPayloadContext,
                             bodyBuilder,
                             blockSlotState,
@@ -489,6 +490,7 @@ public class BlockOperationSelectorFactory {
   }
 
   private SafeFuture<Void> setExecutionPayloadBid(
+      final Bytes32 parentRoot,
       final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
       final BeaconState blockSlotState,
@@ -508,6 +510,7 @@ public class BlockOperationSelectorFactory {
     final SafeFuture<Void> setExecutionPayloadBid =
         executionPayloadBidManager
             .getBidForBlock(
+                parentRoot,
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
                 blockProductionPerformance)
