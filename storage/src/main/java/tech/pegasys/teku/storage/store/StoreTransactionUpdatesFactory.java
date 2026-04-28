@@ -57,7 +57,6 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
-  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
@@ -81,9 +80,8 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
-    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
     hotExecutionPayloads =
-        hotExecutionPayloadAndStates.entrySet().stream()
+        tx.executionPayloadData.entrySet().stream()
             .collect(
                 Collectors.toConcurrentMap(
                     Map.Entry::getKey, entry -> entry.getValue().executionPayload()));
@@ -152,7 +150,6 @@ class StoreTransactionUpdatesFactory {
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
-              hotExecutionPayloadAndStates.remove(blockRoot);
               hotExecutionPayloads.remove(blockRoot);
             });
 
@@ -291,7 +288,6 @@ class StoreTransactionUpdatesFactory {
         spec.supportsBlobSidecars(),
         spec.supportsDataColumnSidecars(),
         spec.supportsExecutionPayloadEnvelopes(),
-        hotExecutionPayloadAndStates,
         hotExecutionPayloads,
         blindedExecutionPayloads);
   }
