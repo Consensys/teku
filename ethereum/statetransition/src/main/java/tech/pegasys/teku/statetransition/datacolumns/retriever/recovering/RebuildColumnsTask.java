@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -33,14 +34,16 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 
 class RebuildColumnsTask {
   private static final Logger LOG = LogManager.getLogger();
+
   protected final List<PendingRecoveryRequest> tasks = new CopyOnWriteArrayList<>();
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final UInt64 timeoutMillis;
   private final int minimumColumnsForRebuild;
   private final DataColumnSidecarDbAccessor sidecarDB;
+  private final Spec spec;
+
   protected SafeFuture<Void> query;
   protected boolean isReadyToRebuild = false;
-  private final MiscHelpersFulu miscHelpers;
   protected final Map<Integer, DataColumnSidecar> sidecarMap = new ConcurrentSkipListMap<>();
   protected final AtomicBoolean done = new AtomicBoolean(false);
 
@@ -50,12 +53,12 @@ class RebuildColumnsTask {
       final Duration timeout,
       final int minimumColumnsForRebuild,
       final DataColumnSidecarDbAccessor sidecarDB,
-      final MiscHelpersFulu miscHelpers) {
+      final Spec spec) {
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.timeoutMillis = timestampMillis.plus(timeout.toMillis());
     this.minimumColumnsForRebuild = minimumColumnsForRebuild;
     this.sidecarDB = sidecarDB;
-    this.miscHelpers = miscHelpers;
+    this.spec = spec;
     query = SafeFuture.COMPLETE;
   }
 
@@ -147,7 +150,9 @@ class RebuildColumnsTask {
       LOG.debug(
           "Rebuilding columns at {}, {} columns in cache", slotAndBlockRoot, sidecarMap.size());
       final Map<UInt64, DataColumnSidecar> reconstructedSidecars =
-          miscHelpers.reconstructAllDataColumnSidecars(sidecarMap.values()).stream()
+          MiscHelpersFulu.required(spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers())
+              .reconstructAllDataColumnSidecars(sidecarMap.values())
+              .stream()
               .collect(
                   Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
       LOG.debug(
