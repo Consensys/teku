@@ -372,6 +372,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (blockNodeIndex.getFullNode(blockRoot).isEmpty()) {
       return false;
     }
+    System.out.println(
+        "ptcVoteTracker.getPayloadPresentVoteCount(blockRoot) > payloadTimelyThreshold "
+            + ptcVoteTracker.getPayloadPresentVoteCount(blockRoot)
+            + " > "
+            + payloadTimelyThreshold);
     return ptcVoteTracker.getPayloadPresentVoteCount(blockRoot) > payloadTimelyThreshold;
   }
 
@@ -380,6 +385,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (blockNodeIndex.getFullNode(blockRoot).isEmpty()) {
       return false;
     }
+    System.out.println(
+        "ptcVoteTracker.getDataAvailableVoteCount(blockRoot) > dataAvailabilityTimelyThreshold "
+            + ptcVoteTracker.getDataAvailableVoteCount(blockRoot)
+            + " > "
+            + dataAvailabilityTimelyThreshold);
     return ptcVoteTracker.getDataAvailableVoteCount(blockRoot) > dataAvailabilityTimelyThreshold;
   }
 

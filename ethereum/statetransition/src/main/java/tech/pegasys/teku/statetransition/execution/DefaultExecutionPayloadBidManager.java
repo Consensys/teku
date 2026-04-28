@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
@@ -84,17 +85,20 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
     // only supporting local self-built bids
-    return getLocalSelfBuiltBid(parentRoot, slot, getPayloadResponseFuture).thenApply(Optional::of);
+    return getLocalSelfBuiltBid(
+            state.toVersionGloas().orElseThrow(), slot, getPayloadResponseFuture)
+        .thenApply(Optional::of);
   }
 
   private SafeFuture<SignedExecutionPayloadBid> getLocalSelfBuiltBid(
-      final Bytes32 parentRoot,
+      final BeaconStateGloas state,
       final UInt64 slot,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
     return getPayloadResponseFuture.thenApply(
         getPayloadResponse -> {
           final SignedExecutionPayloadBid localSelfBuiltSignedBid =
-              createLocalSelfBuiltSignedBid(getPayloadResponse, parentRoot, slot);
+              createLocalSelfBuiltSignedBid(
+                  getPayloadResponse, slot, state.getLatestBlockHeader().getRoot());
           LOG.info(
               "Considering self-built bid (value: {} ETH, EL block: {}) for block at slot {}",
               weiToEth(getPayloadResponse.getExecutionPayloadValue()),
@@ -108,7 +112,7 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
   }
 
   private SignedExecutionPayloadBid createLocalSelfBuiltSignedBid(
-      final GetPayloadResponse getPayloadResponse, final Bytes32 parentRoot, final UInt64 slot) {
+      final GetPayloadResponse getPayloadResponse, final UInt64 slot, final Bytes32 parentRoot) {
     final SpecVersion specVersion = spec.atSlot(slot);
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions());
@@ -119,6 +123,7 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
     final Bytes32 executionRequestsRoot =
         getPayloadResponse.getExecutionRequests().orElseThrow().hashTreeRoot();
+
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()

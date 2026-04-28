@@ -53,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -71,19 +70,16 @@ public class CombinedChainDataClient {
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
 
-  private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
   private final boolean isEarliestAvailableDataColumnSlotSupported;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec,
-      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final boolean isEarliestAvailableDataColumnSlotSupported) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
-    this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.isEarliestAvailableDataColumnSlotSupported = isEarliestAvailableDataColumnSlotSupported;
   }
 
@@ -301,45 +297,24 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
-      final UInt64 slot,
-      final boolean isForkChoiceLateBlockReorgEnabled,
-      final Runnable onLateBlockPreparationCompleted) {
-    if (!isForkChoiceLateBlockReorgEnabled) {
-      return getStateAtSlotExact(slot);
-    }
-    final Optional<ChainHead> chainHead = getChainHead();
-    if (chainHead.isEmpty()) {
-      return getStateAtSlotExact(slot);
-    }
-    final Bytes32 headRoot = chainHead.get().getRoot();
-
-    final Bytes32 proposerHeadRoot = recentChainData.getProposerHead(headRoot, slot);
-    if (proposerHeadRoot.equals(headRoot)) {
-      return getStateAtSlotExact(slot);
-    }
-    // otherwise we're looking for the parent slot
-    return getStateByBlockRoot(proposerHeadRoot)
-        .thenCompose(
-            maybeState ->
-                maybeState
-                    .map(
-                        beaconState -> {
-                          // let's run preparation and state generation in parallel
-                          final SafeFuture<Void> preparationCompletion =
-                              lateBlockReorgPreparationHandler
-                                  .onLateBlockReorgPreparation(
-                                      recentChainData
-                                          .getSlotForBlockRoot(proposerHeadRoot)
-                                          .orElseThrow(),
-                                      headRoot)
-                                  .thenPeek(__ -> onLateBlockPreparationCompleted.run());
-                          final Optional<BeaconState> state =
-                              regenerateBeaconState(beaconState, slot);
-
-                          return preparationCompletion.thenApply(__ -> state);
-                        })
-                    .orElseGet(() -> getStateAtSlotExact(slot)));
+  /**
+   * Builds the block-production beacon state from the (already proposer-head-resolved) {@link
+   * ChainHead} returned by {@code ForkChoice.prepareForBlockProduction}. The late-block-reorg
+   * deviation and its preparation handler now live in {@code ForkChoice}, so this method just
+   * advances the supplied chain-head state to the proposing slot.
+   */
+  public SafeFuture<BeaconState> getStateForBlockProduction(
+      final ChainHead chainHead, final UInt64 slot) {
+    return chainHead
+        .getState()
+        .thenApply(
+            state -> {
+              try {
+                return spec.processSlots(state, slot);
+              } catch (SlotProcessingException | EpochProcessingException e) {
+                throw new RuntimeException(e);
+              }
+            });
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(

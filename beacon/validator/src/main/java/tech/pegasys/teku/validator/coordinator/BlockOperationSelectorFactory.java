@@ -28,8 +28,6 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
@@ -86,6 +84,7 @@ import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler.BlockProductionContext;
 
 public class BlockOperationSelectorFactory {
   private final Spec spec;
@@ -144,15 +143,13 @@ public class BlockOperationSelectorFactory {
   }
 
   public Function<BeaconBlockBodyBuilder, SafeFuture<Void>> createSelector(
-      final Bytes32 parentRoot,
-      final BeaconState blockSlotState,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final BlockProductionPerformance blockProductionPerformance) {
+      final BlockProductionContext blockProductionContext) {
+
+    final BeaconState blockSlotState = blockProductionContext.blockSlotState();
+    final Bytes32 parentRoot = blockProductionContext.parentRoot();
 
     return bodyBuilder -> {
-      blockProductionPerformance.beaconBlockBodyPreparationStarted();
+      blockProductionContext.blockProductionPerformance().beaconBlockBodyPreparationStarted();
 
       final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
@@ -172,10 +169,8 @@ public class BlockOperationSelectorFactory {
                         setExecutionData(
                             executionPayloadContext,
                             bodyBuilder,
-                            requestedBuilderBoostFactor,
                             SchemaDefinitionsBellatrix.required(schemaDefinitions),
-                            blockSlotState,
-                            blockProductionPerformance));
+                            blockProductionContext));
       } else {
         setExecutionDataComplete = COMPLETE;
       }
@@ -193,8 +188,7 @@ public class BlockOperationSelectorFactory {
                             parentRoot,
                             executionPayloadContext,
                             bodyBuilder,
-                            blockSlotState,
-                            blockProductionPerformance));
+                            blockProductionContext));
 
       } else {
         setExecutionPayloadBidComplete = COMPLETE;
@@ -205,7 +199,7 @@ public class BlockOperationSelectorFactory {
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
-      blockProductionPerformance.getAttestationsForBlock();
+      blockProductionContext.blockProductionPerformance().getAttestationsForBlock();
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
@@ -230,7 +224,7 @@ public class BlockOperationSelectorFactory {
           bodyBuilder.supportsParentExecutionRequests()
               ? Optional.of(
                   executionPayloadManager.getParentExecutionRequestsForBlock(
-                      blockSlotState.getSlot(), parentRoot))
+                      blockSlotState.getSlot(), parentRoot, blockProductionContext.payloadStatus()))
               : Optional.empty();
       final Set<UInt64> validatorsWithParentWithdrawalRequests = new HashSet<>();
       parentExecutionRequests.ifPresent(
@@ -255,9 +249,9 @@ public class BlockOperationSelectorFactory {
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
-          .randaoReveal(randaoReveal)
+          .randaoReveal(blockProductionContext.randaoReveal())
           .eth1Data(eth1Data)
-          .graffiti(graffitiBuilder.buildGraffiti(optionalGraffiti))
+          .graffiti(graffitiBuilder.buildGraffiti(blockProductionContext.graffiti()))
           .attestations(attestations)
           .proposerSlashings(proposerSlashings)
           .attesterSlashings(attesterSlashings)
@@ -283,10 +277,12 @@ public class BlockOperationSelectorFactory {
         bodyBuilder.payloadAttestations(
             payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
       }
+
       parentExecutionRequests.ifPresent(bodyBuilder::parentExecutionRequests);
 
       return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)
-          .thenPeek(__ -> blockProductionPerformance.beaconBlockBodyPrepared());
+          .thenPeek(
+              __ -> blockProductionContext.blockProductionPerformance().beaconBlockBodyPrepared());
     };
   }
 
@@ -319,10 +315,9 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<Void> setExecutionData(
       final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Optional<UInt64> requestedBuilderBoostFactor,
       final SchemaDefinitionsBellatrix schemaDefinitions,
-      final BeaconState blockSlotState,
-      final BlockProductionPerformance blockProductionPerformance) {
+      final BlockProductionContext blockProductionContext) {
+    final BeaconState blockSlotState = blockProductionContext.blockSlotState();
 
     if (spec.isMergeTransitionComplete(blockSlotState) && executionPayloadContext.isEmpty()) {
       throw new IllegalStateException(
@@ -348,8 +343,8 @@ public class BlockOperationSelectorFactory {
             executionPayloadContext.orElseThrow(),
             blockSlotState,
             shouldTryBuilderFlow,
-            requestedBuilderBoostFactor,
-            blockProductionPerformance);
+            blockProductionContext.requestedBuilderBoostFactor(),
+            blockProductionContext.blockProductionPerformance());
 
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
@@ -494,8 +489,8 @@ public class BlockOperationSelectorFactory {
       final Bytes32 parentRoot,
       final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
-      final BeaconState blockSlotState,
-      final BlockProductionPerformance blockProductionPerformance) {
+      final BlockProductionContext blockProductionContext) {
+    final BeaconState blockSlotState = blockProductionContext.blockSlotState();
     checkState(
         executionPayloadContext.isPresent(),
         "ExecutionPayloadContext is not provided for production of block at slot %s",
@@ -507,14 +502,14 @@ public class BlockOperationSelectorFactory {
             // builder flow (mev-boost) is not used in Gloas
             false,
             Optional.empty(),
-            blockProductionPerformance);
+            blockProductionContext.blockProductionPerformance());
     final SafeFuture<Void> setExecutionPayloadBid =
         executionPayloadBidManager
             .getBidForBlock(
                 parentRoot,
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
-                blockProductionPerformance)
+                blockProductionContext.blockProductionPerformance())
             .thenAccept(
                 signedBid -> {
                   checkState(
