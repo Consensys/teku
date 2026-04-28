@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.util;
 
 import java.util.List;
 import java.util.Map;
+
 import picocli.CommandLine.Model.OptionSpec;
 
 public interface AdditionalParamsProvider {

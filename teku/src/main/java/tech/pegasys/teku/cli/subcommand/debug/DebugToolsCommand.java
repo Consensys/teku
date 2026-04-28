@@ -15,24 +15,6 @@ package tech.pegasys.teku.cli.subcommand.debug;
 
 import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
-import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KeyKt;
-import io.libp2p.core.crypto.PrivKey;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import picocli.AutoComplete;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.subcommand.storage.RocksDbCommand;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -55,6 +37,26 @@ import tech.pegasys.teku.validator.client.NoOpKeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionAlert;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
+
+import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.PrivKey;
+import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import picocli.AutoComplete;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 
 @Command(
     name = "debug-tools",

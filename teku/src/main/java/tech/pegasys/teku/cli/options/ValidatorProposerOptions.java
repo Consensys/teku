@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.UInt64Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
 
 public class ValidatorProposerOptions {
   @Option(

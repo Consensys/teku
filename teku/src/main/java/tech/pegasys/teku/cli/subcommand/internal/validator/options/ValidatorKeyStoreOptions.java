@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
+
+import com.google.common.annotations.VisibleForTesting;
 import picocli.CommandLine;
 
 public class ValidatorKeyStoreOptions {

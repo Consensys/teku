@@ -16,12 +16,6 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Duration;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -29,6 +23,14 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Duration;
+import java.util.Optional;
+
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Test;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 

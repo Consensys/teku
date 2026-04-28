@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.services;
 
-import java.util.ArrayList;
-import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class ServiceController extends Service implements ServiceControllerFacade {
   protected final List<Service> services = new ArrayList<>();

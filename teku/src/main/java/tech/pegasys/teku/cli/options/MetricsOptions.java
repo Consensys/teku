@@ -13,18 +13,20 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.google.common.base.Strings;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Set;
+
+import com.google.common.base.Strings;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 public class MetricsOptions {
 

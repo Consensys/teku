@@ -20,10 +20,11 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 
-import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+
+import org.junit.jupiter.api.Test;
 
 public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
 

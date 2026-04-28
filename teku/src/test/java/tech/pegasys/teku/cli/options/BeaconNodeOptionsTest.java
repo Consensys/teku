@@ -15,9 +15,10 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+
+import org.junit.jupiter.api.Test;
 
 class BeaconNodeOptionsTest extends AbstractBeaconNodeCommandTest {
 

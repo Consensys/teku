@@ -13,18 +13,23 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import com.google.common.annotations.VisibleForTesting;
-import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KeyKt;
-import io.libp2p.core.crypto.KeyType;
-import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.crypto.PubKey;
+import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+
+import com.google.common.annotations.VisibleForTesting;
+import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
+import io.libp2p.core.crypto.PrivKey;
+import io.libp2p.core.crypto.PubKey;
 import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -33,9 +38,6 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
-import tech.pegasys.teku.cli.BeaconNodeCommand;
-import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 @Command(
     name = "peer",

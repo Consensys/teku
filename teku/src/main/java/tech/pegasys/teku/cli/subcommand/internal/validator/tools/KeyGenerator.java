@@ -17,6 +17,13 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static tech.pegasys.teku.cli.subcommand.internal.validator.options.KeystorePasswordOptions.readFromEnvironmentVariable;
 import static tech.pegasys.teku.cli.subcommand.internal.validator.options.KeystorePasswordOptions.readFromFile;
 
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeystorePasswordOptions;
+import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
+import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -25,14 +32,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeystorePasswordOptions;
-import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
-import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
-import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class KeyGenerator {
   private static final String VALIDATOR_PASSWORD_PROMPT = "Validator Keystore";

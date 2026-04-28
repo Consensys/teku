@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.cli.util;
 
-import java.nio.file.Path;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+
+import java.nio.file.Path;
 
 public class SlashingProtectionCommandUtils {
   public static void verifySlashingProtectionPathExists(

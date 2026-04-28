@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import org.apache.logging.log4j.util.Strings;
-import picocli.CommandLine;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.util.SlashingProtectionCommandUtils;
 import tech.pegasys.teku.data.SlashingProtectionExporter;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+
+import org.apache.logging.log4j.util.Strings;
+import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "export",

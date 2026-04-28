@@ -13,17 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import com.google.common.base.Throwables;
-import java.io.FileNotFoundException;
-import java.io.UncheckedIOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.Callable;
-import org.apache.commons.lang3.tuple.Pair;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import picocli.CommandLine;
 import tech.pegasys.teku.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
@@ -36,6 +25,19 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.validator.client.loader.LocalValidatorVerifier;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource;
+
+import java.io.FileNotFoundException;
+import java.io.UncheckedIOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import com.google.common.base.Throwables;
+import org.apache.commons.lang3.tuple.Pair;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "key-check",

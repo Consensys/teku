@@ -15,12 +15,15 @@ package tech.pegasys.teku.cli.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.io.Resources;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import com.google.common.io.Resources;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -28,7 +31,6 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.UsageMessageSpec;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 
 @SuppressWarnings("unused")
 class MixinSectionOptionRendererTest {

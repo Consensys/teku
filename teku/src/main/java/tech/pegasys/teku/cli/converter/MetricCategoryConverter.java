@@ -19,6 +19,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 

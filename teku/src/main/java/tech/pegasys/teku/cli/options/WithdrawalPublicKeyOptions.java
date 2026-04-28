@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import java.io.File;
+
 import picocli.CommandLine.Option;
 
 public class WithdrawalPublicKeyOptions {

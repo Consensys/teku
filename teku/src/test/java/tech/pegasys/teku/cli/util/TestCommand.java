@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.util;
 
 import java.util.List;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 

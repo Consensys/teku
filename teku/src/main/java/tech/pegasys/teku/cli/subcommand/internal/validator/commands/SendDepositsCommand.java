@@ -15,19 +15,6 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.commands;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
-import picocli.CommandLine;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.ParameterException;
-import picocli.CommandLine.Spec;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
@@ -42,6 +29,21 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeystorePassw
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorKeyOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.VerbosityOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.Spec;
 
 @Command(
     name = "send-deposits",

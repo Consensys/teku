@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.File;
+
 import picocli.CommandLine;
 
 public class WithdrawalPasswordOptions implements KeystorePasswordOptions {

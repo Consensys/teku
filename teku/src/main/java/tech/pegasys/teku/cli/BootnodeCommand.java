@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.cli;
 
-import java.util.concurrent.Callable;
-import org.apache.logging.log4j.Level;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
@@ -28,6 +23,13 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+
+import java.util.concurrent.Callable;
+
+import org.apache.logging.log4j.Level;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.ParentCommand;
 
 @Command(
     name = "bootnode",

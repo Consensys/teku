@@ -15,9 +15,6 @@ package tech.pegasys.teku.cli.subcommand.admin;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import java.util.Optional;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
@@ -29,6 +26,11 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+
+import java.util.Optional;
+
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "weak-subjectivity",

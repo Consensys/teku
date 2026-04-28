@@ -21,20 +21,6 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static tech.pegasys.teku.ethereum.json.types.config.SpecConfigDataMapBuilder.GET_SPEC_RESPONSE_TYPE;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Collections;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.matchers.Times;
-import org.mockserver.socket.PortFactory;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.NodeMode;
@@ -44,6 +30,22 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Collections;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.matchers.Times;
+import org.mockserver.socket.PortFactory;
 
 @ExtendWith(MockServerExtension.class)
 public class ValidatorClientCommandTest {

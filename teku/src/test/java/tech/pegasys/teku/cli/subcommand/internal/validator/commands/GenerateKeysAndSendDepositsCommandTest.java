@@ -19,12 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.DepositOptions;
@@ -34,6 +28,14 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ValidatorKeys;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 class GenerateKeysAndSendDepositsCommandTest {
   private static final Consumer<Integer> SHUTDOWN_FUNCTION = status -> {};

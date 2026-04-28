@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 
-import com.google.errorprone.annotations.FormatMethod;
 import java.io.Console;
+
+import com.google.errorprone.annotations.FormatMethod;
 
 public class ConsoleAdapter {
   private final Console console = System.console();

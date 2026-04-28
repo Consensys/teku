@@ -15,14 +15,6 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.util.function.Consumer;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.keystore.KeyStore;
 import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
@@ -33,6 +25,16 @@ import tech.pegasys.teku.bls.keystore.model.KdfParam;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.keystore.model.Pbkdf2Param;
 import tech.pegasys.teku.bls.keystore.model.Pbkdf2PseudoRandomFunction;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.SecureRandom;
+import java.util.function.Consumer;
+
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class EncryptedKeystoreWriter implements KeysWriter {
 

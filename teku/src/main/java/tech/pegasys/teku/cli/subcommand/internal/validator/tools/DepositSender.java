@@ -15,25 +15,27 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import okhttp3.ConnectionPool;
-import okhttp3.OkHttpClient;
-import org.web3j.crypto.Credentials;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import okhttp3.ConnectionPool;
+import okhttp3.OkHttpClient;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.http.HttpService;
 
 public class DepositSender implements AutoCloseable {
 

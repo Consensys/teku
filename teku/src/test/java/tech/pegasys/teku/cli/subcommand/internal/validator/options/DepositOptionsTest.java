@@ -18,11 +18,18 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.networks.Eth2Network;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.IntConsumer;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.web3j.crypto.Credentials;
@@ -32,11 +39,6 @@ import org.web3j.crypto.exception.CipherException;
 import org.web3j.utils.Numeric;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
-import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class DepositOptionsTest {
   private static final String ETH1_PRIVATE_KEY =

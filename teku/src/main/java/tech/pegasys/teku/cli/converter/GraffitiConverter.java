@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.cli.converter;
 
+import tech.pegasys.teku.validator.api.Bytes32Parser;
+
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
-import tech.pegasys.teku.validator.api.Bytes32Parser;
 
 public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
   @Override

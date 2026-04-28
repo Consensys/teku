@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.cli.converter;
 
-import picocli.CommandLine;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+
+import picocli.CommandLine;
 
 public class PicoCliVersionProvider implements CommandLine.IVersionProvider {
 

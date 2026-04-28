@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.InputStream;
-import java.util.Optional;
-import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+
+import java.io.InputStream;
+import java.util.Optional;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import picocli.CommandLine;
 
 public class WeakSubjectivityOptions {
   @CommandLine.Option(

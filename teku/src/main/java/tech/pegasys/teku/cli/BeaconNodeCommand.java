@@ -13,28 +13,6 @@
 
 package tech.pegasys.teku.cli;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.stream.Stream;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.hyperledger.besu.metrics.StandardMetricCategory;
-import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Model.OptionSpec;
-import picocli.CommandLine.Model.UsageMessageSpec;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.ParameterException;
-import picocli.CommandLine.ParseResult;
-import picocli.CommandLine.ScopeType;
-import picocli.CommandLine.Unmatched;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
@@ -75,6 +53,30 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
+
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.stream.Stream;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.OptionSpec;
+import picocli.CommandLine.Model.UsageMessageSpec;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.ParseResult;
+import picocli.CommandLine.ScopeType;
+import picocli.CommandLine.Unmatched;
 
 @SuppressWarnings("unused")
 @Command(

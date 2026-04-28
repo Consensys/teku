@@ -15,11 +15,6 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.file.Path;
-import java.util.Locale;
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
@@ -27,6 +22,13 @@ import tech.pegasys.teku.bls.keystore.KeyStore;
 import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
+
+import java.nio.file.Path;
+import java.util.Locale;
+
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class EncryptedKeystoreWriterTest {
   private static final BLSSecretKey VALIDATOR_1_SECRET_KEY =

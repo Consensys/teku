@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import picocli.CommandLine;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
 
 public class ValidatorClientOptions {
 

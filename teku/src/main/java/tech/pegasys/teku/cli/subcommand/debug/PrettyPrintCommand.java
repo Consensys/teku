@@ -13,23 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.errorprone.annotations.MustBeClosed;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
-import org.apache.commons.io.IOUtils;
-import org.apache.tuweni.bytes.Bytes;
-import org.xerial.snappy.Snappy;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
@@ -39,6 +22,25 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.errorprone.annotations.MustBeClosed;
+import org.apache.commons.io.IOUtils;
+import org.apache.tuweni.bytes.Bytes;
+import org.xerial.snappy.Snappy;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 @Command(
     name = "pretty-print",

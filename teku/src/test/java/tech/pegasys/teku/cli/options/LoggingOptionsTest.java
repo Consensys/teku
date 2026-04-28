@@ -18,11 +18,6 @@ import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE_PREFIX;
 import static tech.pegasys.teku.cli.OSUtils.SLASH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
-import java.util.Locale;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -30,6 +25,13 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
+
+import java.util.Locale;
+
+import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final String LOG_FILE =

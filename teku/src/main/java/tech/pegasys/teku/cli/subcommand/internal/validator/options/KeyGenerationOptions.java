@@ -15,15 +15,17 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
+import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
+
 import java.util.function.Function;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
-import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
-import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
 
 public class KeyGenerationOptions {
 

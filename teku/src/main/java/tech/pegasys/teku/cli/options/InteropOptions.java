@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.google.common.base.Strings;
-import java.nio.file.Path;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.InteropConfig;
+
+import java.nio.file.Path;
+
+import com.google.common.base.Strings;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
 
 public class InteropOptions {
 

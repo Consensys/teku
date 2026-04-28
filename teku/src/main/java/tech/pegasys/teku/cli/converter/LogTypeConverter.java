@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.converter;
 
 import java.util.Locale;
+
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.ITypeConverter;

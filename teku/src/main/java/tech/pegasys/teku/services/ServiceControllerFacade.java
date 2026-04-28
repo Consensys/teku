@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.services;
 
-import java.util.List;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
+
+import java.util.List;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API

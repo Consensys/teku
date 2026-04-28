@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -45,6 +44,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+
+import java.util.function.Function;
 
 @SuppressWarnings("JavaCase")
 public enum SszObjectType {

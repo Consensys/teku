@@ -25,13 +25,6 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -42,6 +35,15 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 
 public class P2POptions {
   @Mixin private final NatOptions natOptions = new NatOptions();
@@ -749,7 +751,7 @@ public class P2POptions {
                           ? DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS
                           : DEFAULT_P2P_PEERS_UPPER_BOUND));
               if (p2pAdvertisedUdpPortIpv6 != null) {
-                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
+                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedUdpPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(getStaticPeersList())
