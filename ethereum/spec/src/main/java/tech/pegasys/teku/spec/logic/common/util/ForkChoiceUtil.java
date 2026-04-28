@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -81,7 +82,7 @@ public class ForkChoiceUtil {
     this.miscHelpers = miscHelpers;
   }
 
-  private UInt64 getCurrentSlot(final ReadOnlyStore store) {
+  protected UInt64 getCurrentSlot(final ReadOnlyStore store) {
     return miscHelpers.computeSlotAtTime(store.getGenesisTime(), store.getTimeSeconds());
   }
 
@@ -104,6 +105,11 @@ public class ForkChoiceUtil {
   public Optional<Bytes32> getAncestor(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
     return forkChoiceStrategy.getAncestor(root, slot);
+  }
+
+  public Optional<ForkChoiceNode> getAncestorNode(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
+    return getAncestor(forkChoiceStrategy, root, slot).map(ForkChoiceNode::createBase);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
@@ -322,7 +328,7 @@ public class ForkChoiceUtil {
     try {
       final BeaconState proposerPreState =
           context.processSlots(maybeParentState.get(), proposalSlot);
-      final int proposerIndex = getProposerIndex(proposerPreState, proposalSlot);
+      final int proposerIndex = getProposerIndex(proposerPreState);
       if (!context.isValidatorConnected(proposerIndex, proposalSlot)) {
         LOG.debug(
             "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
@@ -364,6 +370,12 @@ public class ForkChoiceUtil {
    * Computes block timeliness based on the arrival time relative to the slot start.
    *
    * <p>Spec reference: record_block_timeliness
+   *
+   * @param blockSlot the slot of the block
+   * @param currentSlot the current slot
+   * @param millisIntoSlot milliseconds elapsed since the slot start
+   * @return boolean array of timeliness values. Pre-Gloas: single element (attestation deadline).
+   *     Gloas: two elements (attestation deadline, PTC deadline).
    */
   public BlockTimeliness computeBlockTimeliness(
       final UInt64 blockSlot, final UInt64 currentSlot, final int millisIntoSlot) {
@@ -630,7 +642,7 @@ public class ForkChoiceUtil {
 
   public void applyExecutionPayloadToStore(
       final MutableStore store, final SignedExecutionPayloadEnvelope signedEnvelope) {
-    // NO-OP until Gloas
+    // No-op until the runtime wiring switches to the Gloas payload path.
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
@@ -728,6 +740,7 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
+  @VisibleForTesting
   // get_slot_component_duration_ms
   protected int getSlotComponentDurationMillis(final int basisPoints) {
     return (basisPoints * specConfig.getSlotDurationMillis()) / 10_000;
@@ -771,6 +784,16 @@ public class ForkChoiceUtil {
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 
+  /**
+   * Determines whether a validator's vote should be updated based on the attestation.
+   *
+   * <p>Pre-Gloas uses epoch-based comparison; Gloas overrides with slot-based comparison.
+   *
+   * @param vote the current vote tracker for the validator
+   * @param targetEpoch the target epoch of the attestation
+   * @param slot the slot of the attestation
+   * @return true if the vote should be updated
+   */
   public boolean shouldUpdateVote(
       final VoteTracker vote, final UInt64 targetEpoch, final UInt64 slot) {
     return targetEpoch.isGreaterThan(miscHelpers.computeEpochAtSlot(vote.getNextSlot()))
@@ -788,6 +811,16 @@ public class ForkChoiceUtil {
     return false;
   }
 
+  /**
+   * Determines if the head block is weak (its weight is below the reorg threshold).
+   *
+   * <p>Spec reference: is_head_weak
+   *
+   * @param store the fork choice store for accessing weights and fork-aware state
+   * @param root the root of the head block
+   * @param reorgThreshold the threshold below which a head is considered weak
+   * @return true if the head weight is less than the reorg threshold
+   */
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
     return store
@@ -797,6 +830,20 @@ public class ForkChoiceUtil {
         .orElse(false);
   }
 
+  /**
+   * Determines if the parent block selected by {@code head} is strong.
+   *
+   * <p>Spec reference: is_parent_strong
+   *
+   * <p>Pre-Gloas forks evaluate the parent by root alone. Gloas overrides this form because the
+   * spec chooses the parent node identity from the child block's payload linkage rather than from
+   * the parent root alone.
+   *
+   * @param store the fork choice store for accessing weights and fork-aware state
+   * @param head the child block whose parent is being evaluated
+   * @param parentThreshold the threshold above which a parent is considered strong
+   * @return true if the relevant parent node weight is greater than the parent threshold
+   */
   public boolean isParentStrong(
       final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 parentThreshold) {
     return store
@@ -807,7 +854,7 @@ public class ForkChoiceUtil {
   }
 
   @VisibleForTesting
-  protected int getProposerIndex(final BeaconState proposerPreState, final UInt64 proposalSlot) {
+  protected int getProposerIndex(final BeaconState proposerPreState) {
     return beaconStateAccessors.getBeaconProposerIndex(proposerPreState);
   }
 
@@ -820,7 +867,7 @@ public class ForkChoiceUtil {
     return AvailabilityChecker.NOOP;
   }
 
-  // Used for computing committee indices when producing attestations
+  // Used for computing committee indices when producing attestations.
   public int computeCommitteeIndexForAttestation(
       final UInt64 slot,
       final BeaconBlock block,
@@ -830,6 +877,14 @@ public class ForkChoiceUtil {
   }
 
   public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
+    return true;
+  }
+
+  public boolean shouldApplyProposerBoost(
+      final Bytes32 proposerBoostRoot,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final UInt64 reorgThreshold,
+      final BeaconState justifiedState) {
     return true;
   }
 

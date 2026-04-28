@@ -48,6 +48,14 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
 
   int getMaxBuildersPerWithdrawalsSweep();
 
+  default int getPayloadTimelyThreshold() {
+    return getPtcSize() / 2;
+  }
+
+  default int getDataAvailabilityTimelyThreshold() {
+    return getPtcSize() / 2;
+  }
+
   @Override
   Optional<SpecConfigGloas> toVersionGloas();
 }

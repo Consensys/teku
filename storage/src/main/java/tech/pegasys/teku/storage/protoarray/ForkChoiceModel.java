@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 
@@ -86,6 +87,12 @@ interface ForkChoiceModel {
 
   Optional<ProtoNodeData> getBaseNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
+
+  boolean shouldExtendPayload(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ReadOnlyStore store,
+      Bytes32 blockRoot);
 
   /**
    * Returns whether the supplied node is a valid head candidate for this fork-aware model.

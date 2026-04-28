@@ -47,14 +47,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
           fetch-depth: 0  # Full history
           fetch-tags: true
 
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -78,7 +78,7 @@ jobs:
           password: "fa8651f2-88be-48b7-98ce-e711bd376252"          
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.gradle/caches
@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ inputs.stage_key }}-reports-${{ matrix.shard }}
           path: |

@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -259,7 +259,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       validationResult -> {
                         if (!validationResult.isSuccessful()) {
                           if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
-                            final IndexedAttestation indexedAttestation =
+                            final IndexedAttestationLight indexedAttestation =
                                 getIndexedAttestation(attestation);
                             final boolean fullPayloadHint =
                                 spec.atSlot(attestation.getData().getSlot())
@@ -1009,10 +1009,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private boolean validateBlockAttestation(
       final ForkChoiceStrategy forkChoiceStrategy,
       final UInt64 currentEpoch,
-      final IndexedAttestation attestation) {
-    return spec.atSlot(attestation.getData().getSlot())
+      final IndexedAttestationLight attestation) {
+    return spec.atSlot(attestation.data().getSlot())
         .getForkChoiceUtil()
-        .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.getData())
+        .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.data())
         .isSuccessful();
   }
 
@@ -1099,7 +1099,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     "Attempting to perform fork choice operations before store has been initialized"));
   }
 
-  private IndexedAttestation getIndexedAttestation(final ValidatableAttestation attestation) {
+  private IndexedAttestationLight getIndexedAttestation(final ValidatableAttestation attestation) {
     return attestation
         .getIndexedAttestation()
         .orElseThrow(

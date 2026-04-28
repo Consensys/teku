@@ -14,6 +14,11 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.storage.protoarray.ProtoArrayScoreCalculator.computeDeltas;
 import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
@@ -633,6 +638,85 @@ public class ProtoArrayScoreCalculatorTest {
 
     assertThat(deltas).containsExactly(-balance.longValue());
     assertThat(store.getVote(ZERO).isCurrentEquivocating()).isTrue();
+  }
+
+  @Test
+  void computeDeltas_unchangedVoteTargetAndBalanceDoesNotResolveVoteNodes() {
+    final UInt64 balance = UInt64.valueOf(42);
+    final Bytes32 root = getHash(1);
+    final UInt64 voteSlot = UInt64.valueOf(12);
+    final ForkChoiceModel forkChoiceModel = mock(ForkChoiceModel.class);
+
+    oldBalances = List.of(balance);
+    newBalances = List.of(balance);
+    store.putVote(ZERO, new VoteTracker(root, root, false, false, voteSlot, true, voteSlot, true));
+
+    final LongList deltas =
+        ProtoArrayScoreCalculator.computeDeltas(
+            store,
+            1,
+            node -> {
+              throw new AssertionError("Unchanged votes should not require node index resolution");
+            },
+            Optional.empty(),
+            Optional.empty(),
+            oldBalances,
+            newBalances,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            createProtoArray(),
+            new BlockNodeVariantsIndex(),
+            forkChoiceModel);
+
+    assertThat(deltas.size()).isEqualTo(1);
+    assertThat(deltas.getLong(0)).isZero();
+    verifyNoInteractions(forkChoiceModel);
+  }
+
+  @Test
+  void computeDeltas_sameRootAndBalanceButDifferentSlotResolvesVoteNodes() {
+    final UInt64 balance = UInt64.valueOf(42);
+    final Bytes32 root = getHash(1);
+    final UInt64 currentSlot = UInt64.valueOf(12);
+    final UInt64 nextSlot = UInt64.valueOf(13);
+    final ForkChoiceNode node = ForkChoiceNode.createBase(root);
+    final ProtoArray protoArray = createProtoArray();
+    final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
+    final ForkChoiceModel forkChoiceModel = mock(ForkChoiceModel.class);
+
+    oldBalances = List.of(balance);
+    newBalances = List.of(balance);
+    store.putVote(
+        ZERO, new VoteTracker(root, root, false, false, nextSlot, false, currentSlot, false));
+
+    when(forkChoiceModel.resolveVoteNode(root, currentSlot, false, protoArray, blockNodeIndex))
+        .thenReturn(Optional.of(node));
+    when(forkChoiceModel.resolveVoteNode(root, nextSlot, false, protoArray, blockNodeIndex))
+        .thenReturn(Optional.of(node));
+
+    final LongList deltas =
+        ProtoArrayScoreCalculator.computeDeltas(
+            store,
+            1,
+            resolvedNode -> {
+              throw new AssertionError("Unchanged resolved nodes should not update deltas");
+            },
+            Optional.empty(),
+            Optional.empty(),
+            oldBalances,
+            newBalances,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            protoArray,
+            blockNodeIndex,
+            forkChoiceModel);
+
+    assertThat(deltas.size()).isEqualTo(1);
+    assertThat(deltas.getLong(0)).isZero();
+    verify(forkChoiceModel, times(1))
+        .resolveVoteNode(root, currentSlot, false, protoArray, blockNodeIndex);
+    verify(forkChoiceModel, times(1))
+        .resolveVoteNode(root, nextSlot, false, protoArray, blockNodeIndex);
   }
 
   private ProtoArray createProtoArray() {

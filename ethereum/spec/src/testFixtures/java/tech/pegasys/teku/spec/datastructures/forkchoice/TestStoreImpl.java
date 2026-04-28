@@ -528,6 +528,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 blockRoot) {
+      return store.getExecutionPayloadIfAvailable(blockRoot).isPresent();
+    }
+
+    @Override
     public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
     }
