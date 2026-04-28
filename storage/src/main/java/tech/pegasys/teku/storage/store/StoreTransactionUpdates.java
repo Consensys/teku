@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,8 +55,13 @@ class StoreTransactionUpdates {
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
   private final boolean executionPayloadEnvelopesEnabled;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads;
+  // Pruned blocks that are the parent of a kept hot block. Fed to applyUpdate as transient anchor
+  // stubs so non-pruned descendants can resolve their parent in the protoarray; they do NOT
+  // appear in hotBlocks (which mirrors what gets cached/written to disk).
+  private final List<BlockAndCheckpoints> forkChoiceBoundaryBlocks;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -73,8 +80,10 @@ class StoreTransactionUpdates {
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled,
       final boolean executionPayloadEnvelopesEnabled,
+      final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates,
       final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
+      final List<BlockAndCheckpoints> forkChoiceBoundaryBlocks) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -87,8 +96,10 @@ class StoreTransactionUpdates {
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
+    checkNotNull(hotExecutionPayloadAndStates, "Hot execution payload states are required");
     checkNotNull(hotExecutionPayloads, "Hot execution payloads are required");
     checkNotNull(blindedExecutionPayloads, "Blinded execution payloads are required");
+    checkNotNull(forkChoiceBoundaryBlocks, "Fork-choice boundary blocks are required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -106,7 +117,9 @@ class StoreTransactionUpdates {
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
     this.executionPayloadEnvelopesEnabled = executionPayloadEnvelopesEnabled;
+    this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
     this.hotExecutionPayloads = hotExecutionPayloads;
+    this.forkChoiceBoundaryBlocks = forkChoiceBoundaryBlocks;
     this.blindedExecutionPayloads = blindedExecutionPayloads;
   }
 
@@ -133,6 +146,11 @@ class StoreTransactionUpdates {
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
+    // Capture the protoarray's current anchor BEFORE updateFinalizedAnchor moves it. Boundary
+    // blocks (kept in hotBlocks because a non-pruned descendant references them as parent, but
+    // themselves marked for pruning) need a parent that's already tracked in the protoarray; the
+    // pre-update finalized root is guaranteed to be there.
+    final Bytes32 preUpdateAnchorRoot = store.getFinalizedCheckpoint().getRoot();
     // Add new data
     tx.timeMillis.ifPresent(store::cacheTimeMillis);
     tx.genesisTime.ifPresent(store::cacheGenesisTime);
@@ -169,22 +187,37 @@ class StoreTransactionUpdates {
 
     store.cacheExecutionPayloads(hotExecutionPayloads);
 
-    // Feed the fork-choice strategy the full unpruned set of new blocks/payloads so the chain is
-    // intact when each new node resolves its parent in the protoarray. This matters when a single
-    // transaction adds many blocks and finalises a checkpoint inside the batch (e.g. during sync
-    // from a checkpoint anchor): the to-be-pruned blocks must still be wired up so non-pruned
-    // descendants can find their parents. The pruning then happens via prunedHotBlockRoots /
-    // onRemovedBlockRoot below.
-    final List<BlockAndCheckpoints> allNewBlocks =
-        tx.blockData.values().stream().map(TransactionBlockData::toBlockAndCheckpoints).toList();
+    // Boundary blocks (pruned blocks whose kept descendant references them as parent) are fed
+    // here as transient anchor stubs. We reroute their parentRoot to the pre-update finalized
+    // root so they attach below something the protoarray already tracks; they are then torn down
+    // by the same applyUpdate call's onRemovedBlockRoot pass.
+    final Collection<BlockAndCheckpoints> blocksForForkChoice;
+    if (forkChoiceBoundaryBlocks.isEmpty()) {
+      blocksForForkChoice = hotBlocks.values();
+    } else {
+      blocksForForkChoice = new ArrayList<>(hotBlocks.size() + forkChoiceBoundaryBlocks.size());
+      blocksForForkChoice.addAll(hotBlocks.values());
+      forkChoiceBoundaryBlocks.forEach(
+          block -> blocksForForkChoice.add(withParentRoot(block, preUpdateAnchorRoot)));
+    }
     store
         .getForkChoiceStrategy()
         .applyUpdate(
-            allNewBlocks,
-            tx.executionPayloadData.values(),
+            blocksForForkChoice,
+            hotExecutionPayloadAndStates.values(),
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
             store.getFinalizedCheckpoint());
+  }
+
+  private static BlockAndCheckpoints withParentRoot(
+      final BlockAndCheckpoints block, final Bytes32 parentRoot) {
+    return new BlockAndCheckpoints(block.getBlock(), block.getBlockCheckpoints()) {
+      @Override
+      public Bytes32 getParentRoot() {
+        return parentRoot;
+      }
+    };
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,6 +58,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
@@ -80,8 +82,9 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
+    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
     hotExecutionPayloads =
-        tx.executionPayloadData.entrySet().stream()
+        hotExecutionPayloadAndStates.entrySet().stream()
             .collect(
                 Collectors.toConcurrentMap(
                     Map.Entry::getKey, entry -> entry.getValue().executionPayload()));
@@ -110,7 +113,8 @@ class StoreTransactionUpdatesFactory {
                     Optional.empty(),
                     tx.clearFinalizedOptimisticTransitionPayload,
                     Optional.empty(),
-                    createBlindedExecutionPayloads()));
+                    createBlindedExecutionPayloads(),
+                    List.of()));
   }
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
@@ -144,12 +148,20 @@ class StoreTransactionUpdatesFactory {
 
     // Prune collections
     calculatePrunedHotBlockRoots();
+    // Identify boundary blocks: pruned blocks that are the parent of a kept hot block. They must
+    // be fed into applyUpdate as transient anchor stubs so non-pruned descendants can resolve
+    // their parent in the protoarray; the same applyUpdate call then tears them down via
+    // onRemovedBlockRoot. Capture them BEFORE pruning hotBlocks so we can hand them to the fork
+    // choice separately.
+    final List<BlockAndCheckpoints> forkChoiceBoundaryBlocks =
+        computeBoundaryHotBlocks();
     prunedHotBlockRoots
         .keySet()
         .forEach(
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloadAndStates.remove(blockRoot);
               hotExecutionPayloads.remove(blockRoot);
             });
 
@@ -166,7 +178,8 @@ class StoreTransactionUpdatesFactory {
         finalizedChainData,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
-        blindedExecutionPayloads);
+        blindedExecutionPayloads,
+        forkChoiceBoundaryBlocks);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -266,11 +279,31 @@ class StoreTransactionUpdatesFactory {
                 prunedHotBlockRoots.put(newBlockAndState.getRoot(), newBlockAndState.getSlot()));
   }
 
+  /**
+   * Pruned blocks introduced in this transaction that are the direct parent of a kept hot block.
+   * The fork-choice protoarray needs at least these stub parents present so non-pruned descendants
+   * can resolve their parent during {@code applyUpdate}; they are then torn down by the same
+   * call's {@code onRemovedBlockRoot} pass.
+   */
+  private List<BlockAndCheckpoints> computeBoundaryHotBlocks() {
+    final Set<Bytes32> boundaryRoots =
+        hotBlocks.values().stream()
+            .filter(block -> !prunedHotBlockRoots.containsKey(block.getRoot()))
+            .map(BlockAndCheckpoints::getParentRoot)
+            .filter(prunedHotBlockRoots::containsKey)
+            .collect(Collectors.toSet());
+    return boundaryRoots.stream()
+        .map(hotBlocks::get)
+        .filter(Objects::nonNull)
+        .toList();
+  }
+
   private StoreTransactionUpdates createStoreTransactionUpdates(
       final Optional<FinalizedChainData> finalizedChainData,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
+      final List<BlockAndCheckpoints> forkChoiceBoundaryBlocks) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -288,8 +321,10 @@ class StoreTransactionUpdatesFactory {
         spec.supportsBlobSidecars(),
         spec.supportsDataColumnSidecars(),
         spec.supportsExecutionPayloadEnvelopes(),
+        hotExecutionPayloadAndStates,
         hotExecutionPayloads,
-        blindedExecutionPayloads);
+        blindedExecutionPayloads,
+        forkChoiceBoundaryBlocks);
   }
 
   private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> createBlindedExecutionPayloads() {
