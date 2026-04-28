@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -169,6 +171,23 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.getPtcDuties(epoch, validatorIndices),
         BeaconNodeRequestLabels.GET_PTC_DUTIES_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getInclusionListDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_INCLUSION_LIST_DUTIES_METHOD);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      final List<SignedInclusionList> signedInclusionLists) {
+    return relayRequest(
+        apiChannel -> apiChannel.sendSignedInclusionLists(signedInclusionLists),
+        BeaconNodeRequestLabels.SEND_SIGNED_INCLUSION_LISTS_METHOD,
+        failoversPublishSignedDuties);
   }
 
   @Override

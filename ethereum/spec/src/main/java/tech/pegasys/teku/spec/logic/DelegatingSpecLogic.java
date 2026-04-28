@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 
 public class DelegatingSpecLogic implements SpecLogic {
   private final SpecLogic specLogic;
@@ -164,5 +165,10 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
     return specLogic.getDataColumnSidecarUtil();
+  }
+
+  @Override
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return specLogic.getInclusionListUtil();
   }
 }

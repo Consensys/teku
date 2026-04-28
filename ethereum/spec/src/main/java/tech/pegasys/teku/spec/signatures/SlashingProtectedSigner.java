@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -174,6 +175,12 @@ public class SlashingProtectedSigner implements Signer {
   public SafeFuture<BLSSignature> signProposerPreferences(
       final ProposerPreferences proposerPreferences, final ForkInfo forkInfo) {
     return delegate.signProposerPreferences(proposerPreferences, forkInfo);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionList(
+      final InclusionList inclusionList, final ForkInfo forkInfo) {
+    return delegate.signInclusionList(inclusionList, forkInfo);
   }
 
   @Override

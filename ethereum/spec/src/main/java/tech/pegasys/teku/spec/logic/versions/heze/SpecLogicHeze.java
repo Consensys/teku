@@ -49,11 +49,11 @@ import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochPr
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
 import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
+import tech.pegasys.teku.spec.logic.versions.heze.util.ValidatorsUtilHeze;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class SpecLogicHeze extends AbstractSpecLogic {
@@ -136,8 +136,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         new OperationSignatureVerifierGloas(miscHelpers, beaconStateAccessors, predicates);
 
     // Util
-    final ValidatorsUtilGloas validatorsUtil =
-        new ValidatorsUtilGloas(config, miscHelpers, beaconStateAccessors);
+    final ValidatorsUtilHeze validatorsUtil =
+        new ValidatorsUtilHeze(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
@@ -301,6 +301,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     return dataColumnSidecarUtil;
   }
 
+  @Override
   public Optional<InclusionListUtil> getInclusionListUtil() {
     return inclusionListUtil;
   }

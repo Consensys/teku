@@ -40,6 +40,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -224,6 +226,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PtcDuties>> getPtcDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      final List<SignedInclusionList> signedInclusionLists) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
