@@ -69,7 +69,11 @@ class GetExecutionPayloadEnvelopeTest
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
     final ExecutionPayloadAndMetaData responseData =
         new ExecutionPayloadAndMetaData(
-            executionPayloadEnvelope, spec.getGenesisSpec().getMilestone(), false, false);
+            executionPayloadEnvelope,
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            false,
+            dataStructureUtil.randomBytes32());
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final JsonNode responseDataAsJsonNode = JsonTestUtil.parseAsJsonNode(data);
     final String expected =

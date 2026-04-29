@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
@@ -1586,6 +1587,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoice,
             beaconConfig.eth2NetworkConfig().getAttestationWaitLimitMillis(),
             timeProvider);
+    // Only required for Gloas genesis, so skip it fast in all other cases
+    if (spec.getGenesisSpecConfig().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      try {
+        forkChoice.applyGenesisExecutionPayloadForGloas().get(1, TimeUnit.MINUTES);
+      } catch (Exception e) {
+        throw new InvalidConfigurationException(
+            "Failed to apply genesis execution payload for Gloas", e);
+      }
+    }
   }
 
   public void initMetrics() {
@@ -1855,7 +1865,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(
-        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, spec));
+        Eth1EventsChannel.class,
+        new GenesisHandler(recentChainData, forkChoice, timeProvider, spec));
   }
 
   protected void initSignatureVerificationService() {

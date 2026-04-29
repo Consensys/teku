@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -134,7 +135,7 @@ public class GetExecutionPayloadEnvelopeIntegrationTest
 
   private byte[] getExpectedSsz(final SignedExecutionPayloadEnvelope data) throws IOException {
     final ExecutionPayloadAndMetaData value =
-        new ExecutionPayloadAndMetaData(data, SpecMilestone.GLOAS, false, false);
+        new ExecutionPayloadAndMetaData(data, SpecMilestone.GLOAS, false, false, Bytes32.ZERO);
     try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
       EthereumTypes.executionPayloadAndMetaDataSszResponseType().serialize(value, outputStream);
       return outputStream.toByteArray();
