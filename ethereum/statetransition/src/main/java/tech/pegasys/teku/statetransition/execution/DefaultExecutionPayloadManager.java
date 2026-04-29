@@ -143,7 +143,7 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload);
               } else {
-                LOG.warn(
+                LOG.debug(
                     "Failed to import execution payload for reason {}{}: {}",
                     result::getFailureReason,
                     () ->
