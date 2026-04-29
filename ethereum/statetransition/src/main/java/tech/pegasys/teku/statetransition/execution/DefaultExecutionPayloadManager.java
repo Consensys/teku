@@ -143,7 +143,7 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload);
               } else {
-                LOG.warn(
+                LOG.debug(
                     "Failed to import execution payload for reason {}{}: {}",
                     result::getFailureReason,
                     () ->
@@ -215,13 +215,9 @@ public class DefaultExecutionPayloadManager
                   .thenCompose(
                       result -> {
                         if (result.isAccept()) {
+                          // re-broadcast the payload which has been validated
                           return executionPayloadPublisher.apply(executionPayloadToProcess);
                         }
-                        LOG.warn(
-                            "Execution payload for slot {} and block root {} which has been received before the block has been rejected ({})",
-                            executionPayloadToProcess.getSlot(),
-                            executionPayloadToProcess.getBeaconBlockRoot(),
-                            result.getDescription().orElse("unknown reason"));
                         return SafeFuture.COMPLETE;
                       })
                   .finishError(LOG);

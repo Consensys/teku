@@ -168,6 +168,10 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       return Optional.empty();
     }
 
+    if (parentRoot.equals(Bytes32.ZERO)) {
+      return Optional.empty();
+    }
+
     throw new IllegalStateException(
         String.format(
             "Missing GLOAS parent variants for parent root %s at or after slot %s",
