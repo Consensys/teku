@@ -133,6 +133,56 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
   }
 
+  @Override
+  public void processAnchorBlock(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final Optional<UInt64> maybeExecutionBlockNumber,
+      final Optional<Bytes32> maybeExecutionBlockHash,
+      final boolean optimisticallyProcessed) {
+    // Anchor blocks preserve their real beacon parent root as metadata while deliberately having
+    // no tracked parent node. Descendants then attach to the anchor's FULL or EMPTY child.
+    final ForkChoiceNode baseNode = ForkChoiceNode.createBase(blockRoot);
+    if (blockNodeIndex.getBaseNode(blockRoot).isEmpty()) {
+      protoArray.addNode(
+          baseNode,
+          blockSlot,
+          parentRoot,
+          Optional.empty(),
+          stateRoot,
+          checkpoints,
+          maybeExecutionBlockNumber.orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+          maybeExecutionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+          optimisticallyProcessed);
+      blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
+    } else {
+      blockNodeIndex
+          .getBaseNode(blockRoot)
+          .flatMap(protoArray::getNode)
+          .ifPresent(node -> node.setParentIndex(Optional.empty()));
+    }
+
+    if (blockNodeIndex.getEmptyNode(blockRoot).isEmpty()) {
+      final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+      protoArray.addNode(
+          emptyNode,
+          blockSlot,
+          parentRoot,
+          Optional.of(baseNode),
+          stateRoot,
+          checkpoints,
+          maybeExecutionBlockNumber.orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+          maybeExecutionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+          optimisticallyProcessed);
+      blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
+    }
+  }
+
   @VisibleForTesting
   Optional<ProtoNode> resolveParentNode(
       final ProtoArray protoArray,

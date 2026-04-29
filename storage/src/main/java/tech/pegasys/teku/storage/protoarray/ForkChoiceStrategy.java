@@ -18,6 +18,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -496,12 +497,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  /**
-   * Creates a FULL node in the protoarray for a block that has received its execution payload. This
-   * makes the FULL child visible in the three-state fork choice tree. Delegates to the fork-aware
-   * model selected for the block slot.
-   */
-  void onExecutionPayload(
+  @VisibleForTesting
+  void processExecutionPayload(
       final Bytes32 blockRoot,
       final UInt64 blockSlot,
       final UInt64 executionBlockNumber,
@@ -686,31 +683,51 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Collection<Bytes32> pulledUpBlocks,
       final Map<Bytes32, UInt64> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
+    applyUpdate(
+        newBlocks,
+        executionPayloads,
+        pulledUpBlocks,
+        removedBlockRoots,
+        finalizedCheckpoint,
+        Optional.empty());
+  }
+
+  public void applyUpdate(
+      final Collection<BlockAndCheckpoints> newBlocks,
+      final Collection<ExecutionPayloadUpdate> executionPayloads,
+      final Collection<Bytes32> pulledUpBlocks,
+      final Map<Bytes32, UInt64> removedBlockRoots,
+      final Checkpoint finalizedCheckpoint,
+      final Optional<BlockAndCheckpoints> finalizedExecutionPayloadBoundaryBlock) {
     protoArrayLock.writeLock().lock();
     try {
+      final Map<Bytes32, ExecutionPayloadUpdate> executionPayloadsByRoot =
+          executionPayloadsByRoot(executionPayloads);
+      finalizedExecutionPayloadBoundaryBlock.ifPresent(
+          boundaryBlock -> {
+            processFinalizedBoundaryBlock(boundaryBlock);
+            processExecutionPayload(executionPayloadsByRoot.remove(boundaryBlock.getRoot()));
+          });
       newBlocks.stream()
           .sorted(Comparator.comparing(BlockAndCheckpoints::getSlot))
-          .forEach(
+          .filter(
               block ->
-                  processBlock(
-                      block.getSlot(),
-                      block.getRoot(),
-                      block.getParentRoot(),
-                      block.getStateRoot(),
-                      block.getBlockCheckpoints(),
-                      block.getExecutionBlockNumber(),
-                      block.getExecutionBlockHash()));
-      newExecutionPayloads.forEach(
-          executionPayloadUpdate -> {
-            final SignedExecutionPayloadEnvelope envelope =
-                executionPayloadUpdate.executionPayload();
-            onExecutionPayload(
-                envelope.getBeaconBlockRoot(),
-                envelope.getSlot(),
-                envelope.getMessage().getPayload().getBlockNumber(),
-                envelope.getMessage().getPayload().getBlockHash(),
-                executionPayloadUpdate.isOptimistic());
-          });
+                  finalizedExecutionPayloadBoundaryBlock
+                      .map(boundaryBlock -> !boundaryBlock.getRoot().equals(block.getRoot()))
+                      .orElse(true))
+          .forEach(
+              block -> {
+                processBlock(
+                    block.getSlot(),
+                    block.getRoot(),
+                    block.getParentRoot(),
+                    block.getStateRoot(),
+                    block.getBlockCheckpoints(),
+                    block.getExecutionBlockNumber(),
+                    block.getExecutionBlockHash());
+                processExecutionPayload(executionPayloadsByRoot.remove(block.getRoot()));
+              });
+      executionPayloadsByRoot.values().forEach(this::processExecutionPayload);
       removedBlockRoots.forEach(
           (root, blockSlot) ->
               getForkChoiceModel(blockSlot).onRemovedBlockRoot(protoArray, blockNodeIndex, root));
@@ -731,6 +748,46 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     } finally {
       protoArrayLock.writeLock().unlock();
     }
+  }
+
+  private Map<Bytes32, ExecutionPayloadUpdate> executionPayloadsByRoot(
+      final Collection<ExecutionPayloadUpdate> executionPayloads) {
+    final Map<Bytes32, ExecutionPayloadUpdate> result = new HashMap<>();
+    executionPayloads.forEach(
+        executionPayloadUpdate ->
+            result.put(
+                executionPayloadUpdate.executionPayload().getBeaconBlockRoot(),
+                executionPayloadUpdate));
+    return result;
+  }
+
+  private void processExecutionPayload(final ExecutionPayloadUpdate executionPayloadUpdate) {
+    if (executionPayloadUpdate == null) {
+      return;
+    }
+    final var envelope = executionPayloadUpdate.executionPayload();
+    processExecutionPayload(
+        envelope.getBeaconBlockRoot(),
+        envelope.getSlot(),
+        envelope.getMessage().getPayload().getBlockNumber(),
+        envelope.getMessage().getPayload().getBlockHash(),
+        executionPayloadUpdate.isOptimistic());
+  }
+
+  private void processFinalizedBoundaryBlock(final BlockAndCheckpoints block) {
+    getForkChoiceModel(block.getSlot())
+        .processAnchorBlock(
+            protoArray,
+            blockNodeIndex,
+            block.getSlot(),
+            block.getRoot(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            block.getBlockCheckpoints(),
+            block.getExecutionBlockNumber(),
+            block.getExecutionBlockHash(),
+            spec.isBlockProcessorOptimistic(block.getSlot()));
+    updateParentBestChildAndDescendantForBlockVariants(block.getRoot());
   }
 
   @Override
