@@ -26,7 +26,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -36,8 +36,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.signatures.Signer;
@@ -63,11 +63,13 @@ public class ProposerPreferencesPublisherTest {
   private Eth1Address feeRecipient;
   private UInt64 gasLimit;
 
-  @BeforeEach
-  void setUp(final SpecContext specContext) {
-    spec = specContext.getSpec();
-    dataStructureUtil = specContext.getDataStructureUtil();
+  private void setUp(final SpecContext specContext) {
+    setUp(specContext.getSpec(), specContext.getDataStructureUtil());
+  }
 
+  private void setUp(final Spec spec, final DataStructureUtil dataStructureUtil) {
+    this.spec = spec;
+    this.dataStructureUtil = dataStructureUtil;
     signer = mock(Signer.class);
     publicKey = dataStructureUtil.randomPublicKey();
     feeRecipient = dataStructureUtil.randomEth1Address();
@@ -83,7 +85,6 @@ public class ProposerPreferencesPublisherTest {
             proposerConfigPropertiesProvider,
             forkProvider,
             spec);
-    publisher.onSlot(UInt64.ZERO);
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey))
         .thenReturn(Optional.of(feeRecipient));
@@ -97,7 +98,8 @@ public class ProposerPreferencesPublisherTest {
   }
 
   @TestTemplate
-  void shouldPublishWhenDutiesIncludeOurValidator() {
+  void shouldPublishWhenDutiesIncludeOurValidator(final SpecContext specContext) {
+    setUp(specContext);
     final UInt64 epoch = UInt64.valueOf(6);
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
@@ -112,7 +114,8 @@ public class ProposerPreferencesPublisherTest {
   }
 
   @TestTemplate
-  void shouldNotPublishWhenNoDutiesForOurValidators() {
+  void shouldNotPublishWhenNoDutiesForOurValidators(final SpecContext specContext) {
+    setUp(specContext);
     final UInt64 epoch = UInt64.valueOf(6);
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
     final BLSPublicKey otherKey = dataStructureUtil.randomPublicKey();
@@ -128,7 +131,8 @@ public class ProposerPreferencesPublisherTest {
   }
 
   @TestTemplate
-  void shouldNotPublishWhenFeeRecipientNotConfigured() {
+  void shouldNotPublishWhenFeeRecipientNotConfigured(final SpecContext specContext) {
+    setUp(specContext);
     final UInt64 epoch = UInt64.valueOf(6);
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
@@ -145,7 +149,8 @@ public class ProposerPreferencesPublisherTest {
   }
 
   @TestTemplate
-  void shouldPublishRemainingPreferencesWhenSigningFails() {
+  void shouldPublishRemainingPreferencesWhenSigningFails(final SpecContext specContext) {
+    setUp(specContext);
     final UInt64 epoch = UInt64.valueOf(6);
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
@@ -180,5 +185,25 @@ public class ProposerPreferencesPublisherTest {
     assertThat(published).hasSize(1);
     assertThat(published.getFirst().getMessage().getValidatorIndex())
         .isEqualTo(UInt64.valueOf(successfulValidatorIndex));
+  }
+
+  @Test
+  void shouldPublishFirstGloasEpochDutiesLoadedDuringLastFuluEpoch() {
+    final Spec transitionSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE);
+    setUp(transitionSpec, new DataStructureUtil(transitionSpec));
+
+    final UInt64 gloasEpoch = UInt64.ONE;
+    final UInt64 firstGloasSlot = spec.computeStartSlotAtEpoch(gloasEpoch);
+    assertThat(spec.isProposerPreferencesAvailableAtSlot(firstGloasSlot.decrement())).isFalse();
+
+    publisher.onProposerDutiesLoaded(
+        gloasEpoch,
+        new ProposerDuties(
+            dataStructureUtil.randomBytes32(),
+            List.of(new ProposerDuty(publicKey, 42, firstGloasSlot)),
+            false));
+
+    verify(signer).signProposerPreferences(any(), any());
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
   }
 }
