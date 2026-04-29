@@ -154,7 +154,7 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
                     blindedEnvelope.getMessage().getPayloadHeader().getBlockHash();
                 final ExecutionPayloadBody executionPayloadBody = bodiesByHash.get(blockHash);
                 if (executionPayloadBody == null) {
-                  LOG.warn(
+                  LOG.debug(
                       "No execution payload body available for block hash {}, skipping unblinding execution payload for block root {}",
                       blockHash,
                       blockRoot);
