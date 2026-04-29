@@ -20,6 +20,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
+import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +45,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-@TestSpecContext(milestone = SpecMilestone.GLOAS)
+@TestSpecContext(milestone = {GLOAS, HEZE})
 public class ProposerPreferencesPublisherTest {
 
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -81,7 +83,6 @@ public class ProposerPreferencesPublisherTest {
             proposerConfigPropertiesProvider,
             forkProvider,
             spec);
-    // Test spec is Gloas from genesis, so slot 0 is already at/past Gloas
     publisher.onSlot(UInt64.ZERO);
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey))
