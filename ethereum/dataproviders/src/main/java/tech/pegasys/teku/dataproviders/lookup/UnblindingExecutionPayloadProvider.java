@@ -155,13 +155,14 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
                 final ExecutionPayloadBody executionPayloadBody = bodiesByHash.get(blockHash);
                 if (executionPayloadBody == null) {
                   LOG.warn(
-                      "No execution payload body available for block hash {}, skipping unblinding",
-                      blockHash);
+                      "No execution payload body available for block hash {}, skipping unblinding execution payload for block root {}",
+                      blockHash,
+                      blockRoot);
                   continue;
                 }
                 if (executionPayloadBody.blockAccessList() == null) {
                   LOG.debug(
-                      "Execution payload body for block hash {} is missing blockAccessList, skipping unblinding for block root {}",
+                      "Execution payload body for block hash {} is missing blockAccessList, skipping unblinding execution payload for block root {}",
                       blockHash,
                       blockRoot);
                   continue;
