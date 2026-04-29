@@ -1236,7 +1236,7 @@ class ProtoArrayTest {
                   variants
                       .getNode(payloadStatus)
                       .flatMap(protoArray::getNodeIndex)
-                      .ifPresent(index -> indices.putInt(variants.baseNode().blockRoot(), index)));
+                      .ifPresent(index -> indices.put(variants.baseNode().blockRoot(), index)));
       return indices;
     }
 
