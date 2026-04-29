@@ -73,8 +73,11 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
           "Signature verification of the execution payload envelope failed");
     }
 
-    // Verify consistency with the beacon block
-    if (!envelope.getBeaconBlockRoot().equals(BeaconBlockHeader.fromState(state).hashTreeRoot())) {
+    // Verify consistency with the beacon block. state.latest_block_header.state_root is only
+    // backfilled during the next process_slot (see StateTransition.processSlot), so the
+    // post-block-processing state we receive here has it as ZERO. Substitute the current state
+    // hash as per the consensus spec's process_slot semantics before computing the root.
+    if (!envelope.getBeaconBlockRoot().equals(latestBlockHeaderRoot(state))) {
       throw new ExecutionPayloadVerificationException(
           "Envelope beacon block root is not consistent with the latest beacon block from the state");
     }
@@ -138,6 +141,22 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
             "Execution payload was not optimistically accepted");
       }
     }
+  }
+
+  private static Bytes32 latestBlockHeaderRoot(final BeaconState state) {
+    final BeaconBlockHeader latestBlockHeader = state.getLatestBlockHeader();
+    if (!latestBlockHeader.getStateRoot().equals(Bytes32.ZERO)) {
+      return latestBlockHeader.hashTreeRoot();
+    }
+    // Mirrors process_slot backfill: replace the zero state_root with the current state hash
+    // so the block root is consistent with the one the proposer signed.
+    return new BeaconBlockHeader(
+            latestBlockHeader.getSlot(),
+            latestBlockHeader.getProposerIndex(),
+            latestBlockHeader.getParentRoot(),
+            state.hashTreeRoot(),
+            latestBlockHeader.getBodyRoot())
+        .hashTreeRoot();
   }
 
   @Override
