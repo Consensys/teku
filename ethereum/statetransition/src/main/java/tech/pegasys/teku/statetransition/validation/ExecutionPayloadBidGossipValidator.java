@@ -162,13 +162,14 @@ public class ExecutionPayloadBidGossipValidator {
     /*
      * [IGNORE] bid.parent_block_hash is the block hash of a known execution payload in fork choice.
      */
-    if (!gossipValidationHelper.isBlockHashKnown(
-        bid.getParentBlockHash(), bid.getParentBlockRoot())) {
-      LOG.trace(
-          "Bid's parent block hash {} is not the block hash of a known execution payload in fork choice. It will be saved for future processing",
-          bid.getParentBlockHash());
-      return completedFuture(SAVE_FOR_FUTURE);
-    }
+    //    if (!gossipValidationHelper.isBlockHashKnown(
+    //        bid.getParentBlockHash(), bid.getParentBlockRoot())) {
+    //      LOG.trace(
+    //          "Bid's parent block hash {} is not the block hash of a known execution payload in
+    // fork choice. It will be saved for future processing",
+    //          bid.getParentBlockHash());
+    //      return completedFuture(SAVE_FOR_FUTURE);
+    //    }
 
     /*
      * [IGNORE] bid.parent_block_root is the hash tree root of a known beacon block in fork choice.
