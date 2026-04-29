@@ -120,6 +120,7 @@ import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPo
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -145,7 +146,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private final Map<UInt64, SafeFuture<Optional<BlockContainerAndMetaData>>>
       blockProductionBySlotCache = new ConcurrentHashMap<>();
-  private final Map<UInt64, SafeFuture<BlockProductionPreparationContext>>
+  private final Map<UInt64, BlockProductionPreparationContext>
       blockProductionPreparationContextBySlotCache = new ConcurrentHashMap<>();
 
   private final BlockProductionAndPublishingPerformanceFactory
@@ -455,7 +456,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             });
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void onBlockProductionPreparationDue(final UInt64 slot) {
     if (isSyncActive()) {
       return;
@@ -463,24 +463,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     prepareBlockProductionInternal(slot);
   }
 
-  private SafeFuture<BlockProductionPreparationContext> prepareBlockProductionInternal(
-      final UInt64 slot) {
+  private BlockProductionPreparationContext prepareBlockProductionInternal(final UInt64 slot) {
     return blockProductionPreparationContextBySlotCache.computeIfAbsent(
         slot,
         __ -> {
           LOG.info("Preparing block production for slot {}", slot);
           final BlockProductionPerformance productionPerformance =
               blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
-          return forkChoiceTrigger
-              .prepareForBlockProduction(slot, productionPerformance)
-              .thenApply(
-                  chainHead ->
-                      new BlockProductionPreparationContext(
-                          combinedChainDataClient
-                              .getStateForBlockProduction(chainHead, slot)
-                              .thenPeek(___ -> productionPerformance.getState()),
-                          chainHead.getPayloadStatus(),
-                          productionPerformance));
+          final SafeFuture<ChainHead> maybeChainHead =
+              forkChoiceTrigger.prepareForBlockProduction(slot, productionPerformance);
+
+          final SafeFuture<BeaconState> stateFuture =
+              maybeChainHead
+                  .thenCompose(
+                      chainHead ->
+                          combinedChainDataClient.getStateForBlockProduction(chainHead, slot))
+                  .thenPeek(___ -> productionPerformance.getState());
+
+          return new BlockProductionPreparationContext(
+              stateFuture,
+              maybeChainHead.thenApply(ChainHead::getPayloadStatus),
+              productionPerformance);
         });
   }
 
@@ -495,26 +498,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return NodeSyncingException.failedFuture();
     }
 
-    return prepareBlockProductionInternal(slot)
-        .thenCompose(
-            blockProductionPreparationContext -> {
-              final BlockProductionPerformance blockProductionPerformance =
-                  blockProductionPreparationContext.blockProductionPerformance;
+    final BlockProductionPreparationContext blockProductionPreparationContext =
+        prepareBlockProductionInternal(slot);
 
-              blockProductionPerformance.validatorBlockRequested();
+    blockProductionPreparationContext.blockProductionPerformance.validatorBlockRequested();
 
-              return blockProductionPreparationContext
-                  .toBlockProductionContext(
-                      spec, slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
-                  .thenCompose(this::createBlock)
-                  .thenPeek(
-                      maybeBlock ->
-                          maybeBlock.ifPresent(
-                              block ->
-                                  performanceTracker.saveProducedBlock(
-                                      block.blockContainer().getBlock().getSlotAndBlockRoot())))
-                  .alwaysRun(blockProductionPerformance::complete);
-            });
+    return blockProductionPreparationContext
+        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
+        .thenCompose(this::createBlock)
+        .thenPeek(
+            maybeBlock ->
+                maybeBlock.ifPresent(
+                    block ->
+                        performanceTracker.saveProducedBlock(
+                            block.blockContainer().getBlock().getSlotAndBlockRoot())))
+        .alwaysRun(blockProductionPreparationContext.blockProductionPerformance::complete);
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createBlock(
@@ -1214,7 +1212,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private record BlockProductionPreparationContext(
       SafeFuture<BeaconState> stateFuture,
-      ForkChoicePayloadStatus payloadStatus,
+      SafeFuture<ForkChoicePayloadStatus> payloadStatusFuture,
       BlockProductionPerformance blockProductionPerformance) {
 
     SafeFuture<BlockProductionContext> toBlockProductionContext(
@@ -1223,8 +1221,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final BLSSignature randaoReveal,
         final Optional<Bytes32> graffiti,
         final Optional<UInt64> requestedBuilderBoostFactor) {
-      return stateFuture.thenApply(
-          state ->
+      return stateFuture.thenCombine(
+          payloadStatusFuture,
+          (state, payloadStatus) ->
               BlockProductionContext.create(
                   spec,
                   proposalSlot,
