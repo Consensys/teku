@@ -152,15 +152,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
 
-    applyParentExecutionPayload(stateGloas, parentBid, requests, validatorExitContextSupplier);
+    applyParentExecutionPayload(stateGloas, requests, validatorExitContextSupplier);
   }
 
   // apply_parent_execution_payload
   protected void applyParentExecutionPayload(
       final MutableBeaconStateGloas state,
-      final ExecutionPayloadBid parentBid,
       final ExecutionRequests requests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    final ExecutionPayloadBid parentBid = state.getLatestExecutionPayloadBid();
     final UInt64 parentSlot = parentBid.getSlot();
     final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
 
