@@ -185,13 +185,16 @@ public class GenesisGenerator {
 
       final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
 
+      stateGloas.setLatestBlockHash(eth1BlockHash);
+      final Bytes32 parentBlockHash = eth1BlockHash;
+
       stateGloas.setLatestExecutionPayloadBid(
           schemaDefinitionsGloas
               .getExecutionPayloadBidSchema()
               .create(
+                  parentBlockHash,
                   Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
+                  parentBlockHash,
                   Bytes32.ZERO,
                   Bytes20.ZERO,
                   UInt64.ZERO,
@@ -219,7 +222,6 @@ public class GenesisGenerator {
               .createFromElements(builderPendingPayments));
       stateGloas.setBuilderPendingWithdrawals(
           schemaDefinitionsGloas.getBuilderPendingWithdrawalsSchema().of());
-      stateGloas.setLatestBlockHash(Bytes32.ZERO);
       stateGloas.setPayloadExpectedWithdrawals(
           schemaDefinitionsGloas.getExecutionPayloadSchema().getWithdrawalsSchemaRequired().of());
       stateGloas.setPtcWindow(accessorsGloas.initializePtcWindow(state));
