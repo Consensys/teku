@@ -476,10 +476,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               .thenApply(
                   chainHead ->
                       new BlockProductionPreparationContext(
-                          combinedChainDataClient.getStateForBlockProduction(chainHead, slot),
+                          combinedChainDataClient
+                              .getStateForBlockProduction(chainHead, slot)
+                              .thenPeek(___ -> productionPerformance.getState()),
                           chainHead.getPayloadStatus(),
-                          productionPerformance))
-              .thenPeek(___ -> productionPerformance.getState());
+                          productionPerformance));
         });
   }
 
