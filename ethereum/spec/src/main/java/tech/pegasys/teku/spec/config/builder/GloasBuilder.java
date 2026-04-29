@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -40,6 +41,11 @@ public class GloasBuilder extends BaseForkBuilder
   private Long builderPendingWithdrawalsLimit;
   private Integer maxBuildersPerWithdrawalsSweep;
 
+  // EIP-8061: Increase exit and consolidation churn
+  private Integer churnLimitQuotientGloas;
+  private Integer consolidationChurnLimitQuotient;
+  private UInt64 maxPerEpochActivationChurnLimitGloas;
+
   GloasBuilder() {}
 
   @Override
@@ -59,7 +65,10 @@ public class GloasBuilder extends BaseForkBuilder
             minBuilderWithdrawabilityDelay,
             payloadAttestationDueBps,
             ptcSize,
-            syncMessageDueBpsGloas),
+            syncMessageDueBpsGloas,
+            churnLimitQuotientGloas,
+            consolidationChurnLimitQuotient,
+            maxPerEpochActivationChurnLimitGloas),
         specConfigAndParent);
   }
 
@@ -135,6 +144,26 @@ public class GloasBuilder extends BaseForkBuilder
     return this;
   }
 
+  public GloasBuilder churnLimitQuotientGloas(final Integer churnLimitQuotientGloas) {
+    checkNotNull(churnLimitQuotientGloas);
+    this.churnLimitQuotientGloas = churnLimitQuotientGloas;
+    return this;
+  }
+
+  public GloasBuilder consolidationChurnLimitQuotient(
+      final Integer consolidationChurnLimitQuotient) {
+    checkNotNull(consolidationChurnLimitQuotient);
+    this.consolidationChurnLimitQuotient = consolidationChurnLimitQuotient;
+    return this;
+  }
+
+  public GloasBuilder maxPerEpochActivationChurnLimitGloas(
+      final UInt64 maxPerEpochActivationChurnLimitGloas) {
+    checkNotNull(maxPerEpochActivationChurnLimitGloas);
+    this.maxPerEpochActivationChurnLimitGloas = maxPerEpochActivationChurnLimitGloas;
+    return this;
+  }
+
   @Override
   public void validate() {
     defaultValuesIfRequired(this);
@@ -157,6 +186,9 @@ public class GloasBuilder extends BaseForkBuilder
     constants.put("maxBuildersPerWithdrawalsSweep", maxBuildersPerWithdrawalsSweep);
     constants.put("ptcSize", ptcSize);
     constants.put("maxPayloadAttestations", maxPayloadAttestations);
+    constants.put("churnLimitQuotientGloas", churnLimitQuotientGloas);
+    constants.put("consolidationChurnLimitQuotient", consolidationChurnLimitQuotient);
+    constants.put("maxPerEpochActivationChurnLimitGloas", maxPerEpochActivationChurnLimitGloas);
 
     return constants;
   }
