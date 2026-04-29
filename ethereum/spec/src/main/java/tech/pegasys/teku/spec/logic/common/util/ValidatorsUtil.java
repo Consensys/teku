@@ -150,6 +150,12 @@ public class ValidatorsUtil {
     return new Int2ObjectOpenHashMap<>();
   }
 
+  public Int2ObjectMap<UInt64> getValidatorIndexToILCommitteeAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    // NO-OP in Phase0
+    return new Int2ObjectOpenHashMap<>();
+  }
+
   public EpochAttestationSchedule getAttestationCommitteesAtEpoch(
       final BeaconState state, final UInt64 epoch, final UInt64 committeeCountPerSlot) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);

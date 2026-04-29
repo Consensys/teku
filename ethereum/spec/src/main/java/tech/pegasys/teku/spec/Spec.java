@@ -1203,6 +1203,20 @@ public class Spec {
     return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
   }
 
+  public Int2ObjectMap<UInt64> getValidatorIndexToILCommitteeAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .getValidatorsUtil()
+        .getValidatorIndexToILCommitteeAssignmentMap(state, epoch);
+  }
+
+  public Optional<Bytes32> getInclusionListCommitteeRoot(
+      final BeaconState state, final UInt64 slot) {
+    return atSlot(slot)
+        .getInclusionListUtil()
+        .map(util -> util.getInclusionListCommitteeRoot(state, slot));
+  }
+
   // get_ptc
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
     return atSlot(slot).beaconStateAccessors().getPtc(state, slot);

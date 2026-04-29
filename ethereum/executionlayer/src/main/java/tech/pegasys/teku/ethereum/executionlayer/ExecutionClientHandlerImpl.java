@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
@@ -117,7 +118,8 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .add(executionPayload)
             .addOptional(newPayloadRequest.getVersionedHashes())
             .addOptional(newPayloadRequest.getParentBeaconBlockRoot())
-            .addOptional(newPayloadRequest.getExecutionRequests());
+            .addOptional(newPayloadRequest.getExecutionRequests())
+            .addOptional(newPayloadRequest.getInclusionListTransactions());
 
     return engineMethodsResolver
         .getMethod(
@@ -208,5 +210,13 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                               : blobAndProofV2.asInternalBlobAndProofs(blobSchema))
                   .toList();
             });
+  }
+
+  @Override
+  public SafeFuture<List<Bytes>> engineGetInclusionList(
+      final Bytes32 parentHash, final UInt64 slot) {
+    return executionEngineClient
+        .getInclusionListV1(parentHash)
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow);
   }
 }

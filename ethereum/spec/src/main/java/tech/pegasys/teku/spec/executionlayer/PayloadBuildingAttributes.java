@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -34,6 +35,7 @@ public class PayloadBuildingAttributes {
   private final Optional<SignedValidatorRegistration> validatorRegistration;
   private final Optional<List<Withdrawal>> withdrawals;
   private final Bytes32 parentBeaconBlockRoot;
+  private final List<Bytes> inclusionListTransactions;
 
   public PayloadBuildingAttributes(
       final UInt64 proposerIndex,
@@ -44,6 +46,28 @@ public class PayloadBuildingAttributes {
       final Optional<SignedValidatorRegistration> validatorRegistration,
       final Optional<List<Withdrawal>> withdrawals,
       final Bytes32 parentBeaconBlockRoot) {
+    this(
+        proposerIndex,
+        proposalSlot,
+        timestamp,
+        prevRandao,
+        feeRecipient,
+        validatorRegistration,
+        withdrawals,
+        parentBeaconBlockRoot,
+        List.of());
+  }
+
+  public PayloadBuildingAttributes(
+      final UInt64 proposerIndex,
+      final UInt64 proposalSlot,
+      final UInt64 timestamp,
+      final Bytes32 prevRandao,
+      final Eth1Address feeRecipient,
+      final Optional<SignedValidatorRegistration> validatorRegistration,
+      final Optional<List<Withdrawal>> withdrawals,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> inclusionListTransactions) {
     this.proposerIndex = proposerIndex;
     this.proposalSlot = proposalSlot;
     this.timestamp = timestamp;
@@ -52,6 +76,7 @@ public class PayloadBuildingAttributes {
     this.validatorRegistration = validatorRegistration;
     this.withdrawals = withdrawals;
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
+    this.inclusionListTransactions = inclusionListTransactions;
   }
 
   public UInt64 getProposerIndex() {
@@ -91,6 +116,10 @@ public class PayloadBuildingAttributes {
     return withdrawals;
   }
 
+  public List<Bytes> getInclusionListTransactions() {
+    return inclusionListTransactions;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -107,7 +136,8 @@ public class PayloadBuildingAttributes {
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
         && Objects.equals(withdrawals, that.withdrawals)
-        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
+        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
+        && Objects.equals(inclusionListTransactions, that.inclusionListTransactions);
   }
 
   @Override
@@ -120,7 +150,8 @@ public class PayloadBuildingAttributes {
         feeRecipient,
         validatorRegistration,
         withdrawals,
-        parentBeaconBlockRoot);
+        parentBeaconBlockRoot,
+        inclusionListTransactions);
   }
 
   @Override
@@ -134,6 +165,7 @@ public class PayloadBuildingAttributes {
         .add("validatorRegistration", validatorRegistration)
         .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
+        .add("inclusionListTransactions", inclusionListTransactions)
         .toString();
   }
 }

@@ -43,6 +43,8 @@ public class BeaconNodeRequestLabels {
   public static final String BEACON_COMMITTEE_SELECTIONS = "beacon_committee_selections";
   public static final String SYNC_COMMITTEE_SELECTIONS = "sync_committee_selections";
   public static final String GET_PTC_DUTIES_METHOD = "get_ptc_duties";
+  public static final String GET_INCLUSION_LIST_DUTIES_METHOD = "get_inclusion_list_duties";
+  public static final String SEND_SIGNED_INCLUSION_LISTS_METHOD = "send_signed_inclusion_lists";
   public static final String CREATE_PAYLOAD_ATTESTATION_METHOD = "create_payload_attestation";
   public static final String SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD =
       "send_payload_attestation_messages";

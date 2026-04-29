@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -253,6 +254,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final List<Bytes32> blockHashes) {
     LOG.trace("calling engineGetPayloadBodiesByHash(blockHashes={})", blockHashes);
     return executionClientHandler.engineGetPayloadBodiesByHash(blockHashes);
+  }
+
+  @Override
+  public SafeFuture<List<Bytes>> engineGetInclusionList(
+      final Bytes32 parentHash, final UInt64 slot) {
+    LOG.trace("calling engineGetInclusionList(parentHash={}, slot={})", parentHash, slot);
+    return executionClientHandler.engineGetInclusionList(parentHash, slot);
   }
 
   @Override

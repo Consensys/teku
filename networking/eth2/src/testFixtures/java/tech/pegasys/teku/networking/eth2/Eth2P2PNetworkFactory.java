@@ -62,6 +62,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloas;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsHeze;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -105,6 +106,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -175,6 +177,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
     protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
     protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
+    protected OperationProcessor<SignedInclusionList> inclusionListProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -574,7 +577,7 @@ public class Eth2P2PNetworkFactory {
                 executionProofOperationProcessor,
                 p2PConfig.isExecutionProofTopicEnabled(),
                 isSuperNodeSupplier);
-        case GLOAS, HEZE ->
+        case GLOAS ->
             new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
                 spec,
@@ -598,6 +601,36 @@ public class Eth2P2PNetworkFactory {
                 payloadAttestationMessageProcessor,
                 executionPayloadBidProcessor,
                 proposerPreferencesProcessor,
+                debugDataDumper,
+                DasGossipLogger.NOOP,
+                executionProofOperationProcessor,
+                p2PConfig.isExecutionProofTopicEnabled(),
+                isSuperNodeSupplier);
+        case HEZE ->
+            new GossipForkSubscriptionsHeze(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                dataColumnSidecarOperationProcessor,
+                executionPayloadProcessor,
+                payloadAttestationMessageProcessor,
+                executionPayloadBidProcessor,
+                proposerPreferencesProcessor,
+                inclusionListProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
@@ -711,6 +744,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (proposerPreferencesProcessor == null) {
         proposerPreferencesProcessor = OperationProcessor.noop();
+      }
+      if (inclusionListProcessor == null) {
+        inclusionListProcessor = OperationProcessor.noop();
       }
       if (isSuperNodeSupplier == null) {
         isSuperNodeSupplier = () -> false;

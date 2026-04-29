@@ -68,6 +68,7 @@ import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFac
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadDuty;
+import tech.pegasys.teku.validator.client.duties.inclusionlists.InclusionListDutyFactory;
 import tech.pegasys.teku.validator.client.duties.payloadattestations.PayloadAttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -573,6 +574,27 @@ public class ValidatorClientService extends Service {
             validatorTimingChannels.add(preparer);
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
+    }
+
+    if (spec.isMilestoneSupported(SpecMilestone.HEZE)) {
+      final InclusionListDutyFactory inclusionListDutyFactory =
+          new InclusionListDutyFactory(
+              spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
+      final DutyLoader<?> inclusionListDutyLoader =
+          new RetryingDutyLoader<>(
+              asyncRunner,
+              timeProvider,
+              new InclusionListDutyLoader(
+                  validatorApiChannel,
+                  dependentRoot ->
+                      new SlotBasedScheduledDuties<>(
+                          inclusionListDutyFactory,
+                          dependentRoot,
+                          validatorDutyMetrics::performDutyWithMetrics),
+                  validators,
+                  validatorIndexProvider));
+      validatorTimingChannels.add(
+          new InclusionListDutyScheduler(metricsSystem, inclusionListDutyLoader, spec));
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {

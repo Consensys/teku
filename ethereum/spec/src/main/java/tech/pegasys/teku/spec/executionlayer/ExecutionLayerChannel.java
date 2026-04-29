@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -101,6 +102,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<Bytes>> engineGetInclusionList(
+            final Bytes32 parentHash, final UInt64 slot) {
+          return SafeFuture.completedFuture(Collections.emptyList());
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -146,6 +153,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
+
+  SafeFuture<List<Bytes>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
 
   /**
    * This is low level method, use {@link

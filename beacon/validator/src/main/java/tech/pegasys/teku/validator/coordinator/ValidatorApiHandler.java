@@ -56,6 +56,8 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
@@ -72,6 +74,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -89,6 +92,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -174,6 +178,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ExecutionPayloadBidManager executionPayloadBidManager;
   private final ProposerPreferencesManager proposerPreferencesManager;
   private final ExecutionProofManager executionProofManager;
+  private final OperationProcessor<SignedInclusionList> signedInclusionListProcessor;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
@@ -205,7 +210,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadPublisher executionPayloadPublisher,
       final ExecutionPayloadBidManager executionPayloadBidManager,
       final ProposerPreferencesManager proposerPreferencesManager,
-      final ExecutionProofManager executionProofManager) {
+      final ExecutionProofManager executionProofManager,
+      final OperationProcessor<SignedInclusionList> signedInclusionListProcessor) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -234,6 +240,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadBidManager = executionPayloadBidManager;
     this.proposerPreferencesManager = proposerPreferencesManager;
     this.executionProofManager = executionProofManager;
+    this.signedInclusionListProcessor = signedInclusionListProcessor;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -403,6 +410,72 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           }
         });
     return new PtcDuties(combinedChainDataClient.isChainHeadOptimistic(), dependentRoot, duties);
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    if (epoch.isGreaterThan(
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Inclusion list duties were requested %s epochs ahead, IL committee selection is only stable "
+                      + "within the context of the current and next epochs in the lookahead.",
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+    }
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch.minusMinZero(1));
+    LOG.trace("Retrieving inclusion list duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state ->
+                        getInclusionListDutiesFromIndicesAndState(state, epoch, validatorIndices)));
+  }
+
+  private InclusionListDuties getInclusionListDutiesFromIndicesAndState(
+      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThan(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    final List<InclusionListDuty> duties = new ArrayList<>();
+    final Int2ObjectMap<UInt64> validatorIndexToILSlotMap =
+        spec.getValidatorIndexToILCommitteeAssignmentMap(state, epoch);
+    validatorIndices.forEach(
+        i -> {
+          final UInt64 ilDutySlot = validatorIndexToILSlotMap.get(i);
+          final UInt64 validatorIndex = UInt64.valueOf(i);
+          if (ilDutySlot != null) {
+            spec.getValidatorPubKey(state, validatorIndex)
+                .ifPresent(
+                    publicKey -> {
+                      final Bytes32 committeeRoot =
+                          spec.getInclusionListCommitteeRoot(state, ilDutySlot).orElseThrow();
+                      duties.add(
+                          new InclusionListDuty(
+                              publicKey, validatorIndex, ilDutySlot, committeeRoot));
+                    });
+          }
+        });
+    return new InclusionListDuties(
+        combinedChainDataClient.isChainHeadOptimistic(), dependentRoot, duties);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      final List<SignedInclusionList> signedInclusionLists) {
+    return SafeFuture.collectAll(
+            signedInclusionLists.stream()
+                .map(il -> signedInclusionListProcessor.process(il, Optional.empty())))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
   @Override
