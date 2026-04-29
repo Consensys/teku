@@ -337,7 +337,7 @@ public class SlotProcessor {
         .getChainHead()
         .ifPresent(
             (head) ->
-                eventLog.slotBlockEvent(
+                eventLog.slotEvent(
                     nodeSlot.getValue(),
                     head.getSlot(),
                     head.getRoot(),

@@ -224,7 +224,8 @@ public class BlockOperationSelectorFactory {
                   exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
       // In Gloas, parent execution requests are applied before operations, so a withdrawal
-      // request targeting validator V can invalidate a voluntary exit for V in the same block.
+      // request targeting a validator can invalidate a voluntary exit for this validator in the
+      // same block.
       final Optional<ExecutionRequests> parentExecutionRequests =
           bodyBuilder.supportsParentExecutionRequests()
               ? Optional.of(
