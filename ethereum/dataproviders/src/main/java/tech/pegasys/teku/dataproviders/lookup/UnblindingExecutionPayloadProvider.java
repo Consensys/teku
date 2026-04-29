@@ -160,7 +160,7 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
                   continue;
                 }
                 if (executionPayloadBody.blockAccessList() == null) {
-                  LOG.warn(
+                  LOG.debug(
                       "Execution payload body for block hash {} is missing blockAccessList, skipping unblinding for block root {}",
                       blockHash,
                       blockRoot);
