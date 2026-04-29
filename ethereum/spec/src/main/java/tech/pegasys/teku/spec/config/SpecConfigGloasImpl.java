@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements SpecConfigGloas {
@@ -30,6 +31,9 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int payloadAttestationDueBps;
   private final int ptcSize;
   private final int syncMessageDueBps;
+  private final int churnLimitQuotientGloas;
+  private final int consolidationChurnLimitQuotient;
+  private final UInt64 maxPerEpochActivationChurnLimitGloas;
 
   public SpecConfigGloasImpl(
       final SpecConfigFulu specConfig,
@@ -44,7 +48,10 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int minBuilderWithdrawabilityDelay,
       final int payloadAttestationDueBps,
       final int ptcSize,
-      final int syncMessageDueBps) {
+      final int syncMessageDueBps,
+      final int churnLimitQuotientGloas,
+      final int consolidationChurnLimitQuotient,
+      final UInt64 maxPerEpochActivationChurnLimitGloas) {
     super(specConfig);
     this.aggregateDueBps = aggregateDueBps;
     this.attestationDueBps = attestationDueBps;
@@ -58,6 +65,9 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.minBuilderWithdrawabilityDelay = minBuilderWithdrawabilityDelay;
     this.payloadAttestationDueBps = payloadAttestationDueBps;
     this.syncMessageDueBps = syncMessageDueBps;
+    this.churnLimitQuotientGloas = churnLimitQuotientGloas;
+    this.consolidationChurnLimitQuotient = consolidationChurnLimitQuotient;
+    this.maxPerEpochActivationChurnLimitGloas = maxPerEpochActivationChurnLimitGloas;
   }
 
   @Override
@@ -121,6 +131,21 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
+  public int getChurnLimitQuotientGloas() {
+    return churnLimitQuotientGloas;
+  }
+
+  @Override
+  public int getConsolidationChurnLimitQuotient() {
+    return consolidationChurnLimitQuotient;
+  }
+
+  @Override
+  public UInt64 getMaxPerEpochActivationChurnLimitGloas() {
+    return maxPerEpochActivationChurnLimitGloas;
+  }
+
+  @Override
   public SpecMilestone getMilestone() {
     return SpecMilestone.GLOAS;
   }
@@ -150,7 +175,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && syncMessageDueBps == that.syncMessageDueBps
         && builderRegistryLimit == that.builderRegistryLimit
         && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit
-        && maxBuildersPerWithdrawalsSweep == that.maxBuildersPerWithdrawalsSweep;
+        && maxBuildersPerWithdrawalsSweep == that.maxBuildersPerWithdrawalsSweep
+        && churnLimitQuotientGloas == that.churnLimitQuotientGloas
+        && consolidationChurnLimitQuotient == that.consolidationChurnLimitQuotient
+        && Objects.equals(
+            maxPerEpochActivationChurnLimitGloas, that.maxPerEpochActivationChurnLimitGloas);
   }
 
   @Override
@@ -168,6 +197,9 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         minBuilderWithdrawabilityDelay,
         payloadAttestationDueBps,
         ptcSize,
-        syncMessageDueBps);
+        syncMessageDueBps,
+        churnLimitQuotientGloas,
+        consolidationChurnLimitQuotient,
+        maxPerEpochActivationChurnLimitGloas);
   }
 }

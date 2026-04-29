@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implements SpecConfigGloas {
   private final SpecConfigGloas delegate;
@@ -76,6 +77,21 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   @Override
   public int getMaxBuildersPerWithdrawalsSweep() {
     return delegate.getMaxBuildersPerWithdrawalsSweep();
+  }
+
+  @Override
+  public int getChurnLimitQuotientGloas() {
+    return delegate.getChurnLimitQuotientGloas();
+  }
+
+  @Override
+  public int getConsolidationChurnLimitQuotient() {
+    return delegate.getConsolidationChurnLimitQuotient();
+  }
+
+  @Override
+  public UInt64 getMaxPerEpochActivationChurnLimitGloas() {
+    return delegate.getMaxPerEpochActivationChurnLimitGloas();
   }
 
   @Override
