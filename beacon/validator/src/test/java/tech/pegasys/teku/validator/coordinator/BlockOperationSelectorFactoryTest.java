@@ -964,7 +964,7 @@ class BlockOperationSelectorFactoryTest {
 
     private final boolean supportsKzgCommitments;
     private final boolean supportExecutionRequests;
-    private final boolean supportsParentExecRequests;
+    private final boolean supportsParentExecutionRequests;
 
     protected BLSSignature randaoReveal;
     protected Bytes32 graffiti;
@@ -981,23 +981,23 @@ class BlockOperationSelectorFactoryTest {
     public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
       this.supportsKzgCommitments = supportsKzgCommitments;
       this.supportExecutionRequests = false;
-      this.supportsParentExecRequests = false;
+      this.supportsParentExecutionRequests = false;
     }
 
     public CapturingBeaconBlockBodyBuilder(
         final boolean supportsKzgCommitments, final boolean supportExecutionRequests) {
       this.supportsKzgCommitments = supportsKzgCommitments;
       this.supportExecutionRequests = supportExecutionRequests;
-      this.supportsParentExecRequests = false;
+      this.supportsParentExecutionRequests = false;
     }
 
     public CapturingBeaconBlockBodyBuilder(
         final boolean supportsKzgCommitments,
         final boolean supportExecutionRequests,
-        final boolean supportsParentExecRequests) {
+        final boolean supportsParentExecutionRequests) {
       this.supportsKzgCommitments = supportsKzgCommitments;
       this.supportExecutionRequests = supportExecutionRequests;
-      this.supportsParentExecRequests = supportsParentExecRequests;
+      this.supportsParentExecutionRequests = supportsParentExecutionRequests;
     }
 
     @Override
@@ -1107,7 +1107,7 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public Boolean supportsParentExecutionRequests() {
-      return supportsParentExecRequests;
+      return supportsParentExecutionRequests;
     }
 
     @Override

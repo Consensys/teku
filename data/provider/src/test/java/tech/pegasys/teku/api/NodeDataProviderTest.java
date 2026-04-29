@@ -213,8 +213,7 @@ public class NodeDataProviderTest {
   void shouldAcceptBuilderVoluntaryExitWithoutCheckingValidatorList()
       throws ExecutionException, InterruptedException {
     final BeaconState state = mock(BeaconState.class);
-    when(recentChainData.getBestState())
-        .thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
 
     final UInt64 builderValidatorIndex =
         UInt64.fromLongBits(

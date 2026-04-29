@@ -215,9 +215,12 @@ public class NodeDataProvider {
                     .thenApply(
                         state -> {
                           final SszList<Validator> validators = state.getValidators();
-                          //TODO in gloas this would have a flow for builders, and they have 40th bit set
+                          // TODO-GLOAS This would have a flow for builders, and they have 40th bit
+                          // set (it requires more validation)
                           final UInt64 validatorId = exit.getValidatorId();
-                          if ((validatorId.longValue() & SpecConfigGloas.BUILDER_INDEX_FLAG.longValue()) != 0) {
+                          if ((validatorId.longValue()
+                                  & SpecConfigGloas.BUILDER_INDEX_FLAG.longValue())
+                              != 0) {
                             return InternalValidationResult.ACCEPT;
                           }
                           if (validatorId.isGreaterThanOrEqualTo(validators.size())) {

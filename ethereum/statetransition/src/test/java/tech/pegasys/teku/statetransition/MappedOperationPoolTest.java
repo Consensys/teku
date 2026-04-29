@@ -49,9 +49,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 
 public class MappedOperationPoolTest {
@@ -336,7 +336,8 @@ public class MappedOperationPoolTest {
 
     final UInt64 regularIndex = UInt64.valueOf(5);
     final UInt64 builderIndex =
-        UInt64.fromLongBits(regularIndex.longValue() | SpecConfigGloas.BUILDER_INDEX_FLAG.longValue());
+        UInt64.fromLongBits(
+            regularIndex.longValue() | SpecConfigGloas.BUILDER_INDEX_FLAG.longValue());
 
     final SignedVoluntaryExit regularExit =
         new SignedVoluntaryExit(
