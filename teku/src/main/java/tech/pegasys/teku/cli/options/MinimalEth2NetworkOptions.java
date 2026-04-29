@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
-
-import picocli.CommandLine.Option;
 
 public class MinimalEth2NetworkOptions {
 

@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.cli.options;
 
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
-
-import picocli.CommandLine.Option;
 
 public class StoreOptions {
   @Option(

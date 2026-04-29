@@ -13,6 +13,18 @@
 
 package tech.pegasys.teku.cli.subcommand.storage;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import org.bouncycastle.util.Arrays;
+import org.rocksdb.RocksDBException;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
@@ -25,20 +37,6 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbHelper;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-
-import org.bouncycastle.util.Arrays;
-import org.rocksdb.RocksDBException;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
 
 @Command(
     name = "rocksdb",

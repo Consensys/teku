@@ -15,11 +15,10 @@ package tech.pegasys.teku.cli.options;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
 import tech.pegasys.teku.networking.nat.NatMethod;
-
-import picocli.CommandLine;
 
 public class NatOptions {
 

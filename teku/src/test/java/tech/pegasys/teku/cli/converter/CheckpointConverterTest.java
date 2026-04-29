@@ -16,18 +16,16 @@ package tech.pegasys.teku.cli.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import picocli.CommandLine;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class CheckpointConverterTest {
   private final CheckpointConverter parser = new CheckpointConverter();

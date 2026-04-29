@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 
 import java.io.File;
-
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 

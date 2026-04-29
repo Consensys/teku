@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.cli.converter;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
 import picocli.CommandLine;
 import picocli.CommandLine.TypeConversionException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class UInt64Converter implements CommandLine.ITypeConverter<UInt64> {
   @Override

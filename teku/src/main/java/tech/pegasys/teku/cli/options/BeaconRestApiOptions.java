@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
-import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
-import tech.pegasys.teku.config.TekuConfiguration;
-
 import java.util.List;
 import java.util.Optional;
-
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class BeaconRestApiOptions {
 

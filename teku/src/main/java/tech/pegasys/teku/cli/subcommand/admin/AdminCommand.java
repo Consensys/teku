@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand.admin;
 
-import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-
 import picocli.CommandLine;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 
 @CommandLine.Command(
     name = "admin",

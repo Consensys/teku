@@ -15,6 +15,12 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry;
 
+import java.util.concurrent.Callable;
+import org.apache.logging.log4j.Level;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.NodeMode;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -31,14 +37,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-
-import java.util.concurrent.Callable;
-
-import org.apache.logging.log4j.Level;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.ParentCommand;
 
 @Command(
     name = "validator-client",

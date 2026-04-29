@@ -15,12 +15,10 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.service.serviceutils.layout.DataConfig.DEFAULT_DATA_PATH;
 
+import java.nio.file.Path;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
-
-import java.nio.file.Path;
-
-import picocli.CommandLine.Option;
 
 public abstract class DataOptions {
 

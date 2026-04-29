@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-
+import com.google.common.base.Strings;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -24,10 +21,11 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorKeysOptions {
 

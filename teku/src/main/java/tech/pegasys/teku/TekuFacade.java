@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku;
 
-import tech.pegasys.teku.config.TekuConfiguration;
-
 import java.util.Optional;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 /**
  * The main entry point to start Teku node

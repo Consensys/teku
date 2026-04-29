@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -22,9 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
 
 public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   private final DataStructureUtil dataStructureUtil =

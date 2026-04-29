@@ -15,6 +15,26 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.io.ByteStreams;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
+import org.bouncycastle.util.encoders.Hex;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
@@ -25,28 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.io.ByteStreams;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
-import org.bouncycastle.util.encoders.Hex;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
 @Command(
     name = "transition",

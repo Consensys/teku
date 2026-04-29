@@ -18,14 +18,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeyGenerationOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.VerbosityOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
-
-import java.util.function.Consumer;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 class GenerateKeysCommandTest {
   private static final Consumer<Integer> SHUTDOWN_FUNCTION = status -> {};

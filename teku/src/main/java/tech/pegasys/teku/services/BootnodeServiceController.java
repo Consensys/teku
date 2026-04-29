@@ -15,7 +15,6 @@ package tech.pegasys.teku.services;
 
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-
 import teku.pegasys.teku.services.bootnode.BootnodeService;
 
 public class BootnodeServiceController extends ServiceController {

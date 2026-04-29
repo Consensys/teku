@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku;
 
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.NodeMode;
@@ -20,11 +24,6 @@ import tech.pegasys.teku.cli.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
-
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class Teku {
 

@@ -18,6 +18,15 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.function.Consumer;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.cli.converter.OptionalLongConverter;
@@ -27,17 +36,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-
-import java.util.OptionalInt;
-import java.util.OptionalLong;
-import java.util.function.Consumer;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
-import picocli.CommandLine;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Option;
 
 public class Eth2NetworkOptions {
 

@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.time.Duration;
+import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
-
-import java.time.Duration;
-
-import picocli.CommandLine;
 
 public class ZkChainOptions {
   @CommandLine.Option(

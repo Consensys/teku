@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.Scanner;
+import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.util.DatabaseMigrater;
 import tech.pegasys.teku.cli.util.DatabaseMigraterError;
@@ -21,16 +29,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.Scanner;
-
-import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "migrate-database",

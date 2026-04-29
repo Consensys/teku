@@ -21,11 +21,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import tech.pegasys.teku.bls.keystore.KeyStore;
-import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
-import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
-import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -34,12 +29,15 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Function;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
+import tech.pegasys.teku.bls.keystore.KeyStore;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
+import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
 
 class KeyGeneratorTest {
 

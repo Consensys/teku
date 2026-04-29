@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.util;
 
 import java.util.Map;
-
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 public class CascadingParamsProviderTest {

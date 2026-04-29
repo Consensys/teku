@@ -16,23 +16,21 @@ package tech.pegasys.teku.cli.subcommand;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
-import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.cli.NodeMode;
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-
-import com.google.common.io.Resources;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.cli.NodeMode;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 

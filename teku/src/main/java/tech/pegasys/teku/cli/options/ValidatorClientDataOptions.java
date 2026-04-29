@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
-import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
-
 import java.nio.file.Path;
-
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 
 public class ValidatorClientDataOptions extends DataOptions {
 

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import picocli.CommandLine.Help;
 import picocli.CommandLine.IHelpSectionRenderer;
 import picocli.CommandLine.Model.CommandSpec;

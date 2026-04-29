@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.config;
 
+import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -42,9 +44,6 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientConfiguration;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
-
-import java.util.Optional;
-import java.util.function.Consumer;
 
 public class TekuConfiguration {
   private final Eth2NetworkConfiguration eth2NetworkConfiguration;

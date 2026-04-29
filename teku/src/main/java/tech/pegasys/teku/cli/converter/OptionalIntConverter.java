@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.converter;
 
 import java.util.OptionalInt;
-
 import picocli.CommandLine;
 
 public class OptionalIntConverter implements CommandLine.ITypeConverter<OptionalInt> {

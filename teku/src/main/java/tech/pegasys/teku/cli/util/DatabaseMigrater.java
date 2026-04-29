@@ -15,6 +15,15 @@ package tech.pegasys.teku.cli.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import org.apache.commons.io.FileUtils;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -28,17 +37,6 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.io.FileUtils;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 
 public class DatabaseMigrater {
   private final DataDirLayout dataDirLayout;

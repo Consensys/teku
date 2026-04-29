@@ -21,6 +21,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import picocli.CommandLine;
 import tech.pegasys.teku.bls.keystore.KeyStore;
 import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.bls.keystore.model.Cipher;
@@ -33,19 +44,6 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorKeyO
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorKeyStoreOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import picocli.CommandLine;
 
 class SendDepositsCommandTest {
   private static final Consumer<Integer> SHUTDOWN_FUNCTION = status -> {};

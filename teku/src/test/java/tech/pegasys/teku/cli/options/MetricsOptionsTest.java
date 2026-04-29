@@ -20,15 +20,9 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTB
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 
-import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.junit.jupiter.api.Test;
@@ -36,6 +30,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 

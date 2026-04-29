@@ -15,10 +15,9 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.commands;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 
 @Command(
     name = "validator-tools",

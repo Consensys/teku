@@ -13,22 +13,12 @@
 
 package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 
-import tech.pegasys.teku.cli.converter.Eth1AddressConverter;
-import tech.pegasys.teku.cli.converter.UInt64Converter;
-import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
-import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.config.SpecConfig;
-
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.IntConsumer;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
 import org.web3j.crypto.exception.CipherException;
@@ -37,6 +27,14 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
+import tech.pegasys.teku.cli.converter.Eth1AddressConverter;
+import tech.pegasys.teku.cli.converter.UInt64Converter;
+import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
+import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class DepositOptions {
 

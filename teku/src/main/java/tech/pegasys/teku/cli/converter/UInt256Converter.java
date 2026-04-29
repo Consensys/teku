@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.converter;
 
 import java.math.BigInteger;
-
 import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.TypeConversionException;

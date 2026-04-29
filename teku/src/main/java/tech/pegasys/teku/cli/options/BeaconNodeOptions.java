@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.cli.options;
 
-import tech.pegasys.teku.config.TekuConfiguration;
-
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class BeaconNodeOptions {
 

@@ -16,14 +16,12 @@ package tech.pegasys.teku.cli.converter;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-
-import java.util.List;
-
 import com.google.common.base.Splitter;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class CheckpointConverter implements CommandLine.ITypeConverter<Checkpoint> {
   public static final String CHECKPOINT_ERROR =

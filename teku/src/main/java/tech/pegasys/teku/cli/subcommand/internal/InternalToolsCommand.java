@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.cli.subcommand.internal;
 
+import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.subcommand.internal.validator.commands.ValidatorToolsCommand;
-
-import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "internal-tools",

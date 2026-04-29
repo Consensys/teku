@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.services.powchain.PowchainConfiguration;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 
 public class DepositOptions {
 

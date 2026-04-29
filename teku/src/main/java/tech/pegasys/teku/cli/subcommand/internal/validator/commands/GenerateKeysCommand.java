@@ -15,16 +15,14 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.commands;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.function.Consumer;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeyGenerationOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.VerbosityOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
-
-import java.util.function.Consumer;
-
-import com.google.common.annotations.VisibleForTesting;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
 
 @Command(
     name = "generate-keys",

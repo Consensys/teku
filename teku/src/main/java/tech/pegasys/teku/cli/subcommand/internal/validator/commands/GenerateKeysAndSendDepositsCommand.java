@@ -15,6 +15,15 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.commands;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.DepositOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeyGenerationOptions;
@@ -23,17 +32,6 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.KeyGenerator;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ValidatorKeys;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import com.google.common.annotations.VisibleForTesting;
-import org.jetbrains.annotations.NotNull;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
 
 @Command(
     name = "generate-keys-and-send-deposits",

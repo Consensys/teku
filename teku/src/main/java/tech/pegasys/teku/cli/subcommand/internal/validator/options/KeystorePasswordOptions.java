@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.function.Function;
-
 import picocli.CommandLine;
 import picocli.CommandLine.ParameterException;
 

@@ -17,6 +17,11 @@ import static tech.pegasys.teku.service.serviceutils.layout.DataConfig.DEFAULT_D
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_ROCKSDB_BLOB_DB_ENABLED;
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
+import java.nio.file.Path;
+import java.time.Duration;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -24,13 +29,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
-
-import java.nio.file.Path;
-import java.time.Duration;
-
-import picocli.CommandLine;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Option;
 
 public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 

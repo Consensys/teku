@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import picocli.CommandLine;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 public class ValidatorRestApiOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;

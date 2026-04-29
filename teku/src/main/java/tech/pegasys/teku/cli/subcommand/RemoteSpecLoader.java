@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.spec.Spec;
@@ -21,15 +28,6 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
-
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 
 class RemoteSpecLoader {
 

@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 
-import tech.pegasys.teku.bls.BLSKeyPair;
-
 import java.io.UncheckedIOException;
+import tech.pegasys.teku.bls.BLSKeyPair;
 
 /** To write the keys that are generated during Deposit Command */
 public interface KeysWriter {

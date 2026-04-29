@@ -15,6 +15,8 @@ package tech.pegasys.teku.services;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
+import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.networking.nat.NatService;
@@ -31,9 +33,6 @@ import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
-
-import java.util.Optional;
-import java.util.function.Supplier;
 
 public class BeaconNodeServiceController extends ServiceController {
 

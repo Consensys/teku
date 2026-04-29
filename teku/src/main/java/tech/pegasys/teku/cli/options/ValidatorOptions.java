@@ -18,6 +18,14 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANG
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.OptionalInt;
+import org.apache.tuweni.bytes.Bytes32;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -25,16 +33,6 @@ import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
-
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.OptionalInt;
-
-import org.apache.tuweni.bytes.Bytes32;
-import picocli.CommandLine;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 
 public class ValidatorOptions {
 

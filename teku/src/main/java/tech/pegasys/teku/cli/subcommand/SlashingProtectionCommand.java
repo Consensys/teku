@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.slashingprotection.ExportCommand;
 import tech.pegasys.teku.cli.slashingprotection.ImportCommand;
 import tech.pegasys.teku.cli.slashingprotection.RepairCommand;
-
-import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "slashing-protection",

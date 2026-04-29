@@ -15,6 +15,12 @@ package tech.pegasys.teku.cli.slashingprotection;
 
 import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.Scanner;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
@@ -28,14 +34,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.Scanner;
-
-import picocli.CommandLine;
-import picocli.CommandLine.Help.Visibility;
 
 @CommandLine.Command(
     name = "repair",

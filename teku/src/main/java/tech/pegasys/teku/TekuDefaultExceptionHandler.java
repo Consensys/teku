@@ -16,6 +16,15 @@ package tech.pegasys.teku;
 import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.ERROR_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Method;
+import java.nio.channels.ClosedChannelException;
+import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
@@ -23,17 +32,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.services.beaconchain.EphemeryLifecycleException;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.lang.reflect.Method;
-import java.nio.channels.ClosedChannelException;
-import java.util.Optional;
-import java.util.concurrent.RejectedExecutionException;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public final class TekuDefaultExceptionHandler
     implements ChannelExceptionHandler, UncaughtExceptionHandler {

@@ -15,14 +15,13 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import org.apache.logging.log4j.Level;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-
-import org.apache.logging.log4j.Level;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Option;
 
 public class LoggingOptions {
   private static final String WINDOWS_SEP = "\\";

@@ -30,25 +30,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWOR
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
-import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
-import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
-import tech.pegasys.teku.networking.nat.NatMethod;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.storage.server.DatabaseVersion;
-import tech.pegasys.teku.storage.server.StorageConfiguration;
-import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
-import tech.pegasys.teku.validator.api.InteropConfig;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
-
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -68,8 +50,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.common.io.Resources;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,6 +64,24 @@ import org.junit.jupiter.params.provider.MethodSource;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Model.OptionSpec;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
+import tech.pegasys.teku.networking.nat.NatMethod;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();

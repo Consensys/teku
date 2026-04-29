@@ -19,9 +19,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
 class TekuDefaultExceptionHandlerTest {
 

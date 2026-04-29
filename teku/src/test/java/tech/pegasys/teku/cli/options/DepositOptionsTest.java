@@ -17,15 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 import static tech.pegasys.teku.services.powchain.PowchainConfiguration.DEPOSIT_SNAPSHOT_URL_PATH;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.powchain.DepositTreeSnapshotConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 

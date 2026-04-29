@@ -15,15 +15,13 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-
+import com.google.common.io.Resources;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-
-import com.google.common.io.Resources;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 
 public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
 

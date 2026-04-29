@@ -15,19 +15,17 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.MinimalEth2NetworkOptions;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 
 @Command(
     name = "genesis",
