@@ -197,7 +197,8 @@ public class EventSubscriptionManager
   }
 
   @Override
-  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     onExecutionPayloadAvailable(executionPayload);
   }
 

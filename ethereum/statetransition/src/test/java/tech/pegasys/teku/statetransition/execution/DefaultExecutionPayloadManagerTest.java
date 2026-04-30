@@ -92,7 +92,7 @@ class DefaultExecutionPayloadManagerTest {
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
 
     verify(receivedExecutionPayloadEventsChannelPublisher)
-        .onExecutionPayloadImported(signedExecutionPayload);
+        .onExecutionPayloadImported(signedExecutionPayload, false);
 
     // verify the `beacon_block_root` is cached
     assertThat(
@@ -173,7 +173,7 @@ class DefaultExecutionPayloadManagerTest {
     asyncRunner.executeDueActions();
     // verify the payload has been processed
     verify(receivedExecutionPayloadEventsChannelPublisher)
-        .onExecutionPayloadImported(signedExecutionPayload);
+        .onExecutionPayloadImported(signedExecutionPayload, false);
 
     // verify the payload has been published
     assertThat(publishedExecutionPayload).hasValue(signedExecutionPayload);

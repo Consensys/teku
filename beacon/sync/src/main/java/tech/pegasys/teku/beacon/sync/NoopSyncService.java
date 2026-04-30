@@ -185,7 +185,8 @@ public class NoopSyncService
   }
 
   @Override
-  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     // No-op
   }
 }

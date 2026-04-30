@@ -59,7 +59,8 @@ public interface RecentExecutionPayloadsFetcher
 
         @Override
         public void onExecutionPayloadImported(
-            final SignedExecutionPayloadEnvelope executionPayload) {}
+            final SignedExecutionPayloadEnvelope executionPayload,
+            final boolean executionOptimistic) {}
       };
 
   static RecentExecutionPayloadsFetcher create(
