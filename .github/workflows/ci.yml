@@ -4,7 +4,7 @@ name: ci
 ## RUNNERS
 # https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 # ubuntu-24.04 = 4cpu, 16GB
-# ubuntu-latest-128= 32, 128GB
+# ubuntu-latest-128 = 32, 128GB
 # windows-2025 = 4 cpu, 16GB
 # ubuntu-24.04-arm = 4cpu, 16GB
 # macos-13 = 4cpu, 14GB
@@ -132,7 +132,8 @@ jobs:
             build/test-results/
 
   assemble:
-    runs-on: ubuntu-24.04
+    # assemble is in our critical path so we want it to finish as quick as possible
+    runs-on: ubuntu-latest-128
     outputs:
       workflow-run-id: ${{ steps.workflowdetails.outputs.run_id }}
       publish-version: ${{ steps.projectDetails.outputs.publish-version }}
