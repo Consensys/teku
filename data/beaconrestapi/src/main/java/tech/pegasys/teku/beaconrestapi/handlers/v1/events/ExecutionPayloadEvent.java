@@ -33,7 +33,7 @@ public class ExecutionPayloadEvent extends Event<ExecutionPayloadEvent.Execution
               .withField("block_hash", BYTES32_TYPE, ExecutionPayloadData::blockHash)
               .withField("block_root", BYTES32_TYPE, ExecutionPayloadData::blockRoot)
               .withField(
-                  "executionOptimistic", BOOLEAN_TYPE, ExecutionPayloadData::executionOptimistic)
+                  "execution_optimistic", BOOLEAN_TYPE, ExecutionPayloadData::executionOptimistic)
               .build();
 
   ExecutionPayloadEvent(
