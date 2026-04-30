@@ -29,6 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -50,6 +52,9 @@ public class SchemaDefinitionCacheTest {
 
   @ParameterizedTest
   @MethodSource("allNetworksWithAllMilestones")
+  @DisabledOnOs(
+      value = OS.WINDOWS,
+      disabledReason = "EPHEMERY config requires a remote HTTP fetch that times out on Windows CI")
   void shouldGetSchemasForAllMilestonesOnAllNetworks(
       final Eth2Network network, final SpecMilestone specMilestone) {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =

@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
@@ -214,12 +215,19 @@ public class NodeDataProvider {
                     .thenApply(
                         state -> {
                           final SszList<Validator> validators = state.getValidators();
-                          final int validatorId = exit.getValidatorId();
-                          if (validators.size() <= validatorId) {
+                          // TODO-GLOAS This would have a flow for builders, and they have 40th bit
+                          // set (it requires more validation)
+                          final UInt64 validatorId = exit.getValidatorId();
+                          if ((validatorId.longValue()
+                                  & SpecConfigGloas.BUILDER_INDEX_FLAG.longValue())
+                              != 0) {
+                            return InternalValidationResult.ACCEPT;
+                          }
+                          if (validatorId.isGreaterThanOrEqualTo(validators.size())) {
                             return InternalValidationResult.reject(
-                                "Validator index %s was not found", exit.getValidatorId());
+                                "Validator index %s was not found", validatorId);
                           } else if (validators
-                              .get(validatorId)
+                              .get(validatorId.intValue())
                               .getExitEpoch()
                               .isLessThan(FAR_FUTURE_EPOCH)) {
                             return InternalValidationResult.reject(

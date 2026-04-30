@@ -149,7 +149,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void shouldExtendPayload_shouldReturnTrueForPreGloasBlock() {
+  void shouldExtendPayload_shouldReturnFalseForPreGloasBlock() {
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final SignedBeaconBlock genesisBlock = chainBuilder.generateGenesis().getBlock();
     final ForkChoiceStrategy forkChoiceStrategy =
@@ -157,7 +157,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             spec, createProtoArray(chainBuilder.getLatestBlockAndState().getState()));
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
 
-    assertThat(forkChoiceStrategy.shouldExtendPayload(store, genesisBlock.getRoot())).isTrue();
+    // if pre-gloas returns true, the gloas transition breaks, so instead we return false pre-gloas
+    assertThat(forkChoiceStrategy.shouldExtendPayload(store, genesisBlock.getRoot())).isFalse();
   }
 
   @Test

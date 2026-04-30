@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -492,31 +491,21 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    * makes the FULL child visible in the three-state fork choice tree. Delegates to the fork-aware
    * model selected for the block slot.
    */
-  public void onExecutionPayload(
+  void onExecutionPayload(
       final Bytes32 blockRoot,
       final UInt64 blockSlot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final boolean isOptimistic) {
-    protoArrayLock.writeLock().lock();
-    try {
-      getForkChoiceModel(blockSlot)
-          .onExecutionPayload(
-              protoArray,
-              blockNodeIndex,
-              blockRoot,
-              executionBlockNumber,
-              executionBlockHash,
-              isOptimistic);
-      updateParentBestChildAndDescendantForBlockVariants(blockRoot);
-    } finally {
-      protoArrayLock.writeLock().unlock();
-    }
-  }
-
-  public void processExecutionPayload(final SignedExecutionPayloadEnvelope signedEnvelope) {
-    // Branch 04 keeps the Phase0 model active only, so execution-payload-only node expansion
-    // remains dormant until the later Gloas-specific branches.
+    getForkChoiceModel(blockSlot)
+        .onExecutionPayload(
+            protoArray,
+            blockNodeIndex,
+            blockRoot,
+            executionBlockNumber,
+            executionBlockHash,
+            isOptimistic);
+    updateParentBestChildAndDescendantForBlockVariants(blockRoot);
   }
 
   /**
@@ -707,14 +696,12 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       executionPayloads.forEach(
           executionPayloadUpdate -> {
             final var envelope = executionPayloadUpdate.executionPayload();
-            getForkChoiceModel(envelope.getSlot())
-                .onExecutionPayload(
-                    protoArray,
-                    blockNodeIndex,
-                    envelope.getBeaconBlockRoot(),
-                    envelope.getMessage().getPayload().getBlockNumber(),
-                    envelope.getMessage().getPayload().getBlockHash(),
-                    executionPayloadUpdate.isOptimistic());
+            onExecutionPayload(
+                envelope.getBeaconBlockRoot(),
+                envelope.getSlot(),
+                envelope.getMessage().getPayload().getBlockNumber(),
+                envelope.getMessage().getPayload().getBlockHash(),
+                executionPayloadUpdate.isOptimistic());
             updateParentBestChildAndDescendantForBlockVariants(envelope.getBeaconBlockRoot());
           });
       removedBlockRoots.forEach(

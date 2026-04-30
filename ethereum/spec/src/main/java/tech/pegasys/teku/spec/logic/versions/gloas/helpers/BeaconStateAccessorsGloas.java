@@ -195,7 +195,11 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
           epoch.minusMinZero(stateEpoch).plus(1).times(config.getSlotsPerEpoch()).intValue();
       cacheIndex = slot.mod(config.getSlotsPerEpoch()).plus(offset).intValue();
     }
-    return BeaconStateGloas.required(state).getPtcWindow().get(cacheIndex).toIntList();
+    return state
+        .toVersionGloas()
+        .map(stateGloas -> stateGloas.getPtcWindow().get(cacheIndex).toIntList())
+        // Fork boundary edge case
+        .orElseGet(() -> computePtc(state, slot).toIntList());
   }
 
   /**

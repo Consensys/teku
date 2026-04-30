@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -322,6 +322,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .finishStackTrace();
   }
 
+  public void onPayloadAttestationMessage(
+      final PayloadAttestationMessage message,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (!result.isAccept()) {
+      return;
+    }
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .ifPresent(
+            strategy ->
+                strategy.onPtcVote(
+                    message.getData().getBeaconBlockRoot(),
+                    message.getValidatorIndex(),
+                    message.getData().isPayloadPresent(),
+                    message.getData().isBlobDataAvailable()));
+  }
+
   public void subscribeToOptimisticHeadChangesAndUpdate(final OptimisticHeadSubscriber subscriber) {
     optimisticSyncSubscribers.subscribe(subscriber);
     getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
@@ -418,7 +436,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             spec.getProposerBoostAmount(justifiedState));
 
     try {
-      recentChainData.updateHead(headNode.node().blockRoot(), nodeSlot.orElse(headNode.slot()));
+      recentChainData.updateHead(headNode.node(), nodeSlot.orElse(headNode.slot()));
     } finally {
       // here we just make sure to commit, because protoarray has been updated. We just had an
       // exception while updating recentChainData which will become consistent again on the next
@@ -755,12 +773,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     transaction.commit().join();
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
-    // devnet-0, we need a proper fork choice implementation
-    forkChoiceStrategy.processExecutionPayload(signedEnvelope);
-
-    updateForkChoiceForImportedExecutionPayload(signedEnvelope, forkChoiceStrategy);
+    updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
 
     return ExecutionPayloadImportResult.successful(signedEnvelope);
@@ -900,10 +913,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
 
-    final SlotAndBlockRoot bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.getBlockRoot().equals(currentHead.getRoot())) {
-      recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
-      if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
+    final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
+    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+      recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
+      if (bestHeadBlock.node().blockRoot().equals(block.getRoot())) {
         result.markAsCanonical();
       }
     }
@@ -924,31 +937,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
-  // devnet-0, we need a proper fork choice implementation
   private void updateForkChoiceForImportedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceStrategy forkChoiceStrategy) {
-    recentChainData.updateHead(signedEnvelope.getBeaconBlockRoot(), signedEnvelope.getSlot());
-    final SlotAndBlockRoot bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.getBlockRoot().equals(signedEnvelope.getBeaconBlockRoot())) {
-      processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
-      return;
+    final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
+    final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
+    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+      recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
-    recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
   }
 
-  private SlotAndBlockRoot findNewChainHead(final ForkChoiceStrategy forkChoiceStrategy) {
+  private SlotAndForkChoiceNode findNewChainHead(final ForkChoiceStrategy forkChoiceStrategy) {
     // use fork choice to find the new chain head as if this block is on time the proposer weighting
     // may cause us to reorg.
     final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
-    final SlotAndForkChoiceNode headNode =
-        forkChoiceStrategy.findHead(
-            recentChainData.getCurrentEpoch().orElseThrow(),
-            justifiedCheckpoint,
-            finalizedCheckpoint);
-    return new SlotAndBlockRoot(headNode.slot(), headNode.node().blockRoot());
+    return forkChoiceStrategy.findHead(
+        recentChainData.getCurrentEpoch().orElseThrow(), justifiedCheckpoint, finalizedCheckpoint);
   }
 
   private void reportInvalidBlock(final SignedBeaconBlock block, final BlockImportResult result) {
