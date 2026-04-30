@@ -776,6 +776,12 @@ tasks.register('localDocker') {
 			executable executableAndArg[0]
 			args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
 		}
+		// tag with commit hash for traceability
+		def commitHash = gitCommitHashShort()
+		system.executor.exec {
+			executable executableAndArg[0]
+			args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}-${commitHash}"
+		}
 	}
 }
 
@@ -784,9 +790,10 @@ tasks.register('localDockerClean') {
 	def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
 	def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 	doLast {
+		def commitHash = gitCommitHashShort()
 		system.executor.exec {
 			executable executableAndArg[0]
-			args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+			args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}-${commitHash}"
 		}
 	}
 }
