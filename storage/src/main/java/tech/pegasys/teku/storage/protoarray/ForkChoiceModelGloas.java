@@ -462,6 +462,31 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public ProtoNode resolveBestDescendant(
+      final ProtoNode candidate,
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 currentSlot,
+      final Optional<Bytes32> proposerBoostRoot) {
+    // The structural chain-walk in ProtoArray.findHead follows stale bestDescendantIndex pointers
+    // that may have been set when only EMPTY existed under a base PENDING node. When a FULL
+    // sibling is added later via onExecutionPayload, BASE.bestChild is correctly flipped to FULL
+    // locally, but ancestor bestDescendantIndex pointers still point at EMPTY. Redirect the
+    // landing point to BASE.bestChild — the model-preferred sibling — using the candidate's own
+    // block root since PENDING/EMPTY/FULL all share it.
+    if (candidate.getBestDescendantIndex().isPresent() && !candidate.isInvalid()) {
+      return protoArray.getNodeByIndex(candidate.getBestDescendantIndex().get());
+    }
+
+    return resolveBaseNode(blockNodeIndex, candidate.getBlockRoot())
+        .flatMap(protoArray::getNode)
+        .flatMap(ProtoNode::getBestChildIndex)
+        .map(protoArray::getNodeByIndex)
+        .filter(sibling -> !sibling.isInvalid())
+        .orElse(candidate);
+  }
+
+  @Override
   public Optional<ForkChoiceNode> resolveBaseNode(
       final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
     return blockNodeIndex.getBaseNode(blockRoot);
