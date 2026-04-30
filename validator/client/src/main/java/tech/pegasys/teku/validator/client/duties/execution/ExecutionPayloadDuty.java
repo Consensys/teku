@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.duties.execution;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -38,12 +36,6 @@ import tech.pegasys.teku.validator.client.duties.Duty;
  */
 public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
 
-  // we need some time for the block to be disseminated across the network before performing the
-  // execution payload duty
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10018
-  @VisibleForTesting
-  static final Duration EXECUTION_PAYLOAD_DUTY_DELAY_FOR_SELF_BUILT_BID = Duration.ofMillis(500);
-
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -65,12 +57,12 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
   @Override
   public void onSelfBuiltBidIncludedInBlock(
       final Validator validator, final ForkInfo forkInfo, final ExecutionPayloadBid bid) {
+    // execution payload is produced and broadcast
     asyncRunner
-        .runAfterDelay(
+        .runAsync(
             () ->
                 performExecutionPayloadDuty(
-                    validator, forkInfo, bid.getSlot(), bid.getBuilderIndex()),
-            EXECUTION_PAYLOAD_DUTY_DELAY_FOR_SELF_BUILT_BID)
+                    validator, forkInfo, bid.getSlot(), bid.getBuilderIndex()))
         .finishStackTrace();
   }
 

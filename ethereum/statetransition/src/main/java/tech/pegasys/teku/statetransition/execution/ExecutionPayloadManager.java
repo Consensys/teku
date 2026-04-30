@@ -50,6 +50,10 @@ public interface ExecutionPayloadManager {
             final UInt64 slot, final Bytes32 parentRoot) {
           return null;
         }
+
+        @Override
+        public void subscribeFailedPayloadExecution(
+            final FailedPayloadExecutionSubscriber subscriber) {}
       };
 
   /**
@@ -81,5 +85,11 @@ public interface ExecutionPayloadManager {
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return validateAndImportExecutionPayload(signedExecutionPayload, Optional.empty());
+  }
+
+  void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber);
+
+  interface FailedPayloadExecutionSubscriber {
+    void onPayloadExecutionFailed(SignedExecutionPayloadEnvelope executionPayload);
   }
 }

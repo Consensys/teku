@@ -18,6 +18,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 
 public interface ReceivedExecutionPayloadEventsChannel extends VoidReturningChannelInterface {
 
+  /** Block passes validation rules of the `execution_payload` topic */
+  void onExecutionPayloadValidated(SignedExecutionPayloadEnvelope executionPayload);
+
   /** Successfully imported on the fork-choice `on_execution_payload` handler */
   void onExecutionPayloadImported(
       SignedExecutionPayloadEnvelope executionPayload, boolean executionOptimistic);
