@@ -201,6 +201,8 @@ allprojects {
 		from javadoc.destinationDir
 	}
 
+	assemble.dependsOn javadocJar
+
 	java {
 		sourceCompatibility = JavaVersion.VERSION_21
 	}

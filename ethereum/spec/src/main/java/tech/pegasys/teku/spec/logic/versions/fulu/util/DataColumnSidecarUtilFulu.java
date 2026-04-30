@@ -66,7 +66,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   /**
    * Perform slot timing gossip validation checks Gossip rule: [IGNORE] The sidecar is not from a
    * future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. validate that
-   * block_header.slot <= current_slot (a client MAY queue future sidecars for processing at the
+   * block_header.slot &lt;= current_slot (a client MAY queue future sidecars for processing at the
    * appropriate slot).
    *
    * @param dataColumnSidecar the data column sidecar to validate
