@@ -180,6 +180,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
       beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
     } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
+      // Parent is older than the previous epoch, its payment entry has been
+      // evicted from builder_pending_payments. Append the withdrawal directly.
       state
           .getBuilderPendingWithdrawals()
           .append(
