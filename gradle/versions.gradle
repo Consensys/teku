@@ -25,7 +25,7 @@ dependencyManagement {
 
 		dependency 'com.launchdarkly:okhttp-eventsource:4.3.0'
 
-		dependencySet(group: 'com.squareup.okhttp3', version: '4.12.0') {
+		dependencySet(group: 'com.squareup.okhttp3', version: '5.3.2') {
 			entry 'okhttp'
 			entry 'mockwebserver'
 		}
@@ -104,12 +104,12 @@ dependencyManagement {
 			entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
 		}
 
-		dependencySet(group: 'org.junit.jupiter', version: '5.13.4') {
+		dependencySet(group: 'org.junit.jupiter', version: '6.0.3') {
 			entry 'junit-jupiter-api'
 			entry 'junit-jupiter-engine'
 			entry 'junit-jupiter-params'
 		}
-		dependency 'org.junit.platform:junit-platform-launcher:1.13.4'
+		dependency 'org.junit.platform:junit-platform-launcher:6.0.3'
 
 		dependency 'net.java.dev.jna:jna:5.18.1'
 
@@ -128,7 +128,7 @@ dependencyManagement {
 		dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
 		dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-		dependencySet(group: "org.web3j", version: "4.14.0") {
+		dependencySet(group: "org.web3j", version: "5.0.2") {
 			entry 'core'
 			entry 'abi'
 			entry 'crypto'
@@ -150,7 +150,7 @@ dependencyManagement {
 			entry 'besu-plugin-api'
 		}
 
-		dependencySet(group: 'org.testcontainers', version: '1.21.4') {
+		dependencySet(group: 'org.testcontainers', version: '2.0.5') {
 			entry "testcontainers"
 			entry "junit-jupiter"
 		}
