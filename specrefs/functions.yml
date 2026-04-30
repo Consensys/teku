@@ -941,6 +941,40 @@
         return state.earliest_exit_epoch
     </spec>
 
+- name: compute_exit_epoch_and_update_churn#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateMutatorsGloas.java
+      search: public UInt64 computeExitEpochAndUpdateChurn(
+  spec: |
+    <spec fn="compute_exit_epoch_and_update_churn" fork="gloas" hash="00000000">
+    def compute_exit_epoch_and_update_churn(state: BeaconState, exit_balance: Gwei) -> Epoch:
+        earliest_exit_epoch = max(
+            state.earliest_exit_epoch, compute_activation_exit_epoch(get_current_epoch(state))
+        )
+        # [Modified in Gloas:EIP8061]
+        # Exits use the uncapped per-epoch exit churn limit instead of the
+        # combined activation/exit churn shared in Electra.
+        per_epoch_churn = get_exit_churn_limit(state)
+        # New epoch for exits.
+        if state.earliest_exit_epoch < earliest_exit_epoch:
+            exit_balance_to_consume = per_epoch_churn
+        else:
+            exit_balance_to_consume = state.exit_balance_to_consume
+
+        # Exit doesn't fit in the current earliest epoch.
+        if exit_balance > exit_balance_to_consume:
+            balance_to_process = exit_balance - exit_balance_to_consume
+            additional_epochs = (balance_to_process - 1) // per_epoch_churn + 1
+            earliest_exit_epoch += additional_epochs
+            exit_balance_to_consume += additional_epochs * per_epoch_churn
+
+        # Consume the balance and update state variables.
+        state.exit_balance_to_consume = exit_balance_to_consume - exit_balance
+        state.earliest_exit_epoch = earliest_exit_epoch
+
+        return state.earliest_exit_epoch
+    </spec>
+
 - name: compute_fork_data_root#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
@@ -2715,6 +2749,19 @@
         return KZGCommitment(bls.G1_to_bytes48(result))
     </spec>
 
+- name: get_activation_churn_limit#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
+      search: public UInt64 getActivationChurnLimit(
+  spec: |
+    <spec fn="get_activation_churn_limit" fork="gloas" hash="00000000">
+    def get_activation_churn_limit(state: BeaconState) -> Gwei:
+        """
+        Return the churn limit for the current epoch dedicated to activations.
+        """
+        return min(MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT_GLOAS, get_balance_churn_limit(state))
+    </spec>
+
 - name: get_activation_exit_churn_limit#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateAccessorsElectra.java
@@ -3723,6 +3770,23 @@
         return get_balance_churn_limit(state) - get_activation_exit_churn_limit(state)
     </spec>
 
+- name: get_consolidation_churn_limit#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
+      search: public UInt64 getConsolidationChurnLimit(
+  spec: |
+    <spec fn="get_consolidation_churn_limit" fork="gloas" hash="00000000">
+    def get_consolidation_churn_limit(state: BeaconState) -> Gwei:
+        # [Modified in Gloas:EIP8061]
+        # Consolidation churn is now derived independently from the
+        # activation/exit churn via CONSOLIDATION_CHURN_LIMIT_QUOTIENT.
+        churn = max(
+            MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA,
+            get_total_active_balance(state) // CONSOLIDATION_CHURN_LIMIT_QUOTIENT,
+        )
+        return churn - churn % EFFECTIVE_BALANCE_INCREMENT
+    </spec>
+
 - name: get_contribution_and_proof#altair
   sources: []
   spec: |
@@ -4362,6 +4426,19 @@
             for request_type, request_data in requests
             if len(request_data) != 0
         ]
+    </spec>
+
+- name: get_exit_churn_limit#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
+      search: public UInt64 getExitChurnLimit(
+  spec: |
+    <spec fn="get_exit_churn_limit" fork="gloas" hash="00000000">
+    def get_exit_churn_limit(state: BeaconState) -> Gwei:
+        """
+        Return the uncapped churn limit for the current epoch dedicated to exits.
+        """
+        return get_balance_churn_limit(state)
     </spec>
 
 - name: get_expected_withdrawals#capella

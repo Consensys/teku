@@ -164,10 +164,20 @@
 - name: CHURN_LIMIT_QUOTIENT#phase0
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "CHURN_LIMIT_QUOTIENT:"
+      search: "^CHURN_LIMIT_QUOTIENT:"
+      regex: true
   spec: |
     <spec config_var="CHURN_LIMIT_QUOTIENT" fork="phase0" hash="a43a1d33">
     CHURN_LIMIT_QUOTIENT: uint64 = 65536
+    </spec>
+
+- name: CHURN_LIMIT_QUOTIENT_GLOAS#gloas
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: "CHURN_LIMIT_QUOTIENT_GLOAS:"
+  spec: |
+    <spec config_var="CHURN_LIMIT_QUOTIENT_GLOAS" fork="gloas" hash="00000000">
+    CHURN_LIMIT_QUOTIENT_GLOAS: uint64 = 32768
     </spec>
 
 - name: CONFIRMATION_BYZANTINE_THRESHOLD#phase0
@@ -175,6 +185,15 @@
   spec: |
     <spec config_var="CONFIRMATION_BYZANTINE_THRESHOLD" fork="phase0" hash="60de2e33">
     CONFIRMATION_BYZANTINE_THRESHOLD: uint64 = 25
+    </spec>
+
+- name: CONSOLIDATION_CHURN_LIMIT_QUOTIENT#gloas
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: "CONSOLIDATION_CHURN_LIMIT_QUOTIENT:"
+  spec: |
+    <spec config_var="CONSOLIDATION_CHURN_LIMIT_QUOTIENT" fork="gloas" hash="00000000">
+    CONSOLIDATION_CHURN_LIMIT_QUOTIENT: uint64 = 65536
     </spec>
 
 - name: CONTRIBUTION_DUE_BPS#altair
@@ -429,6 +448,15 @@
   spec: |
     <spec config_var="MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT" fork="deneb" hash="c4d9b0bb">
     MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: uint64 = 8
+    </spec>
+
+- name: MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT_GLOAS#gloas
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: "MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT_GLOAS:"
+  spec: |
+    <spec config_var="MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT_GLOAS" fork="gloas" hash="00000000">
+    MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT_GLOAS: Gwei = 256000000000
     </spec>
 
 - name: MAX_PER_EPOCH_ACTIVATION_EXIT_CHURN_LIMIT#electra
