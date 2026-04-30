@@ -207,7 +207,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayload(executionPayload);
+    tx.putExecutionPayload(executionPayload, false);
     assertThat(tx.commit()).isCompleted();
 
     assertThat(store.retrieveSignedExecutionPayload(blockAndState.getRoot()))
