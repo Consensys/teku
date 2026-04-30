@@ -83,7 +83,10 @@ public class StoreBuilder {
             anchor.getState().hashTreeRoot(),
             anchor.getExecutionBlockNumber(),
             anchor.getExecutionBlockHash(),
-            Optional.of(spec.calculateBlockCheckpoints(anchor.getState()))));
+            Optional.of(spec.calculateBlockCheckpoints(anchor.getState())),
+            anchor
+                .getSignedBeaconBlock()
+                .flatMap(StoredBlockMetadata::extractGloasForkChoiceRebuildData)));
 
     return new OnDiskStoreData(
         time,

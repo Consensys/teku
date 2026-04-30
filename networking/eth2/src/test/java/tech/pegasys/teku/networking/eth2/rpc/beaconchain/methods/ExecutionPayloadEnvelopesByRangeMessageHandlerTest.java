@@ -208,6 +208,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
     for (final SignedExecutionPayloadEnvelope executionPayloadEnvelope :
         executionPayloadEnvelopes) {
       verify(callback).respond(executionPayloadEnvelope);
+      verify(combinedChainDataClient).getBlockAtSlotExact(executionPayloadEnvelope.getSlot());
     }
     verify(callback).completeSuccessfully();
     assertThat(getLabelledCounterValue("ok")).isOne();

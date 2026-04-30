@@ -23,6 +23,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
+	id 'org.jreleaser' version '1.23.0'
 }
 
 // --- Git CLI helpers (replaces grgit plugin for worktree compatibility) ---
@@ -192,6 +193,12 @@ allprojects {
 		from sourceSets.main.allSource
 		jar.reproducibleFileOrder = true
 		jar.preserveFileTimestamps = false
+	}
+
+	tasks.register('javadocJar', Jar) {
+		dependsOn javadoc
+		archiveClassifier = 'javadoc'
+		from javadoc.destinationDir
 	}
 
 	java {
@@ -988,6 +995,10 @@ subprojects {
 						password = cloudsmithKey
 					}
 				}
+				maven {
+					name = "staging"
+					url = rootProject.layout.buildDirectory.dir("staging-deploy")
+				}
 			}
 			publications {
 				mavenJava(MavenPublication) {
@@ -996,6 +1007,7 @@ subprojects {
 					if (sourceSetIsPopulated("main")) {
 						from components.java
 						artifact sourcesJar
+						artifact javadocJar
 					}
 
 					versionMapping {
@@ -1290,6 +1302,33 @@ tasks.register('cloudsmithUpload') {
 		system.executor.exec {
 			executable project.file("scripts/cloudsmith-upload.sh")
 			args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
+		}
+	}
+}
+
+jreleaser {
+	release {
+		github {
+			skipRelease = true
+			skipTag = true
+			token = "foobar"
+		}
+	}
+	signing {
+		active = 'ALWAYS'
+		armored = true
+	}
+	deploy {
+		maven {
+			mavenCentral {
+				sonatype {
+					active = 'ALWAYS'
+					url = 'https://central.sonatype.com/api/v1/publisher'
+					stagingRepository('build/staging-deploy')
+					retryDelay = 15
+					maxRetries = 100
+				}
+			}
 		}
 	}
 }

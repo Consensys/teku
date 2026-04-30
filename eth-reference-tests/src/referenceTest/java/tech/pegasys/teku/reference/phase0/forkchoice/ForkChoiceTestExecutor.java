@@ -62,7 +62,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -76,7 +79,9 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
@@ -91,6 +96,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -110,10 +116,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
-          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
+          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor())
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
-          // TODO-GLOAS: implement on_execution_payload_envelope reference tests
-          .put("fork_choice/on_execution_payload_envelope", IGNORE_TESTS)
+          .put("fork_choice/get_parent_payload_status", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_execution_payload_envelope", new ForkChoiceTestExecutor())
           // Fork choice generated test types
           .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
           .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())
@@ -282,6 +288,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else if (step.containsKey("block_hash")) {
         applyPosBlock(step, executionLayer);
 
+      } else if (step.containsKey("payload_attestation")) {
+        applyPayloadAttestation(testDefinition, forkChoice, step);
+
+      } else if (step.containsKey("execution_payload")) {
+        applyExecutionPayloadEnvelope(testDefinition, forkChoice, executionLayer, step);
+
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
       }
@@ -363,6 +375,47 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     assertDoesNotThrow(
         () ->
             forkChoice.onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
+  }
+
+  private void applyPayloadAttestation(
+      final TestDefinition testDefinition,
+      final ForkChoice forkChoice,
+      final Map<String, Object> step) {
+    final String payloadAttestationName = get(step, "payload_attestation");
+    final PayloadAttestationMessage payloadAttestationMessage =
+        TestDataUtils.loadSsz(
+            testDefinition,
+            payloadAttestationName + SSZ_SNAPPY_EXTENSION,
+            SchemaDefinitionsGloas.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
+                .getPayloadAttestationMessageSchema());
+    assertDoesNotThrow(
+        () ->
+            forkChoice.onPayloadAttestationMessage(
+                payloadAttestationMessage, InternalValidationResult.ACCEPT, true));
+  }
+
+  private void applyExecutionPayloadEnvelope(
+      final TestDefinition testDefinition,
+      final ForkChoice forkChoice,
+      final ExecutionLayerChannelStub executionLayer,
+      final Map<String, Object> step) {
+    final String envelopeName = get(step, "execution_payload");
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
+    final SignedExecutionPayloadEnvelope envelope =
+        TestDataUtils.loadSsz(
+            testDefinition,
+            envelopeName + SSZ_SNAPPY_EXTENSION,
+            SchemaDefinitionsGloas.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
+                .getSignedExecutionPayloadEnvelopeSchema());
+    final SafeFuture<ExecutionPayloadImportResult> result =
+        forkChoice.onExecutionPayloadEnvelope(envelope, executionLayer);
+    assertThat(result).isCompleted();
+    final ExecutionPayloadImportResult importResult = safeJoin(result);
+    assertThat(importResult.isSuccessful())
+        .withFailMessage(
+            "Expected valid=%s but got isSuccessful=%s (reason: %s)",
+            valid, importResult.isSuccessful(), importResult.getFailureReason())
+        .isEqualTo(valid);
   }
 
   private void applyBlock(
@@ -595,6 +648,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               UInt64 actualWeight = chainHeadRootsAndWeights.get(root);
               assertThat(actualWeight).describedAs("block %s's weight", root).isEqualTo(weight);
             }
+          }
+
+          case "head_payload_status" -> {
+            final int expectedValue = ((Number) checks.get(checkType)).intValue();
+            final ForkChoicePayloadStatus headStatus =
+                recentChainData.getChainHead().map(ChainHead::getPayloadStatus).orElseThrow();
+            assertThat(headStatus.getValue())
+                .describedAs("head_payload_status")
+                .isEqualTo(expectedValue);
           }
 
           default ->

@@ -575,11 +575,12 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // simulate a bid
-    when(executionPayloadBidManager.getBidForBlock(any(), any(), any()))
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any()))
         .thenAnswer(
             args -> {
-              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(0));
-              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(1);
+              final Bytes32 parentRoot = args.getArgument(0);
+              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(1));
+              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(2);
               // verify we pass the correct future to the bid manager
               assertThat(getPayloadResponseFuture)
                   .isEqualTo(
@@ -594,7 +595,7 @@ public abstract class AbstractBlockFactoryTest {
                       .getExecutionPayloadBidSchema()
                       .create(
                           executionPayload.getParentHash(),
-                          state.getLatestBlockHeader().getRoot(),
+                          parentRoot,
                           executionPayload.getBlockHash(),
                           executionPayload.getPrevRandao(),
                           executionPayload.getFeeRecipient(),

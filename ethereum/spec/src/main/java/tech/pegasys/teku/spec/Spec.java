@@ -1195,17 +1195,17 @@ public class Spec {
   // get_ptc_assignment
   public Optional<UInt64> getPtcAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
-    return atState(state).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
+    return atEpoch(epoch).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
   }
 
   public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
-    return atState(state).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
   }
 
   // get_ptc
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
-    return atState(state).beaconStateAccessors().getPtc(state, slot);
+    return atSlot(slot).beaconStateAccessors().getPtc(state, slot);
   }
 
   // Builder Utils

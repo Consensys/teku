@@ -3191,7 +3191,7 @@
 - name: get_attesting_indices#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
-      search: public IntList getAttestingIndices(
+      search: public List<UInt64> getAttestingIndices(
   spec: |
     <spec fn="get_attesting_indices" fork="phase0" hash="abbf9f2d">
     def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
@@ -3205,7 +3205,7 @@
 - name: get_attesting_indices#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/util/AttestationUtilElectra.java
-      search: public IntList getAttestingIndices(
+      search: public List<UInt64> getAttestingIndices(
   spec: |
     <spec fn="get_attesting_indices" fork="electra" hash="fd4b0475">
     def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
@@ -4804,7 +4804,7 @@
 - name: get_indexed_attestation#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
-      search: public IndexedAttestation getIndexedAttestation(
+      search: public IndexedAttestationLight getIndexedAttestation(
   spec: |
     <spec fn="get_indexed_attestation" fork="phase0" hash="424c7a96">
     def get_indexed_attestation(state: BeaconState, attestation: Attestation) -> IndexedAttestation:
@@ -5196,7 +5196,7 @@
 - name: get_parent_payload_status#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: SafeFuture<PayloadStatus> getParentPayloadStatus(
+      search: SafeFuture<ForkChoicePayloadStatus> getParentPayloadStatus(
   spec: |
     <spec fn="get_parent_payload_status" fork="gloas" hash="e7a0327e">
     def get_parent_payload_status(store: Store, block: BeaconBlock) -> PayloadStatus:
