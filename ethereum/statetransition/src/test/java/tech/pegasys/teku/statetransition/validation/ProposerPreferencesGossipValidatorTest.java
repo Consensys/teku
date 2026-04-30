@@ -178,7 +178,8 @@ public class ProposerPreferencesGossipValidatorTest {
   void shouldIgnore_whenDuplicateArrivesWhileValidating() {
     // Create a slow checkpoint state future
     final SafeFuture<Optional<BeaconState>> slowStateFuture = new SafeFuture<>();
-    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class))).thenReturn(slowStateFuture);
+    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
+        .thenReturn(slowStateFuture);
 
     // Start first validation (will block on state)
     final SafeFuture<InternalValidationResult> firstResult =

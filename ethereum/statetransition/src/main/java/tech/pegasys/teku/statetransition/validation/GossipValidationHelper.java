@@ -233,7 +233,9 @@ public class GossipValidationHelper {
   public boolean isSlotInCurrentEpoch(final UInt64 slot) {
     return recentChainData
         .getCurrentSlot()
-        .map(currentSlot -> spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot)))
+        .map(
+            currentSlot ->
+                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot)))
         .orElse(false);
   }
 
