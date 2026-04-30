@@ -43,8 +43,8 @@ public class ExecutionPayloadEvent extends Event<ExecutionPayloadEvent.Execution
         new ExecutionPayloadData(
             executionPayload.getSlot(),
             executionPayload.getMessage().getBuilderIndex(),
-            executionPayload.getBeaconBlockRoot(),
             executionPayload.getMessage().getPayload().getBlockHash(),
+            executionPayload.getBeaconBlockRoot(),
             executionOptimistic));
   }
 
