@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
@@ -91,11 +92,13 @@ public class ProposerPreferencesGossipValidator {
 
     /*
      * [IGNORE] The block with root preferences.dependent_root has been seen
+     * (a client MAY queue preferences for processing once the block is retrieved).
      */
     if (!gossipValidationHelper.isBlockAvailable(dependentRoot)) {
-      LOG.trace("Proposer preferences dependent root {} has not been seen", dependentRoot);
-      return completedFuture(
-          ignore("Proposer preferences dependent root %s has not been seen", dependentRoot));
+      LOG.trace(
+          "Proposer preferences dependent root {} has not been seen. Saving for future processing",
+          dependentRoot);
+      return completedFuture(SAVE_FOR_FUTURE);
     }
 
     /*
@@ -120,12 +123,10 @@ public class ProposerPreferencesGossipValidator {
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.trace(
-                    "Could not retrieve checkpoint state for ({}, {})",
+                    "Could not retrieve checkpoint state for ({}, {}). Saving for future processing",
                     checkpointEpoch,
                     dependentRoot);
-                return ignore(
-                    "Could not retrieve checkpoint state for (%s, %s)",
-                    checkpointEpoch, dependentRoot);
+                return SAVE_FOR_FUTURE;
               }
               final BeaconState state = maybeState.get();
 

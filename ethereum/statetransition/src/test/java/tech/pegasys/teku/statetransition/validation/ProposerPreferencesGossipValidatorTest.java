@@ -116,10 +116,10 @@ public class ProposerPreferencesGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenDependentRootBlockNotSeen() {
+  void shouldSaveForFuture_whenDependentRootBlockNotSeen() {
     when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 
