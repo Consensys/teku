@@ -876,13 +876,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         () -> {
           final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
-          forkChoiceUtil.applyExecutionPayloadToStore(transaction, envelope);
+          forkChoiceUtil.applyExecutionPayloadToStore(transaction, envelope, false);
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
 
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
-          notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+          notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
         });
   }
 
