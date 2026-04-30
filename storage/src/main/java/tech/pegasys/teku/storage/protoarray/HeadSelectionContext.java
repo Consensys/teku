@@ -72,4 +72,9 @@ public record HeadSelectionContext(
     // Choose the winner by weight.
     return candidateChild.getWeight().compareTo(currentBestChild.getWeight());
   }
+
+  public ProtoNode resolveHead(final ProtoNode candidate, final ProtoArray protoArray) {
+    return modelForSlot(candidate.getBlockSlot())
+        .resolveHead(candidate, protoArray, blockNodeIndex, currentSlot, proposerBoostRoot);
+  }
 }

@@ -305,6 +305,11 @@ public class ProtoArray {
       bestNode = getNodeByIndex(parentIndex);
     }
 
+    // Allow the per-slot fork-choice model to redirect the landing point. The structural
+    // chain-walk above can stop on a stale sibling when bestDescendantIndex on chain ancestors
+    // wasn't propagated after a sibling was added (e.g. GLOAS FULL added after EMPTY).
+    bestNode = headSelectionContext.resolveHead(bestNode, this);
+
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode) && !bestNode.equals(justifiedNode)) {
       throw new IllegalStateException(

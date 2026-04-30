@@ -102,6 +102,23 @@ interface ForkChoiceModel {
    */
   boolean isHeadCandidate(ProtoNode node);
 
+  /**
+   * Allows the model to redirect the chain-walk landing point produced by {@link
+   * ProtoArray#findOptimisticHead}. The structural chain-walk follows {@code bestDescendantIndex}
+   * pointers downwards; those pointers are only locally updated by {@code onExecutionPayload} and
+   * {@code processBlock}, so on a stale upper-chain pointer the walk can land on the wrong sibling
+   * (e.g. an EMPTY node when its FULL sibling is now the model-preferred best child of the same
+   * parent).
+   *
+   * <p>Implementations should return {@code candidate} unchanged when no redirection is needed.
+   */
+  ProtoNode resolveHead(
+      ProtoNode candidate,
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      UInt64 currentSlot,
+      Optional<Bytes32> proposerBoostRoot);
+
   Optional<ForkChoiceNode> resolveBaseNode(
       BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
