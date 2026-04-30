@@ -141,7 +141,7 @@ public class DefaultExecutionPayloadManager
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
-                    signedExecutionPayload);
+                    signedExecutionPayload, result.isImportedOptimistically());
               } else {
                 LOG.debug(
                     "Failed to import execution payload for reason {}{}: {}",
