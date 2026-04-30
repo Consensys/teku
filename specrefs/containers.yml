@@ -1024,12 +1024,13 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelope.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelopeSchema.java
   spec: |
-    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="526d7f15">
+    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="3df22cd3">
     class ExecutionPayloadEnvelope(Container):
         payload: ExecutionPayload
         execution_requests: ExecutionRequests
         builder_index: BuilderIndex
         beacon_block_root: Root
+        parent_beacon_block_root: Root
     </spec>
 
 - name: ExecutionPayloadHeader#bellatrix
@@ -1454,8 +1455,9 @@
 - name: ProposerPreferences#gloas
   sources: []
   spec: |
-    <spec container="ProposerPreferences" fork="gloas" hash="2a38b149">
+    <spec container="ProposerPreferences" fork="gloas" hash="5ef93db5">
     class ProposerPreferences(Container):
+        dependent_root: Root
         proposal_slot: Slot
         validator_index: ValidatorIndex
         fee_recipient: ExecutionAddress

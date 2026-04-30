@@ -839,7 +839,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                         genesisPayload,
                         schemaDefinitions.getExecutionRequestsSchema().getDefault(),
                         UInt64.ZERO,
-                        recentChainData.getBestBlockRoot().orElseThrow()),
+                        recentChainData.getBestBlockRoot().orElseThrow(),
+                        Bytes32.ZERO),
                 BLSSignature.empty());
 
     return onForkChoiceThread(
