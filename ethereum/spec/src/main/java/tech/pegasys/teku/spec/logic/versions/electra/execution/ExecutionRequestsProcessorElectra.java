@@ -266,7 +266,8 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   /**
    * Implements process_consolidation_request from consensus-spec (EIP-7251)
    *
-   * @see <a href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-process_consolidation_request">process_consolidation_request</a>
+   * @see <a
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-process_consolidation_request">process_consolidation_request</a>
    */
   @Override
   public void processConsolidationRequests(
