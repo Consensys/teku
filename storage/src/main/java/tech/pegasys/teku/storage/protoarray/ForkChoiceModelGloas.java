@@ -358,13 +358,15 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (!proposerNode.get().getParentRoot().equals(blockRoot)) {
       return true;
     }
-    return blockNodeIndex
-        .getFullNode(blockRoot)
-        .flatMap(protoArray::getNode)
-        .map(
-            fullNode ->
-                fullNode.getExecutionBlockHash().equals(proposerNode.get().getExecutionBlockHash()))
-        .orElse(false);
+    // Spec: is_parent_node_full(store, proposer_block) — i.e. proposer's bid.parent_block_hash
+    // equals this block's bid.block_hash. resolveParentNode already encoded that decision when
+    // the proposer block was imported by attaching it to either the FULL or the EMPTY node, so
+    // checking the protoarray attachment is equivalent and avoids false positives from comparing
+    // the proposer BASE's inherited executionBlockHash (which collides with FULL's hash whenever
+    // the proposer attached to EMPTY but EMPTY's inherited hash happens to match FULL's).
+    final Optional<Integer> fullNodeIndex =
+        blockNodeIndex.getFullNode(blockRoot).flatMap(protoArray::getNodeIndex);
+    return fullNodeIndex.isPresent() && fullNodeIndex.equals(proposerNode.get().getParentIndex());
   }
 
   private boolean isPayloadTimely(
