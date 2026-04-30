@@ -20,8 +20,8 @@ import org.fusesource.leveldbjni.internal.NativeDB;
 import org.fusesource.leveldbjni.internal.NativeIterator;
 
 /**
- * This is a copy of <link
- * href="https://github.com/fusesource/leveldbjni/blob/c810afcfa55a208f077ff4101cb318c0cc3e1bfb/leveldbjni/src/main/java/org/fusesource/leveldbjni/internal/JniDBIterator.java">
+ * This is a copy of <a
+ * href="https://github.com/fusesource/leveldbjni/blob/c810afcfa55a208f077ff4101cb318c0cc3e1bfb/leveldbjni/src/main/java/org/fusesource/leveldbjni/internal/JniDBIterator.java">JniDBIterator</a>
  * which also implements the methods from {@link CustomDBIterator}
  */
 public class CustomJniDBIterator implements CustomDBIterator {
