@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -29,11 +29,12 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionP
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BlindedExecutionPayloadEnvelope
-    extends Container4<
+    extends Container5<
         BlindedExecutionPayloadEnvelope,
         ExecutionPayloadHeader,
         ExecutionRequests,
         SszUInt64,
+        SszBytes32,
         SszBytes32> {
 
   BlindedExecutionPayloadEnvelope(
@@ -41,13 +42,15 @@ public class BlindedExecutionPayloadEnvelope
       final ExecutionPayloadHeader payloadHeader,
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
-      final Bytes32 beaconBlockRoot) {
+      final Bytes32 beaconBlockRoot,
+      final Bytes32 parentBeaconBlockRoot) {
     super(
         schema,
         payloadHeader,
         executionRequests,
         SszUInt64.of(builderIndex),
-        SszBytes32.of(beaconBlockRoot));
+        SszBytes32.of(beaconBlockRoot),
+        SszBytes32.of(parentBeaconBlockRoot));
   }
 
   BlindedExecutionPayloadEnvelope(
@@ -71,6 +74,10 @@ public class BlindedExecutionPayloadEnvelope
     return getField3().get();
   }
 
+  public Bytes32 getParentBeaconBlockRoot() {
+    return getField4().get();
+  }
+
   public UInt64 getSlot() {
     return ExecutionPayloadHeaderGloas.required(getPayloadHeader()).getSlotNumber();
   }
@@ -92,7 +99,12 @@ public class BlindedExecutionPayloadEnvelope
     final ExecutionPayloadEnvelope executionPayloadEnvelope =
         schemaDefinitions
             .getExecutionPayloadEnvelopeSchema()
-            .create(payload, getExecutionRequests(), getBuilderIndex(), getBeaconBlockRoot());
+            .create(
+                payload,
+                getExecutionRequests(),
+                getBuilderIndex(),
+                getBeaconBlockRoot(),
+                getParentBeaconBlockRoot());
     checkState(
         executionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
         "unblinded execution payload envelope root does not match original envelope root");
