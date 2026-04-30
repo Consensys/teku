@@ -103,8 +103,8 @@ interface ForkChoiceModel {
   boolean isHeadCandidate(ProtoNode node);
 
   /**
-   * Resolves the model-preferred best descendant for the given candidate during head selection.
-   * The structural {@code bestDescendantIndex} field is only locally updated by {@code
+   * Resolves the model-preferred best descendant for the given candidate during head selection. The
+   * structural {@code bestDescendantIndex} field is only locally updated by {@code
    * onExecutionPayload} and {@code processBlock}, so on a stale upper-chain pointer the chain-walk
    * can land on the wrong sibling (e.g. an EMPTY node when its FULL sibling is now the
    * model-preferred best child of the same parent). This method patches up that staleness in a
