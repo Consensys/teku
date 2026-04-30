@@ -285,13 +285,20 @@ public class ProtoArray {
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
     ProtoNode bestNode = getNodeByIndex(bestDescendantIndex);
 
-    // Normally the best descendant index would point straight to chain head, but onBlock only
-    // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
-    // change back up and everything works, but we run findHead to determine if the new block should
-    // become the best head so need to follow down the chain.
+    // Normally the best descendant index would point straight to chain head, but onBlock /
+    // onExecutionPayload only update the immediate parent, not all the ancestors. When
+    // applyScoreChanges runs it propagates the change back up and everything works, but we run
+    // findHead to determine if the new block should become the best head so need to follow down
+    // the chain.
+    //
+    // After each descent step, ask the per-slot fork-choice model to redirect to the
+    // model-preferred sibling (e.g. GLOAS BASE.bestChild flipping EMPTY→FULL after
+    // onExecutionPayload). This mirrors the spec's get_head semantics, which picks the preferred
+    // child at every level rather than just at the leaf.
+    bestNode = headSelectionContext.resolveHead(bestNode, this);
     while (bestNode.getBestDescendantIndex().isPresent() && !bestNode.isInvalid()) {
       bestDescendantIndex = bestNode.getBestDescendantIndex().get();
-      bestNode = getNodeByIndex(bestDescendantIndex);
+      bestNode = headSelectionContext.resolveHead(getNodeByIndex(bestDescendantIndex), this);
     }
 
     // Walk backwards to find the last valid node in the chain
@@ -304,11 +311,6 @@ public class ProtoArray {
       final int parentIndex = maybeParentIndex.get();
       bestNode = getNodeByIndex(parentIndex);
     }
-
-    // Allow the per-slot fork-choice model to redirect the landing point. The structural
-    // chain-walk above can stop on a stale sibling when bestDescendantIndex on chain ancestors
-    // wasn't propagated after a sibling was added (e.g. GLOAS FULL added after EMPTY).
-    bestNode = headSelectionContext.resolveHead(bestNode, this);
 
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode) && !bestNode.equals(justifiedNode)) {

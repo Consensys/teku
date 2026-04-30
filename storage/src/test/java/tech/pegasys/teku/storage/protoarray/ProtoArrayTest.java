@@ -1072,8 +1072,34 @@ class ProtoArrayTest {
     assertThat(head.getBlockRoot()).isEqualTo(slot8);
     assertThat(head.getPayloadStatus()).isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
 
-    final int fullNodeIndex = protoArray.getFullNodeIndices().getInt(slot8);
-    assertThat(protoArray.getNodeByIndex(fullNodeIndex)).isEqualTo(head);
+    final int slot8FullIndex = protoArray.getFullNodeIndices().getInt(slot8);
+    assertThat(protoArray.getNodeByIndex(slot8FullIndex)).isEqualTo(head);
+
+    // Extend the chain: import slot-9 (PENDING+EMPTY) built on slot8.FULL, then add slot-9 FULL,
+    // all without re-running applyScoreChanges. Chain ancestors still hold bestDescendantIndex
+    // pointing at slot8.EMPTY, but slot8.FULL.bestDesc now stale-points to slot9.BASE and
+    // slot9.BASE has slot9.FULL as its current bestChild. The findHead descent loop must walk
+    // multiple resolveHead redirects:
+    //   ancestor → slot8.EMPTY → resolveHead → slot8.FULL
+    //                          → descend     → slot9.BASE
+    //                          → resolveHead → slot9.FULL
+    final Bytes32 slot9 = dataStructureUtil.randomBytes32();
+    final UInt64 slot9ExecutionBlockNumber = EXECUTION_BLOCK_NUMBER.plus(1);
+    final Bytes32 slot9ExecutionBlockHash = dataStructureUtil.randomBytes32();
+    addValidBlockWithParentIndex(
+        9, slot9, slot8, Optional.of(slot8FullIndex), EXECUTION_BLOCK_HASH);
+    protoArray.createEmptyNode(slot9);
+    protoArray.onExecutionPayload(slot9, slot9ExecutionBlockNumber, slot9ExecutionBlockHash);
+    protoArray.markNodeValid(slot9);
+
+    final ProtoNode extendedHead =
+        protoArray.findOptimisticHead(UInt64.valueOf(5), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+    assertThat(extendedHead.getBlockRoot()).isEqualTo(slot9);
+    assertThat(extendedHead.getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+
+    final int slot9FullIndex = protoArray.getFullNodeIndices().getInt(slot9);
+    assertThat(protoArray.getNodeByIndex(slot9FullIndex)).isEqualTo(extendedHead);
   }
 
   @Test
