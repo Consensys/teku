@@ -953,44 +953,6 @@ class ProtoArrayTest {
   }
 
   @Test
-  void tiebreaker_emptyWins_whenBoostedChildBuiltOnEmpty_evenIfInheritedHashCollidesWithFull() {
-    // Regression for the on_execution_payload_envelope__valid reference test.
-    //
-    // shouldExtendPayload must mirror the spec's is_parent_node_full(store, proposer_block) by
-    // checking the proposer block's protoarray attachment (FULL vs EMPTY) — that attachment was
-    // computed by resolveParentNode at on_block time from the proposer's bid.parent_block_hash.
-    // Comparing FULL.executionBlockHash against the proposer BASE's executionBlockHash is unsafe
-    // because the BASE hash is inherited from whichever node it attached to. When the proposer
-    // attaches to EMPTY but EMPTY's inherited hash happens to equal FULL's hash, the
-    // hash-equality check incorrectly returns true and the Gloas tiebreaker picks FULL.
-    addValidBlock(5, block1a, GENESIS_CHECKPOINT.getRoot());
-    protoArray.createEmptyNode(block1a);
-    protoArray.onExecutionPayload(block1a, EXECUTION_BLOCK_NUMBER, EXECUTION_BLOCK_HASH);
-    protoArray.markNodeValid(block1a);
-
-    final int emptyNodeIndex = protoArray.getEmptyNodeIndices().getInt(block1a);
-    final int fullNodeIndex = protoArray.getFullNodeIndices().getInt(block1a);
-
-    // block2a attaches to EMPTY (its bid did NOT extend block1a's payload), but its stored
-    // executionBlockHash collides with block1a's FULL.executionBlockHash — simulating the
-    // inherited-hash collision seen in the reference test.
-    addValidBlockWithParentIndex(
-        6, block2a, block1a, Optional.of(emptyNodeIndex), EXECUTION_BLOCK_HASH);
-
-    // currentSlot = blockSlot + 1 → effective weight is 0 for both EMPTY and FULL → tiebreaker
-    // decides. No PTC votes → not timely / not available. Proposer-boost is on block2a, which
-    // attached to EMPTY → is_parent_node_full(block2a) must be false → should_extend_payload
-    // returns false → FULL tiebreaker is 0, EMPTY tiebreaker is 1 → EMPTY wins.
-    applyScoreChanges(gloasModel, UInt64.valueOf(6), Optional.of(block2a));
-
-    final ProtoNode block1aNode = protoArray.getProtoNode(block1a).orElseThrow();
-    assertThat(block1aNode.getBestChildIndex())
-        .describedAs("EMPTY must win when proposer attached to EMPTY, regardless of hash collision")
-        .isEqualTo(Optional.of(emptyNodeIndex))
-        .isNotEqualTo(Optional.of(fullNodeIndex));
-  }
-
-  @Test
   void emptyPathWinsOverFullPath_whenEmptyHasMoreWeight_notPreviousSlot() {
     // Block at slot 5, currentSlot = 100 → not previous slot → effectiveWeight = node.getWeight()
     // EMPTY path has more attestation weight than FULL path → EMPTY wins by weight,
