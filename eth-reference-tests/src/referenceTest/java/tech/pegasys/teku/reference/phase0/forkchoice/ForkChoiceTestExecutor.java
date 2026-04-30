@@ -96,6 +96,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -184,8 +185,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             false);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
-    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
-    // executor
     spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
@@ -196,7 +195,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            // forkChoiceLateBlockReorgEnabled is true here always because this is the reference
+            // test executor
             true,
+            LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem(),
             AsyncBLSSignatureVerifier.wrap(

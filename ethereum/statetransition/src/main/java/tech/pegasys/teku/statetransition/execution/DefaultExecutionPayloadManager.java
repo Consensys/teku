@@ -166,9 +166,9 @@ public class DefaultExecutionPayloadManager
                     }
                   }
                   case INTERNAL_ERROR,
-                      FAILED_VERIFICATION,
-                      FAILED_DATA_AVAILABILITY_CHECK_INVALID,
-                      FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
+                          FAILED_VERIFICATION,
+                          FAILED_DATA_AVAILABILITY_CHECK_INVALID,
+                          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
                       logFailedExecutionPayloadImport(
                           signedExecutionPayload, result.getFailureReason());
                 }
