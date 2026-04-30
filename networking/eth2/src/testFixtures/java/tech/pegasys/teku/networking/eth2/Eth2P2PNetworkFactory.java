@@ -123,7 +123,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveRec
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -238,11 +237,7 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
             new CombinedChainDataClient(
-                recentChainData,
-                historicalChainData,
-                spec,
-                LateBlockReorgPreparationHandler.NOOP,
-                config.isReworkedSidecarSyncEnabled());
+                recentChainData, historicalChainData, spec, config.isReworkedSidecarSyncEnabled());
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);

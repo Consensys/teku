@@ -46,12 +46,12 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
   public static PayloadAttributesV4 fromInternalPayloadBuildingAttributesV4(
       final PayloadBuildingAttributes payloadBuildingAttributes) {
     return new PayloadAttributesV4(
-        payloadBuildingAttributes.getTimestamp(),
-        payloadBuildingAttributes.getPrevRandao(),
-        payloadBuildingAttributes.getFeeRecipient(),
+        payloadBuildingAttributes.timestamp(),
+        payloadBuildingAttributes.prevRandao(),
+        payloadBuildingAttributes.feeRecipient(),
         getWithdrawals(payloadBuildingAttributes),
-        payloadBuildingAttributes.getParentBeaconBlockRoot(),
-        payloadBuildingAttributes.getProposalSlot());
+        payloadBuildingAttributes.parentBeaconBlock().blockRoot(),
+        payloadBuildingAttributes.proposalSlot());
   }
 
   @Override

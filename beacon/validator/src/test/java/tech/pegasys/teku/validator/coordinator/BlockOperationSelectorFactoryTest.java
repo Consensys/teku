@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.validator.coordinator.BlockProductionTestUtil.blockProductionContext;
 
 import java.util.Comparator;
 import java.util.List;
@@ -240,12 +241,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
@@ -280,12 +282,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                Optional.of(defaultGraffiti),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    randaoReveal,
+                    Optional.of(defaultGraffiti),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
     assertThat(bodyBuilder.voluntaryExits).isEmpty();
   }
@@ -321,18 +324,19 @@ class BlockOperationSelectorFactoryTest {
 
     final CapturingBeaconBlockBodyBuilder gloasBodyBuilder =
         new CapturingBeaconBlockBodyBuilder(false, false, true);
-    when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any()))
+    when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
         .thenReturn(parentReqs);
 
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                Optional.of(defaultGraffiti),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    randaoReveal,
+                    Optional.of(defaultGraffiti),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(gloasBodyBuilder));
 
     assertThat(gloasBodyBuilder.voluntaryExits).isEmpty();
@@ -367,12 +371,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                Optional.of(defaultGraffiti),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    randaoReveal,
+                    Optional.of(defaultGraffiti),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -454,12 +459,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                Optional.of(defaultGraffiti),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    randaoReveal,
+                    Optional.of(defaultGraffiti),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -491,12 +497,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
@@ -529,12 +536,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
@@ -559,12 +567,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
@@ -589,12 +598,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
@@ -620,12 +630,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
@@ -661,12 +672,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
@@ -713,12 +725,13 @@ class BlockOperationSelectorFactoryTest {
     assertThatSafeFuture(
             factory
                 .createSelector(
-                    parentRoot,
-                    blockSlotState,
-                    dataStructureUtil.randomSignature(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    BlockProductionPerformance.NOOP)
+                    blockProductionContext(
+                        parentRoot,
+                        blockSlotState,
+                        dataStructureUtil.randomSignature(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        BlockProductionPerformance.NOOP))
                 .apply(bodyBuilder))
         .isCompletedExceptionallyWith(IllegalStateException.class)
         .hasMessage(
@@ -761,12 +774,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                Optional.of(defaultGraffiti),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    randaoReveal,
+                    Optional.of(defaultGraffiti),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -810,12 +824,13 @@ class BlockOperationSelectorFactoryTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(bodyBuilder.executionRequests).isEqualTo(executionRequests);
