@@ -112,8 +112,10 @@ public final class RpcResponseDecoder<T extends SszData, TContext> {
       Optional<T> ret = payloadDecoder.get().decodeOneMessage(data);
       if (ret.isPresent()) {
         respCodeMaybe = Optional.empty();
+        contextDecoder.ifPresent(ByteBufDecoder::close);
         contextDecoder = Optional.empty();
         context = Optional.empty();
+        payloadDecoder.ifPresent(ByteBufDecoder::close);
         payloadDecoder = Optional.empty();
       }
       return ret;
@@ -128,6 +130,7 @@ public final class RpcResponseDecoder<T extends SszData, TContext> {
               .map(errorMessage -> new RpcException(toByteExactUnsigned(respCode), errorMessage));
       if (rpcException.isPresent()) {
         respCodeMaybe = Optional.empty();
+        errorDecoder.ifPresent(ByteBufDecoder::close);
         errorDecoder = Optional.empty();
         throw rpcException.get();
       } else {
