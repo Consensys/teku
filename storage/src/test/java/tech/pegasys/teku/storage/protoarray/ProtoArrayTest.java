@@ -1079,10 +1079,10 @@ class ProtoArrayTest {
     // all without re-running applyScoreChanges. Chain ancestors still hold bestDescendantIndex
     // pointing at slot8.EMPTY, but slot8.FULL.bestDesc now stale-points to slot9.BASE and
     // slot9.BASE has slot9.FULL as its current bestChild. The findHead descent loop must walk
-    // multiple resolveHead redirects:
-    //   ancestor → slot8.EMPTY → resolveHead → slot8.FULL
-    //                          → descend     → slot9.BASE
-    //                          → resolveHead → slot9.FULL
+    // multiple resolveBestDescendant redirects:
+    //   ancestor → slot8.EMPTY → resolveBestDescendant → slot8.FULL
+    //                          → descend               → slot9.BASE
+    //                          → resolveBestDescendant → slot9.FULL
     final Bytes32 slot9 = dataStructureUtil.randomBytes32();
     final UInt64 slot9ExecutionBlockNumber = EXECUTION_BLOCK_NUMBER.plus(1);
     final Bytes32 slot9ExecutionBlockHash = dataStructureUtil.randomBytes32();

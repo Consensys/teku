@@ -295,10 +295,11 @@ public class ProtoArray {
     // model-preferred sibling (e.g. GLOAS BASE.bestChild flipping EMPTY→FULL after
     // onExecutionPayload). This mirrors the spec's get_head semantics, which picks the preferred
     // child at every level rather than just at the leaf.
-    bestNode = headSelectionContext.resolveHead(bestNode, this);
+    bestNode = headSelectionContext.resolveBestDescendant(bestNode, this);
     while (bestNode.getBestDescendantIndex().isPresent() && !bestNode.isInvalid()) {
       bestDescendantIndex = bestNode.getBestDescendantIndex().get();
-      bestNode = headSelectionContext.resolveHead(getNodeByIndex(bestDescendantIndex), this);
+      bestNode =
+          headSelectionContext.resolveBestDescendant(getNodeByIndex(bestDescendantIndex), this);
     }
 
     // Walk backwards to find the last valid node in the chain
