@@ -104,13 +104,19 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
       return SafeFuture.COMPLETE;
     }
 
+    // Gloas's get_proposer_dependent_root(state, e) returns the block root at
+    // start_of_(e-1) - 1. For next-epoch duties, BlockProposalUtilFulu's
+    // getBlockProposalDependentRoot returns the same value, so we reuse it here.
+    final Bytes32 dependentRoot = proposerDuties.getDependentRoot();
     return forkProvider
         .getForkInfo(ourDuties.getFirst().getSlot())
         .thenCompose(
             forkInfo ->
                 SafeFuture.collectAll(
                         ourDuties.stream()
-                            .map(duty -> createSignedProposerPreferences(duty, forkInfo)))
+                            .map(
+                                duty ->
+                                    createSignedProposerPreferences(duty, dependentRoot, forkInfo)))
                     .thenCompose(
                         signedPreferences -> {
                           final List<SignedProposerPreferences> preferencesList =
@@ -130,7 +136,7 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
   }
 
   private SafeFuture<Optional<SignedProposerPreferences>> createSignedProposerPreferences(
-      final ProposerDuty duty, final ForkInfo forkInfo) {
+      final ProposerDuty duty, final Bytes32 dependentRoot, final ForkInfo forkInfo) {
     final Optional<Validator> maybeValidator = ownedValidators.getValidator(duty.getPublicKey());
     if (maybeValidator.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
@@ -151,6 +157,7 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
                       schemaDefinitions
                           .getProposerPreferencesSchema()
                           .create(
+                              dependentRoot,
                               duty.getSlot(),
                               UInt64.valueOf(duty.getValidatorIndex()),
                               feeRecipient,

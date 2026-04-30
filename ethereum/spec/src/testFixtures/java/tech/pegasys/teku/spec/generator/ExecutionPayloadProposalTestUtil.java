@@ -47,7 +47,8 @@ public class ExecutionPayloadProposalTestUtil {
                 executionPayloadProposalData.executionPayload(),
                 executionPayloadProposalData.executionRequests(),
                 BUILDER_INDEX_SELF_BUILD,
-                blockAndState.getRoot());
+                blockAndState.getRoot(),
+                blockAndState.getBlock().getParentRoot());
     // Sign execution payload and set signature
     return signer
         .signExecutionPayloadEnvelope(executionPayload, blockAndState.getState().getForkInfo())
