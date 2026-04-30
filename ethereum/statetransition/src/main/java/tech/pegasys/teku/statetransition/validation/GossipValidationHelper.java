@@ -225,13 +225,17 @@ public class GossipValidationHelper {
     return recentChainData
         .getCurrentSlot()
         .map(
-            currentSlot -> {
-              final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
-              final UInt64 currentEpochStart = currentSlot.minus(currentSlot.mod(slotsPerEpoch));
-              final UInt64 nextEpochStart = currentEpochStart.plus(slotsPerEpoch);
-              return slot.isGreaterThanOrEqualTo(nextEpochStart)
-                  && slot.isLessThan(nextEpochStart.plus(slotsPerEpoch));
-            })
+            currentSlot ->
+                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot).plus(1)))
+        .orElse(false);
+  }
+
+  public boolean isSlotInCurrentEpoch(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(
+            currentSlot ->
+                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot)))
         .orElse(false);
   }
 
