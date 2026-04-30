@@ -117,12 +117,14 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    * get_consolidation_churn_limit
    *
    * <p>EIP-8061: consolidation churn is now derived independently from the activation/exit churn
-   * via {@code CONSOLIDATION_CHURN_LIMIT_QUOTIENT}.
+   * via {@code CONSOLIDATION_CHURN_LIMIT_QUOTIENT}. Unlike the activation/exit churn limits, no
+   * {@code MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA} floor is applied.
    */
   @Override
   public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
-    return computeBalanceChurnLimit(
-        state, UInt64.valueOf(configGloas.getConsolidationChurnLimitQuotient()));
+    final UInt64 churn =
+        getTotalActiveBalance(state).dividedBy(configGloas.getConsolidationChurnLimitQuotient());
+    return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
   }
 
   public UInt64 getPendingBalanceToWithdrawForBuilder(
