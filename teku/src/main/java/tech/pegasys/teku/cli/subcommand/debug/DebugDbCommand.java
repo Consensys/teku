@@ -339,7 +339,8 @@ public class DebugDbCommand implements Runnable {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Map<String, Long> counts = database.getColumnCounts(Optional.ofNullable(filter));
       final int width = counts.keySet().stream().mapToInt(String::length).max().orElse(1);
-      counts.forEach((label, count) -> System.out.printf("%" + width + "s: %d%n", label, count));
+      final String fmt = String.format("%%-%ds: %%d%%n", width);
+      counts.forEach((label, count) -> System.out.printf(fmt, label, count));
     }
     return 0;
   }
