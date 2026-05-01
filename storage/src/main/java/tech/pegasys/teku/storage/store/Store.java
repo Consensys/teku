@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -204,6 +203,7 @@ class Store extends CacheableStore {
 
     this.executionPayloads = executionPayloads;
 
+    // Set up execution payload provider to draw from in-memory execution payload
     this.executionPayloadProvider =
         ExecutionPayloadProvider.combined(
             createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
@@ -741,9 +741,10 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
-    return executionPayloadProvider
-        .getExecutionPayloads(Set.of(blockRoot))
-        .thenApply(result -> Optional.ofNullable(result.get(blockRoot)));
+    if (!containsBlock(blockRoot)) {
+      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return executionPayloadProvider.getExecutionPayload(blockRoot);
   }
 
   @Override

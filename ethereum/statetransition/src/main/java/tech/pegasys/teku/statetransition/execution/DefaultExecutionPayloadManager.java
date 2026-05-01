@@ -45,7 +45,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadManager
     implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
@@ -198,22 +197,32 @@ public class DefaultExecutionPayloadManager
   public ExecutionRequests getParentExecutionRequestsForBlock(
       final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    final UpdatableStore store = recentChainData.getStore();
     if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
       return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
           .getExecutionRequestsSchema()
           .getDefault();
     }
-    return store
+    // TODO: make the blinded provider transparently go to the cache and then hit the disk on cache
+    // miss (and it will be a future, with all the side effects)
+    return recentChainData
+        .getStore()
         .getExecutionPayloadIfAvailable(parentRoot)
+        .map(signedEnvelope -> signedEnvelope.getMessage().getExecutionRequests())
+        .or(
+            () ->
+                recentChainData
+                    .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
+                    // TODO: remove join, with all the consequences (but see above)
+                    .join()
+                    .map(
+                        signedBlindedEnvelope ->
+                            signedBlindedEnvelope.getMessage().getExecutionRequests()))
         .orElseThrow(
             () ->
                 new IllegalStateException(
                     String.format(
                         "Execution Payload is not available for parent root %s during block production for slot %s",
-                        parentRoot, slot)))
-        .getMessage()
-        .getExecutionRequests();
+                        parentRoot, slot)));
   }
 
   @Override

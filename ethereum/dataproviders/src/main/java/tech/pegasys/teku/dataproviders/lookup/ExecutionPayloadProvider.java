@@ -76,4 +76,10 @@ public interface ExecutionPayloadProvider {
 
   SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getExecutionPayloads(
       Set<Bytes32> blockRoots);
+
+  default SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayload(
+      final Bytes32 blockRoot) {
+    return getExecutionPayloads(Set.of(blockRoot))
+        .thenApply(executionPayloads -> Optional.ofNullable(executionPayloads.get(blockRoot)));
+  }
 }

@@ -69,6 +69,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
         executionPayloadProvider,
+        storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot,
         validatedBlockProvider,
         validatedBlobSidecarProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
