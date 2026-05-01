@@ -107,15 +107,17 @@ public class DefaultExecutionPayloadManager
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT, SAVE_FOR_FUTURE -> {
-              if (result.isAccept()) {
-                receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
-                    signedExecutionPayload);
-                // cache the seen `beacon_block_root` when the gossip checks pass
-                recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
-              }
+            case ACCEPT -> {
+              receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
+                  signedExecutionPayload);
+              // cache the seen `beacon_block_root` when the gossip checks pass
+              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
               importExecutionPayload(signedExecutionPayload).finishStackTrace();
             }
+            case SAVE_FOR_FUTURE ->
+                // import will be triggered when the corresponding block is imported
+                pendingExecutionPayloads.put(
+                    signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
             case REJECT, IGNORE -> {}
           }
         });
@@ -147,26 +149,8 @@ public class DefaultExecutionPayloadManager
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed,
                         signedExecutionPayload);
                   }
-                  case UNKNOWN_BEACON_BLOCK_ROOT -> {
-                    // Add to the pending pool so it is triggered once the block is imported
-                    pendingExecutionPayloads.put(
-                        signedExecutionPayload.getBlockRootAndBuilderIndex(),
-                        signedExecutionPayload);
-                    // Check if the block was imported while we were trying to import this execution
-                    // payload and then import it async
-                    if (recentChainData.containsBlock(
-                        signedExecutionPayload.getBeaconBlockRoot())) {
-                      pendingExecutionPayloads.remove(
-                          signedExecutionPayload.getBlockRootAndBuilderIndex());
-                      importExecutionPayload(signedExecutionPayload).finishStackTrace();
-                    } else {
-                      LOG.debug(
-                          "Adding execution payload for slot {} and block root {} to the pending pool because the block is not yet imported",
-                          signedExecutionPayload.getSlot(),
-                          signedExecutionPayload.getBeaconBlockRoot());
-                    }
-                  }
                   case INTERNAL_ERROR,
+                          UNKNOWN_BEACON_BLOCK_ROOT,
                           FAILED_VERIFICATION,
                           FAILED_DATA_AVAILABILITY_CHECK_INVALID,
                           FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
@@ -184,6 +168,12 @@ public class DefaultExecutionPayloadManager
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
+  }
+
+  // import will be triggered when the corresponding block is imported
+  private void addToPendingExecutionPayloads(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    pendingExecutionPayloads.put(executionPayload.getBlockRootAndBuilderIndex(), executionPayload);
   }
 
   private void logFailedExecutionPayloadImport(
