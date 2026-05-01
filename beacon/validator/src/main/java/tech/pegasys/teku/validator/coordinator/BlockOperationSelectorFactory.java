@@ -525,14 +525,7 @@ public class BlockOperationSelectorFactory {
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
                 blockProductionContext.blockProductionPerformance())
-            .thenAccept(
-                signedBid -> {
-                  checkState(
-                      signedBid.isPresent(),
-                      "No execution payload bid has been prepared for production of block at slot %s",
-                      blockSlotState.getSlot());
-                  bodyBuilder.signedExecutionPayloadBid(signedBid.get());
-                });
+            .thenAccept(bodyBuilder::signedExecutionPayloadBid);
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState), setExecutionPayloadBid);
   }

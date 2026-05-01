@@ -113,25 +113,27 @@ public class DefaultExecutionPayloadBidManager
   }
 
   @Override
-  public SafeFuture<Optional<SignedExecutionPayloadBid>> getBidForBlock(
+  public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       final Bytes32 parentRoot,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
-    final Optional<SignedExecutionPayloadBid> bestRemoteBid = findBestRemoteBid(slot, parentRoot);
-    if (bestRemoteBid.isPresent()) {
-      final ExecutionPayloadBid bid = bestRemoteBid.get().getMessage();
-      LOG.info(
-          "Considering remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
-          gweiToEth(bid.getValue()),
-          bid.getBuilderIndex(),
-          formatAbbreviatedHashRoot(bid.getBlockHash()),
-          slot);
-      blockProductionPerformance.builderBidValidated();
-      return SafeFuture.completedFuture(bestRemoteBid);
-    }
-    return getLocalSelfBuiltBid(parentRoot, slot, getPayloadResponseFuture).thenApply(Optional::of);
+    return findBestRemoteBid(slot, parentRoot)
+        .map(
+            bestRemoteBid -> {
+              final ExecutionPayloadBid bid = bestRemoteBid.getMessage();
+              LOG.info(
+                  "Considering remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
+                  gweiToEth(bid.getValue()),
+                  bid.getBuilderIndex(),
+                  formatAbbreviatedHashRoot(bid.getBlockHash()),
+                  slot);
+              blockProductionPerformance.builderBidValidated();
+              return SafeFuture.completedFuture(bestRemoteBid);
+            })
+        // fallback to local self-built bid
+        .orElseGet(() -> getLocalSelfBuiltBid(parentRoot, slot, getPayloadResponseFuture));
   }
 
   private void addBid(final SignedExecutionPayloadBid signedBid) {

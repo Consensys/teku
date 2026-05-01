@@ -613,10 +613,9 @@ public abstract class AbstractBlockFactoryTest {
                               .orElse(blobKzgCommitmentsSchema.of()),
                           dataStructureUtil.emptyExecutionRequests().hashTreeRoot());
               return SafeFuture.completedFuture(
-                  Optional.of(
-                      schemaDefinitions
-                          .getSignedExecutionPayloadBidSchema()
-                          .create(executionPayloadBid, BLSSignature.infinity())));
+                  schemaDefinitions
+                      .getSignedExecutionPayloadBidSchema()
+                      .create(executionPayloadBid, BLSSignature.infinity()));
             });
     // simulate caching of the payload result
     when(executionLayer.getCachedPayloadResult(any()))

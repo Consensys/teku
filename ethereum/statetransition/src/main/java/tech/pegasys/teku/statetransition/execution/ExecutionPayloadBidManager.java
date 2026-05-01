@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -39,19 +38,19 @@ public interface ExecutionPayloadBidManager {
         }
 
         @Override
-        public SafeFuture<Optional<SignedExecutionPayloadBid>> getBidForBlock(
+        public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
             final Bytes32 parentRoot,
             final BeaconState state,
             final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
             final BlockProductionPerformance blockProductionPerformance) {
-          return SafeFuture.completedFuture(Optional.empty());
+          return SafeFuture.completedFuture(null);
         }
       };
 
   SafeFuture<InternalValidationResult> validateAndAddBid(
       SignedExecutionPayloadBid signedBid, RemoteBidOrigin remoteBidOrigin);
 
-  SafeFuture<Optional<SignedExecutionPayloadBid>> getBidForBlock(
+  SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       Bytes32 parentRoot,
       BeaconState state,
       SafeFuture<GetPayloadResponse> getPayloadResponseFuture,

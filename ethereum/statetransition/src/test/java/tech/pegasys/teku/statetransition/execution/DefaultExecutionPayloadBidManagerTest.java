@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
@@ -92,17 +91,13 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
 
-    final Optional<SignedExecutionPayloadBid> maybeSignedBid =
+    final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
                 state,
                 SafeFuture.completedFuture(getPayloadResponse),
                 blockProductionPerformance));
-
-    assertThat(maybeSignedBid).isPresent();
-
-    final SignedExecutionPayloadBid signedBid = maybeSignedBid.get();
 
     assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
 
@@ -174,17 +169,15 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
 
-    final Optional<SignedExecutionPayloadBid> maybeSignedBid =
+    final ExecutionPayloadBid bid =
         SafeFutureAssert.safeJoin(
-            executionPayloadBidManager.getBidForBlock(
-                parentRoot,
-                state,
-                SafeFuture.completedFuture(getPayloadResponse),
-                blockProductionPerformance));
+                executionPayloadBidManager.getBidForBlock(
+                    parentRoot,
+                    state,
+                    SafeFuture.completedFuture(getPayloadResponse),
+                    blockProductionPerformance))
+            .getMessage();
 
-    assertThat(maybeSignedBid).isPresent();
-
-    final ExecutionPayloadBid bid = maybeSignedBid.orElseThrow().getMessage();
     final SszList<SszKZGCommitment> expectedBlobKzgCommitments =
         schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle);
     final ExecutionPayloadBid expectedBid =
@@ -215,12 +208,12 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final BeaconStateGloas state = stateAtSlot(slot);
 
-    final Optional<SignedExecutionPayloadBid> maybeSignedBid =
+    final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot, state, new SafeFuture<>(), blockProductionPerformance));
 
-    assertThat(maybeSignedBid).hasValue(higherBid);
+    assertThat(signedBid).isEqualTo(higherBid);
   }
 
   @Test
@@ -239,12 +232,12 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final BeaconStateGloas state = stateAtSlot(slot);
 
-    final Optional<SignedExecutionPayloadBid> maybeSignedBid =
+    final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot, state, new SafeFuture<>(), blockProductionPerformance));
 
-    assertThat(maybeSignedBid).hasValue(bidForOurParent);
+    assertThat(signedBid).isEqualTo(bidForOurParent);
   }
 
   @Test
@@ -257,7 +250,7 @@ public class DefaultExecutionPayloadBidManagerTest {
     addAcceptedBid(
         createBid(state.getSlot(), dataStructureUtil.randomBytes32(), UInt64.valueOf(100)));
 
-    final Optional<SignedExecutionPayloadBid> maybeSignedBid =
+    final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
@@ -265,8 +258,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 SafeFuture.completedFuture(randomGetPayloadResponse(state.getSlot())),
                 blockProductionPerformance));
 
-    assertThat(maybeSignedBid).isPresent();
-    assertThat(maybeSignedBid.get().getSignature()).isEqualTo(BLSSignature.infinity());
+    assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
   }
 
   @Test
@@ -304,15 +296,14 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     // stale bid is pruned: lookup falls back to a local self-built bid
     final UInt64 staleSlot = staleBid.getMessage().getSlot();
-    final Optional<SignedExecutionPayloadBid> staleLookup =
+    final SignedExecutionPayloadBid staleLookup =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
                 stateAtSlot(staleSlot),
                 SafeFuture.completedFuture(randomGetPayloadResponse(staleSlot)),
                 blockProductionPerformance));
-    assertThat(staleLookup).isPresent();
-    assertThat(staleLookup.get().getSignature()).isEqualTo(BLSSignature.infinity());
+    assertThat(staleLookup.getSignature()).isEqualTo(BLSSignature.infinity());
 
     // current and next slot bids are retained
     assertThat(
@@ -322,7 +313,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                     stateAtSlot(currentSlot),
                     new SafeFuture<>(),
                     blockProductionPerformance)))
-        .hasValue(currentSlotBid);
+        .isEqualTo(currentSlotBid);
     assertThat(
             SafeFutureAssert.safeJoin(
                 executionPayloadBidManager.getBidForBlock(
@@ -330,7 +321,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                     stateAtSlot(currentSlot.plus(1)),
                     new SafeFuture<>(),
                     blockProductionPerformance)))
-        .hasValue(nextSlotBid);
+        .isEqualTo(nextSlotBid);
   }
 
   private GetPayloadResponse randomGetPayloadResponse(final UInt64 slot) {
