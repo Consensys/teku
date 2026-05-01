@@ -1316,6 +1316,11 @@ tasks.register('cloudsmithUpload') {
 }
 
 jreleaser {
+	project {
+		java {
+			groupId = 'tech.pegasys.teku'
+		}
+	}
 	release {
 		github {
 			skipRelease = true
