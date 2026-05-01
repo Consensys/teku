@@ -212,7 +212,7 @@ public class DefaultExecutionPayloadManager
               .getDefault());
     }
     // to avoid querying the EL when unblinding in some cases, we directly query for the blinded
-    // execution payloads which include the in-memory payloads as well
+    // execution payload which include the in-memory payloads as well
     return recentChainData
         .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
         .thenApply(
