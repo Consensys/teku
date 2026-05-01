@@ -359,7 +359,6 @@ specrefs:
       - get_ptc_assignment#gloas
       - get_weight#gloas
       - is_merge_transition_complete#gloas
-      - is_payload_timely#gloas
       - is_supporting_vote#gloas
       - notify_ptc_messages#gloas
       - on_block#gloas

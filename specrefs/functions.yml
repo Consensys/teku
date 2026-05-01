@@ -5512,7 +5512,9 @@
     </spec>
 
 - name: get_proposer_dependent_root#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/BlockProposalUtilFulu.java
+      search: public Bytes32 getBlockProposalDependentRoot(
   spec: |
     <spec fn="get_proposer_dependent_root" fork="gloas" hash="2fabad44">
     def get_proposer_dependent_root(state: BeaconState, epoch: Epoch) -> Root:
@@ -7352,8 +7354,8 @@
 
 - name: is_payload_timely#gloas
   sources:
-    - file: java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public boolean isPayloadVerified(final ReadOnlyStore store, final Bytes32 root) {
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: "private boolean isPayloadTimely("
   spec: |
     <spec fn="is_payload_timely" fork="gloas" hash="e49ecafe">
     def is_payload_timely(store: Store, root: Root) -> bool:
@@ -7374,7 +7376,9 @@
     </spec>
 
 - name: is_payload_verified#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
+      search: public boolean isPayloadVerified(final ReadOnlyStore store, final Bytes32 root) {
   spec: |
     <spec fn="is_payload_verified" fork="gloas" hash="8ddb7023">
     def is_payload_verified(store: Store, root: Root) -> bool:
@@ -11548,7 +11552,7 @@
 
 - name: should_extend_payload#gloas
   sources:
-    - file: tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
       search: private boolean shouldExtendPayload(
   spec: |
     <spec fn="should_extend_payload" fork="gloas" hash="f8ae3bd2">
