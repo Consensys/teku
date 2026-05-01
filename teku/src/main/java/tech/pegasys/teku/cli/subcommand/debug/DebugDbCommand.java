@@ -337,7 +337,9 @@ public class DebugDbCommand implements Runnable {
           final String filter)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
-      database.getColumnCounts(Optional.ofNullable(filter)).forEach(this::printColumn);
+      final Map<String, Long> counts = database.getColumnCounts(Optional.ofNullable(filter));
+      final int width = counts.keySet().stream().mapToInt(String::length).max().orElse(1);
+      counts.forEach((label, count) -> System.out.printf("%" + width + "s: %d%n", label, count));
     }
     return 0;
   }
@@ -1039,10 +1041,6 @@ public class DebugDbCommand implements Runnable {
           "Finalized block index for root %s reports slot %s, expected slot %s%n",
           parentBlock.getRoot(), (indexSlot.isPresent() ? indexSlot.get() : "BLANK"), parentSlot);
     }
-  }
-
-  private void printColumn(final String label, final long count) {
-    System.out.printf("%40s: %d%n", label, count);
   }
 
   private Database createDatabase(
