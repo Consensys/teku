@@ -62,6 +62,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -229,16 +231,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
-  @Override
-  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
-      final UInt64 epoch, final IntCollection validatorIndices) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
-  }
-
+  // TODO EIP7805 implement beacon FOCIL APIs
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
       final List<SignedInclusionList> signedInclusionLists) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  // TODO EIP7805 implement beacon FOCIL APIs
+  @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
@@ -327,6 +331,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
       final UInt64 slot) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  // TODO EIP7805 implement beacon FOCIL APIs
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    return sendRequest(() -> typeDefClient.getInclusionList(slot));
   }
 
   @Override

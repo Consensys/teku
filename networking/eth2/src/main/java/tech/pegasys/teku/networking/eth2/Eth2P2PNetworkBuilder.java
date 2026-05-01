@@ -106,6 +106,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -124,6 +125,7 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
   protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  protected InclusionListManager inclusionListManager;
   protected MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -196,6 +198,7 @@ public class Eth2P2PNetworkBuilder {
             combinedChainDataClient,
             custodyGroupCountManagerSupplier,
             metadataMessagesFactory,
+            inclusionListManager,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -208,6 +211,7 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerBlocksRateLimit(),
             config.getPeerBlobSidecarsRateLimit(),
+            config.getPeerInclusionListsRateLimit(),
             config.getPeerRequestLimit(),
             spec,
             discoveryNodeIdExtractor,
@@ -703,6 +707,13 @@ public class Eth2P2PNetworkBuilder {
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
     checkNotNull(custodyGroupCountManagerSupplier);
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder inclusionListManager(
+      final InclusionListManager inclusionListManager) {
+    checkNotNull(inclusionListManager);
+    this.inclusionListManager = inclusionListManager;
     return this;
   }
 

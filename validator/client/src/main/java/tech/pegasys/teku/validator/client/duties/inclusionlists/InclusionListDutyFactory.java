@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyFactory;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
-import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
 public class InclusionListDutyFactory implements DutyFactory<InclusionListProductionDuty, Duty> {
@@ -50,12 +49,13 @@ public class InclusionListDutyFactory implements DutyFactory<InclusionListProduc
         slot,
         forkProvider,
         new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedInclusionLists),
-        validatorDutyMetrics);
+        validatorDutyMetrics,
+        validatorApiChannel);
   }
 
   @Override
-  public AggregationDuty createAggregationDuty(final UInt64 slot, final Validator validator) {
-    throw new UnsupportedOperationException("Aggregation for inclusion lists is not supported");
+  public Duty createAggregationDuty(final UInt64 slot, final Validator validator) {
+    throw new UnsupportedOperationException("Aggregation not supported for inclusion lists");
   }
 
   @Override
@@ -65,7 +65,6 @@ public class InclusionListDutyFactory implements DutyFactory<InclusionListProduc
 
   @Override
   public String getAggregationType() {
-    // not used
     return "";
   }
 }

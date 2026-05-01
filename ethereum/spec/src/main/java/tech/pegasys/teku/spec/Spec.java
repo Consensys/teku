@@ -84,6 +84,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -630,6 +631,10 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeSigningRoot(slot, domain);
   }
 
+  public Bytes computeSigningRoot(final InclusionList inclusionList, final Bytes32 domain) {
+    return atSlot(inclusionList.getSlot()).miscHelpers().computeSigningRoot(inclusionList, domain);
+  }
+
   public Bytes computeBuilderApplicationSigningRoot(final UInt64 slot, final Merkleizable object) {
     final MiscHelpers miscHelpers = atSlot(slot).miscHelpers();
     return miscHelpers.computeSigningRoot(
@@ -722,6 +727,10 @@ public class Spec {
 
   public Optional<Integer> getPayloadAttestationDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
+  }
+
+  public Optional<Integer> getInclusionListSubmissionDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getInclusionListSubmissionDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
@@ -1051,7 +1060,8 @@ public class Spec {
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
@@ -1061,7 +1071,8 @@ public class Spec {
               blockSlotState,
               IndexedAttestationCache.NOOP,
               signatureVerifier,
-              payloadExecutor);
+              payloadExecutor,
+              inclusionLists);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -1077,6 +1088,7 @@ public class Spec {
               block.getMessage(),
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NOOP,
+              Optional.empty(),
               Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
@@ -1180,9 +1192,26 @@ public class Spec {
     return atState(state).getValidatorsUtil().getValidatorIndex(state, publicKey);
   }
 
+  public Optional<Bytes32> getInclusionListCommitteeRoot(
+      final BeaconState state, final UInt64 slot) {
+    return Optional.of(
+        atSlot(slot)
+            .getInclusionListUtil()
+            .orElseThrow()
+            .getInclusionListCommitteeRoot(state, slot));
+  }
+
   public Optional<CommitteeAssignment> getCommitteeAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
+  }
+
+  public Optional<UInt64> getInclusionCommitteeAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch)
+        .getInclusionListUtil()
+        .orElseThrow()
+        .getInclusionListCommitteeAssignment(state, epoch, validatorIndex);
   }
 
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
@@ -1210,13 +1239,6 @@ public class Spec {
         .getValidatorIndexToILCommitteeAssignmentMap(state, epoch);
   }
 
-  public Optional<Bytes32> getInclusionListCommitteeRoot(
-      final BeaconState state, final UInt64 slot) {
-    return atSlot(slot)
-        .getInclusionListUtil()
-        .map(util -> util.getInclusionListCommitteeRoot(state, slot));
-  }
-
   // get_ptc
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
     return atSlot(slot).beaconStateAccessors().getPtc(state, slot);
@@ -1232,6 +1254,14 @@ public class Spec {
     return atState(state).beaconStateAccessors().getBuilderIndex(state, publicKey);
   }
 
+  public Int2ObjectMap<UInt64> getValidatorIndexInclusionListAssignmentSlotMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .getInclusionListUtil()
+        .orElseThrow()
+        .getValidatorIndexToSlotAssignmentMap(state, epoch);
+  }
+
   // Attestation helpers
   public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
@@ -1242,11 +1272,11 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final BeaconBlockSummary block,
+      final Bytes32 blockRoot,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
-        .getGenericAttestationData(slot, state, block, committeeIndex);
+        .getGenericAttestationData(slot, state, blockRoot, committeeIndex);
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(

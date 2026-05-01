@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.net.ConnectException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,11 +40,14 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -51,6 +55,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
@@ -58,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -74,6 +83,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
@@ -292,6 +302,68 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
+  public SafeFuture<InclusionListImportResult> onInclusionList(
+      final SignedInclusionList signedInclusionList) {
+    final InclusionList inclusionList = signedInclusionList.getMessage();
+    final UInt64 inclusionListSlot = inclusionList.getSlot();
+    final UpdatableStore store = recentChainData.getStore();
+
+    final UInt64 currentSlot = spec.getCurrentSlot(store);
+
+    final int secondsPerSlot = spec.atSlot(inclusionListSlot).getConfig().getSecondsPerSlot();
+    final UInt64 timeIntoSlot =
+        store.getTimeInSeconds().minusMinZero(store.getGenesisTime()).mod(secondsPerSlot);
+
+    // Do not process inclusion lists from known equivocators
+    final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot =
+        new SlotAndInclusionListCommitteeRoot(
+            inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
+    final UInt64 validatorIndex = inclusionList.getValidatorIndex();
+
+    if (store.isInclusionListEquivocator(slotAndInclusionListCommitteeRoot, validatorIndex)) {
+      return SafeFuture.completedFuture(InclusionListImportResult.FAILED_EQUIVOCATED);
+    } else {
+      final Optional<List<InclusionList>> maybeInclusionLists =
+          store.getInclusionLists(slotAndInclusionListCommitteeRoot);
+      final List<InclusionList> inclusionLists =
+          maybeInclusionLists.orElse(Collections.emptyList()).stream()
+              .filter(il -> il.getValidatorIndex().equals(validatorIndex))
+              .toList();
+
+      if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
+        final StoreTransaction transaction = recentChainData.startStoreTransaction();
+        transaction.putEquivocatedInclusionList(inclusionList);
+        transaction.commit().join();
+        return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
+      }
+
+      final boolean isBeforeFreezeDeadline =
+          isBeforeFreezeDeadline(spec, currentSlot, signedInclusionList, timeIntoSlot);
+      if (isBeforeFreezeDeadline) {
+        final StoreTransaction transaction = recentChainData.startStoreTransaction();
+        transaction.putInclusionList(inclusionList);
+        transaction.commit().join();
+        return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
+      } else {
+        return SafeFuture.completedFuture(
+            InclusionListImportResult.FAILED_PAST_INCLUSION_LIST_DEADLINE);
+      }
+    }
+  }
+
+  private boolean isBeforeFreezeDeadline(
+      final Spec spec,
+      final UInt64 currentSlot,
+      final SignedInclusionList signedInclusionList,
+      final UInt64 timeIntoSlot) {
+    final UInt64 inclusionListSlot = signedInclusionList.getMessage().getSlot();
+    final int viewFreezeCutoffBps =
+        SpecConfigHeze.required(spec.atSlot(inclusionListSlot).getConfig())
+            .getViewFreezeCutoffBps();
+    return currentSlot.equals(inclusionListSlot)
+        && timeIntoSlot.isLessThanOrEqualTo(viewFreezeCutoffBps);
+  }
+
   public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
     onForkChoiceThread(
             () -> {
@@ -467,9 +539,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ForkChoicePayloadExecutor payloadExecutor =
         ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionLayer);
+    final UpdatableStore store = recentChainData.getStore();
     final BlockImportResult preconditionCheckResult =
-        forkChoiceUtil.checkOnBlockConditions(
-            block, blockSlotState.get(), recentChainData.getStore());
+        forkChoiceUtil.checkOnBlockConditions(block, blockSlotState.get(), store);
     if (!preconditionCheckResult.isSuccessful()) {
       reportInvalidBlock(block, preconditionCheckResult);
       return SafeFuture.completedFuture(preconditionCheckResult);
@@ -482,7 +554,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceUtil.createAvailabilityCheckerOnBlock(block);
 
     availabilityChecker.initiateDataAvailabilityCheck();
-
+    final Optional<List<InclusionList>> inclusionLists =
+        spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.HEZE)
+            ? store.getInclusionLists(block.getSlot().minusMinZero(UInt64.ONE))
+            : Optional.empty();
     final BeaconState postState;
     try {
       postState =
@@ -491,7 +566,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   block,
                   blockSlotState.get(),
                   indexedAttestationCache,
-                  Optional.of(payloadExecutor));
+                  Optional.of(payloadExecutor),
+                  inclusionLists);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -647,6 +723,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (payloadResult.hasFailedExecution()) {
       return BlockImportResult.failedExecutionPayloadExecution(
           payloadResult.getFailureCause().orElseThrow());
+    }
+
+    // TODO EIP7808 check the fork choice logic
+    if (payloadResult.hasInvalidInclusionList()) {
+      final StoreTransaction transaction = recentChainData.startStoreTransaction();
+      transaction.putUnsatisfiedInclusionListBlock(block.getRoot());
+      transaction.commit().join();
+      return BlockImportResult.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD;
     }
 
     switch (dataAndValidationResult.validationResult()) {
@@ -1130,5 +1214,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public interface OptimisticHeadSubscriber {
     void onOptimisticHeadChanged(boolean isHeadOptimistic);
+  }
+
+  // Implements `validate_inclusion_lists` added in EIP-7805 - consensus/fork-choice
+  public Optional<BlockImportResult> validateInclusionLists(
+      final List<Transaction> inclusionListTransactions, final ExecutionPayload executionPayload) {
+    final SszList<Transaction> executionPayloadTransactions = executionPayload.getTransactions();
+    if (!executionPayloadTransactions.asList().containsAll(inclusionListTransactions)) {
+      return Optional.of(
+          BlockImportResult.failedToIncludeInclusionListInExecutionPayload(
+              new IllegalStateException(
+                  "Inclusion list contains transactions not in the execution payload")));
+    }
+
+    return Optional.empty();
   }
 }

@@ -27,6 +27,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
+import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -499,6 +500,37 @@ public class Web3JExecutionEngineClientTest {
     assertThat(requestData.get("params"))
         .asInstanceOf(LIST)
         .containsExactly(List.of(blockHash1.toHexString(), blockHash2.toHexString()));
+  }
+
+  @TestTemplate
+  public void getInclusionListV1_shouldBuildRequestAndResponseSuccessfully() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(HEZE);
+    final List<Bytes> transactions =
+        dataStructureUtil.randomInclusionListTransactions(dataStructureUtil.randomSlot());
+    final List<String> inclusionListTransactionV1List =
+        transactions.stream().map(Bytes::toHexString).toList();
+    final String transactionsJson =
+        String.format(
+            "\"%s\"", transactions.stream().map(Bytes::toString).collect(Collectors.joining(", ")));
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": [" + transactionsJson + "]}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final Bytes32 parentHash = dataStructureUtil.randomSlotAndBlockRoot().getBlockRoot();
+
+    final SafeFuture<Response<List<String>>> futureResponse =
+        eeClient.getInclusionListV1(parentHash);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.payload().equals(inclusionListTransactionV1List));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getInclusionListV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(parentHash.toHexString());
   }
 
   private void mockSuccessfulResponse(final String responseBody) {

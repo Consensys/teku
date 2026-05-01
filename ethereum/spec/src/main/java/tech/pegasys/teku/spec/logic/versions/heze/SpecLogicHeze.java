@@ -48,10 +48,10 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Volunta
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
+import tech.pegasys.teku.spec.logic.versions.heze.util.ForkChoiceUtilHeze;
 import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 import tech.pegasys.teku.spec.logic.versions.heze.util.ValidatorsUtilHeze;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
@@ -64,7 +64,6 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<ExecutionPayloadVerifier> executionPayloadVerifier;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
-  private final Optional<InclusionListUtil> inclusionListUtil;
 
   private SpecLogicHeze(
       final PredicatesGloas predicates,
@@ -107,6 +106,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         Optional.of(blindBlockUtil),
+        Optional.of(inclusionListUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
@@ -115,7 +115,6 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.executionPayloadVerifier = Optional.of(executionPayloadVerifier);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
-    this.inclusionListUtil = Optional.of(inclusionListUtil);
   }
 
   public static SpecLogicHeze create(
@@ -213,7 +212,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         new ExecutionPayloadVerifierGloas(
             miscHelpers, beaconStateAccessors, executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtilGloas(
+        new ForkChoiceUtilHeze(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());

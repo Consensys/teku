@@ -30,13 +30,22 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
       final ValidatorTimingChannel validatorTimingChannel,
       final Runnable onLastSlot,
       final Spec spec) {
-    super(
+    this(
         spec.computeStartSlotAtEpoch(
             spec.getForkSchedule().getFork(SpecMilestone.GLOAS).getEpoch()),
         taskScheduler,
         validatorTimingChannel,
         onLastSlot,
         spec);
+  }
+
+  protected GloasTimeBasedEventAdapter(
+      final UInt64 firstSlot,
+      final RepeatingTaskScheduler taskScheduler,
+      final ValidatorTimingChannel validatorTimingChannel,
+      final Runnable onLastSlot,
+      final Spec spec) {
+    super(firstSlot, taskScheduler, validatorTimingChannel, onLastSlot, spec);
   }
 
   @Override

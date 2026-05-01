@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_W
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -102,13 +104,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayloadHeader executionPayloadHeader =
         extractExecutionPayloadHeader(beaconBlock.getBody());
     processWithdrawals(genericState, Optional.of(executionPayloadHeader));
     super.executionProcessing(
-        genericState, beaconBlock, payloadExecutor, validatorExitContextSupplier);
+        genericState, beaconBlock, payloadExecutor, validatorExitContextSupplier, inclusionLists);
   }
 
   @Override

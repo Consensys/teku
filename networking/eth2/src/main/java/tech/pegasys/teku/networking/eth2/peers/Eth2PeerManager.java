@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -77,6 +78,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final CombinedChainDataClient combinedChainDataClient,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
+      final InclusionListManager inclusionListManager,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
       final StatusMessageFactory statusMessageFactory,
@@ -99,6 +101,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             combinedChainDataClient,
             custodyGroupCountManagerSupplier,
             recentChainData,
+            inclusionListManager,
             metricsSystem,
             statusMessageFactory,
             metadataMessagesFactory,
@@ -115,6 +118,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final CombinedChainDataClient combinedChainDataClient,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetadataMessagesFactory metadataMessagesFactory,
+      final InclusionListManager inclusionListManager,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -127,6 +131,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final TimeProvider timeProvider,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
+      final int peerInclusionListsRateLimit,
       final int peerRequestLimit,
       final Spec spec,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
@@ -143,6 +148,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         combinedChainDataClient,
         custodyGroupCountManagerSupplier,
         combinedChainDataClient.getRecentChainData(),
+        inclusionListManager,
         metricsSystem,
         new Eth2PeerFactory(
             spec,
@@ -154,6 +160,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             requiredCheckpoint,
             peerBlocksRateLimit,
             peerBlobSidecarsRateLimit,
+            peerInclusionListsRateLimit,
             peerRequestLimit,
             discoveryNodeIdExtractor),
         statusMessageFactory,

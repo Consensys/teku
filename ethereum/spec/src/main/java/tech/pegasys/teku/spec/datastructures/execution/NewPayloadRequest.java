@@ -27,14 +27,14 @@ public class NewPayloadRequest {
   private final Optional<List<VersionedHash>> versionedHashes;
   private final Optional<Bytes32> parentBeaconBlockRoot;
   private final Optional<List<Bytes>> executionRequests;
-  private final Optional<List<Bytes>> inclusionListTransactions;
+  private final Optional<List<Transaction>> inclusionList;
 
   public NewPayloadRequest(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.empty();
     this.parentBeaconBlockRoot = Optional.empty();
     this.executionRequests = Optional.empty();
-    this.inclusionListTransactions = Optional.empty();
+    this.inclusionList = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -45,7 +45,7 @@ public class NewPayloadRequest {
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
     this.executionRequests = Optional.empty();
-    this.inclusionListTransactions = Optional.empty();
+    this.inclusionList = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -57,7 +57,7 @@ public class NewPayloadRequest {
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
     this.executionRequests = Optional.of(executionRequests);
-    this.inclusionListTransactions = Optional.empty();
+    this.inclusionList = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -65,12 +65,12 @@ public class NewPayloadRequest {
       final List<VersionedHash> versionedHashes,
       final Bytes32 parentBeaconBlockRoot,
       final List<Bytes> executionRequests,
-      final List<Bytes> inclusionListTransactions) {
+      final List<Transaction> inclusionList) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
     this.executionRequests = Optional.of(executionRequests);
-    this.inclusionListTransactions = Optional.of(inclusionListTransactions);
+    this.inclusionList = Optional.of(inclusionList);
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -89,8 +89,8 @@ public class NewPayloadRequest {
     return executionRequests;
   }
 
-  public Optional<List<Bytes>> getInclusionListTransactions() {
-    return inclusionListTransactions;
+  public Optional<List<Transaction>> getInclusionList() {
+    return inclusionList;
   }
 
   @Override
@@ -104,7 +104,7 @@ public class NewPayloadRequest {
           && Objects.equals(versionedHashes, that.versionedHashes)
           && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
           && Objects.equals(executionRequests, that.executionRequests)
-          && Objects.equals(inclusionListTransactions, that.inclusionListTransactions);
+          && Objects.equals(inclusionList, that.inclusionList);
     } else {
       return false;
     }
@@ -113,11 +113,7 @@ public class NewPayloadRequest {
   @Override
   public int hashCode() {
     return Objects.hash(
-        executionPayload,
-        versionedHashes,
-        parentBeaconBlockRoot,
-        executionRequests,
-        inclusionListTransactions);
+        executionPayload, versionedHashes, parentBeaconBlockRoot, executionRequests, inclusionList);
   }
 
   @Override
@@ -127,7 +123,7 @@ public class NewPayloadRequest {
         .add("versionedHashes", versionedHashes)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .add("executionRequests", executionRequests)
-        .add("inclusionListTransactions", inclusionListTransactions)
+        .add("inclusionList", inclusionList)
         .toString();
   }
 }

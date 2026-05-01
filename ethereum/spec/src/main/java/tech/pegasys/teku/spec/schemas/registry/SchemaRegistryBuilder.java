@@ -67,6 +67,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROO
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_COMMITTEE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
@@ -103,8 +105,10 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -186,6 +190,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
@@ -315,7 +320,9 @@ public class SchemaRegistryBuilder {
 
         // HEZE
         .addProvider(createInclusionListSchemaProvider())
-        .addProvider(createSignedInclusionListSchemaProvider());
+        .addProvider(createSignedInclusionListSchemaProvider())
+        .addProvider(createInclusionListByCommitteeIndicesRequestMessageSchemaProvider())
+        .addProvider(createInclusionListCommitteeSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -1133,6 +1140,28 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SIGNED_INCLUSION_LIST_SCHEMA)
         .withCreator(
             HEZE, (registry, specConfig, schemaName) -> new SignedInclusionListSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?>
+      createInclusionListByCommitteeIndicesRequestMessageSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new InclusionListByCommitteeRequestMessageSchema(
+                    SpecConfigHeze.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createInclusionListCommitteeSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_COMMITTEE_SCHEMA)
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                SszPrimitiveVectorSchema.create(
+                    SszPrimitiveSchemas.UINT64_SCHEMA,
+                    SpecConfigHeze.required(specConfig).getInclusionListCommitteeSize()))
         .build();
   }
 

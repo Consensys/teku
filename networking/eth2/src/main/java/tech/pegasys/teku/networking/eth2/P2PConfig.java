@@ -36,6 +36,7 @@ public class P2PConfig {
   public static final int DEFAULT_PEER_BLOCKS_RATE_LIMIT = 500;
   // 250 MB per peer per minute (~ 4.16 MB/s)
   public static final int DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT = 2000;
+  public static final int DEFAULT_PEER_INCLUSION_LISTS_RATE_LIMIT = 200;
 
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 100;
 
@@ -88,6 +89,7 @@ public class P2PConfig {
   private final int historicalDataMaxQueryQueueSize;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
+  private final int peerInclusionListsRateLimit;
   private final int peerRequestLimit;
   private final int batchVerifyMaxThreads;
   private final int batchVerifyQueueCapacity;
@@ -120,6 +122,7 @@ public class P2PConfig {
       final int historicalDataMaxQueryQueueSize,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
+      final int peerInclusionListsRateLimit,
       final int peerRequestLimit,
       final int batchVerifyMaxThreads,
       final int batchVerifyQueueCapacity,
@@ -150,6 +153,7 @@ public class P2PConfig {
     this.historicalDataMaxQueryQueueSize = historicalDataMaxQueryQueueSize;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
+    this.peerInclusionListsRateLimit = peerInclusionListsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyMaxThreads = batchVerifyMaxThreads;
     this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
@@ -231,6 +235,10 @@ public class P2PConfig {
 
   public int getPeerBlobSidecarsRateLimit() {
     return peerBlobSidecarsRateLimit;
+  }
+
+  public int getPeerInclusionListsRateLimit() {
+    return peerInclusionListsRateLimit;
   }
 
   public int getPeerRequestLimit() {
@@ -319,6 +327,7 @@ public class P2PConfig {
     private int historicalDataMaxQueryQueueSize = DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
     private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
+    private Integer peerInclusionListsRateLimit = DEFAULT_PEER_INCLUSION_LISTS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
     private OptionalInt batchVerifyQueueCapacity = OptionalInt.empty();
@@ -398,6 +407,7 @@ public class P2PConfig {
           historicalDataMaxQueryQueueSize,
           peerBlocksRateLimit,
           peerBlobSidecarsRateLimit,
+          peerInclusionListsRateLimit,
           peerRequestLimit,
           batchVerifyMaxThreads,
           batchVerifyQueueCapacity.orElse(DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY),
@@ -509,6 +519,16 @@ public class P2PConfig {
             String.format("Invalid peerBlobSidecarsRateLimit: %d", peerBlobSidecarsRateLimit));
       }
       this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
+      return this;
+    }
+
+    public Builder peerInclusionListsRateLimit(final Integer peerInclusionListsRateLimit) {
+      checkNotNull(peerInclusionListsRateLimit);
+      if (peerInclusionListsRateLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerInclusionListsRateLimit: %d", peerInclusionListsRateLimit));
+      }
+      this.peerInclusionListsRateLimit = peerInclusionListsRateLimit;
       return this;
     }
 

@@ -42,6 +42,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
@@ -87,6 +88,8 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
   public static final String GET_BLOBS_V2_METHOD = "get_blobs_versionV2";
+  public static final String UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD =
+      "update_payload_with_inclusion_list_versionV1";
   public static final String GET_PAYLOAD_BODIES_BY_HASH_V2_METHOD = "get_payload_bodies_by_hashV2";
 
   private final ExecutionEngineClient delegate;
@@ -269,12 +272,6 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   }
 
   @Override
-  public SafeFuture<Response<List<Bytes>>> getInclusionListV1(final Bytes32 parentHash) {
-    return countRequest(
-        () -> delegate.getInclusionListV1(parentHash), GET_INCLUSION_LIST_V1_METHOD);
-  }
-
-  @Override
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
     return countRequest(
         () -> delegate.exchangeCapabilities(capabilities), EXCHANGE_CAPABILITIES_METHOD);
@@ -304,5 +301,20 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       final List<Bytes32> blockHashes) {
     return countRequest(
         () -> delegate.getPayloadBodiesByHashV2(blockHashes), GET_PAYLOAD_BODIES_BY_HASH_V2_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<List<String>>> getInclusionListV1(final Bytes32 parentHash) {
+    return countRequest(
+        () -> delegate.getInclusionListV1(parentHash), GET_INCLUSION_LIST_V1_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
+      updatePayloadWithInclusionListV1(
+          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
+    return countRequest(
+        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionListsTransactions),
+        UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD);
   }
 }

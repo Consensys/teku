@@ -57,6 +57,7 @@ public class InclusionListDutyLoader
   @Override
   protected SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
       final UInt64 epoch, final InclusionListDuties duties) {
+
     final SlotBasedScheduledDuties<InclusionListProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.dependentRoot());
 
@@ -76,8 +77,7 @@ public class InclusionListDutyLoader
                     duty.slot(),
                     validator,
                     d -> {
-                      d.addValidator(
-                          validator, duty.validatorIndex(), duty.inclusionListCommitteeRoot());
+                      d.addValidator(validator, duty.validatorIndex().intValue());
                       return null;
                     }));
   }

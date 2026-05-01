@@ -98,6 +98,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return specLogic.getInclusionListUtil();
+  }
+
+  @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return specLogic.getSyncCommitteeUtil();
   }
@@ -165,10 +170,5 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
     return specLogic.getDataColumnSidecarUtil();
-  }
-
-  @Override
-  public Optional<InclusionListUtil> getInclusionListUtil() {
-    return specLogic.getInclusionListUtil();
   }
 }

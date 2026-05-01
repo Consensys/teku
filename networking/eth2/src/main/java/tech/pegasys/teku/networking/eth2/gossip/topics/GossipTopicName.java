@@ -27,7 +27,6 @@ public enum GossipTopicName {
   PAYLOAD_ATTESTATION_MESSAGE,
   EXECUTION_PAYLOAD_BID,
   PROPOSER_PREFERENCES,
-  // Heze
   INCLUSION_LIST;
 
   @Override

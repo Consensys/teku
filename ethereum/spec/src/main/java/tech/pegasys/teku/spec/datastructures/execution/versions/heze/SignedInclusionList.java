@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 public class SignedInclusionList
     extends Container2<SignedInclusionList, InclusionList, SszSignature> {
 
-  SignedInclusionList(
+  public SignedInclusionList(
       final SignedInclusionListSchema schema,
       final InclusionList message,
       final BLSSignature signature) {

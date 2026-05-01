@@ -23,8 +23,11 @@ import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.WithdrawalV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -37,13 +40,17 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.UpdatePayloadWithInclusionListResponse;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
@@ -119,7 +126,12 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .addOptional(newPayloadRequest.getVersionedHashes())
             .addOptional(newPayloadRequest.getParentBeaconBlockRoot())
             .addOptional(newPayloadRequest.getExecutionRequests())
-            .addOptional(newPayloadRequest.getInclusionListTransactions());
+            .addOptional(
+                newPayloadRequest
+                    .getInclusionList()
+                    .map(
+                        transactions ->
+                            transactions.stream().map(SszByteListImpl::getBytes).toList()));
 
     return engineMethodsResolver
         .getMethod(
@@ -213,10 +225,45 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<List<Bytes>> engineGetInclusionList(
+  public SafeFuture<List<Transaction>> engineGetInclusionList(
       final Bytes32 parentHash, final UInt64 slot) {
     return executionEngineClient
         .getInclusionListV1(parentHash)
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow);
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            response -> {
+              final TransactionSchema transactionSchema =
+                  SchemaDefinitionsHeze.required(spec.atSlot(slot).getSchemaDefinitions())
+                      .getInclusionListSchema()
+                      .getTransactionSchema();
+              return response.stream()
+                  .map(
+                      inclusionListTransactionV1 ->
+                          transactionSchema.fromBytes(
+                              Bytes.fromHexString(inclusionListTransactionV1)))
+                  .toList();
+            });
+  }
+
+  @Override
+  public SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
+      final Bytes8 payloadId,
+      final List<Transaction> inclusionListsTransactions,
+      final UInt64 slot) {
+    final TransactionSchema transactionSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionHeze()
+            .orElseThrow()
+            .getInclusionListSchema()
+            .getTransactionSchema();
+    return executionEngineClient
+        .updatePayloadWithInclusionListV1(
+            payloadId,
+            inclusionListsTransactions.stream().map(transactionSchema::sszSerialize).toList())
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            UpdatePayloadWithInclusionListV1Response
+                ::asInternalUpdatePayloadWithInclusionListResponse);
   }
 }

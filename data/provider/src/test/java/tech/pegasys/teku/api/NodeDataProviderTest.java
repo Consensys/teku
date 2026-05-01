@@ -46,6 +46,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -58,6 +59,7 @@ public class NodeDataProviderTest {
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
   private final DataColumnSidecarManager dataColumnSidecarManager =
@@ -89,6 +91,7 @@ public class NodeDataProviderTest {
     provider =
         new NodeDataProvider(
             attestationPool,
+            inclusionListManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
@@ -215,6 +218,7 @@ public class NodeDataProviderTest {
     provider =
         new NodeDataProvider(
             attestationPool,
+            inclusionListManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,

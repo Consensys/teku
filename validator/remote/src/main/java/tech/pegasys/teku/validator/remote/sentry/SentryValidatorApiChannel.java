@@ -45,6 +45,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -171,6 +173,21 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .createPayloadAttestationData(slot);
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    // TODO EIP7805 add a separate sentry node channel for ILs
+    return attestationPublisherChannel
+        .orElse(dutiesProviderChannel)
+        .createInclusionList(slot, validatorIndex);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    // TODO EIP7805 add a separate sentry node channel for ILs
+    return attestationPublisherChannel.orElse(dutiesProviderChannel).getInclusionList(slot);
   }
 
   @Override

@@ -22,9 +22,9 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
   private final int viewFreezeCutoffBps;
   private final int inclusionListSubmissionDueBps;
   private final int proposerInclusionListCutoffBps;
+  private final int inclusionListCommitteeSize;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
-  private final int inclusionListCommitteeSize;
 
   public SpecConfigHezeImpl(
       final SpecConfigGloas specConfig,

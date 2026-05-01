@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.spec.logic.versions.heze.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
@@ -34,6 +37,15 @@ public class BeaconStateAccessorsHeze extends BeaconStateAccessorsGloas {
       final MiscHelpersGloas miscHelpers) {
     super(config, schemaDefinitions, predicates, miscHelpers);
     this.configHeze = config;
+  }
+
+  public static BeaconStateAccessorsHeze required(final BeaconStateAccessors beaconStateAccessors) {
+    checkArgument(
+        beaconStateAccessors instanceof BeaconStateAccessorsGloas,
+        "Expected %s but it was %s",
+        BeaconStateAccessorsHeze.class,
+        beaconStateAccessors.getClass());
+    return (BeaconStateAccessorsHeze) beaconStateAccessors;
   }
 
   /**

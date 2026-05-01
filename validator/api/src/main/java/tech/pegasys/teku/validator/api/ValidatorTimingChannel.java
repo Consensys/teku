@@ -49,6 +49,8 @@ public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
 
   default void onInclusionListCreationDue(final UInt64 slot) {}
 
+  void onInclusionListDue(UInt64 slot);
+
   void onAttesterSlashing(AttesterSlashing attesterSlashing);
 
   void onProposerSlashing(ProposerSlashing proposerSlashing);

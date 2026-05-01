@@ -36,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -240,9 +242,18 @@ public class ValidatorDataProvider {
     return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices));
   }
 
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    return SafeFuture.of(() -> validatorApiChannel.getInclusionList(slot));
+  }
+
   public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> contributionAndProofs) {
     return validatorApiChannel.sendSignedContributionAndProofs(contributionAndProofs);
+  }
+
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionList(
+      final List<SignedInclusionList> signedInclusionLists) {
+    return validatorApiChannel.sendSignedInclusionLists(signedInclusionLists);
   }
 
   public SafeFuture<Void> prepareBeaconProposer(

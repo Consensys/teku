@@ -46,6 +46,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -110,12 +112,6 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
-            final List<SignedInclusionList> signedInclusionLists) {
-          return SafeFuture.completedFuture(List.of());
-        }
-
-        @Override
         public SafeFuture<Optional<PeerCount>> getPeerCount() {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -146,6 +142,17 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         @Override
         public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
             final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<InclusionList>> createInclusionList(
+            final UInt64 slot, final UInt64 validatorIndex) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -214,6 +221,12 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         public SafeFuture<Void> sendSignedProposerPreferences(
             final List<SignedProposerPreferences> signedProposerPreferences) {
           return SafeFuture.COMPLETE;
+        }
+
+        @Override
+        public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+            final List<SignedInclusionList> signedInclusionLists) {
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
@@ -296,6 +309,10 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
   SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
       UInt64 epoch, IntCollection validatorIndices);
 
+  SafeFuture<Optional<InclusionList>> createInclusionList(UInt64 slot, UInt64 validatorIndex);
+
+  SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot);
+
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
@@ -338,11 +355,11 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
   SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       List<PayloadAttestationMessage> payloadAttestationMessages);
 
-  SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
-      List<SignedInclusionList> signedInclusionLists);
-
   SafeFuture<Void> sendSignedProposerPreferences(
       List<SignedProposerPreferences> signedProposerPreferences);
+
+  SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      List<SignedInclusionList> signedInclusionLists);
 
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);

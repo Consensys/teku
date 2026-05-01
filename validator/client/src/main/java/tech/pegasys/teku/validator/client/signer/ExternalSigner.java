@@ -298,15 +298,19 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signInclusionList(
-      final InclusionList inclusionList, final ForkInfo forkInfo) {
+  public SafeFuture<BLSSignature> signProposerPreferences(
+      final ProposerPreferences proposerPreferences, final ForkInfo forkInfo) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   @Override
-  public SafeFuture<BLSSignature> signProposerPreferences(
-      final ProposerPreferences proposerPreferences, final ForkInfo forkInfo) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  public SafeFuture<BLSSignature> signInclusionList(
+      final InclusionList inclusionList, final ForkInfo forkInfo) {
+    return sign(
+        signingRootUtil.signingRootForSignInclusionList(inclusionList, forkInfo),
+        SignType.INCLUSION_LIST,
+        Map.of(SignType.INCLUSION_LIST.getName(), inclusionList, FORK_INFO, forkInfo),
+        slashableGenericMessage("inclusion list"));
   }
 
   @Override

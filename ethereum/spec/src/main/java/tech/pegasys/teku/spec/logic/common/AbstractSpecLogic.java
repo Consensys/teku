@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 
 public abstract class AbstractSpecLogic implements SpecLogic {
   // Helpers
@@ -52,6 +53,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
   protected final Optional<BlindBlockUtil> blockConversionUtil;
+  protected final Optional<InclusionListUtil> inclusionListUtil;
 
   // State upgrade
   protected final Optional<StateUpgrade<?>> stateUpgrade;
@@ -72,6 +74,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final Optional<BlindBlockUtil> blockConversionUtil,
+      final Optional<InclusionListUtil> inclusionListUtil,
       final Optional<StateUpgrade<?>> stateUpgrade) {
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
@@ -81,6 +84,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
+    this.inclusionListUtil = inclusionListUtil;
     this.validatorStatusFactory = validatorStatusFactory;
     this.epochProcessor = epochProcessor;
     this.blockProcessor = blockProcessor;
@@ -139,6 +143,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public Optional<BlindBlockUtil> getBlindBlockUtil() {
     return blockConversionUtil;
+  }
+
+  @Override
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return inclusionListUtil;
   }
 
   @Override

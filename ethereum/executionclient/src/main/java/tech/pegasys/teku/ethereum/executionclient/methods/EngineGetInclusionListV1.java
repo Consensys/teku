@@ -21,13 +21,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
-public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<Bytes>> {
+public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<Transaction>> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private final Spec spec;
 
-  public EngineGetInclusionListV1(final ExecutionEngineClient executionEngineClient) {
+  public EngineGetInclusionListV1(
+      final ExecutionEngineClient executionEngineClient, final Spec spec) {
     super(executionEngineClient);
+    this.spec = spec;
   }
 
   @Override
@@ -41,7 +48,7 @@ public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<B
   }
 
   @Override
-  public SafeFuture<List<Bytes>> execute(final JsonRpcRequestParams params) {
+  public SafeFuture<List<Transaction>> execute(final JsonRpcRequestParams params) {
     final Bytes32 parentHash = params.getRequiredParameter(0, Bytes32.class);
 
     LOG.trace("Calling {}(parentHash={})", getVersionedName(), parentHash);
@@ -49,12 +56,21 @@ public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<B
     return executionEngineClient
         .getInclusionListV1(parentHash)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenPeek(
-            transactions ->
-                LOG.trace(
-                    "Response {}(parentHash={}) -> {} transactions",
-                    getVersionedName(),
-                    parentHash,
-                    transactions.size()));
+        .thenApply(
+            response -> {
+              // TODO EIP7805 this is not used since using the method resolver to call
+              // getInclusionListV1. We should find a better way to get the slot and get the spec at
+              // that slot instead of using the genesis spec config/schema definitions
+              final TransactionSchema transactionSchema =
+                  SchemaDefinitionsHeze.required(spec.getGenesisSchemaDefinitions())
+                      .getInclusionListSchema()
+                      .getTransactionSchema();
+              return response.stream()
+                  .map(
+                      inclusionListTransactionV1 ->
+                          transactionSchema.fromBytes(
+                              Bytes.fromHexString(inclusionListTransactionV1)))
+                  .toList();
+            });
   }
 }
