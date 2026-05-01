@@ -1030,9 +1030,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
     if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
-      if (bestHeadBlock.node().blockRoot().equals(block.getRoot())) {
-        result.markAsCanonical();
-      }
+    }
+
+    if (bestHeadBlock.node().blockRoot().equals(block.getRoot())) {
+      result.markAsCanonical();
     }
 
     if (!result.isBlockOnCanonicalChain() && shouldUpdateProposerBoostRoot) {
