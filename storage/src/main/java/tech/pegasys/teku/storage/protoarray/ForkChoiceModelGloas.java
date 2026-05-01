@@ -434,6 +434,29 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public void onForkChoiceUpdatedResult(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ForkChoiceNode node,
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash,
+      final boolean verifiedInvalidTransition,
+      final HeadSelectionContext headSelectionContext) {
+    if (status.isValid()) {
+      protoArray.markNodeValid(node);
+      return;
+    }
+    onExecutionPayloadResult(
+        protoArray,
+        blockNodeIndex,
+        node.blockRoot(),
+        status,
+        latestValidHash,
+        verifiedInvalidTransition,
+        headSelectionContext);
+  }
+
+  @Override
   public Optional<ProtoNodeData> getBaseNodeData(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,

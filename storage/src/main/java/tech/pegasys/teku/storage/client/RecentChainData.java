@@ -387,17 +387,21 @@ public abstract class RecentChainData
       final Optional<ForkChoicePayloadStatus> maybePayloadStatus,
       final UInt64 currentSlot) {
     synchronized (this) {
-      if (chainHead
-          .map(
-              head ->
-                  head.getRoot().equals(root)
-                      && maybePayloadStatus
-                          .map(status -> head.getPayloadStatus().equals(status))
-                          .orElse(true))
-          .orElse(false)) {
-        LOG.trace("Skipping head update because new head is same as previous head");
-        return;
-      }
+      // TODO: this fixes the transition from optimistic to non-optimistic.
+      //  we need a proper fix
+
+      //      if (chainHead
+      //          .map(
+      //              head ->
+      //                  head.getRoot().equals(root)
+      //                      && maybePayloadStatus
+      //                          .map(status -> head.getPayloadStatus().equals(status) &&
+      // head.isOptimistic() == )
+      //                          .orElse(true))
+      //          .orElse(false)) {
+      //        LOG.info("Skipping head update because new head is same as previous head");
+      //        return;
+      //      }
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();

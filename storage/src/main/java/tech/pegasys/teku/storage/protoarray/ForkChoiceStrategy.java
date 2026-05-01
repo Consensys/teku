@@ -863,4 +863,48 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArrayLock.writeLock().unlock();
     }
   }
+
+  public void onForkChoiceUpdatedResult(
+      final ForkChoiceNode node,
+      final PayloadStatus result,
+      final boolean verifiedInvalidTransition) {
+    if (result.hasFailedExecution()) {
+      LOG.warn(
+          "Unable to execute Payload for node {}, Execution Engine is offline",
+          node,
+          result.getFailureCause().orElseThrow());
+      return;
+    }
+    final ExecutionPayloadStatus status = result.getStatus().orElseThrow();
+    if (status.isNotValidated()) {
+      return;
+    }
+    protoArrayLock.writeLock().lock();
+    try {
+      getForkChoiceModelForRoot(node.blockRoot())
+          .ifPresent(
+              forkChoiceModel -> {
+                if (status.isInvalid()) {
+                  LOG.warn(
+                      "Payload for {} node {} marked as invalid by Execution Client",
+                      verifiedInvalidTransition ? "" : "child of",
+                      node);
+                }
+                forkChoiceModel.onForkChoiceUpdatedResult(
+                    protoArray,
+                    blockNodeIndex,
+                    node,
+                    status,
+                    result.getLatestValidHash(),
+                    verifiedInvalidTransition,
+                    headSelectionContext);
+              });
+      if (status.isInvalid()) {
+        blockNodeIndex.removeIf(
+            root -> blockNodeIndex.getBaseNode(root).flatMap(protoArray::getNode).isEmpty());
+      }
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
+  }
 }

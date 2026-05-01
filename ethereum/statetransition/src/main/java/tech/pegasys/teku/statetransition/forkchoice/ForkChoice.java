@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -206,7 +207,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 return;
               }
               onExecutionPayloadResult(
-                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock().blockRoot(),
+                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock(),
                   forkChoiceUpdatedResult.getPayloadStatus());
             })
         .finish(
@@ -975,10 +976,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void onExecutionPayloadResult(
-      final Bytes32 blockRoot, final PayloadStatus payloadResult) {
+      final ForkChoiceNode node, final PayloadStatus payloadResult) {
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
-      transitionValidatedStatus = transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot);
+      transitionValidatedStatus =
+          transitionBlockValidator.verifyAncestorTransitionBlock(node.blockRoot());
     } else {
       transitionValidatedStatus =
           SafeFuture.completedFuture(new PayloadValidationResult(payloadResult));
@@ -987,9 +989,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         result -> {
           final PayloadStatus resultStatus = result.getStatus();
           final Bytes32 validatedBlockRoot =
-              result.getInvalidTransitionBlockRoot().orElse(blockRoot);
+              result.getInvalidTransitionBlockRoot().orElse(node.blockRoot());
 
-          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
+          if (resultStatus.hasValidStatus()) {
+            getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, true);
+          } else {
+            getForkChoiceStrategy()
+                .onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
+          }
 
           if (resultStatus.hasInvalidStatus()) {
             LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
@@ -1006,7 +1013,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 .getUncaughtExceptionHandler()
                 .uncaughtException(Thread.currentThread(), error);
           } else {
-            LOG.error("Failed to apply payload result for block {}", blockRoot, error);
+            LOG.error("Failed to apply payload result for node {}", node, error);
           }
         },
         forkChoiceExecutor);
