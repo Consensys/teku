@@ -239,7 +239,7 @@ public class BlockOperationSelectorFactory {
                                         UInt64.valueOf(idx)));
                       }
                       final SszList<SignedVoluntaryExit> voluntaryExits =
-                          getVoluntaryExits(
+                          getVoluntaryExitsForBlock(
                               blockSlotState,
                               exitedValidators,
                               validatorsWithParentWithdrawalRequests);
@@ -248,13 +248,10 @@ public class BlockOperationSelectorFactory {
                       bodyBuilder.parentExecutionRequests(parentExecutionRequests);
                     });
       } else {
-        setVoluntaryExits =
-            SafeFuture.fromRunnable(
-                () -> {
-                  final SszList<SignedVoluntaryExit> voluntaryExits =
-                      getVoluntaryExits(blockSlotState, exitedValidators, new HashSet<>());
-                  bodyBuilder.voluntaryExits(voluntaryExits);
-                });
+        final SszList<SignedVoluntaryExit> voluntaryExits =
+            getVoluntaryExitsForBlock(blockSlotState, exitedValidators, new HashSet<>());
+        bodyBuilder.voluntaryExits(voluntaryExits);
+        setVoluntaryExits = COMPLETE;
       }
 
       bodyBuilder
@@ -293,7 +290,7 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  private SszList<SignedVoluntaryExit> getVoluntaryExits(
+  private SszList<SignedVoluntaryExit> getVoluntaryExitsForBlock(
       final BeaconState blockSlotState,
       final Set<UInt64> exitedValidators,
       final Set<UInt64> validatorsWithParentWithdrawalRequests) {
@@ -314,9 +311,8 @@ public class BlockOperationSelectorFactory {
     if (exitedValidators.contains(validatorIndex)) {
       return false;
     }
-    // In Gloas, parent execution requests are applied before operations. A withdrawal request
-    // for this validator would call initiate_validator_exit or add a pending partial withdrawal,
-    // either of which would invalidate this voluntary exit.
+    // In Gloas, a withdrawal request for this validator would call initiate_validator_exit or add a
+    // pending partial withdrawal, either of which would invalidate this voluntary exit.
     if (validatorsWithParentWithdrawalRequests.contains(validatorIndex)) {
       return false;
     }
