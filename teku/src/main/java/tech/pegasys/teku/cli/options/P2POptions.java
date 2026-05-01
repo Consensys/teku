@@ -749,7 +749,7 @@ public class P2POptions {
                           ? DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS
                           : DEFAULT_P2P_PEERS_UPPER_BOUND));
               if (p2pAdvertisedUdpPortIpv6 != null) {
-                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
+                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedUdpPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(getStaticPeersList())

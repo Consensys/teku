@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
@@ -112,6 +113,42 @@ class UnblindingExecutionPayloadProviderTest {
               bodies.add(null);
               return SafeFuture.completedFuture(bodies);
             });
+
+    assertThat(provider.getExecutionPayloads(Set.of(blockRoot))).isCompletedWithValue(Map.of());
+  }
+
+  @Test
+  void shouldSkipWhenElReturnsNullBlockAccessList() {
+    final UInt64 slot = UInt64.ONE;
+    final ExecutionPayload executionPayload =
+        dataStructureUtil.randomExecutionPayload(
+            slot, builder -> builder.blockAccessList(() -> Bytes.EMPTY));
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+    final SignedExecutionPayloadEnvelope originalEnvelope =
+        schemaDefinitions
+            .getSignedExecutionPayloadEnvelopeSchema()
+            .create(
+                schemaDefinitions
+                    .getExecutionPayloadEnvelopeSchema()
+                    .create(
+                        executionPayload,
+                        dataStructureUtil.randomExecutionRequests(),
+                        dataStructureUtil.randomBuilderIndex(),
+                        dataStructureUtil.randomBytes32()),
+                dataStructureUtil.randomSignature());
+    final Bytes32 blockRoot = originalEnvelope.getBeaconBlockRoot();
+    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
+        originalEnvelope.blind(schemaDefinitions);
+    final ExecutionPayloadBody completeBody = toExecutionPayloadBody(executionPayload);
+    final ExecutionPayloadBody bodyWithNullBlockAccessList =
+        new ExecutionPayloadBody(completeBody.transactions(), completeBody.withdrawals(), null);
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots -> SafeFuture.completedFuture(Map.of(blockRoot, blindedEnvelope)),
+            blockHashes -> SafeFuture.completedFuture(List.of(bodyWithNullBlockAccessList)));
 
     assertThat(provider.getExecutionPayloads(Set.of(blockRoot))).isCompletedWithValue(Map.of());
   }

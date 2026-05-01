@@ -23,10 +23,12 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -44,12 +46,14 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRootMessageHandler(
-      final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
+      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
+    this.spec = spec;
     this.recentChainData = recentChainData;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -88,6 +92,11 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.size());
 
     final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
+    final UInt64 minServableEpoch =
+        currentEpoch
+            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
+            .max(spec.getSpecConfig(currentEpoch).getGloasForkEpoch());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
 
@@ -100,6 +109,9 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
                       .thenCompose(
                           maybeExecutionPayloadEnvelope ->
                               maybeExecutionPayloadEnvelope
+                                  .filter(
+                                      envelope ->
+                                          isEnvelopeWithinServableRange(envelope, minServableEpoch))
                                   .map(
                                       executionPayloadEnvelope ->
                                           callback
@@ -118,5 +130,11 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
           callback.completeSuccessfully();
         },
         err -> handleError(err, callback, "execution payload envelopes by root"));
+  }
+
+  private boolean isEnvelopeWithinServableRange(
+      final SignedExecutionPayloadEnvelope envelope, final UInt64 minServableEpoch) {
+    return spec.computeEpochAtSlot(envelope.getMessage().getSlot())
+        .isGreaterThanOrEqualTo(minServableEpoch);
   }
 }

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,6 +52,7 @@ class DefaultExecutionPayloadManagerTest {
       receivedExecutionPayloadEventsChannelPublisher =
           mock(ReceivedExecutionPayloadEventsChannel.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private Optional<SignedExecutionPayloadEnvelope> publishedExecutionPayload = Optional.empty();
 
   private final DefaultExecutionPayloadManager executionPayloadManager =
       new DefaultExecutionPayloadManager(
@@ -60,7 +62,11 @@ class DefaultExecutionPayloadManagerTest {
           forkChoice,
           executionLayer,
           receivedExecutionPayloadEventsChannelPublisher,
-          recentChainData);
+          recentChainData,
+          executionPayload -> {
+            publishedExecutionPayload = Optional.of(executionPayload);
+            return SafeFuture.COMPLETE;
+          });
 
   private final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
@@ -168,5 +174,8 @@ class DefaultExecutionPayloadManagerTest {
     // verify the payload has been processed
     verify(receivedExecutionPayloadEventsChannelPublisher)
         .onExecutionPayloadImported(signedExecutionPayload);
+
+    // verify the payload has been published
+    assertThat(publishedExecutionPayload).hasValue(signedExecutionPayload);
   }
 }

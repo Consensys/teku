@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended"
   ],
-  "enabledManagers": ["github-actions", "gradle", "gradle-wrapper", "dockerfile"],
+  "enabledManagers": ["github-actions", "dockerfile"],
   "dependencyDashboard": false,
   "packageRules": [
     {
@@ -18,18 +18,6 @@
       "matchManagers": ["dockerfile"],
       "minimumReleaseAge": "7 days",
       "groupName": "Renovatebot Dockerfile Updates"
-    },
-    {
-      "description": "Group all Gradle wrapper updates into a single PR",
-      "matchManagers": ["gradle-wrapper"],
-      "minimumReleaseAge": "7 days",
-      "groupName": "Renovatebot Gradle Wrapper Updates"
-    },
-    {
-      "description": "Group all Gradle dependency updates into a single PR",
-      "matchManagers": ["gradle"],
-      "minimumReleaseAge": "7 days",
-      "groupName": "Renovatebot Gradle Updates"
     }
   ]
 }
