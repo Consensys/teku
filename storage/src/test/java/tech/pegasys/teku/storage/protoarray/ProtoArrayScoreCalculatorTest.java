@@ -36,7 +36,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -45,6 +48,9 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public class ProtoArrayScoreCalculatorTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
   private static final Checkpoint GENESIS_CHECKPOINT = new Checkpoint(ZERO, Bytes32.ZERO);
+  private static final BlockCheckpoints GENESIS_BLOCK_CHECKPOINTS =
+      new BlockCheckpoints(
+          GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
   private final Object2IntMap<Bytes32> indices = new Object2IntOpenHashMap<>();
   private List<UInt64> oldBalances = new ArrayList<>();
@@ -54,6 +60,10 @@ public class ProtoArrayScoreCalculatorTest {
   private UInt64 oldProposerBoostAmount = ZERO;
   private UInt64 newProposerBoostAmount = ZERO;
   private final VoteUpdater store = createStoreToManipulateVotes();
+  private final ForkChoiceModelGloas gloasModel =
+      new ForkChoiceModelGloas(
+          SpecConfigGloas.required(
+              TestSpecFactory.createMinimalGloas().forMilestone(SpecMilestone.GLOAS).getConfig()));
 
   private Optional<Integer> getIndex(final Bytes32 root) {
     final int index = indices.getOrDefault(root, -1);
@@ -86,6 +96,34 @@ public class ProtoArrayScoreCalculatorTest {
         createProtoArray(),
         blockNodeIndex,
         ForkChoiceModelPhase0.INSTANCE);
+  }
+
+  private LongList computeDeltas(
+      final VoteUpdater store,
+      final int protoArraySize,
+      final Function<ForkChoiceNode, Optional<Integer>> getIndexByNode,
+      final Optional<ForkChoiceNode> previousProposerBoostNode,
+      final Optional<ForkChoiceNode> newProposerBoostNode,
+      final List<UInt64> oldBalances,
+      final List<UInt64> newBalances,
+      final UInt64 previousBoostAmount,
+      final UInt64 newBoostAmount,
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ForkChoiceModel forkChoiceModel) {
+    return ProtoArrayScoreCalculator.computeDeltas(
+        store,
+        protoArraySize,
+        getIndexByNode,
+        previousProposerBoostNode,
+        newProposerBoostNode,
+        oldBalances,
+        newBalances,
+        previousBoostAmount,
+        newBoostAmount,
+        protoArray,
+        blockNodeIndex,
+        forkChoiceModel);
   }
 
   @Test
@@ -550,6 +588,101 @@ public class ProtoArrayScoreCalculatorTest {
   }
 
   @Test
+  void computeDeltas_payloadPresentVoteFallsBackToPendingWhenFullNodeIsMissing() {
+    final UInt64 balance = UInt64.valueOf(42);
+    final Bytes32 root = getHash(1);
+    final ProtoArray protoArray = createProtoArray();
+    final BlockNodeVariantsIndex blockNodeIndex =
+        createBlockNodeVariantsIndex(protoArray, root, true, false, UInt64.ONE);
+    oldBalances = List.of(balance);
+    newBalances = List.of(balance);
+
+    store.putVote(
+        ZERO,
+        new VoteTracker(Bytes32.ZERO, root, false, false, UInt64.valueOf(2), true, ZERO, false));
+
+    final List<Long> deltas =
+        computeDeltas(
+            store,
+            protoArray.getTotalTrackedNodeCount(),
+            protoArray::getNodeIndex,
+            Optional.empty(),
+            Optional.empty(),
+            oldBalances,
+            newBalances,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            protoArray,
+            blockNodeIndex,
+            gloasModel);
+
+    assertThat(deltas).containsExactly(balance.longValue(), 0L);
+  }
+
+  @Test
+  void computeDeltas_payloadAbsentVoteAtBlockSlotTargetsPendingNode() {
+    final UInt64 balance = UInt64.valueOf(42);
+    final Bytes32 root = getHash(1);
+    final ProtoArray protoArray = createProtoArray();
+    final BlockNodeVariantsIndex blockNodeIndex =
+        createBlockNodeVariantsIndex(protoArray, root, true, false, UInt64.ONE);
+    oldBalances = List.of(balance);
+    newBalances = List.of(balance);
+
+    store.putVote(
+        ZERO, new VoteTracker(Bytes32.ZERO, root, false, false, UInt64.ONE, false, ZERO, false));
+
+    final List<Long> deltas =
+        computeDeltas(
+            store,
+            protoArray.getTotalTrackedNodeCount(),
+            protoArray::getNodeIndex,
+            Optional.empty(),
+            Optional.empty(),
+            oldBalances,
+            newBalances,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            protoArray,
+            blockNodeIndex,
+            gloasModel);
+
+    assertThat(deltas).containsExactly(balance.longValue(), 0L);
+  }
+
+  @Test
+  void computeDeltas_payloadPresentVoteTargetsFullWhenFullNodeExists() {
+    final UInt64 balance = UInt64.valueOf(42);
+    final Bytes32 root = getHash(1);
+    final ProtoArray protoArray = createProtoArray();
+    final BlockNodeVariantsIndex blockNodeIndex =
+        createBlockNodeVariantsIndex(protoArray, root, true, true, UInt64.ONE);
+    oldBalances = List.of(balance);
+    newBalances = List.of(balance);
+
+    store.putVote(
+        ZERO,
+        new VoteTracker(Bytes32.ZERO, root, false, false, UInt64.valueOf(2), true, ZERO, false));
+
+    final List<Long> deltas =
+        computeDeltas(
+            store,
+            protoArray.getTotalTrackedNodeCount(),
+            protoArray::getNodeIndex,
+            Optional.empty(),
+            Optional.empty(),
+            oldBalances,
+            newBalances,
+            oldProposerBoostAmount,
+            newProposerBoostAmount,
+            protoArray,
+            blockNodeIndex,
+            gloasModel);
+
+    assertThat(deltas).containsExactly(0L, 0L, balance.longValue());
+  }
+
+  @Test
   void computeDeltas_validatorEquivocatesChain() {
     final UInt64 balance = UInt64.valueOf(42);
 
@@ -726,6 +859,59 @@ public class ProtoArrayScoreCalculatorTest {
         .justifiedCheckpoint(GENESIS_CHECKPOINT)
         .finalizedCheckpoint(GENESIS_CHECKPOINT)
         .build();
+  }
+
+  private BlockNodeVariantsIndex createBlockNodeVariantsIndex(
+      final ProtoArray protoArray,
+      final Bytes32 blockRoot,
+      final boolean includeEmptyNode,
+      final boolean includeFullNode,
+      final UInt64 blockSlot) {
+    final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
+    final ForkChoiceNode baseNode = ForkChoiceNode.createBase(blockRoot);
+    protoArray.addNode(
+        baseNode,
+        blockSlot,
+        Bytes32.ZERO,
+        Optional.empty(),
+        Bytes32.ZERO,
+        GENESIS_BLOCK_CHECKPOINTS,
+        ZERO,
+        Bytes32.ZERO,
+        false);
+    blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
+
+    if (includeEmptyNode) {
+      final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+      protoArray.addNode(
+          emptyNode,
+          blockSlot,
+          Bytes32.ZERO,
+          Optional.of(baseNode),
+          Bytes32.ZERO,
+          GENESIS_BLOCK_CHECKPOINTS,
+          ZERO,
+          Bytes32.ZERO,
+          false);
+      blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
+    }
+
+    if (includeFullNode) {
+      final ForkChoiceNode fullNode = ForkChoiceNode.createFull(blockRoot);
+      protoArray.addNode(
+          fullNode,
+          blockSlot,
+          Bytes32.ZERO,
+          Optional.of(baseNode),
+          Bytes32.ZERO,
+          GENESIS_BLOCK_CHECKPOINTS,
+          ZERO,
+          getHash(999),
+          false);
+      blockNodeIndex.attachFullNode(blockRoot, fullNode);
+    }
+
+    return blockNodeIndex;
   }
 
   private void votesShouldBeUpdated(final VoteUpdater store) {

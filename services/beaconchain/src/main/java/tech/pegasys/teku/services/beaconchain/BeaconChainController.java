@@ -138,7 +138,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -941,8 +940,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
-              receivedExecutionPayloadBidEventsChannelPublisher,
-              recentChainData);
+              receivedExecutionPayloadBidEventsChannelPublisher);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -954,6 +952,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
           eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
+          eventChannels.getPublisher(ExecutionPayloadGossipChannel.class, beaconAsyncRunner);
       final DefaultExecutionPayloadManager executionPayloadManager =
           new DefaultExecutionPayloadManager(
               spec,
@@ -962,7 +962,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               forkChoice,
               executionLayer,
               receivedExecutionPayloadEventsChannelPublisher,
-              recentChainData);
+              recentChainData,
+              executionPayloadGossipChannel::publishExecutionPayload);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
       this.executionPayloadManager = executionPayloadManager;
     } else {
@@ -993,8 +994,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .getBlockAtSlotExact(slot)
                 .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
 
-    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(specVersionFulu.miscHelpers());
-
     final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
     final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
 
@@ -1022,7 +1021,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnSidecarCustodyImpl,
             dasAsyncRunner,
             spec,
-            miscHelpersFulu,
             dataColumnSidecarGossipChannel::publishDataColumnSidecar,
             custodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
@@ -1074,7 +1072,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnSidecarRetriever recoveringSidecarRetriever =
         new SidecarRetriever(
             sidecarRetriever,
-            miscHelpersFulu,
+            spec,
             dbAccessor,
             dasAsyncRunner,
             Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
@@ -1475,6 +1473,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           .subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool)
           .subscribe(ReceivedBlockEventsChannel.class, aggregatingPayloadAttestationPool)
           .subscribe(FinalizedCheckpointChannel.class, pendingPayloadAttestations);
+      payloadAttestationPool.subscribeOperationAdded(forkChoice::onPayloadAttestationMessage);
     } else {
       pendingPayloadAttestations = poolFactory.createNoOpPendingPool(spec);
       payloadAttestationPool = PayloadAttestationPool.NOOP;

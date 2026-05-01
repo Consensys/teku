@@ -38,7 +38,7 @@ public class AttestationUtilDeneb extends AttestationUtilPhase0 {
 
   /**
    * [IGNORE] attestation.data.slot is equal to or earlier than the current_slot (with a
-   * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot <= current_slot (a
+   * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot &lt;= current_slot (a
    * client MAY queue future attestation for processing at the appropriate slot).
    *
    * <p>[IGNORE] the epoch of attestation.data.slot is either the current or previous epoch (with a
