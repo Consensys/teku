@@ -220,70 +220,95 @@ public class BlockOperationSelectorFactory {
       // In Gloas, parent execution requests are applied before operations, so a withdrawal
       // request targeting a validator can invalidate a voluntary exit for this validator in the
       // same block.
-      final Optional<ExecutionRequests> parentExecutionRequests =
+      final SafeFuture<Optional<ExecutionRequests>> parentExecutionRequestsFuture =
           bodyBuilder.supportsParentExecutionRequests()
-              ? Optional.of(
-                  executionPayloadManager.getParentExecutionRequestsForBlock(
-                      blockSlotState.getSlot(), parentRoot, blockProductionContext.payloadStatus()))
-              : Optional.empty();
-      final Set<UInt64> validatorsWithParentWithdrawalRequests = new HashSet<>();
-      parentExecutionRequests.ifPresent(
-          reqs -> {
-            for (final WithdrawalRequest wr : reqs.getWithdrawals()) {
-              spec.getValidatorIndex(blockSlotState, wr.getValidatorPubkey())
-                  .ifPresent(
-                      idx -> validatorsWithParentWithdrawalRequests.add(UInt64.valueOf(idx)));
-            }
-          });
+              ? executionPayloadManager
+                  .getParentExecutionRequestsForBlock(
+                      blockSlotState.getSlot(), parentRoot, blockProductionContext.payloadStatus())
+                  .thenApply(Optional::of)
+              : SafeFuture.completedFuture(Optional.empty());
 
-      // Collect exits to include
-      final SszList<SignedVoluntaryExit> voluntaryExits =
-          voluntaryExitPool.getItemsForBlock(
-              blockSlotState,
-              exit ->
-                  voluntaryExitPredicate(
+      final SafeFuture<Void> setOperationsComplete =
+          parentExecutionRequestsFuture.thenAccept(
+              parentExecutionRequests ->
+                  populateBlockBodyOperations(
+                      bodyBuilder,
+                      blockProductionContext,
                       blockSlotState,
+                      parentRoot,
+                      eth1Data,
+                      attestations,
+                      proposerSlashings,
+                      attesterSlashings,
                       exitedValidators,
-                      exit,
-                      validatorsWithParentWithdrawalRequests),
-              exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
+                      parentExecutionRequests));
 
-      bodyBuilder
-          .randaoReveal(blockProductionContext.randaoReveal())
-          .eth1Data(eth1Data)
-          .graffiti(graffitiBuilder.buildGraffiti(blockProductionContext.graffiti()))
-          .attestations(attestations)
-          .proposerSlashings(proposerSlashings)
-          .attesterSlashings(attesterSlashings)
-          .deposits(depositProvider.getDeposits(blockSlotState, eth1Data))
-          .voluntaryExits(voluntaryExits);
-
-      // Optional fields introduced in later forks
-
-      // Post-Altair: Sync aggregate
-      if (bodyBuilder.supportsSyncAggregate()) {
-        bodyBuilder.syncAggregate(
-            contributionPool.createSyncAggregateForBlock(blockSlotState.getSlot(), parentRoot));
-      }
-
-      // Post-Capella: BLS to Execution changes
-      if (bodyBuilder.supportsBlsToExecutionChanges()) {
-        bodyBuilder.blsToExecutionChanges(
-            blsToExecutionChangePool.getItemsForBlock(blockSlotState));
-      }
-
-      // Post-Gloas: Payload Attestations, Parent Execution Requests
-      if (bodyBuilder.supportsPayloadAttestations()) {
-        bodyBuilder.payloadAttestations(
-            payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
-      }
-
-      parentExecutionRequests.ifPresent(bodyBuilder::parentExecutionRequests);
-
-      return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)
+      return SafeFuture.allOfFailFast(
+              setExecutionDataComplete, setExecutionPayloadBidComplete, setOperationsComplete)
           .thenPeek(
               __ -> blockProductionContext.blockProductionPerformance().beaconBlockBodyPrepared());
     };
+  }
+
+  private void populateBlockBodyOperations(
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final BlockProductionContext blockProductionContext,
+      final BeaconState blockSlotState,
+      final Bytes32 parentRoot,
+      final Eth1Data eth1Data,
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final Set<UInt64> exitedValidators,
+      final Optional<ExecutionRequests> parentExecutionRequests) {
+    final Set<UInt64> validatorsWithParentWithdrawalRequests = new HashSet<>();
+    parentExecutionRequests.ifPresent(
+        reqs -> {
+          for (final WithdrawalRequest wr : reqs.getWithdrawals()) {
+            spec.getValidatorIndex(blockSlotState, wr.getValidatorPubkey())
+                .ifPresent(idx -> validatorsWithParentWithdrawalRequests.add(UInt64.valueOf(idx)));
+          }
+        });
+
+    // Collect exits to include
+    final SszList<SignedVoluntaryExit> voluntaryExits =
+        voluntaryExitPool.getItemsForBlock(
+            blockSlotState,
+            exit ->
+                voluntaryExitPredicate(
+                    blockSlotState, exitedValidators, exit, validatorsWithParentWithdrawalRequests),
+            exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
+
+    bodyBuilder
+        .randaoReveal(blockProductionContext.randaoReveal())
+        .eth1Data(eth1Data)
+        .graffiti(graffitiBuilder.buildGraffiti(blockProductionContext.graffiti()))
+        .attestations(attestations)
+        .proposerSlashings(proposerSlashings)
+        .attesterSlashings(attesterSlashings)
+        .deposits(depositProvider.getDeposits(blockSlotState, eth1Data))
+        .voluntaryExits(voluntaryExits);
+
+    // Optional fields introduced in later forks
+
+    // Post-Altair: Sync aggregate
+    if (bodyBuilder.supportsSyncAggregate()) {
+      bodyBuilder.syncAggregate(
+          contributionPool.createSyncAggregateForBlock(blockSlotState.getSlot(), parentRoot));
+    }
+
+    // Post-Capella: BLS to Execution changes
+    if (bodyBuilder.supportsBlsToExecutionChanges()) {
+      bodyBuilder.blsToExecutionChanges(blsToExecutionChangePool.getItemsForBlock(blockSlotState));
+    }
+
+    // Post-Gloas: Payload Attestations, Parent Execution Requests
+    if (bodyBuilder.supportsPayloadAttestations()) {
+      bodyBuilder.payloadAttestations(
+          payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
+    }
+
+    parentExecutionRequests.ifPresent(bodyBuilder::parentExecutionRequests);
   }
 
   private boolean voluntaryExitPredicate(

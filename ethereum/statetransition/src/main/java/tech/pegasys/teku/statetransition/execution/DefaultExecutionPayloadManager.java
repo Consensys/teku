@@ -194,35 +194,37 @@ public class DefaultExecutionPayloadManager
   }
 
   @Override
-  public ExecutionRequests getParentExecutionRequestsForBlock(
+  public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
       final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
     final SpecVersion specVersion = spec.atSlot(slot);
     if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
-      return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
-          .getExecutionRequestsSchema()
-          .getDefault();
+      return SafeFuture.completedFuture(
+          SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
+              .getExecutionRequestsSchema()
+              .getDefault());
     }
-    // TODO: make the blinded provider transparently go to the cache and then hit the disk on cache
-    // miss (and it will be a future, with all the side effects)
+    final Optional<ExecutionRequests> fromCache =
+        recentChainData
+            .getStore()
+            .getExecutionPayloadIfAvailable(parentRoot)
+            .map(signedEnvelope -> signedEnvelope.getMessage().getExecutionRequests());
+    if (fromCache.isPresent()) {
+      return SafeFuture.completedFuture(fromCache.get());
+    }
     return recentChainData
-        .getStore()
-        .getExecutionPayloadIfAvailable(parentRoot)
-        .map(signedEnvelope -> signedEnvelope.getMessage().getExecutionRequests())
-        .or(
-            () ->
-                recentChainData
-                    .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
-                    // TODO: remove join, with all the consequences (but see above)
-                    .join()
+        .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
+        .thenApply(
+            maybeBlinded ->
+                maybeBlinded
                     .map(
                         signedBlindedEnvelope ->
-                            signedBlindedEnvelope.getMessage().getExecutionRequests()))
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    String.format(
-                        "Execution Payload is not available for parent root %s during block production for slot %s",
-                        parentRoot, slot)));
+                            signedBlindedEnvelope.getMessage().getExecutionRequests())
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Execution Payload is not available for parent root %s during block production for slot %s",
+                                    parentRoot, slot))));
   }
 
   @Override

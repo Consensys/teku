@@ -325,7 +325,7 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockBodyBuilder gloasBodyBuilder =
         new CapturingBeaconBlockBodyBuilder(false, false, true);
     when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
-        .thenReturn(parentReqs);
+        .thenReturn(SafeFuture.completedFuture(parentReqs));
 
     safeJoin(
         factory
