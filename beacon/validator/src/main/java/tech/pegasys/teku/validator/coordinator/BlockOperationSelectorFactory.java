@@ -244,6 +244,7 @@ public class BlockOperationSelectorFactory {
                               exitedValidators,
                               validatorsWithParentWithdrawalRequests);
                       bodyBuilder.voluntaryExits(voluntaryExits);
+                      // Post-Gloas: Parent Execution Requests
                       bodyBuilder.parentExecutionRequests(parentExecutionRequests);
                     });
       } else {
