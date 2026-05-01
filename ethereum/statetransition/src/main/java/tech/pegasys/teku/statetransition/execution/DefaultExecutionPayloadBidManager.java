@@ -93,7 +93,14 @@ public class DefaultExecutionPayloadBidManager
               receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
                   signedBid);
             }
-            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            case SAVE_FOR_FUTURE -> {}
+            case REJECT, IGNORE ->
+                LOG.debug(
+                    "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
+                    remoteBidOrigin,
+                    signedBid.getMessage().getSlot(),
+                    signedBid.getMessage().getBuilderIndex(),
+                    result);
           }
         });
     return validationResult;

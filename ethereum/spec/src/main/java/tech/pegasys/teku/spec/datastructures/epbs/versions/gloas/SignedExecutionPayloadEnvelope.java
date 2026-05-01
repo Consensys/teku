@@ -73,7 +73,10 @@ public class SignedExecutionPayloadEnvelope
 
   public String toLogString() {
     return LogFormatter.formatExecutionPayload(
-        getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
+        getMessage().getSlot(),
+        getMessage().getBeaconBlockRoot(),
+        getMessage().getBuilderIndex(),
+        getMessage().getPayload().getBlockHash());
   }
 
   public SignedBlindedExecutionPayloadEnvelope blind(final Spec spec) {
