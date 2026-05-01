@@ -197,6 +197,7 @@ public abstract class RecentChainData
             .specProvider(spec)
             .blockProvider(blockProvider)
             .executionPayloadProvider(executionPayloadProvider)
+            .blindedExecutionPayloadProvider(blindedExecutionPayloadProvider)
             .stateProvider(stateProvider)
             .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
             .storeConfig(storeConfig)
@@ -731,7 +732,7 @@ public abstract class RecentChainData
     if (store == null) {
       return EmptyStoreResults.EMPTY_SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
     }
-    return blindedExecutionPayloadProvider.getBlindedExecutionPayload(beaconBlockRoot);
+    return store.retrieveSignedBlindedExecutionPayload(beaconBlockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {

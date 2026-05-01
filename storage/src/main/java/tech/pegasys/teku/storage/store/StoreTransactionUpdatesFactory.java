@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
@@ -294,11 +293,7 @@ class StoreTransactionUpdatesFactory {
             entry -> {
               final SignedExecutionPayloadEnvelope executionPayload =
                   entry.getValue().executionPayload();
-              return Map.entry(
-                  entry.getKey(),
-                  executionPayload.blind(
-                      SchemaDefinitionsGloas.required(
-                          spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
+              return Map.entry(entry.getKey(), executionPayload.blind(spec));
             })
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }

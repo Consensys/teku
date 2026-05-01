@@ -95,7 +95,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.GloasForkChoiceRebuildData;
@@ -704,9 +703,7 @@ public class DatabaseTest {
     final SignedBlindedExecutionPayloadEnvelope mismatchedEnvelope =
         dataStructureUtil
             .randomSignedExecutionPayloadEnvelopeForBlock(blockAndState.getBlock())
-            .blind(
-                SchemaDefinitionsGloas.required(
-                    spec.atSlot(blockAndState.getSlot()).getSchemaDefinitions()));
+            .blind(spec);
 
     commit(transaction);
     storeBlindedExecutionPayloadEnvelope(blockAndState.getRoot(), mismatchedEnvelope);
@@ -924,9 +921,7 @@ public class DatabaseTest {
       final SignedBlockAndState blockAndState) {
     final SignedExecutionPayloadEnvelope executionPayload =
         chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
-    return executionPayload.blind(
-        SchemaDefinitionsGloas.required(
-            spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions()));
+    return executionPayload.blind(spec);
   }
 
   @TestTemplate

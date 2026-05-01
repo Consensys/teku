@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -81,11 +80,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
     verify(channel).onStorageUpdate(captor.capture());
     assertThat(captor.getValue().getBlindedExecutionPayloads())
-        .containsEntry(
-            blockAndState.getRoot(),
-            executionPayload.blind(
-                SchemaDefinitionsGloas.required(
-                    spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
+        .containsEntry(blockAndState.getRoot(), executionPayload.blind(spec));
   }
 
   @Test

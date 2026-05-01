@@ -19,6 +19,7 @@ import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMa
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
@@ -60,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -105,6 +108,7 @@ class Store extends CacheableStore {
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private final ForkChoiceStrategy forkChoiceStrategy;
   private final ExecutionPayloadProvider executionPayloadProvider;
+  private final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider;
 
   private final Optional<Checkpoint> initialCheckpoint;
   private final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates;
@@ -132,6 +136,7 @@ class Store extends CacheableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates,
@@ -203,11 +208,17 @@ class Store extends CacheableStore {
 
     this.executionPayloads = executionPayloads;
 
-    // Set up execution payload provider to draw from in-memory execution payload
+    // Set up execution payload providers to draw from in-memory execution payloads
     this.executionPayloadProvider =
         ExecutionPayloadProvider.combined(
             createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
             executionPayloadProvider);
+    this.blindedExecutionPayloadProvider =
+        BlindedExecutionPayloadProvider.combined(
+            createBlindedExecutionPayloadProviderFromMapWhileLocked(
+                Maps.transformValues(
+                    this.executionPayloads, executionPayload -> executionPayload.blind(spec))),
+            blindedExecutionPayloadProvider);
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -240,12 +251,28 @@ class Store extends CacheableStore {
     };
   }
 
+  private BlindedExecutionPayloadProvider createBlindedExecutionPayloadProviderFromMapWhileLocked(
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloadMap) {
+    return (roots) -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            roots.stream()
+                .filter(blindedExecutionPayloadMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blindedExecutionPayloadMap::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
+  }
+
   static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -285,6 +312,7 @@ class Store extends CacheableStore {
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
         executionPayloadProvider,
+        blindedExecutionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         blockStateTaskQueue,
@@ -311,6 +339,7 @@ class Store extends CacheableStore {
       final Spec spec,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -343,6 +372,7 @@ class Store extends CacheableStore {
         spec,
         blockProvider,
         executionPayloadProvider,
+        blindedExecutionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         initialCheckpoint,
@@ -745,6 +775,15 @@ class Store extends CacheableStore {
       return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
     }
     return executionPayloadProvider.getExecutionPayload(blockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
+    if (!containsBlock(blockRoot)) {
+      return EmptyStoreResults.EMPTY_SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return blindedExecutionPayloadProvider.getBlindedExecutionPayload(blockRoot);
   }
 
   @Override

@@ -61,6 +61,7 @@ import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.UnblindingExecutionPayloadProvider;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -605,8 +606,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorIsConnectedProvider validatorIsConnectedProvider =
         new ValidatorIsConnectedProviderReference(() -> proposersDataManager);
 
+    final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider =
+        createBlindedExecutionPayloadProvider(storageQueryChannel);
+
     final ExecutionPayloadProvider executionPayloadProvider =
-        createExecutionPayloadProvider(storageQueryChannel);
+        createExecutionPayloadProvider(blindedExecutionPayloadProvider);
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -620,6 +624,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
                     executionPayloadProvider,
+                    blindedExecutionPayloadProvider,
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
@@ -744,14 +749,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
   }
 
-  protected ExecutionPayloadProvider createExecutionPayloadProvider(
+  protected BlindedExecutionPayloadProvider createBlindedExecutionPayloadProvider(
       final StorageQueryChannel storageQueryChannel) {
+    if (!spec.supportsExecutionPayloadEnvelopes()) {
+      return BlindedExecutionPayloadProvider.NOOP;
+    }
+    return storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot;
+  }
+
+  protected ExecutionPayloadProvider createExecutionPayloadProvider(
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider) {
     if (!spec.supportsExecutionPayloadEnvelopes()) {
       return ExecutionPayloadProvider.NOOP;
     }
     return new UnblindingExecutionPayloadProvider(
         spec,
-        storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot,
+        blindedExecutionPayloadProvider,
         blockHashes -> executionLayer.engineGetPayloadBodiesByHash(blockHashes));
   }
 

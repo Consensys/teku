@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -132,6 +133,9 @@ public interface ReadOnlyStore extends TimeProvider {
   SafeFuture<Optional<BeaconState>> retrieveBlockState(SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
+      Bytes32 blockRoot);
+
+  SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>> retrieveSignedBlindedExecutionPayload(
       Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);

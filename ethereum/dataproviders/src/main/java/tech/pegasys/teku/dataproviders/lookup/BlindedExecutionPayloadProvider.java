@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.dataproviders.lookup;
 
+import com.google.common.collect.Sets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +27,39 @@ public interface BlindedExecutionPayloadProvider {
 
   BlindedExecutionPayloadProvider NOOP =
       roots -> SafeFuture.completedFuture(Collections.emptyMap());
+
+  /**
+   * Combines multiple providers, querying the primary first and falling back to secondary providers
+   * for any missing roots. Use this to combine a hot store provider with a database-backed
+   * provider.
+   */
+  static BlindedExecutionPayloadProvider combined(
+      final BlindedExecutionPayloadProvider primaryProvider,
+      final BlindedExecutionPayloadProvider... secondaryProviders) {
+    return (final Set<Bytes32> blockRoots) -> {
+      SafeFuture<Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>> result =
+          primaryProvider.getBlindedExecutionPayloads(blockRoots).thenApply(HashMap::new);
+      for (BlindedExecutionPayloadProvider nextProvider : secondaryProviders) {
+        result =
+            result.thenCompose(
+                blindedExecutionPayloads -> {
+                  final Set<Bytes32> remainingRoots =
+                      Sets.difference(blockRoots, blindedExecutionPayloads.keySet());
+                  if (remainingRoots.isEmpty()) {
+                    return SafeFuture.completedFuture(blindedExecutionPayloads);
+                  }
+                  return nextProvider
+                      .getBlindedExecutionPayloads(remainingRoots)
+                      .thenApply(
+                          moreBlindedPayloads -> {
+                            blindedExecutionPayloads.putAll(moreBlindedPayloads);
+                            return blindedExecutionPayloads;
+                          });
+                });
+      }
+      return result;
+    };
+  }
 
   SafeFuture<Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>> getBlindedExecutionPayloads(
       Set<Bytes32> blockRoots);

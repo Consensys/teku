@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -148,28 +148,29 @@ public class DefaultExecutionPayloadManager
                         signedExecutionPayload);
                   }
                   case UNKNOWN_BEACON_BLOCK_ROOT -> {
+                    // Add to the pending pool so it is triggered once the block is imported
+                    pendingExecutionPayloads.put(
+                        signedExecutionPayload.getBlockRootAndBuilderIndex(),
+                        signedExecutionPayload);
                     // Check if the block was imported while we were trying to import this execution
                     // payload and then import it async
                     if (recentChainData.containsBlock(
                         signedExecutionPayload.getBeaconBlockRoot())) {
+                      pendingExecutionPayloads.remove(
+                          signedExecutionPayload.getBlockRootAndBuilderIndex());
                       importExecutionPayload(signedExecutionPayload).finishStackTrace();
                     } else {
                       LOG.debug(
                           "Adding execution payload for slot {} and block root {} to the pending pool because the block is not yet imported",
                           signedExecutionPayload.getSlot(),
                           signedExecutionPayload.getBeaconBlockRoot());
-                      // Add to the pending pool so it is triggered once the block is imported
-                      pendingExecutionPayloads.put(
-                          signedExecutionPayload.getBlockRootAndBuilderIndex(),
-                          signedExecutionPayload);
                     }
                   }
                   case INTERNAL_ERROR,
                           FAILED_VERIFICATION,
                           FAILED_DATA_AVAILABILITY_CHECK_INVALID,
                           FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
-                      logFailedExecutionPayloadImport(
-                          signedExecutionPayload, result.getFailureReason());
+                      logFailedExecutionPayloadImport(signedExecutionPayload, result);
                 }
               }
             })
@@ -186,10 +187,17 @@ public class DefaultExecutionPayloadManager
   }
 
   private void logFailedExecutionPayloadImport(
-      final SignedExecutionPayloadEnvelope executionPayload, final FailureReason failureReason) {
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult importResult) {
     LOG.debug(
-        "Unable to import execution payload for reason {}: {}",
-        failureReason,
+        "Unable to import execution payload for reason {}{}: {}",
+        importResult.getFailureReason(),
+        importResult
+            .getFailureCause()
+            .map(ExceptionUtil::getRootCauseMessage)
+            .filter(causeMessage -> !causeMessage.isBlank())
+            .map(causeMessage -> " (" + causeMessage + ")")
+            .orElse(""),
         executionPayload.toLogString());
   }
 
@@ -203,28 +211,21 @@ public class DefaultExecutionPayloadManager
               .getExecutionRequestsSchema()
               .getDefault());
     }
-    final Optional<ExecutionRequests> fromCache =
-        recentChainData
-            .getStore()
-            .getExecutionPayloadIfAvailable(parentRoot)
-            .map(signedEnvelope -> signedEnvelope.getMessage().getExecutionRequests());
-    if (fromCache.isPresent()) {
-      return SafeFuture.completedFuture(fromCache.get());
-    }
+    // to avoid querying the EL when unblinding in some cases, we directly query for the blinded
+    // execution payloads which include the in-memory payloads as well
     return recentChainData
         .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
         .thenApply(
-            maybeBlinded ->
-                maybeBlinded
-                    .map(
-                        signedBlindedEnvelope ->
-                            signedBlindedEnvelope.getMessage().getExecutionRequests())
+            executionPayload ->
+                executionPayload
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
                                 String.format(
                                     "Execution Payload is not available for parent root %s during block production for slot %s",
-                                    parentRoot, slot))));
+                                    parentRoot, slot)))
+                    .getMessage()
+                    .getExecutionRequests());
   }
 
   @Override
