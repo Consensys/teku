@@ -40,6 +40,7 @@ public interface ExecutionPayloadBidManager {
         @Override
         public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
             final Bytes32 parentRoot,
+            final Bytes32 parentBlockHash,
             final BeaconState state,
             final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
             final BlockProductionPerformance blockProductionPerformance) {
@@ -52,6 +53,7 @@ public interface ExecutionPayloadBidManager {
 
   SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       Bytes32 parentRoot,
+      Bytes32 parentBlockHash,
       BeaconState state,
       SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       BlockProductionPerformance blockProductionPerformance);

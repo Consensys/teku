@@ -163,7 +163,8 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsExecutionPayload()) {
         setExecutionDataComplete =
             forkChoiceNotifier
-                .getPayloadId(parentRoot, blockSlotState.getSlot())
+                .getPayloadId(
+                    blockProductionContext.parentForkChoiceNode(), blockSlotState.getSlot())
                 .thenCompose(
                     executionPayloadContext ->
                         setExecutionData(
@@ -181,7 +182,8 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsSignedExecutionPayloadBid()) {
         setExecutionPayloadBidComplete =
             forkChoiceNotifier
-                .getPayloadId(parentRoot, blockSlotState.getSlot())
+                .getPayloadId(
+                    blockProductionContext.parentForkChoiceNode(), blockSlotState.getSlot())
                 .thenCompose(
                     executionPayloadContext ->
                         setExecutionPayloadBid(
@@ -522,6 +524,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadBidManager
             .getBidForBlock(
                 parentRoot,
+                blockProductionContext.parentExecutionBlockHash(),
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
                 blockProductionContext.blockProductionPerformance())

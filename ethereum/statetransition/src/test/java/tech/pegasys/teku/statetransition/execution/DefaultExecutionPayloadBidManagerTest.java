@@ -90,11 +90,13 @@ public class DefaultExecutionPayloadBidManagerTest {
             executionRequests);
 
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = executionPayload.getParentHash();
 
     final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
+                parentBlockHash,
                 state,
                 SafeFuture.completedFuture(getPayloadResponse),
                 blockProductionPerformance));
@@ -168,11 +170,13 @@ public class DefaultExecutionPayloadBidManagerTest {
             executionRequests);
 
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = executionPayload.getParentHash();
 
     final ExecutionPayloadBid bid =
         SafeFutureAssert.safeJoin(
                 executionPayloadBidManager.getBidForBlock(
                     parentRoot,
+                    parentBlockHash,
                     state,
                     SafeFuture.completedFuture(getPayloadResponse),
                     blockProductionPerformance))
@@ -194,13 +198,36 @@ public class DefaultExecutionPayloadBidManagerTest {
   }
 
   @Test
+  public void rejectsLocalBidWhenPayloadParentHashDoesNotMatchProductionParent() {
+    final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 selectedParentBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 payloadParentBlockHash = dataStructureUtil.randomBytes32();
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                selectedParentBlockHash,
+                state,
+                SafeFuture.completedFuture(
+                    randomGetPayloadResponse(state.getSlot(), payloadParentBlockHash)),
+                blockProductionPerformance))
+        .isCompletedExceptionallyWith(IllegalStateException.class)
+        .hasMessageContaining("does not match selected production parent execution hash");
+  }
+
+  @Test
   public void returnsHighestValueRemoteBidForBlock() {
     final UInt64 slot = UInt64.valueOf(10);
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
 
-    final SignedExecutionPayloadBid lowerBid = createBid(slot, parentRoot, UInt64.valueOf(100));
-    final SignedExecutionPayloadBid higherBid = createBid(slot, parentRoot, UInt64.valueOf(500));
-    final SignedExecutionPayloadBid mediumBid = createBid(slot, parentRoot, UInt64.valueOf(250));
+    final SignedExecutionPayloadBid lowerBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(100));
+    final SignedExecutionPayloadBid higherBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500));
+    final SignedExecutionPayloadBid mediumBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(250));
 
     addAcceptedBid(lowerBid);
     addAcceptedBid(higherBid);
@@ -211,7 +238,11 @@ public class DefaultExecutionPayloadBidManagerTest {
     final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
-                parentRoot, state, new SafeFuture<>(), blockProductionPerformance));
+                parentRoot,
+                parentBlockHash,
+                state,
+                new SafeFuture<>(),
+                blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(higherBid);
   }
@@ -220,12 +251,13 @@ public class DefaultExecutionPayloadBidManagerTest {
   public void filtersRemoteBidsByParentBlockRoot() {
     final UInt64 slot = UInt64.valueOf(10);
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 otherParentRoot = dataStructureUtil.randomBytes32();
 
     final SignedExecutionPayloadBid bidForOtherParent =
-        createBid(slot, otherParentRoot, UInt64.valueOf(1_000_000));
+        createBid(slot, otherParentRoot, parentBlockHash, UInt64.valueOf(1_000_000));
     final SignedExecutionPayloadBid bidForOurParent =
-        createBid(slot, parentRoot, UInt64.valueOf(100));
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(100));
 
     addAcceptedBid(bidForOtherParent);
     addAcceptedBid(bidForOurParent);
@@ -235,27 +267,68 @@ public class DefaultExecutionPayloadBidManagerTest {
     final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
-                parentRoot, state, new SafeFuture<>(), blockProductionPerformance));
+                parentRoot,
+                parentBlockHash,
+                state,
+                new SafeFuture<>(),
+                blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(bidForOurParent);
+  }
+
+  @Test
+  public void filtersRemoteBidsByParentBlockHash() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 otherParentBlockHash = dataStructureUtil.randomBytes32();
+
+    final SignedExecutionPayloadBid bidForOtherParentHash =
+        createBid(slot, parentRoot, otherParentBlockHash, UInt64.valueOf(1_000_000));
+    final SignedExecutionPayloadBid bidForOurParentHash =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(100));
+
+    addAcceptedBid(bidForOtherParentHash);
+    addAcceptedBid(bidForOurParentHash);
+
+    final BeaconStateGloas state = stateAtSlot(slot);
+
+    final SignedExecutionPayloadBid signedBid =
+        SafeFutureAssert.safeJoin(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                parentBlockHash,
+                state,
+                new SafeFuture<>(),
+                blockProductionPerformance));
+
+    assertThat(signedBid).isEqualTo(bidForOurParentHash);
   }
 
   @Test
   public void fallsBackToLocalSelfBuiltBidWhenNoRemoteBidMatches() {
     final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
 
     // remote bids for a different slot or parent should not match
-    addAcceptedBid(createBid(state.getSlot().plus(5), parentRoot, UInt64.valueOf(100)));
     addAcceptedBid(
-        createBid(state.getSlot(), dataStructureUtil.randomBytes32(), UInt64.valueOf(100)));
+        createBid(state.getSlot().plus(5), parentRoot, parentBlockHash, UInt64.valueOf(100)));
+    addAcceptedBid(
+        createBid(
+            state.getSlot(),
+            dataStructureUtil.randomBytes32(),
+            parentBlockHash,
+            UInt64.valueOf(100)));
 
     final SignedExecutionPayloadBid signedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
+                parentBlockHash,
                 state,
-                SafeFuture.completedFuture(randomGetPayloadResponse(state.getSlot())),
+                SafeFuture.completedFuture(
+                    randomGetPayloadResponse(state.getSlot(), parentBlockHash)),
                 blockProductionPerformance));
 
     assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -279,14 +352,15 @@ public class DefaultExecutionPayloadBidManagerTest {
   @Test
   public void onSlotPrunesBidsForPriorSlots() {
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
     final UInt64 currentSlot = UInt64.valueOf(10);
 
     final SignedExecutionPayloadBid staleBid =
-        createBid(currentSlot.minus(1), parentRoot, UInt64.valueOf(500));
+        createBid(currentSlot.minus(1), parentRoot, parentBlockHash, UInt64.valueOf(500));
     final SignedExecutionPayloadBid currentSlotBid =
-        createBid(currentSlot, parentRoot, UInt64.valueOf(200));
+        createBid(currentSlot, parentRoot, parentBlockHash, UInt64.valueOf(200));
     final SignedExecutionPayloadBid nextSlotBid =
-        createBid(currentSlot.plus(1), parentRoot, UInt64.valueOf(300));
+        createBid(currentSlot.plus(1), parentRoot, parentBlockHash, UInt64.valueOf(300));
 
     addAcceptedBid(staleBid);
     addAcceptedBid(currentSlotBid);
@@ -300,8 +374,9 @@ public class DefaultExecutionPayloadBidManagerTest {
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
+                parentBlockHash,
                 stateAtSlot(staleSlot),
-                SafeFuture.completedFuture(randomGetPayloadResponse(staleSlot)),
+                SafeFuture.completedFuture(randomGetPayloadResponse(staleSlot, parentBlockHash)),
                 blockProductionPerformance));
     assertThat(staleLookup.getSignature()).isEqualTo(BLSSignature.infinity());
 
@@ -310,6 +385,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             SafeFutureAssert.safeJoin(
                 executionPayloadBidManager.getBidForBlock(
                     parentRoot,
+                    parentBlockHash,
                     stateAtSlot(currentSlot),
                     new SafeFuture<>(),
                     blockProductionPerformance)))
@@ -318,15 +394,18 @@ public class DefaultExecutionPayloadBidManagerTest {
             SafeFutureAssert.safeJoin(
                 executionPayloadBidManager.getBidForBlock(
                     parentRoot,
+                    parentBlockHash,
                     stateAtSlot(currentSlot.plus(1)),
                     new SafeFuture<>(),
                     blockProductionPerformance)))
         .isEqualTo(nextSlotBid);
   }
 
-  private GetPayloadResponse randomGetPayloadResponse(final UInt64 slot) {
+  private GetPayloadResponse randomGetPayloadResponse(
+      final UInt64 slot, final Bytes32 parentBlockHash) {
     return new GetPayloadResponse(
-        dataStructureUtil.randomExecutionPayload(slot),
+        dataStructureUtil.randomExecutionPayload(
+            slot, builder -> builder.parentHash(parentBlockHash)),
         UInt256.valueOf(1000000000000L),
         dataStructureUtil.randomBlobsBundle(3),
         false,
@@ -335,12 +414,20 @@ public class DefaultExecutionPayloadBidManagerTest {
 
   private SignedExecutionPayloadBid createBid(
       final UInt64 slot, final Bytes32 parentBlockRoot, final UInt64 value) {
+    return createBid(slot, parentBlockRoot, dataStructureUtil.randomBytes32(), value);
+  }
+
+  private SignedExecutionPayloadBid createBid(
+      final UInt64 slot,
+      final Bytes32 parentBlockRoot,
+      final Bytes32 parentBlockHash,
+      final UInt64 value) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionPayloadBidSchema schema = schemaDefinitions.getExecutionPayloadBidSchema();
     final ExecutionPayloadBid bid =
         schema.create(
-            dataStructureUtil.randomBytes32(),
+            parentBlockHash,
             parentBlockRoot,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32(),

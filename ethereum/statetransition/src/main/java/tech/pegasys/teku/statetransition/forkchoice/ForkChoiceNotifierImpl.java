@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -118,8 +119,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, blockSlot));
+      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
+    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlock, blockSlot));
   }
 
   @Override
@@ -135,41 +136,35 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   /**
-   * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
+   * @param parentBeaconBlock fork choice node of the beacon block the new block will be built on
    * @param blockSlot slot of the block being produced, for which the payloadId has been requested
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the bellatrix fork and before Terminal Block arrival)
    *     <p>Optional.of(executionPayloadContext) when one of the following:
-   *     <p>1. builds on top of execution head of parentBeaconBlockRoot
+   *     <p>1. builds on top of execution head of parentBeaconBlock
    *     <p>2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
-      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
+      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
 
     LOG.debug(
-        "internalGetPayloadId parentBeaconBlockRoot {} blockSlot {}",
-        parentBeaconBlockRoot,
-        blockSlot);
-
-    checkState(
-        forkChoiceUpdateData
-            .getForkChoiceState()
-            .headBlock()
-            .blockRoot()
-            .equals(parentBeaconBlockRoot));
+        "internalGetPayloadId parentBeaconBlock {} blockSlot {}", parentBeaconBlock, blockSlot);
 
     final Bytes32 parentExecutionHash =
         recentChainData
-            .getExecutionBlockHashForBlock(forkChoiceUpdateData.getForkChoiceState().headBlock())
+            .getExecutionBlockHashForBlock(parentBeaconBlock)
             .orElseThrow(
                 () ->
                     new IllegalStateException(
                         "Failed to retrieve execution payload hash from beacon block root"));
 
     final UInt64 timestamp = spec.computeTimeAtSlot(blockSlot, recentChainData.getGenesisTime());
+
+    validateForkChoiceHeadMatchesParent(parentBeaconBlock, parentExecutionHash);
+
     if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
       return forkChoiceUpdateData.getExecutionPayloadContext();
     } else if (parentExecutionHash.isZero() && !forkChoiceUpdateData.hasTerminalBlockHash()) {
@@ -203,6 +198,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
                 sendForkChoiceUpdated();
 
+                validateForkChoiceHeadMatchesParent(parentBeaconBlock, parentExecutionHash);
+
                 if (!forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
                   throw new IllegalStateException(
                       "payloadId still not suitable after requesting a new one via FcU with recalculated data");
@@ -219,6 +216,19 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                 return maybeExecutionPayloadContext;
               });
     }
+  }
+
+  private void validateForkChoiceHeadMatchesParent(
+      final ForkChoiceNode parentBeaconBlock, final Bytes32 parentExecutionHash) {
+    if (parentExecutionHash.isZero()) {
+      return;
+    }
+
+    checkState(
+        forkChoiceUpdateData.getForkChoiceState().headBlock().equals(parentBeaconBlock),
+        "Fork choice update head %s does not match requested block production parent %s",
+        forkChoiceUpdateData.getForkChoiceState().headBlock(),
+        parentBeaconBlock);
   }
 
   private void internalForkChoiceUpdated(
@@ -346,15 +356,22 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
-    forkChoiceUpdateData
+    final ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
+    localForkChoiceUpdateData
         .withPayloadBuildingAttributesAsync(
             () ->
                 proposersDataManager.calculatePayloadBuildingAttributes(
-                    blockSlot, inSync, forkChoiceUpdateData, false),
+                    blockSlot, inSync, localForkChoiceUpdateData, false),
             eventThread)
         .thenAccept(
             newForkChoiceUpdateData -> {
               if (newForkChoiceUpdateData.isPresent()) {
+                if (isStaleForkChoiceUpdateData(localForkChoiceUpdateData)) {
+                  LOG.debug(
+                      "Ignoring stale payload attributes for slot {} because fork choice update data has changed",
+                      blockSlot);
+                  return;
+                }
                 forkChoiceUpdateData = newForkChoiceUpdateData.get();
                 sendForkChoiceUpdated();
               }
@@ -362,5 +379,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         .finish(
             error ->
                 LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error));
+  }
+
+  @SuppressWarnings("ReferenceComparison")
+  private boolean isStaleForkChoiceUpdateData(
+      final ForkChoiceUpdateData localForkChoiceUpdateData) {
+    return forkChoiceUpdateData != localForkChoiceUpdateData;
   }
 }

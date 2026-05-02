@@ -90,6 +90,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -481,9 +482,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   .thenPeek(___ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(
-              stateFuture,
-              maybeChainHead.thenApply(ChainHead::getPayloadStatus),
-              productionPerformance);
+              stateFuture, maybeChainHead, productionPerformance);
         });
   }
 
@@ -1212,7 +1211,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private record BlockProductionPreparationContext(
       SafeFuture<BeaconState> stateFuture,
-      SafeFuture<ForkChoicePayloadStatus> payloadStatusFuture,
+      SafeFuture<ChainHead> chainHeadFuture,
       BlockProductionPerformance blockProductionPerformance) {
 
     SafeFuture<BlockProductionContext> toBlockProductionContext(
@@ -1222,16 +1221,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final Optional<Bytes32> graffiti,
         final Optional<UInt64> requestedBuilderBoostFactor) {
       return stateFuture.thenCombine(
-          payloadStatusFuture,
-          (state, payloadStatus) ->
+          chainHeadFuture,
+          (state, chainHead) ->
               BlockProductionContext.create(
                   spec,
                   proposalSlot,
                   state,
+                  chainHead,
                   randaoReveal,
                   graffiti,
                   requestedBuilderBoostFactor,
-                  payloadStatus,
                   blockProductionPerformance));
     }
   }
@@ -1239,21 +1238,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   public record BlockProductionContext(
       UInt64 proposalSlot,
       BeaconState blockSlotState,
-      Bytes32 parentRoot,
+      ForkChoiceNode parentForkChoiceNode,
+      Bytes32 parentExecutionBlockHash,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
       Optional<UInt64> requestedBuilderBoostFactor,
-      ForkChoicePayloadStatus payloadStatus,
       BlockProductionPerformance blockProductionPerformance) {
 
     public static BlockProductionContext create(
         final Spec spec,
         final UInt64 proposalSlot,
         final BeaconState blockSlotState,
+        final ChainHead parentChainHead,
         final BLSSignature randaoReveal,
         final Optional<Bytes32> graffiti,
         final Optional<UInt64> requestedBuilderBoostFactor,
-        final ForkChoicePayloadStatus payloadStatus,
         final BlockProductionPerformance blockProductionPerformance) {
       checkArgument(
           blockSlotState.getSlot().equals(proposalSlot),
@@ -1261,15 +1260,28 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           blockSlotState.getSlot(),
           proposalSlot);
       final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
+      checkArgument(
+          parentRoot.equals(parentChainHead.getRoot()),
+          "Block slot state parent root %s does not match selected production parent root %s",
+          parentRoot,
+          parentChainHead.getRoot());
       return new BlockProductionContext(
           proposalSlot,
           blockSlotState,
-          parentRoot,
+          parentChainHead.getForkChoiceNode(),
+          parentChainHead.getExecutionBlockHash(),
           randaoReveal,
           graffiti,
           requestedBuilderBoostFactor,
-          payloadStatus,
           blockProductionPerformance);
+    }
+
+    public Bytes32 parentRoot() {
+      return parentForkChoiceNode.blockRoot();
+    }
+
+    public ForkChoicePayloadStatus payloadStatus() {
+      return parentForkChoiceNode.payloadStatus();
     }
   }
 }
