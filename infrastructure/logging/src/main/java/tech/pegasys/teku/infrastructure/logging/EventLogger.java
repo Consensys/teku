@@ -275,16 +275,20 @@ public class EventLogger {
       final UInt64 nodeSlot,
       final UInt64 headSlot,
       final Bytes32 bestExecutionBlockHash,
-      final String payloadStatus,
+      final String payloadBuiltOn,
       final int numPeers) {
-    String executionBlockHash = "                                                       ... empty";
+    String executionBlockHashAndBuiltOn =
+        "                                                       ... empty";
     if (nodeSlot.equals(headSlot)) {
-      executionBlockHash = LogFormatter.formatHashRoot(bestExecutionBlockHash);
+      executionBlockHashAndBuiltOn =
+          LogFormatter.formatHashRoot(bestExecutionBlockHash)
+              + ", Built on top of "
+              + payloadBuiltOn;
     }
     final String slotPayloadEventLog =
         String.format(
-            "Slot Payload Event  *** Slot: %s, Execution Block: %s, Payload Status: %s, Peers: %d",
-            nodeSlot, executionBlockHash, payloadStatus, numPeers);
+            "Slot Payload Event  *** Slot: %s, Execution Block: %s, Peers: %d",
+            nodeSlot, executionBlockHashAndBuiltOn, numPeers);
     info(slotPayloadEventLog, Color.WHITE);
   }
 

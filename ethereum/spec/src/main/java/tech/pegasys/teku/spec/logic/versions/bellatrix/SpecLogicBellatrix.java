@@ -91,7 +91,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         Optional.of(blindBlockUtil),
-        Optional.empty(),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);

@@ -80,7 +80,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         Optional.empty(),
-        Optional.empty(),
         Optional.empty());
   }
 

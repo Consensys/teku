@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYL
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -66,6 +67,8 @@ public class DefaultExecutionPayloadManager
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher;
   private final RecentChainData recentChainData;
+  private final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>>
+      executionPayloadPublisher;
 
   public DefaultExecutionPayloadManager(
       final Spec spec,
@@ -74,7 +77,8 @@ public class DefaultExecutionPayloadManager
       final ForkChoice forkChoice,
       final ExecutionLayerChannel executionLayer,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>> executionPayloadPublisher) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.executionPayloadGossipValidator = executionPayloadGossipValidator;
@@ -83,6 +87,7 @@ public class DefaultExecutionPayloadManager
     this.receivedExecutionPayloadEventsChannelPublisher =
         receivedExecutionPayloadEventsChannelPublisher;
     this.recentChainData = recentChainData;
+    this.executionPayloadPublisher = executionPayloadPublisher;
   }
 
   @Override
@@ -138,7 +143,7 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload);
               } else {
-                LOG.warn(
+                LOG.debug(
                     "Failed to import execution payload for reason {}{}: {}",
                     result::getFailureReason,
                     () ->
@@ -206,7 +211,16 @@ public class DefaultExecutionPayloadManager
                   "Processing execution payload for slot {} and block root {} which has been received before the block",
                   executionPayloadToProcess.getSlot(),
                   executionPayloadToProcess.getBeaconBlockRoot());
-              validateAndImportExecutionPayload(executionPayloadToProcess).finishError(LOG);
+              validateAndImportExecutionPayload(executionPayloadToProcess)
+                  .thenCompose(
+                      result -> {
+                        if (result.isAccept()) {
+                          // re-broadcast the payload which has been validated
+                          return executionPayloadPublisher.apply(executionPayloadToProcess);
+                        }
+                        return SafeFuture.COMPLETE;
+                      })
+                  .finishError(LOG);
             });
   }
 }

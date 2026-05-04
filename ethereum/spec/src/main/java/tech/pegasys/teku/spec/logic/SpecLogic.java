@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
@@ -89,7 +90,7 @@ public interface SpecLogic {
 
   Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil();
 
-  default Optional<InclusionListUtil> getInclusionListUtil() {
-    return Optional.empty();
-  }
+  ProposerPreferencesUtil getProposerPreferencesUtil();
+
+  Optional<InclusionListUtil> getInclusionListUtil();
 }

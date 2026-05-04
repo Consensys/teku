@@ -86,7 +86,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         Optional.empty(),
-        Optional.empty(),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);

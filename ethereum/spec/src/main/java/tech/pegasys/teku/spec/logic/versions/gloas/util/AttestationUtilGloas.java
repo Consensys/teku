@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
@@ -99,5 +100,25 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
               }
             })
         .orElse(AttestationValidationResult.VALID);
+  }
+
+  @Override
+  public AttestationData getGenericAttestationData(
+      final UInt64 slot,
+      final BeaconState state,
+      final Bytes32 blockRoot,
+      final UInt64 committeeIndex) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+    // Get variables necessary that can be shared among Attestations of all validators
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    final Bytes32 epochBoundaryBlockRoot =
+        startSlot.compareTo(slot) == 0 || state.getSlot().compareTo(startSlot) <= 0
+            ? blockRoot
+            : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
+    final Checkpoint source = state.getCurrentJustifiedCheckpoint();
+    final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
+
+    // Set attestation data
+    return new AttestationData(slot, committeeIndex, blockRoot, source, target);
   }
 }

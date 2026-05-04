@@ -113,7 +113,7 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
     pendingDeposits.append(deposit);
   }
 
-  /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
+  /** Implements process_withdrawal_request from consensus-specs (EIP-7002 &amp; EIP-7251). */
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
@@ -267,8 +267,7 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
    * Implements process_consolidation_request from consensus-spec (EIP-7251)
    *
    * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain
-   *     .md#new-process_consolidation_request"/>
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-process_consolidation_request">process_consolidation_request</a>
    */
   @Override
   public void processConsolidationRequests(

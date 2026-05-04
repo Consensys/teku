@@ -31,9 +31,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -43,7 +43,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarRetriever delegate;
-  private final MiscHelpersFulu miscHelpersFulu;
+  private final Spec spec;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
@@ -67,7 +67,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
 
   public SidecarRetriever(
       final DataColumnSidecarRetriever delegate,
-      final MiscHelpersFulu miscHelpersFulu,
+      final Spec spec,
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoveryTimeout,
@@ -78,7 +78,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
-    this.miscHelpersFulu = miscHelpersFulu;
+    this.spec = spec;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
     this.recoveryTimeout = recoveryTimeout;
@@ -216,7 +216,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
                           recoveryTimeout.minus(downloadTimeout),
                           numberOfColumnsRequiredToReconstruct,
                           sidecarDB,
-                          miscHelpersFulu);
+                          spec);
                     });
             rebuildColumnsTask.addTask(request);
           } else {

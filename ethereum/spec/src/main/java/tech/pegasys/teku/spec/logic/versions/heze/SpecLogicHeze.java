@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Volunta
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ProposerPreferencesUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
@@ -64,6 +66,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<ExecutionPayloadVerifier> executionPayloadVerifier;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
+  private final ProposerPreferencesUtil proposerPreferencesUtil;
+  private final Optional<InclusionListUtil> inclusionListUtil;
 
   private SpecLogicHeze(
       final PredicatesGloas predicates,
@@ -89,6 +93,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final ExecutionPayloadProposalUtil executionPayloadProposalUtil,
       final HezeStateUpgrade stateUpgrade,
       final DataColumnSidecarUtil dataColumnSidecarUtil,
+      final ProposerPreferencesUtil proposerPreferencesUtil,
       final InclusionListUtil inclusionListUtil) {
     super(
         predicates,
@@ -106,7 +111,6 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         Optional.of(blindBlockUtil),
-        Optional.of(inclusionListUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
@@ -115,6 +119,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.executionPayloadVerifier = Optional.of(executionPayloadVerifier);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
+    this.proposerPreferencesUtil = proposerPreferencesUtil;
+    this.inclusionListUtil = Optional.of(inclusionListUtil);
   }
 
   public static SpecLogicHeze create(
@@ -229,6 +235,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     // Data column sidecar util
     final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas(miscHelpers);
 
+    // Proposer preferences util (introduced in Gloas, still active in Heze)
+    final ProposerPreferencesUtil proposerPreferencesUtil =
+        new ProposerPreferencesUtilGloas(schemaDefinitions);
+
     // Inclusion list util
     final InclusionListUtil inclusionListUtil =
         new InclusionListUtil(config, beaconStateAccessors, miscHelpers);
@@ -257,6 +267,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         executionPayloadProposalUtil,
         stateUpgrade,
         dataColumnSidecarUtil,
+        proposerPreferencesUtil,
         inclusionListUtil);
   }
 
@@ -298,6 +309,11 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   @Override
   public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
     return dataColumnSidecarUtil;
+  }
+
+  @Override
+  public ProposerPreferencesUtil getProposerPreferencesUtil() {
+    return proposerPreferencesUtil;
   }
 
   @Override
