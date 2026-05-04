@@ -33,10 +33,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -204,6 +207,30 @@ public class NodeDataProviderTest {
     when(recentChainData.getCurrentSlot()).thenReturn(Optional.empty());
     provider.getAttesterSlashingsAndMetaData();
     verify(specMock).atSlot(eq(UInt64.ZERO));
+  }
+
+  @Test
+  void shouldAcceptBuilderVoluntaryExitWithoutCheckingValidatorList()
+      throws ExecutionException, InterruptedException {
+    final BeaconState state = mock(BeaconState.class);
+    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+
+    final UInt64 builderValidatorIndex =
+        UInt64.fromLongBits(
+            UInt64.valueOf(3).longValue() | SpecConfigGloas.BUILDER_INDEX_FLAG.longValue());
+    final SignedVoluntaryExit builderExit =
+        new SignedVoluntaryExit(
+            new VoluntaryExit(UInt64.ZERO, builderValidatorIndex),
+            dataStructureUtil.randomSignature());
+
+    when(voluntaryExitPool.addLocal(builderExit))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<InternalValidationResult> result = provider.postVoluntaryExit(builderExit);
+
+    assertThat(result).isCompleted();
+    assertThat(result.get().isAccept()).isTrue();
+    verify(voluntaryExitPool).addLocal(builderExit);
   }
 
   private Spec setUpMockedSpec() {

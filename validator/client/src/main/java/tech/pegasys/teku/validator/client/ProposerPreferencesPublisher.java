@@ -16,15 +16,10 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.ValidatorStatus;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -32,15 +27,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
+public class ProposerPreferencesPublisher {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -49,8 +41,6 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
   private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider;
   private final ForkProvider forkProvider;
   private final Spec spec;
-  private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
-  private final AtomicReference<UInt64> lastSlot = new AtomicReference<>();
 
   public ProposerPreferencesPublisher(
       final ValidatorApiChannel validatorApiChannel,
@@ -65,52 +55,33 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
     this.spec = spec;
   }
 
-  @Override
-  public void onSlot(final UInt64 slot) {
-    lastSlot.set(slot);
-    if (firstCallDone.compareAndSet(false, true) || isThirdSlotOfEpoch(slot)) {
-      // On startup, publish immediately so preferences are available as soon as possible.
-      // Then publish at the 3rd slot of each epoch to spread load. This is not a spec requirement.
-      // If startup lands on slots 0-1, preferences may be sent twice in that epoch (once
-      // immediately, once at the 3rd slot). This is harmless because duplicates are ignored by the
-      // gossip validator and ensures a retry if the first attempt fails.
-      publishProposerPreferences(slot);
+  public void onProposerDutiesLoaded(final UInt64 epoch, final ProposerDuties proposerDuties) {
+    if (!spec.isProposerPreferencesAvailableAtSlot(spec.computeStartSlotAtEpoch(epoch))) {
+      return;
     }
-  }
 
-  private void publishProposerPreferences(final UInt64 slot) {
-    final UInt64 nextEpoch = spec.computeEpochAtSlot(slot).plus(1);
-    validatorApiChannel
-        .getProposerDuties(nextEpoch, true)
-        .thenCompose(
-            maybeProposerDuties -> {
-              if (maybeProposerDuties.isEmpty()) {
-                LOG.debug("No proposer duties available for epoch {}", nextEpoch);
-                return SafeFuture.COMPLETE;
-              }
-              return createAndSendProposerPreferences(maybeProposerDuties.get());
-            })
-        .finish(error -> VALIDATOR_LOGGER.proposerPreferencesPublicationFailed(nextEpoch, error));
-  }
-
-  private SafeFuture<Void> createAndSendProposerPreferences(final ProposerDuties proposerDuties) {
-    final List<ProposerDuty> ourDuties =
+    final List<ProposerDuty> ourProposerDuties =
         proposerDuties.getDuties().stream()
             .filter(duty -> ownedValidators.hasValidator(duty.getPublicKey()))
             .toList();
 
-    if (ourDuties.isEmpty()) {
-      LOG.debug("No proposal duties for our validators in the next epoch");
-      return SafeFuture.COMPLETE;
+    if (ourProposerDuties.isEmpty()) {
+      LOG.debug("No proposal proposerDuties for our validators in epoch {}", epoch);
+      return;
     }
 
-    return forkProvider
-        .getForkInfo(ourDuties.getFirst().getSlot())
+    final ProposerPreferencesUtil preferencesUtil = spec.getProposerPreferencesUtil(epoch);
+
+    forkProvider
+        .getForkInfo(ourProposerDuties.getFirst().getSlot())
         .thenCompose(
             forkInfo ->
                 SafeFuture.collectAll(
-                        ourDuties.stream()
-                            .map(duty -> createSignedProposerPreferences(duty, forkInfo)))
+                        ourProposerDuties.stream()
+                            .map(
+                                proposerDuty ->
+                                    createSignedProposerPreferences(
+                                        proposerDuty, forkInfo, preferencesUtil)))
                     .thenCompose(
                         signedPreferences -> {
                           final List<SignedProposerPreferences> preferencesList =
@@ -126,110 +97,51 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
                                       LOG.debug(
                                           "Proposer preferences published successfully for {} validators",
                                           preferencesList.size()));
-                        }));
+                        }))
+        .finish(error -> VALIDATOR_LOGGER.proposerPreferencesPublicationFailed(epoch, error));
   }
 
   private SafeFuture<Optional<SignedProposerPreferences>> createSignedProposerPreferences(
-      final ProposerDuty duty, final ForkInfo forkInfo) {
+      final ProposerDuty duty,
+      final ForkInfo forkInfo,
+      final ProposerPreferencesUtil preferencesUtil) {
     final Optional<Validator> maybeValidator = ownedValidators.getValidator(duty.getPublicKey());
     if (maybeValidator.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final Optional<SafeFuture<Optional<SignedProposerPreferences>>> maybeFuture =
-        proposerConfigPropertiesProvider
-            .getFeeRecipient(duty.getPublicKey())
-            .map(
-                feeRecipient -> {
-                  final UInt64 gasLimit =
-                      proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
-                  final SchemaDefinitionsGloas schemaDefinitions =
-                      SchemaDefinitionsGloas.required(
-                          spec.atSlot(duty.getSlot()).getSchemaDefinitions());
+    final Optional<Eth1Address> maybeFeeRecipient =
+        proposerConfigPropertiesProvider.getFeeRecipient(duty.getPublicKey());
+    if (maybeFeeRecipient.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
 
-                  final ProposerPreferences proposerPreferences =
-                      schemaDefinitions
-                          .getProposerPreferencesSchema()
-                          .create(
-                              duty.getSlot(),
-                              UInt64.valueOf(duty.getValidatorIndex()),
-                              feeRecipient,
-                              gasLimit);
+    final UInt64 gasLimit = proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
+    final Optional<ProposerPreferences> maybePreferences =
+        preferencesUtil.createProposerPreferences(
+            duty.getSlot(),
+            UInt64.valueOf(duty.getValidatorIndex()),
+            maybeFeeRecipient.get(),
+            gasLimit);
+    if (maybePreferences.isEmpty()) {
+      // Pre Gloas the util is NOOP, nothing to publish
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final ProposerPreferences preferences = maybePreferences.get();
 
-                  return maybeValidator
-                      .get()
-                      .getSigner()
-                      .signProposerPreferences(proposerPreferences, forkInfo)
-                      .thenApply(
-                          signature ->
-                              Optional.of(
-                                  schemaDefinitions
-                                      .getSignedProposerPreferencesSchema()
-                                      .create(proposerPreferences, signature)))
-                      .exceptionally(
-                          error -> {
-                            LOG.warn(
-                                "Failed to sign proposer preferences for validator {}",
-                                duty.getPublicKey(),
-                                error);
-                            return Optional.empty();
-                          });
-                });
-
-    return maybeFuture.orElse(SafeFuture.completedFuture(Optional.empty()));
+    return maybeValidator
+        .get()
+        .getSigner()
+        .signProposerPreferences(preferences, forkInfo)
+        .thenApply(
+            signature -> preferencesUtil.createSignedProposerPreferences(preferences, signature))
+        .exceptionally(
+            error -> {
+              LOG.warn(
+                  "Failed to sign proposer preferences for validator {}",
+                  duty.getPublicKey(),
+                  error);
+              return Optional.empty();
+            });
   }
-
-  private boolean isThirdSlotOfEpoch(final UInt64 slot) {
-    return slot.mod(spec.getSlotsPerEpoch(slot)).equals(UInt64.valueOf(2));
-  }
-
-  @Override
-  public void onHeadUpdate(
-      final UInt64 slot,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final Bytes32 headBlockRoot) {}
-
-  @Override
-  public void onPossibleMissedEvents() {
-    republishProposerPreferences();
-  }
-
-  @Override
-  public void onValidatorsAdded() {
-    republishProposerPreferences();
-  }
-
-  private void republishProposerPreferences() {
-    Optional.ofNullable(lastSlot.get()).ifPresent(this::publishProposerPreferences);
-  }
-
-  @Override
-  public void onBlockProductionDue(final UInt64 slot) {}
-
-  @Override
-  public void onAttestationCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {}
-
-  @Override
-  public void onSyncCommitteeCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onContributionCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onPayloadAttestationCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
-
-  @Override
-  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
-
-  @Override
-  public void onUpdatedValidatorStatuses(
-      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
-      final boolean possibleMissingEvents) {}
 }

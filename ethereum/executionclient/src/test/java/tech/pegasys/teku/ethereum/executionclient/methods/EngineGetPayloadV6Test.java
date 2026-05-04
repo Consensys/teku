@@ -137,7 +137,7 @@ class EngineGetPayloadV6Test {
     when(executionEngineClient.getPayloadV6(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(
             dummySuccessfulResponse(
-                executionPayloadFulu, blockValue, blobsBundle, encodedExecutionRequests, slot));
+                executionPayloadFulu, blockValue, blobsBundle, encodedExecutionRequests));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -157,12 +157,11 @@ class EngineGetPayloadV6Test {
       final ExecutionPayload executionPayload,
       final UInt256 blockValue,
       final BlobsBundle blobsBundle,
-      final List<Bytes> encodedExecutionRequests,
-      final UInt64 slot) {
+      final List<Bytes> encodedExecutionRequests) {
     return SafeFuture.completedFuture(
         Response.fromPayloadReceivedAsJson(
             new GetPayloadV6Response(
-                ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload, slot),
+                ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload),
                 blockValue,
                 BlobsBundleV2.fromInternalBlobsBundle(blobsBundle),
                 false,

@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -45,7 +46,7 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 public class IndexedAttestationValidationBenchmark {
   Spec spec;
   BeaconState beaconState;
-  IndexedAttestation indexedAttestation;
+  IndexedAttestationLight indexedAttestation;
   Fork fork;
   AsyncBLSSignatureVerifier asyncBLSSignatureVerifier;
 
@@ -58,11 +59,12 @@ public class IndexedAttestationValidationBenchmark {
         Files.readAllBytes(Path.of("/Users/tbenr/attestation.ssz"));
 
     beaconState = spec.deserializeBeaconState(Bytes.of(stateBytes));
-    indexedAttestation =
+    final IndexedAttestation sszIndexedAttestation =
         spec.atSlot(beaconState.getSlot())
             .getSchemaDefinitions()
             .getIndexedAttestationSchema()
             .sszDeserialize(Bytes.of(indexedAttestationBytes));
+    indexedAttestation = IndexedAttestationLight.fromSsz(sszIndexedAttestation);
 
     fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(beaconState.getSlot()));
     asyncBLSSignatureVerifier = AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP);

@@ -61,11 +61,6 @@ public class ReferenceTestFinder {
               if (!testsPath.toFile().exists()) {
                 return Stream.empty();
               }
-              // TODO-GLOAS: temporarily don't run Gloas reference tests until we merge all
-              // v1.7.0-alpha.5 changes
-              if (fork.equals(TestFork.GLOAS)) {
-                return Stream.empty();
-              }
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
@@ -79,7 +74,8 @@ public class ReferenceTestFinder {
                               // under development. This is temporary and should be removed once we
                               // are up-to-date with Gloas specs (see
                               // https://github.com/Consensys/teku-internal/issues/221)
-                              "gloas - mainnet - fork_choice", "gloas - minimal - fork_choice")),
+                              "gloas - minimal - fork_choice/reorg",
+                              "on_execution_payload_envelope__wrong_withdrawals")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

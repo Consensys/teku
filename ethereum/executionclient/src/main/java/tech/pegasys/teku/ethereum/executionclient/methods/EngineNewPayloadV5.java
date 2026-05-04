@@ -23,7 +23,6 @@ import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -54,7 +53,6 @@ public class EngineNewPayloadV5 extends AbstractEngineJsonRpcMethod<PayloadStatu
         params.getRequiredListParameter(1, VersionedHash.class);
     final Bytes32 parentBeaconBlockRoot = params.getRequiredParameter(2, Bytes32.class);
     final List<Bytes> executionRequests = params.getRequiredListParameter(3, Bytes.class);
-    final UInt64 slot = params.getRequiredParameter(4, UInt64.class);
 
     LOG.trace(
         "Calling {}(executionPayload={}, blobVersionedHashes={}, parentBeaconBlockRoot={}, executionRequests={})",
@@ -65,7 +63,7 @@ public class EngineNewPayloadV5 extends AbstractEngineJsonRpcMethod<PayloadStatu
         executionRequests);
 
     final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload, slot);
+        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
     return executionEngineClient
         .newPayloadV5(
             executionPayloadV4, blobVersionedHashes, parentBeaconBlockRoot, executionRequests)

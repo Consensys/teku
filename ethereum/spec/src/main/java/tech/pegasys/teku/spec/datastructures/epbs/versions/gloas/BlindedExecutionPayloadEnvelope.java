@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -25,31 +25,29 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BlindedExecutionPayloadEnvelope
-    extends Container5<
+    extends Container4<
         BlindedExecutionPayloadEnvelope,
         ExecutionPayloadHeader,
         ExecutionRequests,
         SszUInt64,
-        SszBytes32,
-        SszUInt64> {
+        SszBytes32> {
 
   BlindedExecutionPayloadEnvelope(
       final BlindedExecutionPayloadEnvelopeSchema schema,
       final ExecutionPayloadHeader payloadHeader,
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
-      final Bytes32 beaconBlockRoot,
-      final UInt64 slot) {
+      final Bytes32 beaconBlockRoot) {
     super(
         schema,
         payloadHeader,
         executionRequests,
         SszUInt64.of(builderIndex),
-        SszBytes32.of(beaconBlockRoot),
-        SszUInt64.of(slot));
+        SszBytes32.of(beaconBlockRoot));
   }
 
   BlindedExecutionPayloadEnvelope(
@@ -74,7 +72,7 @@ public class BlindedExecutionPayloadEnvelope
   }
 
   public UInt64 getSlot() {
-    return getField4().get();
+    return ExecutionPayloadHeaderGloas.required(getPayloadHeader()).getSlotNumber();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
@@ -94,12 +92,7 @@ public class BlindedExecutionPayloadEnvelope
     final ExecutionPayloadEnvelope executionPayloadEnvelope =
         schemaDefinitions
             .getExecutionPayloadEnvelopeSchema()
-            .create(
-                payload,
-                getExecutionRequests(),
-                getBuilderIndex(),
-                getBeaconBlockRoot(),
-                getSlot());
+            .create(payload, getExecutionRequests(), getBuilderIndex(), getBeaconBlockRoot());
     checkState(
         executionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
         "unblinded execution payload envelope root does not match original envelope root");

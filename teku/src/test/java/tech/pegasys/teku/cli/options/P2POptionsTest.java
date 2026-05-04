@@ -371,6 +371,25 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void advertisedUdpPortIpv6_shouldUseUdpPortIpv6Value() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments(
+            "--p2p-advertised-udp-port-ipv6=6000",
+            "--p2p-port-ipv6=8000",
+            "--p2p-advertised-port-ipv6=7000");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPortIpv6()).isEqualTo(6000);
+    assertThat(tekuConfig.network().getAdvertisedPortIpv6()).isEqualTo(7000);
+    assertThat(tekuConfig.network().getListenPortIpv6()).isEqualTo(8000);
+  }
+
+  @Test
+  void advertisedUdpPortIpv6_shouldNotRequireAdvertisedPortIpv6ToBeSet() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--p2p-advertised-udp-port-ipv6=6000");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPortIpv6()).isEqualTo(6000);
+  }
+
+  @Test
   public void minimumRandomlySelectedPeerCount_shouldDefaultTo20PercentOfLowerBound() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(

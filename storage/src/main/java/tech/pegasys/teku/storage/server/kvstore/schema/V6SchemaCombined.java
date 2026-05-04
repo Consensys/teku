@@ -22,7 +22,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
@@ -109,7 +108,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
     latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
 
-    votes = KvStoreColumn.create(3, UINT64_SERIALIZER, VOTE_TRACKER_SERIALIZER);
+    votes =
+        KvStoreColumn.create(
+            3, UINT64_SERIALIZER, KvStoreSerializer.createVoteTrackerSerializer(spec));
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);

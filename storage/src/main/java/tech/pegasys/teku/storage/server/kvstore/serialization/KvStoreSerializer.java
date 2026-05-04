@@ -52,7 +52,10 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<Set<Bytes32>> BLOCK_ROOTS_SERIALIZER = new Bytes32SetSerializer();
   KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
       new CompressedBranchInfoSerializer();
-  KvStoreSerializer<VoteTracker> VOTE_TRACKER_SERIALIZER = new VoteTrackerSerializer();
+
+  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(final Spec spec) {
+    return new VoteTrackerSerializer(spec);
+  }
 
   KvStoreSerializer<Void> VOID_SERIALIZER = new VoidSerializer();
   KvStoreSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER =

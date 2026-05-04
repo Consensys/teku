@@ -174,6 +174,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -477,6 +479,7 @@ public class SchemaRegistryBuilder {
             BELLATRIX,
             (registry, specConfig, schemaName) ->
                 new BeaconBlockSchema(registry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA), schemaName))
+        .until(FULU)
         .build();
   }
 
@@ -486,6 +489,7 @@ public class SchemaRegistryBuilder {
             BELLATRIX,
             (registry, specConfig, schemaName) ->
                 new SignedBeaconBlockSchema(registry.get(BLINDED_BEACON_BLOCK_SCHEMA), schemaName))
+        .until(FULU)
         .build();
   }
 
@@ -539,6 +543,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaElectraImpl.create(
                     SpecConfigElectra.required(specConfig), schemaName, registry))
+        .until(FULU)
         .build();
   }
 
@@ -594,6 +599,10 @@ public class SchemaRegistryBuilder {
             DENEB,
             (registry, specConfig, schemaName) ->
                 new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadHeaderSchemaGloas(SpecConfigGloas.required(specConfig)))
         .build();
   }
 
@@ -611,6 +620,10 @@ public class SchemaRegistryBuilder {
             DENEB,
             (registry, specConfig, schemaName) ->
                 new ExecutionPayloadSchemaDeneb(SpecConfigDeneb.required(specConfig)))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadSchemaGloas(SpecConfigGloas.required(specConfig)))
         .build();
   }
 

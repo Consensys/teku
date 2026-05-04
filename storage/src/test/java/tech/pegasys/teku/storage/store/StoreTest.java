@@ -106,88 +106,20 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void isHeadWeak_withoutNodeData() {
+  public void computeBalanceThresholds_setsHeadThreshold() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
           store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isFalse();
+          assertThat(store.getReorgThreshold()).isEqualTo(UInt64.valueOf("2400000000"));
         });
   }
 
   @Test
-  public void isHeadWeak_withSufficientWeightIsFalse() {
+  public void computeBalanceThresholds_setsParentThreshold() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2400000001"), UInt64.MAX_VALUE);
           store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isFalse();
-        });
-  }
-
-  @Test
-  public void isHeadWeak_Boundary() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2399999999"), UInt64.MAX_VALUE);
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isHeadWeak_withLowWeightIsTrue() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("1000000000"), UInt64.MAX_VALUE);
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isParentStrong_withoutNodeData() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isParentStrong_withSufficientWeight() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000001"));
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isParentStrong_wityBoundaryWeight() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000000"));
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isFalse();
-        });
-  }
-
-  @Test
-  public void isParentStrong_wityZeroWeight() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.ZERO);
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isFalse();
+          assertThat(store.getParentThreshold()).isEqualTo(UInt64.valueOf("19200000000"));
         });
   }
 
@@ -438,38 +370,6 @@ class StoreTest extends AbstractStoreTest {
             ProtoNodeValidationStatus.VALID,
             parentCheckpoint,
             UInt64.ZERO,
-            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
-    when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
-    when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
-  }
-
-  private void setProtoNodeDataForBlock(
-      final SignedBlockAndState blockAndState, final UInt64 headValue, final UInt64 parentValue) {
-    final Bytes32 root = blockAndState.getRoot();
-    final Bytes32 parentRoot = blockAndState.getParentRoot();
-    final ProtoNodeData protoNodeData =
-        new ProtoNodeData(
-            UInt64.ONE,
-            root,
-            blockAndState.getParentRoot(),
-            blockAndState.getStateRoot(),
-            UInt64.ZERO,
-            Bytes32.random(),
-            ProtoNodeValidationStatus.VALID,
-            null,
-            headValue,
-            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
-    final ProtoNodeData parentNodeData =
-        new ProtoNodeData(
-            UInt64.ZERO,
-            parentRoot,
-            Bytes32.random(),
-            blockAndState.getStateRoot(),
-            UInt64.ZERO,
-            Bytes32.random(),
-            ProtoNodeValidationStatus.VALID,
-            null,
-            parentValue,
             ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
     when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));

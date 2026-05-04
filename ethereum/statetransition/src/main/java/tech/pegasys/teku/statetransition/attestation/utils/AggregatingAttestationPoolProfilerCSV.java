@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_W
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -366,17 +365,18 @@ public class AggregatingAttestationPoolProfilerCSV implements AggregatingAttesta
       }
 
       UInt64 proposerRewardNumerator = UInt64.ZERO;
-      final IntList attestingIndices = spec.getAttestingIndices(state, attestation);
-      for (final Integer attestingIndex : attestingIndices) {
+      final List<UInt64> attestingIndices = spec.getAttestingIndices(state, attestation);
+      for (final UInt64 attestingIndex : attestingIndices) {
+        final int attestingIndexInt = attestingIndex.intValue();
         for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
           if (participationFlagIndices.contains(flagIndex)
-              && !miscHelpers.hasFlag(epochParticipation.get(attestingIndex).get(), flagIndex)) {
+              && !miscHelpers.hasFlag(epochParticipation.get(attestingIndexInt).get(), flagIndex)) {
 
             final UInt64 weight = PARTICIPATION_FLAG_WEIGHTS.get(flagIndex);
 
             final UInt64 reward =
                 BeaconStateAccessorsAltair.required(beaconStateAccessors)
-                    .getBaseReward(state, attestingIndex);
+                    .getBaseReward(state, attestingIndexInt);
 
             proposerRewardNumerator = proposerRewardNumerator.plus(reward.times(weight));
           }

@@ -113,7 +113,6 @@ public class ExecutionPayloadBidSchema
   }
 
   public ExecutionPayloadBid createLocalSelfBuiltBid(
-      final Bytes32 parentBlockHash,
       final Bytes32 parentBlockRoot,
       final UInt64 slot,
       final ExecutionPayload executionPayload,
@@ -121,7 +120,7 @@ public class ExecutionPayloadBidSchema
       final Bytes32 executionRequestsRoot) {
     return new ExecutionPayloadBid(
         this,
-        parentBlockHash,
+        executionPayload.getParentHash(),
         parentBlockRoot,
         executionPayload.getBlockHash(),
         executionPayload.getPrevRandao(),

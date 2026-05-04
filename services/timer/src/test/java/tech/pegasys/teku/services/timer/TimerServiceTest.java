@@ -23,6 +23,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,6 +32,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 
+@DisabledOnOs({OS.WINDOWS}) // tests from this test suite are consistently flaky on Window
 class TimerServiceTest {
 
   private static final int TICKS_PER_SECOND = 10;

@@ -109,7 +109,7 @@ class BatchingVoteUpdateChannelTest {
   void shouldUseLatestVotes() {
     final Map<UInt64, VoteTracker> votes1 = Map.of(UInt64.ONE, VoteTracker.DEFAULT);
     final Map<UInt64, VoteTracker> votes2 =
-        Map.of(UInt64.ONE, new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO, true, true));
+        Map.of(UInt64.ONE, new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, true, true));
 
     channel.onVotesUpdated(votes1);
 

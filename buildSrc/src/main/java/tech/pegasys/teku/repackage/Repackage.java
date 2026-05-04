@@ -78,6 +78,7 @@ public class Repackage {
         final TarArchiveOutputStream target =
             new TarArchiveOutputStream(
                 new GzipCompressorOutputStream(Files.newOutputStream(newTarDist)))) {
+      target.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
       TarArchiveEntry entry;
       while ((entry = source.getNextTarEntry()) != null) {
         entry.setModTime(fileTime);

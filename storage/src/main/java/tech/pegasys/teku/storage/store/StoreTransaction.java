@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.UpdateResult;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
@@ -76,7 +78,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
-  Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadData = new HashMap<>();
+  Map<Bytes32, ExecutionPayloadUpdate> executionPayloadData = new HashMap<>();
 
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
@@ -111,7 +113,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
-    executionPayloadData.put(executionPayload.getBeaconBlockRoot(), executionPayload);
+    executionPayloadData.put(
+        executionPayload.getBeaconBlockRoot(), new ExecutionPayloadUpdate(executionPayload, false));
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -286,6 +289,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public VoteTracker getVote(final UInt64 validatorIndex) {
+    return store.getVote(validatorIndex);
+  }
+
+  @Override
   public AnchorPoint getLatestFinalized() {
     if (finalizedCheckpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're
@@ -355,7 +363,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
       store
           .getForkChoiceStrategy()
-          .processAllInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
+          .processAllBeaconBlocksInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
       this.blockData
           .values()
           .forEach(
@@ -428,7 +436,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
     if (executionPayloadData.containsKey(blockRoot)) {
-      return SafeFuture.completedFuture(Optional.of(executionPayloadData.get(blockRoot)));
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloadData.get(blockRoot))
+              .map(ExecutionPayloadUpdate::executionPayload));
     }
     return store.retrieveSignedExecutionPayload(blockRoot);
   }
@@ -481,13 +491,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public boolean isHeadWeak(final Bytes32 root) {
-    return store.isHeadWeak(root);
+  public UInt64 getReorgThreshold() {
+    return store.getReorgThreshold();
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    return store.isParentStrong(parentRoot);
+  public UInt64 getParentThreshold() {
+    return store.getParentThreshold();
   }
 
   @Override
@@ -508,9 +518,23 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<BeaconState> getJustifiedStateIfAvailable() {
+    if (justifiedCheckpoint.isEmpty()) {
+      return store.getJustifiedStateIfAvailable();
+    }
+    return store.getCheckpointStateIfAvailable(justifiedCheckpoint.get());
+  }
+
+  @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return store.getCheckpointStateIfAvailable(checkpoint);
+  }
+
+  @Override
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
       final Bytes32 blockRoot) {
     return Optional.ofNullable(executionPayloadData.get(blockRoot))
+        .map(ExecutionPayloadUpdate::executionPayload)
         .or(() -> store.getExecutionPayloadIfAvailable(blockRoot));
   }
 
