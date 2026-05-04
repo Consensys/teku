@@ -40,6 +40,7 @@ jobs:
           ./gradlew --no-daemon --parallel --info cloudsmithUpload publish
 
       - name: Publish to Maven Central
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.JRELEASER_MAVENCENTRAL_PASSWORD }}

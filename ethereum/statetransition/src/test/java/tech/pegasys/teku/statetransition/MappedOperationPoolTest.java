@@ -41,13 +41,17 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 
 public class MappedOperationPoolTest {
@@ -307,6 +311,44 @@ public class MappedOperationPoolTest {
     assertThat(subscription.getBlsToExecutionChange()).isEmpty();
     assertThat(subscription.getInternalValidationResult()).isEmpty();
     assertThat(subscription.getFromNetwork()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void builderExitShouldNotCollideWithRegularValidatorExitWithSameLowBits() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final OperationValidator<SignedVoluntaryExit> exitValidator = mock(OperationValidator.class);
+    final OperationPool<SignedVoluntaryExit> voluntaryExitPool =
+        new MappedOperationPool<>(
+            "VoluntaryExitPool",
+            metricsSystem,
+            slot ->
+                gloasSpec
+                    .atSlot(slot)
+                    .getSchemaDefinitions()
+                    .getBeaconBlockBodySchema()
+                    .getVoluntaryExitsSchema(),
+            exitValidator,
+            asyncRunner,
+            stubTimeProvider);
+
+    when(exitValidator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+
+    final UInt64 regularIndex = UInt64.valueOf(5);
+    final UInt64 builderIndex =
+        UInt64.fromLongBits(
+            regularIndex.longValue() | SpecConfigGloas.BUILDER_INDEX_FLAG.longValue());
+
+    final SignedVoluntaryExit regularExit =
+        new SignedVoluntaryExit(
+            new VoluntaryExit(UInt64.ZERO, regularIndex), dataStructureUtil.randomSignature());
+    final SignedVoluntaryExit builderExit =
+        new SignedVoluntaryExit(
+            new VoluntaryExit(UInt64.ZERO, builderIndex), dataStructureUtil.randomSignature());
+
+    assertThat(voluntaryExitPool.addRemote(regularExit, Optional.empty())).isCompleted();
+    assertThat(voluntaryExitPool.addRemote(builderExit, Optional.empty())).isCompleted();
+    assertThat(voluntaryExitPool.size()).isEqualTo(2);
   }
 
   private Subscription initialiseSubscriptions() {

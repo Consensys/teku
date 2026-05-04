@@ -32,12 +32,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidManager {
 
@@ -47,19 +45,16 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
-  private final RecentChainData recentChainData;
 
   public DefaultExecutionPayloadBidManager(
       final Spec spec,
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator,
       final ReceivedExecutionPayloadBidEventsChannel
-          receivedExecutionPayloadBidEventsChannelPublisher,
-      final RecentChainData recentChainData) {
+          receivedExecutionPayloadBidEventsChannelPublisher) {
     this.spec = spec;
     this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
     this.receivedExecutionPayloadBidEventsChannelPublisher =
         receivedExecutionPayloadBidEventsChannelPublisher;
-    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -83,23 +78,23 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
 
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadBid>> getBidForBlock(
+      final Bytes32 parentRoot,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
-    // only local self-built bids for devnet-0
-    return getLocalSelfBuiltBid(slot, state, getPayloadResponseFuture).thenApply(Optional::of);
+    // only supporting local self-built bids
+    return getLocalSelfBuiltBid(parentRoot, slot, getPayloadResponseFuture).thenApply(Optional::of);
   }
 
   private SafeFuture<SignedExecutionPayloadBid> getLocalSelfBuiltBid(
+      final Bytes32 parentRoot,
       final UInt64 slot,
-      final BeaconState state,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
     return getPayloadResponseFuture.thenApply(
         getPayloadResponse -> {
           final SignedExecutionPayloadBid localSelfBuiltSignedBid =
-              createLocalSelfBuiltSignedBid(
-                  getPayloadResponse, slot, BeaconStateGloas.required(state));
+              createLocalSelfBuiltSignedBid(getPayloadResponse, parentRoot, slot);
           LOG.info(
               "Considering self-built bid (value: {} ETH, EL block: {}) for block at slot {}",
               weiToEth(getPayloadResponse.getExecutionPayloadValue()),
@@ -113,9 +108,7 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
   }
 
   private SignedExecutionPayloadBid createLocalSelfBuiltSignedBid(
-      final GetPayloadResponse getPayloadResponse,
-      final UInt64 slot,
-      final BeaconStateGloas state) {
+      final GetPayloadResponse getPayloadResponse, final Bytes32 parentRoot, final UInt64 slot) {
     final SpecVersion specVersion = spec.atSlot(slot);
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions());
@@ -126,28 +119,11 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
     final Bytes32 executionRequestsRoot =
         getPayloadResponse.getExecutionRequests().orElseThrow().hashTreeRoot();
-    final Bytes32 parentRoot = state.getLatestBlockHeader().getRoot();
-    final boolean shouldExtendPayload =
-        recentChainData
-                .getStore()
-                .getForkChoiceStrategy()
-                .shouldExtendPayload(recentChainData.getStore(), parentRoot)
-            // Handle the Gloas bootstrap case before a parent payload has ever been committed.
-            || state.getLatestExecutionPayloadBid().getParentBlockHash().equals(Bytes32.ZERO);
-    final Bytes32 parentBlockHash =
-        shouldExtendPayload
-            ? state.getLatestExecutionPayloadBid().getBlockHash()
-            : state.getLatestExecutionPayloadBid().getParentBlockHash();
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                parentBlockHash,
-                parentRoot,
-                slot,
-                executionPayload,
-                blobKzgCommitments,
-                executionRequestsRoot);
+                parentRoot, slot, executionPayload, blobKzgCommitments, executionRequestsRoot);
     // Using G2_POINT_AT_INFINITY as signature for self-builds
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

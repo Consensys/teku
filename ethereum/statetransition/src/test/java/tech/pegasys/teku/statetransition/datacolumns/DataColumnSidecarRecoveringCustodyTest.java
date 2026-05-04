@@ -17,8 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -29,6 +31,7 @@ import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.crea
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -44,6 +47,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -59,7 +63,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class DataColumnSidecarRecoveringCustodyTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final Spec spec = spy(TestSpecFactory.createMinimalFulu());
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
 
@@ -68,6 +72,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
   private final DataColumnSidecarCustody delegate = mock(DataColumnSidecarCustody.class);
+  private final SpecVersion specVersion = spy(spec.forMilestone(SpecMilestone.FULU));
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
@@ -96,7 +101,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
             delegate,
             stubAsyncRunner,
             spec,
-            miscHelpersFulu,
             dataColumnSidecarPublisher,
             createCustodyGroupCountManager(
                 config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
@@ -105,6 +109,9 @@ public class DataColumnSidecarRecoveringCustodyTest {
             __ -> Duration.ofSeconds(2),
             stubMetricsSystem,
             stubTimeProvider);
+    doReturn(specVersion).when(spec).atSlot(any());
+    doReturn(miscHelpersFulu).when(specVersion).miscHelpers();
+    when(miscHelpersFulu.toVersionFulu()).thenReturn(Optional.of(miscHelpersFulu));
     when(delegate.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
     custody.onSyncingStatusChanged(true); // default in sync
   }
@@ -117,7 +124,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
             delegate,
             stubAsyncRunner,
             spec,
-            miscHelpersFulu,
             dataColumnSidecarPublisher,
             createCustodyGroupCountManager(0, config.getSamplesPerSlot()),
             config.getNumberOfColumns(),
@@ -137,7 +143,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
             delegate,
             stubAsyncRunner,
             spec,
-            miscHelpersFulu,
             dataColumnSidecarPublisher,
             CustodyGroupCountManager.NOOP,
             config.getNumberOfColumns(),
@@ -474,7 +479,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
             delegate,
             stubAsyncRunner,
             spec,
-            miscHelpersFulu,
             dataColumnSidecarPublisher,
             createCustodyGroupCountManager(
                 config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),

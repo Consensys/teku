@@ -14,16 +14,12 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -44,9 +40,6 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadBidManagerTest {
 
@@ -63,24 +56,11 @@ public class DefaultExecutionPayloadBidManagerTest {
       receivedExecutionPayloadBidEventsChannelPublisher =
           mock(ReceivedExecutionPayloadBidEventsChannel.class);
 
-  private final RecentChainData recentChainData = mock(RecentChainData.class);
-
-  private final UpdatableStore store = mock(UpdatableStore.class);
-  private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
-
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
       new DefaultExecutionPayloadBidManager(
           spec,
           executionPayloadBidGossipValidator,
-          receivedExecutionPayloadBidEventsChannelPublisher,
-          recentChainData);
-
-  @BeforeEach
-  public void setUp() {
-    when(recentChainData.getStore()).thenReturn(store);
-    when(store.getForkChoiceStrategy()).thenReturn(forkChoiceStrategy);
-    when(forkChoiceStrategy.shouldExtendPayload(eq(store), any())).thenReturn(false);
-  }
+          receivedExecutionPayloadBidEventsChannelPublisher);
 
   @Test
   public void createsLocalBidForBlock() {
@@ -103,10 +83,15 @@ public class DefaultExecutionPayloadBidManagerTest {
             false,
             executionRequests);
 
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+
     final Optional<SignedExecutionPayloadBid> maybeSignedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
-                state, SafeFuture.completedFuture(getPayloadResponse), blockProductionPerformance));
+                parentRoot,
+                state,
+                SafeFuture.completedFuture(getPayloadResponse),
+                blockProductionPerformance));
 
     assertThat(maybeSignedBid).isPresent();
 
@@ -122,9 +107,7 @@ public class DefaultExecutionPayloadBidManagerTest {
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                // should_extend_payload returns false
-                state.getLatestExecutionPayloadBid().getParentBlockHash(),
-                state.getLatestBlockHeader().getRoot(),
+                parentRoot,
                 state.getSlot(),
                 executionPayload,
                 expectedBlobKzgCommitments,
@@ -182,10 +165,15 @@ public class DefaultExecutionPayloadBidManagerTest {
             false,
             executionRequests);
 
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+
     final Optional<SignedExecutionPayloadBid> maybeSignedBid =
         SafeFutureAssert.safeJoin(
             executionPayloadBidManager.getBidForBlock(
-                state, SafeFuture.completedFuture(getPayloadResponse), blockProductionPerformance));
+                parentRoot,
+                state,
+                SafeFuture.completedFuture(getPayloadResponse),
+                blockProductionPerformance));
 
     assertThat(maybeSignedBid).isPresent();
 
@@ -196,9 +184,7 @@ public class DefaultExecutionPayloadBidManagerTest {
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                // bootstrap fallback should still extend from the latest bid block hash
-                state.getLatestExecutionPayloadBid().getBlockHash(),
-                state.getLatestBlockHeader().getRoot(),
+                parentRoot,
                 state.getSlot(),
                 executionPayload,
                 expectedBlobKzgCommitments,

@@ -76,7 +76,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
@@ -96,8 +98,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
+import tech.pegasys.teku.storage.api.GloasForkChoiceRebuildData;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
+import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -646,6 +650,73 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void shouldPopulateGloasForkChoiceRebuildDataFromBlindedExecutionPayloadEnvelope(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.putBlockAndState(
+        blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+    transaction.putExecutionPayload(executionPayload);
+
+    commit(transaction);
+
+    final ExecutionPayloadBid bid = getExecutionPayloadBid(blockAndState);
+    assertThat(getHotBlockMetadata(blockAndState).getGloasForkChoiceRebuildData())
+        .contains(
+            new GloasForkChoiceRebuildData(
+                bid.getParentBlockHash(),
+                bid.getBlockHash(),
+                Optional.of(executionPayload.getMessage().getPayload().getBlockNumber())));
+  }
+
+  @TestTemplate
+  public void shouldLeaveGloasPayloadBlockNumberEmptyWhenBlindedExecutionPayloadEnvelopeIsMissing(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.putBlockAndState(
+        blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+
+    commit(transaction);
+
+    final ExecutionPayloadBid bid = getExecutionPayloadBid(blockAndState);
+    assertThat(getHotBlockMetadata(blockAndState).getGloasForkChoiceRebuildData())
+        .contains(
+            new GloasForkChoiceRebuildData(
+                bid.getParentBlockHash(), bid.getBlockHash(), Optional.empty()));
+  }
+
+  @TestTemplate
+  public void shouldRejectMismatchedBlindedExecutionPayloadEnvelopeForGloasRebuildData(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.putBlockAndState(
+        blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+    final SignedBlindedExecutionPayloadEnvelope mismatchedEnvelope =
+        dataStructureUtil
+            .randomSignedExecutionPayloadEnvelopeForBlock(blockAndState.getBlock())
+            .blind(
+                SchemaDefinitionsGloas.required(
+                    spec.atSlot(blockAndState.getSlot()).getSchemaDefinitions()));
+
+    commit(transaction);
+    storeBlindedExecutionPayloadEnvelope(blockAndState.getRoot(), mismatchedEnvelope);
+
+    assertThatThrownBy(() -> getHotBlockMetadata(blockAndState))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("does not match GLOAS block bid");
+  }
+
+  @TestTemplate
   public void shouldRetainBlindedExecutionPayloadEnvelopeAfterFinalization(
       final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
@@ -809,6 +880,44 @@ public class DatabaseTest {
 
   private void commit(final StoreTransaction transaction) {
     assertThat(transaction.commit()).isCompleted();
+  }
+
+  private StoredBlockMetadata getHotBlockMetadata(final SignedBlockAndState blockAndState) {
+    return ((KvStoreDatabase) database).buildHotBlockMetadata().get(blockAndState.getRoot());
+  }
+
+  private ExecutionPayloadBid getExecutionPayloadBid(final SignedBlockAndState blockAndState) {
+    return blockAndState
+        .getBlock()
+        .getMessage()
+        .getBody()
+        .getOptionalSignedExecutionPayloadBid()
+        .map(SignedExecutionPayloadBid::getMessage)
+        .orElseThrow();
+  }
+
+  private void storeBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot, final SignedBlindedExecutionPayloadEnvelope envelope) {
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(blockRoot, envelope),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
   }
 
   private SignedBlindedExecutionPayloadEnvelope getSignedBlindedExecutionPayloadEnvelope(
