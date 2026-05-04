@@ -28,7 +28,9 @@ public interface ExecutionPayloadFactory {
         @Override
         public SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
             final UInt64 builderIndex, final BeaconBlockAndState blockAndState) {
-          return SafeFuture.completedFuture(null);
+          return SafeFuture.failedFuture(
+              new UnsupportedOperationException(
+                  "ExecutionPayloadFactory is not supported before the Gloas milestone"));
         }
 
         @Override
