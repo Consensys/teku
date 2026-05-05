@@ -66,9 +66,8 @@ public class InclusionListFactory {
                   inclusionListUtil.getInclusionListCommitteeRoot(state, slot);
               final Bytes32 parentHash =
                   BeaconStateGloas.required(state)
-                      .getLatestExecutionPayloadHeader()
-                      .orElseThrow()
-                      .getParentHash();
+                      .getLatestExecutionPayloadBid()
+                      .getParentBlockHash();
               return executionLayerChannel
                   .engineGetInclusionList(parentHash, slot)
                   .thenApply(

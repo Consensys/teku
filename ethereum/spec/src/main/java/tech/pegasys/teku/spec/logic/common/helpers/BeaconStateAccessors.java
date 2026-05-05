@@ -188,7 +188,7 @@ public abstract class BeaconStateAccessors {
    * @return
    */
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
-    IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     return getCommitteeCountPerSlot(activeValidatorIndices.size());
   }
 
