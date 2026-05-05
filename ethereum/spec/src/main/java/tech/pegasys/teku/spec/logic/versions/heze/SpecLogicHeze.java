@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochPr
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ProposerPreferencesUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
@@ -63,6 +65,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<ExecutionPayloadVerifier> executionPayloadVerifier;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
+  private final ProposerPreferencesUtil proposerPreferencesUtil;
 
   private SpecLogicHeze(
       final PredicatesGloas predicates,
@@ -87,7 +90,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final LightClientUtil lightClientUtil,
       final ExecutionPayloadProposalUtil executionPayloadProposalUtil,
       final HezeStateUpgrade stateUpgrade,
-      final DataColumnSidecarUtil dataColumnSidecarUtil) {
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
+      final ProposerPreferencesUtil proposerPreferencesUtil) {
     super(
         predicates,
         miscHelpers,
@@ -112,6 +116,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.executionPayloadVerifier = Optional.of(executionPayloadVerifier);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
+    this.proposerPreferencesUtil = proposerPreferencesUtil;
   }
 
   public static SpecLogicHeze create(
@@ -226,6 +231,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     // Data column sidecar util
     final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas(miscHelpers);
 
+    // Proposer preferences util (introduced in Gloas, still active in Heze)
+    final ProposerPreferencesUtil proposerPreferencesUtil =
+        new ProposerPreferencesUtilGloas(schemaDefinitions);
+
     return new SpecLogicHeze(
         predicates,
         miscHelpers,
@@ -249,7 +258,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         lightClientUtil,
         executionPayloadProposalUtil,
         stateUpgrade,
-        dataColumnSidecarUtil);
+        dataColumnSidecarUtil,
+        proposerPreferencesUtil);
   }
 
   @Override
@@ -290,5 +300,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   @Override
   public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
     return dataColumnSidecarUtil;
+  }
+
+  @Override
+  public ProposerPreferencesUtil getProposerPreferencesUtil() {
+    return proposerPreferencesUtil;
   }
 }
