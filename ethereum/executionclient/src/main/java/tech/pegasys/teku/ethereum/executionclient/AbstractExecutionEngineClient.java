@@ -288,7 +288,7 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
     return doRequest(
         "engine_getInclusionListV1",
         Collections.singletonList(parentHash.toHexString()),
-        objectMapper.getTypeFactory().constructCollectionType(List.class, Bytes.class),
+        objectMapper.getTypeFactory().constructCollectionType(List.class, String.class),
         EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
   }
 

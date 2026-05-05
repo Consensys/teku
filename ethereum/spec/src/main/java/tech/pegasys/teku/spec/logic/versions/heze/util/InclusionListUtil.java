@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -87,6 +88,7 @@ public class InclusionListUtil {
    * </code>
    */
   public SafeFuture<Boolean> isValidInclusionListSignature(
+      final Fork fork,
       final BeaconState state,
       final SignedInclusionList signedInclusionList,
       final AsyncBLSSignatureVerifier signatureVerifier) {
@@ -97,7 +99,7 @@ public class InclusionListUtil {
         beaconStateAccessors.getDomain(
             Domain.INCLUSION_LIST_COMMITTEE,
             miscHelpers.computeEpochAtSlot(message.getSlot()),
-            state.getFork(),
+            fork,
             state.getGenesisValidatorsRoot());
     final Bytes signingRoot = miscHelpers.computeSigningRoot(message, domain);
     final BLSSignature signature = signedInclusionList.getSignature();

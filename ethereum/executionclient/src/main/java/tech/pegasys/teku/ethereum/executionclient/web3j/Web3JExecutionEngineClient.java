@@ -412,12 +412,12 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<List<String>>> getInclusionListV1(final Bytes32 parentHash) {
-    final Request<?, GetnclusionListVersionV1Web3jResponse> web3jRequest =
+    final Request<?, GetInclusionListVersionV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getInclusionListV1",
             Collections.singletonList(parentHash.toHexString()),
             web3JClient.getWeb3jService(),
-            GetnclusionListVersionV1Web3jResponse.class);
+            GetInclusionListVersionV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, GET_INCLUSION_LIST_TIMEOUT);
   }
 
@@ -475,10 +475,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   static class GetPayloadBodiesByHashV2Web3jResponse
       extends org.web3j.protocol.core.Response<List<ExecutionPayloadBodyV2>> {}
 
-  static class GetInclusionListV1Web3jResponse
-      extends org.web3j.protocol.core.Response<List<Bytes>> {}
-
-  static class GetnclusionListVersionV1Web3jResponse
+  static class GetInclusionListVersionV1Web3jResponse
       extends org.web3j.protocol.core.Response<List<String>> {}
 
   static class UpdatePayloadWithInclusionListV1Web3jResponse

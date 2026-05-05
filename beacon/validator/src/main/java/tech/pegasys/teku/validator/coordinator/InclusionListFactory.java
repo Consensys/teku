@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
@@ -90,10 +89,9 @@ public class InclusionListFactory {
         .thenCompose(
             state -> {
               final Bytes32 parentHash =
-                  BeaconStateElectra.required(state)
-                      .getLatestExecutionPayloadHeader()
-                      .orElseThrow()
-                      .getParentHash();
+                  BeaconStateGloas.required(state)
+                      .getLatestExecutionPayloadBid()
+                      .getParentBlockHash();
               return executionLayerChannel
                   .engineGetInclusionList(parentHash, slot)
                   .thenApply(Optional::ofNullable);

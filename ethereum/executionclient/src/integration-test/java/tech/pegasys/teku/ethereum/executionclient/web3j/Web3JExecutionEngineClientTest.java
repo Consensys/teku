@@ -27,7 +27,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
-import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -503,17 +502,12 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  public void getInclusionListV1_shouldBuildRequestAndResponseSuccessfully() {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(HEZE);
-    final List<Bytes> transactions =
-        dataStructureUtil.randomInclusionListTransactions(dataStructureUtil.randomSlot());
+  public void getInclusionListV1_shouldBuildRequestAndResponseSuccessfully() throws Exception {
     final List<String> inclusionListTransactionV1List =
-        transactions.stream().map(Bytes::toHexString).toList();
-    final String transactionsJson =
-        String.format(
-            "\"%s\"", transactions.stream().map(Bytes::toString).collect(Collectors.joining(", ")));
+        List.of(Bytes.random(4).toHexString(), Bytes.random(8).toHexString());
+    final String transactionsJson = objectMapper.writeValueAsString(inclusionListTransactionV1List);
     final String bodyResponse =
-        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": [" + transactionsJson + "]}";
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": " + transactionsJson + "}";
 
     mockSuccessfulResponse(bodyResponse);
 

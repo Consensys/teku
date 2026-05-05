@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
@@ -52,6 +53,7 @@ public class SignedInclusionListValidator {
 
     final InclusionList inclusionList = signedInclusionList.getMessage();
     final UInt64 slot = inclusionList.getSlot();
+    final Fork fork = spec.fork(spec.computeEpochAtSlot(slot));
     final SpecConfigHeze specConfigHeze =
         spec.atSlot(slot).getConfig().toVersionHeze().orElseThrow();
     final int maxBytesPerInclusionList = specConfigHeze.getMaxBytesPerInclusionList();
@@ -116,7 +118,8 @@ public class SignedInclusionListValidator {
                * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
                */
               return inclusionListUtil
-                  .isValidInclusionListSignature(state, signedInclusionList, signatureVerifier)
+                  .isValidInclusionListSignature(
+                      fork, state, signedInclusionList, signatureVerifier)
                   .thenApply(
                       isValidInclusionListSignature -> {
                         if (isValidInclusionListSignature) {

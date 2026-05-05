@@ -38,9 +38,14 @@ public class SignedInclusionListPublisher {
 
   public SafeFuture<InternalValidationResult> sendInclusionList(
       final SignedInclusionList signedInclusionList) {
-    publishSignedInclusionList(signedInclusionList);
-    return inclusionListManager.addSignedInclusionList(
-        signedInclusionList, Optional.of(timeProvider.getTimeInMillis()));
+    return inclusionListManager
+        .addSignedInclusionList(signedInclusionList, Optional.of(timeProvider.getTimeInMillis()))
+        .thenPeek(
+            validationResult -> {
+              if (validationResult.isAccept()) {
+                publishSignedInclusionList(signedInclusionList);
+              }
+            });
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

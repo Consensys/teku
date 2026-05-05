@@ -439,6 +439,29 @@ public class OkHttpHttpExecutionEngineClientTest {
         .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());
   }
 
+  @TestTemplate
+  public void getInclusionListV1_shouldBuildRequestAndDeserializeStringTransactions()
+      throws Exception {
+    final List<String> inclusionListTransactions =
+        List.of(Bytes.random(4).toHexString(), Bytes.random(8).toHexString());
+    final JsonRpcResponse responseBody = new JsonRpcResponse(inclusionListTransactions);
+    mockSuccessfulResponse(objectMapper.writeValueAsString(responseBody));
+
+    final Bytes32 parentHash = dataStructureUtil.randomBytes32();
+    final SafeFuture<Response<List<String>>> futureResponse =
+        eeClient.getInclusionListV1(parentHash);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.payload().equals(inclusionListTransactions));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getInclusionListV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(parentHash.toHexString());
+  }
+
   private void mockSuccessfulResponse(final String responseBody) {
     mockWebServer.enqueue(
         new MockResponse()
