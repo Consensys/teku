@@ -74,8 +74,7 @@
       },
       "builder_index": "537496",
       "beacon_block_root": "0x77d96e3f4a4ad0971596b71d6420b24b4d12a275af3d948b77b438faa484f0d1",
-      "slot": "1",
-      "state_root": "0xfcc0453faa5beb79c96a8a4d2dde41e779279b73abbab1a2b73c11749d2af49c"
+      "parent_beacon_block_root": "0x8afa683fea95afdc0ad91e4937a9c6185315a1076506bd45a4357cc27fe5a75c"
     },
     "signature": "0x8ab48d0165e8cc8bfc6804760141896946c3be751af5f16d1a03ead456ebceab88a8168e1da194df56c512edc15ca6350c413cb819d31a7ef69b329d8cb9fa8e5d93ae66289a445f1465d57d97e72d4c0866e48a806df7f58ebcd060e2d03a72"
   }
