@@ -128,10 +128,11 @@ public class GetExecutionPayloadEnvelope extends RestApiEndpoint {
                 executionRequestsType,
                 m -> m.data().getMessage().getExecutionRequests())
             .withField("builder_index", UINT64_TYPE, m -> m.data().getMessage().getBuilderIndex())
+            .withField("beacon_block_root", BYTES32_TYPE, m -> m.data().getBeaconBlockRoot())
             .withField(
-                "beacon_block_root", BYTES32_TYPE, m -> m.data().getMessage().getBeaconBlockRoot())
-            .withField("slot", UINT64_TYPE, m -> m.data().getMessage().getSlot())
-            .withField("state_root", BYTES32_TYPE, ExecutionPayloadAndMetaData::stateRoot)
+                "parent_beacon_block_root",
+                BYTES32_TYPE,
+                m -> m.data().getMessage().getParentBeaconBlockRoot())
             .build();
 
     final SerializableTypeDefinition<ExecutionPayloadAndMetaData> signedEnvelopeType =

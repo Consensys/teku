@@ -900,7 +900,7 @@ class RecentChainDataTest {
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
     final List<BlobSidecar> blobSidecars1 = chainBuilder.getBlobSidecars(block1.getRoot());
-    storageSystem.chainUpdater().saveBlock(block1, blobSidecars1, UInt64.valueOf(1));
+    storageSystem.chainUpdater().saveBlock(block1, Optional.of(blobSidecars1), Optional.of(ONE));
     // 0 from genesis
     assertThat(recentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(UInt64.valueOf(0)));

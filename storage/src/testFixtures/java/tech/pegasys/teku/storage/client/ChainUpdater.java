@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -297,18 +298,32 @@ public class ChainUpdater {
   }
 
   public void saveBlock(final SignedBlockAndState block) {
+    saveBlock(block, Optional.empty(), Optional.empty());
+  }
+
+  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
+    saveBlock(block, Optional.of(blobSidecars), Optional.of(block.getSlot()));
+  }
+
+  public void saveBlock(
+      final SignedBlockAndState block,
+      final Optional<List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> earliestBlobSidecarSlot) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        Optional.empty(),
-        Optional.empty());
+        blobSidecars,
+        earliestBlobSidecarSlot);
     assertThat(tx.commit()).isCompleted();
-    recentChainData
-        .getUpdatableForkChoiceStrategy()
-        .orElseThrow()
-        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
+    // no need to call onExecutionPayloadResult when in Gloas
+    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      recentChainData
+          .getUpdatableForkChoiceStrategy()
+          .orElseThrow()
+          .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
+    }
     saveBlockTime(block);
   }
 
@@ -327,29 +342,6 @@ public class ChainUpdater {
     saveBlockTime(block);
   }
 
-  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
-    saveBlock(block, blobSidecars, block.getSlot());
-  }
-
-  public void saveBlock(
-      final SignedBlockAndState block,
-      final List<BlobSidecar> blobSidecars,
-      final UInt64 earliestBlobSidecarSlot) {
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(
-        block.getBlock(),
-        block.getState(),
-        spec.calculateBlockCheckpoints(block.getState()),
-        Optional.of(blobSidecars),
-        Optional.of(earliestBlobSidecarSlot));
-    assertThat(tx.commit()).isCompleted();
-    recentChainData
-        .getUpdatableForkChoiceStrategy()
-        .orElseThrow()
-        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
-    saveBlockTime(block);
-  }
-
   public void saveBlockTime(final SignedBlockAndState block) {
     // Make sure time is consistent with block
     final UInt64 blockTime = getSlotTime(block.getSlot());
@@ -362,6 +354,11 @@ public class ChainUpdater {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putExecutionPayload(executionPayload, false);
     assertThat(tx.commit()).isCompleted();
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .orElseThrow()
+        .onExecutionPayloadResult(
+            executionPayload.getBeaconBlockRoot(), PayloadStatus.VALID, false);
   }
 
   protected UInt64 getSlotTime(final UInt64 slot) {
