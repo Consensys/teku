@@ -781,8 +781,8 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
-  // get_inclusion_list_submission_due_ms
-  public Optional<Integer> getInclusionListSubmissionDueMillis() {
+  // get_inclusion_list_due_ms
+  public Optional<Integer> getInclusionListDueMillis() {
     return Optional.empty();
   }
 

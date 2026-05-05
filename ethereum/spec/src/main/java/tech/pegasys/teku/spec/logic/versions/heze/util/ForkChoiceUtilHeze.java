@@ -33,9 +33,8 @@ public class ForkChoiceUtilHeze extends ForkChoiceUtilGloas {
   }
 
   @Override
-  public Optional<Integer> getInclusionListSubmissionDueMillis() {
+  public Optional<Integer> getInclusionListDueMillis() {
     final SpecConfigHeze configHeze = SpecConfigHeze.required(specConfig);
-    return Optional.of(
-        getSlotComponentDurationMillis(configHeze.getInclusionListSubmissionDueBps()));
+    return Optional.of(getSlotComponentDurationMillis(configHeze.getInclusionListDueBps()));
   }
 }

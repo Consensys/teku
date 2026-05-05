@@ -26,13 +26,11 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.logging.EventLogger.TargetChain;
-import tech.pegasys.teku.infrastructure.time.TimeUtilities;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -265,7 +263,7 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
-  // Attestations are due 1/3 (1/4 in Gloas) of the way through the slots time period
+  // Inclusion list block updates are due at the inclusion list deadline.
   boolean isSlotUpdateBlockWithInclusionListsDue(
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,
@@ -275,11 +273,8 @@ public class SlotProcessor {
         || specVersion.getMilestone().isLessThan(SpecMilestone.HEZE)) {
       return false;
     }
-    final UInt64 proposerInclusionListCutoffBps =
-        TimeUtilities.secondsToMillis(
-            SpecConfigHeze.required(specVersion.getConfig()).getProposerInclusionListCutoffBps());
     final UInt64 earliestTimeInMillis =
-        nodeSlotStartTimeMillis.plus(proposerInclusionListCutoffBps);
+        nodeSlotStartTimeMillis.plus(spec.getInclusionListDueMillis(calculatedSlot).orElseThrow());
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 

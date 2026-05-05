@@ -731,8 +731,8 @@ public class Spec {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
   }
 
-  public Optional<Integer> getInclusionListSubmissionDueMillis(final UInt64 slot) {
-    return atSlot(slot).getForkChoiceUtil().getInclusionListSubmissionDueMillis();
+  public Optional<Integer> getInclusionListDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getInclusionListDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
