@@ -55,30 +55,31 @@ public class InclusionListsBlockUpdater {
 
   @SuppressWarnings({"FutureReturnValueIgnored", "UnusedReturnValue"})
   public SafeFuture<Optional<Bytes8>> onUpdateBlockWithInclusionListsDue(final UInt64 slot) {
+    final UInt64 stateSlot = slot.increment();
     return combinedChainDataClient
-        .getStateAtSlotExact(slot.increment())
+        .getStateAtSlotExact(stateSlot)
         .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.warn(
                     "Ignoring block update with inclusion lists because state at slot {} is not available",
-                    slot);
+                    stateSlot);
                 return SafeFuture.failedFuture(
                     new IllegalStateException("Head state is not yet available"));
               }
               final BeaconState state = maybeState.get();
-              if (proposersDataManager.isProposerForSlot(slot.increment(), state)) {
+              if (proposersDataManager.isProposerForSlot(stateSlot, state)) {
                 return updateBlockWithInclusionLists(slot, state);
               } else {
                 LOG.trace(
                     "Not a proposer for slot {}, no block creation to update with inclusion lists",
-                    slot.increment());
+                    stateSlot);
                 return SafeFuture.completedFuture(Optional.empty());
               }
             })
         .exceptionally(
             error -> {
-              LOG.error("Unable to get state at slot {}.", slot, error);
+              LOG.error("Unable to get state at slot {}.", stateSlot, error);
               return Optional.empty();
             });
   }
