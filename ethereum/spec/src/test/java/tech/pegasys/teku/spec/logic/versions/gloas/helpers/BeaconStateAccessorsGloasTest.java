@@ -90,14 +90,15 @@ public class BeaconStateAccessorsGloasTest {
   @Test
   public void churnLimits_shouldFloorAtMinPerEpochChurnLimitWhenActiveBalanceIsLow() {
     // 8 active validators × 32 ETH = 256 ETH active balance. Even / 16 (16 ETH) is below the
-    // MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA floor on all three churn helpers.
+    // MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA floor for activations/exits
     final BeaconStateElectra state = activeStateWithValidators(8);
     final SpecConfigGloas config = configGloas();
     final UInt64 floor = config.getMinPerEpochChurnLimitElectra();
 
     assertThat(beaconStateAccessors.getActivationChurnLimit(state)).isEqualTo(floor);
     assertThat(beaconStateAccessors.getExitChurnLimit(state)).isEqualTo(floor);
-    assertThat(beaconStateAccessors.getConsolidationChurnLimit(state)).isEqualTo(floor);
+    // no floor applied for consolidation churn limit, it is derived independently
+    assertThat(beaconStateAccessors.getConsolidationChurnLimit(state)).isLessThan(floor);
   }
 
   @Test

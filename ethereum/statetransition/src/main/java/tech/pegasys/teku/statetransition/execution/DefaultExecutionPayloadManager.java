@@ -204,9 +204,11 @@ public class DefaultExecutionPayloadManager
 
   @Override
   public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
-      final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
+      final UInt64 slot,
+      final Bytes32 parentRoot,
+      final ForkChoicePayloadStatus parentPayloadStatus) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
+    if (!parentPayloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
       return SafeFuture.completedFuture(
           SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
               .getExecutionRequestsSchema()

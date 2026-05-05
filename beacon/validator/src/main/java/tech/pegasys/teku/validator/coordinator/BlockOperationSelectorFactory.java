@@ -227,7 +227,9 @@ public class BlockOperationSelectorFactory {
         setVoluntaryExits =
             executionPayloadManager
                 .getParentExecutionRequestsForBlock(
-                    blockSlotState.getSlot(), parentRoot, blockProductionContext.payloadStatus())
+                    blockSlotState.getSlot(),
+                    parentRoot,
+                    blockProductionContext.parentPayloadStatus())
                 .thenAccept(
                     parentExecutionRequests -> {
                       final Set<UInt64> validatorsWithParentWithdrawalRequests = new HashSet<>();

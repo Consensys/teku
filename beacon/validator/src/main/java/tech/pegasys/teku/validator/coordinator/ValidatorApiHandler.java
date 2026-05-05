@@ -1280,7 +1280,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return parentForkChoiceNode.blockRoot();
     }
 
-    public ForkChoicePayloadStatus payloadStatus() {
+    public ForkChoicePayloadStatus parentPayloadStatus() {
       return parentForkChoiceNode.payloadStatus();
     }
   }
