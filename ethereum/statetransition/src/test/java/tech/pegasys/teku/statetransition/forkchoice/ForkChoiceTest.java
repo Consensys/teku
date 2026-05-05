@@ -1410,7 +1410,7 @@ class ForkChoiceTest {
   @Test
   void
       validateInclusionListReturnsFailureIfNotAllInclusionListsTransactionAreInTheExecutionPayload() {
-    setupWithSpec(TestSpecFactory.createMainnetHeze());
+    setupWithSpec(TestSpecFactory.createMinimalHeze());
 
     final List<Transaction> inclusionListTransactions = new ArrayList<>();
 

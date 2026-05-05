@@ -775,6 +775,42 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void createAttestationData_shouldUseInclusionListAttesterHeadWhenDifferentFromHead() {
+    final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
+
+    final SignedBlockAndState attesterHeadBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(epochStartSlot);
+    final Bytes32 attesterHeadRoot = attesterHeadBlockAndState.getRoot();
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(slot, attesterHeadRoot);
+
+    when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
+        .thenReturn(completedFuture(Optional.of(blockAndState)));
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+    when(store.getInclusionListAttesterHead(blockAndState.getRoot()))
+        .thenReturn(Optional.of(attesterHeadRoot));
+    when(store.getBlockIfAvailable(attesterHeadRoot))
+        .thenReturn(Optional.of(attesterHeadBlockAndState.getBlock()));
+    when(chainDataClient.getStateByBlockRoot(attesterHeadRoot))
+        .thenReturn(completedFuture(Optional.of(attesterHeadBlockAndState.getState())));
+    when(store.getExecutionPayloadIfAvailable(attesterHeadRoot))
+        .thenReturn(Optional.of(dataStructureUtil.randomSignedExecutionPayloadEnvelope(5)));
+
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, 0);
+
+    assertThat(result).isCompleted();
+    final Optional<AttestationData> maybeAttestation = safeJoin(result);
+    assertThat(maybeAttestation).isPresent();
+    final AttestationData attestationData = maybeAttestation.orElseThrow();
+    assertThat(attestationData)
+        .isEqualTo(
+            spec.getGenericAttestationData(
+                slot, attesterHeadBlockAndState.getState(), attesterHeadRoot, ONE));
+  }
+
+  @Test
   public void createAttestationData_shouldRejectRequestWhenSlotIsInTheFuture() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot.minus(1));

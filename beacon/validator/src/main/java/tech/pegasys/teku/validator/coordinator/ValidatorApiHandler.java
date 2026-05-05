@@ -654,50 +654,91 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                               }
                               final SignedBlockAndState blockAndState = maybeBlockAndState.get();
                               final BeaconBlock block = blockAndState.getBlock().getMessage();
-                              final Optional<Bytes32> maybeBlockRoot =
+                              final Optional<Bytes32> maybeAttesterHeadRoot =
                                   combinedChainDataClient
                                       .getStore()
                                       .getInclusionListAttesterHead(block.getRoot());
-                              if (maybeBlockRoot.isEmpty()) {
+                              if (maybeAttesterHeadRoot.isEmpty()) {
                                 return SafeFuture.failedFuture(
                                     new IllegalArgumentException(
                                         String.format(
                                             "Unable to create attestation for slot %s. No suitable block available.",
                                             slot)));
                               }
-                              final Bytes32 blockRoot = maybeBlockRoot.get();
+                              final Bytes32 attesterHeadRoot = maybeAttesterHeadRoot.get();
                               // The head block must not be optimistically synced.
-                              if (combinedChainDataClient.isOptimisticBlock(blockRoot)) {
+                              if (combinedChainDataClient.isOptimisticBlock(attesterHeadRoot)) {
                                 return NodeSyncingException.failedFuture();
                               }
-                              if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
-                                // The current effective block is too far in the past - so roll the
-                                // state forward to the current epoch. Ensures we have the latest
-                                // justified checkpoint
-                                return combinedChainDataClient
-                                    .getCheckpointState(epoch, blockAndState)
-                                    .thenApply(
-                                        checkpointState ->
-                                            Optional.of(
-                                                createAttestationData(
-                                                    block,
-                                                    checkpointState.getState(),
-                                                    slot,
-                                                    computeCommitteeIndexForAttestation(
-                                                        slot, block, committeeIndex))));
-                              } else {
-                                final AttestationData attestationData =
-                                    createAttestationData(
-                                        block,
-                                        blockAndState.getState(),
-                                        slot,
-                                        computeCommitteeIndexForAttestation(
-                                            slot, block, committeeIndex));
-                                return SafeFuture.completedFuture(Optional.of(attestationData));
-                              }
+                              return getAttesterHeadBlockAndState(attesterHeadRoot, blockAndState)
+                                  .thenCompose(
+                                      maybeAttesterHeadBlockAndState ->
+                                          maybeAttesterHeadBlockAndState
+                                              .map(
+                                                  attesterHeadBlockAndState ->
+                                                      createAttestationData(
+                                                          epoch,
+                                                          minQuerySlot,
+                                                          slot,
+                                                          committeeIndex,
+                                                          attesterHeadBlockAndState))
+                                              .orElseGet(
+                                                  () ->
+                                                      SafeFuture.failedFuture(
+                                                          new IllegalArgumentException(
+                                                              String.format(
+                                                                  "Unable to create attestation for slot %s. No suitable block available.",
+                                                                  slot)))));
                             }));
     result.always(context::stopTimer);
     return result;
+  }
+
+  private SafeFuture<Optional<SignedBlockAndState>> getAttesterHeadBlockAndState(
+      final Bytes32 attesterHeadRoot, final SignedBlockAndState candidateBlockAndState) {
+    if (attesterHeadRoot.equals(candidateBlockAndState.getRoot())) {
+      return SafeFuture.completedFuture(Optional.of(candidateBlockAndState));
+    }
+
+    return combinedChainDataClient
+        .getStore()
+        .getBlockIfAvailable(attesterHeadRoot)
+        .map(
+            attesterHeadBlock ->
+                combinedChainDataClient
+                    .getStateByBlockRoot(attesterHeadRoot)
+                    .thenApply(
+                        maybeState ->
+                            maybeState.map(
+                                state -> new SignedBlockAndState(attesterHeadBlock, state))))
+        .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()));
+  }
+
+  private SafeFuture<Optional<AttestationData>> createAttestationData(
+      final UInt64 epoch,
+      final UInt64 minQuerySlot,
+      final UInt64 slot,
+      final int committeeIndex,
+      final SignedBlockAndState blockAndState) {
+    final BeaconBlock block = blockAndState.getBlock().getMessage();
+    final int computedCommitteeIndex =
+        computeCommitteeIndexForAttestation(slot, block, committeeIndex);
+
+    if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+      // The current effective block is too far in the past - so roll the state forward to the
+      // current epoch. Ensures we have the latest justified checkpoint.
+      return combinedChainDataClient
+          .getCheckpointState(epoch, blockAndState)
+          .thenApply(
+              checkpointState ->
+                  Optional.of(
+                      createAttestationData(
+                          block, checkpointState.getState(), slot, computedCommitteeIndex)));
+    } else {
+      final AttestationData attestationData =
+          createAttestationData(block, blockAndState.getState(), slot, computedCommitteeIndex);
+      return SafeFuture.completedFuture(Optional.of(attestationData));
+    }
   }
 
   private int computeCommitteeIndexForAttestation(
