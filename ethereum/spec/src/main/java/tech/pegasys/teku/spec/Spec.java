@@ -1373,8 +1373,8 @@ public class Spec {
   }
 
   // Gloas Utils
-  public boolean isProposerPreferencesAvailableAtSlot(final UInt64 slot) {
-    return atSlot(slot)
+  public boolean isProposerPreferencesAvailableAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch)
         .miscHelpers()
         .toVersionGloas()
         .map(MiscHelpersGloas::isProposerPreferencesAvailable)

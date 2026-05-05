@@ -57,37 +57,37 @@ public class ProposerPreferencesPublisher {
   }
 
   public void onProposerDutiesLoaded(final UInt64 epoch, final ProposerDuties proposerDuties) {
-    if (!spec.isProposerPreferencesAvailableAtSlot(spec.computeStartSlotAtEpoch(epoch))) {
+    if (!spec.isProposerPreferencesAvailableAtEpoch(epoch)) {
       return;
     }
 
-    final List<ProposerDuty> ourProposerDuties =
+    final List<ProposerDuty> ownedProposerDuties =
         proposerDuties.getDuties().stream()
             .filter(duty -> ownedValidators.hasValidator(duty.getPublicKey()))
             .toList();
 
-    if (ourProposerDuties.isEmpty()) {
-      LOG.debug("No proposal proposerDuties for our validators in epoch {}", epoch);
+    if (ownedProposerDuties.isEmpty()) {
+      LOG.debug("No owned validators have proposer duties in epoch {}", epoch);
       return;
     }
 
-      // Gloas's get_proposer_dependent_root(state, e) returns the block root at
-      // start_of_(e-1) - 1. For next-epoch duties, BlockProposalUtilFulu's
-      // getBlockProposalDependentRoot returns the same value, so we reuse it here.
-      final Bytes32 dependentRoot = proposerDuties.getDependentRoot();
+    // Gloas's get_proposer_dependent_root(state, e) returns the block root at
+    // start_of_(e-1) - 1. For next-epoch duties, BlockProposalUtilFulu's
+    // getBlockProposalDependentRoot returns the same value, so we reuse it here.
+    final Bytes32 dependentRoot = proposerDuties.getDependentRoot();
 
     final ProposerPreferencesUtil preferencesUtil = spec.getProposerPreferencesUtil(epoch);
 
     forkProvider
-        .getForkInfo(ourProposerDuties.getFirst().getSlot())
+        .getForkInfo(ownedProposerDuties.getFirst().getSlot())
         .thenCompose(
             forkInfo ->
                 SafeFuture.collectAll(
-                        ourDuties.stream()
+                        ownedProposerDuties.stream()
                             .map(
                                 duty ->
                                     createSignedProposerPreferences(
-                                            duty,dependentRoot, forkInfo, preferencesUtil)))
+                                        duty, dependentRoot, forkInfo, preferencesUtil)))
                     .thenCompose(
                         signedPreferences -> {
                           final List<SignedProposerPreferences> preferencesList =
@@ -132,7 +132,7 @@ public class ProposerPreferencesPublisher {
             maybeFeeRecipient.get(),
             gasLimit);
     if (maybePreferences.isEmpty()) {
-      // Pre Gloas the util is NOOP, nothing to publish
+      // Pre-Gloas, the util is NOOP, nothing to publish
       return SafeFuture.completedFuture(Optional.empty());
     }
     final ProposerPreferences preferences = maybePreferences.get();
