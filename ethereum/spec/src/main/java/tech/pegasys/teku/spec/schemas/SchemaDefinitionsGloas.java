@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
@@ -29,6 +31,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTEST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
@@ -129,18 +132,20 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   }
 
   @Override
-  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
-    return getBeaconBlockSchema();
+  protected BeaconBlockBodySchema<?> createBlindedBeaconBlockBodySchema(
+      final SchemaRegistry schemaRegistry) {
+    return schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
   }
 
   @Override
-  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return getBeaconBlockBodySchema();
+  protected BeaconBlockSchema createBlindedBeaconBlockSchema(final SchemaRegistry schemaRegistry) {
+    return schemaRegistry.get(BEACON_BLOCK_SCHEMA);
   }
 
   @Override
-  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
-    return getSignedBeaconBlockSchema();
+  protected SignedBeaconBlockSchema createSignedBlindedBeaconBlockSchema(
+      final SchemaRegistry schemaRegistry) {
+    return schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
   }
 
   @Override

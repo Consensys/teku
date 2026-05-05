@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
@@ -66,7 +67,8 @@ abstract class AbstractBlockMetadataStoreTest {
     final BlockAndCheckpoints block3 =
         BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(3));
 
-    store.applyUpdate(List.of(block1, block2, block3), emptySet(), emptyMap(), genesisCheckpoint);
+    store.applyUpdate(
+        List.of(block1, block2, block3), emptyList(), emptySet(), emptyMap(), genesisCheckpoint);
 
     chainBuilder
         .streamBlocksAndStates()
@@ -85,6 +87,7 @@ abstract class AbstractBlockMetadataStoreTest {
 
     store.applyUpdate(
         List.of(block1, block2, block3),
+        emptyList(),
         emptySet(),
         Map.of(genesis.getRoot(), UInt64.ZERO, block1.getRoot(), block1.getSlot()),
         new Checkpoint(UInt64.ONE, block2.getRoot()));
@@ -96,12 +99,12 @@ abstract class AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void processAllInOrder_shouldVisitAllBlocksInSingleChain() {
+  void processAllBeaconBlocksInOrder_shouldVisitAllBlocksInSingleChain() {
     final int lastSlot = 10;
     chainBuilder.generateBlocksUpToSlot(lastSlot);
     final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
     final AtomicInteger expectedNextSlot = new AtomicInteger(0);
-    store.processAllInOrder(
+    store.processAllBeaconBlocksInOrder(
         (childRoot, slot, parentRoot) -> {
           assertThat(slot).isEqualTo(UInt64.valueOf(expectedNextSlot.getAndIncrement()));
           final SignedBeaconBlock block = chainBuilder.getBlockAtSlot(slot);
@@ -114,7 +117,7 @@ abstract class AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void processAllInOrder_shouldVisitParentBlocksBeforeChildBlocksInForks() {
+  void processAllBeaconBlocksInOrder_shouldVisitParentBlocksBeforeChildBlocksInForks() {
     // First chain has all blocks up to 10
     // Fork chain has 0-5, skips 6 and then has 7-10
     chainBuilder.generateBlocksUpToSlot(5);
@@ -128,13 +131,14 @@ abstract class AbstractBlockMetadataStoreTest {
             .streamBlocksAndStates()
             .map(blockAndState -> BlockAndCheckpoints.fromBlockAndState(spec, blockAndState))
             .collect(toList()),
+        emptyList(),
         emptySet(),
         emptyMap(),
         genesisCheckpoint);
 
     final Set<Bytes32> seenBlocks = new HashSet<>();
 
-    store.processAllInOrder(
+    store.processAllBeaconBlocksInOrder(
         (childRoot, slot, parentRoot) -> {
           assertThat(seenBlocks).doesNotContain(childRoot);
           if (!seenBlocks.isEmpty()) {
@@ -163,7 +167,7 @@ abstract class AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void processHashesInChain_shouldWalkUpSpecifiedChain() {
+  void processBeaconBlockChain_shouldWalkUpSpecifiedChain() {
     // First chain has all blocks up to 10
     // Fork chain has 0-5, skips 6 and then has 7-10
     chainBuilder.generateBlocksUpToSlot(5);
@@ -177,6 +181,7 @@ abstract class AbstractBlockMetadataStoreTest {
             .streamBlocksAndStates()
             .map(blockAndState -> BlockAndCheckpoints.fromBlockAndState(spec, blockAndState))
             .collect(toList()),
+        emptyList(),
         emptySet(),
         emptyMap(),
         genesisCheckpoint);
@@ -201,7 +206,7 @@ abstract class AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void processHashesInChainWhile_shouldStopProcessingWhenProcessorReturnsFalse() {
+  void processBeaconBlockChainWhile_shouldStopProcessingWhenProcessorReturnsFalse() {
     chainBuilder.generateBlocksUpToSlot(10);
     final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
 
@@ -212,9 +217,9 @@ abstract class AbstractBlockMetadataStoreTest {
     final Set<Bytes32> seenBlocks = new HashSet<>();
 
     final AtomicReference<Bytes32> expectedBlock = new AtomicReference<>(headRoot);
-    store.processHashesInChainWhile(
+    store.processBeaconBlockChainWhile(
         headRoot,
-        (childRoot, slot, parentRoot, executionHash) -> {
+        (childRoot, slot, parentRoot) -> {
           assertThat(seenBlocks).doesNotContain(childRoot);
           seenBlocks.add(childRoot);
 
@@ -222,7 +227,6 @@ abstract class AbstractBlockMetadataStoreTest {
           assertThat(childRoot).isEqualTo(block.getRoot());
           assertThat(slot).isEqualTo(block.getSlot());
           assertThat(parentRoot).isEqualTo(block.getParentRoot());
-          assertThat(executionHash).isEqualTo(Bytes32.ZERO);
 
           expectedBlock.set(block.getParentRoot());
           return !slot.equals(UInt64.valueOf(3));
@@ -316,7 +320,7 @@ abstract class AbstractBlockMetadataStoreTest {
     final Set<Bytes32> seenBlocks = new HashSet<>();
 
     final AtomicReference<Bytes32> expectedBlock = new AtomicReference<>(headRoot);
-    store.processHashesInChain(
+    store.processBeaconBlockChain(
         headRoot,
         (childRoot, slot, parentRoot) -> {
           assertThat(seenBlocks).doesNotContain(childRoot);

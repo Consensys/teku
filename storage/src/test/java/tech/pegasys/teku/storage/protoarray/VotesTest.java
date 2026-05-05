@@ -536,7 +536,8 @@ public class VotesTest {
 
     // Ensure that pruning below the prune threshold does not prune.
     forkChoice.setPruneThreshold(Integer.MAX_VALUE);
-    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(5)));
+    forkChoice.applyUpdate(
+        emptyList(), emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
@@ -564,7 +565,8 @@ public class VotesTest {
     //              / \
     // 20          9   10
     forkChoice.setPruneThreshold(1);
-    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(4)));
+    forkChoice.applyUpdate(
+        emptyList(), emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(4)));
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(7);
 
     // Run find-head, ensure the prune didn't change the head.
@@ -619,8 +621,8 @@ public class VotesTest {
             new Checkpoint(finalizedEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
-        ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        Optional.empty(),
+        Optional.empty());
   }
 
   private UInt64 unsigned(final int i) {
@@ -635,13 +637,17 @@ public class VotesTest {
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances) {
-    return forkChoice.applyPendingVotes(
-        store,
-        Optional.empty(),
-        UInt64.valueOf(1000),
-        finalizedCheckpoint,
-        justifiedCheckpoint,
-        justifiedStateEffectiveBalances,
-        ZERO);
+    return forkChoice
+        .applyPendingVotes(
+            store,
+            Optional.empty(),
+            UInt64.valueOf(1000),
+            UInt64.valueOf(1000),
+            finalizedCheckpoint,
+            justifiedCheckpoint,
+            justifiedStateEffectiveBalances,
+            ZERO)
+        .node()
+        .blockRoot();
   }
 }

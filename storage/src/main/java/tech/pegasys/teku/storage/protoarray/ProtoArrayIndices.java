@@ -18,39 +18,38 @@ import static com.google.common.base.Preconditions.checkState;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 
-public class ProtoArrayIndices {
-  private final Object2IntMap<Bytes32> rootIndices = new Object2IntOpenHashMap<>();
+class ProtoArrayIndices {
+  private final Object2IntMap<ForkChoiceNode> nodeIndices = new Object2IntOpenHashMap<>();
 
-  public boolean contains(final Bytes32 root) {
-    return rootIndices.containsKey(root);
+  boolean contains(final ForkChoiceNode node) {
+    return nodeIndices.containsKey(node);
   }
 
-  public void add(final Bytes32 blockRoot, final int nodeIndex) {
-    rootIndices.put(blockRoot, nodeIndex);
+  void add(final ForkChoiceNode node, final int nodeIndex) {
+    nodeIndices.put(node, nodeIndex);
   }
 
-  public Optional<Integer> get(final Bytes32 root) {
-    // we operate in the assumption that protoarray indices are always >= 0
-    final int nodeIndex = rootIndices.getOrDefault(root, -1);
+  Optional<Integer> get(final ForkChoiceNode node) {
+    final int nodeIndex = nodeIndices.getOrDefault(node, -1);
     return nodeIndex == -1 ? Optional.empty() : Optional.of(nodeIndex);
   }
 
-  public void remove(final Bytes32 root) {
-    rootIndices.removeInt(root);
+  void remove(final ForkChoiceNode node) {
+    nodeIndices.removeInt(node);
   }
 
-  public void offsetIndices(final int finalizedIndex) {
-    rootIndices.replaceAll(
+  void offsetIndices(final int finalizedIndex) {
+    nodeIndices.replaceAll(
         (key, value) -> {
-          int newIndex = value - finalizedIndex;
+          final int newIndex = value - finalizedIndex;
           checkState(newIndex >= 0, "ProtoArray: New array index less than 0.");
           return newIndex;
         });
   }
 
-  public Object2IntMap<Bytes32> getRootIndices() {
-    return rootIndices;
+  Object2IntMap<ForkChoiceNode> getNodeIndices() {
+    return nodeIndices;
   }
 }

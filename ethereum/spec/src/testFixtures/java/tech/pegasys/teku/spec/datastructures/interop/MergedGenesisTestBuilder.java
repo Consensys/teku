@@ -81,6 +81,10 @@ public class MergedGenesisTestBuilder {
                             .orElseThrow())
                 // New in Deneb
                 .blobGasUsed(() -> UInt64.ZERO)
-                .excessBlobGas(() -> UInt64.ZERO));
+                .excessBlobGas(() -> UInt64.ZERO)
+                // New in Gloas
+                .blockAccessListRoot(
+                    () -> Bytes32.wrap(header.getBalHash().orElseThrow().getBytes()))
+                .slotNumber(() -> UInt64.valueOf(header.getSlotNumber())));
   }
 }

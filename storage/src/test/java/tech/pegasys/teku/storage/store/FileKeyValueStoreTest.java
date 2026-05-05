@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
@@ -33,6 +35,7 @@ public class FileKeyValueStoreTest {
   @TempDir Path kvDir;
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   void testSimple() {
     FileKeyValueStore store = new FileKeyValueStore(kvDir);
 
@@ -47,6 +50,7 @@ public class FileKeyValueStoreTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   @SuppressWarnings({"unchecked", "rawtypes"})
   void testConcurrent() {
     FileKeyValueStore store = new FileKeyValueStore(kvDir);

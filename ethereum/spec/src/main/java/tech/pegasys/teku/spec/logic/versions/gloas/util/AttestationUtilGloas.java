@@ -18,13 +18,14 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
@@ -66,7 +67,9 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
             Domain.PTC_ATTESTER,
             miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()));
     final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.getData(), domain);
-    return BLS.fastAggregateVerify(pubKeys, signingRoot, attestation.getSignature());
+    return specConfig
+        .getBLSSignatureVerifier()
+        .verify(pubKeys, signingRoot, attestation.getSignature());
   }
 
   @Override
@@ -98,5 +101,26 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
               }
             })
         .orElse(AttestationValidationResult.VALID);
+  }
+
+  @Override
+  public AttestationData getGenericAttestationData(
+      final UInt64 slot,
+      final BeaconState state,
+      final BeaconBlockSummary block,
+      final UInt64 committeeIndex) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+    // Get variables necessary that can be shared among Attestations of all validators
+    final Bytes32 beaconBlockRoot = block.getRoot();
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    final Bytes32 epochBoundaryBlockRoot =
+        startSlot.compareTo(slot) == 0 || state.getSlot().compareTo(startSlot) <= 0
+            ? block.getRoot()
+            : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
+    final Checkpoint source = state.getCurrentJustifiedCheckpoint();
+    final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
+
+    // Set attestation data
+    return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
   }
 }

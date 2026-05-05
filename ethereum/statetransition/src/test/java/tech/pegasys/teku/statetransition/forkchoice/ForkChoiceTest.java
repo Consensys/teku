@@ -76,7 +76,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -1303,11 +1303,9 @@ class ForkChoiceTest {
                     new Checkpoint(
                         spec.computeEpochAtSlot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
-    final IndexedAttestationSchema indexedAttestationSchema =
-        spec.atSlot(updatedAttestationSlot).getSchemaDefinitions().getIndexedAttestationSchema();
     updatedVote.setIndexedAttestation(
-        indexedAttestationSchema.create(
-            indexedAttestationSchema.getAttestingIndicesSchema().of(validatorIndex),
+        new IndexedAttestationLight(
+            List.of(validatorIndex),
             updatedVote.getData(),
             updatedVote.getAttestation().getAggregateSignature()));
 

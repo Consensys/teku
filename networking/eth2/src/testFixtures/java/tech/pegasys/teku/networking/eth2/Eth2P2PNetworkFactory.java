@@ -616,7 +616,11 @@ public class Eth2P2PNetworkFactory {
       return P2PConfig.builder()
           .specProvider(spec)
           .targetSubnetSubscriberCount(2)
-          .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
+          .network(
+              b ->
+                  b.listenPort(port)
+                      .networkInterface("127.0.0.1")
+                      .wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
               d ->
                   d.isDiscoveryEnabled(false)
