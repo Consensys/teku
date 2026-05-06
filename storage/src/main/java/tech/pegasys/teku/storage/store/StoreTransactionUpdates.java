@@ -175,7 +175,7 @@ class StoreTransactionUpdates {
         .getForkChoiceStrategy()
         .applyUpdate(
             hotBlocks.values(),
-            hotExecutionPayloads.values(),
+            hotExecutionPayloads,
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
             store.getFinalizedCheckpoint(),

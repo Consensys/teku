@@ -678,7 +678,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   @Override
   public void applyUpdate(
       final Collection<BlockAndCheckpoints> newBlocks,
-      final Collection<ExecutionPayloadUpdate> newExecutionPayloads,
+      final Map<Bytes32, ExecutionPayloadUpdate> newExecutionPayloads,
       final Collection<Bytes32> pulledUpBlocks,
       final Map<Bytes32, UInt64> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
@@ -693,7 +693,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   public void applyUpdate(
       final Collection<BlockAndCheckpoints> newBlocks,
-      final Collection<ExecutionPayloadUpdate> executionPayloads,
+      final Map<Bytes32, ExecutionPayloadUpdate> executionPayloads,
       final Collection<Bytes32> pulledUpBlocks,
       final Map<Bytes32, UInt64> removedBlockRoots,
       final Checkpoint finalizedCheckpoint,
@@ -701,7 +701,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.writeLock().lock();
     try {
       final Map<Bytes32, ExecutionPayloadUpdate> executionPayloadsByRoot =
-          executionPayloadsByRoot(executionPayloads);
+          new HashMap<>(executionPayloads);
       finalizedExecutionPayloadBoundaryBlock.ifPresent(
           boundaryBlock -> {
             processFinalizedBoundaryBlock(boundaryBlock);
@@ -747,17 +747,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     } finally {
       protoArrayLock.writeLock().unlock();
     }
-  }
-
-  private Map<Bytes32, ExecutionPayloadUpdate> executionPayloadsByRoot(
-      final Collection<ExecutionPayloadUpdate> executionPayloads) {
-    final Map<Bytes32, ExecutionPayloadUpdate> result = new HashMap<>();
-    executionPayloads.forEach(
-        executionPayloadUpdate ->
-            result.put(
-                executionPayloadUpdate.executionPayload().getBeaconBlockRoot(),
-                executionPayloadUpdate));
-    return result;
   }
 
   private void processExecutionPayload(final ExecutionPayloadUpdate executionPayloadUpdate) {

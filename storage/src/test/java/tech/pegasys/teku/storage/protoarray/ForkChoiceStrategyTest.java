@@ -246,7 +246,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         List.of(
             BlockAndCheckpoints.fromBlockAndState(spec, bestBlock),
             BlockAndCheckpoints.fromBlockAndState(spec, forkBlock)),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         emptyMap(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -325,7 +325,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
     strategy.applyUpdate(
         emptyList(),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         Map.of(block2.getRoot(), block2.getSlot()),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -346,7 +346,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         List.of(
             BlockAndCheckpoints.fromBlockAndState(spec, block1),
             BlockAndCheckpoints.fromBlockAndState(spec, block2)),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         emptyMap(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -369,7 +369,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Not pruned because threshold isn't reached.
     strategy.applyUpdate(
-        emptyList(), emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, block2.getRoot()));
+        emptyList(), emptyMap(), emptySet(), emptyMap(), new Checkpoint(ONE, block2.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isTrue();
     assertThat(strategy.contains(block2.getRoot())).isTrue();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -377,7 +377,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Prune when threshold is exceeded
     strategy.applyUpdate(
-        emptyList(), emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, block3.getRoot()));
+        emptyList(), emptyMap(), emptySet(), emptyMap(), new Checkpoint(ONE, block3.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isFalse();
     assertThat(strategy.contains(block2.getRoot())).isFalse();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -394,7 +394,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
     forkChoiceStrategy.setPruneThreshold(0);
     forkChoiceStrategy.applyUpdate(
-        emptyList(), emptyList(), emptySet(), emptyMap(), finalizedCheckpoint);
+        emptyList(), emptyMap(), emptySet(), emptyMap(), finalizedCheckpoint);
 
     // Check that all blocks prior to latest finalized have been pruned
     final List<SignedBlockAndState> allBlocks =
@@ -434,7 +434,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             List.of(
                 BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
                 BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
-            List.of(fixture.boundaryExecutionPayload()),
+            Map.of(fixture.boundary().getRoot(), fixture.boundaryExecutionPayload()),
             emptySet(),
             emptyMap(),
             fixture.finalizedCheckpoint(),
@@ -457,7 +457,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             List.of(
                 BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
                 BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
-            emptyList(),
+            emptyMap(),
             emptySet(),
             emptyMap(),
             fixture.finalizedCheckpoint(),
@@ -486,7 +486,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             List.of(
                 BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
                 BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
-            emptyList(),
+            emptyMap(),
             emptySet(),
             emptyMap(),
             fixture.finalizedCheckpoint(),
@@ -522,7 +522,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             () ->
                 strategy.applyUpdate(
                     List.of(BlockAndCheckpoints.fromBlockAndState(gloasSpec, child)),
-                    emptyList(),
+                    emptyMap(),
                     emptySet(),
                     emptyMap(),
                     new Checkpoint(ZERO, genesis.getRoot())))
@@ -542,7 +542,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     strategy.applyUpdate(
         emptyList(),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         Map.of(block1.getRoot(), block1.getSlot(), block2.getRoot(), block2.getSlot()),
         new Checkpoint(ONE, block3.getRoot()));
