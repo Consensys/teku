@@ -36,6 +36,7 @@ public class Eth2PeerFactory {
   private final Optional<Checkpoint> requiredCheckpoint;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
+  private final int peerInclusionListsRateLimit;
   private final int peerRequestLimit;
   private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
@@ -50,6 +51,7 @@ public class Eth2PeerFactory {
       final Optional<Checkpoint> requiredCheckpoint,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
+      final int peerInclusionListsRateLimit,
       final int peerRequestLimit,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
     this.spec = spec;
@@ -61,6 +63,7 @@ public class Eth2PeerFactory {
     this.requiredCheckpoint = requiredCheckpoint;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
+    this.peerInclusionListsRateLimit = peerInclusionListsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
     this.dataColumnSidecarSignatureValidator =
@@ -86,6 +89,7 @@ public class Eth2PeerFactory {
             "data_column_sidecars"),
         RateTracker.create(
             peerBlocksRateLimit, TIME_OUT, timeProvider, "execution_payload_envelopes"),
+        RateTracker.create(peerInclusionListsRateLimit, TIME_OUT, timeProvider, "inclusionLists"),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "request_tracker"),
         metricsSystem,
         timeProvider,

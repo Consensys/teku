@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -65,10 +67,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -115,6 +119,10 @@ class Store extends CacheableStore {
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  private final Map<SlotAndInclusionListCommitteeRoot, List<InclusionList>> inclusionLists;
+  private final Map<SlotAndInclusionListCommitteeRoot, Set<UInt64>> inclusionListEquivocators;
+  private final Set<Bytes32> unsatisfiedInclusionListBlocks;
+
   private UInt64 timeMillis;
   private UInt64 genesisTime;
   private AnchorPoint finalizedAnchor;
@@ -154,7 +162,10 @@ class Store extends CacheableStore {
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> custodyGroupCount,
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
+      final Map<SlotAndInclusionListCommitteeRoot, List<InclusionList>> inclusionLists,
+      final Map<SlotAndInclusionListCommitteeRoot, Set<UInt64>> inclusionListEquivocators,
+      final Set<Bytes32> unsatisfiedInclusionListBlocks) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -179,6 +190,9 @@ class Store extends CacheableStore {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.blobSidecars = blobSidecars;
+    this.inclusionLists = inclusionLists;
+    this.inclusionListEquivocators = inclusionListEquivocators;
+    this.unsatisfiedInclusionListBlocks = unsatisfiedInclusionListBlocks;
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -308,6 +322,13 @@ class Store extends CacheableStore {
     final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
+    final Map<SlotAndInclusionListCommitteeRoot, List<InclusionList>> inclusionLists =
+        LimitedMap.createSynchronizedNatural(config.getInclusionListCacheSize());
+    final Map<SlotAndInclusionListCommitteeRoot, Set<UInt64>> inclusionListEquivocators =
+        LimitedMap.createSynchronizedNatural(config.getInclusionListCacheSize());
+    final Set<Bytes32> unsatisfiedInclusionListBlocks =
+        LimitedSet.createSynchronized(config.getInclusionListCacheSize());
+
     return new Store(
         metricsSystem,
         spec,
@@ -332,7 +353,10 @@ class Store extends CacheableStore {
         maybeEpochStates,
         blobSidecars,
         custodyGroupCount,
-        executionPayloads);
+        executionPayloads,
+        inclusionLists,
+        inclusionListEquivocators,
+        unsatisfiedInclusionListBlocks);
   }
 
   static UpdatableStore create(
@@ -727,6 +751,56 @@ class Store extends CacheableStore {
         headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
   }
 
+  @Override
+  public boolean satisfiesInclusionList(final Bytes32 blockRoot) {
+    return !unsatisfiedInclusionListBlocks.contains(blockRoot);
+  }
+
+  @Override
+  public Optional<List<InclusionList>> getInclusionLists(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot) {
+    readLock.lock();
+    try {
+      return Optional.ofNullable(inclusionLists.get(slotAndInclusionListCommitteeRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<List<InclusionList>> getInclusionLists(final UInt64 slot) {
+    readLock.lock();
+    try {
+      final List<InclusionList> ils =
+          inclusionLists.entrySet().stream()
+              .filter(entry -> entry.getKey().slot().equals(slot))
+              .flatMap(entry -> entry.getValue().stream())
+              .toList();
+      return Optional.of(ils);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
+    if (!satisfiesInclusionList(headRoot)) {
+      return getBlockIfAvailable(headRoot).map(SignedBeaconBlock::getParentRoot);
+    } else {
+      return Optional.of(headRoot);
+    }
+  }
+
+  @Override
+  public boolean isInclusionListEquivocator(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
+      final UInt64 validatorIndex) {
+    return inclusionListEquivocators.containsKey(slotAndInclusionListCommitteeRoot)
+        && inclusionListEquivocators
+            .get(slotAndInclusionListCommitteeRoot)
+            .contains(validatorIndex);
+  }
+
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
     readLock.lock();
     try {
@@ -852,6 +926,34 @@ class Store extends CacheableStore {
         .map(BlockAndCheckpoints::getBlock)
         .forEach(block -> blocks.put(block.getRoot(), block));
     blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    unsatisfiedInclusionListBlocks.add(blockRoot);
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheInclusionListEquivocator(final InclusionList inclusionList) {
+    inclusionListEquivocators
+        .computeIfAbsent(
+            new SlotAndInclusionListCommitteeRoot(
+                inclusionList.getSlot(), inclusionList.getInclusionListCommitteeRoot()),
+            key -> new HashSet<>())
+        .add(inclusionList.getValidatorIndex());
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheInclusionList(final InclusionList inclusionList) {
+    inclusionLists
+        .computeIfAbsent(
+            new SlotAndInclusionListCommitteeRoot(
+                inclusionList.getSlot(), inclusionList.getInclusionListCommitteeRoot()),
+            key -> new ArrayList<>())
+        .add(inclusionList);
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -31,7 +32,8 @@ public record PayloadBuildingAttributes(
     Eth1Address feeRecipient,
     Optional<SignedValidatorRegistration> validatorRegistration,
     Optional<List<Withdrawal>> withdrawals,
-    ForkChoiceNode parentBeaconBlock) {
+    ForkChoiceNode parentBeaconBlock,
+    List<Bytes> inclusionListTransactions) {
 
   public Optional<BLSPublicKey> getValidatorRegistrationPublicKey() {
     return validatorRegistration.map(

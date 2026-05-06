@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
@@ -679,6 +681,12 @@ public class ForkChoiceUtil {
     return BlockImportResult.successful(block);
   }
 
+  public InclusionListImportResult checkOnInclusionListConditions(
+      final SignedInclusionList signedInclusionList) {
+
+    return InclusionListImportResult.success(signedInclusionList);
+  }
+
   private boolean blockIsFromFuture(final ReadOnlyStore store, final UInt64 blockSlot) {
     return getCurrentSlot(store).compareTo(blockSlot) < 0;
   }
@@ -772,6 +780,11 @@ public class ForkChoiceUtil {
 
   // get_payload_attestation_due_ms
   public Optional<Integer> getPayloadAttestationDueMillis() {
+    return Optional.empty();
+  }
+
+  // get_inclusion_list_due_ms
+  public Optional<Integer> getInclusionListDueMillis() {
     return Optional.empty();
   }
 

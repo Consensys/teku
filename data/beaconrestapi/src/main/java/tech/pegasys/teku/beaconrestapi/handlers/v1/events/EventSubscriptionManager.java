@@ -32,9 +32,11 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -47,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -54,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
@@ -79,9 +83,12 @@ public class EventSubscriptionManager
   private final int maxPendingEvents;
   // collection of subscribers
   private final Collection<EventSubscriber> eventSubscribers;
+  private final SerializableTypeDefinition<InclusionListEvent.InclusionListEventData>
+      inclusionListEventDataType;
 
   public EventSubscriptionManager(
       final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache,
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
@@ -97,6 +104,8 @@ public class EventSubscriptionManager
     this.maxPendingEvents = maxPendingEvents;
     this.eventSubscribers = new ConcurrentLinkedQueue<>();
     this.configProvider = configProvider;
+    this.inclusionListEventDataType =
+        BeaconRestApiTypes.getInclusionListEventDataType(schemaDefinitionCache);
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, this);
@@ -114,6 +123,7 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) -> onNewDataColumnSidecar(dataColumnSidecar));
     nodeDataProvider.subscribeToPayloadAttestationMessages(this::onNewPayloadAttestationMessage);
+    nodeDataProvider.subscribeToNewInclusionList(this::onNewInclusionList);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -355,6 +365,15 @@ public class EventSubscriptionManager
           EventType.payload_attestation_message,
           new PayloadAttestationMessageEvent(payloadAttestationMessage));
     }
+  }
+
+  protected void onNewInclusionList(final SignedInclusionList signedInclusionList) {
+    final InclusionListEvent inclusionListEvent =
+        new InclusionListEvent(
+            signedInclusionList,
+            spec.atSlot(signedInclusionList.getMessage().getSlot()).getMilestone(),
+            inclusionListEventDataType);
+    notifySubscribersOfEvent(EventType.inclusion_list, inclusionListEvent);
   }
 
   private void notifySubscribersOfEvent(final EventType eventType, final Event<?> event) {

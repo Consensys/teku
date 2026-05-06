@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -45,6 +46,9 @@ class StoreTransactionUpdates {
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
+  private final Optional<InclusionList> maybeInclusionList;
+  private final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot;
+  private final Optional<InclusionList> maybeEquivocatedInclusionList;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
@@ -65,6 +69,9 @@ class StoreTransactionUpdates {
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
+      final Optional<InclusionList> maybeInclusionList,
+      final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot,
+      final Optional<InclusionList> maybeEquivocatedInclusionList,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
@@ -83,6 +90,9 @@ class StoreTransactionUpdates {
     checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
+    checkNotNull(maybeInclusionList, "Inclusion list is required");
+    checkNotNull(maybeUnsatisfiedInclusionListBlockRoot, "Unsatisfied inclusion list is required");
+    checkNotNull(maybeEquivocatedInclusionList, "Equivocated inclusion list required");
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
@@ -98,6 +108,9 @@ class StoreTransactionUpdates {
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
+    this.maybeInclusionList = maybeInclusionList;
+    this.maybeUnsatisfiedInclusionListBlockRoot = maybeUnsatisfiedInclusionListBlockRoot;
+    this.maybeEquivocatedInclusionList = maybeEquivocatedInclusionList;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
@@ -141,6 +154,9 @@ class StoreTransactionUpdates {
     store.cacheBlocks(hotBlocks.values());
     store.cacheBlockStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     store.cacheBlobSidecars(blobSidecars);
+    maybeInclusionList.ifPresent(store::cacheInclusionList);
+    maybeUnsatisfiedInclusionListBlockRoot.ifPresent(store::cacheUnsatisfiedInclusionListBlock);
+    maybeEquivocatedInclusionList.ifPresent(store::cacheInclusionListEquivocator);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(
           updateResult.getFinalizedOptimisticTransitionPayload());

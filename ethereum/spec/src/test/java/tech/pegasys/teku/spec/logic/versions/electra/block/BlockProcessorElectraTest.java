@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -165,7 +166,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         getExecutionRequestsDataCodec().encode(blockBody.getExecutionRequests());
 
     final NewPayloadRequest newPayloadRequest =
-        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
+        spec.getBlockProcessor(UInt64.ONE)
+            .computeNewPayloadRequest(preState, blockBody, Optional.empty());
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());

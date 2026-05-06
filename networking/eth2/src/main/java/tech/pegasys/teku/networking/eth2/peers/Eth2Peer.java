@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -59,6 +60,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker executionPayloadEnvelopesRequestTracker,
+      final RateTracker inclusionListRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
@@ -76,6 +78,7 @@ public interface Eth2Peer extends Peer, SyncSource {
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
         executionPayloadEnvelopesRequestTracker,
+        inclusionListRequestTracker,
         requestTracker,
         metricsSystem,
         timeProvider,
@@ -194,6 +197,16 @@ public interface Eth2Peer extends Peer, SyncSource {
   }
 
   long getAvailableDataColumnSidecarsRequestCount();
+
+  default Optional<RequestKey> approveInclusionListsRequest(
+      final ResponseCallback<SignedInclusionList> callback, final long inclusionListsCount) {
+    return approveObjectsRequest(RequestObject.INCLUSION_LIST, callback, inclusionListsCount);
+  }
+
+  default void adjustInclusionListsRequest(
+      final RequestKey requestKey, final long returnedInclusionListsCount) {
+    adjustObjectsRequest(RequestObject.BLOB_SIDECAR, requestKey, returnedInclusionListsCount);
+  }
 
   boolean approveRequest();
 

@@ -44,8 +44,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -76,6 +78,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
+  Optional<InclusionList> maybeInclusionList = Optional.empty();
+  Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot = Optional.empty();
+  Optional<InclusionList> maybeEquivocatedInclusionList = Optional.empty();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
@@ -118,6 +123,21 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     executionPayloadData.put(
         executionPayload.getBeaconBlockRoot(),
         new ExecutionPayloadUpdate(executionPayload, executionOptimistic));
+  }
+
+  @Override
+  public void putInclusionList(final InclusionList inclusionList) {
+    this.maybeInclusionList = Optional.of(inclusionList);
+  }
+
+  @Override
+  public void putUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    this.maybeUnsatisfiedInclusionListBlockRoot = Optional.of(blockRoot);
+  }
+
+  @Override
+  public void putEquivocatedInclusionList(final InclusionList equivocatedInclusionList) {
+    this.maybeEquivocatedInclusionList = Optional.of(equivocatedInclusionList);
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -523,6 +543,34 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return store.isFfgCompetitive(headRoot, parentRoot);
+  }
+
+  @Override
+  public boolean satisfiesInclusionList(final Bytes32 blockRoot) {
+    return store.satisfiesInclusionList(blockRoot);
+  }
+
+  @Override
+  public Optional<List<InclusionList>> getInclusionLists(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot) {
+    return store.getInclusionLists(slotAndInclusionListCommitteeRoot);
+  }
+
+  @Override
+  public Optional<List<InclusionList>> getInclusionLists(final UInt64 slot) {
+    return store.getInclusionLists(slot);
+  }
+
+  @Override
+  public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
+    return store.getInclusionListAttesterHead(headRoot);
+  }
+
+  @Override
+  public boolean isInclusionListEquivocator(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
+      final UInt64 validatorIndex) {
+    return store.isInclusionListEquivocator(slotAndInclusionListCommitteeRoot, validatorIndex);
   }
 
   @Override

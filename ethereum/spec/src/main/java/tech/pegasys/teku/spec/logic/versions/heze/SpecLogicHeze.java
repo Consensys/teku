@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.logic.versions.fulu.util.BlockProposalUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadVerifierGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
@@ -50,11 +49,13 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Volunta
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ProposerPreferencesUtilGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
+import tech.pegasys.teku.spec.logic.versions.heze.util.ForkChoiceUtilHeze;
+import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
+import tech.pegasys.teku.spec.logic.versions.heze.util.ValidatorsUtilHeze;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class SpecLogicHeze extends AbstractSpecLogic {
@@ -66,11 +67,12 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
   private final ProposerPreferencesUtil proposerPreferencesUtil;
+  private final Optional<InclusionListUtil> inclusionListUtil;
 
   private SpecLogicHeze(
       final PredicatesGloas predicates,
       final MiscHelpersGloas miscHelpers,
-      final BeaconStateAccessorsGloas beaconStateAccessors,
+      final BeaconStateAccessorsHeze beaconStateAccessors,
       final BeaconStateMutatorsGloas beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
@@ -91,7 +93,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final ExecutionPayloadProposalUtil executionPayloadProposalUtil,
       final HezeStateUpgrade stateUpgrade,
       final DataColumnSidecarUtil dataColumnSidecarUtil,
-      final ProposerPreferencesUtil proposerPreferencesUtil) {
+      final ProposerPreferencesUtil proposerPreferencesUtil,
+      final InclusionListUtil inclusionListUtil) {
     super(
         predicates,
         miscHelpers,
@@ -117,6 +120,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
     this.proposerPreferencesUtil = proposerPreferencesUtil;
+    this.inclusionListUtil = Optional.of(inclusionListUtil);
   }
 
   public static SpecLogicHeze create(
@@ -127,8 +131,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     final PredicatesGloas predicates = new PredicatesGloas(config);
     final MiscHelpersGloas miscHelpers =
         new MiscHelpersGloas(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsGloas beaconStateAccessors =
-        new BeaconStateAccessorsGloas(config, schemaDefinitions, predicates, miscHelpers);
+    final BeaconStateAccessorsHeze beaconStateAccessors =
+        new BeaconStateAccessorsHeze(config, schemaDefinitions, predicates, miscHelpers);
     final BeaconStateMutatorsGloas beaconStateMutators =
         new BeaconStateMutatorsGloas(config, miscHelpers, beaconStateAccessors, schemaDefinitions);
 
@@ -137,8 +141,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         new OperationSignatureVerifierGloas(miscHelpers, beaconStateAccessors, predicates);
 
     // Util
-    final ValidatorsUtilGloas validatorsUtil =
-        new ValidatorsUtilGloas(config, miscHelpers, beaconStateAccessors);
+    final ValidatorsUtilHeze validatorsUtil =
+        new ValidatorsUtilHeze(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
@@ -214,7 +218,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         new ExecutionPayloadVerifierGloas(
             miscHelpers, beaconStateAccessors, executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtilGloas(
+        new ForkChoiceUtilHeze(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
@@ -234,6 +238,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     // Proposer preferences util (introduced in Gloas, still active in Heze)
     final ProposerPreferencesUtil proposerPreferencesUtil =
         new ProposerPreferencesUtilGloas(schemaDefinitions);
+
+    // Inclusion list util
+    final InclusionListUtil inclusionListUtil =
+        new InclusionListUtil(config, beaconStateAccessors, miscHelpers);
 
     return new SpecLogicHeze(
         predicates,
@@ -259,7 +267,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         executionPayloadProposalUtil,
         stateUpgrade,
         dataColumnSidecarUtil,
-        proposerPreferencesUtil);
+        proposerPreferencesUtil,
+        inclusionListUtil);
   }
 
   @Override
@@ -305,5 +314,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   @Override
   public ProposerPreferencesUtil getProposerPreferencesUtil() {
     return proposerPreferencesUtil;
+  }
+
+  @Override
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return inclusionListUtil;
   }
 }

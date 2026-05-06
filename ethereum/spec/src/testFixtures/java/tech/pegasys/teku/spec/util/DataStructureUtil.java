@@ -96,6 +96,7 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -170,6 +171,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -260,6 +262,8 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
   private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
+
+  private static final int MAX_IL_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private final Spec spec;
 
@@ -2742,6 +2746,41 @@ public final class DataStructureUtil {
         count);
   }
 
+  public SignedInclusionList randomSignedInclusionList() {
+    return new SignedInclusionList(
+        SchemaDefinitionsHeze.required(spec.getGenesisSchemaDefinitions())
+            .getSignedInclusionListSchema(),
+        randomInclusionList(),
+        randomSignature());
+  }
+
+  public InclusionList randomInclusionList() {
+    final List<Transaction> transactions = new ArrayList<>();
+    for (int i = 0; i < MAX_IL_RANDOM_TRANSACTIONS_SIZE; i++) {
+      transactions.add(randomExecutionPayloadTransaction());
+    }
+
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionHeze()
+        .orElseThrow()
+        .getInclusionListSchema()
+        .create(randomSlot(), randomValidatorIndex(), randomBytes32(), transactions);
+  }
+
+  public InclusionList randomInclusionList(final int numberOfTransactionPerInclusionList) {
+
+    final List<Transaction> transactions = new ArrayList<>();
+    for (int i = 0; i < numberOfTransactionPerInclusionList; i++) {
+      transactions.add(randomExecutionPayloadTransaction());
+    }
+
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionHeze()
+        .orElseThrow()
+        .getInclusionListSchema()
+        .create(randomSlot(), randomValidatorIndex(), randomBytes32(), transactions);
+  }
+
   public class RandomBlobSidecarBuilder {
 
     private Optional<UInt64> index = Optional.empty();
@@ -3421,17 +3460,24 @@ public final class DataStructureUtil {
         executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
   }
 
-  public InclusionList randomInclusionList() {
-    final SchemaDefinitionsHeze schemaDefinitionsHeze =
-        SchemaDefinitionsHeze.required(
-            spec.forMilestone(SpecMilestone.HEZE).getSchemaDefinitions());
-    return schemaDefinitionsHeze
-        .getInclusionListSchema()
-        .create(
-            randomSlot(),
-            randomValidatorIndex(),
-            randomBytes32(),
-            randomExecutionPayloadTransactions());
+  public List<Bytes> randomInclusionListTransactions(final UInt64 slot) {
+    final SpecConfigHeze specConfigHeze =
+        spec.atSlot(slot).getConfig().toVersionHeze().orElseThrow();
+    final int maxTransactionsSize = specConfigHeze.getMaxBytesPerInclusionList();
+    final List<Bytes> transactions = new ArrayList<>();
+    int currentTransactionsSize = 0;
+    while (transactions.size() < MAX_IL_RANDOM_TRANSACTIONS_SIZE
+        && currentTransactionsSize < maxTransactionsSize) {
+      final Bytes transaction = Bytes.random(randomInt(10, maxTransactionsSize + 1));
+      final int remainingSize = maxTransactionsSize - currentTransactionsSize;
+      if (transaction.size() <= remainingSize) {
+        transactions.add(transaction);
+        currentTransactionsSize += transaction.size();
+      } else if (!transactions.isEmpty()) {
+        break;
+      }
+    }
+    return transactions;
   }
 
   private int randomInt(final int origin, final int bound) {

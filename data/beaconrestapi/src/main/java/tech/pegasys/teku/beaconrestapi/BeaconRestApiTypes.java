@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
@@ -62,12 +63,16 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.EventType;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.InclusionListEvent;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -80,10 +85,12 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
@@ -290,6 +297,43 @@ public class BeaconRestApiTypes {
         .getSchemaDefinition(SpecMilestone.PHASE0)
         .getAttestationSchema()
         .getJsonTypeDefinition();
+  }
+
+  public static SerializableTypeDefinition<InclusionListEvent.InclusionListEventData>
+      getInclusionListEventDataType(final SchemaDefinitionCache schemaDefinitionCache) {
+
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<SignedInclusionList>>
+        schemaGetters = generateInclusionListDataSchemaGetters(schemaDefinitionCache);
+
+    final SerializableTypeDefinition<SignedInclusionList>
+        signedInclusionListSerializableTypeDefinition =
+            getMultipleSchemaDefinitionFromMilestone(
+                schemaDefinitionCache, "SignedInclusionList", schemaGetters);
+
+    return SerializableTypeDefinition.<InclusionListEvent.InclusionListEventData>object()
+        .name("InclusionListEvent")
+        .withField("version", MILESTONE_TYPE, InclusionListEvent.InclusionListEventData::milestone)
+        .withField(
+            "data",
+            signedInclusionListSerializableTypeDefinition,
+            InclusionListEvent.InclusionListEventData::data)
+        .build();
+  }
+
+  private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<SignedInclusionList>>
+      generateInclusionListDataSchemaGetters(final SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<SignedInclusionList>>
+        schemaGetterList = new ArrayList<>();
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (blockContainer, milestone) ->
+                schemaDefinitionCache
+                    .milestoneAtSlot(blockContainer.getMessage().getSlot())
+                    .equals(milestone),
+            SpecMilestone.HEZE,
+            schemaDefinitions ->
+                SchemaDefinitionsHeze.required(schemaDefinitions).getSignedInclusionListSchema()));
+    return schemaGetterList;
   }
 
   @SuppressWarnings("JavaCase")

@@ -156,7 +156,6 @@ public class GenesisGenerator {
 
     // Process proposer lookahead
     if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-
       final SchemaDefinitionsFulu schemaDefinitionsFulu =
           SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
 

@@ -68,6 +68,18 @@ public class ValidatorTimingActionsTest {
           Map.entry(key4, ValidatorStatus.exited_slashed));
 
   @Test
+  public void shouldForwardInclusionListCreationDue() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
+    final UInt64 slot = UInt64.valueOf(12);
+
+    validatorTimingActions.onInclusionListCreationDue(slot);
+
+    verify(delegate).onInclusionListCreationDue(slot);
+  }
+
+  @Test
   public void shouldTriggerSlashingActionForSlashedValidators_AttesterSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(

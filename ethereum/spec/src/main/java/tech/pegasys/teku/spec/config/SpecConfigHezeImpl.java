@@ -20,9 +20,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements SpecConfigHeze {
 
   private final int inclusionListDueBps;
+  private final int inclusionListCommitteeSize;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
-  private final int inclusionListCommitteeSize;
 
   public SpecConfigHezeImpl(
       final SpecConfigGloas specConfig,

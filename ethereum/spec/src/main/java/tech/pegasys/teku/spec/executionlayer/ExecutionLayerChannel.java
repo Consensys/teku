@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -101,6 +103,19 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<Transaction>> engineGetInclusionList(
+            final Bytes32 parentHash, final UInt64 slot) {
+          return SafeFuture.completedFuture(Collections.emptyList());
+        }
+
+        @Override
+        public SafeFuture<UpdatePayloadWithInclusionListResponse>
+            engineUpdatePayloadWithInclusionList(
+                final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -146,6 +161,11 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
+
+  SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
+
+  SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
+      Bytes8 payloadId, List<Transaction> inclusionList, UInt64 slot);
 
   /**
    * This is low level method, use {@link

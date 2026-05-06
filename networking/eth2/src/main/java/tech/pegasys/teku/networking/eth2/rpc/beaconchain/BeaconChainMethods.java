@@ -33,6 +33,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidec
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.ExecutionPayloadEnvelopesByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.ExecutionPayloadEnvelopesByRootMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.GoodbyeMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.InclusionListByCommitteeIndicesMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.PingMessageHandler;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage.BeaconBlocksByRangeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -68,15 +70,19 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -104,6 +110,8 @@ public class BeaconChainMethods {
           Eth2RpcMethod<
               ExecutionPayloadEnvelopesByRangeRequestMessage, SignedExecutionPayloadEnvelope>>
       executionPayloadEnvelopesByRange;
+  private final Optional<Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+      inclusionListByCommitteeIndices;
   private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
   private final Eth2RpcMethod<PingMessage, PingMessage> ping;
 
@@ -130,6 +138,8 @@ public class BeaconChainMethods {
               Eth2RpcMethod<
                   ExecutionPayloadEnvelopesByRangeRequestMessage, SignedExecutionPayloadEnvelope>>
           executionPayloadEnvelopesByRange,
+      final Optional<Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+          inclusionListByCommitteeIndices,
       final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata,
       final Eth2RpcMethod<PingMessage, PingMessage> ping) {
     this.status = status;
@@ -142,6 +152,7 @@ public class BeaconChainMethods {
     this.dataColumnSidecarsByRange = dataColumnSidecarsByRange;
     this.executionPayloadEnvelopesByRoot = executionPayloadEnvelopesByRoot;
     this.executionPayloadEnvelopesByRange = executionPayloadEnvelopesByRange;
+    this.inclusionListByCommitteeIndices = inclusionListByCommitteeIndices;
     this.getMetadata = getMetadata;
     this.ping = ping;
     this.allMethods =
@@ -165,6 +176,7 @@ public class BeaconChainMethods {
       final CombinedChainDataClient combinedChainDataClient,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
+      final InclusionListManager inclusionListManager,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -225,6 +237,14 @@ public class BeaconChainMethods {
             spec, asyncRunner, peerLookup, rpcEncoding, recentChainData, metricsSystem),
         createExecutionPayloadEnvelopesByRange(
             spec, asyncRunner, peerLookup, rpcEncoding, combinedChainDataClient, metricsSystem),
+        createInclusionListByCommitteeIndices(
+            spec,
+            metricsSystem,
+            asyncRunner,
+            inclusionListManager,
+            peerLookup,
+            rpcEncoding,
+            recentChainData),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -635,6 +655,48 @@ public class BeaconChainMethods {
             peerLookup));
   }
 
+  private static Optional<
+          Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+      createInclusionListByCommitteeIndices(
+          final Spec spec,
+          final MetricsSystem metricsSystem,
+          final AsyncRunner asyncRunner,
+          final InclusionListManager inclusionListManager,
+          final PeerLookup peerLookup,
+          final RpcEncoding rpcEncoding,
+          final RecentChainData recentChainData) {
+
+    if (!spec.isMilestoneSupported(SpecMilestone.HEZE)) {
+      return Optional.empty();
+    }
+
+    final RpcContextCodec<Bytes4, SignedInclusionList> forkDigestContextCodec =
+        RpcContextCodec.forkDigest(
+            spec, recentChainData, ForkDigestPayloadContext.SIGNED_INCLUSION_LIST);
+
+    final InclusionListByCommitteeIndicesMessageHandler
+        inclusionListByCommitteeIndicesMessageHandler =
+            new InclusionListByCommitteeIndicesMessageHandler(
+                spec, metricsSystem, inclusionListManager);
+    final InclusionListByCommitteeRequestMessageSchema
+        inclusionListByCommitteeRequestMessageSchema =
+            SchemaDefinitionsHeze.required(
+                    spec.forMilestone(SpecMilestone.HEZE).getSchemaDefinitions())
+                .getInclusionListByCommitteeRequestMessageSchema();
+
+    return Optional.of(
+        new SingleProtocolEth2RpcMethod<>(
+            asyncRunner,
+            BeaconChainMethodIds.INCLUSION_LIST_BY_COMMITTEE_INDICES,
+            1,
+            rpcEncoding,
+            inclusionListByCommitteeRequestMessageSchema,
+            true,
+            forkDigestContextCodec,
+            inclusionListByCommitteeIndicesMessageHandler,
+            peerLookup));
+  }
+
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -799,6 +861,11 @@ public class BeaconChainMethods {
               ExecutionPayloadEnvelopesByRangeRequestMessage, SignedExecutionPayloadEnvelope>>
       executionPayloadEnvelopesByRange() {
     return executionPayloadEnvelopesByRange;
+  }
+
+  public Optional<Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+      inclusionListByCommitteeIndices() {
+    return inclusionListByCommitteeIndices;
   }
 
   public Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata() {

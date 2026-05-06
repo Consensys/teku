@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -215,6 +218,11 @@ public class ValidatorDataProvider {
     return SafeFuture.of(() -> validatorApiChannel.getPtcDuties(epoch, indices));
   }
 
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntList indices) {
+    return SafeFuture.of(() -> validatorApiChannel.getInclusionListDuties(epoch, indices));
+  }
+
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch, true));
   }
@@ -234,9 +242,18 @@ public class ValidatorDataProvider {
     return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices));
   }
 
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    return SafeFuture.of(() -> validatorApiChannel.getInclusionList(slot));
+  }
+
   public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> contributionAndProofs) {
     return validatorApiChannel.sendSignedContributionAndProofs(contributionAndProofs);
+  }
+
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionList(
+      final List<SignedInclusionList> signedInclusionLists) {
+    return validatorApiChannel.sendSignedInclusionLists(signedInclusionLists);
   }
 
   public SafeFuture<Void> prepareBeaconProposer(

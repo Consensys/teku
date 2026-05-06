@@ -139,6 +139,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 
 class ValidatorApiHandlerTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -157,6 +158,9 @@ class ValidatorApiHandlerTest {
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockPublisher blockPublisher = mock(BlockPublisher.class);
   private final ExecutionProofManager executionProofManager = ExecutionProofManager.NOOP;
+  private final SignedInclusionListPublisher signedInclusionListPublisher =
+      mock(SignedInclusionListPublisher.class);
+  private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -239,7 +243,9 @@ class ValidatorApiHandlerTest {
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            executionProofManager);
+            executionProofManager,
+            signedInclusionListPublisher,
+            inclusionListFactory);
 
     doReturn(BlockProductionPerformance.NOOP)
         .when(blockProductionPerformanceFactory)
@@ -250,6 +256,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(chainHead));
     when(chainHead.getPayloadStatus()).thenReturn(PAYLOAD_STATUS_PENDING);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
+    when(chainDataClient.getStore()).thenReturn(store);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
         .unblindSignedBlockIfBlinded(any(), any());
@@ -534,7 +541,9 @@ class ValidatorApiHandlerTest {
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            executionProofManager);
+            executionProofManager,
+            signedInclusionListPublisher,
+            inclusionListFactory);
     dataStructureUtil = new DataStructureUtil(spec);
     // Best state is still in Phase0
     final BeaconState state =
@@ -696,6 +705,8 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+    when(store.getInclusionListAttesterHead(any()))
+        .thenReturn(Optional.of(blockAndState.getBlock().getRoot()));
 
     when(chainDataClient.isOptimisticBlock(blockAndState.getRoot())).thenReturn(true);
 
@@ -719,7 +730,8 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
-
+    when(store.getInclusionListAttesterHead(any()))
+        .thenReturn(Optional.of(blockAndState.getBlock().getRoot()));
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
         validatorApiHandler.createAttestationData(slot, committeeIndex);
@@ -733,7 +745,7 @@ class ValidatorApiHandlerTest {
             spec.getGenericAttestationData(
                 slot,
                 blockAndState.getState(),
-                blockAndState.getBlock().getMessage(),
+                blockAndState.getBlock().getRoot(),
                 UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getIndex()).isEqualTo(ZERO);
     assertThat(attestationData.getSlot()).isEqualTo(slot);
@@ -742,6 +754,42 @@ class ValidatorApiHandlerTest {
     // Ensure we prepare for attestation production prior to getting the block to attest to
     inOrder.verify(forkChoiceTrigger).prepareForAttestationProduction(slot);
     inOrder.verify(chainDataClient).getSignedBlockAndStateInEffectAtSlot(slot);
+  }
+
+  @Test
+  public void createAttestationData_shouldUseInclusionListAttesterHeadWhenDifferentFromHead() {
+    final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
+
+    final SignedBlockAndState attesterHeadBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(epochStartSlot);
+    final Bytes32 attesterHeadRoot = attesterHeadBlockAndState.getRoot();
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(slot, attesterHeadRoot);
+
+    when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
+        .thenReturn(completedFuture(Optional.of(blockAndState)));
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+    when(store.getInclusionListAttesterHead(blockAndState.getRoot()))
+        .thenReturn(Optional.of(attesterHeadRoot));
+    when(store.getBlockIfAvailable(attesterHeadRoot))
+        .thenReturn(Optional.of(attesterHeadBlockAndState.getBlock()));
+    when(chainDataClient.getStateByBlockRoot(attesterHeadRoot))
+        .thenReturn(completedFuture(Optional.of(attesterHeadBlockAndState.getState())));
+    when(store.getExecutionPayloadIfAvailable(attesterHeadRoot))
+        .thenReturn(Optional.of(dataStructureUtil.randomSignedExecutionPayloadEnvelope(5)));
+
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, 0);
+
+    assertThat(result).isCompleted();
+    final Optional<AttestationData> maybeAttestation = safeJoin(result);
+    assertThat(maybeAttestation).isPresent();
+    final AttestationData attestationData = maybeAttestation.orElseThrow();
+    assertThat(attestationData)
+        .isEqualTo(
+            spec.getGenericAttestationData(
+                slot, attesterHeadBlockAndState.getState(), attesterHeadRoot, ONE));
   }
 
   @Test
@@ -779,6 +827,8 @@ class ValidatorApiHandlerTest {
                 CheckpointState.create(
                     spec, new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+    when(store.getInclusionListAttesterHead(any()))
+        .thenReturn(Optional.of(blockAndState.getBlock().getRoot()));
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
@@ -791,7 +841,7 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
-                slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
+                slot, rightState, block.getRoot(), UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getIndex()).isEqualTo(ZERO);
     assertThat(attestationData.getSlot()).isEqualTo(slot);
   }

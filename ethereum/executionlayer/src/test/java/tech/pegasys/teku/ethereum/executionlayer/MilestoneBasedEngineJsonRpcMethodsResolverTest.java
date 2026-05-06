@@ -300,6 +300,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_getPayloadV3",
             "engine_newPayloadV5",
             "engine_getPayloadV4",
+            "engine_newPayloadV6",
             "engine_getPayloadV1",
             "engine_newPayloadV3",
             "engine_getPayloadV2",
@@ -309,9 +310,12 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_newPayloadV1",
             "engine_newPayloadV2",
             "engine_getPayloadBodiesByHashV2",
+            "engine_getInclusionListV1",
+            "engine_updatePayloadWithInclusionListV1",
             "engine_forkchoiceUpdatedV1",
             "engine_forkchoiceUpdatedV2",
             "engine_forkchoiceUpdatedV3",
-            "engine_forkchoiceUpdatedV4");
+            "engine_forkchoiceUpdatedV4",
+            "engine_forkchoiceUpdatedV5");
   }
 }

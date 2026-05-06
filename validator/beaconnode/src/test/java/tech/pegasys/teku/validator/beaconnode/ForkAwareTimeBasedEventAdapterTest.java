@@ -73,7 +73,10 @@ class ForkAwareTimeBasedEventAdapterTest {
             (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ONE)),
         Arguments.of(
             "Altair to Gloas",
-            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE)));
+            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE)),
+        Arguments.of(
+            "Gloas to Heze",
+            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithHezeForkEpoch(UInt64.ONE)));
   }
 
   @ParameterizedTest(name = "{0}")
@@ -132,6 +135,7 @@ class ForkAwareTimeBasedEventAdapterTest {
             11L),
         Arguments.of(
             "Gloas from genesis", (Supplier<Spec>) TestSpecFactory::createMinimalGloas, 25L),
+        Arguments.of("Heze from genesis", (Supplier<Spec>) TestSpecFactory::createMinimalHeze, 25L),
         Arguments.of(
             "Electra no Gloas", (Supplier<Spec>) TestSpecFactory::createMinimalElectra, 25L),
         Arguments.of(

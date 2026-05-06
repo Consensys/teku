@@ -20,6 +20,8 @@ public class BeaconNodeRequestLabels {
   public static final String GET_VALIDATOR_STATUSES_METHOD = "get_validator_statuses";
   public static final String GET_ATTESTATION_DUTIES_METHOD = "get_attestation_duties";
   public static final String GET_PROPOSER_DUTIES_REQUESTS_METHOD = "get_proposer_duties";
+  public static final String GET_INCLUSION_LIST_DUTIES_REQUESTS_METHOD =
+      "get_inclusion_list_duties";
   public static final String GET_PEER_COUNT_METHOD = "get_peer_count";
   public static final String GET_SYNC_COMMITTEE_DUTIES_METHOD = "get_sync_committee_duties";
   public static final String CREATE_UNSIGNED_BLOCK_METHOD = "create_unsigned_block";
@@ -27,6 +29,8 @@ public class BeaconNodeRequestLabels {
   public static final String CREATE_AGGREGATE_METHOD = "create_aggregate";
   public static final String CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD =
       "create_sync_committee_contribution";
+  public static final String CREATE_INCLUSION_LIST_METHOD = "create_inclusion_list_contribution";
+  public static final String GET_INCLUSION_LIST_METHOD = "get_inclusion_list";
   public static final String BEACON_COMMITTEE_SUBSCRIPTION_METHOD = "beacon_committee_subscription";
   public static final String SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_METHOD =
       "sync_committee_subnet_subscription";
@@ -35,6 +39,7 @@ public class BeaconNodeRequestLabels {
   public static final String PUBLISH_ATTESTATION_METHOD = "publish_attestation";
   public static final String PUBLISH_AGGREGATE_AND_PROOFS_METHOD = "publish_aggregate_and_proofs";
   public static final String PUBLISH_BLOCK_METHOD = "publish_block";
+  public static final String PUBLISH_INCLUSION_LIST_METHOD = "publish_inclusion_list";
   public static final String SEND_SYNC_COMMITTEE_MESSAGES_METHOD = "send_sync_committee_messages";
   public static final String SEND_CONTRIBUTIONS_AND_PROOFS_METHOD = "send_contributions_and_proofs";
   public static final String PREPARE_BEACON_PROPOSERS_METHOD = "prepare_beacon_proposers";
@@ -43,6 +48,8 @@ public class BeaconNodeRequestLabels {
   public static final String BEACON_COMMITTEE_SELECTIONS = "beacon_committee_selections";
   public static final String SYNC_COMMITTEE_SELECTIONS = "sync_committee_selections";
   public static final String GET_PTC_DUTIES_METHOD = "get_ptc_duties";
+  public static final String GET_INCLUSION_LIST_DUTIES_METHOD = "get_inclusion_list_duties";
+  public static final String SEND_SIGNED_INCLUSION_LISTS_METHOD = "send_signed_inclusion_lists";
   public static final String CREATE_PAYLOAD_ATTESTATION_METHOD = "create_payload_attestation";
   public static final String SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD =
       "send_payload_attestation_messages";

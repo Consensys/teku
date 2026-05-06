@@ -116,6 +116,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                 metaData.getBlsSetting() == IGNORED
                     ? BLSSignatureVerifier.NOOP
                     : BLSSignatureVerifier.SIMPLE,
+                Optional.empty(),
                 Optional.empty());
       }
       return result;

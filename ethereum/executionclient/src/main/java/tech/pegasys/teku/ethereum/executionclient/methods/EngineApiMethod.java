@@ -17,7 +17,9 @@ public enum EngineApiMethod {
   ENGINE_NEW_PAYLOAD("engine_newPayload"),
   ENGINE_GET_PAYLOAD("engine_getPayload"),
   ENGINE_FORK_CHOICE_UPDATED("engine_forkchoiceUpdated"),
-  ENGINE_GET_PAYLOAD_BODIES_BY_HASH("engine_getPayloadBodiesByHash");
+  ENGINE_GET_PAYLOAD_BODIES_BY_HASH("engine_getPayloadBodiesByHash"),
+  ENGINE_GET_INCLUSION_LIST("engine_getInclusionList"),
+  ENGINE_UPDATE_PAYLOAD_WITH_INCLUSION_LIST("engine_updatePayloadWithInclusionList");
 
   private final String name;
 
