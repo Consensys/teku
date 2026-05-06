@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,7 +116,7 @@ class StoreTransactionUpdates {
         finalizedChainData,
         tx.justifiedCheckpoint,
         tx.bestJustifiedCheckpoint,
-        hotBlocks,
+        createUnprunedHotBlocks(),
         hotStatesToPersist,
         blindedExecutionPayloads,
         blobSidecars,
@@ -138,9 +139,6 @@ class StoreTransactionUpdates {
     tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
     tx.getCustodyGroupCount().ifPresent(store::updateCustodyGroupCount);
-    store.cacheBlocks(hotBlocks.values());
-    store.cacheBlockStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
-    store.cacheBlobSidecars(blobSidecars);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(
           updateResult.getFinalizedOptimisticTransitionPayload());
@@ -150,24 +148,9 @@ class StoreTransactionUpdates {
     finalizedChainData.ifPresent(
         finalizedData -> store.updateFinalizedAnchor(finalizedData.getLatestFinalized()));
 
-    // Prune blocks, execution payloads and states
-    prunedHotBlockRoots
-        .keySet()
-        .forEach(
-            blockRoot -> {
-              store.removeBlockAndState(blockRoot);
-              store.removeExecutionPayload(blockRoot);
-            });
-
-    store.cleanupCheckpointStates(
-        slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
-
     if (tx.proposerBoostRootSet) {
       store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
-
-    store.cacheExecutionPayloads(
-        Maps.transformValues(hotExecutionPayloads, ExecutionPayloadUpdate::executionPayload));
 
     store
         .getForkChoiceStrategy()
@@ -177,6 +160,40 @@ class StoreTransactionUpdates {
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
             store.getFinalizedCheckpoint());
+
+    pruneHotData(store);
+
+    store.cacheBlocks(hotBlocks.values());
+    store.cacheBlockStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    store.cacheBlobSidecars(blobSidecars);
+    store.cacheExecutionPayloads(
+        Maps.transformValues(hotExecutionPayloads, ExecutionPayloadUpdate::executionPayload));
+  }
+
+  private Map<Bytes32, BlockAndCheckpoints> createUnprunedHotBlocks() {
+    if (prunedHotBlockRoots.isEmpty()) {
+      return hotBlocks;
+    }
+
+    final Map<Bytes32, BlockAndCheckpoints> unprunedHotBlocks = new HashMap<>(hotBlocks);
+    unprunedHotBlocks.keySet().removeAll(prunedHotBlockRoots.keySet());
+    return unprunedHotBlocks;
+  }
+
+  private void pruneHotData(final Store store) {
+    prunedHotBlockRoots
+        .keySet()
+        .forEach(
+            blockRoot -> {
+              hotBlocks.remove(blockRoot);
+              hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloads.remove(blockRoot);
+              store.removeBlockAndState(blockRoot);
+              store.removeExecutionPayload(blockRoot);
+            });
+
+    store.cleanupCheckpointStates(
+        slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

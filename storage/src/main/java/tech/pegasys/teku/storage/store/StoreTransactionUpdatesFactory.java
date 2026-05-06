@@ -137,16 +137,7 @@ class StoreTransactionUpdatesFactory {
       optimisticTransitionBlockRoot = Optional.empty();
     }
 
-    // Prune collections
     calculatePrunedHotBlockRoots();
-    prunedHotBlockRoots
-        .keySet()
-        .forEach(
-            blockRoot -> {
-              hotBlocks.remove(blockRoot);
-              hotBlockAndStates.remove(blockRoot);
-              hotExecutionPayloads.remove(blockRoot);
-            });
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
@@ -168,6 +159,7 @@ class StoreTransactionUpdatesFactory {
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
     final Map<Bytes32, BeaconState> statesToPersist =
         hotBlockAndStates.entrySet().stream()
+            .filter(e -> !prunedHotBlockRoots.containsKey(e.getKey()))
             .filter(
                 e ->
                     baseStore.shouldPersistState(
