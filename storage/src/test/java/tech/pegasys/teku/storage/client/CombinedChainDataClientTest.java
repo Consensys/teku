@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -150,17 +149,16 @@ class CombinedChainDataClientTest {
     assertThat(result).hasValue(UInt64.ONE);
   }
 
-  // TODO-GLOAS: fix test (disabled when working on glamsterdam-devnet-2)
   @Test
-  @Disabled
-  void getStateForBlockProduction_processesChainHeadState()
-      throws ExecutionException, InterruptedException {
+  void getStateForBlockProduction_processesChainHeadState() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
     when(chainHead.getState()).thenReturn(SafeFuture.completedFuture(state));
 
-    final SafeFuture<BeaconState> future = client.getStateForBlockProduction(chainHead, UInt64.ONE);
+    final SafeFuture<BeaconState> future =
+        client.getStateForBlockProduction(chainHead, UInt64.valueOf(2));
 
-    assertThat(future.get()).isEqualTo(state);
+    SafeFutureAssert.assertThatSafeFuture(future)
+        .isCompletedWithValueMatching(s -> s.getSlot().equals(UInt64.valueOf(2)));
     verify(chainHead).getState();
   }
 
