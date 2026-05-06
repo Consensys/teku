@@ -300,6 +300,45 @@
         slot_number: uint64
     </spec>
 
+- name: Seen#altair
+  sources: []
+  spec: |
+    <spec dataclass="Seen" fork="altair" hash="aba9af1a">
+    class Seen(object):
+        proposer_slots: Set[Tuple[ValidatorIndex, Slot]]
+        aggregator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        aggregate_data_roots: Dict[Root, Set[Tuple[boolean, ...]]]
+        voluntary_exit_indices: Set[ValidatorIndex]
+        proposer_slashing_indices: Set[ValidatorIndex]
+        attester_slashing_indices: Set[ValidatorIndex]
+        attestation_validator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        # [New in Altair]
+        sync_contribution_aggregator_slots: Set[Tuple[ValidatorIndex, Slot, uint64]]
+        # [New in Altair]
+        sync_contribution_data: Dict[Tuple[Slot, Root, uint64], Set[Tuple[boolean, ...]]]
+        # [New in Altair]
+        sync_message_validator_slots: Set[Tuple[Slot, ValidatorIndex, uint64]]
+    </spec>
+
+- name: Seen#capella
+  sources: []
+  spec: |
+    <spec dataclass="Seen" fork="capella" hash="a2b00f90">
+    class Seen(object):
+        proposer_slots: Set[Tuple[ValidatorIndex, Slot]]
+        aggregator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        aggregate_data_roots: Dict[Root, Set[Tuple[boolean, ...]]]
+        voluntary_exit_indices: Set[ValidatorIndex]
+        proposer_slashing_indices: Set[ValidatorIndex]
+        attester_slashing_indices: Set[ValidatorIndex]
+        attestation_validator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        sync_contribution_aggregator_slots: Set[Tuple[ValidatorIndex, Slot, uint64]]
+        sync_contribution_data: Dict[Tuple[Slot, Root, uint64], Set[Tuple[boolean, ...]]]
+        sync_message_validator_slots: Set[Tuple[Slot, ValidatorIndex, uint64]]
+        # [New in Capella]
+        bls_to_execution_change_indices: Set[ValidatorIndex]
+    </spec>
+
 - name: Store#phase0
   sources: []
   spec: |
@@ -324,10 +363,10 @@
 - name: Store#gloas
   sources: []
   spec: |
-    <spec dataclass="Store" fork="gloas" style="diff" hash="5ece7e6f">
+    <spec dataclass="Store" fork="gloas" style="diff" hash="e7c1cf9d">
     --- phase0
     +++ gloas
-    @@ -9,7 +9,14 @@
+    @@ -9,7 +9,16 @@
          equivocating_indices: Set[ValidatorIndex]
          blocks: Dict[Root, BeaconBlock] = field(default_factory=dict)
          block_states: Dict[Root, BeaconState] = field(default_factory=dict)
@@ -339,8 +378,10 @@
          latest_messages: Dict[ValidatorIndex, LatestMessage] = field(default_factory=dict)
          unrealized_justifications: Dict[Root, Checkpoint] = field(default_factory=dict)
     +    payloads: Dict[Root, ExecutionPayloadEnvelope] = field(default_factory=dict)
-    +    payload_timeliness_vote: Dict[Root, Vector[boolean, PTC_SIZE]] = field(default_factory=dict)
-    +    payload_data_availability_vote: Dict[Root, Vector[boolean, PTC_SIZE]] = field(
+    +    payload_timeliness_vote: Dict[Root, Vector[Optional[boolean], PTC_SIZE]] = field(
+    +        default_factory=dict
+    +    )
+    +    payload_data_availability_vote: Dict[Root, Vector[Optional[boolean], PTC_SIZE]] = field(
     +        default_factory=dict
     +    )
     </spec>

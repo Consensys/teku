@@ -49,6 +49,7 @@ public class ExecutionPayloadProposalUtil {
                     executionPayloadProposalData.executionPayload,
                     executionPayloadProposalData.executionRequests,
                     builderIndex,
-                    blockAndState.getRoot()));
+                    blockAndState.getRoot(),
+                    blockAndState.getBlock().getParentRoot()));
   }
 }

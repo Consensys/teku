@@ -26,6 +26,9 @@ public class GossipTests {
           // TODO: https://github.com/Consensys/teku/issues/10578
           .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_sync_committee_contribution_and_proof", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_sync_committee_message", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_bls_to_execution_change", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTestExecutor())
           .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTestExecutor())
           .build();

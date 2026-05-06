@@ -3340,7 +3340,7 @@ public final class DataStructureUtil {
   public ProposerPreferences randomProposerPreferences() {
     return getGloasSchemaDefinitions()
         .getProposerPreferencesSchema()
-        .create(randomSlot(), randomUInt64(), randomEth1Address(), randomUInt64());
+        .create(randomBytes32(), randomSlot(), randomUInt64(), randomEth1Address(), randomUInt64());
   }
 
   public SignedProposerPreferences randomSignedProposerPreferences() {
@@ -3364,7 +3364,8 @@ public final class DataStructureUtil {
                 .getSignedExecutionPayloadBid()
                 .getMessage()
                 .getBuilderIndex(),
-            block.getRoot());
+            block.getRoot(),
+            block.getParentRoot());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
@@ -3374,6 +3375,7 @@ public final class DataStructureUtil {
             randomExecutionPayload(slot),
             randomExecutionRequests(),
             randomBuilderIndex(),
+            randomBytes32(),
             randomBytes32());
   }
 

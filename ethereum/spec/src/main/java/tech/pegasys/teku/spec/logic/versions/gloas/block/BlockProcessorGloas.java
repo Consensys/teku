@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -138,10 +137,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final ExecutionPayloadBid parentBid = stateGloas.getLatestExecutionPayloadBid();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    final boolean isGenesisBlock = parentBid.getBlockHash().equals(Bytes32.ZERO);
-    final boolean isParentBlockEmpty = !bid.getParentBlockHash().equals(parentBid.getBlockHash());
-
-    if (isGenesisBlock || isParentBlockEmpty) {
+    if (!bid.getParentBlockHash().equals(parentBid.getBlockHash())) {
       // Parent was EMPTY -- no execution requests expected
       if (!requests.equals(schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault())) {
         throw new BlockProcessingException(
@@ -156,15 +152,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
 
-    applyParentExecutionPayload(stateGloas, parentBid, requests, validatorExitContextSupplier);
+    applyParentExecutionPayload(stateGloas, requests, validatorExitContextSupplier);
   }
 
   // apply_parent_execution_payload
   protected void applyParentExecutionPayload(
       final MutableBeaconStateGloas state,
-      final ExecutionPayloadBid parentBid,
       final ExecutionRequests requests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    final ExecutionPayloadBid parentBid = state.getLatestExecutionPayloadBid();
     final UInt64 parentSlot = parentBid.getSlot();
     final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
 
@@ -184,6 +180,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
       beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
     } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
+      // Parent is older than the previous epoch, its payment entry has been
+      // evicted from builder_pending_payments. Append the withdrawal directly.
       state
           .getBuilderPendingWithdrawals()
           .append(
