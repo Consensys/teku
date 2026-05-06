@@ -59,8 +59,10 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -84,6 +86,8 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   protected static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_BODIES_TIMEOUT = Duration.ofSeconds(2);
+  protected static final Duration UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT =
+      Duration.ofSeconds(2);
 
   protected final EventLogger eventLog;
   protected final TimeProvider timeProvider;
@@ -255,6 +259,40 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   }
 
   @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionListTransactions) {
+    final List<String> versionedHashHexes =
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
+    final List<String> executionRequestHexes =
+        executionRequests.stream().map(Bytes::toHexString).toList();
+    final List<String> inclusionListTransactionHexes =
+        inclusionListTransactions.stream().map(Bytes::toHexString).toList();
+    return doRequest(
+        "engine_newPayloadV6",
+        list(
+            executionPayload,
+            versionedHashHexes,
+            parentBeaconBlockRoot.toHexString(),
+            executionRequestHexes,
+            inclusionListTransactionHexes),
+        PayloadStatusV1.class,
+        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<List<String>>> getInclusionListV1(final Bytes32 parentHash) {
+    return doRequest(
+        "engine_getInclusionListV1",
+        Collections.singletonList(parentHash.toHexString()),
+        objectMapper.getTypeFactory().constructCollectionType(List.class, String.class),
+        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       final ForkChoiceStateV1 forkChoiceState,
       final Optional<PayloadAttributesV1> payloadAttributes) {
@@ -293,6 +331,17 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
       final Optional<PayloadAttributesV4> payloadAttributes) {
     return doRequest(
         "engine_forkchoiceUpdatedV4",
+        list(forkChoiceState, payloadAttributes.orElse(null)),
+        ForkChoiceUpdatedResult.class,
+        EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV5> payloadAttributes) {
+    return doRequest(
+        "engine_forkchoiceUpdatedV5",
         list(forkChoiceState, payloadAttributes.orElse(null)),
         ForkChoiceUpdatedResult.class,
         EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
@@ -352,6 +401,19 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
             .getTypeFactory()
             .constructCollectionType(List.class, ExecutionPayloadBodyV2.class),
         GET_PAYLOAD_BODIES_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
+      updatePayloadWithInclusionListV1(
+          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
+    return doRequest(
+        "engine_updatePayloadWithInclusionListV1",
+        list(
+            payloadId.toHexString(),
+            inclusionListsTransactions.stream().map(Bytes::toHexString).toList()),
+        objectMapper.getTypeFactory().constructType(UpdatePayloadWithInclusionListV1Response.class),
+        UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT);
   }
 
   private SafeFuture<PowBlock> doEthBlockRequest(final String method, final List<Object> params) {

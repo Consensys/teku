@@ -18,19 +18,31 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsHeze extends SchemaDefinitionsGloas {
 
   private final InclusionListSchema inclusionListSchema;
   private final SignedInclusionListSchema signedInclusionListSchema;
+  private final InclusionListByCommitteeRequestMessageSchema
+      inclusionListByCommitteeRequestMessageSchema;
+  private final SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> inclusionListCommitteeSchema;
 
   public SchemaDefinitionsHeze(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     this.inclusionListSchema = schemaRegistry.get(INCLUSION_LIST_SCHEMA);
     this.signedInclusionListSchema = schemaRegistry.get(SIGNED_INCLUSION_LIST_SCHEMA);
+    this.inclusionListByCommitteeRequestMessageSchema =
+        schemaRegistry.get(SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA);
+    this.inclusionListCommitteeSchema =
+        schemaRegistry.get(SchemaTypes.INCLUSION_LIST_COMMITTEE_SCHEMA);
   }
 
   public static SchemaDefinitionsHeze required(final SchemaDefinitions schemaDefinitions) {
@@ -48,6 +60,15 @@ public class SchemaDefinitionsHeze extends SchemaDefinitionsGloas {
 
   public SignedInclusionListSchema getSignedInclusionListSchema() {
     return signedInclusionListSchema;
+  }
+
+  public InclusionListByCommitteeRequestMessageSchema
+      getInclusionListByCommitteeRequestMessageSchema() {
+    return inclusionListByCommitteeRequestMessageSchema;
+  }
+
+  public SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> getInclusionListCommitteeSchema() {
+    return inclusionListCommitteeSchema;
   }
 
   @Override

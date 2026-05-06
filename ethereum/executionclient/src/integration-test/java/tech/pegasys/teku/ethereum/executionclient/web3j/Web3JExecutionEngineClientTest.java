@@ -501,6 +501,32 @@ public class Web3JExecutionEngineClientTest {
         .containsExactly(List.of(blockHash1.toHexString(), blockHash2.toHexString()));
   }
 
+  @TestTemplate
+  public void getInclusionListV1_shouldBuildRequestAndResponseSuccessfully() throws Exception {
+    final List<String> inclusionListTransactionV1List =
+        List.of(Bytes.random(4).toHexString(), Bytes.random(8).toHexString());
+    final String transactionsJson = objectMapper.writeValueAsString(inclusionListTransactionV1List);
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": " + transactionsJson + "}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final Bytes32 parentHash = dataStructureUtil.randomSlotAndBlockRoot().getBlockRoot();
+
+    final SafeFuture<Response<List<String>>> futureResponse =
+        eeClient.getInclusionListV1(parentHash);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.payload().equals(inclusionListTransactionV1List));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getInclusionListV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(parentHash.toHexString());
+  }
+
   private void mockSuccessfulResponse(final String responseBody) {
     mockWebServer.enqueue(
         new MockResponse()

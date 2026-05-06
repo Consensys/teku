@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -116,7 +118,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     safelyProcess(
         () ->
@@ -312,7 +315,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   public void processExecutionPayload(
       final MutableBeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor) {
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists) {
     throw new UnsupportedOperationException("process_execution_payload has been removed in Gloas");
   }
 

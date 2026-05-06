@@ -141,6 +141,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker executionPayloadEnvelopesRequestTracker,
+      final RateTracker inclusionListRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
@@ -160,6 +161,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     requestObjectsTrackers.put(RequestObject.DATA_COLUMN_SIDECAR, dataColumnSidecarsRequestTracker);
     requestObjectsTrackers.put(
         RequestObject.EXECUTION_PAYLOAD_ENVELOPE, executionPayloadEnvelopesRequestTracker);
+    requestObjectsTrackers.put(RequestObject.INCLUSION_LIST, inclusionListRequestTracker);
     checkState(
         requestObjectsTrackers.size() == RequestObject.values().length,
         "NOT all request objects trackers have been configured");

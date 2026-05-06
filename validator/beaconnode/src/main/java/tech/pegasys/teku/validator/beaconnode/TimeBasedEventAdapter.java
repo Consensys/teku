@@ -145,6 +145,18 @@ public abstract class TimeBasedEventAdapter {
     validatorTimingChannel.onAttestationAggregationDue(slot);
   }
 
+  void onInclusionListCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
+    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping inclusion list creation for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onInclusionListCreationDue(slot);
+  }
+
   void onSyncCommitteeCreationDue(
       final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
     final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);

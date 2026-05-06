@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -74,6 +75,12 @@ public interface MutableStore extends ReadOnlyStore {
    * @param executionPayload Execution payload
    */
   void putExecutionPayload(SignedExecutionPayloadEnvelope executionPayload);
+
+  void putInclusionList(InclusionList inclusionList);
+
+  void putUnsatisfiedInclusionListBlock(Bytes32 blockRoot);
+
+  void putEquivocatedInclusionList(InclusionList equivocatedInclusionList);
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 

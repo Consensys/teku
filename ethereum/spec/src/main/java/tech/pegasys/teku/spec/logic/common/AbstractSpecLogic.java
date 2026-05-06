@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 
 public abstract class AbstractSpecLogic implements SpecLogic {
   // Helpers
@@ -180,5 +181,10 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public ProposerPreferencesUtil getProposerPreferencesUtil() {
     return ProposerPreferencesUtil.NOOP;
+  }
+
+  @Override
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return Optional.empty();
   }
 }

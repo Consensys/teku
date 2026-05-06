@@ -18,6 +18,11 @@ specrefs:
       # Not implemented: phase0
       - CONFIRMATION_BYZANTINE_THRESHOLD#phase0
 
+      # Replaced in Heze draft after v1.7.0-alpha.5
+      - INCLUSION_LIST_SUBMISSION_DUE_BPS#heze
+      - PROPOSER_INCLUSION_LIST_CUTOFF_BPS#heze
+      - VIEW_FREEZE_CUTOFF_BPS#heze
+
     constants:
       # Not defined as a constant, unnecessary
       - BASIS_POINTS#phase0

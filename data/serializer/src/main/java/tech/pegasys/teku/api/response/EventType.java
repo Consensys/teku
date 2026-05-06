@@ -35,7 +35,8 @@ public enum EventType {
   data_column_sidecar,
   execution_payload_available,
   execution_payload_bid,
-  payload_attestation_message;
+  payload_attestation_message,
+  inclusion_list;
 
   public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

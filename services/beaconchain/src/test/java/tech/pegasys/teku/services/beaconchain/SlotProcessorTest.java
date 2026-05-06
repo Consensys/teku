@@ -60,6 +60,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
+import tech.pegasys.teku.validator.coordinator.InclusionListsBlockUpdater;
 
 public class SlotProcessorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -81,6 +82,8 @@ public class SlotProcessorTest {
   private final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger =
       mock(FutureBlockProductionPreparationTrigger.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
+  private final InclusionListsBlockUpdater inclusionListsBlockUpdater =
+      mock(InclusionListsBlockUpdater.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final EpochCachePrimer epochCachePrimer = mock(EpochCachePrimer.class);
@@ -97,6 +100,7 @@ public class SlotProcessorTest {
         forkChoiceTrigger,
         blockProductionPreparationTrigger,
         forkChoiceNotifier,
+        inclusionListsBlockUpdater,
         p2pNetwork,
         slotEventsChannel,
         epochCachePrimer,
@@ -328,7 +332,7 @@ public class SlotProcessorTest {
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     final MinimalBeaconBlockSummary headBlock = recentChainData.getHeadBlock().orElseThrow();
     verify(eventLogger)
-        .slotEvent(
+        .slotBlockEvent(
             ZERO,
             recentChainData.getHeadSlot(),
             headBlock.getRoot(),
@@ -423,6 +427,7 @@ public class SlotProcessorTest {
             forkChoiceTrigger,
             blockProductionPreparationTrigger,
             forkChoiceNotifier,
+            inclusionListsBlockUpdater,
             p2pNetwork,
             slotEventsChannel,
             epochCachePrimer,

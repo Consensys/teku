@@ -36,6 +36,9 @@ public class BeaconChainMethodIds {
   static final String EXECUTION_PAYLOAD_ENVELOPES_BY_RANGE =
       "/eth2/beacon_chain/req/execution_payload_envelopes_by_range";
 
+  static final String INCLUSION_LIST_BY_COMMITTEE_INDICES =
+      "/eth2/beacon_chain/req/inclusion_list_by_committee_indices";
+
   static final String GET_METADATA = "/eth2/beacon_chain/req/metadata";
   static final String PING = "/eth2/beacon_chain/req/ping";
 
@@ -70,6 +73,11 @@ public class BeaconChainMethodIds {
   public static String getDataColumnSidecarsByRangeMethodId(
       final int version, final RpcEncoding encoding) {
     return getMethodId(DATA_COLUMN_SIDECARS_BY_RANGE, version, encoding);
+  }
+
+  public static String getInclusionListByCommitteeIndicesMethodId(
+      final int version, final RpcEncoding encoding) {
+    return getMethodId(INCLUSION_LIST_BY_COMMITTEE_INDICES, version, encoding);
   }
 
   public static String getExecutionPayloadEnvelopesByRootMethodId(

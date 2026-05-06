@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -58,6 +59,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -172,6 +176,23 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getInclusionListDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_INCLUSION_LIST_DUTIES_METHOD);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      final List<SignedInclusionList> signedInclusionLists) {
+    return relayRequest(
+        apiChannel -> apiChannel.sendSignedInclusionLists(signedInclusionLists),
+        BeaconNodeRequestLabels.SEND_SIGNED_INCLUSION_LISTS_METHOD,
+        failoversPublishSignedDuties);
+  }
+
+  @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return tryRequestUntilSuccess(
         ValidatorApiChannel::getPeerCount, BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
@@ -239,6 +260,21 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createPayloadAttestationData(slot),
         BeaconNodeRequestLabels.CREATE_PAYLOAD_ATTESTATION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.createInclusionList(slot, validatorIndex),
+        BeaconNodeRequestLabels.CREATE_INCLUSION_LIST_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getInclusionList(slot),
+        BeaconNodeRequestLabels.GET_INCLUSION_LIST_METHOD);
   }
 
   @Override

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -52,6 +53,9 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
+  private final Optional<InclusionList> maybeInclusionList;
+  private final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot;
+  private final Optional<InclusionList> maybeEquivocatedInclusionList;
   private final Optional<Bytes32> maybeLatestCanonicalBlockRoot;
   private final Optional<UInt64> maybeCustodyGroupCount;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
@@ -87,6 +91,9 @@ class StoreTransactionUpdatesFactory {
             .collect(
                 Collectors.toConcurrentMap(
                     Map.Entry::getKey, entry -> entry.getValue().executionPayload()));
+    maybeInclusionList = tx.maybeInclusionList;
+    maybeUnsatisfiedInclusionListBlockRoot = tx.maybeUnsatisfiedInclusionListBlockRoot;
+    maybeEquivocatedInclusionList = tx.maybeEquivocatedInclusionList;
   }
 
   public static StoreTransactionUpdates create(
@@ -284,6 +291,9 @@ class StoreTransactionUpdatesFactory {
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
         stateRoots,
+        maybeInclusionList,
+        maybeUnsatisfiedInclusionListBlockRoot,
+        maybeEquivocatedInclusionList,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,

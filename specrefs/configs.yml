@@ -367,15 +367,6 @@
     INACTIVITY_SCORE_RECOVERY_RATE: uint64 = 16
     </spec>
 
-- name: INCLUSION_LIST_SUBMISSION_DUE_BPS#heze
-  sources:
-    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "INCLUSION_LIST_SUBMISSION_DUE_BPS:"
-  spec: |
-    <spec config_var="INCLUSION_LIST_SUBMISSION_DUE_BPS" fork="heze" hash="046793e8">
-    INCLUSION_LIST_SUBMISSION_DUE_BPS: uint64 = 6667
-    </spec>
-
 - name: MAXIMUM_GOSSIP_CLOCK_DISPARITY#phase0
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -584,15 +575,6 @@
     PAYLOAD_ATTESTATION_DUE_BPS: uint64 = 7500
     </spec>
 
-- name: PROPOSER_INCLUSION_LIST_CUTOFF_BPS#heze
-  sources:
-    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "PROPOSER_INCLUSION_LIST_CUTOFF_BPS:"
-  spec: |
-    <spec config_var="PROPOSER_INCLUSION_LIST_CUTOFF_BPS" fork="heze" hash="72361163">
-    PROPOSER_INCLUSION_LIST_CUTOFF_BPS: uint64 = 9167
-    </spec>
-
 - name: PROPOSER_REORG_CUTOFF_BPS#phase0
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -735,13 +717,4 @@
   spec: |
     <spec config_var="VALIDATOR_CUSTODY_REQUIREMENT" fork="fulu" hash="4dfc4457">
     VALIDATOR_CUSTODY_REQUIREMENT = 8
-    </spec>
-
-- name: VIEW_FREEZE_CUTOFF_BPS#heze
-  sources:
-    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "VIEW_FREEZE_CUTOFF_BPS:"
-  spec: |
-    <spec config_var="VIEW_FREEZE_CUTOFF_BPS" fork="heze" hash="e2e4fa3c">
-    VIEW_FREEZE_CUTOFF_BPS: uint64 = 7500
     </spec>

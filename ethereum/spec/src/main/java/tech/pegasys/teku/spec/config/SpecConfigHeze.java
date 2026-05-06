@@ -26,11 +26,7 @@ public interface SpecConfigHeze extends SpecConfigGloas, NetworkingSpecConfigHez
                     "Expected Heze spec config but got: " + specConfig.getClass().getSimpleName()));
   }
 
-  int getViewFreezeCutoffBps();
-
-  int getInclusionListSubmissionDueBps();
-
-  int getProposerInclusionListCutoffBps();
+  int getInclusionListDueBps();
 
   int getInclusionListCommitteeSize();
 

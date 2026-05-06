@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -118,10 +119,11 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processExecutionPayload(
       final MutableBeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionPayload(state, beaconBlockBody, payloadExecutor);
+        .processExecutionPayload(state, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   @Override

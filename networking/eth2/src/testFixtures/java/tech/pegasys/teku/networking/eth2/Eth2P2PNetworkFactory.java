@@ -62,6 +62,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloas;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsHeze;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -105,6 +106,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -122,6 +124,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -158,6 +161,7 @@ public class Eth2P2PNetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
+    protected InclusionListManager inclusionListManager;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
     protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -175,6 +179,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
     protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
     protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
+    protected OperationProcessor<SignedInclusionList> inclusionListProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -291,6 +296,7 @@ public class Eth2P2PNetworkFactory {
                 combinedChainDataClient,
                 () -> custodyGroupCountManager,
                 metadataMessagesFactory,
+                inclusionListManager,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -303,6 +309,7 @@ public class Eth2P2PNetworkFactory {
                 timeProvider,
                 P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_INCLUSION_LISTS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 __ -> Optional.of(discoveryNodeId),
@@ -574,7 +581,7 @@ public class Eth2P2PNetworkFactory {
                 executionProofOperationProcessor,
                 p2PConfig.isExecutionProofTopicEnabled(),
                 isSuperNodeSupplier);
-        case GLOAS, HEZE ->
+        case GLOAS ->
             new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
                 spec,
@@ -598,6 +605,36 @@ public class Eth2P2PNetworkFactory {
                 payloadAttestationMessageProcessor,
                 executionPayloadBidProcessor,
                 proposerPreferencesProcessor,
+                debugDataDumper,
+                DasGossipLogger.NOOP,
+                executionProofOperationProcessor,
+                p2PConfig.isExecutionProofTopicEnabled(),
+                isSuperNodeSupplier);
+        case HEZE ->
+            new GossipForkSubscriptionsHeze(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                dataColumnSidecarOperationProcessor,
+                executionPayloadProcessor,
+                payloadAttestationMessageProcessor,
+                executionPayloadBidProcessor,
+                proposerPreferencesProcessor,
+                inclusionListProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
@@ -716,6 +753,9 @@ public class Eth2P2PNetworkFactory {
       if (proposerPreferencesProcessor == null) {
         proposerPreferencesProcessor = OperationProcessor.noop();
       }
+      if (inclusionListProcessor == null) {
+        inclusionListProcessor = OperationProcessor.noop();
+      }
       if (isSuperNodeSupplier == null) {
         isSuperNodeSupplier = () -> false;
       }
@@ -759,6 +799,13 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder inclusionListManager(
+        final InclusionListManager inclusionListManager) {
+      checkNotNull(inclusionListManager);
+      this.inclusionListManager = inclusionListManager;
       return this;
     }
 

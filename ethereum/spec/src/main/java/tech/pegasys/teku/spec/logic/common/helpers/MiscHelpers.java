@@ -536,4 +536,8 @@ public class MiscHelpers {
   public Optional<MiscHelpersGloas> toVersionGloas() {
     return Optional.empty();
   }
+
+  public Optional<MiscHelpersGloas> toVersionHeze() {
+    return Optional.empty();
+  }
 }

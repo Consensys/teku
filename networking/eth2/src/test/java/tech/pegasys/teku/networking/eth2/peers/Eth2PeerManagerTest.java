@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -61,6 +62,7 @@ public class Eth2PeerManagerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   private final Eth2PeerFactory eth2PeerFactory = mock(Eth2PeerFactory.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final StatusMessageFactory statusMessageFactory =
@@ -77,6 +79,7 @@ public class Eth2PeerManagerTest {
           combinedChainDataClient,
           () -> CustodyGroupCountManager.NOOP,
           recentChainData,
+          inclusionListManager,
           new NoOpMetricsSystem(),
           eth2PeerFactory,
           statusMessageFactory,
