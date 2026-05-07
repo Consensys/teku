@@ -455,6 +455,24 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateExecutionPayload() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=execution_payload");
+    manager.registerClient(client1);
+
+    triggerExecutionPayloadEvent();
+    checkEvent("execution_payload", new ExecutionPayloadEvent(sampleExecutionPayload, false));
+  }
+
+  @Test
+  void shouldPropagateExecutionPayloadGossip() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=execution_payload_gossip");
+    manager.registerClient(client1);
+
+    triggerExecutionPayloadGossipEvent();
+    checkEvent("execution_payload_gossip", new ExecutionPayloadGossipEvent(sampleExecutionPayload));
+  }
+
+  @Test
   void shouldPropagateExecutionPayloadAvailable() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=execution_payload_available");
     manager.registerClient(client1);
@@ -594,9 +612,18 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
-  private void triggerExecutionPayloadAvailableEvent() {
-    manager.onExecutionPayloadAvailable(sampleExecutionPayload);
+  private void triggerExecutionPayloadEvent() {
+    manager.onExecutionPayloadImported(sampleExecutionPayload, false);
     asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerExecutionPayloadGossipEvent() {
+    manager.onExecutionPayloadValidated(sampleExecutionPayload);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerExecutionPayloadAvailableEvent() {
+    triggerExecutionPayloadEvent();
   }
 
   private void triggerExecutionPayloadBidEvent() {

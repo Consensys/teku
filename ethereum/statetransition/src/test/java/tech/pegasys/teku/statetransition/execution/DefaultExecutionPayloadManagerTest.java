@@ -157,17 +157,21 @@ class DefaultExecutionPayloadManagerTest {
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
     when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(SafeFuture.completedFuture(successfulImportResult));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                ExecutionPayloadImportResult.FAILED_UNKNOWN_BEACON_BLOCK_ROOT));
 
     // should just cache the payload for future processing
     SafeFutureAssert.safeJoin(
         executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload));
 
     asyncRunner.executeDueActions();
-    verifyNoInteractions(forkChoice, receivedExecutionPayloadEventsChannelPublisher);
+    verifyNoInteractions(receivedExecutionPayloadEventsChannelPublisher);
 
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(SafeFuture.completedFuture(successfulImportResult));
     executionPayloadManager.onBlockImported(block, false);
 
     asyncRunner.executeDueActions();

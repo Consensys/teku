@@ -148,28 +148,29 @@ public class DefaultExecutionPayloadManager
                         signedExecutionPayload);
                   }
                   case UNKNOWN_BEACON_BLOCK_ROOT -> {
+                    // Add to the pending pool so it is triggered once the block is imported
+                    pendingExecutionPayloads.put(
+                        signedExecutionPayload.getBlockRootAndBuilderIndex(),
+                        signedExecutionPayload);
                     // Check if the block was imported while we were trying to import this execution
                     // payload and then import it async
                     if (recentChainData.containsBlock(
                         signedExecutionPayload.getBeaconBlockRoot())) {
+                      pendingExecutionPayloads.remove(
+                          signedExecutionPayload.getBlockRootAndBuilderIndex());
                       importExecutionPayload(signedExecutionPayload).finishStackTrace();
                     } else {
                       LOG.debug(
                           "Adding execution payload for slot {} and block root {} to the pending pool because the block is not yet imported",
                           signedExecutionPayload.getSlot(),
                           signedExecutionPayload.getBeaconBlockRoot());
-                      // Add to the pending pool so it is triggered once the block is imported
-                      pendingExecutionPayloads.put(
-                          signedExecutionPayload.getBlockRootAndBuilderIndex(),
-                          signedExecutionPayload);
                     }
                   }
                   case INTERNAL_ERROR,
-                      FAILED_VERIFICATION,
-                      FAILED_DATA_AVAILABILITY_CHECK_INVALID,
-                      FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
-                      logFailedExecutionPayloadImport(
-                          signedExecutionPayload, result.getFailureReason());
+                          FAILED_VERIFICATION,
+                          FAILED_DATA_AVAILABILITY_CHECK_INVALID,
+                          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
+                      logFailedExecutionPayloadImport(signedExecutionPayload, result.getFailureReason());
                 }
               }
             })
