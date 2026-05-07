@@ -133,6 +133,15 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
   }
 
+  /**
+   * Inserts a Gloas finalized-boundary block as an anchor instead of as a normal block.
+   *
+   * <p>Normal Gloas blocks require their parent variants to already exist so BASE, EMPTY, and FULL
+   * nodes can be attached consistently. A finalized anchor deliberately has no tracked parent node:
+   * it keeps the finalized block's real parent root as metadata, but makes the block's BASE node a
+   * root in protoarray so descendants can attach to the anchor's EMPTY or FULL variant after older
+   * finalized nodes have been pruned.
+   */
   @Override
   public void processAnchorBlock(
       final ProtoArray protoArray,

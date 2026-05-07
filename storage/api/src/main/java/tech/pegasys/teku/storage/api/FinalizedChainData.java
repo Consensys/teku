@@ -75,6 +75,17 @@ public class FinalizedChainData {
     return latestFinalized;
   }
 
+  /**
+   * Returns the newly finalized beacon block when it is still needed as the hot fork-choice anchor
+   * for execution payload handling.
+   *
+   * <p>Finalization applies to the beacon block root. In Gloas, fork choice tracks the associated
+   * execution payload separately via the block's FULL variant, and that payload remains hot even
+   * when it refers to a finalized beacon block. When the finalized checkpoint is at this boundary,
+   * descendants may still need to attach to the finalized beacon block's FULL or EMPTY variant.
+   * Keeping this block in the update lets protoarray insert it as an anchor before pruning older
+   * finalized nodes.
+   */
   public Optional<BlockAndCheckpoints> getFinalizedExecutionPayloadBoundaryBlock() {
     return finalizedExecutionPayloadBoundaryBlock;
   }

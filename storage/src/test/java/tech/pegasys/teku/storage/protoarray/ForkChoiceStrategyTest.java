@@ -531,6 +531,33 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void applyUpdate_shouldAcceptPreGloasBlockWithMissingParentVariants() {
+    final Spec preGloasSpec = TestSpecFactory.createMinimalBellatrix();
+    final ChainBuilder chainBuilder = ChainBuilder.create(preGloasSpec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState child = chainBuilder.generateBlockAtSlot(2);
+    final ProtoArray protoArray = createProtoArray(preGloasSpec, genesis.getState());
+    addBlockToProtoArray(preGloasSpec, protoArray, genesis);
+    final ForkChoiceStrategy strategy = ForkChoiceStrategy.initialize(preGloasSpec, protoArray);
+
+    strategy.applyUpdate(
+        List.of(BlockAndCheckpoints.fromBlockAndState(preGloasSpec, child)),
+        emptyMap(),
+        emptySet(),
+        emptyMap(),
+        new Checkpoint(ZERO, genesis.getRoot()));
+
+    assertThat(strategy.contains(child.getRoot())).isTrue();
+    assertThat(
+            protoArray
+                .getNode(ForkChoiceNode.createBase(child.getRoot()))
+                .orElseThrow()
+                .getParentIndex())
+        .isEmpty();
+  }
+
+  @Test
   void applyScoreChanges_shouldWorkAfterRemovingNodes() {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();

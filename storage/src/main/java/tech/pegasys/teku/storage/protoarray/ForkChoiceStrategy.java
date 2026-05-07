@@ -691,6 +691,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         Optional.empty());
   }
 
+  /**
+   * Applies hot fork-choice updates, optionally anchoring the finalized execution-payload boundary
+   * block before normal block processing.
+   *
+   * <p>The boundary block is only supplied for Gloas finalization. It lets protoarray keep the
+   * finalized block's EMPTY/FULL variants available for hot descendants while pruning older
+   * finalized nodes.
+   */
   public void applyUpdate(
       final Collection<BlockAndCheckpoints> newBlocks,
       final Map<Bytes32, ExecutionPayloadUpdate> executionPayloads,
@@ -763,6 +771,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   private void processFinalizedBoundaryBlock(final BlockAndCheckpoints block) {
+    // A finalized Gloas block can be the last beacon block before execution payload data becomes
+    // available to its descendants. Re-adding it as an anchor preserves the fork-choice variants
+    // descendants need while still allowing older finalized nodes to be pruned.
     getForkChoiceModel(block.getSlot())
         .processAnchorBlock(
             protoArray,
