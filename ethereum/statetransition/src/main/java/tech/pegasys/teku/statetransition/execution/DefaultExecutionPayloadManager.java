@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -167,11 +168,10 @@ public class DefaultExecutionPayloadManager
                     }
                   }
                   case INTERNAL_ERROR,
-                      FAILED_VERIFICATION,
-                      FAILED_DATA_AVAILABILITY_CHECK_INVALID,
-                      FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
-                      logFailedExecutionPayloadImport(
-                          signedExecutionPayload, result.getFailureReason());
+                          FAILED_VERIFICATION,
+                          FAILED_DATA_AVAILABILITY_CHECK_INVALID,
+                          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
+                      logFailedExecutionPayloadImport(signedExecutionPayload, result);
                 }
               }
             })
@@ -188,10 +188,17 @@ public class DefaultExecutionPayloadManager
   }
 
   private void logFailedExecutionPayloadImport(
-      final SignedExecutionPayloadEnvelope executionPayload, final FailureReason failureReason) {
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult importResult) {
     LOG.debug(
-        "Unable to import execution payload for reason {}: {}",
-        failureReason,
+        "Unable to import execution payload for reason {}{}: {}",
+        importResult.getFailureReason(),
+        importResult
+            .getFailureCause()
+            .map(ExceptionUtil::getRootCauseMessage)
+            .filter(causeMessage -> !causeMessage.isBlank())
+            .map(causeMessage -> " (" + causeMessage + ")")
+            .orElse(""),
         executionPayload.toLogString());
   }
 
