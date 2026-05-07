@@ -110,9 +110,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
         .containsOnlyKeys(firstBlockAndState.getRoot(), secondBlockAndState.getRoot());
   }
 
-  // TODO-GLOAS: fix test (disabled when working on glamsterdam-devnet-2)
   @Test
-  @Disabled
   public void commit_shouldRetainBlindedEnvelopesForBlocksFinalizedInSameTransaction() {
     final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(16);
     final ChainBuilder gloasChainBuilder = ChainBuilder.create(spec, keys);

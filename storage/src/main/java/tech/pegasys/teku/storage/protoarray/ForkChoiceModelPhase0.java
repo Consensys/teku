@@ -57,6 +57,31 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public void processAnchorBlock(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<Bytes32> executionBlockHash,
+      final boolean optimisticallyProcessed) {
+    processBlock(
+        protoArray,
+        blockNodeIndex,
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        checkpoints,
+        executionBlockNumber,
+        executionBlockHash,
+        optimisticallyProcessed);
+  }
+
+  @Override
   public void onExecutionPayload(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
