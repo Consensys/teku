@@ -328,9 +328,9 @@ public class EventSubscriptionManager
 
   protected void onNewExecutionPayload(
       final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
-    final ExecutionPayloadEvent executionPayloadGossipEvent =
+    final ExecutionPayloadEvent executionPayloadEvent =
         new ExecutionPayloadEvent(executionPayload, executionOptimistic);
-    notifySubscribersOfEvent(EventType.execution_payload, executionPayloadGossipEvent);
+    notifySubscribersOfEvent(EventType.execution_payload, executionPayloadEvent);
   }
 
   protected void onExecutionPayloadAvailable(
