@@ -193,7 +193,8 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     if (maybeParentSlot.get().increment().isLessThan(blockSlot)) {
       return true;
     }
-    // TODO: implement the Gloas equivocation suppression branch from should_apply_proposer_boost
+    // TODO-GLOAS: implement the Gloas equivocation suppression branch from
+    // should_apply_proposer_boost
     // using recorded PTC timeliness instead of routing a predicate through ForkChoice.
     // The complication is that we need to have a good interaction with gossip datastructures to
     // detect equivocations. Spec should probably be updated.
@@ -288,7 +289,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     final UInt64 committeesPerSlot =
         beaconStateAccessors.getCommitteeCountPerSlot(headState, epoch);
 
-    // TODO: we could optimize this by tracking a cumulative equivocating weight per slot,
+    // TODO-GLOAS: we could optimize this by tracking a cumulative equivocating weight per slot,
     //  so we can lookup this fast without recompute the sum all the time.
 
     long equivocatingWeight = 0;

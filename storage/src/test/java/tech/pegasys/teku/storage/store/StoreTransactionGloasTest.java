@@ -111,7 +111,6 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   }
 
   @Test
-  @Disabled
   public void commit_shouldRetainBlindedEnvelopesForBlocksFinalizedInSameTransaction() {
     final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(16);
     final ChainBuilder gloasChainBuilder = ChainBuilder.create(spec, keys);

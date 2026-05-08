@@ -225,10 +225,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return processHead(Optional.empty(), false);
   }
 
-  public boolean isForkChoiceLateBlockReorgEnabled() {
-    return forkChoiceLateBlockReorgEnabled;
-  }
-
   /** on_block */
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
@@ -723,6 +719,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
+    // in Gloas, there is no need to call onExecutionPayloadResult in "on_block" fork choice handler
     if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
       forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
     }
@@ -810,7 +807,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
 
     forkChoiceStrategy.onExecutionPayloadResult(
-        signedEnvelope.getBeaconBlockRoot(), payloadStatus, true);
+        signedEnvelope.getBeaconBlockRoot(), payloadStatus, false);
 
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
@@ -1032,7 +1029,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
 
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+    if (!currentHead.isSameHeadAs(bestHeadBlock)) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
 
@@ -1060,7 +1057,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStrategy forkChoiceStrategy) {
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+    if (!currentHead.isSameHeadAs(bestHeadBlock)) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
   }
