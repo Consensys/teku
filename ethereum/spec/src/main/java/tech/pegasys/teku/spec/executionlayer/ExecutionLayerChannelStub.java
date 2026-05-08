@@ -212,6 +212,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     offlineCheck();
 
+    LOG.info("Fork choice update {} attributes {}", forkChoiceState, payloadBuildingAttributes);
+
     if (!bellatrixActivationDetected) {
       LOG.debug(
           "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");
@@ -230,17 +232,17 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   payloadIdToHeadAndAttrsCache.invalidateWithNewValue(
                       payloadId,
                       new HeadAndAttributes(
-                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes));
+                          forkChoiceState.headExecutionBlockHash(), payloadAttributes));
                   return payloadId;
                 }));
 
     if (!LOG.isDebugEnabled()) {
       LOG.info(
           "EL Stub FCU head: {}:{}, payload: {}:{}",
-          forkChoiceState.getHeadBlockSlot(),
-          forkChoiceState.getHeadBlockRoot(),
-          forkChoiceState.getHeadExecutionBlockNumber(),
-          forkChoiceState.getHeadExecutionBlockHash());
+          forkChoiceState.headBlockSlot(),
+          forkChoiceState.headBlock(),
+          forkChoiceState.headExecutionBlockNumber(),
+          forkChoiceState.headExecutionBlockHash());
     }
     LOG.debug(
         "forkChoiceUpdated: forkChoiceState: {} payloadBuildingAttributes: {} -> forkChoiceUpdatedResult: {}",
@@ -287,20 +289,20 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                 builder ->
                     builder
                         .parentHash(headAndAttrs.head)
-                        .feeRecipient(payloadAttributes.getFeeRecipient())
+                        .feeRecipient(payloadAttributes.feeRecipient())
                         .stateRoot(Bytes32.ZERO)
                         .receiptsRoot(Bytes32.ZERO)
                         .logsBloom(Bytes.random(256))
-                        .prevRandao(payloadAttributes.getPrevRandao())
+                        .prevRandao(payloadAttributes.prevRandao())
                         .blockNumber(UInt64.valueOf(payloadIdCounter.get()))
                         .gasLimit(UInt64.ONE)
                         .gasUsed(UInt64.ZERO)
-                        .timestamp(payloadAttributes.getTimestamp())
+                        .timestamp(payloadAttributes.timestamp())
                         .extraData(Bytes.EMPTY)
                         .baseFeePerGas(UInt256.ONE)
                         .blockHash(Bytes32.random())
                         .transactions(transactions)
-                        .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
+                        .withdrawals(() -> payloadAttributes.withdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
                         .excessBlobGas(() -> UInt64.ZERO)
                         .blockAccessList(() -> Bytes32.ZERO)
@@ -312,7 +314,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             new PowBlock(
                 executionPayload.getBlockHash(),
                 executionPayload.getParentHash(),
-                payloadAttributes.getTimestamp()));
+                payloadAttributes.timestamp()));
 
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
 

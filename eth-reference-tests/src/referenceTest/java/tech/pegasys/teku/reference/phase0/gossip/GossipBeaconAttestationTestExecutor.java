@@ -52,6 +52,7 @@ import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -97,6 +98,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             true,
+            LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));

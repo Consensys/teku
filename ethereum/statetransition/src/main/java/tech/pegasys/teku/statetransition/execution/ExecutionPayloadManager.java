@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -47,7 +48,9 @@ public interface ExecutionPayloadManager {
 
         @Override
         public ExecutionRequests getParentExecutionRequestsForBlock(
-            final UInt64 slot, final Bytes32 parentRoot) {
+            final UInt64 slot,
+            final Bytes32 parentRoot,
+            final ForkChoicePayloadStatus payloadStatus) {
           return null;
         }
       };
@@ -76,7 +79,8 @@ public interface ExecutionPayloadManager {
       SignedExecutionPayloadEnvelope signedExecutionPayload);
 
   /** Retrieves parent execution requests (used in block production) */
-  ExecutionRequests getParentExecutionRequestsForBlock(UInt64 slot, Bytes32 parentRoot);
+  ExecutionRequests getParentExecutionRequestsForBlock(
+      UInt64 slot, Bytes32 parentRoot, ForkChoicePayloadStatus payloadStatus);
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {

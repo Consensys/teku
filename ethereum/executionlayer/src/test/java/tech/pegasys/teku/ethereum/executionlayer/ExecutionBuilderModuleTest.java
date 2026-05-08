@@ -229,7 +229,7 @@ public class ExecutionBuilderModuleTest {
 
   private BuilderBid prepareBuilderGetHeaderResponse(
       final boolean prepareEmptyResponse, final UInt256 builderBlockValue) {
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
 
     final BuilderBid builderBid =
         dataStructureUtil.randomBuilderBid(builder -> builder.value(builderBlockValue));

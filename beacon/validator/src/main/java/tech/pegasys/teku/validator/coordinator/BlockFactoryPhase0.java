@@ -19,9 +19,6 @@ import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler.BlockProductionContext;
 
 public class BlockFactoryPhase0 implements BlockFactory {
 
@@ -49,36 +47,22 @@ public class BlockFactoryPhase0 implements BlockFactory {
 
   @Override
   public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
-      final BeaconState blockSlotState,
-      final UInt64 proposalSlot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final BlockProductionPerformance blockProductionPerformance) {
+      final BlockProductionContext blockProductionContext) {
+    final BeaconState blockSlotState = blockProductionContext.blockSlotState();
+    final UInt64 proposalSlot = blockProductionContext.proposalSlot();
     checkArgument(
         blockSlotState.getSlot().equals(proposalSlot),
         "Block slot state for slot %s but should be for slot %s",
         blockSlotState.getSlot(),
         proposalSlot);
 
-    // Process empty slots up to the one before the new block slot
-    final UInt64 slotBeforeBlock = proposalSlot.minus(UInt64.ONE);
-
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
-
     return spec.createNewUnsignedBlock(
             proposalSlot,
             spec.getBeaconProposerIndex(blockSlotState, proposalSlot),
             blockSlotState,
-            parentRoot,
-            operationSelector.createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                optionalGraffiti,
-                requestedBuilderBoostFactor,
-                blockProductionPerformance),
-            blockProductionPerformance)
+            blockProductionContext.parentRoot(),
+            operationSelector.createSelector(blockProductionContext),
+            blockProductionContext.blockProductionPerformance())
         .thenApply(this::blockAndStateToBlockContainerAndMetaData);
   }
 

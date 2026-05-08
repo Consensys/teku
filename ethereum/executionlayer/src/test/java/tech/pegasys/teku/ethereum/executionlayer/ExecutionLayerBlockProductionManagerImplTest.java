@@ -92,7 +92,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
@@ -150,7 +150,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     // we expect result from the builder
@@ -202,7 +202,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
@@ -250,7 +250,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
@@ -301,7 +301,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     // we expect result from the builder
@@ -355,7 +355,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
@@ -402,7 +402,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     // we expect result from the builder
@@ -466,7 +466,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private BuilderBid prepareBuilderGetHeaderResponse(
       final ExecutionPayloadContext executionPayloadContext, final boolean prepareEmptyResponse) {
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().headBlockSlot();
 
     final SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid();
 

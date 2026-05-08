@@ -261,7 +261,6 @@ import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -1551,9 +1550,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             storageQueryChannel,
             spec,
-            (slot, blockRoot) ->
-                beaconAsyncRunner.runAsync(
-                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
             beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled());
   }
 
@@ -1578,6 +1574,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
+            (slot, blockRoot) ->
+                beaconAsyncRunner.runAsync(
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
             debugDataDumper,
             metricsSystem,
             signatureVerificationService);
@@ -1966,7 +1965,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   throttlingStorageQueryChannel,
                   spec,
-                  LateBlockReorgPreparationHandler.NOOP,
                   beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
@@ -2320,8 +2318,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionLayer,
             recentChainData,
-            proposersDataManager,
-            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled());
+            proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {
