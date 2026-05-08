@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromState;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
@@ -36,7 +37,6 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -83,8 +83,7 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
     final RecentChainData recentChainData = storageSystem.recentChainData();
 
     // Initialize from state with time 0 (will be advanced via onTick)
-    recentChainData.initializeFromAnchorPoint(
-        AnchorPoint.fromInitialState(spec, state), UInt64.ZERO);
+    recentChainData.initializeFromAnchorPoint(createAnchorFromState(spec, state), UInt64.ZERO);
 
     // Set up ForkChoice for block importing
     final InlineEventThread eventThread = new InlineEventThread();
