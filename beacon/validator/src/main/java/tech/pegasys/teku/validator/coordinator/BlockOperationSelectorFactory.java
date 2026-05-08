@@ -162,7 +162,8 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsExecutionPayload()) {
         setExecutionData =
             forkChoiceNotifier
-                .getPayloadId(parentRoot, blockSlotState.getSlot())
+                .getPayloadId(
+                    blockProductionContext.parentForkChoiceNode(), blockSlotState.getSlot())
                 .thenCompose(
                     executionPayloadContext ->
                         setExecutionData(
@@ -180,7 +181,8 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsSignedExecutionPayloadBid()) {
         setExecutionPayloadBid =
             forkChoiceNotifier
-                .getPayloadId(parentRoot, blockSlotState.getSlot())
+                .getPayloadId(
+                    blockProductionContext.parentForkChoiceNode(), blockSlotState.getSlot())
                 .thenCompose(
                     executionPayloadContext ->
                         setExecutionPayloadBid(
@@ -238,7 +240,7 @@ public class BlockOperationSelectorFactory {
                                         UInt64.valueOf(idx)));
                       }
                       final SszList<SignedVoluntaryExit> voluntaryExits =
-                          getVoluntaryExits(
+                          getVoluntaryExitsForBlock(
                               blockSlotState,
                               exitedValidators,
                               validatorsWithParentWithdrawalRequests);
@@ -248,7 +250,7 @@ public class BlockOperationSelectorFactory {
                     });
       } else {
         final SszList<SignedVoluntaryExit> voluntaryExits =
-            getVoluntaryExits(blockSlotState, exitedValidators, new HashSet<>());
+            getVoluntaryExitsForBlock(blockSlotState, exitedValidators, new HashSet<>());
         bodyBuilder.voluntaryExits(voluntaryExits);
         setVoluntaryExitsAndParentExecutionRequests = COMPLETE;
       }
@@ -289,7 +291,7 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  private SszList<SignedVoluntaryExit> getVoluntaryExits(
+  private SszList<SignedVoluntaryExit> getVoluntaryExitsForBlock(
       final BeaconState blockSlotState,
       final Set<UInt64> exitedValidators,
       final Set<UInt64> validatorsWithParentWithdrawalRequests) {
@@ -310,9 +312,8 @@ public class BlockOperationSelectorFactory {
     if (exitedValidators.contains(validatorIndex)) {
       return false;
     }
-    // In Gloas, parent execution requests are applied before operations. A withdrawal request
-    // for this validator would call initiate_validator_exit or add a pending partial withdrawal,
-    // either of which would invalidate this voluntary exit.
+    // In Gloas, a withdrawal request for this validator would call initiate_validator_exit or add a
+    // pending partial withdrawal, either of which would invalidate this voluntary exit.
     if (validatorsWithParentWithdrawalRequests.contains(validatorIndex)) {
       return false;
     }
@@ -522,17 +523,11 @@ public class BlockOperationSelectorFactory {
         executionPayloadBidManager
             .getBidForBlock(
                 parentRoot,
+                blockProductionContext.parentExecutionBlockHash(),
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
                 blockProductionContext.blockProductionPerformance())
-            .thenAccept(
-                signedBid -> {
-                  checkState(
-                      signedBid.isPresent(),
-                      "No execution payload bid has been prepared for production of block at slot %s",
-                      blockSlotState.getSlot());
-                  bodyBuilder.signedExecutionPayloadBid(signedBid.get());
-                });
+            .thenAccept(bodyBuilder::signedExecutionPayloadBid);
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState), setExecutionPayloadBid);
   }

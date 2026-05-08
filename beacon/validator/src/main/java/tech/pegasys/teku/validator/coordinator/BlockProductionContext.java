@@ -21,27 +21,29 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.client.ChainHead;
 
 public record BlockProductionContext(
     UInt64 proposalSlot,
     BeaconState blockSlotState,
-    Bytes32 parentRoot,
+    ForkChoiceNode parentForkChoiceNode,
+    Bytes32 parentExecutionBlockHash,
     BLSSignature randaoReveal,
     Optional<Bytes32> graffiti,
     Optional<UInt64> requestedBuilderBoostFactor,
-    ForkChoicePayloadStatus payloadStatus,
     BlockProductionPerformance blockProductionPerformance) {
 
   public static BlockProductionContext create(
       final Spec spec,
       final UInt64 proposalSlot,
       final BeaconState blockSlotState,
+      final ChainHead parentChainHead,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor,
-      final ForkChoicePayloadStatus payloadStatus,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(proposalSlot),
@@ -49,14 +51,27 @@ public record BlockProductionContext(
         blockSlotState.getSlot(),
         proposalSlot);
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
+    checkArgument(
+        parentRoot.equals(parentChainHead.getRoot()),
+        "Block slot state parent root %s does not match selected production parent root %s",
+        parentRoot,
+        parentChainHead.getRoot());
     return new BlockProductionContext(
         proposalSlot,
         blockSlotState,
-        parentRoot,
+        parentChainHead.getForkChoiceNode(),
+        parentChainHead.getExecutionBlockHash(),
         randaoReveal,
         graffiti,
         requestedBuilderBoostFactor,
-        payloadStatus,
         blockProductionPerformance);
+  }
+
+  public Bytes32 parentRoot() {
+    return parentForkChoiceNode.blockRoot();
+  }
+
+  public ForkChoicePayloadStatus payloadStatus() {
+    return parentForkChoiceNode.payloadStatus();
   }
 }
