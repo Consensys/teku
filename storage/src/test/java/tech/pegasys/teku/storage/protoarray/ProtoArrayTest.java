@@ -1135,6 +1135,33 @@ class ProtoArrayTest {
     assertThat(protoArray.getNodeByIndex(emptyNodeIndex).isOptimistic()).isTrue();
   }
 
+  @Test
+  void gloas_onForkChoiceUpdatedResult_valid_shouldMarkExactNodeValid() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    protoArray.createEmptyNode(block1a);
+    protoArray.onExecutionPayload(block1a, EXECUTION_BLOCK_NUMBER, EXECUTION_BLOCK_HASH);
+
+    final ForkChoiceNode emptyNode =
+        protoArray.blockNodeIndex().getEmptyNode(block1a).orElseThrow();
+    final int emptyNodeIndex = protoArray.getEmptyNodeIndices().getInt(block1a);
+    final int fullNodeIndex = protoArray.getFullNodeIndices().getInt(block1a);
+    assertThat(protoArray.getNodeByIndex(emptyNodeIndex).isOptimistic()).isTrue();
+    assertThat(protoArray.getNodeByIndex(fullNodeIndex).isOptimistic()).isTrue();
+
+    gloasModel.onForkChoiceUpdatedResult(
+        protoArray.protoArray(),
+        protoArray.blockNodeIndex(),
+        emptyNode,
+        ExecutionPayloadStatus.VALID,
+        Optional.empty(),
+        true,
+        new HeadSelectionContext(
+            gloasModel, protoArray.blockNodeIndex(), UInt64.ZERO, Optional.empty()));
+
+    assertThat(protoArray.getNodeByIndex(emptyNodeIndex).isFullyValidated()).isTrue();
+    assertThat(protoArray.getNodeByIndex(fullNodeIndex).isOptimistic()).isTrue();
+  }
+
   private void assertHead(final Bytes32 expectedBlockHash) {
     final ProtoNode node = protoArray.getProtoNode(expectedBlockHash).orElseThrow();
     assertThat(

@@ -14,11 +14,7 @@
       "type" : "boolean"
     },
     "data" : {
-      "title" : "SignedExecutionPayloadEnvelope",
-      "type" : "object",
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/SignedExecutionPayloadEnvelope"
-      } ]
+      "$ref" : "#/components/schemas/SignedExecutionPayloadEnvelope"
     }
   }
 }

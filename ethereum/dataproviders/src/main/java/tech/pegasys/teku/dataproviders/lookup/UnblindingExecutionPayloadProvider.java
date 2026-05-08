@@ -53,36 +53,30 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
   private static final int DEFAULT_UNBLINDED_ENVELOPE_CACHE_SIZE = 32;
 
   private final Spec spec;
-  private final BlindedExecutionPayloadEnvelopeProvider blindedExecutionPayloadEnvelopeProvider;
+  private final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider;
   private final ExecutionPayloadBodiesByHashProvider executionPayloadBodiesByHashProvider;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> recentlyUnblindedEnvelopes;
 
   public UnblindingExecutionPayloadProvider(
       final Spec spec,
-      final BlindedExecutionPayloadEnvelopeProvider blindedExecutionPayloadEnvelopeProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final ExecutionPayloadBodiesByHashProvider executionPayloadBodiesByHashProvider) {
     this(
         spec,
-        blindedExecutionPayloadEnvelopeProvider,
+        blindedExecutionPayloadProvider,
         executionPayloadBodiesByHashProvider,
         DEFAULT_UNBLINDED_ENVELOPE_CACHE_SIZE);
   }
 
   public UnblindingExecutionPayloadProvider(
       final Spec spec,
-      final BlindedExecutionPayloadEnvelopeProvider blindedExecutionPayloadEnvelopeProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final ExecutionPayloadBodiesByHashProvider executionPayloadBodiesByHashProvider,
       final int cacheSize) {
     this.spec = spec;
-    this.blindedExecutionPayloadEnvelopeProvider = blindedExecutionPayloadEnvelopeProvider;
+    this.blindedExecutionPayloadProvider = blindedExecutionPayloadProvider;
     this.executionPayloadBodiesByHashProvider = executionPayloadBodiesByHashProvider;
     this.recentlyUnblindedEnvelopes = LimitedMap.createSynchronizedLRU(cacheSize);
-  }
-
-  @FunctionalInterface
-  public interface BlindedExecutionPayloadEnvelopeProvider {
-    SafeFuture<Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>>
-        getBlindedExecutionPayloadEnvelopes(Set<Bytes32> blockRoots);
   }
 
   @FunctionalInterface
@@ -109,8 +103,8 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
     }
 
     // Fetch and unblind remaining from DB and EL
-    return blindedExecutionPayloadEnvelopeProvider
-        .getBlindedExecutionPayloadEnvelopes(cacheMisses)
+    return blindedExecutionPayloadProvider
+        .getBlindedExecutionPayloads(cacheMisses)
         .thenCompose(this::unblindExecutionPayloadEnvelopes)
         .thenApply(
             newlyUnblinded -> {

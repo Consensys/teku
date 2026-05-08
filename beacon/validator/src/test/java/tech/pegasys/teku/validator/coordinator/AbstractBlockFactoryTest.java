@@ -211,7 +211,7 @@ public abstract class AbstractBlockFactoryTest {
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
     when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
-        .thenAnswer(__ -> dataStructureUtil.emptyExecutionRequests());
+        .thenAnswer(__ -> SafeFuture.completedFuture(dataStructureUtil.emptyExecutionRequests()));
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))

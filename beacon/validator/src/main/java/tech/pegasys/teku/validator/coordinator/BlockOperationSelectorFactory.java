@@ -216,36 +216,44 @@ public class BlockOperationSelectorFactory {
               slashing ->
                   exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
-      // In Gloas, parent execution requests are applied before operations, so a withdrawal
-      // request targeting a validator can invalidate a voluntary exit for this validator in the
-      // same block.
-      final Optional<ExecutionRequests> parentExecutionRequests =
-          bodyBuilder.supportsParentExecutionRequests()
-              ? Optional.of(
-                  executionPayloadManager.getParentExecutionRequestsForBlock(
-                      blockSlotState.getSlot(), parentRoot, blockProductionContext.payloadStatus()))
-              : Optional.empty();
-      final Set<UInt64> validatorsWithParentWithdrawalRequests = new HashSet<>();
-      parentExecutionRequests.ifPresent(
-          reqs -> {
-            for (final WithdrawalRequest wr : reqs.getWithdrawals()) {
-              spec.getValidatorIndex(blockSlotState, wr.getValidatorPubkey())
-                  .ifPresent(
-                      idx -> validatorsWithParentWithdrawalRequests.add(UInt64.valueOf(idx)));
-            }
-          });
+      final SafeFuture<Void> setVoluntaryExitsOrParentExecutionRequests;
 
-      // Collect exits to include
-      final SszList<SignedVoluntaryExit> voluntaryExits =
-          voluntaryExitPool.getItemsForBlock(
-              blockSlotState,
-              exit ->
-                  voluntaryExitPredicate(
-                      blockSlotState,
-                      exitedValidators,
-                      exit,
-                      validatorsWithParentWithdrawalRequests),
-              exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
+      // In Gloas, parent withdrawal request targeting a validator can invalidate a voluntary exit
+      // for this validator in the same block.
+      if (bodyBuilder.supportsParentExecutionRequests()) {
+        setVoluntaryExitsOrParentExecutionRequests =
+            executionPayloadManager
+                .getParentExecutionRequestsForBlock(
+                    blockSlotState.getSlot(), parentRoot, blockProductionContext.payloadStatus())
+                .thenAccept(
+                    parentExecutionRequests -> {
+                      final Set<UInt64> validatorsWithParentWithdrawalRequests = new HashSet<>();
+                      for (final WithdrawalRequest withdrawalRequest :
+                          parentExecutionRequests.getWithdrawals()) {
+                        spec.getValidatorIndex(
+                                blockSlotState, withdrawalRequest.getValidatorPubkey())
+                            .ifPresent(
+                                idx ->
+                                    validatorsWithParentWithdrawalRequests.add(
+                                        UInt64.valueOf(idx)));
+                      }
+                      final SszList<SignedVoluntaryExit> voluntaryExits =
+                          getVoluntaryExits(
+                              blockSlotState,
+                              exitedValidators,
+                              validatorsWithParentWithdrawalRequests);
+                      bodyBuilder.voluntaryExits(voluntaryExits);
+                      bodyBuilder.parentExecutionRequests(parentExecutionRequests);
+                    });
+      } else {
+        setVoluntaryExitsOrParentExecutionRequests =
+            SafeFuture.fromRunnable(
+                () -> {
+                  final SszList<SignedVoluntaryExit> voluntaryExits =
+                      getVoluntaryExits(blockSlotState, exitedValidators, new HashSet<>());
+                  bodyBuilder.voluntaryExits(voluntaryExits);
+                });
+      }
 
       bodyBuilder
           .randaoReveal(blockProductionContext.randaoReveal())
@@ -254,8 +262,7 @@ public class BlockOperationSelectorFactory {
           .attestations(attestations)
           .proposerSlashings(proposerSlashings)
           .attesterSlashings(attesterSlashings)
-          .deposits(depositProvider.getDeposits(blockSlotState, eth1Data))
-          .voluntaryExits(voluntaryExits);
+          .deposits(depositProvider.getDeposits(blockSlotState, eth1Data));
 
       // Optional fields introduced in later forks
 
@@ -271,18 +278,31 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      // Post-Gloas: Payload Attestations, Parent Execution Requests
+      // Post-Gloas: Payload Attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
         bodyBuilder.payloadAttestations(
             payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
       }
 
-      parentExecutionRequests.ifPresent(bodyBuilder::parentExecutionRequests);
-
-      return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)
+      return SafeFuture.allOfFailFast(
+              setExecutionDataComplete,
+              setExecutionPayloadBidComplete,
+              setVoluntaryExitsOrParentExecutionRequests)
           .thenPeek(
               __ -> blockProductionContext.blockProductionPerformance().beaconBlockBodyPrepared());
     };
+  }
+
+  private SszList<SignedVoluntaryExit> getVoluntaryExits(
+      final BeaconState blockSlotState,
+      final Set<UInt64> exitedValidators,
+      final Set<UInt64> validatorsWithParentWithdrawalRequests) {
+    return voluntaryExitPool.getItemsForBlock(
+        blockSlotState,
+        exit ->
+            voluntaryExitPredicate(
+                blockSlotState, exitedValidators, exit, validatorsWithParentWithdrawalRequests),
+        exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
   }
 
   private boolean voluntaryExitPredicate(
