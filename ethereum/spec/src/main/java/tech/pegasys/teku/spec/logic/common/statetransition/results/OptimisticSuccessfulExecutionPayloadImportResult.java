@@ -11,17 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.execution;
+package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
-public interface ReceivedExecutionPayloadEventsChannel extends VoidReturningChannelInterface {
+class OptimisticSuccessfulExecutionPayloadImportResult
+    extends SuccessfulExecutionPayloadImportResult {
 
-  /** Block passes validation rules of the `execution_payload` topic */
-  void onExecutionPayloadValidated(SignedExecutionPayloadEnvelope executionPayload);
+  OptimisticSuccessfulExecutionPayloadImportResult(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    super(executionPayload);
+  }
 
-  /** Successfully imported on the fork-choice `on_execution_payload` handler */
-  void onExecutionPayloadImported(
-      SignedExecutionPayloadEnvelope executionPayload, boolean executionOptimistic);
+  @Override
+  public boolean isImportedOptimistically() {
+    return true;
+  }
 }

@@ -15,6 +15,8 @@ package tech.pegasys.teku.storage.protoarray;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
  */
 class ForkChoiceModelGloas implements ForkChoiceModel {
 
+  private static final Logger LOG = LogManager.getLogger();
   private final UInt64 firstGloasSlot;
   private final int payloadTimelyThreshold;
   private final int dataAvailabilityTimelyThreshold;
@@ -343,6 +346,19 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final Bytes32 blockRoot,
       final ProtoArray protoArray,
       final Optional<Bytes32> proposerBoostRoot) {
+
+    // in spec, would call is_payload_verified
+    //    if not is_payload_verified(store, root):
+    //        return False
+    final Optional<ProtoNode> node =
+        blockNodeIndex.getFullNode(blockRoot).flatMap(protoArray::getNode);
+    if (node.isEmpty() || !node.get().isFullyValidated()) {
+      LOG.debug(
+          "Node not found or the node is not fully validated, dont extend payload at blockroot {}",
+          blockRoot);
+      return false;
+    }
+
     if (isPayloadTimely(blockNodeIndex, blockRoot)
         && isPayloadDataAvailable(blockNodeIndex, blockRoot)) {
       return true;
@@ -443,6 +459,31 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     // In the Gloas three-state tree the base PENDING node is structural only. Candidate heads are
     // the EMPTY/FULL children selected from get_node_children(...).
     return node.getPayloadStatus() != ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
+  }
+
+  @Override
+  public ProtoNode resolveBestDescendant(
+      final ProtoNode candidate,
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 currentSlot,
+      final Optional<Bytes32> proposerBoostRoot) {
+    // The structural chain-walk in ProtoArray.findHead follows stale bestDescendantIndex pointers
+    // that may have been set when only EMPTY existed under a base PENDING node. When a FULL
+    // sibling is added later via onExecutionPayload, BASE.bestChild is correctly flipped to FULL
+    // locally, but ancestor bestDescendantIndex pointers still point at EMPTY. Redirect the
+    // landing point to BASE.bestChild — the model-preferred sibling — using the candidate's own
+    // block root since PENDING/EMPTY/FULL all share it.
+    if (candidate.getBestDescendantIndex().isPresent() && !candidate.isInvalid()) {
+      return protoArray.getNodeByIndex(candidate.getBestDescendantIndex().get());
+    }
+
+    return resolveBaseNode(blockNodeIndex, candidate.getBlockRoot())
+        .flatMap(protoArray::getNode)
+        .flatMap(ProtoNode::getBestChildIndex)
+        .map(protoArray::getNodeByIndex)
+        .filter(sibling -> !sibling.isInvalid())
+        .orElse(candidate);
   }
 
   @Override

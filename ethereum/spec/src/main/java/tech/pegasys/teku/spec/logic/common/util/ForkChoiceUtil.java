@@ -641,7 +641,9 @@ public class ForkChoiceUtil {
   }
 
   public void applyExecutionPayloadToStore(
-      final MutableStore store, final SignedExecutionPayloadEnvelope signedEnvelope) {
+      final MutableStore store,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final boolean executionOptimistic) {
     // No-op until the runtime wiring switches to the Gloas payload path.
   }
 
