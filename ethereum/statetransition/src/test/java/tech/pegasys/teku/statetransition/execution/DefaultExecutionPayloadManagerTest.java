@@ -150,16 +150,12 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
-  public void shouldProcessExecutionPayloadWhichHaveBeenReceivedBeforeTheBlock() {
+  public void shouldProcessExecutionPayloadWhichHasBeenReceivedBeforeTheBlock() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                ExecutionPayloadImportResult.FAILED_UNKNOWN_BEACON_BLOCK_ROOT));
 
     // should just cache the payload for future processing
     SafeFutureAssert.safeJoin(
@@ -172,13 +168,13 @@ class DefaultExecutionPayloadManagerTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
         .thenReturn(SafeFuture.completedFuture(successfulImportResult));
+
     executionPayloadManager.onBlockImported(block, false);
 
     asyncRunner.executeDueActions();
     // verify the payload has been processed
     verify(receivedExecutionPayloadEventsChannelPublisher)
         .onExecutionPayloadImported(signedExecutionPayload, false);
-
     // verify the payload has been published
     assertThat(publishedExecutionPayload).hasValue(signedExecutionPayload);
   }

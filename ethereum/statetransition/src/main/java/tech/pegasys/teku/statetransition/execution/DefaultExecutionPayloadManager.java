@@ -170,12 +170,6 @@ public class DefaultExecutionPayloadManager
             });
   }
 
-  // import will be triggered when the corresponding block is imported
-  private void addToPendingExecutionPayloads(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    pendingExecutionPayloads.put(executionPayload.getBlockRootAndBuilderIndex(), executionPayload);
-  }
-
   private void logFailedExecutionPayloadImport(
       final SignedExecutionPayloadEnvelope executionPayload,
       final ExecutionPayloadImportResult importResult) {
