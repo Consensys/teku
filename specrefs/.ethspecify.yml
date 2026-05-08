@@ -370,7 +370,6 @@ specrefs:
       - process_execution_payload#gloas
       - process_proposer_slashing#gloas
       - process_slot#gloas
-      - should_extend_payload#gloas
       - update_latest_messages#gloas
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
@@ -388,7 +387,6 @@ specrefs:
       - is_data_available#gloas
       - is_payload_data_available#gloas
       - get_latest_message_epoch#gloas
-      - is_payload_verified#gloas
       - process_parent_execution_payload#gloas
       - settle_builder_payment#gloas
       - verify_execution_payload_envelope#gloas

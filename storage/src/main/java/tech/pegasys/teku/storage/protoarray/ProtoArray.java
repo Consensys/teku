@@ -285,13 +285,21 @@ public class ProtoArray {
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
     ProtoNode bestNode = getNodeByIndex(bestDescendantIndex);
 
-    // Normally the best descendant index would point straight to chain head, but onBlock only
-    // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
-    // change back up and everything works, but we run findHead to determine if the new block should
-    // become the best head so need to follow down the chain.
+    // Normally the best descendant index would point straight to chain head, but onBlock /
+    // onExecutionPayload only update the immediate parent, not all the ancestors. When
+    // applyScoreChanges runs it propagates the change back up and everything works, but we run
+    // findHead to determine if the new block should become the best head so need to follow down
+    // the chain.
+    //
+    // After each descent step, ask the per-slot fork-choice model to redirect to the
+    // model-preferred sibling (e.g. GLOAS BASE.bestChild flipping EMPTY→FULL after
+    // onExecutionPayload). This mirrors the spec's get_head semantics, which picks the preferred
+    // child at every level rather than just at the leaf.
+    bestNode = headSelectionContext.resolveBestDescendant(bestNode, this);
     while (bestNode.getBestDescendantIndex().isPresent() && !bestNode.isInvalid()) {
       bestDescendantIndex = bestNode.getBestDescendantIndex().get();
-      bestNode = getNodeByIndex(bestDescendantIndex);
+      bestNode =
+          headSelectionContext.resolveBestDescendant(getNodeByIndex(bestDescendantIndex), this);
     }
 
     // Walk backwards to find the last valid node in the chain

@@ -264,7 +264,7 @@ allprojects {
 			target '*.gradle', 'gradle/*.gradle'
 			trimTrailingWhitespace()
 			endWithNewline()
-			greclipse()
+			greclipse('4.26')
 		}
 	}
 

@@ -70,9 +70,11 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   @Override
   public void applyExecutionPayloadToStore(
-      final MutableStore store, final SignedExecutionPayloadEnvelope signedEnvelope) {
+      final MutableStore store,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final boolean executionOptimistic) {
     // Add new execution payload to store
-    store.putExecutionPayload(signedEnvelope);
+    store.putExecutionPayload(signedEnvelope, executionOptimistic);
   }
 
   @Override
