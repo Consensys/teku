@@ -1140,6 +1140,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           } else {
             preparation = SafeFuture.COMPLETE;
           }
+          // Always notify, even when proposerHead is unchanged. The proposing slot turns this into
+          // the block-production fcU that pins payload attributes and asks the EL to start
+          // building.
           notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
               Optional.of(slot), Optional.of(proposerHead));
           return preparation.thenApply(__ -> proposerHead);
