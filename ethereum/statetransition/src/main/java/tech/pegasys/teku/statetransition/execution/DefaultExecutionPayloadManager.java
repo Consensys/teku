@@ -174,6 +174,12 @@ public class DefaultExecutionPayloadManager
       final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
     final SpecVersion specVersion = spec.atSlot(slot);
     final UpdatableStore store = recentChainData.getStore();
+
+    // here we want to peek the execution requests based on the head we selected for block
+    // production.
+    // if we are building on EMPTY we return a ZERO execution request object, otherwise we expect
+    // the payload to be already imported.
+
     if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
       return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
           .getExecutionRequestsSchema()

@@ -150,16 +150,22 @@ class CombinedChainDataClientTest {
   }
 
   @Test
-  void getStateForBlockProduction_processesChainHeadState() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
-    when(chainHead.getState()).thenReturn(SafeFuture.completedFuture(state));
+  void getStateForBlockProduction_retrievesStateUsingSelectedParentRoot() {
+    final UInt64 proposalSlot = UInt64.valueOf(2);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final BeaconState state = dataStructureUtil.randomBeaconState(proposalSlot);
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(proposalSlot, parentRoot);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(chainHead.getRoot()).thenReturn(parentRoot);
+    when(store.retrieveBlockState(slotAndBlockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<BeaconState> future =
-        client.getStateForBlockProduction(chainHead, UInt64.valueOf(2));
+        client.getStateForBlockProduction(chainHead, proposalSlot);
 
-    SafeFutureAssert.assertThatSafeFuture(future)
-        .isCompletedWithValueMatching(s -> s.getSlot().equals(UInt64.valueOf(2)));
-    verify(chainHead).getState();
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithValue(state);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
+    verify(chainHead, never()).getState();
   }
 
   @Test
