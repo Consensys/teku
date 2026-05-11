@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.versions.gloas.withdrawals;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -59,12 +58,9 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
   public void processWithdrawals(final MutableBeaconState state) {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     // Return early if the parent block is empty
-    final boolean isGenesisBlock = stateGloas.getLatestBlockHash().equals(Bytes32.ZERO);
-    final boolean isParentBlockEmpty =
-        !stateGloas
-            .getLatestBlockHash()
-            .equals(stateGloas.getLatestExecutionPayloadBid().getBlockHash());
-    if (isGenesisBlock || isParentBlockEmpty) {
+    if (!stateGloas
+        .getLatestBlockHash()
+        .equals(stateGloas.getLatestExecutionPayloadBid().getBlockHash())) {
       return;
     }
     super.processWithdrawals(state);

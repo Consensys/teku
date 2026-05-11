@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
@@ -56,32 +57,37 @@ public class ProposerPreferencesPublisher {
   }
 
   public void onProposerDutiesLoaded(final UInt64 epoch, final ProposerDuties proposerDuties) {
-    if (!spec.isProposerPreferencesAvailableAtSlot(spec.computeStartSlotAtEpoch(epoch))) {
+    if (!spec.isProposerPreferencesAvailableAtEpoch(epoch)) {
       return;
     }
 
-    final List<ProposerDuty> ourProposerDuties =
+    final List<ProposerDuty> ownedProposerDuties =
         proposerDuties.getDuties().stream()
             .filter(duty -> ownedValidators.hasValidator(duty.getPublicKey()))
             .toList();
 
-    if (ourProposerDuties.isEmpty()) {
-      LOG.debug("No proposal proposerDuties for our validators in epoch {}", epoch);
+    if (ownedProposerDuties.isEmpty()) {
+      LOG.debug("No owned validators have proposer duties in epoch {}", epoch);
       return;
     }
+
+    // Gloas's get_proposer_dependent_root(state, e) returns the block root at
+    // start_of_(e-1) - 1. For next-epoch duties, BlockProposalUtilFulu's
+    // getBlockProposalDependentRoot returns the same value, so we reuse it here.
+    final Bytes32 dependentRoot = proposerDuties.getDependentRoot();
 
     final ProposerPreferencesUtil preferencesUtil = spec.getProposerPreferencesUtil(epoch);
 
     forkProvider
-        .getForkInfo(ourProposerDuties.getFirst().getSlot())
+        .getForkInfo(ownedProposerDuties.getFirst().getSlot())
         .thenCompose(
             forkInfo ->
                 SafeFuture.collectAll(
-                        ourProposerDuties.stream()
+                        ownedProposerDuties.stream()
                             .map(
-                                proposerDuty ->
+                                duty ->
                                     createSignedProposerPreferences(
-                                        proposerDuty, forkInfo, preferencesUtil)))
+                                        duty, dependentRoot, forkInfo, preferencesUtil)))
                     .thenCompose(
                         signedPreferences -> {
                           final List<SignedProposerPreferences> preferencesList =
@@ -103,6 +109,7 @@ public class ProposerPreferencesPublisher {
 
   private SafeFuture<Optional<SignedProposerPreferences>> createSignedProposerPreferences(
       final ProposerDuty duty,
+      final Bytes32 dependentRoot,
       final ForkInfo forkInfo,
       final ProposerPreferencesUtil preferencesUtil) {
     final Optional<Validator> maybeValidator = ownedValidators.getValidator(duty.getPublicKey());
@@ -119,12 +126,13 @@ public class ProposerPreferencesPublisher {
     final UInt64 gasLimit = proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
     final Optional<ProposerPreferences> maybePreferences =
         preferencesUtil.createProposerPreferences(
+            dependentRoot,
             duty.getSlot(),
             UInt64.valueOf(duty.getValidatorIndex()),
             maybeFeeRecipient.get(),
             gasLimit);
     if (maybePreferences.isEmpty()) {
-      // Pre Gloas the util is NOOP, nothing to publish
+      // Pre-Gloas, the util is NOOP, nothing to publish
       return SafeFuture.completedFuture(Optional.empty());
     }
     final ProposerPreferences preferences = maybePreferences.get();

@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.5
+version: v1.7.0-alpha.7
 style: full
 
 specrefs:
@@ -359,7 +359,6 @@ specrefs:
       - get_ptc_assignment#gloas
       - get_weight#gloas
       - is_merge_transition_complete#gloas
-      - is_payload_timely#gloas
       - is_supporting_vote#gloas
       - notify_ptc_messages#gloas
       - on_block#gloas
@@ -401,10 +400,7 @@ specrefs:
       - get_inclusion_list_committee_assignment#heze
       - get_inclusion_list_signature#heze
       - get_inclusion_list_store#heze
-      - get_inclusion_list_submission_due_ms#heze
       - get_inclusion_list_transactions#heze
-      - get_proposer_inclusion_list_cutoff_ms#heze
-      - get_view_freeze_cutoff_ms#heze
       - is_inclusion_list_bits_inclusive#heze
       - is_payload_inclusion_list_satisfied#heze
       - is_valid_inclusion_list_signature#heze

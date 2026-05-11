@@ -119,7 +119,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor())
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/get_parent_payload_status", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_execution_payload_envelope", new ForkChoiceTestExecutor())
+          // TODO-GLOAS: re-enable on_execution_payload_envelope__valid once the spec test fixture
+          // is fixed; the block in the fixture is not correctly built over the payload.
+          .put(
+              "fork_choice/on_execution_payload_envelope",
+              new ForkChoiceTestExecutor("on_execution_payload_envelope__valid"))
           // Fork choice generated test types
           .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
           .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())

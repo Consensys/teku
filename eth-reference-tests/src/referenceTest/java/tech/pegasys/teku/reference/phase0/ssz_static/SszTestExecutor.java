@@ -153,6 +153,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/PartialDataColumnHeader", IGNORE_TESTS)
           .put("ssz_static/PartialDataColumnPartsMetadata", IGNORE_TESTS)
           .put("ssz_static/PartialDataColumnSidecar", IGNORE_TESTS)
+          .put("ssz_static/PartialDataColumnGroupID", IGNORE_TESTS)
 
           // Bellatrix types
           .put(

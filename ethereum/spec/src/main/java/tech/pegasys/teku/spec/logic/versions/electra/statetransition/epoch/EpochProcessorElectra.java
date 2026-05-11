@@ -209,6 +209,14 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         deposit.getSignature());
   }
 
+  /**
+   * Per-epoch churn budget for processing pending deposits. Electra uses the activation/exit churn;
+   * later forks (Gloas, EIP-8061) override this to use the activation-only churn.
+   */
+  protected UInt64 getPendingDepositsChurnLimit(final MutableBeaconStateElectra state) {
+    return stateAccessorsElectra.getActivationExitChurnLimit(state);
+  }
+
   /** process_pending_deposits */
   @Override
   public void processPendingDeposits(final MutableBeaconState state) {
@@ -216,9 +224,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
     final UInt64 availableForProcessing =
-        stateElectra
-            .getDepositBalanceToConsume()
-            .plus(stateAccessorsElectra.getActivationExitChurnLimit(stateElectra));
+        stateElectra.getDepositBalanceToConsume().plus(getPendingDepositsChurnLimit(stateElectra));
     UInt64 processedAmount = UInt64.ZERO;
     int nextDepositIndex = 0;
     final List<PendingDeposit> depositsToPostpone = new ArrayList<>();

@@ -91,10 +91,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
     return UInt64.valueOf(validatorIndex.longValue() & ~BUILDER_INDEX_FLAG.longValue());
   }
 
-  public boolean isProposerPreferencesAvailable() {
-    return true;
-  }
-
   @Override
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final UInt64 currentEpoch, final UInt64 epoch) {
