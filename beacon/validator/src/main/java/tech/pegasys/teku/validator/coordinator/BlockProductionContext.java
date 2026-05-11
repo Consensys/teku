@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -22,47 +24,39 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-final class BlockProductionTestUtil {
+public record BlockProductionContext(
+    UInt64 proposalSlot,
+    BeaconState blockSlotState,
+    Bytes32 parentRoot,
+    BLSSignature randaoReveal,
+    Optional<Bytes32> graffiti,
+    Optional<UInt64> requestedBuilderBoostFactor,
+    ForkChoicePayloadStatus payloadStatus,
+    BlockProductionPerformance blockProductionPerformance) {
 
-  private static final ForkChoicePayloadStatus DEFAULT_PAYLOAD_STATUS =
-      ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
-
-  private BlockProductionTestUtil() {}
-
-  static BlockProductionContext blockProductionContext(
+  public static BlockProductionContext create(
       final Spec spec,
       final UInt64 proposalSlot,
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor,
+      final ForkChoicePayloadStatus payloadStatus,
       final BlockProductionPerformance blockProductionPerformance) {
-    return BlockProductionContext.create(
-        spec,
-        proposalSlot,
-        blockSlotState,
-        randaoReveal,
-        graffiti,
-        requestedBuilderBoostFactor,
-        DEFAULT_PAYLOAD_STATUS,
-        blockProductionPerformance);
-  }
-
-  static BlockProductionContext blockProductionContext(
-      final Bytes32 parentRoot,
-      final BeaconState blockSlotState,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final BlockProductionPerformance blockProductionPerformance) {
-    return new BlockProductionContext(
+    checkArgument(
+        blockSlotState.getSlot().equals(proposalSlot),
+        "Block slot state for slot %s but should be for slot %s",
         blockSlotState.getSlot(),
+        proposalSlot);
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
+    return new BlockProductionContext(
+        proposalSlot,
         blockSlotState,
         parentRoot,
         randaoReveal,
         graffiti,
         requestedBuilderBoostFactor,
-        DEFAULT_PAYLOAD_STATUS,
+        payloadStatus,
         blockProductionPerformance);
   }
 }

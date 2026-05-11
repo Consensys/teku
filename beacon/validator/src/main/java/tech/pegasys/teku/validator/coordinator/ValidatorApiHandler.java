@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
@@ -1233,43 +1232,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   requestedBuilderBoostFactor,
                   payloadStatus,
                   blockProductionPerformance));
-    }
-  }
-
-  public record BlockProductionContext(
-      UInt64 proposalSlot,
-      BeaconState blockSlotState,
-      Bytes32 parentRoot,
-      BLSSignature randaoReveal,
-      Optional<Bytes32> graffiti,
-      Optional<UInt64> requestedBuilderBoostFactor,
-      ForkChoicePayloadStatus payloadStatus,
-      BlockProductionPerformance blockProductionPerformance) {
-
-    public static BlockProductionContext create(
-        final Spec spec,
-        final UInt64 proposalSlot,
-        final BeaconState blockSlotState,
-        final BLSSignature randaoReveal,
-        final Optional<Bytes32> graffiti,
-        final Optional<UInt64> requestedBuilderBoostFactor,
-        final ForkChoicePayloadStatus payloadStatus,
-        final BlockProductionPerformance blockProductionPerformance) {
-      checkArgument(
-          blockSlotState.getSlot().equals(proposalSlot),
-          "Block slot state for slot %s but should be for slot %s",
-          blockSlotState.getSlot(),
-          proposalSlot);
-      final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
-      return new BlockProductionContext(
-          proposalSlot,
-          blockSlotState,
-          parentRoot,
-          randaoReveal,
-          graffiti,
-          requestedBuilderBoostFactor,
-          payloadStatus,
-          blockProductionPerformance);
     }
   }
 }
