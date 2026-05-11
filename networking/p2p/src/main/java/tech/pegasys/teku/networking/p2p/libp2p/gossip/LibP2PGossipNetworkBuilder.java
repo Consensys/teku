@@ -121,7 +121,7 @@ public class LibP2PGossipNetworkBuilder {
         new TTLSeenCache<>(
             new FastIdSeenCache<>(msg -> Bytes.wrap(msg.messageSha256())),
             gossipParams.getSeenTTL(),
-            builder.getCurrentTimeSupplier());
+            builder.getCurrentTimeSuppluer());
 
     builder.setParams(gossipParams);
     builder.setScoreParams(scoreParams);
