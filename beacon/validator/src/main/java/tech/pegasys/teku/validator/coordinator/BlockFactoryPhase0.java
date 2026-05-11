@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
@@ -49,11 +48,6 @@ public class BlockFactoryPhase0 implements BlockFactory {
       final BlockProductionContext blockProductionContext) {
     final BeaconState blockSlotState = blockProductionContext.blockSlotState();
     final UInt64 proposalSlot = blockProductionContext.proposalSlot();
-    checkArgument(
-        blockSlotState.getSlot().equals(proposalSlot),
-        "Block slot state for slot %s but should be for slot %s",
-        blockSlotState.getSlot(),
-        proposalSlot);
 
     return spec.createNewUnsignedBlock(
             proposalSlot,
