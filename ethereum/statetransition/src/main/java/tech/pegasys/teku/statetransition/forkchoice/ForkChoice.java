@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
@@ -49,9 +50,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -82,6 +86,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
@@ -107,6 +112,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
   private final AtomicReference<UInt64> lastProcessHeadSlot = new AtomicReference<>();
@@ -125,6 +131,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem,
       final AsyncBLSSignatureVerifier signatureVerifier) {
@@ -138,6 +145,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
@@ -169,6 +177,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         false,
+        LateBlockReorgPreparationHandler.NOOP,
         DebugDataDumper.NOOP,
         metricsSystem,
         AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
@@ -185,13 +194,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   && forkChoiceUpdatedResult.getPayloadStatus().hasInvalidStatus()) {
                 LOG.error(
                     "Execution engine considers INVALID recently provided terminal block {}",
-                    forkChoiceUpdatedResultNotification
-                        .forkChoiceState()
-                        .getHeadExecutionBlockHash());
+                    forkChoiceUpdatedResultNotification.forkChoiceState().headExecutionBlockHash());
                 return;
               }
               onExecutionPayloadResult(
-                  forkChoiceUpdatedResultNotification.forkChoiceState().getHeadBlockRoot(),
+                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock().blockRoot(),
                   forkChoiceUpdatedResult.getPayloadStatus());
             })
         .finish(
@@ -205,7 +212,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public SafeFuture<Boolean> processHead() {
+  public SafeFuture<Optional<ChainHead>> processHead() {
     return processHead(Optional.empty(), false);
   }
 
@@ -362,11 +369,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     processHead().join();
   }
 
-  SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
+  SafeFuture<Optional<ChainHead>> processHead(final UInt64 nodeSlot) {
     return processHead(Optional.of(nodeSlot), false);
   }
 
-  private SafeFuture<Boolean> processHead(
+  private SafeFuture<Optional<ChainHead>> processHead(
       final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
@@ -387,27 +394,35 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             retrievedJustifiedCheckpoint::getRoot,
                             justifiedCheckpoint::getEpoch,
                             justifiedCheckpoint::getRoot);
-                        return false;
+                        return recentChainData.getChainHead();
                       }
                       if (maybeJustifiedCheckpointState.isEmpty()) {
                         LOG.debug(
                             "Retrieved justified checkpoint state for {} was empty, cannot update head given current information.",
                             justifiedCheckpoint::getRoot);
-                        return false;
+                        return recentChainData.getChainHead();
                       }
-                      updateHeadTransaction(
-                          nodeSlot,
-                          maybeJustifiedCheckpointState.orElseThrow(),
-                          finalizedCheckpoint,
-                          justifiedCheckpoint);
+                      final Optional<ChainHead> newHead =
+                          updateHeadTransaction(
+                              nodeSlot,
+                              maybeJustifiedCheckpointState.orElseThrow(),
+                              finalizedCheckpoint,
+                              justifiedCheckpoint);
                       nodeSlot.ifPresent(lastProcessHeadSlot::set);
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-                          isPreProposal ? nodeSlot : Optional.empty());
-                      return true;
+
+                      if (isPreProposal) {
+                        checkState(newHead.isPresent(), "We need a chainHead for block production");
+                        // Pre-proposal callers (prepareForBlockProduction) handle the proposer-head
+                        // override and the resulting fcU notification themselves.
+                      } else {
+                        notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+                            Optional.empty(), Optional.empty());
+                      }
+                      return newHead;
                     }));
   }
 
-  private void updateHeadTransaction(
+  private Optional<ChainHead> updateHeadTransaction(
       final Optional<UInt64> nodeSlot,
       final BeaconState justifiedState,
       final Checkpoint finalizedCheckpoint,
@@ -443,6 +458,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       // successful updateHead call
       transaction.commit();
     }
+
+    return recentChainData.getChainHead();
   }
 
   /**
@@ -722,7 +739,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     updateForkChoiceForImportedBlock(
         block, shouldUpdateProposerBoostRoot, result, forkChoiceStrategy);
     if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
-      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
     }
     return result;
   }
@@ -774,7 +791,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
 
     return ExecutionPayloadImportResult.successful(signedEnvelope);
   }
@@ -984,8 +1001,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-      final Optional<UInt64> proposingSlot) {
-    final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync();
+      final Optional<UInt64> proposingSlot, final Optional<ChainHead> proposingOnHead) {
+    checkState(
+        proposingSlot.isPresent() == proposingOnHead.isPresent(),
+        "proposing slot and proposingOnHead must be consistent");
+
+    final ForkChoiceState forkChoiceState =
+        forkChoiceStateProvider.getForkChoiceStateSync(proposingOnHead);
 
     forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
     getProposerHeadSelectedCounter.labels("fork_choice").inc();
@@ -1058,7 +1080,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return lastProcessHeadSlot.get();
   }
 
-  SafeFuture<Void> prepareForBlockProduction(
+  SafeFuture<ChainHead> prepareForBlockProduction(
       final UInt64 slot, final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slotStartTimeMillis =
         spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
@@ -1072,7 +1094,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           "Block creation requested more than {}ms before the start of slot {}",
           BLOCK_CREATION_TOLERANCE_MS,
           slot);
-      return SafeFuture.COMPLETE;
+      return SafeFuture.completedFuture(recentChainData.getChainHead().orElseThrow());
     }
 
     return SafeFuture.allOf(
@@ -1082,7 +1104,106 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             applyDeferredAttestations(slot)
                 .thenPeek(__ -> blockProductionPerformance.prepareApplyDeferredAttestations()))
         .thenCompose(__ -> processHead(Optional.of(slot), true))
-        .thenRun(blockProductionPerformance::prepareProcessHead);
+        .thenApply(Optional::orElseThrow)
+        .thenCompose(
+            canonicalHead ->
+                applyProposerHeadOverrideAndNotify(canonicalHead, slot, blockProductionPerformance))
+        .thenPeek(__ -> blockProductionPerformance.prepareProcessHead());
+  }
+
+  /**
+   * If late-block-reorg is enabled and {@code get_proposer_head} flips the proposer to the parent
+   * of the canonical head, materialize a {@link ChainHead} for the parent (with the parent's
+   * FULL/EMPTY payload variant) and trigger the late-block reorg preparation handler. The
+   * proposer-head fcU notification fires from the same event-thread tick (notify requires the
+   * fork-choice event thread). Returned future completes after the preparation handler completes,
+   * mirroring the previous behavior of {@code CombinedChainDataClient.getStateForBlockProduction}
+   * which awaited preparation before returning the state.
+   */
+  private SafeFuture<ChainHead> applyProposerHeadOverrideAndNotify(
+      final ChainHead canonicalHead,
+      final UInt64 slot,
+      final BlockProductionPerformance performance) {
+    return forkChoiceExecutor.executeFuture(
+        () -> {
+          final Optional<ChainHead> overriddenHead =
+              resolveProposerHeadOverride(canonicalHead, slot);
+          final ChainHead proposerHead = overriddenHead.orElse(canonicalHead);
+          final SafeFuture<Void> preparation;
+          if (overriddenHead.isPresent()) {
+            // Run preparation in parallel; await it before returning so block-body construction
+            // sees the updated operation pools.
+            preparation =
+                lateBlockReorgPreparationHandler
+                    .onLateBlockReorgPreparation(proposerHead.getSlot(), canonicalHead.getRoot())
+                    .thenPeek(__ -> performance.lateBlockReorgPreparationCompleted());
+          } else {
+            preparation = SafeFuture.COMPLETE;
+          }
+          // Always notify, even when proposerHead is unchanged. The proposing slot turns this into
+          // the block-production fcU that pins payload attributes and asks the EL to start
+          // building.
+          notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+              Optional.of(slot), Optional.of(proposerHead));
+          return preparation.thenApply(__ -> proposerHead);
+        });
+  }
+
+  /**
+   * Returns the proposer-head {@link ChainHead} when {@code get_proposer_head} flips the proposer
+   * to the parent of the canonical head, or {@link Optional#empty()} when no override is needed.
+   */
+  private Optional<ChainHead> resolveProposerHeadOverride(
+      final ChainHead canonicalHead, final UInt64 slot) {
+    forkChoiceExecutor.checkOnEventThread();
+    if (!forkChoiceLateBlockReorgEnabled) {
+      return Optional.empty();
+    }
+    final Bytes32 canonicalRoot = canonicalHead.getRoot();
+    final Bytes32 proposerHeadRoot = recentChainData.getProposerHead(canonicalRoot, slot);
+    if (proposerHeadRoot.equals(canonicalRoot)) {
+      return Optional.empty();
+    }
+
+    LOG.debug(
+        "prepareForBlockProduction overriding head {} with proposer head {} for slot {}",
+        canonicalRoot,
+        proposerHeadRoot,
+        slot);
+
+    final ForkChoiceStrategy strategy = getForkChoiceStrategy();
+    final UpdatableStore store = recentChainData.getStore();
+    final ForkChoicePayloadStatus parentPayloadStatus =
+        strategy.shouldExtendPayload(store, proposerHeadRoot)
+            ? ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
+            : ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
+    // Phase0/non-Gloas blocks only have a base node; fall back if the variant lookup misses.
+    final Optional<ProtoNodeData> parentBlockData =
+        strategy
+            .getBlockData(proposerHeadRoot, parentPayloadStatus)
+            .or(() -> strategy.getBlockData(proposerHeadRoot));
+
+    if (parentBlockData.isEmpty()) {
+      LOG.warn(
+          "Unable to resolve proposer head {} in fork choice; sticking with canonical head {}",
+          proposerHeadRoot,
+          canonicalRoot);
+      return Optional.empty();
+    }
+
+    final SafeFuture<StateAndBlockSummary> parentStateAndBlock =
+        store
+            .retrieveStateAndBlockSummary(proposerHeadRoot)
+            .thenApply(
+                maybe ->
+                    maybe.orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to load proposer head state for %s while preparing block production at slot %s",
+                                    proposerHeadRoot, slot))));
+
+    return Optional.of(ChainHead.create(parentBlockData.get(), parentStateAndBlock));
   }
 
   private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {

@@ -62,9 +62,9 @@ public class PayloadAttributesV1 {
     return payloadBuildingAttributes.map(
         payloadAttributes ->
             new PayloadAttributesV1(
-                payloadAttributes.getTimestamp(),
-                payloadAttributes.getPrevRandao(),
-                payloadAttributes.getFeeRecipient()));
+                payloadAttributes.timestamp(),
+                payloadAttributes.prevRandao(),
+                payloadAttributes.feeRecipient()));
   }
 
   @Override

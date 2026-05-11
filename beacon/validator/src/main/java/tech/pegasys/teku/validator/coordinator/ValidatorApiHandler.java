@@ -89,6 +89,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -118,6 +119,7 @@ import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPo
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -467,18 +469,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           LOG.info("Preparing block production for slot {}", slot);
           final BlockProductionPerformance productionPerformance =
               blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
-          final SafeFuture<Optional<BeaconState>> state =
-              forkChoiceTrigger
-                  .prepareForBlockProduction(slot, productionPerformance)
+          final SafeFuture<ChainHead> maybeChainHead =
+              forkChoiceTrigger.prepareForBlockProduction(slot, productionPerformance);
+
+          final SafeFuture<BeaconState> stateFuture =
+              maybeChainHead
                   .thenCompose(
-                      ___ ->
-                          combinedChainDataClient.getStateForBlockProduction(
-                              slot,
-                              forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
-                              productionPerformance::lateBlockReorgPreparationCompleted))
+                      chainHead ->
+                          combinedChainDataClient.getStateForBlockProduction(chainHead, slot))
                   .thenPeek(___ -> productionPerformance.getState());
 
-          return new BlockProductionPreparationContext(state, productionPerformance);
+          return new BlockProductionPreparationContext(
+              stateFuture,
+              maybeChainHead.thenApply(ChainHead::getPayloadStatus),
+              productionPerformance);
         });
   }
 
@@ -493,61 +497,36 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return NodeSyncingException.failedFuture();
     }
 
-    final BlockProductionPreparationContext blockProductionContext =
+    final BlockProductionPreparationContext blockProductionPreparationContext =
         prepareBlockProductionInternal(slot);
-    final BlockProductionPerformance blockProductionPerformance =
-        blockProductionContext.blockProductionPerformance;
 
-    blockProductionPerformance.validatorBlockRequested();
+    blockProductionPreparationContext.blockProductionPerformance.validatorBlockRequested();
 
-    return blockProductionContext
-        .stateFuture
-        .thenCompose(
-            blockSlotState ->
-                createBlock(
-                    slot,
-                    randaoReveal,
-                    graffiti,
-                    requestedBuilderBoostFactor,
-                    blockSlotState,
-                    blockProductionPerformance))
+    return blockProductionPreparationContext
+        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
+        .thenCompose(this::createBlock)
         .thenPeek(
             maybeBlock ->
                 maybeBlock.ifPresent(
                     block ->
                         performanceTracker.saveProducedBlock(
                             block.blockContainer().getBlock().getSlotAndBlockRoot())))
-        .alwaysRun(blockProductionPerformance::complete);
+        .alwaysRun(blockProductionPreparationContext.blockProductionPerformance::complete);
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createBlock(
-      final UInt64 slot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final Optional<BeaconState> maybeBlockSlotState,
-      final BlockProductionPerformance blockProductionPerformance) {
-    if (maybeBlockSlotState.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    final BeaconState blockSlotState = maybeBlockSlotState.get();
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.decrement());
-    LOG.debug("parent block {}:({})", parentRoot, slot);
-    if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
+      final BlockProductionContext blockProductionContext) {
+    LOG.debug(
+        "parent block {}:({})",
+        blockProductionContext.parentRoot(),
+        blockProductionContext.proposalSlot());
+    if (combinedChainDataClient.isOptimisticBlock(blockProductionContext.parentRoot())) {
       LOG.warn(
           "Unable to produce block at slot {} because parent has optimistically validated payload",
-          slot);
+          blockProductionContext.proposalSlot());
       throw new NodeSyncingException();
     }
-    return blockFactory
-        .createUnsignedBlock(
-            blockSlotState,
-            slot,
-            randaoReveal,
-            graffiti,
-            requestedBuilderBoostFactor,
-            blockProductionPerformance)
-        .thenApply(Optional::of);
+    return blockFactory.createUnsignedBlock(blockProductionContext).thenApply(Optional::of);
   }
 
   @Override
@@ -1231,6 +1210,28 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   private record BlockProductionPreparationContext(
-      SafeFuture<Optional<BeaconState>> stateFuture,
-      BlockProductionPerformance blockProductionPerformance) {}
+      SafeFuture<BeaconState> stateFuture,
+      SafeFuture<ForkChoicePayloadStatus> payloadStatusFuture,
+      BlockProductionPerformance blockProductionPerformance) {
+
+    SafeFuture<BlockProductionContext> toBlockProductionContext(
+        final Spec spec,
+        final UInt64 proposalSlot,
+        final BLSSignature randaoReveal,
+        final Optional<Bytes32> graffiti,
+        final Optional<UInt64> requestedBuilderBoostFactor) {
+      return stateFuture.thenCombine(
+          payloadStatusFuture,
+          (state, payloadStatus) ->
+              BlockProductionContext.create(
+                  spec,
+                  proposalSlot,
+                  state,
+                  randaoReveal,
+                  graffiti,
+                  requestedBuilderBoostFactor,
+                  payloadStatus,
+                  blockProductionPerformance));
+    }
+  }
 }

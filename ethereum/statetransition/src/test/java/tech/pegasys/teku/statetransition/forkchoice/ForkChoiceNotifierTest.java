@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
@@ -127,8 +128,7 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager,
-            false);
+            proposersDataManager);
     notifier.onSyncingStatusChanged(true); // Start in sync to make testing easier
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -171,8 +171,7 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager,
-            false);
+            proposersDataManager);
     notifier.onSyncingStatusChanged(true);
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -232,8 +231,7 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
-  void
-      onForkChoiceUpdated_shouldNotSendIfShouldShouldOverrideForkChoiceUpdateAndLateBlockReorgIsEnabled() {
+  void onForkChoiceUpdated_shouldSendWhenProposingSlotAlreadyResolvedLateBlockReorgOverride() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
 
@@ -246,8 +244,7 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager,
-            true);
+            proposersDataManager);
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
@@ -256,9 +253,7 @@ class ForkChoiceNotifierTest {
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
-    when(recentChainData.shouldOverrideForkChoiceUpdate(any(), any())).thenReturn(true);
-
-    notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState, Optional.of(blockSlot));
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
   }
 
   @Test
@@ -276,8 +271,7 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager,
-            true);
+            proposersDataManager);
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
@@ -389,7 +383,7 @@ class ForkChoiceNotifierTest {
 
     notifyForkChoiceUpdated(
         new ForkChoiceState(
-            Bytes32.ZERO,
+            ForkChoiceNode.createBase(Bytes32.ZERO),
             UInt64.ZERO,
             UInt64.ZERO,
             Bytes32.ZERO,
@@ -518,7 +512,7 @@ class ForkChoiceNotifierTest {
             headState,
             blockSlot,
             false,
-            Optional.of(payloadBuildingAttributesArr.get(1).getFeeRecipient()),
+            Optional.of(payloadBuildingAttributesArr.get(1).feeRecipient()),
             Optional.empty());
 
     // store real payload attributes and return an incomplete future
@@ -717,7 +711,7 @@ class ForkChoiceNotifierTest {
             Optional.empty(),
             Optional.of(createValidatorRegistration(headState, blockSlot)));
 
-    assertThat(payloadBuildingAttributes.getValidatorRegistration()).isNotEmpty();
+    assertThat(payloadBuildingAttributes.validatorRegistration()).isNotEmpty();
 
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
     when(executionLayerChannel.engineForkChoiceUpdated(
@@ -787,7 +781,7 @@ class ForkChoiceNotifierTest {
     // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            Bytes32.ZERO,
+            ForkChoiceNode.createBase(Bytes32.ZERO),
             UInt64.ZERO,
             UInt64.ZERO,
             terminalBlockHash,
@@ -822,8 +816,7 @@ class ForkChoiceNotifierTest {
 
     // send merge onForkChoiceUpdated (with non-finalized block state)
     final ForkChoiceState nonFinalizedForkChoiceState = getCurrentForkChoiceState();
-    assertThat(nonFinalizedForkChoiceState.getFinalizedExecutionBlockHash())
-        .isEqualTo(Bytes32.ZERO);
+    assertThat(nonFinalizedForkChoiceState.finalizedExecutionBlockHash()).isEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(nonFinalizedForkChoiceState);
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(nonFinalizedForkChoiceState, Optional.empty());
@@ -847,8 +840,7 @@ class ForkChoiceNotifierTest {
 
     // send post-merge onForkChoiceUpdated (with finalized block state)
     ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
-    assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
-        .isNotEqualTo(Bytes32.ZERO);
+    assertThat(finalizedForkChoiceState.finalizedExecutionBlockHash()).isNotEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(finalizedForkChoiceState);
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
@@ -876,8 +868,7 @@ class ForkChoiceNotifierTest {
 
     // send post-merge onForkChoiceUpdated (with finalized block state)
     ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
-    assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
-        .isNotEqualTo(Bytes32.ZERO);
+    assertThat(finalizedForkChoiceState.finalizedExecutionBlockHash()).isNotEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(finalizedForkChoiceState);
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
@@ -907,8 +898,7 @@ class ForkChoiceNotifierTest {
 
     // send post-merge onForkChoiceUpdated (with finalized block state)
     ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
-    assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
-        .isNotEqualTo(Bytes32.ZERO);
+    assertThat(finalizedForkChoiceState.finalizedExecutionBlockHash()).isNotEqualTo(Bytes32.ZERO);
     notifyForkChoiceUpdated(finalizedForkChoiceState);
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
@@ -1082,7 +1072,7 @@ class ForkChoiceNotifierTest {
       proposersDataManager.updatePreparedProposers(
           List.of(
               new BeaconPreparableProposer(
-                  proposerIndex, payloadBuildingAttributes.getFeeRecipient())),
+                  proposerIndex, payloadBuildingAttributes.feeRecipient())),
           recentChainData.getHeadSlot());
     }
     validatorRegistration.ifPresent(
@@ -1127,10 +1117,9 @@ class ForkChoiceNotifierTest {
     }
     proposersDataManager.updatePreparedProposers(
         List.of(
+            new BeaconPreparableProposer(proposerIndex1, payloadBuildingAttributes1.feeRecipient()),
             new BeaconPreparableProposer(
-                proposerIndex1, payloadBuildingAttributes1.getFeeRecipient()),
-            new BeaconPreparableProposer(
-                proposerIndex2, payloadBuildingAttributes2.getFeeRecipient())),
+                proposerIndex2, payloadBuildingAttributes2.feeRecipient())),
         recentChainData.getHeadSlot());
     return List.of(payloadBuildingAttributes1, payloadBuildingAttributes2);
   }
@@ -1154,7 +1143,7 @@ class ForkChoiceNotifierTest {
         feeRecipient,
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
-        forkChoiceState.getHeadBlockRoot());
+        forkChoiceState.headBlock());
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {
@@ -1169,7 +1158,7 @@ class ForkChoiceNotifierTest {
         forkChoiceStrategy.executionBlockHash(finalizedRoot).orElseThrow();
 
     return new ForkChoiceState(
-        headBlockRoot,
+        ForkChoiceNode.createBase(headBlockRoot),
         headBlockSlot,
         headExecutionBlockNumber,
         headExecutionHash,

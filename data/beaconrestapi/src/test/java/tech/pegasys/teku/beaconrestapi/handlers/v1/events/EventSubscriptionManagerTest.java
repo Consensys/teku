@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -131,21 +132,21 @@ public class EventSubscriptionManagerTest {
       new PayloadAttributesData(
           SpecMilestone.GLOAS,
           new Data(
-              samplePayloadAttributes.getProposalSlot(),
-              samplePayloadAttributes.getParentBeaconBlockRoot(),
+              samplePayloadAttributes.proposalSlot(),
+              samplePayloadAttributes.parentBeaconBlock().blockRoot(),
               data.randomUInt64(),
               data.randomBytes32(),
-              samplePayloadAttributes.getProposerIndex(),
+              samplePayloadAttributes.proposerIndex(),
               new PayloadAttributes(
-                  samplePayloadAttributes.getTimestamp(),
-                  samplePayloadAttributes.getPrevRandao(),
-                  samplePayloadAttributes.getFeeRecipient(),
-                  samplePayloadAttributes.getWithdrawals(),
-                  Optional.of(samplePayloadAttributes.getParentBeaconBlockRoot()))));
+                  samplePayloadAttributes.timestamp(),
+                  samplePayloadAttributes.prevRandao(),
+                  samplePayloadAttributes.feeRecipient(),
+                  samplePayloadAttributes.withdrawals(),
+                  Optional.of(samplePayloadAttributes.parentBeaconBlock().blockRoot()))));
   final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification =
       new ForkChoiceUpdatedResultNotification(
           new ForkChoiceState(
-              data.randomBytes32(),
+              ForkChoiceNode.createBase(data.randomBytes32()),
               data.randomSlot(),
               samplePayloadAttributesData.data().parentExecutionBlockNumber(),
               samplePayloadAttributesData.data().parentExecutionBlockHash(),

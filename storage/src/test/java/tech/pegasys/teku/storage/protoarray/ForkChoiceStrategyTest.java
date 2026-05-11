@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -60,6 +62,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -627,16 +630,47 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     final ForkChoiceState forkChoiceState =
         protoArray.getForkChoiceState(
+            Optional.empty(),
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
             recentChainData.getFinalizedCheckpoint().orElseThrow());
 
     // Should have reverted to the justified checkpoint as head
-    assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(currentJustified.getRoot());
+    assertThat(forkChoiceState.headBlock().blockRoot()).isEqualTo(currentJustified.getRoot());
     // The current head block itself is fully validated
     assertThat(protoArray.isFullyValidated(currentJustified.getRoot())).isTrue();
     // the head is optimistic because it is not viable
     assertThat(forkChoiceState.isHeadOptimistic()).isTrue();
+  }
+
+  @Test
+  void getForkChoiceState_shouldUseProposingHeadWhenProvided() {
+    final InternalPayloadTraversalFixture fixture = createInternalPayloadTraversalFixture();
+    final ProtoNodeData fullPayloadBlockData =
+        fixture
+            .strategy()
+            .getBlockData(fixture.block1().getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+            .orElseThrow();
+    final ChainHead proposingHead =
+        ChainHead.create(
+            fullPayloadBlockData,
+            SafeFuture.completedFuture(StateAndBlockSummary.create(fixture.block1())));
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(fixture.block2().getSlot());
+    final Checkpoint justifiedCheckpoint =
+        fixture.block2().getState().getCurrentJustifiedCheckpoint();
+    final Checkpoint finalizedCheckpoint = fixture.block2().getState().getFinalizedCheckpoint();
+
+    final ForkChoiceState proposingForkChoiceState =
+        fixture
+            .strategy()
+            .getForkChoiceState(
+                Optional.of(proposingHead), currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
+
+    assertThat(proposingForkChoiceState.headBlock())
+        .isEqualTo(ForkChoiceNode.createFull(fixture.block1().getRoot()));
+    assertThat(proposingForkChoiceState.headBlockSlot()).isEqualTo(fixture.block1().getSlot());
+    assertThat(proposingForkChoiceState.headExecutionBlockHash())
+        .isEqualTo(fullPayloadBlockData.getExecutionBlockHash());
   }
 
   private StorageSystem initStorageSystem() {

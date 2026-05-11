@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.Bea
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -170,10 +171,16 @@ public class DefaultExecutionPayloadManager
 
   @Override
   public ExecutionRequests getParentExecutionRequestsForBlock(
-      final UInt64 slot, final Bytes32 parentRoot) {
+      final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
     final SpecVersion specVersion = spec.atSlot(slot);
     final UpdatableStore store = recentChainData.getStore();
-    if (!store.getForkChoiceStrategy().shouldExtendPayload(store, parentRoot)) {
+
+    // here we want to peek the execution requests based on the head we selected for block
+    // production.
+    // if we are building on EMPTY we return a ZERO execution request object, otherwise we expect
+    // the payload to be already imported.
+
+    if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
       return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
           .getExecutionRequestsSchema()
           .getDefault();
