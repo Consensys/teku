@@ -140,7 +140,16 @@ class StoreTransactionUpdatesFactory {
       optimisticTransitionBlockRoot = Optional.empty();
     }
 
+    // Prune collections
     calculatePrunedHotBlockRoots();
+    prunedHotBlockRoots
+        .keySet()
+        .forEach(
+            blockRoot -> {
+              hotBlocks.remove(blockRoot);
+              hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloads.remove(blockRoot);
+            });
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
