@@ -37,7 +37,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -47,6 +47,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -58,14 +59,13 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-public class GossipBeaconAttestationTestExecutor implements TestExecutor {
+public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
 
-    final GossipBeaconAttestationMetaData metaData =
-        loadYaml(testDefinition, "meta.yaml", GossipBeaconAttestationMetaData.class);
-    // Set up attestation validator
+    final GossipBeaconAggregateAndProofMetaData metaData =
+        loadYaml(testDefinition, "meta.yaml", GossipBeaconAggregateAndProofMetaData.class);
     final boolean signatureVerificationDisabled = metaData.getBlsSetting() == BlsSetting.IGNORED;
     final BLSSignatureVerifier blsVerifier =
         signatureVerificationDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
@@ -73,7 +73,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-    // Set up chain storage
     final StorageSystem storageSystem =
         InMemoryStorageSystemBuilder.create()
             .specProvider(spec)
@@ -81,10 +80,8 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             .build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
 
-    // Initialize from state with time 0 (will be advanced via onTick)
     recentChainData.initializeFromAnchorPoint(createAnchorFromState(spec, state), UInt64.ZERO);
 
-    // Set up ForkChoice for block importing
     final InlineEventThread eventThread = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
@@ -104,7 +101,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
-    // Tick clock to current_time_ms before importing blocks
     forkChoice.onTick(UInt64.valueOf(metaData.getCurrentTimeMs()), Optional.empty());
 
     // Track block roots that explicitly failed validation (marked failed: true in meta.yaml).
@@ -113,18 +109,19 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
     final Set<Bytes32> failedBlockRoots = new HashSet<>();
 
     // When a custom finalized_checkpoint is set, its root will not be in the chain, so any block
-    // import attempt would fail. Skip all imports so that the attestation validator's
-    // block-not-available path produces the expected IGNORE result.
+    // import attempt would fail. Skip all imports so that the validator's block-not-available path
+    // produces the expected IGNORE result.
     final boolean hasCustomFinalizedCheckpoint = metaData.getFinalizedCheckpoint() != null;
     if (!hasCustomFinalizedCheckpoint) {
-      for (final GossipBeaconAttestationMetaData.BlockEntry blockEntry : metaData.getBlocks()) {
+      for (final GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry :
+          metaData.getBlocks()) {
         final SignedBeaconBlock block =
             loadSsz(
                 testDefinition,
                 blockEntry.getBlock() + ".ssz_snappy",
                 spec::deserializeSignedBeaconBlock);
         if (blockEntry.isFailed()) {
-          // Record the root of this invalid block so attestations voting for it are rejected.
+          // Record the root of this invalid block so aggregates voting for it are rejected.
           // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
           failedBlockRoots.add(block.getRoot());
         } else {
@@ -140,67 +137,55 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             spec,
             AsyncBLSSignatureVerifier.wrap(blsVerifier),
             new GossipValidationHelper(spec, recentChainData, metricsSystem));
+    final AggregateAttestationValidator aggregateValidator =
+        new AggregateAttestationValidator(
+            spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(blsVerifier));
 
-    // Track seen attestations (by hash tree root) for "already seen" duplicate detection
-    final Set<Bytes32> seenAttestationRoots = new HashSet<>();
-
-    for (final GossipBeaconAttestationMetaData.Message message : metaData.getMessages()) {
-      // Advance clock to message arrival time
+    for (final GossipBeaconAggregateAndProofMetaData.Message message : metaData.getMessages()) {
       final UInt64 messageTimeMs =
           UInt64.valueOf(metaData.getCurrentTimeMs()).plus(UInt64.valueOf(message.getOffsetMs()));
       forkChoice.onTick(messageTimeMs, Optional.empty());
 
-      final Attestation attestation =
+      final SignedAggregateAndProof signedAggregateAndProof =
           loadSsz(
               testDefinition,
               message.getMessage() + ".ssz_snappy",
-              spec.getGenesisSchemaDefinitions().getAttestationSchema());
-      final Bytes32 attestationRoot = attestation.hashTreeRoot();
+              spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema());
 
-      // Already-seen check: same attestation from same validator seen before
-      if (seenAttestationRoots.contains(attestationRoot)) {
-        assertThat(message.getExpected())
-            .describedAs("Expected ignore for already-seen attestation %s", message.getMessage())
-            .isEqualTo("ignore");
-        continue;
-      } else {
-        seenAttestationRoots.add(attestationRoot);
-      }
-
-      // Failed-block check: attestation votes for a block that failed validation
-      final Bytes32 votedBlockRoot = attestation.getData().getBeaconBlockRoot();
+      // Failed-block check: aggregate votes for a block that failed validation
+      final Bytes32 votedBlockRoot =
+          signedAggregateAndProof.getMessage().getAggregate().getData().getBeaconBlockRoot();
       if (failedBlockRoots.contains(votedBlockRoot)) {
         assertThat(message.getExpected())
             .describedAs(
-                "Expected reject for attestation %s voting for failed block %s",
+                "Expected reject for aggregate %s voting for failed block %s",
                 message.getMessage(), votedBlockRoot)
             .isEqualTo("reject");
         continue;
       }
 
       final ValidatableAttestation validatableAttestation =
-          ValidatableAttestation.fromNetwork(spec, attestation, message.getSubnetId());
+          ValidatableAttestation.aggregateFromNetwork(spec, signedAggregateAndProof);
       final InternalValidationResult result =
-          attestationValidator.validate(validatableAttestation).join();
+          aggregateValidator.validate(validatableAttestation).join();
 
       switch (message.getExpected()) {
-        case "valid" -> {
-          assertThat(result.code())
-              .describedAs(
-                  "Expected attestation %s to be valid but got %s: %s",
-                  message.getMessage(), result.code(), result.getDescription().orElse(""))
-              .isEqualTo(ValidationResultCode.ACCEPT);
-        }
+        case "valid" ->
+            assertThat(result.code())
+                .describedAs(
+                    "Expected aggregate %s to be valid but got %s: %s",
+                    message.getMessage(), result.code(), result.getDescription().orElse(""))
+                .isEqualTo(ValidationResultCode.ACCEPT);
         case "reject" ->
             assertThat(result.code())
                 .describedAs(
-                    "Expected attestation %s to be rejected but got %s: %s",
+                    "Expected aggregate %s to be rejected but got %s: %s",
                     message.getMessage(), result.code(), result.getDescription().orElse(""))
                 .isEqualTo(ValidationResultCode.REJECT);
         case "ignore" ->
             assertThat(result.code())
                 .describedAs(
-                    "Expected attestation %s to be ignored but got %s: %s",
+                    "Expected aggregate %s to be ignored but got %s: %s",
                     message.getMessage(), result.code(), result.getDescription().orElse(""))
                 .isIn(ValidationResultCode.IGNORE, ValidationResultCode.SAVE_FOR_FUTURE);
         default ->
@@ -215,7 +200,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
 
   @SuppressWarnings("unused")
   @JsonIgnoreProperties(ignoreUnknown = true)
-  private static class GossipBeaconAttestationMetaData {
+  private static class GossipBeaconAggregateAndProofMetaData {
 
     @JsonProperty(value = "topic", required = true)
     private String topic;
@@ -274,9 +259,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
 
     private static class Message {
 
-      @JsonProperty(value = "subnet_id", required = true)
-      private int subnetId;
-
       @JsonProperty(value = "offset_ms", required = true)
       private long offsetMs;
 
@@ -288,10 +270,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
 
       @JsonProperty(value = "reason", required = false)
       private String reason;
-
-      public int getSubnetId() {
-        return subnetId;
-      }
 
       public long getOffsetMs() {
         return offsetMs;

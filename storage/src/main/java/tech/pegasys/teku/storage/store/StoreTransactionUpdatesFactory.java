@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -119,6 +120,8 @@ class StoreTransactionUpdatesFactory {
     final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads =
         createBlindedExecutionPayloads();
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
+    createFinalizedExecutionPayloadBoundaryBlock()
+        .ifPresent(finalizedChainDataBuilder::finalizedExecutionPayloadBoundaryBlock);
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
     if (tx.clearFinalizedOptimisticTransitionPayload) {
@@ -288,5 +291,14 @@ class StoreTransactionUpdatesFactory {
               return Map.entry(entry.getKey(), executionPayload.blind(spec));
             })
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private Optional<BlockAndCheckpoints> createFinalizedExecutionPayloadBoundaryBlock() {
+    if (!spec.atSlot(latestFinalized.getBlockSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(hotBlocks.get(latestFinalized.getRoot()));
   }
 }

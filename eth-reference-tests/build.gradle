@@ -27,6 +27,7 @@ dependencies {
 	referenceTestImplementation testFixtures(project(':infrastructure:kzg'))
 	referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
 	referenceTestImplementation project(':infrastructure:time')
+	referenceTestImplementation testFixtures(project(':infrastructure:time'))
 	referenceTestImplementation project(':data:dataexchange')
 
 	referenceTestImplementation 'org.hyperledger.besu:besu-plugin-api'

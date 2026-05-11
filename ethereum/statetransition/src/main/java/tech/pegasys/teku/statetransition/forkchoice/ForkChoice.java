@@ -1025,7 +1025,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
 
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+    if (!currentHead.isSameHeadAs(bestHeadBlock)) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
 
@@ -1053,7 +1053,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStrategy forkChoiceStrategy) {
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+    if (!currentHead.isSameHeadAs(bestHeadBlock)) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
   }

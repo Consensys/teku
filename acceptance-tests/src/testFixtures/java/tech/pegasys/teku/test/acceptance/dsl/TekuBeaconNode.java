@@ -712,7 +712,9 @@ public class TekuBeaconNode extends TekuNode {
       return Optional.empty();
     } else {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
-      final UInt64 slot = UInt64.valueOf(jsonNode.get("data").get("message").get("slot").asText());
+      final UInt64 slot =
+          UInt64.valueOf(
+              jsonNode.get("data").get("message").get("payload").get("slot_number").asText());
       final DeserializableTypeDefinition<SignedExecutionPayloadEnvelope> jsonTypeDefinition =
           SharedApiTypes.withDataWrapper(
               "execution_payload_envelope",
