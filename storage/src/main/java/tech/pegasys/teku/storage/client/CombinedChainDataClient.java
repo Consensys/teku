@@ -299,22 +299,22 @@ public class CombinedChainDataClient {
 
   /**
    * Builds the block-production beacon state from the (already proposer-head-resolved) {@link
-   * ChainHead} returned by {@code ForkChoice.prepareForBlockProduction}. The late-block-reorg
-   * deviation and its preparation handler now live in {@code ForkChoice}, so this method just
-   * advances the supplied chain-head state to the proposing slot.
+   * ChainHead} returned by {@code ForkChoice.prepareForBlockProduction}. The selected parent root
+   * is used as part of the cache key so block production, block import, epoch precomputation, and
+   * any in-flight state generation can reuse the same slot state.
    */
   public SafeFuture<BeaconState> getStateForBlockProduction(
       final ChainHead chainHead, final UInt64 slot) {
-    return chainHead
-        .getState()
+    return getStore()
+        .retrieveBlockState(new SlotAndBlockRoot(slot, chainHead.getRoot()))
         .thenApply(
-            state -> {
-              try {
-                return spec.processSlots(state, slot);
-              } catch (SlotProcessingException | EpochProcessingException e) {
-                throw new RuntimeException(e);
-              }
-            });
+            maybeState ->
+                maybeState.orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            String.format(
+                                "Unable to load block production state for slot %s and parent root %s",
+                                slot, chainHead.getRoot()))));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(

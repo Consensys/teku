@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
@@ -90,8 +89,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -1232,56 +1229,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   graffiti,
                   requestedBuilderBoostFactor,
                   blockProductionPerformance));
-    }
-  }
-
-  public record BlockProductionContext(
-      UInt64 proposalSlot,
-      BeaconState blockSlotState,
-      ForkChoiceNode parentForkChoiceNode,
-      Bytes32 parentExecutionBlockHash,
-      BLSSignature randaoReveal,
-      Optional<Bytes32> graffiti,
-      Optional<UInt64> requestedBuilderBoostFactor,
-      BlockProductionPerformance blockProductionPerformance) {
-
-    public static BlockProductionContext create(
-        final Spec spec,
-        final UInt64 proposalSlot,
-        final BeaconState blockSlotState,
-        final ChainHead parentChainHead,
-        final BLSSignature randaoReveal,
-        final Optional<Bytes32> graffiti,
-        final Optional<UInt64> requestedBuilderBoostFactor,
-        final BlockProductionPerformance blockProductionPerformance) {
-      checkArgument(
-          blockSlotState.getSlot().equals(proposalSlot),
-          "Block slot state for slot %s but should be for slot %s",
-          blockSlotState.getSlot(),
-          proposalSlot);
-      final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
-      checkArgument(
-          parentRoot.equals(parentChainHead.getRoot()),
-          "Block slot state parent root %s does not match selected production parent root %s",
-          parentRoot,
-          parentChainHead.getRoot());
-      return new BlockProductionContext(
-          proposalSlot,
-          blockSlotState,
-          parentChainHead.getForkChoiceNode(),
-          parentChainHead.getExecutionBlockHash(),
-          randaoReveal,
-          graffiti,
-          requestedBuilderBoostFactor,
-          blockProductionPerformance);
-    }
-
-    public Bytes32 parentRoot() {
-      return parentForkChoiceNode.blockRoot();
-    }
-
-    public ForkChoicePayloadStatus parentPayloadStatus() {
-      return parentForkChoiceNode.payloadStatus();
     }
   }
 }

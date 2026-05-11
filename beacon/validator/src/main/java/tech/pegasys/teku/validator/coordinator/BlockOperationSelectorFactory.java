@@ -84,7 +84,6 @@ import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler.BlockProductionContext;
 
 public class BlockOperationSelectorFactory {
   private final Spec spec;

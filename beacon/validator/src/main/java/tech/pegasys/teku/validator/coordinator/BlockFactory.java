@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler.BlockProductionContext;
 
 public interface BlockFactory {
 

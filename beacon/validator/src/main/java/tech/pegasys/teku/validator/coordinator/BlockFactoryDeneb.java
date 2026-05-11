@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler.BlockProductionContext;
 
 public class BlockFactoryDeneb extends BlockFactoryPhase0 {
 

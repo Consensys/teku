@@ -34,10 +34,8 @@ on:
   pull_request:
     branches:
       - master
-      - '*prototype*'
-      - '**/*prototype*'
-      - '*devnet*'
-      - '**/*devnet*'
+      - '**prototype**'
+      - '**devnet**'
     paths-ignore:
       - '**/*.md'
       - 'LICENSE*'
