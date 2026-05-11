@@ -171,7 +171,6 @@ class StoreTransactionUpdatesFactory {
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
     final Map<Bytes32, BeaconState> statesToPersist =
         hotBlockAndStates.entrySet().stream()
-            .filter(e -> !prunedHotBlockRoots.containsKey(e.getKey()))
             .filter(
                 e ->
                     baseStore.shouldPersistState(
