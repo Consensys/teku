@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -118,8 +119,12 @@ public class DefaultExecutionPayloadManager
             case SAVE_FOR_FUTURE -> {
               if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
                 // handles edge case where block was imported while validating the payload
-                validateAndImportExecutionPayload(signedExecutionPayload)
-                    .thenCompose(r -> publishPayload(r, signedExecutionPayload))
+                asyncRunner
+                    .runAfterDelay(
+                        () ->
+                            validateAndImportExecutionPayload(signedExecutionPayload)
+                                .thenCompose(r -> publishPayload(r, signedExecutionPayload)),
+                        Duration.ofMillis(100))
                     .finishError(LOG);
               } else {
                 // import will be triggered when the corresponding block is imported
