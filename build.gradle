@@ -1268,6 +1268,7 @@ tasks.register('jacocoReferenceTestRootReport', JacocoReport) {
 			t.name == 'jacocoReferenceTestReport'
 		}
 	}
+	mustRunAfter 'jacocoRootReport'
 
 	executionData.from fileTree(rootDir) {
 		include '**/build/jacoco/referenceTest.exec'
@@ -1288,6 +1289,36 @@ tasks.register('jacocoReferenceTestRootReport', JacocoReport) {
 		xml {
 			required = true
 			outputLocation = layout.buildDirectory.file('reports/jacoco/referenceTest/jacocoReferenceTestRootReport.xml')
+		}
+	}
+}
+
+tasks.register('jacocoCombinedRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates a combined aggregate JaCoCo coverage report for unit tests and reference tests'
+
+	dependsOn tasks.named('jacocoRootReport'), tasks.named('jacocoReferenceTestRootReport')
+
+	executionData.from fileTree(rootDir) {
+		include '**/build/jacoco/test.exec'
+		include '**/build/jacoco/referenceTest.exec'
+	}
+
+	subprojects.each { subproject ->
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/combined/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/combined/jacocoCombinedRootReport.xml')
 		}
 	}
 }
