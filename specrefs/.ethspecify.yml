@@ -64,7 +64,6 @@ specrefs:
       - LightClientOptimisticUpdate
       - LightClientBootstrap#capella
       - LightClientUpdate#capella
-      - LightClientHeader#gloas
 
       # Not implemented: fulu
       - PartialDataColumnHeader#fulu
@@ -216,12 +215,6 @@ specrefs:
       - upgrade_lc_store_to_gloas
       - upgrade_lc_update_to_gloas
       - validate_light_client_update
-      - upgrade_lc_bootstrap_to_gloas#gloas
-      - upgrade_lc_finality_update_to_gloas#gloas
-      - upgrade_lc_header_to_gloas#gloas
-      - upgrade_lc_optimistic_update_to_gloas#gloas
-      - upgrade_lc_store_to_gloas#gloas
-      - upgrade_lc_update_to_gloas#gloas
 
       # Still need to implement this for Phase0
       - compute_time_at_slot_ms#phase0
@@ -423,7 +416,6 @@ specrefs:
       - process_parent_execution_payload#gloas
       - settle_builder_payment#gloas
       - verify_execution_payload_envelope#gloas
-      - compute_weak_subjectivity_period#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze
@@ -444,4 +436,3 @@ specrefs:
       - record_payload_inclusion_list_satisfaction#heze
       - should_extend_payload#heze
       - upgrade_to_heze#heze
-      - get_inclusion_list_due_ms#heze
