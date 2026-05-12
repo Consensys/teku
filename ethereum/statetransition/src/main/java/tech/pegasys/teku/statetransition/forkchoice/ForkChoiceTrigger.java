@@ -22,6 +22,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.client.ChainHead;
 
 public class ForkChoiceTrigger {
   public static final int WARNING_TIME_MILLIS = 250;
@@ -79,7 +80,7 @@ public class ForkChoiceTrigger {
     }
   }
 
-  public SafeFuture<Void> prepareForBlockProduction(
+  public SafeFuture<ChainHead> prepareForBlockProduction(
       final UInt64 slot, final BlockProductionPerformance blockProductionPerformance) {
     return forkChoice.prepareForBlockProduction(slot, blockProductionPerformance);
   }

@@ -96,6 +96,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -201,6 +202,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             true,
+            LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem(),
             AsyncBLSSignatureVerifier.wrap(

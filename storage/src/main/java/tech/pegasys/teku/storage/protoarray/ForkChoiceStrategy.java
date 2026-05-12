@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -257,14 +258,22 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   public ForkChoiceState getForkChoiceState(
+      final Optional<ChainHead> proposingOnHead,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint) {
     protoArrayLock.readLock().lock();
     try {
       final ProtoNode headNode =
-          protoArray.findOptimisticHead(
-              currentEpoch, justifiedCheckpoint, finalizedCheckpoint, headSelectionContext);
+          proposingOnHead
+              .map(head -> protoArray.getNode(head.getForkChoiceNode()).orElseThrow())
+              .orElseGet(
+                  () ->
+                      protoArray.findOptimisticHead(
+                          currentEpoch,
+                          justifiedCheckpoint,
+                          finalizedCheckpoint,
+                          headSelectionContext));
       final UInt64 headExecutionBlockNumber = headNode.getExecutionBlockNumber();
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
       final Bytes32 justifiedExecutionHash =
@@ -276,7 +285,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               .map(ProtoNodeData::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       return new ForkChoiceState(
-          headNode.getBlockRoot(),
+          headNode.getForkChoiceNode(),
           headNode.getBlockSlot(),
           headExecutionBlockNumber,
           headExecutionBlockHash,

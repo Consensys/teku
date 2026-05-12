@@ -47,11 +47,11 @@ public class ExecutionPayloadContext {
   }
 
   public Bytes32 getParentHash() {
-    return forkChoiceState.getHeadExecutionBlockHash();
+    return forkChoiceState.headExecutionBlockHash();
   }
 
   public boolean isValidatorRegistrationPresent() {
-    return payloadBuildingAttributes.getValidatorRegistration().isPresent();
+    return payloadBuildingAttributes.validatorRegistration().isPresent();
   }
 
   @Override

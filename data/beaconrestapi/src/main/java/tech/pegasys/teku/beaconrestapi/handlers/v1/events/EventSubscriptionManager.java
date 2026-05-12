@@ -296,7 +296,7 @@ public class EventSubscriptionManager
         .ifPresent(
             payloadAttributes -> {
               final SpecMilestone milestone =
-                  spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
+                  spec.atSlot(payloadAttributes.proposalSlot()).getMilestone();
               final PayloadAttributesEvent payloadAttributesEvent =
                   PayloadAttributesEvent.create(
                       milestone,
