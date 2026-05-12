@@ -63,6 +63,10 @@ public class SignedExecutionPayloadEnvelope
     return getMessage().getBeaconBlockRoot();
   }
 
+  public Bytes32 getParentBeaconBlockRoot() {
+    return getMessage().getParentBeaconBlockRoot();
+  }
+
   public SlotAndBlockRoot getSlotAndBlockRoot() {
     return getMessage().getSlotAndBlockRoot();
   }
