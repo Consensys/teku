@@ -1436,25 +1436,6 @@
         return uint64(MAX_REQUEST_BLOCKS_DENEB * NUMBER_OF_COLUMNS)
     </spec>
 
-- name: compute_merkle_branch_root#phase0
-  sources: []
-  spec: |
-    <spec fn="compute_merkle_branch_root" fork="phase0" hash="ff67a3de">
-    def compute_merkle_branch_root(
-        leaf: Bytes32, branch: Sequence[Bytes32], depth: uint64, index: uint64
-    ) -> Root:
-        """
-        Return the Merkle root obtained by hashing ``leaf`` at ``index`` with ``branch``.
-        """
-        value = leaf
-        for i in range(depth):
-            if index // (2**i) % 2:
-                value = hash(branch[i] + value)
-            else:
-                value = hash(value + branch[i])
-        return Root(value)
-    </spec>
-
 - name: compute_merkle_proof#altair
   sources: []
   spec: |
@@ -2092,29 +2073,6 @@
     +    delta = get_balance_churn_limit(state)
     +    epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
     +    return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
-    </spec>
-
-- name: compute_weak_subjectivity_period#gloas
-  sources: []
-  spec: |
-    <spec fn="compute_weak_subjectivity_period" fork="gloas" hash="8b1ddc92">
-    def compute_weak_subjectivity_period(state: BeaconState) -> uint64:
-        """
-        Returns the weak subjectivity period for the current ``state``.
-        This computation takes into account the effect of:
-            - exit churn (weighted 2/3)
-            - activation churn (weighted 1/3)
-            - consolidation churn (weighted 1)
-        """
-        t = get_total_active_balance(state)
-        # [Modified in Gloas:EIP8061]
-        delta = (
-            2 * get_exit_churn_limit(state) // 3
-            + get_activation_churn_limit(state) // 3
-            + get_consolidation_churn_limit(state)
-        )
-        epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
-        return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
     </spec>
 
 - name: construct_vanishing_polynomial#fulu
@@ -4909,14 +4867,6 @@
         return rewards, penalties
     </spec>
 
-- name: get_inclusion_list_due_ms#heze
-  sources: []
-  spec: |
-    <spec fn="get_inclusion_list_due_ms" fork="heze" hash="d9b6a3e5">
-    def get_inclusion_list_due_ms() -> uint64:
-        return get_slot_component_duration_ms(INCLUSION_LIST_DUE_BPS)
-    </spec>
-
 - name: get_index_for_new_builder#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
@@ -6869,22 +6819,6 @@
         )
     </spec>
 
-- name: is_current_slot#altair
-  sources: []
-  spec: |
-    <spec fn="is_current_slot" fork="altair" hash="cc76de78">
-    def is_current_slot(
-        state: BeaconState,
-        slot: Slot,
-        current_time_ms: uint64,
-    ) -> bool:
-        """
-        Check if the given slot is the current slot
-        (with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance).
-        """
-        return is_within_slot_range(state, slot, 0, current_time_ms)
-    </spec>
-
 - name: is_data_available#deneb
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/BlobSidecarsAvailabilityChecker.java
@@ -7208,29 +7142,6 @@
     <spec fn="is_next_sync_committee_known" fork="altair" hash="f5d3196e">
     def is_next_sync_committee_known(store: LightClientStore) -> bool:
         return store.next_sync_committee != SyncCommittee()
-    </spec>
-
-- name: is_non_strict_superset#phase0
-  sources: []
-  spec: |
-    <spec fn="is_non_strict_superset" fork="phase0" hash="2f69cb02">
-    def is_non_strict_superset(
-        seen_bits_set: Set[Tuple[boolean, ...]],
-        new_bits: Tuple[boolean, ...],
-    ) -> bool:
-        """
-        Return True if any prior bitset in ``seen_bits_set`` is a non-strict
-        superset of ``new_bits`` (every bit set in new is also set in that prior).
-        """
-        for prior_bits in seen_bits_set:
-            is_superset = True
-            for prior_bit, new_bit in zip(prior_bits, new_bits):
-                if new_bit and not prior_bit:
-                    is_superset = False
-                    break
-            if is_superset:
-                return True
-        return False
     </spec>
 
 - name: is_one_confirmed#phase0
@@ -12142,18 +12053,6 @@
         )
     </spec>
 
-- name: upgrade_lc_bootstrap_to_gloas#gloas
-  sources: []
-  spec: |
-    <spec fn="upgrade_lc_bootstrap_to_gloas" fork="gloas" hash="d7fb2b11">
-    def upgrade_lc_bootstrap_to_gloas(pre: electra.LightClientBootstrap) -> LightClientBootstrap:
-        return LightClientBootstrap(
-            header=upgrade_lc_header_to_gloas(pre.header),
-            current_sync_committee=pre.current_sync_committee,
-            current_sync_committee_branch=pre.current_sync_committee_branch,
-        )
-    </spec>
-
 - name: upgrade_lc_finality_update_to_capella#capella
   sources: []
   spec: |
@@ -12197,22 +12096,6 @@
             attested_header=upgrade_lc_header_to_electra(pre.attested_header),
             finalized_header=upgrade_lc_header_to_electra(pre.finalized_header),
             finality_branch=normalize_merkle_branch(pre.finality_branch, FINALIZED_ROOT_GINDEX_ELECTRA),
-            sync_aggregate=pre.sync_aggregate,
-            signature_slot=pre.signature_slot,
-        )
-    </spec>
-
-- name: upgrade_lc_finality_update_to_gloas#gloas
-  sources: []
-  spec: |
-    <spec fn="upgrade_lc_finality_update_to_gloas" fork="gloas" hash="b0e9270b">
-    def upgrade_lc_finality_update_to_gloas(
-        pre: electra.LightClientFinalityUpdate,
-    ) -> LightClientFinalityUpdate:
-        return LightClientFinalityUpdate(
-            attested_header=upgrade_lc_header_to_gloas(pre.attested_header),
-            finalized_header=upgrade_lc_header_to_gloas(pre.finalized_header),
-            finality_branch=pre.finality_branch,
             sync_aggregate=pre.sync_aggregate,
             signature_slot=pre.signature_slot,
         )
@@ -12272,64 +12155,6 @@
             execution=pre.execution,
             execution_branch=pre.execution_branch,
         )
-    </spec>
-
-- name: upgrade_lc_header_to_gloas#gloas
-  sources: []
-  spec: |
-    <spec fn="upgrade_lc_header_to_gloas" fork="gloas" hash="1acacdb8">
-    def upgrade_lc_header_to_gloas(pre: electra.LightClientHeader) -> LightClientHeader:
-        if pre == electra.LightClientHeader():
-            return LightClientHeader()
-
-        epoch = compute_epoch_at_slot(pre.beacon.slot)
-
-        if epoch >= DENEB_FORK_EPOCH:
-            BLOCK_HASH_GINDEX = get_generalized_index(deneb.ExecutionPayloadHeader, "block_hash")
-            return LightClientHeader(
-                beacon=pre.beacon,
-                execution_block_hash=pre.execution.block_hash,
-                execution_branch=ExecutionBranch(
-                    normalize_merkle_branch(
-                        list(compute_merkle_proof(pre.execution, BLOCK_HASH_GINDEX))
-                        + list(pre.execution_branch),
-                        EXECUTION_BLOCK_HASH_GINDEX_GLOAS,
-                    )
-                ),
-            )
-
-        if epoch >= CAPELLA_FORK_EPOCH:
-            execution_header = capella.ExecutionPayloadHeader(
-                parent_hash=pre.execution.parent_hash,
-                fee_recipient=pre.execution.fee_recipient,
-                state_root=pre.execution.state_root,
-                receipts_root=pre.execution.receipts_root,
-                logs_bloom=pre.execution.logs_bloom,
-                prev_randao=pre.execution.prev_randao,
-                block_number=pre.execution.block_number,
-                gas_limit=pre.execution.gas_limit,
-                gas_used=pre.execution.gas_used,
-                timestamp=pre.execution.timestamp,
-                extra_data=pre.execution.extra_data,
-                base_fee_per_gas=pre.execution.base_fee_per_gas,
-                block_hash=pre.execution.block_hash,
-                transactions_root=pre.execution.transactions_root,
-                withdrawals_root=pre.execution.withdrawals_root,
-            )
-            BLOCK_HASH_GINDEX = get_generalized_index(capella.ExecutionPayloadHeader, "block_hash")
-            return LightClientHeader(
-                beacon=pre.beacon,
-                execution_block_hash=pre.execution.block_hash,
-                execution_branch=ExecutionBranch(
-                    normalize_merkle_branch(
-                        list(compute_merkle_proof(execution_header, BLOCK_HASH_GINDEX))
-                        + list(pre.execution_branch),
-                        EXECUTION_BLOCK_HASH_GINDEX_GLOAS,
-                    )
-                ),
-            )
-
-        return LightClientHeader(beacon=pre.beacon)
     </spec>
 
 - name: upgrade_lc_optimistic_update_to_capella#capella

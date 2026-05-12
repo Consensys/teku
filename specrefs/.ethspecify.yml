@@ -60,6 +60,7 @@ specrefs:
       # No light client support
       - LightClientFinalityUpdate
       - LightClientHeader#capella
+      - LightClientHeader#gloas
       - LightClientOptimisticUpdate
       - LightClientBootstrap#capella
       - LightClientUpdate#capella
@@ -208,6 +209,12 @@ specrefs:
       - upgrade_lc_update_to_capella
       - upgrade_lc_update_to_deneb
       - upgrade_lc_update_to_electra
+      - upgrade_lc_bootstrap_to_gloas
+      - upgrade_lc_finality_update_to_gloas
+      - upgrade_lc_header_to_gloas
+      - upgrade_lc_optimistic_update_to_gloas
+      - upgrade_lc_store_to_gloas
+      - upgrade_lc_update_to_gloas
       - validate_light_client_update
       - upgrade_lc_bootstrap_to_gloas#gloas
       - upgrade_lc_finality_update_to_gloas#gloas
@@ -223,6 +230,9 @@ specrefs:
 
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
+
+      # Still need to implement this for Gloas
+      - compute_weak_subjectivity_period#gloas
 
       # Not implemented: phase0
       - check_if_validator_active#phase0
@@ -420,6 +430,7 @@ specrefs:
       - get_inclusion_list_bits#heze
       - get_inclusion_list_committee#heze
       - get_inclusion_list_committee_assignment#heze
+      - get_inclusion_list_due_ms#heze
       - get_inclusion_list_signature#heze
       - get_inclusion_list_store#heze
       - get_inclusion_list_transactions#heze
