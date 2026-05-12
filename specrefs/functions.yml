@@ -12199,20 +12199,6 @@
         )
     </spec>
 
-- name: upgrade_lc_optimistic_update_to_gloas#gloas
-  sources: []
-  spec: |
-    <spec fn="upgrade_lc_optimistic_update_to_gloas" fork="gloas" hash="b9a211e4">
-    def upgrade_lc_optimistic_update_to_gloas(
-        pre: electra.LightClientOptimisticUpdate,
-    ) -> LightClientOptimisticUpdate:
-        return LightClientOptimisticUpdate(
-            attested_header=upgrade_lc_header_to_gloas(pre.attested_header),
-            sync_aggregate=pre.sync_aggregate,
-            signature_slot=pre.signature_slot,
-        )
-    </spec>
-
 - name: upgrade_lc_store_to_capella#capella
   sources: []
   spec: |
@@ -12273,26 +12259,6 @@
         )
     </spec>
 
-- name: upgrade_lc_store_to_gloas#gloas
-  sources: []
-  spec: |
-    <spec fn="upgrade_lc_store_to_gloas" fork="gloas" hash="bbf6e13a">
-    def upgrade_lc_store_to_gloas(pre: electra.LightClientStore) -> LightClientStore:
-        if pre.best_valid_update is None:
-            best_valid_update = None
-        else:
-            best_valid_update = upgrade_lc_update_to_gloas(pre.best_valid_update)
-        return LightClientStore(
-            finalized_header=upgrade_lc_header_to_gloas(pre.finalized_header),
-            current_sync_committee=pre.current_sync_committee,
-            next_sync_committee=pre.next_sync_committee,
-            best_valid_update=best_valid_update,
-            optimistic_header=upgrade_lc_header_to_gloas(pre.optimistic_header),
-            previous_max_active_participants=pre.previous_max_active_participants,
-            current_max_active_participants=pre.current_max_active_participants,
-        )
-    </spec>
-
 - name: upgrade_lc_update_to_capella#capella
   sources: []
   spec: |
@@ -12338,22 +12304,6 @@
             ),
             finalized_header=upgrade_lc_header_to_electra(pre.finalized_header),
             finality_branch=normalize_merkle_branch(pre.finality_branch, FINALIZED_ROOT_GINDEX_ELECTRA),
-            sync_aggregate=pre.sync_aggregate,
-            signature_slot=pre.signature_slot,
-        )
-    </spec>
-
-- name: upgrade_lc_update_to_gloas#gloas
-  sources: []
-  spec: |
-    <spec fn="upgrade_lc_update_to_gloas" fork="gloas" hash="bf716977">
-    def upgrade_lc_update_to_gloas(pre: electra.LightClientUpdate) -> LightClientUpdate:
-        return LightClientUpdate(
-            attested_header=upgrade_lc_header_to_gloas(pre.attested_header),
-            next_sync_committee=pre.next_sync_committee,
-            next_sync_committee_branch=pre.next_sync_committee_branch,
-            finalized_header=upgrade_lc_header_to_gloas(pre.finalized_header),
-            finality_branch=pre.finality_branch,
             sync_aggregate=pre.sync_aggregate,
             signature_slot=pre.signature_slot,
         )
