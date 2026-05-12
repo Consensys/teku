@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -108,14 +108,24 @@ public class DefaultExecutionPayloadManager
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT, SAVE_FOR_FUTURE -> {
-              if (result.isAccept()) {
-                receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
-                    signedExecutionPayload);
-                // cache the seen `beacon_block_root` when the gossip checks pass
-                recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+            case ACCEPT -> {
+              receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
+                  signedExecutionPayload);
+              // cache the seen `beacon_block_root` when the gossip checks pass
+              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+              importExecutionPayload(signedExecutionPayload).finishError(LOG);
+            }
+            case SAVE_FOR_FUTURE -> {
+              if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
+                // handles edge case where block was imported while validating the payload
+                validateAndImportExecutionPayload(signedExecutionPayload)
+                    .thenCompose(r -> publishPayload(r, signedExecutionPayload))
+                    .finishError(LOG);
+              } else {
+                // import will be triggered when the corresponding block is imported
+                pendingExecutionPayloads.put(
+                    signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
               }
-              importExecutionPayload(signedExecutionPayload).finishStackTrace();
             }
             case REJECT, IGNORE -> {}
           }
@@ -148,29 +158,12 @@ public class DefaultExecutionPayloadManager
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed,
                         signedExecutionPayload);
                   }
-                  case UNKNOWN_BEACON_BLOCK_ROOT -> {
-                    // Check if the block was imported while we were trying to import this execution
-                    // payload and then import it async
-                    if (recentChainData.containsBlock(
-                        signedExecutionPayload.getBeaconBlockRoot())) {
-                      importExecutionPayload(signedExecutionPayload).finishStackTrace();
-                    } else {
-                      LOG.debug(
-                          "Adding execution payload for slot {} and block root {} to the pending pool because the block is not yet imported",
-                          signedExecutionPayload.getSlot(),
-                          signedExecutionPayload.getBeaconBlockRoot());
-                      // Add to the pending pool so it is triggered once the block is imported
-                      pendingExecutionPayloads.put(
-                          signedExecutionPayload.getBlockRootAndBuilderIndex(),
-                          signedExecutionPayload);
-                    }
-                  }
                   case INTERNAL_ERROR,
+                          UNKNOWN_BEACON_BLOCK_ROOT,
                           FAILED_VERIFICATION,
                           FAILED_DATA_AVAILABILITY_CHECK_INVALID,
                           FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
-                      logFailedExecutionPayloadImport(
-                          signedExecutionPayload, result.getFailureReason());
+                      logFailedExecutionPayloadImport(signedExecutionPayload, result);
                 }
               }
             })
@@ -187,10 +180,17 @@ public class DefaultExecutionPayloadManager
   }
 
   private void logFailedExecutionPayloadImport(
-      final SignedExecutionPayloadEnvelope executionPayload, final FailureReason failureReason) {
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult importResult) {
     LOG.debug(
-        "Unable to import execution payload for reason {}: {}",
-        failureReason,
+        "Unable to import execution payload for reason {}{}: {}",
+        importResult.getFailureReason(),
+        importResult
+            .getFailureCause()
+            .map(ExceptionUtil::getRootCauseMessage)
+            .filter(causeMessage -> !causeMessage.isBlank())
+            .map(causeMessage -> " (" + causeMessage + ")")
+            .orElse(""),
         executionPayload.toLogString());
   }
 
@@ -245,14 +245,17 @@ public class DefaultExecutionPayloadManager
         .ifPresent(
             executionPayloadToProcess ->
                 validateAndImportExecutionPayload(executionPayloadToProcess)
-                    .thenCompose(
-                        result -> {
-                          if (result.isAccept()) {
-                            // re-broadcast the payload which has been validated
-                            return executionPayloadPublisher.apply(executionPayloadToProcess);
-                          }
-                          return SafeFuture.COMPLETE;
-                        })
+                    .thenCompose(result -> publishPayload(result, executionPayloadToProcess))
                     .finishError(LOG));
+  }
+
+  // publish payload in cases where initial validation wasn't accepted
+  private SafeFuture<Void> publishPayload(
+      final InternalValidationResult result,
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    if (result.isAccept()) {
+      return executionPayloadPublisher.apply(executionPayload);
+    }
+    return SafeFuture.COMPLETE;
   }
 }

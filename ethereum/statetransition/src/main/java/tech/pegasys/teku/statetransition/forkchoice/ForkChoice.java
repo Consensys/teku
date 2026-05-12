@@ -761,7 +761,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       + payloadStatus.getValidationError().orElse("No reason provided")));
       reportInvalidExecutionPayload(signedEnvelope, result);
       getForkChoiceStrategy()
-          .onExecutionPayloadResult(signedEnvelope.getBeaconBlockRoot(), payloadStatus, false);
+          .onExecutionPayloadResult(
+              signedEnvelope.getParentBeaconBlockRoot(), payloadStatus, false);
       return result;
     }
 
