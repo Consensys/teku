@@ -19,22 +19,27 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.statetransition.forkchoice.DataColumnSidecarAvailabilityChecker;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerManager implements AvailabilityCheckerFactory<UInt64> {
   public static final AvailabilityCheckerFactory<UInt64> NOOP = NOOP_DATACOLUMN_SIDECAR;
   private final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier;
   final Spec spec;
+  private final RecentChainData recentChainData;
 
   public DasSamplerManager(
-      final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier, final Spec spec) {
+      final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier,
+      final Spec spec,
+      final RecentChainData recentChainData) {
     this.dataAvailabilitySamplerSupplier = dataAvailabilitySamplerSupplier;
     this.spec = spec;
+    this.recentChainData = recentChainData;
   }
 
   @Override
   public DataColumnSidecarAvailabilityChecker createAvailabilityChecker(
       final SignedBeaconBlock block) {
     return new DataColumnSidecarAvailabilityChecker(
-        dataAvailabilitySamplerSupplier.get(), spec, block);
+        dataAvailabilitySamplerSupplier.get(), spec, recentChainData, block);
   }
 }

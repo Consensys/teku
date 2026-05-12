@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.assertj.core.util.Lists;
@@ -30,9 +31,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 class DataColumnSidecarAvailabilityCheckerTest {
   private final Spec spec = mock(Spec.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
 
@@ -43,7 +47,9 @@ class DataColumnSidecarAvailabilityCheckerTest {
 
   @BeforeEach
   void setup() {
-    checker = new DataColumnSidecarAvailabilityChecker(das, spec, block);
+    checker =
+        new DataColumnSidecarAvailabilityChecker(
+            das, spec, recentChainData, block, Duration.ofSeconds(10));
     when(block.getMessage()).thenReturn(beaconBlock);
   }
 
@@ -101,5 +107,46 @@ class DataColumnSidecarAvailabilityCheckerTest {
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.validResult(listOfIndices));
+  }
+
+  @Test
+  void shouldReturnNotAvailableOnTimeoutWhenBlockIsWithinDataAvailabilityWindow()
+      throws ExecutionException, InterruptedException {
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(das.checkSamplingEligibility(block.getMessage()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    when(das.checkDataAvailability(any(), any())).thenReturn(new SafeFuture<>());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(spec.isAvailabilityOfDataColumnSidecarsRequiredAtSlot(any(), any())).thenReturn(true);
+
+    final DataColumnSidecarAvailabilityChecker timedOutChecker =
+        new DataColumnSidecarAvailabilityChecker(
+            das, spec, recentChainData, block, Duration.ofMillis(1));
+
+    assertThat(timedOutChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    final DataAndValidationResult<UInt64> result =
+        timedOutChecker.getAvailabilityCheckResult().get();
+    assertThat(result.isNotAvailable()).isTrue();
+  }
+
+  @Test
+  void shouldReturnNotRequiredOnTimeoutWhenBlockIsOutsideDataAvailabilityWindow()
+      throws ExecutionException, InterruptedException {
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(das.checkSamplingEligibility(block.getMessage()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    when(das.checkDataAvailability(any(), any())).thenReturn(new SafeFuture<>());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(spec.isAvailabilityOfDataColumnSidecarsRequiredAtSlot(any(), any())).thenReturn(false);
+
+    final DataColumnSidecarAvailabilityChecker timedOutChecker =
+        new DataColumnSidecarAvailabilityChecker(
+            das, spec, recentChainData, block, Duration.ofMillis(1));
+
+    assertThat(timedOutChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertThat(timedOutChecker.getAvailabilityCheckResult().get())
+        .isEqualTo(DataAndValidationResult.notRequired());
   }
 }

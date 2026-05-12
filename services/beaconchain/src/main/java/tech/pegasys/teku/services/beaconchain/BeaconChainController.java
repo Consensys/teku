@@ -893,7 +893,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void initDasSamplerManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Activated DAS Sampler Manager for Fulu");
-      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, spec);
+      this.dasSamplerManager =
+          new DasSamplerManager(() -> dataAvailabilitySampler, spec, recentChainData);
     } else {
       LOG.info("Using NOOP DAS Sampler Manager");
       this.dasSamplerManager = DasSamplerManager.NOOP;
