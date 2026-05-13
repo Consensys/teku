@@ -125,7 +125,7 @@ public class DefaultExecutionPayloadBidManager
             bestRemoteBid -> {
               final ExecutionPayloadBid bid = bestRemoteBid.getMessage();
               LOG.info(
-                  "Choosing remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
+                  "Selected remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
                   gweiToEth(bid.getValue()),
                   bid.getBuilderIndex(),
                   formatAbbreviatedHashRoot(bid.getBlockHash()),
