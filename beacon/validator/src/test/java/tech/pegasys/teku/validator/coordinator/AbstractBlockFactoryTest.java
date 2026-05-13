@@ -211,7 +211,7 @@ public abstract class AbstractBlockFactoryTest {
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
     when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
-        .thenAnswer(__ -> dataStructureUtil.emptyExecutionRequests());
+        .thenAnswer(__ -> SafeFuture.completedFuture(dataStructureUtil.emptyExecutionRequests()));
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -578,16 +578,18 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // simulate a bid
-    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any()))
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any(), any()))
         .thenAnswer(
             args -> {
               final Bytes32 parentRoot = args.getArgument(0);
-              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(1));
-              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(2);
+              final Bytes32 parentBlockHash = args.getArgument(1);
+              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(2));
+              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(3);
               // verify we pass the correct future to the bid manager
               assertThat(getPayloadResponseFuture)
                   .isEqualTo(
                       cachedExecutionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired());
+              assertThat(parentBlockHash).isEqualTo(executionPayload.getParentHash());
               final UInt64 slot = state.getSlot();
               final SchemaDefinitionsGloas schemaDefinitions =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
@@ -613,10 +615,9 @@ public abstract class AbstractBlockFactoryTest {
                               .orElse(blobKzgCommitmentsSchema.of()),
                           dataStructureUtil.emptyExecutionRequests().hashTreeRoot());
               return SafeFuture.completedFuture(
-                  Optional.of(
-                      schemaDefinitions
-                          .getSignedExecutionPayloadBidSchema()
-                          .create(executionPayloadBid, BLSSignature.infinity())));
+                  schemaDefinitions
+                      .getSignedExecutionPayloadBidSchema()
+                      .create(executionPayloadBid, BLSSignature.infinity()));
             });
     // simulate caching of the payload result
     when(executionLayer.getCachedPayloadResult(any()))

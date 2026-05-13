@@ -27,14 +27,13 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -46,7 +45,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadManager
     implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
@@ -188,43 +186,34 @@ public class DefaultExecutionPayloadManager
       final SignedExecutionPayloadEnvelope executionPayload,
       final ExecutionPayloadImportResult importResult) {
     LOG.debug(
-        "Unable to import execution payload for reason {}{}: {}",
-        importResult.getFailureReason(),
-        importResult
-            .getFailureCause()
-            .map(ExceptionUtil::getRootCauseMessage)
-            .filter(causeMessage -> !causeMessage.isBlank())
-            .map(causeMessage -> " (" + causeMessage + ")")
-            .orElse(""),
-        executionPayload.toLogString());
+        "Unable to import execution payload for reason {}: {}",
+        importResult::toLogString,
+        executionPayload::toLogString);
   }
 
   @Override
-  public ExecutionRequests getParentExecutionRequestsForBlock(
+  public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
       final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
-    final SpecVersion specVersion = spec.atSlot(slot);
-    final UpdatableStore store = recentChainData.getStore();
-
-    // here we want to peek the execution requests based on the head we selected for block
-    // production.
-    // if we are building on EMPTY we return a ZERO execution request object, otherwise we expect
-    // the payload to be already imported.
-
     if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
-      return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
-          .getExecutionRequestsSchema()
-          .getDefault();
+      return SafeFuture.completedFuture(
+          SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+              .getExecutionRequestsSchema()
+              .getDefault());
     }
-    return store
-        .getExecutionPayloadIfAvailable(parentRoot)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    String.format(
-                        "Execution Payload is not available for parent root %s during block production for slot %s",
-                        parentRoot, slot)))
-        .getMessage()
-        .getExecutionRequests();
+    // to avoid querying the EL when unblinding in some cases, we directly query for the blinded
+    // execution payload which includes going over the in-memory payloads as well
+    return recentChainData
+        .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
+        .thenApply(
+            executionPayload ->
+                executionPayload
+                    .map(SignedBlindedExecutionPayloadEnvelope::getExecutionRequests)
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Execution Requests for parent root %s are not available during block production for slot %s",
+                                    parentRoot, slot))));
   }
 
   @Override

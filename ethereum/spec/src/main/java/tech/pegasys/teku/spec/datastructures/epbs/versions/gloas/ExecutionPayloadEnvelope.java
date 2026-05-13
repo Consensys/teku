@@ -108,7 +108,7 @@ public class ExecutionPayloadEnvelope
                 getParentBeaconBlockRoot());
     checkState(
         blinded.hashTreeRoot().equals(hashTreeRoot()),
-        "Blinded root does not match the unblinded root");
+        "The blinded root does not match the unblinded root");
     return blinded;
   }
 }

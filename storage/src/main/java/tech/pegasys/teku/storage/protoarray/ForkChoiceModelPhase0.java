@@ -219,4 +219,23 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   public void onPrunedBlocks(final BlockNodeVariantsIndex blockNodeIndex) {
     // not used in phase0
   }
+
+  @Override
+  public void onForkChoiceUpdatedResult(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ForkChoiceNode node,
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash,
+      final boolean verifiedInvalidTransition,
+      final HeadSelectionContext headSelectionContext) {
+    onExecutionPayloadResult(
+        protoArray,
+        blockNodeIndex,
+        node.blockRoot(),
+        status,
+        latestValidHash,
+        verifiedInvalidTransition,
+        headSelectionContext);
+  }
 }

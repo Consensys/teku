@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -53,8 +52,7 @@ class StoreTransactionUpdates {
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
   private final boolean executionPayloadEnvelopesEnabled;
-  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
-  private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads;
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads;
 
   StoreTransactionUpdates(
@@ -74,8 +72,7 @@ class StoreTransactionUpdates {
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled,
       final boolean executionPayloadEnvelopesEnabled,
-      final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates,
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads,
+      final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads,
       final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
@@ -89,7 +86,6 @@ class StoreTransactionUpdates {
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
-    checkNotNull(hotExecutionPayloadAndStates, "Hot execution payload states are required");
     checkNotNull(hotExecutionPayloads, "Hot execution payloads are required");
     checkNotNull(blindedExecutionPayloads, "Blinded execution payloads are required");
 
@@ -109,7 +105,6 @@ class StoreTransactionUpdates {
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
     this.executionPayloadEnvelopesEnabled = executionPayloadEnvelopesEnabled;
-    this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
     this.hotExecutionPayloads = hotExecutionPayloads;
     this.blindedExecutionPayloads = blindedExecutionPayloads;
   }
@@ -171,13 +166,14 @@ class StoreTransactionUpdates {
       store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
 
-    store.cacheExecutionPayloads(hotExecutionPayloads);
+    store.cacheExecutionPayloads(
+        Maps.transformValues(hotExecutionPayloads, ExecutionPayloadUpdate::executionPayload));
 
     store
         .getForkChoiceStrategy()
         .applyUpdate(
             hotBlocks.values(),
-            hotExecutionPayloadAndStates.values(),
+            hotExecutionPayloads.values(),
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
             store.getFinalizedCheckpoint());

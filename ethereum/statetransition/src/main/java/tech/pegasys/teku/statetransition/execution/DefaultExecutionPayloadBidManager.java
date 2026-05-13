@@ -13,16 +13,24 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatAbbreviatedHashRoot;
 
+import java.util.Comparator;
+import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -37,14 +45,28 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidManager {
+public class DefaultExecutionPayloadBidManager
+    implements ExecutionPayloadBidManager, SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  // bids are sorted by value descending so the highest-value bid is iterated first;
+  // hashTreeRoot is a tiebreaker to keep the comparator a total order (required by
+  // ConcurrentSkipListSet)
+  private static final Comparator<SignedExecutionPayloadBid> BID_BY_VALUE_DESCENDING =
+      Comparator.<SignedExecutionPayloadBid, UInt64>comparing(bid -> bid.getMessage().getValue())
+          .reversed()
+          .thenComparing(SszData::hashTreeRoot);
 
   private final Spec spec;
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
+
+  // bids are valid for the current and next slot, so they're indexed by bid.slot for pruning;
+  // the inner set is sorted by value descending for cheap best-bid lookup
+  private final ConcurrentNavigableMap<UInt64, NavigableSet<SignedExecutionPayloadBid>> bidsBySlot =
+      new ConcurrentSkipListMap<>();
 
   public DefaultExecutionPayloadBidManager(
       final Spec spec,
@@ -66,33 +88,94 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            // TODO-GLOAS handle bids
-            case ACCEPT ->
-                receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
-                    signedBid);
-            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            case ACCEPT -> {
+              addBid(signedBid);
+              receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
+                  signedBid);
+            }
+            case SAVE_FOR_FUTURE -> {}
+            case REJECT, IGNORE ->
+                LOG.debug(
+                    "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
+                    remoteBidOrigin,
+                    signedBid.getMessage().getSlot(),
+                    signedBid.getMessage().getBuilderIndex(),
+                    result);
           }
         });
     return validationResult;
   }
 
   @Override
-  public SafeFuture<Optional<SignedExecutionPayloadBid>> getBidForBlock(
+  public void onSlot(final UInt64 slot) {
+    // bids are valid for the current and next slot, so anything below the current slot is stale
+    bidsBySlot.headMap(slot, false).clear();
+  }
+
+  @Override
+  public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       final Bytes32 parentRoot,
+      final Bytes32 parentBlockHash,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
-    // only supporting local self-built bids
-    return getLocalSelfBuiltBid(parentRoot, slot, getPayloadResponseFuture).thenApply(Optional::of);
+    return findBestRemoteBid(slot, parentRoot, parentBlockHash)
+        .map(
+            bestRemoteBid -> {
+              final ExecutionPayloadBid bid = bestRemoteBid.getMessage();
+              LOG.info(
+                  "Selected remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
+                  gweiToEth(bid.getValue()),
+                  bid.getBuilderIndex(),
+                  formatAbbreviatedHashRoot(bid.getBlockHash()),
+                  slot);
+              blockProductionPerformance.builderBidValidated();
+              return SafeFuture.completedFuture(bestRemoteBid);
+            })
+        // fallback to local self-built bid
+        .orElseGet(
+            () ->
+                getLocalSelfBuiltBid(parentRoot, parentBlockHash, slot, getPayloadResponseFuture));
+  }
+
+  private void addBid(final SignedExecutionPayloadBid signedBid) {
+    bidsBySlot
+        .computeIfAbsent(
+            signedBid.getMessage().getSlot(),
+            __ -> new ConcurrentSkipListSet<>(BID_BY_VALUE_DESCENDING))
+        .add(signedBid);
+  }
+
+  private Optional<SignedExecutionPayloadBid> findBestRemoteBid(
+      final UInt64 slot, final Bytes32 parentRoot, final Bytes32 parentBlockHash) {
+    final NavigableSet<SignedExecutionPayloadBid> bids = bidsBySlot.get(slot);
+    if (bids == null) {
+      return Optional.empty();
+    }
+    // bids iterate from highest to lowest value; return the first one matching the exact parent
+    return bids.stream()
+        .filter(bid -> bid.getMessage().getParentBlockRoot().equals(parentRoot))
+        .filter(bid -> bid.getMessage().getParentBlockHash().equals(parentBlockHash))
+        .findFirst();
   }
 
   private SafeFuture<SignedExecutionPayloadBid> getLocalSelfBuiltBid(
       final Bytes32 parentRoot,
+      final Bytes32 parentBlockHash,
       final UInt64 slot,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
     return getPayloadResponseFuture.thenApply(
         getPayloadResponse -> {
+          final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+          if (!executionPayload.getParentHash().equals(parentBlockHash)) {
+            throw new IllegalStateException(
+                String.format(
+                    "Self-built execution payload parent hash %s does not match selected production parent execution hash %s for block at slot %s",
+                    formatAbbreviatedHashRoot(executionPayload.getParentHash()),
+                    formatAbbreviatedHashRoot(parentBlockHash),
+                    slot));
+          }
           final SignedExecutionPayloadBid localSelfBuiltSignedBid =
               createLocalSelfBuiltSignedBid(getPayloadResponse, slot, parentRoot);
           LOG.info(

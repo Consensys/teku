@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -76,7 +77,14 @@ public class SignedExecutionPayloadEnvelope
 
   public String toLogString() {
     return LogFormatter.formatExecutionPayload(
-        getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
+        getMessage().getSlot(),
+        getMessage().getBeaconBlockRoot(),
+        getMessage().getBuilderIndex(),
+        getMessage().getPayload().getBlockHash());
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope blind(final Spec spec) {
+    return blind(SchemaDefinitionsGloas.required(spec.atSlot(getSlot()).getSchemaDefinitions()));
   }
 
   public SignedBlindedExecutionPayloadEnvelope blind(
