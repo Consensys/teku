@@ -497,16 +497,19 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     // locally, but ancestor bestDescendantIndex pointers still point at EMPTY. Redirect the
     // landing point to BASE.bestChild — the model-preferred sibling — using the candidate's own
     // block root since PENDING/EMPTY/FULL all share it.
-    if (candidate.getBestDescendantIndex().isPresent() && !candidate.isInvalid()) {
-      return protoArray.getNodeByIndex(candidate.getBestDescendantIndex().get());
-    }
+    final ProtoNode landingPoint =
+        candidate
+            .getBestDescendantIndex()
+            .filter(__ -> !candidate.isInvalid())
+            .map(protoArray::getNodeByIndex)
+            .orElse(candidate);
 
-    return resolveBaseNode(blockNodeIndex, candidate.getBlockRoot())
+    return resolveBaseNode(blockNodeIndex, landingPoint.getBlockRoot())
         .flatMap(protoArray::getNode)
         .flatMap(ProtoNode::getBestChildIndex)
         .map(protoArray::getNodeByIndex)
         .filter(sibling -> !sibling.isInvalid())
-        .orElse(candidate);
+        .orElse(landingPoint);
   }
 
   @Override

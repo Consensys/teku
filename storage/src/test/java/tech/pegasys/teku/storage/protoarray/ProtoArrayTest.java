@@ -1103,6 +1103,59 @@ class ProtoArrayTest {
   }
 
   @Test
+  void findOptimisticHead_shouldContinuePastStaleEmptyLandingToNewGloasChild() {
+    final Bytes32 slot8 = dataStructureUtil.randomBytes32();
+    final Bytes32 slot9 = dataStructureUtil.randomBytes32();
+    final Bytes32 slot10 = dataStructureUtil.randomBytes32();
+    final Bytes32 slot9ExecutionBlockHash = dataStructureUtil.randomBytes32();
+
+    addValidBlock(8, slot8, GENESIS_CHECKPOINT.getRoot());
+    protoArray.createEmptyNode(slot8);
+    protoArray.onExecutionPayload(slot8, EXECUTION_BLOCK_NUMBER, EXECUTION_BLOCK_HASH);
+    protoArray.markNodeValid(slot8);
+
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, slot8, false, false));
+    applyScoreChanges(gloasModel, UInt64.valueOf(100), Optional.empty());
+
+    final int slot8FullIndex = protoArray.getFullNodeIndices().getInt(slot8);
+    final ProtoNode slot8Head =
+        protoArray.findOptimisticHead(UInt64.valueOf(5), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+    assertThat(slot8Head).isEqualTo(protoArray.getNodeByIndex(slot8FullIndex));
+
+    // Import the next block and then its payload. Updating the variants locally leaves
+    // slot8.FULL.bestDescendantIndex pointing at slot9.EMPTY, while slot9.BASE now prefers
+    // slot9.FULL.
+    addValidBlockWithParentIndex(
+        9, slot9, slot8, Optional.of(slot8FullIndex), EXECUTION_BLOCK_HASH);
+    protoArray.createEmptyNode(slot9);
+    protoArray.onExecutionPayload(slot9, EXECUTION_BLOCK_NUMBER.plus(1), slot9ExecutionBlockHash);
+    protoArray.markNodeValid(slot9);
+
+    final int slot9EmptyIndex = protoArray.getEmptyNodeIndices().getInt(slot9);
+    final int slot9FullIndex = protoArray.getFullNodeIndices().getInt(slot9);
+    assertThat(protoArray.getNodeByIndex(slot8FullIndex).getBestDescendantIndex())
+        .contains(slot9EmptyIndex);
+    assertThat(protoArray.getProtoNode(slot9).orElseThrow().getBestChildIndex())
+        .contains(slot9FullIndex);
+
+    // Import another block built on slot9.FULL but do not add its FULL node yet. Head selection
+    // must redirect the stale slot9.EMPTY landing point to slot9.FULL, then continue down to the
+    // newly imported slot10.EMPTY node.
+    addValidBlockWithParentIndex(
+        10, slot10, slot9, Optional.of(slot9FullIndex), slot9ExecutionBlockHash);
+    protoArray.createEmptyNode(slot10);
+
+    final ProtoNode importedChildHead =
+        protoArray.findOptimisticHead(UInt64.valueOf(5), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+    assertThat(importedChildHead.getBlockRoot()).isEqualTo(slot10);
+    assertThat(importedChildHead.getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY);
+
+    final int slot10EmptyIndex = protoArray.getEmptyNodeIndices().getInt(slot10);
+    assertThat(protoArray.getNodeByIndex(slot10EmptyIndex)).isEqualTo(importedChildHead);
+  }
+
+  @Test
   void gloas_onExecutionPayloadResult_invalid_shouldOnlyInvalidateFullNode() {
     // Set up a Gloas block with base + EMPTY + FULL nodes (FULL stays optimistic)
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());

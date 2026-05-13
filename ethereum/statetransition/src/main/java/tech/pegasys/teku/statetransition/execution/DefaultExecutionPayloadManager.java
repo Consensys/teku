@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -200,20 +201,19 @@ public class DefaultExecutionPayloadManager
               .getDefault());
     }
     // to avoid querying the EL when unblinding in some cases, we directly query for the blinded
-    // execution payload which include the in-memory payloads as well
+    // execution payload which includes going over the in-memory payloads as well
     return recentChainData
         .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
         .thenApply(
             executionPayload ->
                 executionPayload
+                    .map(SignedBlindedExecutionPayloadEnvelope::getExecutionRequests)
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
                                 String.format(
-                                    "Execution Payload is not available for parent root %s during block production for slot %s",
-                                    parentRoot, slot)))
-                    .getMessage()
-                    .getExecutionRequests());
+                                    "Execution Requests for parent root %s are not available during block production for slot %s",
+                                    parentRoot, slot))));
   }
 
   @Override

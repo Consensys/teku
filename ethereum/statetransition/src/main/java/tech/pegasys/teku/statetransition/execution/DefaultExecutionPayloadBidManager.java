@@ -93,7 +93,14 @@ public class DefaultExecutionPayloadBidManager
               receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
                   signedBid);
             }
-            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            case SAVE_FOR_FUTURE -> {}
+            case REJECT, IGNORE ->
+                LOG.debug(
+                    "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
+                    remoteBidOrigin,
+                    signedBid.getMessage().getSlot(),
+                    signedBid.getMessage().getBuilderIndex(),
+                    result);
           }
         });
     return validationResult;
@@ -106,25 +113,30 @@ public class DefaultExecutionPayloadBidManager
   }
 
   @Override
-  public SafeFuture<Optional<SignedExecutionPayloadBid>> getBidForBlock(
+  public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       final Bytes32 parentRoot,
+      final Bytes32 parentBlockHash,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
-    final Optional<SignedExecutionPayloadBid> bestRemoteBid = findBestRemoteBid(slot, parentRoot);
-    if (bestRemoteBid.isPresent()) {
-      final ExecutionPayloadBid bid = bestRemoteBid.get().getMessage();
-      LOG.info(
-          "Considering remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
-          gweiToEth(bid.getValue()),
-          bid.getBuilderIndex(),
-          formatAbbreviatedHashRoot(bid.getBlockHash()),
-          slot);
-      blockProductionPerformance.builderBidValidated();
-      return SafeFuture.completedFuture(bestRemoteBid);
-    }
-    return getLocalSelfBuiltBid(parentRoot, slot, getPayloadResponseFuture).thenApply(Optional::of);
+    return findBestRemoteBid(slot, parentRoot, parentBlockHash)
+        .map(
+            bestRemoteBid -> {
+              final ExecutionPayloadBid bid = bestRemoteBid.getMessage();
+              LOG.info(
+                  "Selected remote bid (value: {} ETH, builder index: {}, EL block: {}) for block at slot {}",
+                  gweiToEth(bid.getValue()),
+                  bid.getBuilderIndex(),
+                  formatAbbreviatedHashRoot(bid.getBlockHash()),
+                  slot);
+              blockProductionPerformance.builderBidValidated();
+              return SafeFuture.completedFuture(bestRemoteBid);
+            })
+        // fallback to local self-built bid
+        .orElseGet(
+            () ->
+                getLocalSelfBuiltBid(parentRoot, parentBlockHash, slot, getPayloadResponseFuture));
   }
 
   private void addBid(final SignedExecutionPayloadBid signedBid) {
@@ -136,23 +148,34 @@ public class DefaultExecutionPayloadBidManager
   }
 
   private Optional<SignedExecutionPayloadBid> findBestRemoteBid(
-      final UInt64 slot, final Bytes32 parentRoot) {
+      final UInt64 slot, final Bytes32 parentRoot, final Bytes32 parentBlockHash) {
     final NavigableSet<SignedExecutionPayloadBid> bids = bidsBySlot.get(slot);
     if (bids == null) {
       return Optional.empty();
     }
-    // bids iterate from highest to lowest value; return the first one matching parentBlockRoot
+    // bids iterate from highest to lowest value; return the first one matching the exact parent
     return bids.stream()
         .filter(bid -> bid.getMessage().getParentBlockRoot().equals(parentRoot))
+        .filter(bid -> bid.getMessage().getParentBlockHash().equals(parentBlockHash))
         .findFirst();
   }
 
   private SafeFuture<SignedExecutionPayloadBid> getLocalSelfBuiltBid(
       final Bytes32 parentRoot,
+      final Bytes32 parentBlockHash,
       final UInt64 slot,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
     return getPayloadResponseFuture.thenApply(
         getPayloadResponse -> {
+          final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+          if (!executionPayload.getParentHash().equals(parentBlockHash)) {
+            throw new IllegalStateException(
+                String.format(
+                    "Self-built execution payload parent hash %s does not match selected production parent execution hash %s for block at slot %s",
+                    formatAbbreviatedHashRoot(executionPayload.getParentHash()),
+                    formatAbbreviatedHashRoot(parentBlockHash),
+                    slot));
+          }
           final SignedExecutionPayloadBid localSelfBuiltSignedBid =
               createLocalSelfBuiltSignedBid(getPayloadResponse, slot, parentRoot);
           LOG.info(
