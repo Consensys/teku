@@ -207,28 +207,25 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     if (existing != null) {
       return existing;
     }
-    final boolean[] created = {false};
-    final DataColumnSamplingTracker tracker =
-        recentlySampledColumnsByRoot.computeIfAbsent(
+    final DataColumnSamplingTracker dataColumnSamplingTracker = DataColumnSamplingTracker.create(
+            slot,
             blockRoot,
-            k -> {
-              created[0] = true;
-              return DataColumnSamplingTracker.create(
-                  slot,
-                  blockRoot,
-                  custodyGroupCountManager,
-                  halfColumnsSamplingCompletionEnabled
-                      ? Optional.of(
-                          SpecConfigFulu.required(spec.atSlot(slot).getConfig())
-                                  .getNumberOfColumns()
-                              / 2)
-                      : Optional.empty());
-            });
-    if (created[0]) {
+            custodyGroupCountManager,
+            halfColumnsSamplingCompletionEnabled
+                    ? Optional.of(
+                    SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                    .getNumberOfColumns()
+                    / 2)
+                    : Optional.empty());
+    final DataColumnSamplingTracker trackerInserted =
+            recentlySampledColumnsByRoot.computeIfAbsent(
+                    blockRoot,
+                    __ -> dataColumnSamplingTracker);
+    if (dataColumnSamplingTracker == trackerInserted) {
       makeRoomForNewTracker();
-      onFirstSeen(slot, blockRoot, tracker);
+      onFirstSeen(slot, blockRoot, dataColumnSamplingTracker);
     }
-    return tracker;
+    return trackerInserted;
   }
 
   private void makeRoomForNewTracker() {
