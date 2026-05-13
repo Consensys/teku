@@ -673,10 +673,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public List<ProtoNodeData> getBlockData() {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getNodes().stream()
-          .filter(node -> isBaseNode(node) && blockNodeIndex.containsBlock(node.getBlockRoot()))
-          .map(ProtoNode::getBlockData)
-          .toList();
+      return protoArray.getNodes().stream().map(ProtoNode::getBlockData).toList();
     } finally {
       protoArrayLock.readLock().unlock();
     }
