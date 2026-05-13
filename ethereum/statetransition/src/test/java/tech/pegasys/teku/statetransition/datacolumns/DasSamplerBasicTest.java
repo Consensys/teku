@@ -583,7 +583,9 @@ public class DasSamplerBasicTest {
     final DataColumnSamplingTracker incomplete =
         incompleteMockTracker(dataStructureUtil.randomBytes32(), 150L);
 
-    smallSampler.getRecentlySampledColumnsByRoot().put(oldestCompleted.blockRoot(), oldestCompleted);
+    smallSampler
+        .getRecentlySampledColumnsByRoot()
+        .put(oldestCompleted.blockRoot(), oldestCompleted);
     smallSampler.getRecentlySampledColumnsByRoot().put(newerCompleted.blockRoot(), newerCompleted);
     smallSampler.getRecentlySampledColumnsByRoot().put(incomplete.blockRoot(), incomplete);
 
@@ -612,7 +614,9 @@ public class DasSamplerBasicTest {
     final DataColumnSamplingTracker newerCompleted =
         completedMockTracker(dataStructureUtil.randomBytes32(), 200L);
 
-    smallSampler.getRecentlySampledColumnsByRoot().put(oldestCompleted.blockRoot(), oldestCompleted);
+    smallSampler
+        .getRecentlySampledColumnsByRoot()
+        .put(oldestCompleted.blockRoot(), oldestCompleted);
     smallSampler.getRecentlySampledColumnsByRoot().put(newerCompleted.blockRoot(), newerCompleted);
 
     final DataColumnSidecar sidecar =
@@ -664,16 +668,20 @@ public class DasSamplerBasicTest {
 
   @Test
   void metrics_shouldExposeRecentlySampledBlocksGauge() {
-    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "das_recently_sampled_blocks_size")
-            .getValue())
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.BEACON, "das_recently_sampled_blocks_size")
+                .getValue())
         .isZero();
 
     final SignedBeaconBlock blockWithBlobs =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
     sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
 
-    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "das_recently_sampled_blocks_size")
-            .getValue())
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.BEACON, "das_recently_sampled_blocks_size")
+                .getValue())
         .isEqualTo(1.0);
   }
 

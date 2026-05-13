@@ -325,7 +325,8 @@ public class P2POptions {
       names = {"--Xp2p-max-concurrently-sampled-blocks"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Maximum number of recent blocks we keep in the temporary cache to serve requests of recent blocks that have not being fully imported.",
+      description =
+          "Maximum number of recent blocks we keep in the temporary cache to serve requests of recent blocks that have not being fully imported.",
       hidden = true,
       arity = "1")
   private Integer maxConcurrentlySampledBlocks = SyncConfig.DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;

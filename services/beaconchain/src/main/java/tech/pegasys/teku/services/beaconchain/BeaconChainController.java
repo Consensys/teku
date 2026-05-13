@@ -609,7 +609,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final ExecutionPayloadProvider executionPayloadProvider =
         createExecutionPayloadProvider(storageQueryChannel);
-    // Used to optimize the case where we receive a block and are still importing its blobs/data columns,
+    // Used to optimize the case where we receive a block and are still importing its blobs/data
+    // columns,
     // in the meantime we can serve the block if we receive an RPC request
     final SingleBlockProvider singleBlockProviderResolver =
         new SingleBlockProviderResolver(

@@ -208,20 +208,17 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     if (existing != null) {
       return existing;
     }
-    final DataColumnSamplingTracker dataColumnSamplingTracker = DataColumnSamplingTracker.create(
+    final DataColumnSamplingTracker dataColumnSamplingTracker =
+        DataColumnSamplingTracker.create(
             slot,
             blockRoot,
             custodyGroupCountManager,
             halfColumnsSamplingCompletionEnabled
-                    ? Optional.of(
-                    SpecConfigFulu.required(spec.atSlot(slot).getConfig())
-                    .getNumberOfColumns()
-                    / 2)
-                    : Optional.empty());
+                ? Optional.of(
+                    SpecConfigFulu.required(spec.atSlot(slot).getConfig()).getNumberOfColumns() / 2)
+                : Optional.empty());
     final DataColumnSamplingTracker trackerInserted =
-            recentlySampledColumnsByRoot.computeIfAbsent(
-                    blockRoot,
-                    __ -> dataColumnSamplingTracker);
+        recentlySampledColumnsByRoot.computeIfAbsent(blockRoot, __ -> dataColumnSamplingTracker);
     if (dataColumnSamplingTracker == trackerInserted) {
       makeRoomForNewTracker();
       onFirstSeen(slot, blockRoot, dataColumnSamplingTracker);
@@ -249,7 +246,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     if (afterSoft < hardLimit) {
       return;
     }
-    final int hardExcess = afterSoft - hardLimit ;
+    final int hardExcess = afterSoft - hardLimit;
     recentlySampledColumnsByRoot.entrySet().stream()
         .sorted(Comparator.comparingLong(e -> e.getValue().createdAtNanos()))
         .limit(hardExcess)
