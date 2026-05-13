@@ -714,7 +714,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
-    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+    if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
+      forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+    }
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -758,11 +760,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   "Invalid ExecutionPayload: "
                       + payloadStatus.getValidationError().orElse("No reason provided")));
       reportInvalidExecutionPayload(signedEnvelope, result);
+      getForkChoiceStrategy()
+          .onExecutionPayloadResult(
+              signedEnvelope.getParentBeaconBlockRoot(), payloadStatus, false);
       return result;
-    }
-
-    if (payloadStatus.hasNotValidatedStatus()) {
-      return ExecutionPayloadImportResult.FAILED_EXECUTION_SYNCING;
     }
 
     if (payloadStatus.hasFailedExecution()) {
@@ -784,16 +785,28 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
-    forkChoiceUtil.applyExecutionPayloadToStore(transaction, signedEnvelope);
+    final ExecutionPayloadImportResult result;
+    if (payloadStatus.hasValidStatus()) {
+      result = ExecutionPayloadImportResult.successful(signedEnvelope);
+    } else {
+      result = ExecutionPayloadImportResult.optimisticallySuccessful(signedEnvelope);
+    }
+
+    forkChoiceUtil.applyExecutionPayloadToStore(
+        transaction, signedEnvelope, result.isImportedOptimistically());
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+
+    forkChoiceStrategy.onExecutionPayloadResult(
+        signedEnvelope.getBeaconBlockRoot(), payloadStatus, true);
+
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
 
-    return ExecutionPayloadImportResult.successful(signedEnvelope);
+    return result;
   }
 
   // from consensus-specs/fork-choice:
