@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
@@ -83,8 +84,14 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
       default -> {
+        // Propagate to a local future before applying orTimeout: orTimeout mutates the future
+        // in-place, and the sampler's tracker future is shared/cached, so timing it out directly
+        // would permanently poison it and prevent later column arrivals from recovering it.
+        final SafeFuture<List<UInt64>> localFuture = new SafeFuture<>();
         dataAvailabilitySampler
             .checkDataAvailability(block.getSlot(), block.getRoot())
+            .propagateTo(localFuture);
+        localFuture
             .orTimeout(waitForSamplerCompletionTimeout)
             .thenApply(DataAndValidationResult::validResult)
             .exceptionallyCompose(

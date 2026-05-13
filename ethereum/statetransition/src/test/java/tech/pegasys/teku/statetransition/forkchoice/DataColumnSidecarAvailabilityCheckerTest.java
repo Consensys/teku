@@ -149,4 +149,29 @@ class DataColumnSidecarAvailabilityCheckerTest {
     assertThat(timedOutChecker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.notRequired());
   }
+
+  @Test
+  void shouldNotPoisonSharedTrackerFutureOnTimeout()
+      throws ExecutionException, InterruptedException {
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(das.checkSamplingEligibility(block.getMessage()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    final SafeFuture<List<UInt64>> sharedTrackerFuture = new SafeFuture<>();
+    when(das.checkDataAvailability(any(), any())).thenReturn(sharedTrackerFuture);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(spec.isAvailabilityOfDataColumnSidecarsRequiredAtSlot(any(), any())).thenReturn(true);
+
+    final DataColumnSidecarAvailabilityChecker timedOutChecker =
+        new DataColumnSidecarAvailabilityChecker(
+            das, spec, recentChainData, block, Duration.ofMillis(1));
+    timedOutChecker.initiateDataAvailabilityCheck();
+
+    // wait for the checker to time out
+    final DataAndValidationResult<UInt64> result =
+        timedOutChecker.getAvailabilityCheckResult().get();
+    assertThat(result.isNotAvailable()).isTrue();
+
+    // the shared tracker future must not have been completed by the timeout
+    assertThat(sharedTrackerFuture).isNotDone();
+  }
 }
