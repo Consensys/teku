@@ -213,6 +213,8 @@ class Store extends CacheableStore {
         ExecutionPayloadProvider.combined(
             createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
             executionPayloadProvider);
+    // Derive blinded payloads from the hot unblinded payload map so both lookup paths see the same
+    // in-memory Gloas payloads before falling back to the backing provider.
     this.blindedExecutionPayloadProvider =
         BlindedExecutionPayloadProvider.combined(
             createBlindedExecutionPayloadProviderFromMapWhileLocked(

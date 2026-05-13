@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -188,24 +187,16 @@ public class DefaultExecutionPayloadManager
       final SignedExecutionPayloadEnvelope executionPayload,
       final ExecutionPayloadImportResult importResult) {
     LOG.debug(
-        "Unable to import execution payload for reason {}{}: {}",
-        importResult.getFailureReason(),
-        importResult
-            .getFailureCause()
-            .map(ExceptionUtil::getRootCauseMessage)
-            .filter(causeMessage -> !causeMessage.isBlank())
-            .map(causeMessage -> " (" + causeMessage + ")")
-            .orElse(""),
-        executionPayload.toLogString());
+        "Unable to import execution payload for reason {}: {}",
+        importResult::toLogString,
+        executionPayload::toLogString);
   }
 
   @Override
   public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
-      final UInt64 slot,
-      final Bytes32 parentRoot,
-      final ForkChoicePayloadStatus parentPayloadStatus) {
+      final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    if (!parentPayloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
+    if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
       return SafeFuture.completedFuture(
           SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
               .getExecutionRequestsSchema()

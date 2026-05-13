@@ -4,18 +4,10 @@
   "required" : [ "payload", "execution_requests", "builder_index", "beacon_block_root", "parent_beacon_block_root" ],
   "properties" : {
     "payload" : {
-      "title" : "ExecutionPayload",
-      "type" : "object",
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/ExecutionPayloadGloas"
-      } ]
+      "$ref" : "#/components/schemas/ExecutionPayloadGloas"
     },
     "execution_requests" : {
-      "title" : "ExecutionRequests",
-      "type" : "object",
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/ExecutionRequestsElectra"
-      } ]
+      "$ref" : "#/components/schemas/ExecutionRequestsElectra"
     },
     "builder_index" : {
       "type" : "string",

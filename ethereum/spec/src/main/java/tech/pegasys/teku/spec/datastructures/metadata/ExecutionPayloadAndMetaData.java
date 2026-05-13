@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.metadata;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
@@ -21,5 +20,4 @@ public record ExecutionPayloadAndMetaData(
     SignedExecutionPayloadEnvelope data,
     SpecMilestone milestone,
     boolean executionOptimistic,
-    boolean finalized,
-    Bytes32 stateRoot) {}
+    boolean finalized) {}

@@ -36,7 +36,7 @@ public class ExecutionPayloadSelectorFactory
 
   @Override
   public ExecutionPayloadSelector blockRootSelector(final Bytes32 blockRoot) {
-    return () -> client.getExecutionPayloadByBlockRoot(blockRoot).thenCompose(this::addMetaData);
+    return () -> client.getExecutionPayloadByBlockRoot(blockRoot).thenApply(this::addMetaData);
   }
 
   @Override
@@ -48,7 +48,7 @@ public class ExecutionPayloadSelectorFactory
                 chainHead ->
                     client
                         .getExecutionPayloadByBlockRoot(chainHead.getRoot())
-                        .thenCompose(
+                        .thenApply(
                             maybeExecutionPayload -> addMetaData(maybeExecutionPayload, chainHead)))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
@@ -78,39 +78,32 @@ public class ExecutionPayloadSelectorFactory
                 chainHead ->
                     client
                         .getExecutionPayloadAtSlotExact(slot, chainHead.getRoot())
-                        .thenCompose(
+                        .thenApply(
                             maybeExecutionPayload -> addMetaData(maybeExecutionPayload, chainHead)))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
-  private SafeFuture<Optional<ExecutionPayloadAndMetaData>> addMetaData(
+  private Optional<ExecutionPayloadAndMetaData> addMetaData(
       final Optional<SignedExecutionPayloadEnvelope> maybeExecutionPayload) {
     // Ensure we use the same chain head when calculating metadata to ensure a consistent view.
     return client
         .getChainHead()
-        .map(chainHead -> addMetaData(maybeExecutionPayload, chainHead))
-        .orElse(SafeFuture.completedFuture(Optional.empty()));
+        .flatMap(chainHead -> addMetaData(maybeExecutionPayload, chainHead));
   }
 
-  private SafeFuture<Optional<ExecutionPayloadAndMetaData>> addMetaData(
+  private Optional<ExecutionPayloadAndMetaData> addMetaData(
       final Optional<SignedExecutionPayloadEnvelope> maybeExecutionPayload,
       final ChainHead chainHead) {
     if (maybeExecutionPayload.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     }
     final SignedExecutionPayloadEnvelope executionPayload = maybeExecutionPayload.get();
-    return client
-        .getStateByBlockRoot(executionPayload.getBeaconBlockRoot())
-        .thenApply(
-            maybeState ->
-                maybeState.map(
-                    state ->
-                        new ExecutionPayloadAndMetaData(
-                            executionPayload,
-                            spec.atSlot(executionPayload.getSlot()).getMilestone(),
-                            chainHead.isOptimistic()
-                                || client.isOptimisticBlock(executionPayload.getBeaconBlockRoot()),
-                            client.isFinalized(executionPayload.getSlot()),
-                            state.hashTreeRoot())));
+    return Optional.of(
+        new ExecutionPayloadAndMetaData(
+            executionPayload,
+            spec.atSlot(executionPayload.getSlot()).getMilestone(),
+            chainHead.isOptimistic()
+                || client.isOptimisticBlock(executionPayload.getBeaconBlockRoot()),
+            client.isFinalized(executionPayload.getSlot())));
   }
 }
