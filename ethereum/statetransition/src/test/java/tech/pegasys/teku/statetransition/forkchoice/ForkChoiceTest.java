@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -106,6 +107,7 @@ import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -915,6 +917,47 @@ class ForkChoiceTest {
 
     verify(transitionBlockValidator)
         .verifyAncestorTransitionBlock(recentChainData.getBestBlockRoot().orElseThrow());
+  }
+
+  @Test
+  void onForkChoiceUpdatedResult_validGloasNode_shouldForwardExactHeadNode() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
+            debugDataDumper,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    final Bytes32 blockRoot = Bytes32.random();
+    final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+
+    when(recentChainData.getUpdatableForkChoiceStrategy())
+        .thenReturn(Optional.of(forkChoiceStrategy));
+    when(transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
+
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                emptyNode, ONE, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(PayloadStatus.VALID, Optional.empty()))));
+
+    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, PayloadStatus.VALID, false);
+    verify(forkChoiceStrategy, never())
+        .onExecutionPayloadResult(eq(blockRoot), eq(PayloadStatus.VALID), anyBoolean());
   }
 
   @Test

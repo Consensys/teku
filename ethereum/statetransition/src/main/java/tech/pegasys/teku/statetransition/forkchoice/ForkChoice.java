@@ -206,7 +206,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     forkChoiceUpdatedResultNotification.forkChoiceState().headExecutionBlockHash());
                 return;
               }
-              onExecutionPayloadResult(
+              onForkChoiceUpdatedPayloadResult(
                   forkChoiceUpdatedResultNotification.forkChoiceState().headBlock(),
                   forkChoiceUpdatedResult.getPayloadStatus());
             })
@@ -976,7 +976,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
   }
 
-  private void onExecutionPayloadResult(
+  private void onForkChoiceUpdatedPayloadResult(
       final ForkChoiceNode node, final PayloadStatus payloadResult) {
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
@@ -993,7 +993,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               result.getInvalidTransitionBlockRoot().orElse(node.blockRoot());
 
           if (resultStatus.hasValidStatus()) {
-            getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, true);
+            // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
+            // Gloas, EMPTY and FULL nodes can share a block root, so keep node identity instead of
+            // collapsing to block root.
+            getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, false);
           } else {
             getForkChoiceStrategy()
                 .onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
