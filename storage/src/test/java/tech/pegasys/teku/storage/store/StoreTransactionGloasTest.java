@@ -209,23 +209,27 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
         .isCompletedWithValue(Optional.of(executionPayload));
   }
 
-  // TODO-GLOAS: fix test (disabled when working on glamsterdam-devnet-2)
-  //  We need to load the blockRoot in forkChoiceStrategy to make sure containsBlock(blockRoot)
-  // returns true
   @Test
-  @Disabled
   public void retrieveSignedExecutionPayload_fromExternalProvider() {
+    final StoreBuilder storeBuilder = createStoreBuilder(defaultStoreConfig);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final SignedExecutionPayloadEnvelope envelope =
-        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
     final Bytes32 blockRoot = envelope.getBeaconBlockRoot();
 
     final UpdatableStore store =
-        createStoreBuilder(defaultStoreConfig)
+        storeBuilder
             .executionPayloadProvider(
                 roots ->
                     SafeFuture.completedFuture(
                         roots.contains(blockRoot) ? Map.of(blockRoot, envelope) : Map.of()))
             .build();
+
+    // Load the block into forkChoiceStrategy so containsBlock(blockRoot) returns true, but
+    // skip putExecutionPayload so retrieval must fall through to the external provider.
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+    assertThat(tx.commit()).isCompleted();
 
     assertThat(store.retrieveSignedExecutionPayload(blockRoot))
         .isCompletedWithValue(Optional.of(envelope));
