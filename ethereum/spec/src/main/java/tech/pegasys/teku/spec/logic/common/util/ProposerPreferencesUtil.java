@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,6 +27,7 @@ public interface ProposerPreferencesUtil {
       new ProposerPreferencesUtil() {
         @Override
         public Optional<ProposerPreferences> createProposerPreferences(
+            final Bytes32 dependentRoot,
             final UInt64 slot,
             final UInt64 validatorIndex,
             final Eth1Address feeRecipient,
@@ -41,7 +43,11 @@ public interface ProposerPreferencesUtil {
       };
 
   Optional<ProposerPreferences> createProposerPreferences(
-      UInt64 slot, UInt64 validatorIndex, Eth1Address feeRecipient, UInt64 gasLimit);
+      Bytes32 dependentRoot,
+      UInt64 slot,
+      UInt64 validatorIndex,
+      Eth1Address feeRecipient,
+      UInt64 gasLimit);
 
   Optional<SignedProposerPreferences> createSignedProposerPreferences(
       ProposerPreferences preferences, BLSSignature signature);

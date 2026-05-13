@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
@@ -59,6 +60,42 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
     super(specConfig, miscHelpers, beaconStateAccessors, schemaDefinitions);
     this.specConfigGloas = specConfig;
     this.beaconStateAccessorsGloas = beaconStateAccessors;
+  }
+
+  /**
+   * compute_exit_epoch_and_update_churn
+   *
+   * <p>EIP-8061 (Gloas): exits use the uncapped {@code get_exit_churn_limit} instead of the
+   * activation/exit churn shared in Electra.
+   */
+  @Override
+  public UInt64 computeExitEpochAndUpdateChurn(
+      final MutableBeaconStateElectra state, final UInt64 exitBalance) {
+    final UInt64 earliestExitEpoch =
+        miscHelpers
+            .computeActivationExitEpoch(beaconStateAccessorsGloas.getCurrentEpoch(state))
+            .max(state.getEarliestExitEpoch());
+    final UInt64 perEpochChurn = beaconStateAccessorsGloas.getExitChurnLimit(state);
+    final UInt64 exitBalanceToConsume =
+        state.getEarliestExitEpoch().isLessThan(earliestExitEpoch)
+            ? perEpochChurn
+            : state.getExitBalanceToConsume();
+
+    if (exitBalance.isGreaterThan(exitBalanceToConsume)) {
+      final UInt64 balanceToProcess = exitBalance.minusMinZero(exitBalanceToConsume);
+      final UInt64 additionalEpochs =
+          balanceToProcess.minusMinZero(1).dividedBy(perEpochChurn).increment();
+      state.setExitBalanceToConsume(
+          exitBalanceToConsume
+              .plus(additionalEpochs.times(perEpochChurn))
+              .minusMinZero(exitBalance));
+      state.setEarliestExitEpoch(earliestExitEpoch.plus(additionalEpochs));
+    } else {
+      state.setExitBalanceToConsume(exitBalanceToConsume.minusMinZero(exitBalance));
+      state.setEarliestExitEpoch(earliestExitEpoch);
+    }
+
+    return state.getEarliestExitEpoch();
   }
 
   /**

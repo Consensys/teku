@@ -135,6 +135,7 @@ class UnblindingExecutionPayloadProviderTest {
                         executionPayload,
                         dataStructureUtil.randomExecutionRequests(),
                         dataStructureUtil.randomBuilderIndex(),
+                        dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32()),
                 dataStructureUtil.randomSignature());
     final Bytes32 blockRoot = originalEnvelope.getBeaconBlockRoot();

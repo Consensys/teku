@@ -93,6 +93,9 @@ public class SpecConfigGloasTest {
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(512),
-        dataStructureUtil.randomPositiveInt(12000)) {};
+        dataStructureUtil.randomPositiveInt(12000),
+        dataStructureUtil.randomPositiveInt(65536),
+        dataStructureUtil.randomPositiveInt(65536),
+        dataStructureUtil.randomUInt64()) {};
   }
 }

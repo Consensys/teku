@@ -205,6 +205,7 @@ import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesMan
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.FailedExecutionPayloadPool;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
@@ -263,7 +264,6 @@ import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -974,6 +974,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
               receivedExecutionPayloadEventsChannelPublisher,
               recentChainData,
               executionPayloadGossipChannel::publishExecutionPayload);
+      final FailedExecutionPayloadPool failedExecutionPayloadPool =
+          new FailedExecutionPayloadPool(executionPayloadManager, beaconAsyncRunner);
+      executionPayloadManager.subscribeFailedPayloadExecution(
+          failedExecutionPayloadPool::addFailedExecutionPayload);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
       this.executionPayloadManager = executionPayloadManager;
     } else {
@@ -1564,9 +1568,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             storageQueryChannel,
             spec,
-            (slot, blockRoot) ->
-                beaconAsyncRunner.runAsync(
-                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
             beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled());
   }
 
@@ -1591,6 +1592,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
+            (slot, blockRoot) ->
+                beaconAsyncRunner.runAsync(
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
             debugDataDumper,
             metricsSystem,
             signatureVerificationService);
@@ -1979,7 +1983,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   throttlingStorageQueryChannel,
                   spec,
-                  LateBlockReorgPreparationHandler.NOOP,
                   beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
@@ -2334,8 +2337,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionLayer,
             recentChainData,
-            proposersDataManager,
-            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled());
+            proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

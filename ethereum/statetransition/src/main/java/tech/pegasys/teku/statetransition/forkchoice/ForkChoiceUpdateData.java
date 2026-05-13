@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -34,7 +36,13 @@ public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
   private static final ForkChoiceState DEFAULT_FORK_CHOICE_STATE =
       new ForkChoiceState(
-          Bytes32.ZERO, UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
+          new ForkChoiceNode(Bytes32.ZERO, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING),
+          UInt64.ZERO,
+          UInt64.ZERO,
+          Bytes32.ZERO,
+          Bytes32.ZERO,
+          Bytes32.ZERO,
+          false);
 
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadBuildingAttributes> payloadBuildingAttributes;
@@ -56,11 +64,11 @@ public class ForkChoiceUpdateData {
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes,
       final Optional<Bytes32> terminalBlockHash) {
-    if (terminalBlockHash.isPresent() && forkChoiceState.getHeadExecutionBlockHash().isZero()) {
+    if (terminalBlockHash.isPresent() && forkChoiceState.headExecutionBlockHash().isZero()) {
       this.forkChoiceState =
           new ForkChoiceState(
-              forkChoiceState.getHeadBlockRoot(),
-              forkChoiceState.getHeadBlockSlot(),
+              forkChoiceState.headBlock(),
+              forkChoiceState.headBlockSlot(),
               // We don't have data for terminal block number
               UInt64.ZERO,
               terminalBlockHash.get(),
@@ -130,7 +138,7 @@ public class ForkChoiceUpdateData {
     }
 
     final PayloadBuildingAttributes attributes = this.payloadBuildingAttributes.get();
-    if (!attributes.getTimestamp().equals(timestamp)) {
+    if (!attributes.timestamp().equals(timestamp)) {
       LOG.debug("isPayloadIdSuitable - wrong timestamp, returning false");
       // EL building a block with wrong timestamp
       return false;
@@ -141,12 +149,12 @@ public class ForkChoiceUpdateData {
       // pre-merge, must build on top of a detected terminal block
       boolean isSuitable =
           terminalBlockHash.isPresent()
-              && forkChoiceState.getHeadExecutionBlockHash().equals(terminalBlockHash.get());
+              && forkChoiceState.headExecutionBlockHash().equals(terminalBlockHash.get());
       LOG.debug("isPayloadIdSuitable - pre-merge: returning {}", isSuitable);
       return isSuitable;
     } else {
       // post-merge, must build on top of the existing parent
-      boolean isSuitable = forkChoiceState.getHeadExecutionBlockHash().equals(parentExecutionHash);
+      boolean isSuitable = forkChoiceState.headExecutionBlockHash().equals(parentExecutionHash);
       LOG.debug("isPayloadIdSuitable - post-merge: returning {}", isSuitable);
       return isSuitable;
     }
@@ -167,7 +175,7 @@ public class ForkChoiceUpdateData {
     }
     toBeSentAtTime = currentTimestamp.plus(RESEND_AFTER_MILLIS);
 
-    if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
+    if (forkChoiceState.headExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
       executionPayloadContext.complete(Optional.empty());
       return Optional.empty();
@@ -215,12 +223,12 @@ public class ForkChoiceUpdateData {
           buildingAttributes ->
               LOG.info(
                   "Calling local execution layer to start block production (block slot: {})",
-                  buildingAttributes.getProposalSlot()));
+                  buildingAttributes.proposalSlot()));
     }
   }
 
   public boolean hasHeadBlockHash() {
-    return !forkChoiceState.getHeadExecutionBlockHash().isZero();
+    return !forkChoiceState.headExecutionBlockHash().isZero();
   }
 
   public boolean hasTerminalBlockHash() {

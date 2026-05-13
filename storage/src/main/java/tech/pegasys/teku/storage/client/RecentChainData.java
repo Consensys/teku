@@ -668,6 +668,12 @@ public abstract class RecentChainData
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
   }
 
+  public Optional<Bytes32> getExecutionBlockHashForBlock(final ForkChoiceNode block) {
+    return getForkChoiceStrategy()
+        .flatMap(forkChoice -> forkChoice.getNodeData(block))
+        .map(ProtoNodeData::getExecutionBlockHash);
+  }
+
   public Optional<List<BlobSidecar>> getBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(store)
         .flatMap(s -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));

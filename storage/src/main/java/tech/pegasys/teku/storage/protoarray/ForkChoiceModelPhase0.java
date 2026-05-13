@@ -134,6 +134,17 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public ProtoNode resolveBestDescendant(
+      final ProtoNode candidate,
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 currentSlot,
+      final Optional<Bytes32> proposerBoostRoot) {
+    // Phase0 has a single node per block — no sibling structure, no redirection needed.
+    return candidate;
+  }
+
+  @Override
   public void onExecutionPayloadResult(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,

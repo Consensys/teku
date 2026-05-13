@@ -304,6 +304,6 @@ public class ProtoNode {
   }
 
   public String toLogString() {
-    return LogFormatter.formatBlock(blockSlot, getBlockRoot());
+    return LogFormatter.formatBlock(blockSlot, getBlockRoot()) + " " + getPayloadStatus();
   }
 }

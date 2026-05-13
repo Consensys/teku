@@ -16,14 +16,18 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -79,5 +83,75 @@ public class BeaconStateAccessorsGloasTest {
     final Optional<BLSPublicKey> index =
         beaconStateAccessors.getBuilderPubKey(state, UInt64.valueOf(999));
     assertThat(index).isEmpty();
+  }
+
+  // EIP-8061 churn limit coverage --------------------------------------------------------------
+
+  @Test
+  public void churnLimits_shouldFloorAtMinPerEpochChurnLimitWhenActiveBalanceIsLow() {
+    // 8 active validators × 32 ETH = 256 ETH active balance. Even / 16 (16 ETH) is below the
+    // MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA floor
+    final BeaconStateElectra state = activeStateWithValidators(8);
+    final SpecConfigGloas config = configGloas();
+    final UInt64 floor = config.getMinPerEpochChurnLimitElectra();
+
+    assertThat(beaconStateAccessors.getActivationChurnLimit(state)).isEqualTo(floor);
+    assertThat(beaconStateAccessors.getExitChurnLimit(state)).isEqualTo(floor);
+    // no floor applied for consolidation churn limit, it is derived independently
+    assertThat(beaconStateAccessors.getConsolidationChurnLimit(state)).isLessThan(floor);
+  }
+
+  @Test
+  public void getActivationChurnLimit_shouldCapAtMaxPerEpochActivationChurnLimitGloas() {
+    // 65 validators × 32 ETH = 2080 ETH. active/CHURN_LIMIT_QUOTIENT_GLOAS(=16) = 130 ETH which
+    // exceeds the configured cap of 128 ETH, so activation churn is clamped to the cap.
+    final BeaconStateElectra state = activeStateWithValidators(65);
+    final SpecConfigGloas config = configGloas();
+
+    assertThat(beaconStateAccessors.getActivationChurnLimit(state))
+        .isEqualTo(config.getMaxPerEpochActivationChurnLimitGloas());
+  }
+
+  @Test
+  public void getExitChurnLimit_shouldNotCapAtMaxPerEpochActivationChurnLimitGloas() {
+    // Same 65×32 ETH state: exit churn is uncapped, so we get the raw active/quotient value
+    // (130 ETH) which is above the activation cap and above the floor.
+    final BeaconStateElectra state = activeStateWithValidators(65);
+    final SpecConfigGloas config = configGloas();
+    final UInt64 expected =
+        UInt64.valueOf(65L * 32L).times(UInt64.valueOf(1_000_000_000L)).dividedBy(16L);
+
+    final UInt64 exitChurn = beaconStateAccessors.getExitChurnLimit(state);
+    assertThat(exitChurn).isEqualTo(expected);
+    assertThat(exitChurn).isGreaterThan(config.getMaxPerEpochActivationChurnLimitGloas());
+    assertThat(exitChurn).isGreaterThan(beaconStateAccessors.getActivationChurnLimit(state));
+  }
+
+  @Test
+  public void getConsolidationChurnLimit_shouldUseIndependentQuotient() {
+    // 130 validators × 32 ETH = 4160 ETH. active/CONSOLIDATION_CHURN_LIMIT_QUOTIENT(=32) = 130 ETH
+    // which is above the floor; active/CHURN_LIMIT_QUOTIENT_GLOAS(=16) = 260 ETH. The two helpers
+    // must produce different values demonstrating the split quotient introduced in EIP-8061.
+    final BeaconStateElectra state = activeStateWithValidators(130);
+    final UInt64 oneEth = UInt64.valueOf(1_000_000_000L);
+    final UInt64 expectedConsolidation = UInt64.valueOf(130L * 32L).times(oneEth).dividedBy(32L);
+    final UInt64 expectedExit = UInt64.valueOf(130L * 32L).times(oneEth).dividedBy(16L);
+
+    assertThat(beaconStateAccessors.getConsolidationChurnLimit(state))
+        .isEqualTo(expectedConsolidation);
+    assertThat(beaconStateAccessors.getExitChurnLimit(state)).isEqualTo(expectedExit);
+    assertThat(beaconStateAccessors.getConsolidationChurnLimit(state))
+        .isNotEqualTo(beaconStateAccessors.getExitChurnLimit(state));
+  }
+
+  private SpecConfigGloas configGloas() {
+    return SpecConfigGloas.required(spec.getGenesisSpecConfig());
+  }
+
+  private BeaconStateElectra activeStateWithValidators(final int validatorCount) {
+    final UInt64 thirtyTwoEth = UInt64.THIRTY_TWO_ETH;
+    final BeaconStateTestBuilder builder = new BeaconStateTestBuilder(dataStructureUtil).slot(0);
+    IntStream.range(0, validatorCount).forEach(__ -> builder.activeValidator(thirtyTwoEth));
+    return BeaconStateElectra.required(builder.build());
   }
 }

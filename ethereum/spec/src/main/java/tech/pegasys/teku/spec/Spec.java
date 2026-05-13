@@ -128,7 +128,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -1373,12 +1372,8 @@ public class Spec {
   }
 
   // Gloas Utils
-  public boolean isProposerPreferencesAvailableAtSlot(final UInt64 slot) {
-    return atSlot(slot)
-        .miscHelpers()
-        .toVersionGloas()
-        .map(MiscHelpersGloas::isProposerPreferencesAvailable)
-        .orElse(false);
+  public boolean isProposerPreferencesAvailableAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).miscHelpers().toVersionGloas().isPresent();
   }
 
   // Deneb private helpers

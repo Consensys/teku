@@ -118,9 +118,9 @@ public class FailedExecutionPool {
         .finish(
             error -> {
               if (!(Throwables.getRootCause(error) instanceof ShuttingDownException)) {
-                LOG.error("Failed to schedule payload re-execution", error);
+                LOG.error("Failed re-execution of block", error);
+                scheduleNextRetry();
               }
-              scheduleNextRetry();
             });
   }
 }

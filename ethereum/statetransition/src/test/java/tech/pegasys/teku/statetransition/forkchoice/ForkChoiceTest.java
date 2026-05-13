@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -100,6 +101,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubsc
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -173,6 +175,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
@@ -424,6 +427,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
@@ -951,8 +955,8 @@ class ForkChoiceTest {
     // EL should have been notified of the invalid head first and after that the valid
     // head
     List<ForkChoiceState> notifiedStates = forkChoiceStateCaptor.getAllValues();
-    assertThat(notifiedStates.get(0).getHeadBlockRoot()).isEqualTo(chainHeadRoot);
-    assertThat(notifiedStates.get(1).getHeadBlockRoot()).isEqualTo(initialHeadRoot);
+    assertThat(notifiedStates.get(0).headBlock().blockRoot()).isEqualTo(chainHeadRoot);
+    assertThat(notifiedStates.get(1).headBlock().blockRoot()).isEqualTo(initialHeadRoot);
   }
 
   @Test
@@ -1033,7 +1037,7 @@ class ForkChoiceTest {
 
     // last notification to EL should be a valid block
     ForkChoiceState lastNotifiedState = forkChoiceStateCaptor.getValue();
-    assertThat(lastNotifiedState.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+    assertThat(lastNotifiedState.headBlock().blockRoot()).isEqualTo(blockAndState.getRoot());
 
     // New head is optimistic because latestValidHash might still point to an optimistic block
     assertHeadIsOptimistic(blockAndState);
@@ -1044,8 +1048,8 @@ class ForkChoiceTest {
   void onForkChoiceUpdatedResult_shouldLogWhenInvalidTerminalBlock(
       final ForkChoiceUpdatedResult result) {
     final ForkChoiceState state = mock(ForkChoiceState.class);
-    when(state.getHeadExecutionBlockHash()).thenReturn(Bytes32.random());
-    when(state.getHeadBlockRoot()).thenReturn(Bytes32.random());
+    when(state.headExecutionBlockHash()).thenReturn(Bytes32.random());
+    when(state.headBlock()).thenReturn(ForkChoiceNode.createBase(Bytes32.random()));
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
@@ -1135,7 +1139,7 @@ class ForkChoiceTest {
     verify(forkChoiceNotifier, mode)
         .onForkChoiceUpdated(
             new ForkChoiceState(
-                blockAndState.getRoot(),
+                ForkChoiceNode.createBase(blockAndState.getRoot()),
                 blockAndState.getSlot(),
                 headExecutionBlockNumber,
                 headExecutionHash,

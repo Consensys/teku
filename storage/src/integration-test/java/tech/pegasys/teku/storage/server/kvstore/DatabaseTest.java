@@ -660,7 +660,7 @@ public class DatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(
         blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    transaction.putExecutionPayload(executionPayload);
+    transaction.putExecutionPayload(executionPayload, false);
 
     commit(transaction);
 

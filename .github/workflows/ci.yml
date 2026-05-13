@@ -34,6 +34,8 @@ on:
   pull_request:
     branches:
       - master
+      - '**prototype**'
+      - '**devnet**'
     paths-ignore:
       - '**/*.md'
       - 'LICENSE*'

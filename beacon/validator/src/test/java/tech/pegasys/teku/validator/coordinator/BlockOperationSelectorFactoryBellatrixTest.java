@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactoryTest.CapturingBeaconBlockBodyBuilder;
+import static tech.pegasys.teku.validator.coordinator.BlockProductionTestUtil.blockProductionContext;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -205,12 +206,13 @@ class BlockOperationSelectorFactoryBellatrixTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
   }
@@ -231,12 +233,13 @@ class BlockOperationSelectorFactoryBellatrixTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())

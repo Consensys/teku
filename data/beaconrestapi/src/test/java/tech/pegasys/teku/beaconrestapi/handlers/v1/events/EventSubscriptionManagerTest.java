@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -131,21 +132,21 @@ public class EventSubscriptionManagerTest {
       new PayloadAttributesData(
           SpecMilestone.GLOAS,
           new Data(
-              samplePayloadAttributes.getProposalSlot(),
-              samplePayloadAttributes.getParentBeaconBlockRoot(),
+              samplePayloadAttributes.proposalSlot(),
+              samplePayloadAttributes.parentBeaconBlock().blockRoot(),
               data.randomUInt64(),
               data.randomBytes32(),
-              samplePayloadAttributes.getProposerIndex(),
+              samplePayloadAttributes.proposerIndex(),
               new PayloadAttributes(
-                  samplePayloadAttributes.getTimestamp(),
-                  samplePayloadAttributes.getPrevRandao(),
-                  samplePayloadAttributes.getFeeRecipient(),
-                  samplePayloadAttributes.getWithdrawals(),
-                  Optional.of(samplePayloadAttributes.getParentBeaconBlockRoot()))));
+                  samplePayloadAttributes.timestamp(),
+                  samplePayloadAttributes.prevRandao(),
+                  samplePayloadAttributes.feeRecipient(),
+                  samplePayloadAttributes.withdrawals(),
+                  Optional.of(samplePayloadAttributes.parentBeaconBlock().blockRoot()))));
   final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification =
       new ForkChoiceUpdatedResultNotification(
           new ForkChoiceState(
-              data.randomBytes32(),
+              ForkChoiceNode.createBase(data.randomBytes32()),
               data.randomSlot(),
               samplePayloadAttributesData.data().parentExecutionBlockNumber(),
               samplePayloadAttributesData.data().parentExecutionBlockHash(),
@@ -455,6 +456,24 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateExecutionPayload() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=execution_payload");
+    manager.registerClient(client1);
+
+    triggerExecutionPayloadEvent();
+    checkEvent("execution_payload", new ExecutionPayloadEvent(sampleExecutionPayload, false));
+  }
+
+  @Test
+  void shouldPropagateExecutionPayloadGossip() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=execution_payload_gossip");
+    manager.registerClient(client1);
+
+    triggerExecutionPayloadGossipEvent();
+    checkEvent("execution_payload_gossip", new ExecutionPayloadGossipEvent(sampleExecutionPayload));
+  }
+
+  @Test
   void shouldPropagateExecutionPayloadAvailable() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=execution_payload_available");
     manager.registerClient(client1);
@@ -594,9 +613,18 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
-  private void triggerExecutionPayloadAvailableEvent() {
-    manager.onExecutionPayloadAvailable(sampleExecutionPayload);
+  private void triggerExecutionPayloadEvent() {
+    manager.onExecutionPayloadImported(sampleExecutionPayload, false);
     asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerExecutionPayloadGossipEvent() {
+    manager.onExecutionPayloadValidated(sampleExecutionPayload);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerExecutionPayloadAvailableEvent() {
+    triggerExecutionPayloadEvent();
   }
 
   private void triggerExecutionPayloadBidEvent() {
