@@ -420,7 +420,8 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            config.isAllTopicsFilterEnabled());
+            config.isAllTopicsFilterEnabled(),
+            reputationManager);
       }
     }
 

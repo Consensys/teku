@@ -17,12 +17,15 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_DOUBLE_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -31,20 +34,29 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class GetPeersScore extends RestApiEndpoint {
   public static final String ROUTE = "/teku/v1/nodes/peer_scores";
   private final NetworkDataProvider network;
 
-  private static final SerializableTypeDefinition<Eth2Peer> PEER_TYPE =
-      SerializableTypeDefinition.object(Eth2Peer.class)
-          .withField("peer_id", STRING_TYPE, eth2Peer -> eth2Peer.getId().toBase58())
-          .withField("gossip_score", RAW_DOUBLE_TYPE, Peer::getGossipScore)
+  private static final SerializableTypeDefinition<LastAction> LAST_ACTION_TYPE =
+      SerializableTypeDefinition.object(LastAction.class)
+          .withField("reason", STRING_TYPE, LastAction::reason)
+          .withField("delta", RAW_DOUBLE_TYPE, LastAction::delta)
+          .withField("seconds_ago", RAW_INTEGER_TYPE, LastAction::secondsAgo)
           .build();
 
-  private static final SerializableTypeDefinition<List<Eth2Peer>> RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<Eth2Peer>>object()
+  private static final SerializableTypeDefinition<PeerScore> PEER_TYPE =
+      SerializableTypeDefinition.object(PeerScore.class)
+          .withField("peer_id", STRING_TYPE, PeerScore::peerId)
+          .withField("gossip_score", RAW_DOUBLE_TYPE, PeerScore::gossipScore)
+          .withOptionalField("reputation_score", RAW_INTEGER_TYPE, PeerScore::reputationScore)
+          .withOptionalField("last_action", LAST_ACTION_TYPE, PeerScore::lastAction)
+          .build();
+
+  private static final SerializableTypeDefinition<List<PeerScore>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<PeerScore>>object()
           .name("GetPeerScoresResponse")
           .withField("data", listOf(PEER_TYPE), Function.identity())
           .build();
@@ -68,6 +80,39 @@ public class GetPeersScore extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(network.getPeerScores());
+    final ReputationManager reputationManager = network.getReputationManager();
+    final long nowMs = System.currentTimeMillis();
+    final List<PeerScore> data =
+        network.getPeerScores().stream().map(peer -> toPeerScore(peer, reputationManager, nowMs)).toList();
+    request.respondOk(data);
   }
+
+  private static PeerScore toPeerScore(
+      final Eth2Peer peer, final ReputationManager reputationManager, final long nowMs) {
+    final Optional<Integer> reputationScore =
+        toBoxed(reputationManager.getReputationScore(peer.getId()));
+    final Optional<LastAction> lastAction =
+        reputationManager
+            .getLastAdjustment(peer.getId())
+            .map(
+                adjustment ->
+                    new LastAction(
+                        adjustment.reason(),
+                        adjustment.delta(),
+                        (int) Math.max(0L, (nowMs - adjustment.atMs()) / 1000L)));
+    return new PeerScore(
+        peer.getId().toBase58(), peer.getGossipScore(), reputationScore, lastAction);
+  }
+
+  private static Optional<Integer> toBoxed(final OptionalInt value) {
+    return value.isPresent() ? Optional.of(value.getAsInt()) : Optional.empty();
+  }
+
+  record PeerScore(
+      String peerId,
+      Double gossipScore,
+      Optional<Integer> reputationScore,
+      Optional<LastAction> lastAction) {}
+
+  record LastAction(String reason, double delta, int secondsAgo) {}
 }
