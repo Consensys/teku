@@ -248,7 +248,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     if (afterSoft < hardLimit) {
       return;
     }
-    final int hardExcess = afterSoft - hardLimit + 1;
+    final int hardExcess = afterSoft - hardLimit ;
     recentlySampledColumnsByRoot.entrySet().stream()
         .sorted(Comparator.comparingLong(e -> e.getValue().createdAtNanos()))
         .limit(hardExcess)
