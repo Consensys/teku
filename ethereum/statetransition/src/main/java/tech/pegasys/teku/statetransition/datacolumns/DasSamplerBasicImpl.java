@@ -202,6 +202,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
             });
   }
 
+  @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker existing = recentlySampledColumnsByRoot.get(blockRoot);
     if (existing != null) {
