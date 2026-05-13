@@ -237,6 +237,11 @@ public class DefaultExecutionPayloadBidManagerTest {
     addAcceptedBid(bidForOtherParent);
     addAcceptedBid(bidForOurParent);
 
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(bidForOtherParent);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(bidForOurParent);
+
     final BeaconStateGloas state = stateAtSlot(slot);
 
     final Optional<SignedExecutionPayloadBid> maybeSignedBid =
