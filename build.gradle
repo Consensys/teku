@@ -74,6 +74,7 @@ def specificVersion = calculateVersion()
 def isDevelopBuild = rootProject.version.contains('develop')
 
 apply plugin: 'application'
+apply plugin: 'jacoco'
 apply plugin: DepCheckPlugin
 
 defaultTasks 'build','licenseCheck'
@@ -931,6 +932,28 @@ subprojects {
 		}
 	}
 
+	apply plugin: 'jacoco'
+
+	jacocoTestReport {
+		reports {
+			xml.required = true
+			html.required = true
+		}
+	}
+
+	tasks.named('test') {
+		finalizedBy jacocoTestReport
+	}
+
+	tasks.register('jacocoReferenceTestReport', JacocoReport) {
+		sourceSets sourceSets.main
+		executionData fileTree(layout.buildDirectory.dir('jacoco')).include('referenceTest.exec')
+		reports {
+			xml.required = true
+			html.required = true
+		}
+	}
+
 	tasks.withType(JavaCompile) {
 		options.fork = true
 		options.incremental = true
@@ -1192,6 +1215,111 @@ subprojects {
 
 		testClassesDirs = sourceSets.referenceTest.output.classesDirs
 		classpath = sourceSets.referenceTest.runtimeClasspath
+		finalizedBy 'jacocoReferenceTestReport'
+	}
+}
+
+tasks.register('jacocoRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates an aggregate JaCoCo coverage report for all submodule unit tests'
+
+	dependsOn subprojects.collect {
+		it.tasks.matching { t ->
+			t.name == 'test'
+		}
+	}
+	mustRunAfter subprojects.collect { it.tasks.withType(JavaCompile) }
+
+	executionData.from fileTree(rootDir) {
+		include '**/build/jacoco/test.exec'
+	}
+
+	subprojects.each { subproject ->
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/aggregate/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/aggregate/jacocoRootReport.xml')
+		}
+	}
+}
+
+tasks.register('jacocoReferenceTestRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates an aggregate JaCoCo coverage report for all submodule reference tests'
+
+	dependsOn subprojects.collect {
+		it.tasks.matching { t ->
+			t.name == 'referenceTest'
+		}
+	}
+	mustRunAfter subprojects.collect { it.tasks.withType(JavaCompile) }
+	mustRunAfter subprojects.collect {
+		it.tasks.matching { t ->
+			t.name == 'jacocoReferenceTestReport'
+		}
+	}
+	mustRunAfter 'jacocoRootReport'
+
+	executionData.from fileTree(rootDir) {
+		include '**/build/jacoco/referenceTest.exec'
+	}
+
+	subprojects.each { subproject ->
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/referenceTest/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/referenceTest/jacocoReferenceTestRootReport.xml')
+		}
+	}
+}
+
+tasks.register('jacocoCombinedRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates a combined aggregate JaCoCo coverage report for unit tests and reference tests'
+
+	dependsOn tasks.named('jacocoRootReport'), tasks.named('jacocoReferenceTestRootReport')
+
+	executionData.from fileTree(rootDir) {
+		include '**/build/jacoco/test.exec'
+		include '**/build/jacoco/referenceTest.exec'
+	}
+
+	subprojects.each { subproject ->
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/combined/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/combined/jacocoCombinedRootReport.xml')
+		}
 	}
 }
 
