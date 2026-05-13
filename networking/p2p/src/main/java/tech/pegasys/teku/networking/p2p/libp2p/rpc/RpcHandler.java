@@ -202,10 +202,11 @@ public class RpcHandler<
   @Override
   public SafeFuture<Controller<TOutgoingHandler>> initChannel(
       final P2PChannel channel, final String selectedProtocol) {
-    final Connection connection = ((Stream) channel).getConnection();
+    Stream streamChannel = (Stream) channel;
+    final Connection connection = streamChannel.getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
 
-    final Controller<TOutgoingHandler> controller = new Controller<>(nodeId, channel);
+    final Controller<TOutgoingHandler> controller = new Controller<>(nodeId, streamChannel);
     if (!channel.isInitiator()) {
       controller.setIncomingRequestHandler(
           rpcMethod.createIncomingRequestHandler(selectedProtocol));
@@ -219,7 +220,7 @@ public class RpcHandler<
       implements RpcStreamController<TOutgoingHandler> {
 
     private final NodeId nodeId;
-    private final P2PChannel p2pChannel;
+    private final Stream p2pStream;
     private Optional<TOutgoingHandler> outgoingRequestHandler = Optional.empty();
     private Optional<RpcRequestHandler> rpcRequestHandler = Optional.empty();
     private RpcStream rpcStream;
@@ -227,14 +228,14 @@ public class RpcHandler<
 
     protected final SafeFuture<Controller<TOutgoingHandler>> activeFuture = new SafeFuture<>();
 
-    private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
+    private Controller(final NodeId nodeId, final Stream p2pStream) {
       this.nodeId = nodeId;
-      this.p2pChannel = p2pChannel;
+      this.p2pStream = p2pStream;
     }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-      rpcStream = new LibP2PRpcStream(nodeId, p2pChannel, ctx);
+      rpcStream = new LibP2PRpcStream(nodeId, p2pStream, ctx);
       activeFuture.complete(this);
     }
 
@@ -330,7 +331,7 @@ public class RpcHandler<
     @VisibleForTesting
     void closeAbruptly() {
       // We're listening for the result of the close future above, so we can ignore this future
-      ignoreFuture(p2pChannel.close());
+      ignoreFuture(p2pStream.close());
 
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
