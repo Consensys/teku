@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -297,8 +297,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   @Override
   public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
-    final DataColumnSamplingTracker tracker =
-        recentlySampledColumnsByRoot.get(block.getRoot());
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(block.getRoot());
     if (tracker == null) {
       return;
     }
@@ -310,9 +309,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .thenCompose(__ -> blockImportChannel.importBlock(block))
         .finish(
             () ->
-                LOG.debug(
-                    "Block {} re-imported after DAS sampling completion",
-                    block::toLogString),
+                LOG.debug("Block {} re-imported after DAS sampling completion", block::toLogString),
             error ->
                 LOG.error(
                     "Failed to re-import block {} after DAS sampling completion",

@@ -1223,18 +1223,10 @@ tasks.register('jacocoRootReport', JacocoReport) {
 	group = 'verification'
 	description = 'Generates an aggregate JaCoCo coverage report for all submodule unit tests'
 
-	dependsOn subprojects.collect {
-		it.tasks.matching { t ->
-			t.name == 'test'
-		}
-	}
-	mustRunAfter subprojects.collect { it.tasks.withType(JavaCompile) }
-
-	executionData.from fileTree(rootDir) {
-		include '**/build/jacoco/test.exec'
-	}
-
 	subprojects.each { subproject ->
+		subproject.tasks.matching { t -> t.name == 'test' }.each { testTask ->
+			executionData(testTask)
+		}
 		if (subproject.plugins.hasPlugin('java-library')) {
 			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
 			classDirectories.from subproject.sourceSets.main.output.classesDirs
@@ -1257,24 +1249,12 @@ tasks.register('jacocoReferenceTestRootReport', JacocoReport) {
 	group = 'verification'
 	description = 'Generates an aggregate JaCoCo coverage report for all submodule reference tests'
 
-	dependsOn subprojects.collect {
-		it.tasks.matching { t ->
-			t.name == 'referenceTest'
-		}
-	}
-	mustRunAfter subprojects.collect { it.tasks.withType(JavaCompile) }
-	mustRunAfter subprojects.collect {
-		it.tasks.matching { t ->
-			t.name == 'jacocoReferenceTestReport'
-		}
-	}
 	mustRunAfter 'jacocoRootReport'
 
-	executionData.from fileTree(rootDir) {
-		include '**/build/jacoco/referenceTest.exec'
-	}
-
 	subprojects.each { subproject ->
+		subproject.tasks.matching { t -> t.name == 'referenceTest' }.each { refTestTask ->
+			executionData(refTestTask)
+		}
 		if (subproject.plugins.hasPlugin('java-library')) {
 			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
 			classDirectories.from subproject.sourceSets.main.output.classesDirs
@@ -1299,12 +1279,13 @@ tasks.register('jacocoCombinedRootReport', JacocoReport) {
 
 	dependsOn tasks.named('jacocoRootReport'), tasks.named('jacocoReferenceTestRootReport')
 
-	executionData.from fileTree(rootDir) {
-		include '**/build/jacoco/test.exec'
-		include '**/build/jacoco/referenceTest.exec'
-	}
-
 	subprojects.each { subproject ->
+		subproject.tasks.matching { t -> t.name == 'test' }.each { testTask ->
+			executionData(testTask)
+		}
+		subproject.tasks.matching { t -> t.name == 'referenceTest' }.each { refTestTask ->
+			executionData(refTestTask)
+		}
 		if (subproject.plugins.hasPlugin('java-library')) {
 			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
 			classDirectories.from subproject.sourceSets.main.output.classesDirs
