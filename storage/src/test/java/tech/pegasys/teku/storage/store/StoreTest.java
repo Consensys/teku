@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -73,6 +74,7 @@ class StoreTest extends AbstractStoreTest {
                     spec,
                     blockProviderFromChainBuilder(),
                     ExecutionPayloadProvider.NOOP,
+                    BlindedExecutionPayloadProvider.NOOP,
                     StateAndBlockSummaryProvider.NOOP,
                     EarliestBlobSidecarSlotProvider.NOOP,
                     Optional.empty(),

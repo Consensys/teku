@@ -189,8 +189,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             false);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
-    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
-    // executor
     spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
@@ -201,6 +199,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            // forkChoiceLateBlockReorgEnabled is true here always because this is the reference
+            // test executor
             true,
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,

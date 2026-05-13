@@ -46,10 +46,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
@@ -465,7 +469,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateHead_headUpdatesWhenUpdatingWithEmptySlot() {
+  public void updateHead_headDoesNotUpdateWhenAdvancingOverEmptySlot() {
     initPostGenesis();
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(recentChainData, chainBuilder);
@@ -475,6 +479,72 @@ class RecentChainDataTest {
 
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot().plus(1));
     assertThat(storageSystem.chainHeadChannel().getHeadEvents()).isEmpty();
+  }
+
+  @Test
+  public void updateHead_headUpdatesWhenOptimisticFlipsToValid() {
+    initPostGenesis();
+    final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
+    importBlocksAndStates(recentChainData, chainBuilder);
+    recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot());
+    assertThat(recentChainData.getChainHead().orElseThrow().isOptimistic()).isTrue();
+    storageSystem.chainHeadChannel().getHeadEvents().clear();
+
+    // Flip the proto-node from optimistic to validated.
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .orElseThrow()
+        .onExecutionPayloadResult(slot1Block.getRoot(), PayloadStatus.VALID, false);
+
+    // Same root, same slot — but isOptimistic / payloadStatus changed, so head must be re-emitted.
+    recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot());
+
+    assertThat(storageSystem.chainHeadChannel().getHeadEvents()).hasSize(1);
+    assertThat(recentChainData.getChainHead().orElseThrow().isOptimistic()).isFalse();
+  }
+
+  @Test
+  public void updateHead_headUpdatesWhenSwitchingFromEmptyToFullNodeInGloas() {
+    // Locally re-initialize with a Gloas spec; do not touch the class fields.
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final StorageSystem gloasStorage =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(gloasSpec)
+            .storageMode(StateStorageMode.PRUNE)
+            .storeConfig(StoreConfig.builder().build())
+            .build();
+    final ChainBuilder gloasChainBuilder = gloasStorage.chainBuilder();
+    final RecentChainData gloasRecentChainData = gloasStorage.recentChainData();
+    final SignedBlockAndState gloasGenesis = gloasChainBuilder.generateGenesis();
+    gloasRecentChainData.initializeFromGenesis(gloasGenesis.getState(), UInt64.ZERO);
+
+    final SignedBlockAndState block = gloasChainBuilder.generateBlockAtSlot(1);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        gloasChainBuilder.getExecutionPayloadAtSlot(block.getSlot()).orElseThrow();
+
+    // Import block only — creates BASE (PENDING) + EMPTY proto-nodes; FULL is not present yet.
+    StoreTransaction tx = gloasRecentChainData.startStoreTransaction();
+    tx.putBlockAndState(block, gloasSpec.calculateBlockCheckpoints(block.getState()));
+    tx.commit().join();
+
+    // Set head on the EMPTY node.
+    gloasRecentChainData.updateHead(ForkChoiceNode.createEmpty(block.getRoot()), block.getSlot());
+    final Bytes32 emptyExecutionHash =
+        gloasRecentChainData.getChainHead().orElseThrow().getExecutionBlockHash();
+    gloasStorage.chainHeadChannel().getHeadEvents().clear();
+
+    // Import the execution payload — creates the FULL proto-node with the real exec block hash.
+    tx = gloasRecentChainData.startStoreTransaction();
+    tx.putExecutionPayload(executionPayload, false);
+    tx.commit().join();
+
+    // Switch head to the FULL node identity (same root, different payloadStatus + execHash).
+    gloasRecentChainData.updateHead(ForkChoiceNode.createFull(block.getRoot()), block.getSlot());
+
+    assertThat(gloasStorage.chainHeadChannel().getHeadEvents()).hasSize(1);
+    final ChainHead newHead = gloasRecentChainData.getChainHead().orElseThrow();
+    assertThat(newHead.getPayloadStatus()).isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+    assertThat(newHead.getExecutionBlockHash()).isNotEqualTo(emptyExecutionHash);
   }
 
   @Test

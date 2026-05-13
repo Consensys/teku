@@ -35,7 +35,7 @@ class SignedExecutionPayloadEnvelopeTest {
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(10);
 
     final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
-        originalSignedExecutionPayloadEnvelope.blind(schemaDefinitions);
+        originalSignedExecutionPayloadEnvelope.blind(spec);
     assertThat(signedBlindedExecutionPayloadEnvelope.hashTreeRoot())
         .isEqualTo(originalSignedExecutionPayloadEnvelope.hashTreeRoot());
     assertThat(signedBlindedExecutionPayloadEnvelope.getMessage().getPayloadHeader().hashTreeRoot())

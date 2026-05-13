@@ -144,5 +144,14 @@ interface ForkChoiceModel {
       boolean verifiedInvalidTransition,
       HeadSelectionContext headSelectionContext);
 
+  void onForkChoiceUpdatedResult(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ForkChoiceNode node,
+      ExecutionPayloadStatus status,
+      Optional<Bytes32> latestValidHash,
+      boolean verifiedInvalidTransition,
+      HeadSelectionContext headSelectionContext);
+
   void onPrunedBlocks(BlockNodeVariantsIndex blockNodeIndex);
 }

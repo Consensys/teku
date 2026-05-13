@@ -434,6 +434,29 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public void onForkChoiceUpdatedResult(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ForkChoiceNode node,
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash,
+      final boolean verifiedInvalidTransition,
+      final HeadSelectionContext headSelectionContext) {
+    if (status.isValid()) {
+      protoArray.markNodeValid(node);
+      return;
+    }
+    onExecutionPayloadResult(
+        protoArray,
+        blockNodeIndex,
+        node.blockRoot(),
+        status,
+        latestValidHash,
+        verifiedInvalidTransition,
+        headSelectionContext);
+  }
+
+  @Override
   public Optional<ProtoNodeData> getBaseNodeData(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
@@ -474,16 +497,19 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     // locally, but ancestor bestDescendantIndex pointers still point at EMPTY. Redirect the
     // landing point to BASE.bestChild — the model-preferred sibling — using the candidate's own
     // block root since PENDING/EMPTY/FULL all share it.
-    if (candidate.getBestDescendantIndex().isPresent() && !candidate.isInvalid()) {
-      return protoArray.getNodeByIndex(candidate.getBestDescendantIndex().get());
-    }
+    final ProtoNode landingPoint =
+        candidate
+            .getBestDescendantIndex()
+            .filter(__ -> !candidate.isInvalid())
+            .map(protoArray::getNodeByIndex)
+            .orElse(candidate);
 
-    return resolveBaseNode(blockNodeIndex, candidate.getBlockRoot())
+    return resolveBaseNode(blockNodeIndex, landingPoint.getBlockRoot())
         .flatMap(protoArray::getNode)
         .flatMap(ProtoNode::getBestChildIndex)
         .map(protoArray::getNodeByIndex)
         .filter(sibling -> !sibling.isInvalid())
-        .orElse(candidate);
+        .orElse(landingPoint);
   }
 
   @Override
