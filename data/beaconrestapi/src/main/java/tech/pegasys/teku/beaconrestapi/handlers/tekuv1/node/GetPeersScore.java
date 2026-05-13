@@ -99,13 +99,18 @@ public class GetPeersScore extends RestApiEndpoint {
                     new LastAction(
                         adjustment.reason(),
                         adjustment.delta(),
-                        (int) Math.max(0L, (nowMs - adjustment.atMs()) / 1000L)));
+                        secondsSince(nowMs, adjustment.atMs())));
     return new PeerScore(
         peer.getId().toBase58(), peer.getGossipScore(), reputationScore, lastAction);
   }
 
   private static Optional<Integer> toBoxed(final OptionalInt value) {
     return value.isPresent() ? Optional.of(value.getAsInt()) : Optional.empty();
+  }
+
+  private static int secondsSince(final long nowMs, final long thenMs) {
+    final long ageSeconds = Math.max(0L, (nowMs - thenMs) / 1000L);
+    return (int) Math.min(ageSeconds, Integer.MAX_VALUE);
   }
 
   record PeerScore(
