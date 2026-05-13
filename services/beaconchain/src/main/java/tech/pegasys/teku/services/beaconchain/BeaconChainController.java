@@ -203,6 +203,7 @@ import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesMan
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.FailedExecutionPayloadPool;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
@@ -963,6 +964,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
               receivedExecutionPayloadEventsChannelPublisher,
               recentChainData,
               executionPayloadGossipChannel::publishExecutionPayload);
+      final FailedExecutionPayloadPool failedExecutionPayloadPool =
+          new FailedExecutionPayloadPool(executionPayloadManager, beaconAsyncRunner);
+      executionPayloadManager.subscribeFailedPayloadExecution(
+          failedExecutionPayloadPool::addFailedExecutionPayload);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
       this.executionPayloadManager = executionPayloadManager;
     } else {

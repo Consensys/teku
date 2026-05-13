@@ -1019,6 +1019,90 @@ class ProtoArrayTest {
   }
 
   @Test
+  void findOptimisticHead_shouldSelectFullNode_atGloasActivationSlot() {
+    // Replicates a 9-node ProtoArray snapshot taken at the GLOAS activation boundary:
+    //
+    //   genesis (slot 0) ── set up by @BeforeEach (root = Bytes32.ZERO)
+    //     ├── slotA (slot 3)
+    //     │     └── slotC (slot 5)
+    //     │           └── slotD (slot 6)
+    //     │                 └── slotE (slot 7)
+    //     │                       └── slot8 (slot 8) PENDING ── GLOAS activates here
+    //     │                              ├── slot8 EMPTY
+    //     │                              └── slot8 FULL
+    //     └── slotB (slot 4) [unweighted sibling of slotA]
+    //
+    // The slot-8 block carries the GLOAS three-state structure (PENDING base + EMPTY/FULL
+    // children sharing the same blockRoot). With currentSlot far past slot 8 and equal
+    // EMPTY/FULL weights, the GLOAS tiebreaker should select FULL over EMPTY.
+    final Bytes32 slotA = dataStructureUtil.randomBytes32();
+    final Bytes32 slotB = dataStructureUtil.randomBytes32();
+    final Bytes32 slotC = dataStructureUtil.randomBytes32();
+    final Bytes32 slotD = dataStructureUtil.randomBytes32();
+    final Bytes32 slotE = dataStructureUtil.randomBytes32();
+    final Bytes32 slot8 = dataStructureUtil.randomBytes32();
+
+    // Pre-GLOAS chain: only base nodes
+    addValidBlock(3, slotA, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(4, slotB, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(5, slotC, slotA);
+    addValidBlock(6, slotD, slotC);
+    addValidBlock(7, slotE, slotD);
+
+    // Slot-8 base (PENDING) + EMPTY arrive together (matches block import order)
+    addValidBlock(8, slot8, slotE);
+    protoArray.createEmptyNode(slot8);
+
+    // Vote for the slot-8 block and apply score changes BEFORE the FULL node exists.
+    // applyScoreChanges runs the full applyToNodes propagation, so chain ancestors end up with
+    // bestDescendantIndex pointing to the EMPTY node (matching the snapshot's idx 0..5 → 7).
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, slot8, false, false));
+    applyScoreChanges(gloasModel, UInt64.valueOf(100), Optional.empty());
+
+    // FULL node arrives later (e.g. payload becomes available). The facade only locally
+    // updates bestChild/bestDescendant for PENDING's parent — propagation up the chain does
+    // NOT happen, so chain ancestors keep bestDescendantIndex pointing at EMPTY even though
+    // PENDING.bestChild flips to FULL via the GLOAS tiebreaker.
+    protoArray.onExecutionPayload(slot8, EXECUTION_BLOCK_NUMBER, EXECUTION_BLOCK_HASH);
+    protoArray.markNodeValid(slot8);
+
+    final ProtoNode head =
+        protoArray.findOptimisticHead(UInt64.valueOf(5), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+
+    assertThat(head.getBlockRoot()).isEqualTo(slot8);
+    assertThat(head.getPayloadStatus()).isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+
+    final int slot8FullIndex = protoArray.getFullNodeIndices().getInt(slot8);
+    assertThat(protoArray.getNodeByIndex(slot8FullIndex)).isEqualTo(head);
+
+    // Extend the chain: import slot-9 (PENDING+EMPTY) built on slot8.FULL, then add slot-9 FULL,
+    // all without re-running applyScoreChanges. Chain ancestors still hold bestDescendantIndex
+    // pointing at slot8.EMPTY, but slot8.FULL.bestDesc now stale-points to slot9.BASE and
+    // slot9.BASE has slot9.FULL as its current bestChild. The findHead descent loop must walk
+    // multiple resolveBestDescendant redirects:
+    //   ancestor → slot8.EMPTY → resolveBestDescendant → slot8.FULL
+    //                          → descend               → slot9.BASE
+    //                          → resolveBestDescendant → slot9.FULL
+    final Bytes32 slot9 = dataStructureUtil.randomBytes32();
+    final UInt64 slot9ExecutionBlockNumber = EXECUTION_BLOCK_NUMBER.plus(1);
+    final Bytes32 slot9ExecutionBlockHash = dataStructureUtil.randomBytes32();
+    addValidBlockWithParentIndex(
+        9, slot9, slot8, Optional.of(slot8FullIndex), EXECUTION_BLOCK_HASH);
+    protoArray.createEmptyNode(slot9);
+    protoArray.onExecutionPayload(slot9, slot9ExecutionBlockNumber, slot9ExecutionBlockHash);
+    protoArray.markNodeValid(slot9);
+
+    final ProtoNode extendedHead =
+        protoArray.findOptimisticHead(UInt64.valueOf(5), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+    assertThat(extendedHead.getBlockRoot()).isEqualTo(slot9);
+    assertThat(extendedHead.getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+
+    final int slot9FullIndex = protoArray.getFullNodeIndices().getInt(slot9);
+    assertThat(protoArray.getNodeByIndex(slot9FullIndex)).isEqualTo(extendedHead);
+  }
+
+  @Test
   void gloas_onExecutionPayloadResult_invalid_shouldOnlyInvalidateFullNode() {
     // Set up a Gloas block with base + EMPTY + FULL nodes (FULL stays optimistic)
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());

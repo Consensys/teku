@@ -711,7 +711,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                 envelope.getMessage().getPayload().getBlockNumber(),
                 envelope.getMessage().getPayload().getBlockHash(),
                 executionPayloadUpdate.isOptimistic());
-            updateParentBestChildAndDescendantForBlockVariants(envelope.getBeaconBlockRoot());
           });
       removedBlockRoots.forEach(
           (root, blockSlot) -> {

@@ -75,7 +75,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayload(executionPayload);
+    tx.putExecutionPayload(executionPayload, false);
 
     assertThat(tx.commit()).isCompleted();
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
@@ -103,10 +103,10 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(
         firstBlockAndState, spec.calculateBlockCheckpoints(firstBlockAndState.getState()));
-    tx.putExecutionPayload(firstExecutionPayload);
+    tx.putExecutionPayload(firstExecutionPayload, false);
     tx.putBlockAndState(
         secondBlockAndState, spec.calculateBlockCheckpoints(secondBlockAndState.getState()));
-    tx.putExecutionPayload(secondExecutionPayload);
+    tx.putExecutionPayload(secondExecutionPayload, false);
 
     assertThat(tx.commit()).isCompleted();
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
@@ -171,7 +171,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
                   blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
               gloasChainBuilder
                   .getExecutionPayloadAtSlot(blockAndState.getSlot())
-                  .ifPresent(tx::putExecutionPayload);
+                  .ifPresent(payload -> tx.putExecutionPayload(payload, false));
             });
 
     // Finalize at epoch 1 — blocks before this checkpoint will be pruned from hot
@@ -207,7 +207,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayload(executionPayload);
+    tx.putExecutionPayload(executionPayload, false);
     assertThat(tx.commit()).isCompleted();
 
     assertThat(store.retrieveSignedExecutionPayload(blockAndState.getRoot()))
