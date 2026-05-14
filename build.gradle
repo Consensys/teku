@@ -1,5 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import groovy.json.JsonSlurper
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import io.consensys.protocols.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
@@ -17,7 +18,7 @@ buildscript {
 }
 
 plugins {
-	id 'com.diffplug.spotless' version '7.2.1'
+	id 'com.diffplug.spotless' version '8.0.0'
 	id 'com.github.ben-manes.versions' version '0.53.0'
 	id 'com.github.jk1.dependency-license-report' version '3.1.2'
 	id 'io.spring.dependency-management' version '1.1.7'
@@ -72,6 +73,8 @@ ext.gitBranchName = {
 rootProject.version = calculatePublishVersion()
 def specificVersion = calculateVersion()
 def isDevelopBuild = rootProject.version.contains('develop')
+def targetJavaVersion = JavaVersion.VERSION_25
+def targetJavaLanguageVersion = JavaLanguageVersion.of(25)
 
 apply plugin: 'application'
 apply plugin: 'jacoco'
@@ -205,11 +208,11 @@ allprojects {
 	assemble.dependsOn javadocJar
 
 	java {
-		sourceCompatibility = JavaVersion.VERSION_21
-	}
-
-	java {
-		targetCompatibility = JavaVersion.VERSION_21
+		toolchain {
+			languageVersion = targetJavaLanguageVersion
+		}
+		sourceCompatibility = targetJavaVersion
+		targetCompatibility = targetJavaVersion
 	}
 
 	repositories {
@@ -663,7 +666,11 @@ application {
 		// 32Mb for Netty Direct ByteBuf
 		"-Dio.netty.maxDirectMemory=33554432",
 		// avoids JDK 24+ warning
-		"--enable-native-access=ALL-UNNAMED"
+		"--enable-native-access=ALL-UNNAMED",
+		// avoids JDK 25+ warning due to protobuf and others
+		"--sun-misc-unsafe-memory-access=allow",
+		// avoids JDK 26+ warning due to picocli
+		// "--enable-final-field-mutation=ALL-UNNAMED"
 	]
 }
 
@@ -752,7 +759,7 @@ tasks.register("dockerDistUntar") {
 	}
 }
 
-def dockerJdkVariants = ["jdk21", "jdk25"]
+def dockerJdkVariants = ["jdk25", "jdk26"]
 def dockerBuildDir = "build/docker-teku/"
 def localDockerImage = "local/teku"
 
