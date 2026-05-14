@@ -19,13 +19,11 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 
 final class BlockProductionTestUtil {
-
-  private static final ForkChoicePayloadStatus DEFAULT_PAYLOAD_STATUS =
-      ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
 
   private BlockProductionTestUtil() {}
 
@@ -37,14 +35,13 @@ final class BlockProductionTestUtil {
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    return BlockProductionContext.create(
-        spec,
-        proposalSlot,
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
+    return blockProductionContext(
+        parentRoot,
         blockSlotState,
         randaoReveal,
         graffiti,
         requestedBuilderBoostFactor,
-        DEFAULT_PAYLOAD_STATUS,
         blockProductionPerformance);
   }
 
@@ -58,11 +55,15 @@ final class BlockProductionTestUtil {
     return new BlockProductionContext(
         blockSlotState.getSlot(),
         blockSlotState,
-        parentRoot,
+        ForkChoiceNode.createBase(parentRoot),
+        parentExecutionBlockHash(blockSlotState),
         randaoReveal,
         graffiti,
         requestedBuilderBoostFactor,
-        DEFAULT_PAYLOAD_STATUS,
         blockProductionPerformance);
+  }
+
+  private static Bytes32 parentExecutionBlockHash(final BeaconState state) {
+    return state.toVersionGloas().map(BeaconStateGloas::getLatestBlockHash).orElse(Bytes32.ZERO);
   }
 }

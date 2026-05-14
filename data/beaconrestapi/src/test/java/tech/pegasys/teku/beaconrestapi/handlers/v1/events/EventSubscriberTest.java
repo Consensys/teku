@@ -118,7 +118,8 @@ public class EventSubscriberTest {
     eventSubscriber.onEvent(EventType.head, event("test"));
 
     verify(onCloseCallback).run();
-    verify(asyncContext).complete();
+    verify(asyncContext, never()).complete();
+    assertThat(sseClient.terminated()).isTrue();
     asyncRunner.executeQueuedActions();
     assertThat(outputStream.getWriteCounter()).isEqualTo(0);
   }
@@ -140,7 +141,8 @@ public class EventSubscriberTest {
     eventSubscriber.onEvent(EventType.head, event("test"));
 
     verify(onCloseCallback, atMostOnce()).run();
-    verify(asyncContext, atMostOnce()).complete();
+    verify(asyncContext, never()).complete();
+    assertThat(sseClient.terminated()).isTrue();
   }
 
   @Test
@@ -170,7 +172,7 @@ public class EventSubscriberTest {
     for (int i = 0; i <= EventSubscriber.SANITY_LIMIT; i++) {
       asyncRunner.executeQueuedActions();
     }
-    verify(asyncContext).complete();
+    verify(asyncContext, never()).complete();
     verify(failingSseClient).close();
   }
 

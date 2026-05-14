@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 @SuppressWarnings("ClassInitializationDeadlock")
@@ -80,6 +81,15 @@ public interface ExecutionPayloadImportResult {
 
   default boolean isImportedOptimistically() {
     return false;
+  }
+
+  default String toLogString() {
+    return getFailureReason()
+        + getFailureCause()
+            .map(ExceptionUtil::getRootCauseMessage)
+            .filter(causeMessage -> !causeMessage.isBlank())
+            .map(causeMessage -> " (" + causeMessage + ")")
+            .orElse("");
   }
 
   /**

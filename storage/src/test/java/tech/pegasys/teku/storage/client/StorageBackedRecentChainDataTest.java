@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
@@ -85,6 +86,7 @@ public class StorageBackedRecentChainDataTest {
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -136,6 +138,7 @@ public class StorageBackedRecentChainDataTest {
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -190,6 +193,7 @@ public class StorageBackedRecentChainDataTest {
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -240,6 +244,7 @@ public class StorageBackedRecentChainDataTest {
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

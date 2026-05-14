@@ -21,39 +21,39 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 
-@FunctionalInterface
-public interface ExecutionPayloadProvider {
+public interface BlindedExecutionPayloadProvider {
 
-  ExecutionPayloadProvider NOOP = roots -> SafeFuture.completedFuture(Collections.emptyMap());
+  BlindedExecutionPayloadProvider NOOP =
+      roots -> SafeFuture.completedFuture(Collections.emptyMap());
 
   /**
    * Combines multiple providers, querying the primary first and falling back to secondary providers
    * for any missing roots. Use this to combine a hot store provider with a database-backed
    * provider.
    */
-  static ExecutionPayloadProvider combined(
-      final ExecutionPayloadProvider primaryProvider,
-      final ExecutionPayloadProvider... secondaryProviders) {
+  static BlindedExecutionPayloadProvider combined(
+      final BlindedExecutionPayloadProvider primaryProvider,
+      final BlindedExecutionPayloadProvider... secondaryProviders) {
     return (final Set<Bytes32> blockRoots) -> {
-      SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> result =
-          primaryProvider.getExecutionPayloads(blockRoots).thenApply(HashMap::new);
-      for (ExecutionPayloadProvider nextProvider : secondaryProviders) {
+      SafeFuture<Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>> result =
+          primaryProvider.getBlindedExecutionPayloads(blockRoots).thenApply(HashMap::new);
+      for (BlindedExecutionPayloadProvider nextProvider : secondaryProviders) {
         result =
             result.thenCompose(
-                executionPayloads -> {
+                blindedExecutionPayloads -> {
                   final Set<Bytes32> remainingRoots =
-                      Sets.difference(blockRoots, executionPayloads.keySet());
+                      Sets.difference(blockRoots, blindedExecutionPayloads.keySet());
                   if (remainingRoots.isEmpty()) {
-                    return SafeFuture.completedFuture(executionPayloads);
+                    return SafeFuture.completedFuture(blindedExecutionPayloads);
                   }
                   return nextProvider
-                      .getExecutionPayloads(remainingRoots)
+                      .getBlindedExecutionPayloads(remainingRoots)
                       .thenApply(
-                          morePayloads -> {
-                            executionPayloads.putAll(morePayloads);
-                            return executionPayloads;
+                          moreBlindedPayloads -> {
+                            blindedExecutionPayloads.putAll(moreBlindedPayloads);
+                            return blindedExecutionPayloads;
                           });
                 });
       }
@@ -61,12 +61,14 @@ public interface ExecutionPayloadProvider {
     };
   }
 
-  SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getExecutionPayloads(
+  SafeFuture<Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>> getBlindedExecutionPayloads(
       Set<Bytes32> blockRoots);
 
-  default SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayload(
+  default SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>> getBlindedExecutionPayload(
       final Bytes32 blockRoot) {
-    return getExecutionPayloads(Set.of(blockRoot))
-        .thenApply(executionPayloads -> Optional.ofNullable(executionPayloads.get(blockRoot)));
+    return getBlindedExecutionPayloads(Set.of(blockRoot))
+        .thenApply(
+            blindedExecutionPayloads ->
+                Optional.ofNullable(blindedExecutionPayloads.get(blockRoot)));
   }
 }
