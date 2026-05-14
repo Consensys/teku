@@ -361,9 +361,6 @@ specrefs:
       - get_forkchoice_store#gloas
       - is_merge_transition_complete#gloas
       - is_supporting_vote#gloas
-      - prepare_execution_payload#gloas
-      - process_attestation#gloas
-      - process_block#gloas
       - process_proposer_slashing#gloas
       - process_slot#gloas
       - update_latest_messages#gloas

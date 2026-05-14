@@ -8606,7 +8606,11 @@
     </spec>
 
 - name: prepare_execution_payload#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<ChainHead> resolveProposerHeadOverride(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
   spec: |
     <spec fn="prepare_execution_payload" fork="gloas" hash="36e9467d">
     def prepare_execution_payload(
@@ -8847,7 +8851,15 @@
     </spec>
 
 - name: process_attestation#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/block/BlockProcessorAltair.java
+      search: public AttestationProcessingResult processAttestation(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
+      search: protected int getBuilderPaymentIndex(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
+      search: protected UInt64 updateBuilderPaymentWeight(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
+      search: protected void consumeAttestationProcessingResult(
   spec: |
     <spec fn="process_attestation" fork="gloas" hash="2258b5bb">
     def process_attestation(state: BeaconState, attestation: Attestation) -> None:
@@ -9041,7 +9053,11 @@
     </spec>
 
 - name: process_block#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: protected void processBlock(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
+      search: public void executionProcessing(
   spec: |
     <spec fn="process_block" fork="gloas" hash="a911a43e">
     def process_block(state: BeaconState, block: BeaconBlock) -> None:
