@@ -365,8 +365,6 @@ specrefs:
       - process_slot#gloas
       - update_latest_messages#gloas
       - validate_merge_block#gloas
-      - get_proposer_preferences_signature#gloas
-      - get_upcoming_proposal_slots#gloas
       - is_head_late#gloas
       - is_head_weak#gloas
       - is_parent_strong#gloas

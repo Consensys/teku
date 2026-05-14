@@ -5583,7 +5583,11 @@
     </spec>
 
 - name: get_proposer_preferences_signature#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/SigningRootUtil.java
+      search: public Bytes signingRootForSignProposerPreferences(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/LocalSigner.java
+      search: public SafeFuture<BLSSignature> signProposerPreferences(
   spec: |
     <spec fn="get_proposer_preferences_signature" fork="gloas" hash="6a34cb73">
     def get_proposer_preferences_signature(
@@ -6008,7 +6012,9 @@
     </spec>
 
 - name: get_upcoming_proposal_slots#gloas
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/ValidatorApiHandler.java
+      search: private List<ProposerDuty> getProposalSlotsForEpoch(
   spec: |
     <spec fn="get_upcoming_proposal_slots" fork="gloas" hash="87d7a07d">
     def get_upcoming_proposal_slots(
