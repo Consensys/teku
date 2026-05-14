@@ -24,9 +24,7 @@ specrefs:
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
 
-      # Constants for max values, defined elsewhere
-      - UINT256_MAX
-      - UINT64_MAX
+      # Constant for max value, defined elsewhere
       - UINT64_MAX_SQRT
 
       # No light client support
