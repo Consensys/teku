@@ -56,8 +56,8 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   private static final Logger LOG = LogManager.getLogger();
 
   protected final SchemaDefinitionsElectra schemaDefinitions;
-  private final MiscHelpers miscHelpers;
-  private final SpecConfigElectra specConfig;
+  protected final MiscHelpers miscHelpers;
+  protected final SpecConfigElectra specConfig;
   private final PredicatesElectra predicates;
   protected final ValidatorsUtil validatorsUtil;
   private final BeaconStateMutatorsElectra beaconStateMutators;
@@ -88,12 +88,15 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     for (DepositRequest depositRequest : depositRequests) {
-      processDepositRequest(stateElectra, depositRequest);
+      processDepositRequest(stateElectra, depositRequest, false, false);
     }
   }
 
   protected void processDepositRequest(
-      final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
+      final MutableBeaconStateElectra state,
+      final DepositRequest depositRequest,
+      final boolean isNewBuilderDeposit,
+      final boolean signatureAlreadyVerified) {
     final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
     if (state
         .getDepositRequestsStartIndex()

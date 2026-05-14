@@ -13,11 +13,20 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -59,18 +68,77 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
   }
 
   @Override
+  public void processDepositRequests(
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+
+    final List<ClassifiedDepositRequest> classifiedDepositRequests = new ArrayList<>();
+    final List<DepositRequest> newBuilderDeposits = new ArrayList<>();
+
+    for (final DepositRequest depositRequest : depositRequests) {
+      final boolean isValidator =
+          validatorsUtil.getValidatorIndex(state, depositRequest.getPubkey()).isPresent();
+
+      final boolean isNewBuilderDeposit =
+          predicatesGloas.isBuilderWithdrawalCredential(depositRequest.getWithdrawalCredentials())
+              && !isValidator
+              && !miscHelpersGloas.isPendingValidator(state, depositRequest.getPubkey());
+
+      classifiedDepositRequests.add(
+          new ClassifiedDepositRequest(depositRequest, isNewBuilderDeposit));
+
+      if (isNewBuilderDeposit) {
+        newBuilderDeposits.add(depositRequest);
+      }
+    }
+
+    final boolean newBuilderDepositSignaturesAreAllGood =
+        batchVerifyNewBuilderDepositSignatures(newBuilderDeposits);
+
+    for (final ClassifiedDepositRequest depositRequest : classifiedDepositRequests) {
+      final boolean signatureAlreadyVerified =
+          depositRequest.isNewBuilderDeposit() && newBuilderDepositSignaturesAreAllGood;
+      processDepositRequest(
+          stateElectra,
+          depositRequest.depositRequest(),
+          depositRequest.isNewBuilderDeposit(),
+          signatureAlreadyVerified);
+    }
+  }
+
+  private boolean batchVerifyNewBuilderDepositSignatures(
+      final List<DepositRequest> newBuilderDeposits) {
+    try {
+      final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
+      final List<Bytes> messages = new ArrayList<>();
+      final List<BLSSignature> signatures = new ArrayList<>();
+      for (final DepositRequest newBuilderDeposit : newBuilderDeposits) {
+        final BLSPublicKey pubkey = newBuilderDeposit.getPubkey();
+        publicKeys.add(List.of(pubkey));
+        messages.add(
+            miscHelpers.computeDepositSigningRoot(
+                pubkey,
+                newBuilderDeposit.getWithdrawalCredentials(),
+                newBuilderDeposit.getAmount()));
+        signatures.add(newBuilderDeposit.getSignature());
+      }
+      return specConfig.getBLSSignatureVerifier().verify(publicKeys, messages, signatures);
+    } catch (final BlsException e) {
+      return false;
+    }
+  }
+
+  @Override
   protected void processDepositRequest(
-      final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
+      final MutableBeaconStateElectra state,
+      final DepositRequest depositRequest,
+      final boolean isNewBuilderDeposit,
+      final boolean signatureAlreadyVerified) {
     // Regardless of the withdrawal credentials prefix, if a builder/validator already exists with
     // this pubkey, apply the deposit to their balance
     final boolean isBuilder =
         beaconStateAccessorsGloas.getBuilderIndex(state, depositRequest.getPubkey()).isPresent();
-    final boolean isValidator =
-        validatorsUtil.getValidatorIndex(state, depositRequest.getPubkey()).isPresent();
-    if (isBuilder
-        || (predicatesGloas.isBuilderWithdrawalCredential(depositRequest.getWithdrawalCredentials())
-            && !isValidator
-            && !miscHelpersGloas.isPendingValidator(state, depositRequest.getPubkey()))) {
+    if (isBuilder || isNewBuilderDeposit) {
       // Apply builder deposits immediately
       beaconStateMutatorsGloas.applyDepositForBuilder(
           state,
@@ -78,7 +146,8 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
           depositRequest.getWithdrawalCredentials(),
           depositRequest.getAmount(),
           depositRequest.getSignature(),
-          state.getSlot());
+          state.getSlot(),
+          signatureAlreadyVerified);
       return;
     }
     // Add validator deposits to the queue
@@ -94,4 +163,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
                 SszUInt64.of(state.getSlot()));
     pendingDeposits.append(deposit);
   }
+
+  private record ClassifiedDepositRequest(
+      DepositRequest depositRequest, boolean isNewBuilderDeposit) {}
 }
