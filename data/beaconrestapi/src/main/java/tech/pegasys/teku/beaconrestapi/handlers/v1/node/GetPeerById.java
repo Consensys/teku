@@ -27,6 +27,7 @@ import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PeerView;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -35,8 +36,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 public class GetPeerById extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers/{peer_id}";
 
-  private static final SerializableTypeDefinition<Eth2PeerWithEnr> PEERS_BY_ID_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(Eth2PeerWithEnr.class)
+  private static final SerializableTypeDefinition<PeerView> PEERS_BY_ID_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(PeerView.class)
           .name("GetPeerResponse")
           .withField("data", PEER_DATA_TYPE, Function.identity())
           .build();
@@ -69,7 +70,7 @@ public class GetPeerById extends RestApiEndpoint {
     if (peer.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Peer not found");
     } else {
-      request.respondOk(peer.get());
+      request.respondOk(GetPeers.toPeerView(peer.get(), network.getReputationManager()));
     }
   }
 }

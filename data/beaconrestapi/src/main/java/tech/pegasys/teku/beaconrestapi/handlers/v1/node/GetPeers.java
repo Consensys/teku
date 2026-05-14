@@ -15,7 +15,9 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_DOUBLE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
@@ -23,6 +25,8 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -34,6 +38,9 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager.LastAdjustment;
 
 public class GetPeers extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers";
@@ -44,8 +51,8 @@ public class GetPeers extends RestApiEndpoint {
   private static final DeserializableTypeDefinition<Direction> DIRECTION_TYPE =
       DeserializableTypeDefinition.enumOf(Direction.class);
 
-  static final SerializableTypeDefinition<Eth2PeerWithEnr> PEER_DATA_TYPE =
-      SerializableTypeDefinition.object(Eth2PeerWithEnr.class)
+  static final SerializableTypeDefinition<PeerView> PEER_DATA_TYPE =
+      SerializableTypeDefinition.object(PeerView.class)
           .name("Peer")
           .withField(
               "peer_id",
@@ -53,7 +60,7 @@ public class GetPeers extends RestApiEndpoint {
                   "Cryptographic hash of a peer’s public key. "
                       + "'[Read more](https://docs.libp2p.io/concepts/peer-id/)",
                   "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
-              eth2Peer -> eth2Peer.peer().getId().toBase58())
+              view -> view.source().peer().getId().toBase58())
           .withOptionalField(
               "enr",
               string(
@@ -61,25 +68,31 @@ public class GetPeers extends RestApiEndpoint {
                   "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
                       + "Tfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYp"
                       + "Ma2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
-              Eth2PeerWithEnr::enr)
+              view -> view.source().enr())
           .withField(
               "last_seen_p2p_address",
               string(
                   "Multiaddr used in last peer connection. "
                       + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
                   "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
-              eth2Peer -> eth2Peer.peer().getAddress().toExternalForm())
+              view -> view.source().peer().getAddress().toExternalForm())
           .withField(
               "state",
               STATE_TYPE,
-              eth2Peer -> eth2Peer.peer().isConnected() ? State.connected : State.disconnected)
+              view ->
+                  view.source().peer().isConnected() ? State.connected : State.disconnected)
           .withField(
               "direction",
               DIRECTION_TYPE,
-              eth2Peer ->
-                  eth2Peer.peer().connectionInitiatedLocally()
+              view ->
+                  view.source().peer().connectionInitiatedLocally()
                       ? Direction.outbound
                       : Direction.inbound)
+          .withOptionalField("agent_version", STRING_TYPE, PeerView::agentVersion)
+          .withOptionalField("score", RAW_DOUBLE_TYPE, PeerView::score)
+          .withOptionalField("disconnect_reason", STRING_TYPE, PeerView::disconnectReason)
+          .withOptionalField(
+              "downscore_reasons", listOf(STRING_TYPE), PeerView::downscoreReasons)
           .build();
 
   private static final SerializableTypeDefinition<Integer> PEERS_META_TYPE =
@@ -119,19 +132,51 @@ public class GetPeers extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(new PeersData(network.getEth2PeersWithEnr()), NO_CACHE);
+    final ReputationManager reputationManager = network.getReputationManager();
+    final List<PeerView> views =
+        network.getEth2PeersWithEnr().stream()
+            .map(source -> toPeerView(source, reputationManager))
+            .toList();
+    request.respondOk(new PeersData(views), NO_CACHE);
   }
 
+  static PeerView toPeerView(
+      final Eth2PeerWithEnr source, final ReputationManager reputationManager) {
+    final Eth2Peer eth2Peer = source.peer();
+    final Optional<String> agentVersion = eth2Peer.getAgentVersion();
+    final OptionalInt reputationScore = reputationManager.getReputationScore(eth2Peer.getId());
+    final Optional<Double> score =
+        reputationScore.isPresent()
+            ? Optional.of((double) reputationScore.getAsInt())
+            : Optional.empty();
+    final Optional<LastAdjustment> lastAdjustment =
+        reputationManager.getLastAdjustment(eth2Peer.getId());
+    final Optional<String> disconnectReason =
+        lastAdjustment.flatMap(adj -> PeerScoreReasonMapper.mapDisconnectReason(adj.reason()));
+    final Optional<List<String>> downscoreReasons =
+        lastAdjustment
+            .flatMap(adj -> PeerScoreReasonMapper.mapDownscoreReason(adj.reason()))
+            .map(List::of);
+    return new PeerView(source, agentVersion, score, disconnectReason, downscoreReasons);
+  }
+
+  record PeerView(
+      Eth2PeerWithEnr source,
+      Optional<String> agentVersion,
+      Optional<Double> score,
+      Optional<String> disconnectReason,
+      Optional<List<String>> downscoreReasons) {}
+
   static class PeersData {
-    private final List<Eth2PeerWithEnr> peers;
+    private final List<PeerView> peers;
     private final Integer count;
 
-    PeersData(final List<Eth2PeerWithEnr> peers) {
+    PeersData(final List<PeerView> peers) {
       this.peers = peers;
       this.count = peers.size();
     }
 
-    public List<Eth2PeerWithEnr> getPeers() {
+    public List<PeerView> getPeers() {
       return peers;
     }
 

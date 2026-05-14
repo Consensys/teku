@@ -142,6 +142,11 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public Optional<String> getAgentVersion() {
+    return maybeAgentString;
+  }
+
+  @Override
   public void disconnectImmediately(
       final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     if (connected.getAndSet(false)) {
