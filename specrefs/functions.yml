@@ -4038,7 +4038,8 @@
 - name: get_data_column_sidecars#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/MiscHelpersGloas.java
-      search: public List<DataColumnSidecar> constructDataColumnSidecars(
+      search: public List<DataColumnSidecar> constructDataColumnSidecars\(\s*final SignedExecutionPayloadEnvelope
+      regex: true
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/DataColumnSidecarUtilGloas.java
       search: public List<DataColumnSidecar> constructDataColumnSidecars(
   spec: |
