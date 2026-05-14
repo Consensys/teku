@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
