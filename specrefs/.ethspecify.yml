@@ -208,7 +208,6 @@ specrefs:
       - upgrade_lc_update_to_gloas#gloas
 
       # Still need to implement this for Phase0
-      - compute_time_at_slot_ms#phase0
       - is_not_from_future_slot#phase0
       - is_within_slot_range#phase0
 
