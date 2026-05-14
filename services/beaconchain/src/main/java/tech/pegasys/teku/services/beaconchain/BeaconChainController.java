@@ -1002,10 +1002,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
 
-    // during finalization DataColumnSidecarCustody maintains FirstIncompleteSlot variable, which
-    // is not needed on reworked custody backfiller
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
-
     final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
         eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
