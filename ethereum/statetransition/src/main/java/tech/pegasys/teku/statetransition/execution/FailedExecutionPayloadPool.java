@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.block;
+package tech.pegasys.teku.statetransition.execution;
 
 import com.google.common.base.Throwables;
 import java.net.SocketTimeoutException;
@@ -24,51 +24,62 @@ import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
-public class FailedExecutionPool {
+/**
+ * Maintains a pool of execution payloads that failed execution (against the EL) and retries them
+ */
+public class FailedExecutionPayloadPool {
+
   private static final Logger LOG = LogManager.getLogger();
+
   static final Duration MAX_RETRY_DELAY = Duration.ofSeconds(30);
   static final Duration SHORT_DELAY = Duration.ofSeconds(2);
+
   private static final List<Class<? extends Throwable>> TIMEOUT_EXCEPTIONS =
       List.of(InterruptedException.class, SocketTimeoutException.class, TimeoutException.class);
-  private final Queue<SignedBeaconBlock> awaitingExecutionQueue = new ArrayBlockingQueue<>(10);
-  private final BlockManager blockManager;
-  private final AsyncRunner asyncRunner;
 
-  private Optional<SignedBeaconBlock> retryingBlock = Optional.empty();
+  private final Queue<SignedExecutionPayloadEnvelope> awaitingExecutionQueue =
+      new ArrayBlockingQueue<>(10);
+  private Optional<SignedExecutionPayloadEnvelope> retryingExecutionPayload = Optional.empty();
 
   private Duration currentDelay = SHORT_DELAY;
 
-  public FailedExecutionPool(final BlockManager blockManager, final AsyncRunner asyncRunner) {
-    this.blockManager = blockManager;
+  private final ExecutionPayloadManager executionPayloadManager;
+  private final AsyncRunner asyncRunner;
+
+  public FailedExecutionPayloadPool(
+      final ExecutionPayloadManager executionPayloadManager, final AsyncRunner asyncRunner) {
+    this.executionPayloadManager = executionPayloadManager;
     this.asyncRunner = asyncRunner;
   }
 
-  public synchronized void addFailedBlock(final SignedBeaconBlock block) {
-    if (retryingBlock.isEmpty()) {
-      retryingBlock = Optional.of(block);
+  public synchronized void addFailedExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    if (retryingExecutionPayload.isEmpty()) {
+      retryingExecutionPayload = Optional.of(executionPayload);
       scheduleNextRetry();
     } else {
-      if (retryingBlock.get().equals(block) || awaitingExecutionQueue.contains(block)) {
-        // Already retrying this block.
+      if (retryingExecutionPayload.get().equals(executionPayload)
+          || awaitingExecutionQueue.contains(executionPayload)) {
+        // Already retrying this execution payload.
         return;
       }
-      if (!awaitingExecutionQueue.offer(block)) {
-        LOG.info(
-            "Discarding block {} as execution retry pool capacity exceeded", block::toLogString);
+      if (!awaitingExecutionQueue.offer(executionPayload)) {
+        LOG.debug(
+            "Discarding execution payload {} as execution retry pool capacity exceeded",
+            executionPayload::toLogString);
       }
     }
   }
 
   private synchronized void handleExecutionResult(
-      final SignedBeaconBlock block, final BlockImportResult importResult) {
-    if (importResult.hasFailedExecutingExecutionPayload()) {
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult importResult) {
+    if (importResult.hasFailedExecution()) {
       currentDelay = currentDelay.multipliedBy(2);
       if (currentDelay.compareTo(MAX_RETRY_DELAY) > 0) {
         currentDelay = MAX_RETRY_DELAY;
@@ -76,20 +87,20 @@ public class FailedExecutionPool {
       if (awaitingExecutionQueue.isEmpty() || isTimeout(importResult)) {
         scheduleNextRetry();
       } else {
-        // Try a different block
-        final SignedBeaconBlock nextBlock = awaitingExecutionQueue.remove();
-        awaitingExecutionQueue.add(block);
-        retryingBlock = Optional.of(nextBlock);
+        // Try a different execution payload
+        final SignedExecutionPayloadEnvelope nextExecutionPayload = awaitingExecutionQueue.remove();
+        awaitingExecutionQueue.add(executionPayload);
+        retryingExecutionPayload = Optional.of(nextExecutionPayload);
         scheduleNextRetry();
       }
     } else {
       currentDelay = SHORT_DELAY;
-      retryingBlock = Optional.ofNullable(awaitingExecutionQueue.poll());
-      retryingBlock.ifPresent(this::retryExecution);
+      retryingExecutionPayload = Optional.ofNullable(awaitingExecutionQueue.poll());
+      retryingExecutionPayload.ifPresent(this::retryExecution);
     }
   }
 
-  private boolean isTimeout(final BlockImportResult importResult) {
+  private boolean isTimeout(final ExecutionPayloadImportResult importResult) {
     return importResult
         .getFailureCause()
         .map(
@@ -99,22 +110,18 @@ public class FailedExecutionPool {
   }
 
   private synchronized void scheduleNextRetry() {
-    retryingBlock.ifPresent(
-        block ->
+    retryingExecutionPayload.ifPresent(
+        executionPayload ->
             asyncRunner
-                .runAfterDelay(() -> retryExecution(block), currentDelay)
+                .runAfterDelay(() -> retryExecution(executionPayload), currentDelay)
                 .finishStackTrace());
   }
 
-  private synchronized void retryExecution(final SignedBeaconBlock block) {
-    LOG.info("Retrying execution of block {}", block.toLogString());
-    SafeFuture.of(
-            () ->
-                blockManager
-                    .importBlock(block)
-                    .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult))
-        .exceptionally(BlockImportResult::internalError)
-        .thenAccept(result -> handleExecutionResult(block, result))
+  private synchronized void retryExecution(final SignedExecutionPayloadEnvelope executionPayload) {
+    LOG.debug("Retrying execution of execution payload {}", executionPayload.toLogString());
+    executionPayloadManager
+        .importExecutionPayload(executionPayload)
+        .thenAccept(result -> handleExecutionResult(executionPayload, result))
         .finish(
             error -> {
               if (!(Throwables.getRootCause(error) instanceof ShuttingDownException)) {

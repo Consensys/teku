@@ -212,8 +212,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     offlineCheck();
 
-    LOG.info("Fork choice update {} attributes {}", forkChoiceState, payloadBuildingAttributes);
-
     if (!bellatrixActivationDetected) {
       LOG.debug(
           "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");

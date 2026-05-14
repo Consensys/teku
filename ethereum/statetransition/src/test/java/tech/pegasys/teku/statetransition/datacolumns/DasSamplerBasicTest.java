@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -48,8 +49,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
@@ -71,6 +75,7 @@ public class DasSamplerBasicTest {
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
+  private BlockImportChannel blockImportChannel;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
   private DasSamplerBasic sampler;
@@ -83,6 +88,7 @@ public class DasSamplerBasicTest {
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
+    blockImportChannel = mock(BlockImportChannel.class);
 
     when(retriever.retrieve(any()))
         .thenReturn(SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
@@ -100,7 +106,8 @@ public class DasSamplerBasicTest {
             retriever,
             custodyGroupCountManager,
             recentChainData,
-            true);
+            true,
+            blockImportChannel);
   }
 
   @Test
@@ -513,6 +520,34 @@ public class DasSamplerBasicTest {
 
     assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(blockWithBlobs.getRoot());
     assertSamplerTracker(blockWithBlobs.getRoot(), blockWithBlobs.getSlot(), SAMPLING_INDICES);
+  }
+
+  @Test
+  void enableBlockImportOnCompletion_shouldImportOnlyOnceWhenCalledMultipleTimes() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+    when(blockImportChannel.importBlock(blockWithBlobs))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new BlockImportAndBroadcastValidationResults(
+                    SafeFuture.completedFuture(BlockImportResult.successful(blockWithBlobs)))));
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    sampler.enableBlockImportOnCompletion(blockWithBlobs);
+    sampler.enableBlockImportOnCompletion(blockWithBlobs);
+
+    verifyNoInteractions(blockImportChannel);
+
+    SAMPLING_INDICES.forEach(
+        columnIndex ->
+            sampler.onNewValidatedDataColumnSidecar(
+                new DataColumnSlotAndIdentifier(
+                    blockWithBlobs.getSlot(), blockWithBlobs.getRoot(), columnIndex),
+                RemoteOrigin.GOSSIP));
+
+    verify(blockImportChannel, times(1)).importBlock(blockWithBlobs);
   }
 
   private void assertSamplerTracker(

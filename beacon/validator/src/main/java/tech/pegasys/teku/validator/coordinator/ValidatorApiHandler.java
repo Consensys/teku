@@ -89,7 +89,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -480,9 +479,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   .thenPeek(___ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(
-              stateFuture,
-              maybeChainHead.thenApply(ChainHead::getPayloadStatus),
-              productionPerformance);
+              stateFuture, maybeChainHead, productionPerformance);
         });
   }
 
@@ -1211,7 +1208,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private record BlockProductionPreparationContext(
       SafeFuture<BeaconState> stateFuture,
-      SafeFuture<ForkChoicePayloadStatus> payloadStatusFuture,
+      SafeFuture<ChainHead> chainHeadFuture,
       BlockProductionPerformance blockProductionPerformance) {
 
     SafeFuture<BlockProductionContext> toBlockProductionContext(
@@ -1221,16 +1218,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final Optional<Bytes32> graffiti,
         final Optional<UInt64> requestedBuilderBoostFactor) {
       return stateFuture.thenCombine(
-          payloadStatusFuture,
-          (state, payloadStatus) ->
+          chainHeadFuture,
+          (state, chainHead) ->
               BlockProductionContext.create(
                   spec,
                   proposalSlot,
                   state,
+                  chainHead,
                   randaoReveal,
                   graffiti,
                   requestedBuilderBoostFactor,
-                  payloadStatus,
                   blockProductionPerformance));
     }
   }

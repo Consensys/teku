@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
@@ -257,6 +258,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(
+        getExecutionPayloadIfAvailable(blockRoot)
+            .map(executionPayload -> executionPayload.blind(spec)));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
@@ -336,7 +345,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void putExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     executionPayloads.put(executionPayload.getBeaconBlockRoot(), executionPayload);
   }
 

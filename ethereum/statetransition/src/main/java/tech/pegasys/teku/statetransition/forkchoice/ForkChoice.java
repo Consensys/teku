@@ -27,22 +27,27 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -53,6 +58,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -64,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.Status;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -80,6 +88,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -197,8 +206,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     forkChoiceUpdatedResultNotification.forkChoiceState().headExecutionBlockHash());
                 return;
               }
-              onExecutionPayloadResult(
-                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock().blockRoot(),
+              onForkChoiceUpdatedPayloadResult(
+                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock(),
                   forkChoiceUpdatedResult.getPayloadStatus());
             })
         .finish(
@@ -714,7 +723,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
-    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+    if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
+      forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+    }
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -758,11 +769,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   "Invalid ExecutionPayload: "
                       + payloadStatus.getValidationError().orElse("No reason provided")));
       reportInvalidExecutionPayload(signedEnvelope, result);
+      getForkChoiceStrategy()
+          .onExecutionPayloadResult(
+              signedEnvelope.getParentBeaconBlockRoot(), payloadStatus, false);
       return result;
-    }
-
-    if (payloadStatus.hasNotValidatedStatus()) {
-      return ExecutionPayloadImportResult.FAILED_EXECUTION_SYNCING;
     }
 
     if (payloadStatus.hasFailedExecution()) {
@@ -784,16 +794,98 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
-    forkChoiceUtil.applyExecutionPayloadToStore(transaction, signedEnvelope);
+    final ExecutionPayloadImportResult result;
+    if (payloadStatus.hasValidStatus()) {
+      result = ExecutionPayloadImportResult.successful(signedEnvelope);
+    } else {
+      result = ExecutionPayloadImportResult.optimisticallySuccessful(signedEnvelope);
+    }
+
+    forkChoiceUtil.applyExecutionPayloadToStore(
+        transaction, signedEnvelope, result.isImportedOptimistically());
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+
+    forkChoiceStrategy.onExecutionPayloadResult(
+        signedEnvelope.getBeaconBlockRoot(), payloadStatus, true);
+
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
 
-    return ExecutionPayloadImportResult.successful(signedEnvelope);
+    return result;
+  }
+
+  /**
+   * Apply the genesis execution payload envelope to the store. No-op for pre-Gloas genesis.
+   *
+   * <p>Gloas-and-later defines the chain head as a (block, payload) pair, so at genesis we seed a
+   * FULL fork-choice node by importing an envelope whose payload carries the genesis EL block hash.
+   * Without this, {@code internalGetPayloadId} sees a zero parent execution hash at slot 1 and
+   * erroneously falls into the pre-merge branch.
+   */
+  public SafeFuture<Void> applyGenesisExecutionPayloadForGloas() {
+    if (spec.getGenesisSpecConfig().getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      return SafeFuture.COMPLETE;
+    }
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.getGenesisSpec().getSchemaDefinitions());
+    final BeaconStateGloas genesisState =
+        BeaconStateGloas.required(recentChainData.getStore().getLatestFinalized().getState());
+    final Bytes32 genesisExecutionBlockHash = genesisState.getLatestBlockHash();
+    final ExecutionPayload genesisPayload =
+        schemaDefinitions
+            .getExecutionPayloadSchema()
+            .createExecutionPayload(
+                builder ->
+                    builder
+                        .parentHash(Bytes32.ZERO)
+                        .feeRecipient(Bytes20.ZERO)
+                        .stateRoot(Bytes32.ZERO)
+                        .receiptsRoot(Bytes32.ZERO)
+                        .logsBloom(Bytes.wrap(new byte[256]))
+                        .prevRandao(Bytes32.ZERO)
+                        .blockNumber(UInt64.ZERO)
+                        .gasLimit(UInt64.ZERO)
+                        .gasUsed(UInt64.ZERO)
+                        .timestamp(UInt64.ZERO)
+                        .extraData(Bytes.EMPTY)
+                        .baseFeePerGas(UInt256.ZERO)
+                        .blockHash(genesisExecutionBlockHash)
+                        .transactions(List.of())
+                        .withdrawals(List::of)
+                        .blobGasUsed(() -> UInt64.ZERO)
+                        .excessBlobGas(() -> UInt64.ZERO)
+                        .blockAccessList(() -> Bytes.EMPTY)
+                        .slotNumber(() -> UInt64.ZERO));
+    final SignedExecutionPayloadEnvelope envelope =
+        schemaDefinitions
+            .getSignedExecutionPayloadEnvelopeSchema()
+            .create(
+                schemaDefinitions
+                    .getExecutionPayloadEnvelopeSchema()
+                    .create(
+                        genesisPayload,
+                        schemaDefinitions.getExecutionRequestsSchema().getDefault(),
+                        UInt64.ZERO,
+                        recentChainData.getBestBlockRoot().orElseThrow(),
+                        Bytes32.ZERO),
+                BLSSignature.empty());
+
+    return onForkChoiceThread(
+        () -> {
+          final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
+          final StoreTransaction transaction = recentChainData.startStoreTransaction();
+          forkChoiceUtil.applyExecutionPayloadToStore(transaction, envelope, false);
+          // Note: not using thenRun here because we want to ensure each step is on the event thread
+          transaction.commit().join();
+
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
+          notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
+        });
   }
 
   // from consensus-specs/fork-choice:
@@ -884,11 +976,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
   }
 
-  private void onExecutionPayloadResult(
-      final Bytes32 blockRoot, final PayloadStatus payloadResult) {
+  private void onForkChoiceUpdatedPayloadResult(
+      final ForkChoiceNode node, final PayloadStatus payloadResult) {
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
-      transitionValidatedStatus = transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot);
+      transitionValidatedStatus =
+          transitionBlockValidator.verifyAncestorTransitionBlock(node.blockRoot());
     } else {
       transitionValidatedStatus =
           SafeFuture.completedFuture(new PayloadValidationResult(payloadResult));
@@ -897,9 +990,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         result -> {
           final PayloadStatus resultStatus = result.getStatus();
           final Bytes32 validatedBlockRoot =
-              result.getInvalidTransitionBlockRoot().orElse(blockRoot);
+              result.getInvalidTransitionBlockRoot().orElse(node.blockRoot());
 
-          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
+          if (resultStatus.hasValidStatus()) {
+            // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
+            // Gloas, EMPTY and FULL nodes can share a block root, so keep node identity instead of
+            // collapsing to block root.
+            getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, false);
+          } else {
+            getForkChoiceStrategy()
+                .onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
+          }
 
           if (resultStatus.hasInvalidStatus()) {
             LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
@@ -916,7 +1017,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 .getUncaughtExceptionHandler()
                 .uncaughtException(Thread.currentThread(), error);
           } else {
-            LOG.error("Failed to apply payload result for block {}", blockRoot, error);
+            LOG.error("Failed to apply payload result for node {}", node, error);
           }
         },
         forkChoiceExecutor);
@@ -933,9 +1034,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
     if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
-      if (bestHeadBlock.node().blockRoot().equals(block.getRoot())) {
-        result.markAsCanonical();
-      }
+    }
+
+    if (bestHeadBlock.node().blockRoot().equals(block.getRoot())) {
+      result.markAsCanonical();
     }
 
     if (!result.isBlockOnCanonicalChain() && shouldUpdateProposerBoostRoot) {

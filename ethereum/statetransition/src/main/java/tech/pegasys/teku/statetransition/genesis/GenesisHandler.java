@@ -33,19 +33,25 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GenesisHandler implements Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
+  private final ForkChoice forkChoice;
   private final TimeProvider timeProvider;
   private final GenesisGenerator genesisGenerator;
   private final Spec spec;
   private final DepositUtil depositUtil;
 
   public GenesisHandler(
-      final RecentChainData recentChainData, final TimeProvider timeProvider, final Spec spec) {
+      final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
+      final TimeProvider timeProvider,
+      final Spec spec) {
     this.recentChainData = recentChainData;
+    this.forkChoice = forkChoice;
     this.timeProvider = timeProvider;
     this.spec = spec;
     this.genesisGenerator = spec.createGenesisGenerator();
@@ -120,6 +126,7 @@ public class GenesisHandler implements Eth1EventsChannel {
 
   private void eth2Genesis(final BeaconState genesisState) {
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
+    forkChoice.applyGenesisExecutionPayloadForGloas().join();
     final Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(), genesisBlockRoot, genesisState.getGenesisTime());

@@ -54,8 +54,12 @@ public class LogFormatter {
   }
 
   public static String formatExecutionPayload(
-      final UInt64 slot, final Bytes32 blockRoot, final UInt64 builderIndex) {
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final UInt64 builderIndex,
+      final Bytes32 blockHash) {
     return String.format(
-        "%s (block root: %s, builder index: %s)", slot, formatHashRoot(blockRoot), builderIndex);
+        "%s (beacon block root: %s, builder index: %s, block hash: %s)",
+        slot, formatHashRoot(beaconBlockRoot), builderIndex, formatHashRoot(blockHash));
   }
 }

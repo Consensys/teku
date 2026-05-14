@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.UnblindingExecutionPayloadProvider;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -202,6 +204,7 @@ import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesMan
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.FailedExecutionPayloadPool;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
@@ -599,8 +602,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorIsConnectedProvider validatorIsConnectedProvider =
         new ValidatorIsConnectedProviderReference(() -> proposersDataManager);
 
+    final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider =
+        createBlindedExecutionPayloadProvider(storageQueryChannel);
+
     final ExecutionPayloadProvider executionPayloadProvider =
-        createExecutionPayloadProvider(storageQueryChannel);
+        createExecutionPayloadProvider(blindedExecutionPayloadProvider);
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -614,6 +620,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
                     executionPayloadProvider,
+                    blindedExecutionPayloadProvider,
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
@@ -738,14 +745,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
   }
 
-  protected ExecutionPayloadProvider createExecutionPayloadProvider(
+  protected BlindedExecutionPayloadProvider createBlindedExecutionPayloadProvider(
       final StorageQueryChannel storageQueryChannel) {
+    if (!spec.supportsExecutionPayloadEnvelopes()) {
+      return BlindedExecutionPayloadProvider.NOOP;
+    }
+    return storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot;
+  }
+
+  protected ExecutionPayloadProvider createExecutionPayloadProvider(
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider) {
     if (!spec.supportsExecutionPayloadEnvelopes()) {
       return ExecutionPayloadProvider.NOOP;
     }
     return new UnblindingExecutionPayloadProvider(
         spec,
-        storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot,
+        blindedExecutionPayloadProvider,
         blockHashes -> executionLayer.engineGetPayloadBodiesByHash(blockHashes));
   }
 
@@ -889,7 +904,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void initDasSamplerManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Activated DAS Sampler Manager for Fulu");
-      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, spec);
+      this.dasSamplerManager =
+          new DasSamplerManager(() -> dataAvailabilitySampler, spec, recentChainData);
     } else {
       LOG.info("Using NOOP DAS Sampler Manager");
       this.dasSamplerManager = DasSamplerManager.NOOP;
@@ -931,11 +947,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
               eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
-      executionPayloadBidManager =
+      final DefaultExecutionPayloadBidManager defaultExecutionPayloadBidManager =
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
               receivedExecutionPayloadBidEventsChannelPublisher);
+      eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
+      executionPayloadBidManager = defaultExecutionPayloadBidManager;
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -959,6 +977,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
               receivedExecutionPayloadEventsChannelPublisher,
               recentChainData,
               executionPayloadGossipChannel::publishExecutionPayload);
+      final FailedExecutionPayloadPool failedExecutionPayloadPool =
+          new FailedExecutionPayloadPool(executionPayloadManager, beaconAsyncRunner);
+      executionPayloadManager.subscribeFailedPayloadExecution(
+          failedExecutionPayloadPool::addFailedExecutionPayload);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
       this.executionPayloadManager = executionPayloadManager;
     } else {
@@ -1101,6 +1123,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             DEFAULT_MIN_WAIT_MILLIS,
             DEFAULT_TARGET_WAIT_MILLIS);
 
+    final BlockImportChannel dasBlockImportChannel =
+        eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
             spec,
@@ -1111,7 +1135,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recoveringSidecarRetriever,
             custodyGroupCountManager,
             recentChainData,
-            beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled());
+            beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled(),
+            dasBlockImportChannel);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
@@ -1561,6 +1586,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoice,
             beaconConfig.eth2NetworkConfig().getAttestationWaitLimitMillis(),
             timeProvider);
+    // Only required for Gloas genesis, so skip it fast in all other cases
+    if (spec.getGenesisSpecConfig().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      try {
+        forkChoice.applyGenesisExecutionPayloadForGloas().get(1, TimeUnit.MINUTES);
+      } catch (Exception e) {
+        throw new InvalidConfigurationException(
+            "Failed to apply genesis execution payload for Gloas", e);
+      }
+    }
   }
 
   public void initMetrics() {
@@ -1830,7 +1864,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(
-        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, spec));
+        Eth1EventsChannel.class,
+        new GenesisHandler(recentChainData, forkChoice, timeProvider, spec));
   }
 
   protected void initSignatureVerificationService() {

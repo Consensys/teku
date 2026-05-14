@@ -34,6 +34,7 @@ record DataColumnSamplingTracker(
     AtomicBoolean rpcFetchInProgress,
     SafeFuture<List<UInt64>> completionFuture,
     AtomicBoolean fullySampled,
+    AtomicBoolean blockImportOnCompletionEnabled,
     Optional<Integer> earlyCompletionRequirementCount) {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -54,7 +55,12 @@ record DataColumnSamplingTracker(
         new AtomicBoolean(false),
         completionFuture,
         new AtomicBoolean(false),
+        new AtomicBoolean(false),
         completionColumnCount);
+  }
+
+  boolean enableBlockImportOnCompletion() {
+    return blockImportOnCompletionEnabled.compareAndSet(false, true);
   }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {

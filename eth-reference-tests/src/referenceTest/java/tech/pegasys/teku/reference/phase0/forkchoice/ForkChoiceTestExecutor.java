@@ -186,11 +186,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // and fetching from the config would break when not in fulu
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
             recentChainData,
-            false);
+            false,
+            (block, level, origin) -> new SafeFuture<>());
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
-    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
-    // executor
     spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
@@ -201,6 +200,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            // forkChoiceLateBlockReorgEnabled is true here always because this is the reference
+            // test executor
             true,
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,

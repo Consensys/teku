@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,13 +27,13 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -44,7 +45,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadManager
     implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
@@ -54,11 +54,12 @@ public class DefaultExecutionPayloadManager
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
-  // keeping a cache of execution payloads that have been received earlier than the block
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 fine-tune the maxSize (not required
-  // for devnet-0)
+  // pending pool
   private final Map<BlockRootAndBuilderIndex, SignedExecutionPayloadEnvelope>
-      executionPayloadsSavedForFutureProcessing = LimitedMap.createSynchronizedLRU(32);
+      pendingExecutionPayloads = LimitedMap.createSynchronizedLRU(32);
+
+  private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
+      Subscribers.create(true);
 
   private final Spec spec;
   private final AsyncRunner asyncRunner;
@@ -107,22 +108,28 @@ public class DefaultExecutionPayloadManager
         result -> {
           switch (result.code()) {
             case ACCEPT -> {
-              // cache the seen `beacon_block_root`
+              receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
+                  signedExecutionPayload);
+              // cache the seen `beacon_block_root` when the gossip checks pass
               recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
-              importExecutionPayload(signedExecutionPayload)
-                  .finish(
-                      err ->
-                          LOG.error(
-                              "Failed to process received execution payload for slot {} and block root {}",
-                              signedExecutionPayload.getSlot(),
-                              signedExecutionPayload.getBeaconBlockRoot(),
-                              err));
+              importExecutionPayload(signedExecutionPayload).finishError(LOG);
             }
-            case SAVE_FOR_FUTURE ->
-                executionPayloadsSavedForFutureProcessing.put(
+            case SAVE_FOR_FUTURE -> {
+              if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
+                // handles edge case where block was imported while validating the payload
+                asyncRunner
+                    .runAfterDelay(
+                        () ->
+                            validateAndImportExecutionPayload(signedExecutionPayload)
+                                .thenCompose(r -> publishPayload(r, signedExecutionPayload)),
+                        Duration.ofMillis(100))
+                    .finishError(LOG);
+              } else {
+                // import will be triggered when the corresponding block is imported
+                pendingExecutionPayloads.put(
                     signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
-            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 what should we do in these
-            // cases?? (not required for devnet-0)
+              }
+            }
             case REJECT, IGNORE -> {}
           }
         });
@@ -142,19 +149,25 @@ public class DefaultExecutionPayloadManager
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
-                    signedExecutionPayload);
+                    signedExecutionPayload, result.isImportedOptimistically());
               } else {
-                LOG.debug(
-                    "Failed to import execution payload for reason {}{}: {}",
-                    result::getFailureReason,
-                    () ->
-                        result
-                            .getFailureCause()
-                            .map(ExceptionUtil::getRootCauseMessage)
-                            .filter(causeMessage -> !causeMessage.isBlank())
-                            .map(causeMessage -> " (" + causeMessage + ")")
-                            .orElse(""),
-                    signedExecutionPayload::toLogString);
+                switch (result.getFailureReason()) {
+                  case FAILED_EXECUTION -> {
+                    LOG.error(
+                        "Unable to import execution payload {}. Execution Client returned an error: {}",
+                        signedExecutionPayload::toLogString,
+                        () -> result.getFailureCause().map(Throwable::getMessage).orElse(""));
+                    failedPayloadExecutionSubscribers.deliver(
+                        FailedPayloadExecutionSubscriber::onPayloadExecutionFailed,
+                        signedExecutionPayload);
+                  }
+                  case INTERNAL_ERROR,
+                      UNKNOWN_BEACON_BLOCK_ROOT,
+                      FAILED_VERIFICATION,
+                      FAILED_DATA_AVAILABILITY_CHECK_INVALID,
+                      FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
+                      logFailedExecutionPayloadImport(signedExecutionPayload, result);
+                }
               }
             })
         .exceptionally(
@@ -169,32 +182,43 @@ public class DefaultExecutionPayloadManager
             });
   }
 
+  private void logFailedExecutionPayloadImport(
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult importResult) {
+    LOG.debug(
+        "Unable to import execution payload for reason {}: {}",
+        importResult::toLogString,
+        executionPayload::toLogString);
+  }
+
   @Override
-  public ExecutionRequests getParentExecutionRequestsForBlock(
+  public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
       final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
-    final SpecVersion specVersion = spec.atSlot(slot);
-    final UpdatableStore store = recentChainData.getStore();
-
-    // here we want to peek the execution requests based on the head we selected for block
-    // production.
-    // if we are building on EMPTY we return a ZERO execution request object, otherwise we expect
-    // the payload to be already imported.
-
     if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
-      return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
-          .getExecutionRequestsSchema()
-          .getDefault();
+      return SafeFuture.completedFuture(
+          SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+              .getExecutionRequestsSchema()
+              .getDefault());
     }
-    return store
-        .getExecutionPayloadIfAvailable(parentRoot)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    String.format(
-                        "Execution Payload is not available for parent root %s during block production for slot %s",
-                        parentRoot, slot)))
-        .getMessage()
-        .getExecutionRequests();
+    // to avoid querying the EL when unblinding in some cases, we directly query for the blinded
+    // execution payload which includes going over the in-memory payloads as well
+    return recentChainData
+        .retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot)
+        .thenApply(
+            executionPayload ->
+                executionPayload
+                    .map(SignedBlindedExecutionPayloadEnvelope::getExecutionRequests)
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Execution Requests for parent root %s are not available during block production for slot %s",
+                                    parentRoot, slot))));
+  }
+
+  @Override
+  public void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber) {
+    failedPayloadExecutionSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -202,7 +226,7 @@ public class DefaultExecutionPayloadManager
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    // Processing execution payloads which have been received before the block has been imported
+    // Process pending execution payloads
     block
         .getMessage()
         .getBody()
@@ -211,23 +235,21 @@ public class DefaultExecutionPayloadManager
         .map(
             bid ->
                 new BlockRootAndBuilderIndex(block.getRoot(), bid.getMessage().getBuilderIndex()))
-        .map(executionPayloadsSavedForFutureProcessing::remove)
+        .map(pendingExecutionPayloads::remove)
         .ifPresent(
-            executionPayloadToProcess -> {
-              LOG.debug(
-                  "Processing execution payload for slot {} and block root {} which has been received before the block",
-                  executionPayloadToProcess.getSlot(),
-                  executionPayloadToProcess.getBeaconBlockRoot());
-              validateAndImportExecutionPayload(executionPayloadToProcess)
-                  .thenCompose(
-                      result -> {
-                        if (result.isAccept()) {
-                          // re-broadcast the payload which has been validated
-                          return executionPayloadPublisher.apply(executionPayloadToProcess);
-                        }
-                        return SafeFuture.COMPLETE;
-                      })
-                  .finishError(LOG);
-            });
+            executionPayloadToProcess ->
+                validateAndImportExecutionPayload(executionPayloadToProcess)
+                    .thenCompose(result -> publishPayload(result, executionPayloadToProcess))
+                    .finishError(LOG));
+  }
+
+  // publish payload in cases where initial validation wasn't accepted
+  private SafeFuture<Void> publishPayload(
+      final InternalValidationResult result,
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    if (result.isAccept()) {
+      return executionPayloadPublisher.apply(executionPayload);
+    }
+    return SafeFuture.COMPLETE;
   }
 }
