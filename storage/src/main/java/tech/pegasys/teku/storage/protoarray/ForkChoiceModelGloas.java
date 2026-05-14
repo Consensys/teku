@@ -434,6 +434,10 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final BlockNodeVariantsIndex blockNodeIndex,
       final ReadOnlyStore store,
       final Bytes32 blockRoot) {
+    if (blockNodeIndex.getFullNode(blockRoot).isEmpty()
+        || store.getExecutionPayloadIfAvailable(blockRoot).isEmpty()) {
+      return false;
+    }
     return shouldExtendPayload(blockNodeIndex, blockRoot, protoArray, store.getProposerBoostRoot());
   }
 

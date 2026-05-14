@@ -21,15 +21,17 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public interface RecentExecutionPayloadsFetcher
-    extends ServiceFacade, ReceivedExecutionPayloadEventsChannel {
+    extends ServiceFacade, ReceivedBlockEventsChannel, ReceivedExecutionPayloadEventsChannel {
 
   RecentExecutionPayloadsFetcher NOOP =
       new RecentExecutionPayloadsFetcher() {
@@ -56,6 +58,13 @@ public interface RecentExecutionPayloadsFetcher
         public boolean isRunning() {
           return false;
         }
+
+        @Override
+        public void onBlockValidated(final SignedBeaconBlock block) {}
+
+        @Override
+        public void onBlockImported(
+            final SignedBeaconBlock block, final boolean executionOptimistic) {}
 
         @Override
         public void onExecutionPayloadImported(

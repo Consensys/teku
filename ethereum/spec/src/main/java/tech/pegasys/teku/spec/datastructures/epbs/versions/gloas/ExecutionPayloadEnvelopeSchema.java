@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -29,8 +29,13 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadEnvelopeSchema
-    extends ContainerSchema4<
-        ExecutionPayloadEnvelope, ExecutionPayload, ExecutionRequests, SszUInt64, SszBytes32> {
+    extends ContainerSchema5<
+        ExecutionPayloadEnvelope,
+        ExecutionPayload,
+        ExecutionRequests,
+        SszUInt64,
+        SszBytes32,
+        SszBytes32> {
 
   public ExecutionPayloadEnvelopeSchema(final SchemaRegistry schemaRegistry) {
     super(
@@ -40,16 +45,18 @@ public class ExecutionPayloadEnvelopeSchema
             SszSchema.as(ExecutionPayload.class, schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA))),
         namedSchema("execution_requests", schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA)),
         namedSchema("builder_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
+        namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema("parent_beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
   public ExecutionPayloadEnvelope create(
       final ExecutionPayload payload,
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
-      final Bytes32 beaconBlockRoot) {
+      final Bytes32 beaconBlockRoot,
+      final Bytes32 parentBeaconBlockRoot) {
     return new ExecutionPayloadEnvelope(
-        this, payload, executionRequests, builderIndex, beaconBlockRoot);
+        this, payload, executionRequests, builderIndex, beaconBlockRoot, parentBeaconBlockRoot);
   }
 
   @Override

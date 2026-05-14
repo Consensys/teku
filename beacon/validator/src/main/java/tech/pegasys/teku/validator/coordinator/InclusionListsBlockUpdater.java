@@ -17,16 +17,16 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -37,19 +37,16 @@ public class InclusionListsBlockUpdater {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ProposersDataManager proposersDataManager;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final ExecutionLayerChannel executionLayerChannel;
   private final Spec spec;
 
   public InclusionListsBlockUpdater(
       final ForkChoiceNotifier forkChoiceNotifier,
       final ProposersDataManager proposersDataManager,
       final CombinedChainDataClient combinedChainDataClient,
-      final ExecutionLayerChannel executionLayerChannel,
       final Spec spec) {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.executionLayerChannel = executionLayerChannel;
     this.spec = spec;
   }
 
@@ -91,7 +88,11 @@ public class InclusionListsBlockUpdater {
         combinedChainDataClient.getStore().getInclusionLists(slot);
     if (maybeInclusionLists.isPresent()) {
       final List<InclusionList> inclusionLists = maybeInclusionLists.get();
-      final List<Transaction> transactions = getInclusionListTransactions(inclusionLists);
+      final List<Bytes> transactions = getInclusionListTransactions(inclusionLists);
+      if (transactions.isEmpty()) {
+        LOG.debug("No inclusion list transactions found for slot {}", slot);
+        return SafeFuture.completedFuture(Optional.empty());
+      }
       LOG.trace(
           "Updating block with inclusion lists. Found {} ILs with {} txs from slot {}",
           inclusionLists.size(),
@@ -100,11 +101,11 @@ public class InclusionListsBlockUpdater {
       final Bytes32 parentRoot = spec.getBlockRootAtSlot(state, slot);
       final UInt64 proposerSlot = slot.increment();
       return forkChoiceNotifier
-          .getPayloadId(parentRoot, proposerSlot)
-          .thenCompose(
+          .getPayloadId(parentRoot, proposerSlot, transactions)
+          .thenApply(
               maybeExecutionPayloadContext ->
-                  updateExecutionPayloadWithInclusionLists(
-                      proposerSlot, slot, maybeExecutionPayloadContext, parentRoot, transactions))
+                  extractUpdatedPayloadId(
+                      proposerSlot, slot, maybeExecutionPayloadContext, parentRoot))
           .exceptionally(
               error -> {
                 LOG.error(
@@ -120,50 +121,33 @@ public class InclusionListsBlockUpdater {
     }
   }
 
-  private SafeFuture<Optional<Bytes8>> updateExecutionPayloadWithInclusionLists(
+  private Optional<Bytes8> extractUpdatedPayloadId(
       final UInt64 proposerSlot,
       final UInt64 inclusionListsSlot,
       final Optional<ExecutionPayloadContext> maybeExecutionPayloadContext,
-      final Bytes32 parentRoot,
-      final List<Transaction> transactions) {
+      final Bytes32 parentRoot) {
     if (maybeExecutionPayloadContext.isEmpty()) {
       LOG.warn(
           "Unable to update block with inclusion lists. No execution payload context present for slot {} and parent root {}",
           proposerSlot,
           parentRoot);
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     } else {
-      LOG.trace(
-          "Updating block with inclusion lists. PayloadId: {}",
-          maybeExecutionPayloadContext.get().getPayloadId());
-      return executionLayerChannel
-          .engineUpdatePayloadWithInclusionList(
-              maybeExecutionPayloadContext.get().getPayloadId(), transactions, inclusionListsSlot)
-          .thenApply(
-              updatePayloadWithInclusionListResponse -> {
-                final Optional<Bytes8> maybePayloadId =
-                    updatePayloadWithInclusionListResponse.payloadId();
-                LOG.info(
-                    "Updated block with Inclusion Lists from slot {}. PayloadId: {}",
-                    inclusionListsSlot,
-                    maybePayloadId);
-                return maybePayloadId;
-              })
-          .exceptionally(
-              error -> {
-                LOG.error(
-                    "Unable to update block with Inclusion Lists from slot {}",
-                    inclusionListsSlot,
-                    error);
-                return Optional.empty();
-              });
+      final Optional<Bytes8> maybePayloadId =
+          Optional.of(maybeExecutionPayloadContext.get().getPayloadId());
+      LOG.info(
+          "Updated block with Inclusion Lists from slot {}. PayloadId: {}",
+          inclusionListsSlot,
+          maybePayloadId);
+      return maybePayloadId;
     }
   }
 
-  private List<Transaction> getInclusionListTransactions(final List<InclusionList> inclusionLists) {
+  private List<Bytes> getInclusionListTransactions(final List<InclusionList> inclusionLists) {
     return inclusionLists.stream()
         .map(InclusionList::getTransactions)
         .flatMap(List::stream)
+        .map(SszByteListImpl::getBytes)
         .toList();
   }
 }

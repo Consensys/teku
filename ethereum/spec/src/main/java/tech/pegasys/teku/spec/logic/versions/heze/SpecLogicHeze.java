@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransiti
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlockProposalUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadVerifierGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
@@ -51,6 +50,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ProposerPreferencesUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.heze.block.BlockProcessorHeze;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
 import tech.pegasys.teku.spec.logic.versions.heze.util.ForkChoiceUtilHeze;
@@ -83,7 +83,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final EpochProcessorGloas epochProcessor,
       final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsProcessorGloas executionRequestsProcessor,
-      final BlockProcessorGloas blockProcessor,
+      final BlockProcessorHeze blockProcessor,
       final ExecutionPayloadVerifierGloas executionPayloadVerifier,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -197,8 +197,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateMutators,
             beaconStateAccessors);
-    final BlockProcessorGloas blockProcessor =
-        new BlockProcessorGloas(
+    final BlockProcessorHeze blockProcessor =
+        new BlockProcessorHeze(
             config,
             predicates,
             miscHelpers,

@@ -21,6 +21,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.heze.ExecutionPayloadBidSchemaHeze;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
@@ -69,6 +70,11 @@ public class SchemaDefinitionsHeze extends SchemaDefinitionsGloas {
 
   public SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> getInclusionListCommitteeSchema() {
     return inclusionListCommitteeSchema;
+  }
+
+  @Override
+  public ExecutionPayloadBidSchemaHeze getExecutionPayloadBidSchema() {
+    return (ExecutionPayloadBidSchemaHeze) super.getExecutionPayloadBidSchema();
   }
 
   @Override

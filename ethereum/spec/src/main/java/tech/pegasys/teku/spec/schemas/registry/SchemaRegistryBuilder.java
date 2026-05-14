@@ -155,7 +155,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSc
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
@@ -166,6 +166,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.heze.ExecutionPayloadBidSchemaHeze;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -1015,7 +1016,14 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createExecutionPayloadBidSchemaProvider() {
     return providerBuilder(EXECUTION_PAYLOAD_BID_SCHEMA)
         .withCreator(
-            GLOAS, (registry, specConfig, schemaName) -> new ExecutionPayloadBidSchema(registry))
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadBidSchemaGloas(registry).castTypeToExecutionPayloadBidSchema())
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadBidSchemaHeze(registry, SpecConfigHeze.required(specConfig))
+                    .castTypeToExecutionPayloadBidSchema())
         .build();
   }
 

@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -109,13 +108,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<UpdatePayloadWithInclusionListResponse>
-            engineUpdatePayloadWithInclusionList(
-                final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
-          return SafeFuture.completedFuture(null);
-        }
-
-        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -163,9 +155,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
 
   SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
-
-  SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
-      Bytes8 payloadId, List<Transaction> inclusionList, UInt64 slot);
 
   /**
    * This is low level method, use {@link

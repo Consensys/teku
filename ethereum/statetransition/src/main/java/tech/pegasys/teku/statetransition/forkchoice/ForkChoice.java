@@ -44,7 +44,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -554,9 +553,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     availabilityChecker.initiateDataAvailabilityCheck();
     final Optional<List<InclusionList>> inclusionLists =
-        spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.HEZE)
-            ? store.getInclusionLists(block.getSlot().minusMinZero(UInt64.ONE))
-            : Optional.empty();
+        forkChoiceUtil.getInclusionListsForPayloadValidation(store, block.getSlot());
     final BeaconState postState;
     try {
       postState =
@@ -645,8 +642,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final AvailabilityChecker<?> availabilityChecker =
         forkChoiceUtil.createAvailabilityCheckerOnExecutionPayloadEnvelope(block);
     availabilityChecker.initiateDataAvailabilityCheck();
+    final Optional<List<InclusionList>> inclusionLists =
+        forkChoiceUtil.getInclusionListsForPayloadValidation(
+            recentChainData.getStore(), signedEnvelope.getSlot());
     final ForkChoicePayloadExecutorGloas payloadExecutor =
-        ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
+        createPayloadExecutor(signedEnvelope, executionLayer, inclusionLists);
 
     // Verify the execution payload envelope
     try {
@@ -680,6 +680,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 importExecutionPayload(
                     signedEnvelope, forkChoiceUtil, payloadResult, dataAndValidationResult),
             forkChoiceExecutor);
+  }
+
+  private ForkChoicePayloadExecutorGloas createPayloadExecutor(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ExecutionLayerChannel executionLayer,
+      final Optional<List<InclusionList>> inclusionLists) {
+    return inclusionLists
+        .<ForkChoicePayloadExecutorGloas>map(
+            lists -> ForkChoicePayloadExecutorHeze.create(signedEnvelope, executionLayer, lists))
+        .orElseGet(() -> ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer));
   }
 
   private BlockImportResult importBlockAndState(

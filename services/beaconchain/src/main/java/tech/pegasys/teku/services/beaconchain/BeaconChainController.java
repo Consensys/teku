@@ -530,6 +530,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .finish(
                     err ->
                         LOG.error("Failed to process recently fetched execution payload.", err)));
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentExecutionPayloadsFetcher);
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
 
@@ -2166,11 +2167,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initInclusionListsBlockUpdater()");
     inclusionListsBlockUpdater =
         new InclusionListsBlockUpdater(
-            forkChoiceNotifier,
-            proposersDataManager,
-            combinedChainDataClient,
-            executionLayer,
-            spec);
+            forkChoiceNotifier, proposersDataManager, combinedChainDataClient, spec);
   }
 
   public void initRestAPI() {

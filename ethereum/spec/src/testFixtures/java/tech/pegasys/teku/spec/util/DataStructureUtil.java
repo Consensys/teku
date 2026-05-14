@@ -3403,7 +3403,8 @@ public final class DataStructureUtil {
                 .getSignedExecutionPayloadBid()
                 .getMessage()
                 .getBuilderIndex(),
-            block.getRoot());
+            block.getRoot(),
+            block.getMessage().getParentRoot());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
@@ -3413,6 +3414,7 @@ public final class DataStructureUtil {
             randomExecutionPayload(slot),
             randomExecutionRequests(),
             randomBuilderIndex(),
+            randomBytes32(),
             randomBytes32());
   }
 

@@ -57,7 +57,8 @@ class ForkChoicePayloadExecutorGloas implements OptimisticExecutionPayloadExecut
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(payloadToExecute, signedEnvelope.getSlot())
+                .engineNewPayload(
+                    preparePayloadToExecute(payloadToExecute), signedEnvelope.getSlot())
                 .thenApply(PayloadValidationResult::new)
                 .exceptionally(
                     error -> {
@@ -65,5 +66,9 @@ class ForkChoicePayloadExecutorGloas implements OptimisticExecutionPayloadExecut
                       return new PayloadValidationResult(PayloadStatus.failedExecution(error));
                     }));
     return true;
+  }
+
+  protected NewPayloadRequest preparePayloadToExecute(final NewPayloadRequest payloadToExecute) {
+    return payloadToExecute;
   }
 }

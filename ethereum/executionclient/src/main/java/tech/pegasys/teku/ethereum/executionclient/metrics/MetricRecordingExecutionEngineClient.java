@@ -42,7 +42,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
@@ -72,6 +71,9 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String FORKCHOICE_UPDATED_V4_METHOD = "forkchoice_updatedV4";
   public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V4_METHOD =
       "forkchoice_updated_with_attributesV4";
+  public static final String FORKCHOICE_UPDATED_V5_METHOD = "forkchoice_updatedV5";
+  public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V5_METHOD =
+      "forkchoice_updated_with_attributesV5";
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String GET_PAYLOAD_V4_METHOD = "get_payloadV4";
   public static final String GET_PAYLOAD_V5_METHOD = "get_payloadV5";
@@ -80,16 +82,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String NEW_PAYLOAD_V4_METHOD = "new_payloadV4";
   public static final String NEW_PAYLOAD_V5_METHOD = "new_payloadV5";
   public static final String NEW_PAYLOAD_V6_METHOD = "new_payloadV6";
-  public static final String FORKCHOICE_UPDATED_V5_METHOD = "forkchoice_updatedV5";
-  public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V5_METHOD =
-      "forkchoice_updated_with_attributesV5";
   public static final String GET_INCLUSION_LIST_V1_METHOD = "get_inclusion_listV1";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
   public static final String GET_BLOBS_V2_METHOD = "get_blobs_versionV2";
-  public static final String UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD =
-      "update_payload_with_inclusion_list_versionV1";
   public static final String GET_PAYLOAD_BODIES_BY_HASH_V2_METHOD = "get_payload_bodies_by_hashV2";
 
   private final ExecutionEngineClient delegate;
@@ -307,14 +304,5 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public SafeFuture<Response<List<String>>> getInclusionListV1(final Bytes32 parentHash) {
     return countRequest(
         () -> delegate.getInclusionListV1(parentHash), GET_INCLUSION_LIST_V1_METHOD);
-  }
-
-  @Override
-  public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
-      updatePayloadWithInclusionListV1(
-          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
-    return countRequest(
-        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionListsTransactions),
-        UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD);
   }
 }

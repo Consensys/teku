@@ -42,7 +42,8 @@ public class SignedExecutionPayloadBidSchema
     return new SignedExecutionPayloadBid(this, node);
   }
 
-  public ExecutionPayloadBidSchema getMessageSchema() {
-    return (ExecutionPayloadBidSchema) getChildSchema(0);
+  @SuppressWarnings("unchecked")
+  public ExecutionPayloadBidSchema<ExecutionPayloadBid> getMessageSchema() {
+    return (ExecutionPayloadBidSchema<ExecutionPayloadBid>) getChildSchema(0);
   }
 }

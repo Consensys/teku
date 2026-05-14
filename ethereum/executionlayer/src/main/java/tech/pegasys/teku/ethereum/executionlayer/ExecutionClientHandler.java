@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.UpdatePayloadWithInclusionListResponse;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface ExecutionClientHandler {
@@ -61,7 +59,4 @@ public interface ExecutionClientHandler {
   SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
 
   SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
-
-  SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
-      Bytes8 payloadId, List<Transaction> inclusionListsTransactions, UInt64 slot);
 }

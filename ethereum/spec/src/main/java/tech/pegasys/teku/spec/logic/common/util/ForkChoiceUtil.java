@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
@@ -783,6 +784,11 @@ public class ForkChoiceUtil {
 
   // get_inclusion_list_due_ms
   public Optional<Integer> getInclusionListDueMillis() {
+    return Optional.empty();
+  }
+
+  public Optional<List<InclusionList>> getInclusionListsForPayloadValidation(
+      final ReadOnlyStore store, final UInt64 slot) {
     return Optional.empty();
   }
 

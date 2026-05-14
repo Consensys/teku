@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.heze.forktransition;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.heze.ExecutionPayloadBidSchemaHeze;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -42,6 +43,8 @@ public class HezeStateUpgrade implements StateUpgrade<BeaconStateGloas> {
   public BeaconStateGloas upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateGloas preStateGloas = BeaconStateGloas.required(preState);
+    final ExecutionPayloadBidSchemaHeze executionPayloadBidSchema =
+        schemaDefinitions.getExecutionPayloadBidSchema();
 
     return BeaconStateGloas.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedGloas(
@@ -82,7 +85,9 @@ public class HezeStateUpgrade implements StateUpgrade<BeaconStateGloas> {
                   preStateGloas.getExecutionPayloadAvailability());
               state.setBuilderPendingPayments(preStateGloas.getBuilderPendingPayments());
               state.setBuilderPendingWithdrawals(preStateGloas.getBuilderPendingWithdrawals());
-              state.setLatestExecutionPayloadBid(preStateGloas.getLatestExecutionPayloadBid());
+              state.setLatestExecutionPayloadBid(
+                  executionPayloadBidSchema.createFromGloasBid(
+                      preStateGloas.getLatestExecutionPayloadBid()));
               state.setPayloadExpectedWithdrawals(preStateGloas.getPayloadExpectedWithdrawals());
               state.setPtcWindow(preStateGloas.getPtcWindow());
             });
