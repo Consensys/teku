@@ -287,7 +287,8 @@
     </spec>
 
 - name: PayloadAttributes#gloas
-  sources: []
+  sources:
+    - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV4.java
   spec: |
     <spec dataclass="PayloadAttributes" fork="gloas" hash="db78dd94">
     class PayloadAttributes(object):

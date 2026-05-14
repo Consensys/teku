@@ -97,9 +97,6 @@ specrefs:
       # Not implemented: capella
       - Seen#capella
 
-      # Not implemented: gloas
-      - PayloadAttributes#gloas
-
       # Not implemented: heze
       - GetInclusionListResponse#heze
       - InclusionListStore#heze
