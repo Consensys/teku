@@ -70,17 +70,13 @@ public class CombinedChainDataClient {
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
 
-  private final boolean isEarliestAvailableDataColumnSlotSupported;
-
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
-      final Spec spec,
-      final boolean isEarliestAvailableDataColumnSlotSupported) {
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
-    this.isEarliestAvailableDataColumnSlotSupported = isEarliestAvailableDataColumnSlotSupported;
   }
 
   /**
@@ -862,11 +858,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlotWithFallback() {
-    if (isEarliestAvailableDataColumnSlotSupported) {
-      return historicalChainData.getEarliestAvailableDataColumnSlot();
-    }
-
-    return historicalChainData.getEarliestDataColumnSidecarSlot();
+    return historicalChainData.getEarliestAvailableDataColumnSlot();
   }
 
   public Optional<BeaconState> regenerateBeaconState(

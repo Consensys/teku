@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
@@ -332,33 +331,28 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-custody-sync-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "",
-      arity = "0..1",
-      hidden = true,
-      fallbackValue = "true")
-  private boolean reworkedSidecarCustodySyncEnabled = DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
-
-  @Option(
-      names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},
+      names = {
+        "--Xp2p-sidecar-custody-sync-batch-size",
+        "--Xp2p-reworked-sidecar-custody-sync-batch-size"
+      },
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Backfill sync custody batch size in slots",
       arity = "1",
       hidden = true)
-  private Integer reworkedSidecarCustodySyncBatchSize =
-      DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
+  private Integer sidecarCustodySyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-custody-sync-poll-period-seconds"},
+      names = {
+        "--Xp2p-sidecar-custody-sync-poll-period-seconds",
+        "--Xp2p-reworked-sidecar-custody-sync-poll-period-seconds"
+      },
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Backfill sync custody poll period",
       arity = "1",
       hidden = true)
-  private Integer reworkedSidecarCustodySyncPollPeriodSeconds =
+  private Integer sidecarCustodySyncPollPeriodSeconds =
       DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 
   @Option(
@@ -710,11 +704,10 @@ public class P2POptions {
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)
-                  .reworkedSidecarRecoveryTimeout(sidecarCancelTimeoutMs)
-                  .reworkedSidecarDownloadTimeout(sidecarDownloadTimeoutMs)
-                  .reworkedSidecarSyncPollPeriod(reworkedSidecarCustodySyncPollPeriodSeconds)
-                  .reworkedSidecarSyncBatchSize(reworkedSidecarCustodySyncBatchSize)
-                  .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled)
+                  .sidecarRecoveryTimeout(sidecarCancelTimeoutMs)
+                  .sidecarDownloadTimeout(sidecarDownloadTimeoutMs)
+                  .sidecarSyncPollPeriod(sidecarCustodySyncPollPeriodSeconds)
+                  .sidecarSyncBatchSize(sidecarCustodySyncBatchSize)
                   .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled)
                   .minBidIncrementPercentage(minBidIncrementPercentage);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
