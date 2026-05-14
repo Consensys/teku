@@ -123,8 +123,7 @@ public class HistoricalBatchFetcherTest {
 
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
     final RecentChainData recentChainData = storageSystem.recentChainData();
-    chainDataClient =
-        new CombinedChainDataClient(recentChainData, historicalChainData, spec, false);
+    chainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData, spec);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =

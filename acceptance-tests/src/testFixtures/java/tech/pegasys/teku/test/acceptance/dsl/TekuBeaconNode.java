@@ -463,14 +463,8 @@ public class TekuBeaconNode extends TekuNode {
     waitFor(() -> assertThat(fetchBeaconHeadRoot().orElseThrow()).isNotEqualTo(startingBlockRoot));
   }
 
-  public void waitForNewBlockAndNewExecutionPayload() {
-    final Bytes32 startingBlockRoot = waitForBeaconHead(null);
-    waitFor(
-        () -> {
-          final Bytes32 newBlockRoot = fetchBeaconHeadRoot().orElseThrow();
-          assertThat(newBlockRoot).isNotEqualTo(startingBlockRoot);
-          assertThat(fetchExecutionPayload(newBlockRoot.toHexString())).isPresent();
-        });
+  public void waitForExecutionPayload(final Bytes32 beaconBlockRoot) {
+    waitFor(() -> assertThat(fetchExecutionPayload(beaconBlockRoot.toHexString())).isPresent());
   }
 
   public void waitForOptimisticBlock() {
@@ -517,7 +511,8 @@ public class TekuBeaconNode extends TekuNode {
     final Optional<ExecutionPayload> maybeExecutionPayload;
     if (blockBody.getOptionalSignedExecutionPayloadBid().isPresent()) {
       maybeExecutionPayload =
-          fetchExecutionPayload(block.getRoot().toHexString())
+          // we can directly query the execution payload at the head in Gloas
+          fetchExecutionPayload("head")
               .map(SignedExecutionPayloadEnvelope::getMessage)
               .map(ExecutionPayloadEnvelope::getPayload);
     } else {
@@ -712,7 +707,9 @@ public class TekuBeaconNode extends TekuNode {
       return Optional.empty();
     } else {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
-      final UInt64 slot = UInt64.valueOf(jsonNode.get("data").get("message").get("slot").asText());
+      final UInt64 slot =
+          UInt64.valueOf(
+              jsonNode.get("data").get("message").get("payload").get("slot_number").asText());
       final DeserializableTypeDefinition<SignedExecutionPayloadEnvelope> jsonTypeDefinition =
           SharedApiTypes.withDataWrapper(
               "execution_payload_envelope",
