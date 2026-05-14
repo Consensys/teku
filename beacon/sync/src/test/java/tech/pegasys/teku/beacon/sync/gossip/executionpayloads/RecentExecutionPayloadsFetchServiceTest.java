@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -270,6 +271,26 @@ class RecentExecutionPayloadsFetchServiceTest {
             mockMessage(dataStructureUtil.randomBytes32(), false),
             InternalValidationResult.ACCEPT,
             true);
+
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
+  void onBlockImported_requestsExecutionPayloadForGloasBlock() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+
+    recentExecutionPayloadsFetchService.onBlockImported(block, false);
+
+    assertTaskCounts(1, 1, 0);
+    verify(fetchTaskFactory).createFetchExecutionPayloadTask(block.getRoot());
+  }
+
+  @Test
+  void onBlockImported_ignoresKnownExecutionPayload() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+    when(executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot())).thenReturn(true);
+
+    recentExecutionPayloadsFetchService.onBlockImported(block, false);
 
     assertTaskCounts(0, 0, 0);
   }

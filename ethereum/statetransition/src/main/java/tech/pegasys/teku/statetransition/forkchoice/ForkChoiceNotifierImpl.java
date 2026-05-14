@@ -15,9 +15,11 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -124,6 +126,15 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
+      final Bytes32 parentBeaconBlockRoot,
+      final UInt64 blockSlot,
+      final List<Bytes> inclusionListTransactions) {
+    return eventThread.executeFuture(
+        () -> internalGetPayloadId(parentBeaconBlockRoot, blockSlot, inclusionListTransactions));
+  }
+
+  @Override
   public void onTerminalBlockReached(final Bytes32 executionBlockHash) {
     eventThread.execute(() -> internalTerminalBlockReached(executionBlockHash));
   }
@@ -147,7 +158,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
-      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
+      final ForkChoiceNode parentBeaconBlock,
+      final UInt64 blockSlot,
+      final List<Bytes> inclusionListTransactions) {
     eventThread.checkOnEventThread();
 
     LOG.debug(
@@ -165,7 +178,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
     validateForkChoiceHeadMatchesParent(parentBeaconBlock, parentExecutionHash);
 
-    if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
+    if (inclusionListTransactions.isEmpty()
+        && forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
       return forkChoiceUpdateData.getExecutionPayloadContext();
     } else if (parentExecutionHash.isZero() && !forkChoiceUpdateData.hasTerminalBlockHash()) {
       // Pre-merge so ok to use default payload
@@ -177,9 +191,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
       // Request a new payload with refreshed forkChoiceState and payloadBuildingAttributes
 
-      LOG.warn(
-          "No suitable payloadId for block production at slot {}, requesting a new one to the EL",
-          blockSlot);
+      if (inclusionListTransactions.isEmpty()) {
+        LOG.warn(
+            "No suitable payloadId for block production at slot {}, requesting a new one to the EL",
+            blockSlot);
+      } else {
+        LOG.info(
+            "Refreshing payload attributes for slot {} with {} inclusion list transactions",
+            blockSlot,
+            inclusionListTransactions.size());
+      }
 
       // to make sure that we deal with the same data when calculatePayloadAttributes asynchronously
       // returns, we save locally the current class reference.
@@ -189,7 +210,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
           .getForkChoiceStateAsync()
           .thenCombine(
               proposersDataManager.calculatePayloadBuildingAttributes(
-                  blockSlot, inSync, localForkChoiceUpdateData, true),
+                  blockSlot, inSync, localForkChoiceUpdateData, true, inclusionListTransactions),
               (forkChoiceState, payloadBuildingAttributes) -> {
                 forkChoiceUpdateData =
                     localForkChoiceUpdateData

@@ -124,9 +124,8 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
-  // onUpdateBlockWithInclusionListsDue returns the payloadId but is ignored since it's the same as
-  // the initial one returned when starting the execution payload creation.
-  // This could change in the future
+  // onUpdateBlockWithInclusionListsDue refreshes payload attributes with inclusion lists and
+  // returns the updated payload id, but the caller does not need it
   @SuppressWarnings({"FutureReturnValueIgnored"})
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {

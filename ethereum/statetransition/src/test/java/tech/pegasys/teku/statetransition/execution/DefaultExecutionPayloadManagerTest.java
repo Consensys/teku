@@ -102,6 +102,29 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
+  public void shouldNotMarkExecutionPayloadAsSeenWhenImportFails() {
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                ExecutionPayloadImportResult.failedExecution(
+                    new IllegalStateException("payload invalid"))));
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
+
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
+    verifyNoInteractions(receivedExecutionPayloadEventsChannelPublisher);
+    assertThat(
+            executionPayloadManager.isExecutionPayloadRecentlySeen(
+                signedExecutionPayload.getBeaconBlockRoot()))
+        .isFalse();
+  }
+
+  @Test
   public void shouldNotImportIfValidationFails() {
     final InternalValidationResult rejectedResult = InternalValidationResult.reject("oopsy");
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
@@ -142,11 +165,11 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
 
-    // verify the `beacon_block_root` is cached
+    // `beacon_block_root` should not be cached when import fails
     assertThat(
             executionPayloadManager.isExecutionPayloadRecentlySeen(
                 signedExecutionPayload.getBeaconBlockRoot()))
-        .isTrue();
+        .isFalse();
   }
 
   @Test

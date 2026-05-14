@@ -145,6 +145,8 @@ public class DefaultExecutionPayloadManager
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
+                // cache the seen `beacon_block_root`
+                recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);

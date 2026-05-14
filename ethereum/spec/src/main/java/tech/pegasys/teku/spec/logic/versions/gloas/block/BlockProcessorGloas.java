@@ -117,6 +117,31 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
+  public void processBlock(
+      final MutableBeaconState genericState,
+      final BeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
+      throws BlockProcessingException {
+    final MutableBeaconStateGloas state = MutableBeaconStateGloas.required(genericState);
+    final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
+    final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier =
+        getValidatorExitContextSupplier(state);
+
+    processParentExecutionPayload(state, block, validatorExitContextSupplier);
+    processBlockHeader(state, block);
+    processWithdrawals(state, Optional.empty());
+    processExecutionPayloadBid(state, block);
+    processRandaoNoValidation(state, blockBody);
+    processEth1Data(state, blockBody);
+    processOperationsNoValidation(
+        state, blockBody, indexedAttestationCache, validatorExitContextSupplier);
+    processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
+  }
+
+  @Override
   public void executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,

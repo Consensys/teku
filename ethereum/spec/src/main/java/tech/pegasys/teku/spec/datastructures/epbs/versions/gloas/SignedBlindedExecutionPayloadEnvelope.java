@@ -66,6 +66,10 @@ public class SignedBlindedExecutionPayloadEnvelope
     return getMessage().getBeaconBlockRoot();
   }
 
+  public Bytes32 getParentBeaconBlockRoot() {
+    return getMessage().getParentBeaconBlockRoot();
+  }
+
   public SignedExecutionPayloadEnvelope unblind(
       final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload executionPayload) {
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =

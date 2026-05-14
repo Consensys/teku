@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
@@ -78,7 +79,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final PayloadAttestationSchema payloadAttestationSchema;
   private final PayloadAttestationMessageSchema payloadAttestationMessageSchema;
   private final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema;
-  private final ExecutionPayloadBidSchema executionPayloadBidSchema;
+  private final ExecutionPayloadBidSchema<? extends ExecutionPayloadBid> executionPayloadBidSchema;
   private final SignedExecutionPayloadBidSchema signedExecutionPayloadBidSchema;
   private final ProposerPreferencesSchema proposerPreferencesSchema;
   private final SignedProposerPreferencesSchema signedProposerPreferencesSchema;
@@ -188,7 +189,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     return indexedPayloadAttestationSchema;
   }
 
-  public ExecutionPayloadBidSchema getExecutionPayloadBidSchema() {
+  public ExecutionPayloadBidSchema<? extends ExecutionPayloadBid> getExecutionPayloadBidSchema() {
     return executionPayloadBidSchema;
   }
 

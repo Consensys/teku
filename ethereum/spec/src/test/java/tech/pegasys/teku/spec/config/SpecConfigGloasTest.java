@@ -77,6 +77,17 @@ public class SpecConfigGloasTest {
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
+  @Test
+  public void minimalPreset_usesSpecPtcSize() {
+    final SpecConfigGloas minimalConfig =
+        SpecConfigLoader.loadConfig("minimal").specConfig().toVersionGloas().orElseThrow();
+    final SpecConfigGloas swiftConfig =
+        SpecConfigLoader.loadConfig("swift").specConfig().toVersionGloas().orElseThrow();
+
+    assertThat(minimalConfig.getPtcSize()).isEqualTo(16);
+    assertThat(swiftConfig.getPtcSize()).isEqualTo(16);
+  }
+
   private SpecConfigGloas createRandomGloasConfig(final SpecConfigFulu fuluConfig, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 

@@ -62,7 +62,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -86,8 +85,6 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   protected static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_BODIES_TIMEOUT = Duration.ofSeconds(2);
-  protected static final Duration UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT =
-      Duration.ofSeconds(2);
 
   protected final EventLogger eventLog;
   protected final TimeProvider timeProvider;
@@ -401,19 +398,6 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
             .getTypeFactory()
             .constructCollectionType(List.class, ExecutionPayloadBodyV2.class),
         GET_PAYLOAD_BODIES_TIMEOUT);
-  }
-
-  @Override
-  public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
-      updatePayloadWithInclusionListV1(
-          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
-    return doRequest(
-        "engine_updatePayloadWithInclusionListV1",
-        list(
-            payloadId.toHexString(),
-            inclusionListsTransactions.stream().map(Bytes::toHexString).toList()),
-        objectMapper.getTypeFactory().constructType(UpdatePayloadWithInclusionListV1Response.class),
-        UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT);
   }
 
   private SafeFuture<PowBlock> doEthBlockRequest(final String method, final List<Object> params) {

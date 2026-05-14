@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED;
+import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_INCLUSION_LIST;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD_BODIES_BY_HASH;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdate
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV4;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV5;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetInclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadBodiesByHashV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV5;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV6;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -280,6 +284,44 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   }
 
   @Test
+  void hezeMilestoneMethodIsNotSupportedInGloas() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(gloasSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.HEZE, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone HEZE");
+  }
+
+  @ParameterizedTest
+  @MethodSource("hezeMethods")
+  void shouldProvideExpectedMethodsForHeze(
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+    final Spec hezeSpec = TestSpecFactory.createMinimalHeze();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(hezeSpec, executionEngineClient);
+
+    final EngineJsonRpcMethod<Object> providedMethod =
+        engineMethodsResolver.getMethod(method, () -> SpecMilestone.HEZE, Object.class);
+
+    assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  private static Stream<Arguments> hezeMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV6.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV6.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV5.class),
+        arguments(ENGINE_GET_PAYLOAD_BODIES_BY_HASH, EngineGetPayloadBodiesByHashV2.class),
+        arguments(ENGINE_GET_INCLUSION_LIST, EngineGetInclusionListV1.class));
+  }
+
+  @Test
   void getsCapabilities() {
     final Spec spec =
         TestSpecFactory.createMinimalWithCapellaDenebElectraFuluGloasAndHezeForkEpoch(
@@ -311,7 +353,6 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_newPayloadV2",
             "engine_getPayloadBodiesByHashV2",
             "engine_getInclusionListV1",
-            "engine_updatePayloadWithInclusionListV1",
             "engine_forkchoiceUpdatedV1",
             "engine_forkchoiceUpdatedV2",
             "engine_forkchoiceUpdatedV3",

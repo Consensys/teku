@@ -11,25 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs.versions.heze;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container13;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
-public class ExecutionPayloadBidHeze
-    extends Container13<
-        ExecutionPayloadBidHeze,
+public class ExecutionPayloadBidGloas
+    extends Container12<
+        ExecutionPayloadBidGloas,
         SszBytes32,
         SszBytes32,
         SszBytes32,
@@ -41,12 +39,11 @@ public class ExecutionPayloadBidHeze
         SszUInt64,
         SszUInt64,
         SszList<SszKZGCommitment>,
-        SszBytes32,
-        SszBitvector>
+        SszBytes32>
     implements ExecutionPayloadBid {
 
-  ExecutionPayloadBidHeze(
-      final ExecutionPayloadBidSchemaHeze schema,
+  ExecutionPayloadBidGloas(
+      final ExecutionPayloadBidSchemaGloas schema,
       final Bytes32 parentBlockHash,
       final Bytes32 parentBlockRoot,
       final Bytes32 blockHash,
@@ -58,8 +55,7 @@ public class ExecutionPayloadBidHeze
       final UInt64 value,
       final UInt64 executionPayment,
       final SszList<SszKZGCommitment> blobKzgCommitments,
-      final Bytes32 executionRequestsRoot,
-      final SszBitvector inclusionListBits) {
+      final Bytes32 executionRequestsRoot) {
     super(
         schema,
         SszBytes32.of(parentBlockHash),
@@ -73,11 +69,11 @@ public class ExecutionPayloadBidHeze
         SszUInt64.of(value),
         SszUInt64.of(executionPayment),
         blobKzgCommitments,
-        SszBytes32.of(executionRequestsRoot),
-        inclusionListBits);
+        SszBytes32.of(executionRequestsRoot));
   }
 
-  ExecutionPayloadBidHeze(final ExecutionPayloadBidSchemaHeze schema, final TreeNode backingTree) {
+  ExecutionPayloadBidGloas(
+      final ExecutionPayloadBidSchemaGloas schema, final TreeNode backingTree) {
     super(schema, backingTree);
   }
 
@@ -141,12 +137,8 @@ public class ExecutionPayloadBidHeze
     return getField11().get();
   }
 
-  public SszBitvector getInclusionListBits() {
-    return getField12();
-  }
-
   @Override
-  public ExecutionPayloadBidSchemaHeze getSchema() {
-    return (ExecutionPayloadBidSchemaHeze) super.getSchema();
+  public ExecutionPayloadBidSchemaGloas getSchema() {
+    return (ExecutionPayloadBidSchemaGloas) super.getSchema();
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs.versions.heze;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
@@ -22,7 +22,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_REQUESTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.INCLUSION_LIST_BITS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_BLOCK_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PREV_RANDAO;
@@ -33,27 +32,22 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMI
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigHeze;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class ExecutionPayloadBidSchemaHeze
-    extends ContainerSchema13<
-        ExecutionPayloadBidHeze,
+public class ExecutionPayloadBidSchemaGloas
+    extends ContainerSchema12<
+        ExecutionPayloadBidGloas,
         SszBytes32,
         SszBytes32,
         SszBytes32,
@@ -65,14 +59,10 @@ public class ExecutionPayloadBidSchemaHeze
         SszUInt64,
         SszUInt64,
         SszList<SszKZGCommitment>,
-        SszBytes32,
-        SszBitvector>
-    implements ExecutionPayloadBidSchema<ExecutionPayloadBidHeze> {
+        SszBytes32>
+    implements ExecutionPayloadBidSchema<ExecutionPayloadBidGloas> {
 
-  private final SszBitvectorSchema<?> inclusionListBitsSchema;
-
-  public ExecutionPayloadBidSchemaHeze(
-      final SchemaRegistry schemaRegistry, final SpecConfigHeze specConfig) {
+  public ExecutionPayloadBidSchemaGloas(final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadBid",
         namedSchema(PARENT_BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -86,47 +76,11 @@ public class ExecutionPayloadBidSchemaHeze
         namedSchema(VALUE, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXECUTION_PAYMENT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOB_KZG_COMMITMENTS, schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)),
-        namedSchema(EXECUTION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(
-            INCLUSION_LIST_BITS,
-            SszBitvectorSchema.create(specConfig.getInclusionListCommitteeSize())));
-    this.inclusionListBitsSchema =
-        (SszBitvectorSchema<?>) getChildSchema(getFieldIndex(INCLUSION_LIST_BITS));
-  }
-
-  public ExecutionPayloadBidHeze create(
-      final Bytes32 parentBlockHash,
-      final Bytes32 parentBlockRoot,
-      final Bytes32 blockHash,
-      final Bytes32 prevRandao,
-      final Bytes20 feeRecipient,
-      final UInt64 gasLimit,
-      final UInt64 builderIndex,
-      final UInt64 slot,
-      final UInt64 value,
-      final UInt64 executionPayment,
-      final SszList<SszKZGCommitment> blobKzgCommitments,
-      final Bytes32 executionRequestsRoot,
-      final SszBitvector inclusionListBits) {
-    return new ExecutionPayloadBidHeze(
-        this,
-        parentBlockHash,
-        parentBlockRoot,
-        blockHash,
-        prevRandao,
-        feeRecipient,
-        gasLimit,
-        builderIndex,
-        slot,
-        value,
-        executionPayment,
-        blobKzgCommitments,
-        executionRequestsRoot,
-        inclusionListBits);
+        namedSchema(EXECUTION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
   @Override
-  public ExecutionPayloadBidHeze create(
+  public ExecutionPayloadBidGloas create(
       final Bytes32 parentBlockHash,
       final Bytes32 parentBlockRoot,
       final Bytes32 blockHash,
@@ -139,7 +93,8 @@ public class ExecutionPayloadBidSchemaHeze
       final UInt64 executionPayment,
       final SszList<SszKZGCommitment> blobKzgCommitments,
       final Bytes32 executionRequestsRoot) {
-    return create(
+    return new ExecutionPayloadBidGloas(
+        this,
         parentBlockHash,
         parentBlockRoot,
         blockHash,
@@ -151,36 +106,22 @@ public class ExecutionPayloadBidSchemaHeze
         value,
         executionPayment,
         blobKzgCommitments,
-        executionRequestsRoot,
-        inclusionListBitsSchema.ofBits());
-  }
-
-  public ExecutionPayloadBidHeze createFromGloasBid(final ExecutionPayloadBid gloasBid) {
-    return new ExecutionPayloadBidHeze(
-        this,
-        gloasBid.getParentBlockHash(),
-        gloasBid.getParentBlockRoot(),
-        gloasBid.getBlockHash(),
-        gloasBid.getPrevRandao(),
-        gloasBid.getFeeRecipient(),
-        gloasBid.getGasLimit(),
-        gloasBid.getBuilderIndex(),
-        gloasBid.getSlot(),
-        gloasBid.getValue(),
-        gloasBid.getExecutionPayment(),
-        gloasBid.getBlobKzgCommitments(),
-        gloasBid.getExecutionRequestsRoot(),
-        inclusionListBitsSchema.ofBits());
+        executionRequestsRoot);
   }
 
   @Override
-  public ExecutionPayloadBidHeze createLocalSelfBuiltBid(
+  public ExecutionPayloadBidGloas createFromBackingNode(final TreeNode node) {
+    return new ExecutionPayloadBidGloas(this, node);
+  }
+
+  @Override
+  public ExecutionPayloadBidGloas createLocalSelfBuiltBid(
       final Bytes32 parentBlockRoot,
       final UInt64 slot,
       final ExecutionPayload executionPayload,
       final SszList<SszKZGCommitment> blobKzgCommitments,
       final Bytes32 executionRequestsRoot) {
-    return new ExecutionPayloadBidHeze(
+    return new ExecutionPayloadBidGloas(
         this,
         executionPayload.getParentHash(),
         parentBlockRoot,
@@ -193,22 +134,12 @@ public class ExecutionPayloadBidSchemaHeze
         ZERO,
         ZERO,
         blobKzgCommitments,
-        executionRequestsRoot,
-        inclusionListBitsSchema.ofBits());
-  }
-
-  public SszBitvectorSchema<?> getInclusionListBitsSchema() {
-    return inclusionListBitsSchema;
+        executionRequestsRoot);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     return (SszListSchema<SszKZGCommitment, ?>) getChildSchema(getFieldIndex(BLOB_KZG_COMMITMENTS));
-  }
-
-  @Override
-  public ExecutionPayloadBidHeze createFromBackingNode(final TreeNode node) {
-    return new ExecutionPayloadBidHeze(this, node);
   }
 }
