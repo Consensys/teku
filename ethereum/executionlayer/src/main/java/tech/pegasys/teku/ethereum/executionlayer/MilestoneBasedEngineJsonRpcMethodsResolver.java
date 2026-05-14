@@ -18,7 +18,6 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD_BODIES_BY_HASH;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
-import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_UPDATE_PAYLOAD_WITH_INCLUSION_LIST;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -49,7 +48,6 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV5;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV6;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineUpdatePayloadWithInclusionListV1;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
@@ -159,10 +157,6 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
         new EngineGetPayloadBodiesByHashV2(executionEngineClient));
     methods.put(
         ENGINE_GET_INCLUSION_LIST, new EngineGetInclusionListV1(executionEngineClient, spec));
-    methods.put(
-        ENGINE_UPDATE_PAYLOAD_WITH_INCLUSION_LIST,
-        new EngineUpdatePayloadWithInclusionListV1(executionEngineClient));
-
     return methods;
   }
 

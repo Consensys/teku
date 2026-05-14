@@ -105,18 +105,15 @@ public class DefaultExecutionPayloadManager
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT -> {
-              // cache the seen `beacon_block_root`
-              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
-              importExecutionPayload(signedExecutionPayload)
-                  .finish(
-                      err ->
-                          LOG.error(
-                              "Failed to process received execution payload for slot {} and block root {}",
-                              signedExecutionPayload.getSlot(),
-                              signedExecutionPayload.getBeaconBlockRoot(),
-                              err));
-            }
+            case ACCEPT ->
+                importExecutionPayload(signedExecutionPayload)
+                    .finish(
+                        err ->
+                            LOG.error(
+                                "Failed to process received execution payload for slot {} and block root {}",
+                                signedExecutionPayload.getSlot(),
+                                signedExecutionPayload.getBeaconBlockRoot(),
+                                err));
             case SAVE_FOR_FUTURE ->
                 executionPayloadsSavedForFutureProcessing.put(
                     signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
@@ -137,6 +134,8 @@ public class DefaultExecutionPayloadManager
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
+                // cache the seen `beacon_block_root`
+                recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);

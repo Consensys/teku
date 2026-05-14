@@ -23,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -159,6 +161,45 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // if pre-gloas returns true, the gloas transition breaks, so instead we return false pre-gloas
     assertThat(forkChoiceStrategy.shouldExtendPayload(store, genesisBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void shouldExtendPayload_shouldReturnFalseForGloasBlockWithoutLocalPayload() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+
+    final ForkChoiceStrategy forkChoiceStrategy =
+        createGloasForkChoiceStrategy(gloasSpec, genesis, block, emptyList());
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
+    when(store.getExecutionPayloadIfAvailable(block.getRoot())).thenReturn(Optional.empty());
+
+    assertThat(forkChoiceStrategy.shouldExtendPayload(store, block.getRoot())).isFalse();
+  }
+
+  @Test
+  void shouldExtendPayload_shouldReturnTrueForGloasBlockWithLocalPayload() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(block.getSlot()).orElseThrow();
+
+    final ForkChoiceStrategy forkChoiceStrategy =
+        createGloasForkChoiceStrategy(
+            gloasSpec,
+            genesis,
+            block,
+            List.of(new ExecutionPayloadUpdate(executionPayload, false)));
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
+    when(store.getExecutionPayloadIfAvailable(block.getRoot()))
+        .thenReturn(Optional.of(executionPayload));
+
+    assertThat(forkChoiceStrategy.shouldExtendPayload(store, block.getRoot())).isTrue();
   }
 
   @Test
@@ -651,6 +692,25 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
   private ForkChoiceStrategy getProtoArray(final StorageSystem storageSystem) {
     return storageSystem.recentChainData().getStore().getForkChoiceStrategy();
+  }
+
+  private ForkChoiceStrategy createGloasForkChoiceStrategy(
+      final Spec gloasSpec,
+      final SignedBlockAndState genesis,
+      final SignedBlockAndState block,
+      final List<ExecutionPayloadUpdate> executionPayloads) {
+    final ProtoArray protoArray = createProtoArray(gloasSpec, block.getState());
+    final ForkChoiceStrategy forkChoiceStrategy =
+        ForkChoiceStrategy.initialize(gloasSpec, protoArray);
+    forkChoiceStrategy.applyUpdate(
+        List.of(
+            BlockAndCheckpoints.fromBlockAndState(gloasSpec, genesis),
+            BlockAndCheckpoints.fromBlockAndState(gloasSpec, block)),
+        executionPayloads,
+        emptySet(),
+        emptyMap(),
+        new Checkpoint(ZERO, genesis.getRoot()));
+    return forkChoiceStrategy;
   }
 
   private InternalPayloadTraversalFixture createInternalPayloadTraversalFixture() {

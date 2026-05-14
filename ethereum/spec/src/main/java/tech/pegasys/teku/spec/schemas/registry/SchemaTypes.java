@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
@@ -252,8 +253,8 @@ public class SchemaTypes {
       create("PAYLOAD_ATTESTATION_MESSAGE_SCHEMA");
   public static final SchemaId<IndexedPayloadAttestationSchema> INDEXED_PAYLOAD_ATTESTATION_SCHEMA =
       create("INDEXED_PAYLOAD_ATTESTATION_SCHEMA");
-  public static final SchemaId<ExecutionPayloadBidSchema> EXECUTION_PAYLOAD_BID_SCHEMA =
-      create("EXECUTION_PAYLOAD_BID_SCHEMA");
+  public static final SchemaId<ExecutionPayloadBidSchema<ExecutionPayloadBid>>
+      EXECUTION_PAYLOAD_BID_SCHEMA = create("EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadBidSchema>
       SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<ProposerPreferencesSchema> PROPOSER_PREFERENCES_SCHEMA =

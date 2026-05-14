@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.heze.util;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
@@ -36,5 +41,12 @@ public class ForkChoiceUtilHeze extends ForkChoiceUtilGloas {
   public Optional<Integer> getInclusionListDueMillis() {
     final SpecConfigHeze configHeze = SpecConfigHeze.required(specConfig);
     return Optional.of(getSlotComponentDurationMillis(configHeze.getInclusionListDueBps()));
+  }
+
+  @Override
+  public Optional<List<InclusionList>> getInclusionListsForPayloadValidation(
+      final ReadOnlyStore store, final UInt64 slot) {
+    return Optional.of(
+        store.getInclusionLists(slot.minusMinZero(UInt64.ONE)).orElse(Collections.emptyList()));
   }
 }
