@@ -82,6 +82,7 @@ class MultiaddrUtilTest {
             PUB_KEY,
             Bytes32.ZERO,
             new InetSocketAddress(InetAddress.getByAddress(ipAddress), port),
+            Optional.empty(),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
@@ -103,6 +104,7 @@ class MultiaddrUtilTest {
             PUB_KEY,
             Bytes32.ZERO,
             new InetSocketAddress(InetAddress.getByAddress(ipAddress), port),
+            Optional.empty(),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
@@ -124,6 +126,7 @@ class MultiaddrUtilTest {
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             Bytes32.ZERO,
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+            Optional.empty(),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
@@ -136,6 +139,53 @@ class MultiaddrUtilTest {
   }
 
   @Test
+  public void fromDiscoveryPeer_shouldPreferQuicWhenQuicAddressIsPresent() throws Exception {
+    final byte[] ipAddress = {127, 0, 0, 1};
+    final int tcpPort = 9000;
+    final int quicPort = 9100;
+    final DiscoveryPeer peer =
+        new DiscoveryPeer(
+            Bytes.fromHexString(
+                "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
+            Bytes32.ZERO,
+            new InetSocketAddress(InetAddress.getByAddress(ipAddress), tcpPort),
+            Optional.of(new InetSocketAddress(InetAddress.getByAddress(ipAddress), quicPort)),
+            ENR_FORK_ID,
+            PERSISTENT_ATTESTATION_SUBNETS,
+            SYNC_COMMITTEE_SUBNETS,
+            Optional.empty(),
+            Optional.empty());
+    final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
+    assertThat(result)
+        .isEqualTo(
+            Multiaddr.fromString(
+                "/ip4/127.0.0.1/udp/9100/quic-v1/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF"));
+  }
+
+  @Test
+  public void fromDiscoveryPeer_shouldFallBackToTcpWhenNoQuicAddress() throws Exception {
+    final byte[] ipAddress = {127, 0, 0, 1};
+    final int tcpPort = 9000;
+    final DiscoveryPeer peer =
+        new DiscoveryPeer(
+            Bytes.fromHexString(
+                "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
+            Bytes32.ZERO,
+            new InetSocketAddress(InetAddress.getByAddress(ipAddress), tcpPort),
+            Optional.empty(),
+            ENR_FORK_ID,
+            PERSISTENT_ATTESTATION_SUBNETS,
+            SYNC_COMMITTEE_SUBNETS,
+            Optional.empty(),
+            Optional.empty());
+    final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
+    assertThat(result)
+        .isEqualTo(
+            Multiaddr.fromString(
+                "/ip4/127.0.0.1/tcp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF"));
+  }
+
+  @Test
   public void fromDiscoveryPeerAsUdp_shouldConvertDiscoveryPeer() throws Exception {
     final DiscoveryPeer peer =
         new DiscoveryPeer(
@@ -143,6 +193,7 @@ class MultiaddrUtilTest {
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             Bytes32.ZERO,
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+            Optional.empty(),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,

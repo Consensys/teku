@@ -27,7 +27,10 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 public class MultiaddrUtil {
 
   public static Multiaddr fromDiscoveryPeer(final DiscoveryPeer peer) {
-    return fromInetSocketAddress(peer.getNodeAddress(), getNodeId(peer));
+    final NodeId nodeId = getNodeId(peer);
+    return peer.getQuicAddress()
+        .map(quicAddr -> fromInetSocketAddressAsQuic(quicAddr, nodeId))
+        .orElseGet(() -> fromInetSocketAddress(peer.getNodeAddress(), nodeId));
   }
 
   public static Multiaddr fromDiscoveryPeerAsUdp(final DiscoveryPeer peer) {

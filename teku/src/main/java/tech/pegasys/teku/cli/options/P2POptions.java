@@ -107,6 +107,16 @@ public class P2POptions {
   private boolean p2pQuicEnabled = NetworkConfig.DEFAULT_QUIC_ENABLED;
 
   @Option(
+      names = {"--Xp2p-tcp-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables TCP transport",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean p2pTcpEnabled = NetworkConfig.DEFAULT_TCP_ENABLED;
+
+  @Option(
       names = {"--Xp2p-quic-port"},
       paramLabel = "<INTEGER>",
       description = "P2P QUIC port",
@@ -841,7 +851,8 @@ public class P2POptions {
                   .listenQuicPortIpv6(p2pQuicPortIpv6)
                   .advertisedIps(Optional.ofNullable(p2pAdvertisedIps))
                   .yamuxEnabled(yamuxEnabled)
-                  .quicEnabled(p2pQuicEnabled);
+                  .quicEnabled(p2pQuicEnabled)
+                  .tcpEnabled(p2pTcpEnabled);
             })
         .sync(
             s ->

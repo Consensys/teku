@@ -53,6 +53,7 @@ public class NetworkConfig {
   public static final boolean DEFAULT_YAMUX_ENABLED = false;
   public static final boolean DEFAULT_STRICT_CONFIG_LOADING_ENABLED = false;
   public static final boolean DEFAULT_QUIC_ENABLED = false;
+  public static final boolean DEFAULT_TCP_ENABLED = true;
 
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;
@@ -71,6 +72,7 @@ public class NetworkConfig {
   private final OptionalInt advertisedQuicPortIpv6;
   private final boolean yamuxEnabled;
   private final boolean quicEnabled;
+  private final boolean tcpEnabled;
 
   private NetworkConfig(
       final boolean isEnabled,
@@ -88,7 +90,8 @@ public class NetworkConfig {
       final OptionalInt advertisedQuicPort,
       final OptionalInt advertisedQuicPortIpv6,
       final boolean yamuxEnabled,
-      final boolean quicEnabled) {
+      final boolean quicEnabled,
+      final boolean tcpEnabled) {
     this.privateKeySource = privateKeySource;
     this.networkInterfaces = networkInterfaces;
     this.advertisedIps = advertisedIps;
@@ -105,6 +108,7 @@ public class NetworkConfig {
     this.gossipConfig = gossipConfig;
     this.wireLogsConfig = wireLogsConfig;
     this.quicEnabled = quicEnabled;
+    this.tcpEnabled = tcpEnabled;
   }
 
   public static Builder builder() {
@@ -171,6 +175,10 @@ public class NetworkConfig {
 
   public boolean isQuicEnabled() {
     return quicEnabled;
+  }
+
+  public boolean isTcpEnabled() {
+    return tcpEnabled;
   }
 
   public GossipConfig getGossipConfig() {
@@ -264,6 +272,7 @@ public class NetworkConfig {
     private OptionalInt advertisedQuicPortIpv6 = OptionalInt.empty();
     private boolean yamuxEnabled = DEFAULT_YAMUX_ENABLED;
     private boolean quicEnabled = DEFAULT_QUIC_ENABLED;
+    private boolean tcpEnabled = DEFAULT_TCP_ENABLED;
 
     private Builder() {}
 
@@ -294,7 +303,8 @@ public class NetworkConfig {
           advertisedQuicPort,
           advertisedQuicPortIpv6,
           yamuxEnabled,
-          quicEnabled);
+          quicEnabled,
+          tcpEnabled);
     }
 
     private Optional<PrivateKeySource> createFileKeySource() {
@@ -440,6 +450,11 @@ public class NetworkConfig {
 
     public Builder quicEnabled(final Boolean quicEnabled) {
       this.quicEnabled = quicEnabled;
+      return this;
+    }
+
+    public Builder tcpEnabled(final boolean tcpEnabled) {
+      this.tcpEnabled = tcpEnabled;
       return this;
     }
 

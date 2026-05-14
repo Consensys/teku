@@ -317,6 +317,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
                           nodeRecord.getNodeId(),
                           updAddress,
                           Optional.empty(),
+                          Optional.empty(),
                           currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
                           currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault(),
                           Optional.empty(),

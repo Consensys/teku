@@ -26,6 +26,7 @@ public class DiscoveryPeer {
   private final Bytes publicKey;
   private final Bytes nodeId;
   private final InetSocketAddress nodeAddress;
+  private final Optional<InetSocketAddress> quicAddress;
   private final Optional<EnrForkId> enrForkId;
   private final SszBitvector persistentAttestationSubnets;
   private final SszBitvector syncCommitteeSubnets;
@@ -36,6 +37,7 @@ public class DiscoveryPeer {
       final Bytes publicKey,
       final Bytes nodeId,
       final InetSocketAddress nodeAddress,
+      final Optional<InetSocketAddress> quicAddress,
       final Optional<EnrForkId> enrForkId,
       final SszBitvector persistentAttestationSubnets,
       final SszBitvector syncCommitteeSubnets,
@@ -44,6 +46,7 @@ public class DiscoveryPeer {
     this.publicKey = publicKey;
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
+    this.quicAddress = quicAddress;
     this.enrForkId = enrForkId;
     this.persistentAttestationSubnets = persistentAttestationSubnets;
     this.syncCommitteeSubnets = syncCommitteeSubnets;
@@ -61,6 +64,10 @@ public class DiscoveryPeer {
 
   public InetSocketAddress getNodeAddress() {
     return nodeAddress;
+  }
+
+  public Optional<InetSocketAddress> getQuicAddress() {
+    return quicAddress;
   }
 
   public Optional<EnrForkId> getEnrForkId() {
