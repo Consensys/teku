@@ -971,7 +971,11 @@
     </spec>
 
 - name: ExecutionPayload#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadGloasImpl.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadBuilderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadSchemaGloas.java
   spec: |
     <spec container="ExecutionPayload" fork="gloas" hash="d399d858">
     class ExecutionPayload(Container):
@@ -1142,7 +1146,8 @@
     </spec>
 
 - name: ForkChoiceNode#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/ForkChoiceNode.java
   spec: |
     <spec container="ForkChoiceNode" fork="gloas" hash="755a4b34">
     class ForkChoiceNode(Container):
@@ -1453,7 +1458,9 @@
     </spec>
 
 - name: ProposerPreferences#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ProposerPreferences.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ProposerPreferencesSchema.java
   spec: |
     <spec container="ProposerPreferences" fork="gloas" hash="5ef93db5">
     class ProposerPreferences(Container):
@@ -1572,7 +1579,9 @@
     </spec>
 
 - name: SignedProposerPreferences#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedProposerPreferences.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedProposerPreferencesSchema.java
   spec: |
     <spec container="SignedProposerPreferences" fork="gloas" hash="2142774c">
     class SignedProposerPreferences(Container):

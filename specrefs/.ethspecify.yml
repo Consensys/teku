@@ -70,10 +70,6 @@ specrefs:
       - PartialDataColumnSidecar#fulu
 
       # Not implemented: gloas
-      - ForkChoiceNode#gloas
-      - ProposerPreferences#gloas
-      - SignedProposerPreferences#gloas
-      - ExecutionPayload#gloas
       - PartialDataColumnGroupID#gloas
       - PartialDataColumnSidecar#gloas
 
