@@ -3209,7 +3209,11 @@
     </spec>
 
 - name: get_attestation_score#gloas
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: public Optional<ForkChoiceNode> resolveVoteNode(
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArrayScoreCalculator.java
+      search: private static void computeDelta(
   spec: |
     <spec fn="get_attestation_score" fork="gloas" hash="8a2e4701">
     def get_attestation_score(
@@ -13691,7 +13695,13 @@
     </spec>
 
 - name: validate_on_attestation#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public AttestationProcessingResult validateOnAttestation(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
+      search: public AttestationValidationResult validateCommitteeIndexValue(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
+      search: public AttestationValidationResult validatePayloadStatus(
   spec: |
     <spec fn="validate_on_attestation" fork="gloas" hash="41ce6a87">
     def validate_on_attestation(store: Store, attestation: Attestation, is_from_block: bool) -> None:
