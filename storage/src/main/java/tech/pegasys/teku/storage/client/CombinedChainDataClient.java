@@ -857,10 +857,6 @@ public class CombinedChainDataClient {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlotWithFallback() {
-    return historicalChainData.getEarliestAvailableDataColumnSlot();
-  }
-
   public Optional<BeaconState> regenerateBeaconState(
       final BeaconState preState, final UInt64 slot) {
     if (preState.getSlot().equals(slot)) {
