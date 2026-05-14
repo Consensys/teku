@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
@@ -195,10 +194,9 @@ public class DefaultExecutionPayloadManager
   @Override
   public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
       final UInt64 slot, final Bytes32 parentRoot, final ForkChoicePayloadStatus payloadStatus) {
-    final SpecVersion specVersion = spec.atSlot(slot);
     if (!payloadStatus.equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)) {
       return SafeFuture.completedFuture(
-          SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
+          SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
               .getExecutionRequestsSchema()
               .getDefault());
     }
