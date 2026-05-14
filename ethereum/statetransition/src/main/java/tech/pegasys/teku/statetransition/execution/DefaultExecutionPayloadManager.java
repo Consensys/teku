@@ -162,10 +162,10 @@ public class DefaultExecutionPayloadManager
                         signedExecutionPayload);
                   }
                   case INTERNAL_ERROR,
-                          UNKNOWN_BEACON_BLOCK_ROOT,
-                          FAILED_VERIFICATION,
-                          FAILED_DATA_AVAILABILITY_CHECK_INVALID,
-                          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
+                      UNKNOWN_BEACON_BLOCK_ROOT,
+                      FAILED_VERIFICATION,
+                      FAILED_DATA_AVAILABILITY_CHECK_INVALID,
+                      FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
                       logFailedExecutionPayloadImport(signedExecutionPayload, result);
                 }
               }
