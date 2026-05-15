@@ -40,7 +40,7 @@ record DataColumnSamplingTracker(
     SafeFuture<List<UInt64>> completionFuture,
     AtomicBoolean fullySampled,
     AtomicBoolean blockImportOnCompletionEnabled,
-    Optional<Integer> earlyCompletionRequirementCount
+    Optional<Integer> earlyCompletionRequirementCount,
     AtomicReference<Optional<SignedBeaconBlock>> block,
     long createdAtNanos) {
   private static final Logger LOG = LogManager.getLogger();
