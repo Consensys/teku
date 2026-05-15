@@ -971,11 +971,7 @@
     </spec>
 
 - name: ExecutionPayload#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadGloas.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadGloasImpl.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadBuilderGloas.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadSchemaGloas.java
+  sources: []
   spec: |
     <spec container="ExecutionPayload" fork="gloas" hash="d399d858">
     class ExecutionPayload(Container):
@@ -1146,8 +1142,7 @@
     </spec>
 
 - name: ForkChoiceNode#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/ForkChoiceNode.java
+  sources: []
   spec: |
     <spec container="ForkChoiceNode" fork="gloas" hash="755a4b34">
     class ForkChoiceNode(Container):
@@ -1303,6 +1298,20 @@
     +    execution_branch: ExecutionBranch
     </spec>
 
+- name: LightClientHeader#gloas
+  sources: []
+  spec: |
+    <spec container="LightClientHeader" fork="gloas" hash="b0387ab2">
+    class LightClientHeader(Container):
+        beacon: BeaconBlockHeader
+        # [Modified in Gloas:EIP7732]
+        # Removed `execution`
+        # [New in Gloas:EIP7732]
+        execution_block_hash: Hash32
+        # [Modified in Gloas:EIP7732]
+        execution_branch: ExecutionBranch
+    </spec>
+
 - name: LightClientOptimisticUpdate#altair
   sources: []
   spec: |
@@ -1361,6 +1370,25 @@
         kzg_proof: KZGProof
         column_index: ColumnIndex
         row_index: RowIndex
+    </spec>
+
+- name: PartialDataColumnGroupID#gloas
+  sources: []
+  spec: |
+    <spec container="PartialDataColumnGroupID" fork="gloas" hash="9e8865b1">
+    class PartialDataColumnGroupID(Container):
+        slot: Slot
+        beacon_block_root: Root
+    </spec>
+
+- name: PartialDataColumnSidecar#gloas
+  sources: []
+  spec: |
+    <spec container="PartialDataColumnSidecar" fork="gloas" hash="57b4ad2a">
+    class PartialDataColumnSidecar(Container):
+        cells_present_bitmap: Bitlist[MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        partial_column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        kzg_proofs: List[KZGProof, MAX_BLOB_COMMITMENTS_PER_BLOCK]
     </spec>
 
 - name: PayloadAttestation#gloas
@@ -1458,9 +1486,7 @@
     </spec>
 
 - name: ProposerPreferences#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ProposerPreferences.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ProposerPreferencesSchema.java
+  sources: []
   spec: |
     <spec container="ProposerPreferences" fork="gloas" hash="5ef93db5">
     class ProposerPreferences(Container):
@@ -1579,9 +1605,7 @@
     </spec>
 
 - name: SignedProposerPreferences#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedProposerPreferences.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedProposerPreferencesSchema.java
+  sources: []
   spec: |
     <spec container="SignedProposerPreferences" fork="gloas" hash="2142774c">
     class SignedProposerPreferences(Container):
