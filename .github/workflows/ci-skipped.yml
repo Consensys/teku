@@ -1,0 +1,65 @@
+name: ci-skipped
+
+# Companion to ci.yml. When a PR touches ONLY paths that ci.yml lists under
+# paths-ignore (docs, specrefs, license/notice, .codespell, etc.), the real
+# ci.yml workflow is skipped entirely. Branch protection requires several of
+# its job names as status checks, so without this stub those checks stay in
+# "Expected" forever and the PR cannot be merged.
+#
+# This workflow uses the inverse path filter (positive `paths:`) and defines
+# jobs with the same names. Each is a no-op that reports success, satisfying
+# the required-check contexts. See:
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+#
+# Keep the `paths:` list in sync with `paths-ignore:` in ci.yml. Keep the job
+# names in sync with the required-status-check contexts on master branch
+# protection (spotless, moduleChecks, assemble, unitTests, integrationTests,
+# propertyTests, referenceTests).
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**/*.md'
+      - 'LICENSE*'
+      - 'NOTICE*'
+      - 'CHANGELOG*'
+      - 'CODEOWNERS'
+      - '.gitignore'
+      - '.gitattributes'
+      - '.codespell/**'
+      - 'specrefs/**'
+      - 'mlc_config.json'
+
+permissions: read-all
+
+jobs:
+  spotless:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
+  moduleChecks:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
+  assemble:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
+  unitTests:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
+  integrationTests:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
+  propertyTests:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
+  referenceTests:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "ci.yml skipped (docs/specrefs-only change); reporting success for required check."
