@@ -4713,7 +4713,9 @@
     </spec>
 
 - name: get_forkchoice_store#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/store/StoreBuilder.java
+      search: public static OnDiskStoreData forkChoiceStoreBuilder(
   spec: |
     <spec fn="get_forkchoice_store" fork="phase0" hash="1c381b74">
     def get_forkchoice_store(anchor_state: BeaconState, anchor_block: BeaconBlock) -> Store:
@@ -4777,7 +4779,11 @@
     </spec>
 
 - name: get_head#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
+      search: public SlotAndForkChoiceNode findHead(
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArray.java
+      search: public ProtoNode findOptimisticHead(
   spec: |
     <spec fn="get_head" fork="phase0" hash="9fa2b1bd">
     def get_head(store: Store) -> Root:
@@ -4841,7 +4847,9 @@
     </spec>
 
 - name: get_inactivity_penalty_deltas#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/RewardsAndPenaltiesCalculatorPhase0.java
+      search: public void applyInactivityPenaltyDelta(
   spec: |
     <spec fn="get_inactivity_penalty_deltas" fork="phase0" hash="11718f1b">
     def get_inactivity_penalty_deltas(state: BeaconState) -> Tuple[Sequence[Gwei], Sequence[Gwei]]:
@@ -4929,7 +4937,9 @@
     </spec>
 
 - name: get_inclusion_delay_deltas#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/RewardsAndPenaltiesCalculatorPhase0.java
+      search: public void applyInclusionDelayDelta(
   spec: |
     <spec fn="get_inclusion_delay_deltas" fork="phase0" hash="aa690a2f">
     def get_inclusion_delay_deltas(state: BeaconState) -> Tuple[Sequence[Gwei], Sequence[Gwei]]:

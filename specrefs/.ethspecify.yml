@@ -211,10 +211,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - get_forkchoice_store#phase0
-      - get_head#phase0
-      - get_inactivity_penalty_deltas#phase0
-      - get_inclusion_delay_deltas#phase0
       - get_matching_head_attestations#phase0
       - get_matching_source_attestations#phase0
       - get_matching_target_attestations#phase0
