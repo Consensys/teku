@@ -5199,7 +5199,9 @@
     </spec>
 
 - name: get_matching_head_attestations#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/ValidatorStatusFactoryPhase0.java
+      search: protected void processParticipation(
   spec: |
     <spec fn="get_matching_head_attestations" fork="phase0" hash="9e3ca171">
     def get_matching_head_attestations(
@@ -5213,7 +5215,9 @@
     </spec>
 
 - name: get_matching_source_attestations#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/ValidatorStatusFactoryPhase0.java
+      search: protected void processParticipation(
   spec: |
     <spec fn="get_matching_source_attestations" fork="phase0" hash="4771b4df">
     def get_matching_source_attestations(
@@ -5228,7 +5232,9 @@
     </spec>
 
 - name: get_matching_target_attestations#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/ValidatorStatusFactoryPhase0.java
+      search: protected void processParticipation(
   spec: |
     <spec fn="get_matching_target_attestations" fork="phase0" hash="811f3459">
     def get_matching_target_attestations(
