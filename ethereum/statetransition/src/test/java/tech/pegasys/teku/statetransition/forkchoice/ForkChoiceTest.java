@@ -990,8 +990,50 @@ class ForkChoiceTest {
                 new ForkChoiceUpdatedResult(PayloadStatus.VALID, Optional.empty()))));
 
     verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, PayloadStatus.VALID, false);
+    verify(transitionBlockValidator).verifyAncestorTransitionBlock(blockRoot);
     verify(forkChoiceStrategy, never())
         .onExecutionPayloadResult(eq(blockRoot), eq(PayloadStatus.VALID), anyBoolean());
+  }
+
+  @Test
+  void onForkChoiceUpdatedResult_invalidGloasNode_shouldForwardExactHeadNode() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
+            debugDataDumper,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    final Bytes32 blockRoot = Bytes32.random();
+    final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+    final PayloadStatus invalidPayloadStatus =
+        PayloadStatus.invalid(Optional.empty(), Optional.of("invalid payload"));
+
+    when(recentChainData.getUpdatableForkChoiceStrategy())
+        .thenReturn(Optional.of(forkChoiceStrategy));
+
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                emptyNode, ONE, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(invalidPayloadStatus, Optional.empty()))));
+
+    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, invalidPayloadStatus, true);
+    verify(forkChoiceStrategy, never())
+        .onExecutionPayloadResult(eq(blockRoot), eq(invalidPayloadStatus), anyBoolean());
   }
 
   @Test
@@ -1127,6 +1169,7 @@ class ForkChoiceTest {
     final ForkChoiceState state = mock(ForkChoiceState.class);
     when(state.headExecutionBlockHash()).thenReturn(Bytes32.random());
     when(state.headBlock()).thenReturn(ForkChoiceNode.createBase(Bytes32.random()));
+    when(state.headBlockSlot()).thenReturn(ZERO);
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(

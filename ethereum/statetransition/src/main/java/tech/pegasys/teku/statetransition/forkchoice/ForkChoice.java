@@ -207,7 +207,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 return;
               }
               onForkChoiceUpdatedPayloadResult(
-                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock(),
+                  forkChoiceUpdatedResultNotification.forkChoiceState(),
                   forkChoiceUpdatedResult.getPayloadStatus());
             })
         .finish(
@@ -719,9 +719,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
-    // in Gloas, there is no need to call onExecutionPayloadResult in "on_block" fork choice handler
+    // Invalid payload statuses returned above, so the direct-invalid flag is irrelevant here.
+    // Gloas skips this on_block notification entirely.
     if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
-      forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+      forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, false);
     }
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
@@ -755,10 +756,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private ExecutionPayloadImportResult importExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceUtil forkChoiceUtil,
-      final PayloadValidationResult payloadResult,
+      final PayloadStatus payloadStatus,
       final DataAndValidationResult<?> dataAndValidationResult) {
-    final PayloadStatus payloadStatus = payloadResult.getStatus();
-
     if (payloadStatus.hasInvalidStatus()) {
       final ExecutionPayloadImportResult result =
           ExecutionPayloadImportResult.failedVerification(
@@ -974,7 +973,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void onForkChoiceUpdatedPayloadResult(
-      final ForkChoiceNode node, final PayloadStatus payloadResult) {
+      final ForkChoiceState forkChoiceState, final PayloadStatus payloadResult) {
+    final ForkChoiceNode node = forkChoiceState.headBlock();
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
       transitionValidatedStatus =
@@ -986,8 +986,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     transitionValidatedStatus.finishAsync(
         result -> {
           final PayloadStatus resultStatus = result.getStatus();
-          final Bytes32 validatedBlockRoot =
-              result.getInvalidTransitionBlockRoot().orElse(node.blockRoot());
+          final Optional<Bytes32> maybeInvalidTransitionBlockRoot =
+              result.getInvalidTransitionBlockRoot();
+          final Bytes32 invalidBlockRoot = maybeInvalidTransitionBlockRoot.orElse(node.blockRoot());
 
           if (resultStatus.hasValidStatus()) {
             // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
@@ -995,12 +996,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             // collapsing to block root.
             getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, false);
           } else {
-            getForkChoiceStrategy()
-                .onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
+            // invalidTransitionBlockRoot is only populated when merge-transition validation found a
+            // specific Bellatrix transition block to invalidate. Otherwise the EL verdict applies
+            // to
+            // the exact fork-choice node we sent in forkchoiceUpdated.
+            maybeInvalidTransitionBlockRoot.ifPresentOrElse(
+                invalidTransitionBlockRoot ->
+                    getForkChoiceStrategy()
+                        .onExecutionPayloadResult(invalidTransitionBlockRoot, resultStatus, true),
+                () -> getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, true));
           }
 
           if (resultStatus.hasInvalidStatus()) {
-            LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
+            LOG.warn("Will run fork choice because head block {} was invalid", invalidBlockRoot);
             processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
           }
         },

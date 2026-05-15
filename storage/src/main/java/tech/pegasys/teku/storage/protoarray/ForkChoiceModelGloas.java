@@ -472,23 +472,13 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       // import
       blockNodeIndex.getFullNode(blockRoot).ifPresent(protoArray::markNodeValid);
     } else if (status.isInvalid()) {
-      if (verifiedInvalidTransition) {
-        // In Gloas, an invalid execution payload only invalidates the FULL path.
-        // The beacon block (base + EMPTY) remains valid — the builder, not the proposer, is at
-        // fault.
-        blockNodeIndex
-            .getFullNode(blockRoot)
-            .ifPresent(
-                node -> protoArray.markNodeInvalid(node, latestValidHash, headSelectionContext));
-      } else {
-        // Unverified: a child's payload was invalid, pointing at this parent.
-        // The base node is the correct anchor for parent-chain invalidation search.
-        blockNodeIndex
-            .getBaseNode(blockRoot)
-            .ifPresent(
-                node ->
-                    protoArray.markParentChainInvalid(node, latestValidHash, headSelectionContext));
-      }
+      // Block-root invalidation in Gloas is upstream-oriented. Exact node verdicts are handled by
+      // onForkChoiceUpdatedResult, which has the specific BASE/EMPTY/FULL node.
+      blockNodeIndex
+          .getBaseNode(blockRoot)
+          .ifPresent(
+              node ->
+                  protoArray.markParentChainInvalid(node, latestValidHash, headSelectionContext));
     }
   }
 
@@ -503,6 +493,13 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final HeadSelectionContext headSelectionContext) {
     if (status.isValid()) {
       protoArray.markNodeValid(node);
+      return;
+    }
+    if (status.isInvalid() && verifiedInvalidTransition) {
+      // Despite the legacy name, this flag means the caller has a direct invalid verdict for this
+      // exact node. Gloas has multiple nodes per block root, so keep the node-aware FCU result
+      // here.
+      protoArray.markNodeInvalid(node, latestValidHash, headSelectionContext);
       return;
     }
     onExecutionPayloadResult(
