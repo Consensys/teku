@@ -106,6 +106,9 @@ specrefs:
       # Unnecessary
       - xor#phase0
 
+      # Will not implement
+      - get_pow_block_at_terminal_total_difficulty#bellatrix
+
       # Functions implemented by KZG library for EIP-4844
       - bit_reversal_permutation#deneb
       - blob_to_kzg_commitment#deneb
@@ -250,10 +253,6 @@ specrefs:
       - will_no_conflicting_checkpoint_be_justified#phase0
 
       # Not implemented: bellatrix
-      - get_execution_payload#bellatrix
-      - get_pow_block_at_terminal_total_difficulty#bellatrix
-      - get_terminal_pow_block#bellatrix
-      - is_execution_block#bellatrix
       - is_optimistic_candidate_block#bellatrix
       - is_valid_terminal_pow_block#bellatrix
       - latest_verified_ancestor#bellatrix

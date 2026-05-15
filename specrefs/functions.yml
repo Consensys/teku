@@ -4436,7 +4436,10 @@
     </spec>
 
 - name: get_execution_payload#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionLayerChannel.java
+      search: ^  SafeFuture<GetPayloadResponse> engineGetPayload\(
+      regex: true
   spec: |
     <spec fn="get_execution_payload" fork="bellatrix" hash="abcc202e">
     def get_execution_payload(
@@ -6039,7 +6042,9 @@
     </spec>
 
 - name: get_terminal_pow_block#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/TerminalPowBlockMonitor.java
+      search: private void checkTerminalBlockByBlockHash(final Bytes32 blockHashTracking) {
   spec: |
     <spec fn="get_terminal_pow_block" fork="bellatrix" hash="90e145ca">
     def get_terminal_pow_block(pow_chain: Dict[Hash32, PowBlock]) -> Optional[PowBlock]:
@@ -7154,7 +7159,9 @@
     </spec>
 
 - name: is_execution_block#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
   spec: |
     <spec fn="is_execution_block" fork="bellatrix" hash="26be0b84">
     def is_execution_block(block: BeaconBlock) -> bool:
