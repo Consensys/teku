@@ -998,8 +998,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           } else {
             // invalidTransitionBlockRoot is only populated when merge-transition validation found a
             // specific Bellatrix transition block to invalidate. Otherwise the EL verdict applies
-            // to
-            // the exact fork-choice node we sent in forkchoiceUpdated.
+            // to the exact fork-choice node we sent in forkchoiceUpdated.
             maybeInvalidTransitionBlockRoot.ifPresentOrElse(
                 invalidTransitionBlockRoot ->
                     getForkChoiceStrategy()
