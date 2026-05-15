@@ -7007,6 +7007,24 @@
         )
     </spec>
 
+- name: is_current_slot#altair
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/GossipValidationHelper.java
+      search: public boolean isSlotCurrent(final UInt64 slot) {
+  spec: |
+    <spec fn="is_current_slot" fork="altair" hash="cc76de78">
+    def is_current_slot(
+        state: BeaconState,
+        slot: Slot,
+        current_time_ms: uint64,
+    ) -> bool:
+        """
+        Check if the given slot is the current slot
+        (with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance).
+        """
+        return is_within_slot_range(state, slot, 0, current_time_ms)
+    </spec>
+
 - name: is_data_available#deneb
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/BlobSidecarsAvailabilityChecker.java
@@ -14122,7 +14140,9 @@
     </spec>
 
 - name: validate_sync_committee_contribution_and_proof_gossip#altair
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/synccommittee/SignedContributionAndProofValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
   spec: |
     <spec fn="validate_sync_committee_contribution_and_proof_gossip" fork="altair" hash="6239c2b4">
     def validate_sync_committee_contribution_and_proof_gossip(
@@ -14231,7 +14251,9 @@
     </spec>
 
 - name: validate_sync_committee_message_gossip#altair
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/synccommittee/SyncCommitteeMessageValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_sync_committee_message_gossip" fork="altair" hash="83a875a0">
     def validate_sync_committee_message_gossip(
