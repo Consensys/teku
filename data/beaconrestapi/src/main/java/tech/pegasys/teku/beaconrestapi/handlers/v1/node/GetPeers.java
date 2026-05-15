@@ -151,8 +151,14 @@ public class GetPeers extends RestApiEndpoint {
             : Optional.empty();
     final Optional<LastAdjustment> lastAdjustment =
         reputationManager.getLastAdjustment(eth2Peer.getId());
+    // Per beacon-API spec, `disconnect_reason` MUST only be populated when the
+    // peer's `state` is `disconnected` or `disconnecting`. Teku exposes only
+    // `connected`/`disconnected` via `isConnected()`, so suppress for connected peers.
     final Optional<String> disconnectReason =
-        lastAdjustment.flatMap(adj -> PeerScoreReasonMapper.mapDisconnectReason(adj.reason()));
+        eth2Peer.isConnected()
+            ? Optional.empty()
+            : lastAdjustment.flatMap(
+                adj -> PeerScoreReasonMapper.mapDisconnectReason(adj.reason()));
     final Optional<List<String>> downscoreReasons =
         lastAdjustment
             .flatMap(adj -> PeerScoreReasonMapper.mapDownscoreReason(adj.reason()))
