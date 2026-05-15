@@ -3725,7 +3725,11 @@
     </spec>
 
 - name: get_checkpoint_block#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public Optional<Bytes32> getAncestor(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public boolean blockDescendsFromLatestFinalizedBlock(
   spec: |
     <spec fn="get_checkpoint_block" fork="phase0" hash="9d8daa22">
     def get_checkpoint_block(store: Store, root: Root, epoch: Epoch) -> Root:
@@ -3946,7 +3950,9 @@
     </spec>
 
 - name: get_current_store_epoch#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public UInt64 getCurrentEpoch(final ReadOnlyStore store) {
   spec: |
     <spec fn="get_current_store_epoch" fork="phase0" hash="4d86e690">
     def get_current_store_epoch(store: Store) -> Epoch:
@@ -4238,7 +4244,9 @@
     </spec>
 
 - name: get_eligible_validator_indices#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/status/ValidatorStatus.java
+      search: public boolean isEligibleValidator() {
   spec: |
     <spec fn="get_eligible_validator_indices" fork="phase0" hash="22a24ce4">
     def get_eligible_validator_indices(state: BeaconState) -> Sequence[ValidatorIndex]:
@@ -4641,7 +4649,11 @@
     </spec>
 
 - name: get_filtered_block_tree#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArray.java
+      search: public ProtoNode findOptimisticHead(
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArray.java
+      search: public boolean nodeIsViableForHead(final ProtoNode node) {
   spec: |
     <spec fn="get_filtered_block_tree" fork="phase0" hash="31b703b4">
     def get_filtered_block_tree(store: Store) -> Dict[Root, BeaconBlock]:

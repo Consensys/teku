@@ -211,10 +211,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - get_checkpoint_block#phase0
-      - get_current_store_epoch#phase0
-      - get_eligible_validator_indices#phase0
-      - get_filtered_block_tree#phase0
       - get_forkchoice_store#phase0
       - get_head#phase0
       - get_inactivity_penalty_deltas#phase0
