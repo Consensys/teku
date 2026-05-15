@@ -241,7 +241,9 @@
     </spec>
 
 - name: apply_parent_execution_payload#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
+      search: protected void applyParentExecutionPayload(
   spec: |
     <spec fn="apply_parent_execution_payload" fork="gloas" hash="44874701">
     def apply_parent_execution_payload(
@@ -1436,6 +1438,27 @@
         Return the maximum number of data column sidecars in a single request.
         """
         return uint64(MAX_REQUEST_BLOCKS_DENEB * NUMBER_OF_COLUMNS)
+    </spec>
+
+- name: compute_merkle_branch_root#phase0
+  sources:
+    - file: infrastructure/ssz/src/main/java/tech/pegasys/teku/infrastructure/ssz/tree/TreeNode.java
+      search: Bytes32 hashTreeRoot(Sha256 sha256);
+  spec: |
+    <spec fn="compute_merkle_branch_root" fork="phase0" hash="ff67a3de">
+    def compute_merkle_branch_root(
+        leaf: Bytes32, branch: Sequence[Bytes32], depth: uint64, index: uint64
+    ) -> Root:
+        """
+        Return the Merkle root obtained by hashing ``leaf`` at ``index`` with ``branch``.
+        """
+        value = leaf
+        for i in range(depth):
+            if index // (2**i) % 2:
+                value = hash(branch[i] + value)
+            else:
+                value = hash(value + branch[i])
+        return Root(value)
     </spec>
 
 - name: compute_merkle_proof#altair
@@ -7304,6 +7327,33 @@
         return store.next_sync_committee != SyncCommittee()
     </spec>
 
+- name: is_non_strict_superset#phase0
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/util/SeenAggregatesCache.java
+      search: private boolean isAlreadySeen(
+    - file: infrastructure/ssz/src/main/java/tech/pegasys/teku/infrastructure/ssz/collections/SszBitSet.java
+      search: default boolean isSuperSetOf(final SszBitSet other) {
+  spec: |
+    <spec fn="is_non_strict_superset" fork="phase0" hash="2f69cb02">
+    def is_non_strict_superset(
+        seen_bits_set: Set[Tuple[boolean, ...]],
+        new_bits: Tuple[boolean, ...],
+    ) -> bool:
+        """
+        Return True if any prior bitset in ``seen_bits_set`` is a non-strict
+        superset of ``new_bits`` (every bit set in new is also set in that prior).
+        """
+        for prior_bits in seen_bits_set:
+            is_superset = True
+            for prior_bit, new_bit in zip(prior_bits, new_bits):
+                if new_bit and not prior_bit:
+                    is_superset = False
+                    break
+            if is_superset:
+                return True
+        return False
+    </spec>
+
 - name: is_not_from_future_slot#phase0
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/GossipValidationHelper.java
@@ -12292,7 +12342,9 @@
     </spec>
 
 - name: update_proposer_boost_root#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private boolean shouldUpdateProposerBoostRoot(
   spec: |
     <spec fn="update_proposer_boost_root" fork="phase0" hash="f037a32d">
     def update_proposer_boost_root(store: Store, root: Root) -> None:

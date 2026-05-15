@@ -213,10 +213,8 @@ specrefs:
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
 
-      # Not implemented: phase0
-      - update_proposer_boost_root#phase0
+      # Not implemented: fast confirmation
       - adjust_committee_weight_estimate_to_ensure_safety#phase0
-      - apply_parent_execution_payload#gloas
       - compute_adversarial_weight#phase0
       - compute_empty_slot_support_discount#phase0
       - compute_honest_ffg_support_for_current_target#phase0
@@ -250,8 +248,6 @@ specrefs:
       - update_fast_confirmation_variables#phase0
       - will_current_target_be_justified#phase0
       - will_no_conflicting_checkpoint_be_justified#phase0
-      - compute_merkle_branch_root#phase0
-      - is_non_strict_superset#phase0
 
       # Not implemented: altair
       - compute_subnets_for_sync_committee#altair
