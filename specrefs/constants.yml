@@ -650,18 +650,14 @@
     </spec>
 
 - name: UINT256_MAX#fulu
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
-      search: UInt256.MAX_VALUE
+  sources: []
   spec: |
     <spec constant_var="UINT256_MAX" fork="fulu" hash="57a47f45">
     UINT256_MAX: uint256 = 2**256 - 1
     </spec>
 
 - name: UINT64_MAX#phase0
-  sources:
-    - file: infrastructure/unsigned/src/main/java/tech/pegasys/teku/infrastructure/unsigned/UInt64.java
-      search: MAX_VALUE = new UInt64(-1L)
+  sources: []
   spec: |
     <spec constant_var="UINT64_MAX" fork="phase0" hash="0efe6bd6">
     UINT64_MAX: uint64 = 2**64 - 1

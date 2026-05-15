@@ -1436,6 +1436,25 @@
         return uint64(MAX_REQUEST_BLOCKS_DENEB * NUMBER_OF_COLUMNS)
     </spec>
 
+- name: compute_merkle_branch_root#phase0
+  sources: []
+  spec: |
+    <spec fn="compute_merkle_branch_root" fork="phase0" hash="ff67a3de">
+    def compute_merkle_branch_root(
+        leaf: Bytes32, branch: Sequence[Bytes32], depth: uint64, index: uint64
+    ) -> Root:
+        """
+        Return the Merkle root obtained by hashing ``leaf`` at ``index`` with ``branch``.
+        """
+        value = leaf
+        for i in range(depth):
+            if index // (2**i) % 2:
+                value = hash(branch[i] + value)
+            else:
+                value = hash(value + branch[i])
+        return Root(value)
+    </spec>
+
 - name: compute_merkle_proof#altair
   sources: []
   spec: |
@@ -1966,20 +1985,6 @@
         return uint64(state.genesis_time + slots_since_genesis * SLOT_DURATION_MS // 1000)
     </spec>
 
-- name: compute_time_at_slot_ms#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
-      search: public UInt64 computeTimeMillisAtSlot(
-  spec: |
-    <spec fn="compute_time_at_slot_ms" fork="phase0" hash="9e51db2a">
-    def compute_time_at_slot_ms(state: BeaconState, slot: Slot) -> uint64:
-        """
-        Return the time in milliseconds at the start of the given slot.
-        """
-        slots_since_genesis = slot - GENESIS_SLOT
-        return uint64(state.genesis_time * 1000 + slots_since_genesis * SLOT_DURATION_MS)
-    </spec>
-
 - name: compute_verify_cell_kzg_proof_batch_challenge#fulu
   sources: []
   spec: |
@@ -2087,6 +2092,29 @@
     +    delta = get_balance_churn_limit(state)
     +    epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
     +    return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
+    </spec>
+
+- name: compute_weak_subjectivity_period#gloas
+  sources: []
+  spec: |
+    <spec fn="compute_weak_subjectivity_period" fork="gloas" hash="8b1ddc92">
+    def compute_weak_subjectivity_period(state: BeaconState) -> uint64:
+        """
+        Returns the weak subjectivity period for the current ``state``.
+        This computation takes into account the effect of:
+            - exit churn (weighted 2/3)
+            - activation churn (weighted 1/3)
+            - consolidation churn (weighted 1)
+        """
+        t = get_total_active_balance(state)
+        # [Modified in Gloas:EIP8061]
+        delta = (
+            2 * get_exit_churn_limit(state) // 3
+            + get_activation_churn_limit(state) // 3
+            + get_consolidation_churn_limit(state)
+        )
+        epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
+        return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
     </spec>
 
 - name: construct_vanishing_polynomial#fulu
@@ -2911,9 +2939,7 @@
     </spec>
 
 - name: get_ancestor#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public Optional<ForkChoiceNode> getAncestorNode(
+  sources: []
   spec: |
     <spec fn="get_ancestor" fork="gloas" hash="95b7e8fe">
     def get_ancestor(store: Store, root: Root, slot: Slot) -> ForkChoiceNode:
@@ -3131,11 +3157,7 @@
     </spec>
 
 - name: get_attestation_participation_flag_indices#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
-      search: protected boolean computeIsMatchingHead(
+  sources: []
   spec: |
     <spec fn="get_attestation_participation_flag_indices" fork="gloas" hash="aeb30d51">
     def get_attestation_participation_flag_indices(
@@ -3209,11 +3231,7 @@
     </spec>
 
 - name: get_attestation_score#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public Optional<ForkChoiceNode> resolveVoteNode(
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArrayScoreCalculator.java
-      search: private static void computeDelta(
+  sources: []
   spec: |
     <spec fn="get_attestation_score" fork="gloas" hash="8a2e4701">
     def get_attestation_score(
@@ -3713,11 +3731,7 @@
     </spec>
 
 - name: get_checkpoint_block#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public Optional<Bytes32> getAncestor(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public boolean blockDescendsFromLatestFinalizedBlock(
+  sources: []
   spec: |
     <spec fn="get_checkpoint_block" fork="gloas" hash="e238b732">
     def get_checkpoint_block(store: Store, root: Root, epoch: Epoch) -> Root:
@@ -4044,12 +4058,7 @@
     </spec>
 
 - name: get_data_column_sidecars#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/MiscHelpersGloas.java
-      search: public List<DataColumnSidecar> constructDataColumnSidecars\(\s*final SignedExecutionPayloadEnvelope
-      regex: true
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/DataColumnSidecarUtilGloas.java
-      search: public List<DataColumnSidecar> constructDataColumnSidecars(
+  sources: []
   spec: |
     <spec fn="get_data_column_sidecars" fork="gloas" hash="abaf4385">
     def get_data_column_sidecars(
@@ -4120,9 +4129,7 @@
     </spec>
 
 - name: get_data_column_sidecars_from_block#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/DataColumnSidecarUtilGloas.java
-      search: public List<DataColumnSidecar> constructDataColumnSidecars(
+  sources: []
   spec: |
     <spec fn="get_data_column_sidecars_from_block" fork="gloas" hash="302616d2">
     def get_data_column_sidecars_from_block(
@@ -4168,11 +4175,7 @@
     </spec>
 
 - name: get_data_column_sidecars_from_column_sidecar#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/MiscHelpersGloas.java
-      search: public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/DataColumnSidecarUtilGloas.java
-      search: public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+  sources: []
   spec: |
     <spec fn="get_data_column_sidecars_from_column_sidecar" fork="gloas" hash="beb1f94f">
     def get_data_column_sidecars_from_column_sidecar(
@@ -4383,9 +4386,7 @@
     </spec>
 
 - name: get_execution_payload_bid_signature#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/LocalSigner.java
-      search: public SafeFuture<BLSSignature> signExecutionPayloadBid(
+  sources: []
   spec: |
     <spec fn="get_execution_payload_bid_signature" fork="gloas" hash="c09cbb78">
     def get_execution_payload_bid_signature(
@@ -4397,9 +4398,7 @@
     </spec>
 
 - name: get_execution_payload_envelope_signature#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/LocalSigner.java
-      search: public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
+  sources: []
   spec: |
     <spec fn="get_execution_payload_envelope_signature" fork="gloas" hash="7291faa5">
     def get_execution_payload_envelope_signature(
@@ -4552,11 +4551,7 @@
     </spec>
 
 - name: get_expected_withdrawals#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/withdrawals/WithdrawalsHelpersCapella.java
-      search: public ExpectedWithdrawals getExpectedWithdrawals(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/withdrawals/WithdrawalsHelpersGloas.java
-      search: protected int processBuilderWithdrawals(
+  sources: []
   spec: |
     <spec fn="get_expected_withdrawals" fork="gloas" hash="8d0675cb">
     def get_expected_withdrawals(state: BeaconState) -> ExpectedWithdrawals:
@@ -4704,9 +4699,7 @@
     </spec>
 
 - name: get_forkchoice_store#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/store/StoreBuilder.java
-      search: public static OnDiskStoreData forkChoiceStoreBuilder(
+  sources: []
   spec: |
     <spec fn="get_forkchoice_store" fork="gloas" hash="91d69dde">
     def get_forkchoice_store(anchor_state: BeaconState, anchor_block: BeaconBlock) -> Store:
@@ -4759,11 +4752,7 @@
     </spec>
 
 - name: get_head#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public boolean isHeadCandidate(
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public int compareViableChildren(
+  sources: []
   spec: |
     <spec fn="get_head" fork="gloas" hash="d03052ed">
     def get_head(store: Store) -> ForkChoiceNode:
@@ -4920,6 +4909,14 @@
         return rewards, penalties
     </spec>
 
+- name: get_inclusion_list_due_ms#heze
+  sources: []
+  spec: |
+    <spec fn="get_inclusion_list_due_ms" fork="heze" hash="d9b6a3e5">
+    def get_inclusion_list_due_ms() -> uint64:
+        return get_slot_component_duration_ms(INCLUSION_LIST_DUE_BPS)
+    </spec>
+
 - name: get_index_for_new_builder#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
@@ -5056,9 +5053,7 @@
     </spec>
 
 - name: get_latest_message_epoch#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public boolean shouldUpdateVote(
+  sources: []
   spec: |
     <spec fn="get_latest_message_epoch" fork="gloas" hash="f5d3cd16">
     def get_latest_message_epoch(latest_message: LatestMessage) -> Epoch:
@@ -5313,9 +5308,7 @@
     </spec>
 
 - name: get_node_children#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/BlockNodeVariants.java
-      search: List<ForkChoiceNode> allNodes(
+  sources: []
   spec: |
     <spec fn="get_node_children" fork="gloas" hash="395213b3">
     def get_node_children(
@@ -5363,9 +5356,7 @@
     </spec>
 
 - name: get_payload_attestation_message_signature#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/LocalSigner.java
-      search: public SafeFuture<BLSSignature> signPayloadAttestationData(
+  sources: []
   spec: |
     <spec fn="get_payload_attestation_message_signature" fork="gloas" hash="e2a06b4b">
     def get_payload_attestation_message_signature(
@@ -5377,9 +5368,7 @@
     </spec>
 
 - name: get_payload_status_tiebreaker#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: private int computePayloadStatusTiebreaker(
+  sources: []
   spec: |
     <spec fn="get_payload_status_tiebreaker" fork="gloas" hash="5ca841c3">
     def get_payload_status_tiebreaker(store: Store, node: ForkChoiceNode) -> uint8:
@@ -5597,11 +5586,7 @@
     </spec>
 
 - name: get_proposer_preferences_signature#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/SigningRootUtil.java
-      search: public Bytes signingRootForSignProposerPreferences(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/LocalSigner.java
-      search: public SafeFuture<BLSSignature> signProposerPreferences(
+  sources: []
   spec: |
     <spec fn="get_proposer_preferences_signature" fork="gloas" hash="6a34cb73">
     def get_proposer_preferences_signature(
@@ -5668,9 +5653,7 @@
     </spec>
 
 - name: get_ptc_assignment#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ValidatorsUtilGloas.java
-      search: public Optional<UInt64> getPtcAssignment(
+  sources: []
   spec: |
     <spec fn="get_ptc_assignment" fork="gloas" hash="ba09915b">
     def get_ptc_assignment(
@@ -6026,9 +6009,7 @@
     </spec>
 
 - name: get_upcoming_proposal_slots#gloas
-  sources:
-    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/ValidatorApiHandler.java
-      search: private List<ProposerDuty> getProposalSlotsForEpoch(
+  sources: []
   spec: |
     <spec fn="get_upcoming_proposal_slots" fork="gloas" hash="87d7a07d">
     def get_upcoming_proposal_slots(
@@ -6297,11 +6278,7 @@
     </spec>
 
 - name: get_weight#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
-      search: public Optional<UInt64> getWeight(
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: private UInt64 effectiveWeight(
+  sources: []
   spec: |
     <spec fn="get_weight" fork="gloas" hash="10430b82">
     def get_weight(
@@ -6892,6 +6869,22 @@
         )
     </spec>
 
+- name: is_current_slot#altair
+  sources: []
+  spec: |
+    <spec fn="is_current_slot" fork="altair" hash="cc76de78">
+    def is_current_slot(
+        state: BeaconState,
+        slot: Slot,
+        current_time_ms: uint64,
+    ) -> bool:
+        """
+        Check if the given slot is the current slot
+        (with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance).
+        """
+        return is_within_slot_range(state, slot, 0, current_time_ms)
+    </spec>
+
 - name: is_data_available#deneb
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/BlobSidecarsAvailabilityChecker.java
@@ -6929,10 +6922,7 @@
     </spec>
 
 - name: is_data_available#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/DataColumnSidecarAvailabilityChecker.java
+  sources: []
   spec: |
     <spec fn="is_data_available" fork="gloas" hash="92002d87">
     def is_data_available(beacon_block_root: Root) -> bool:
@@ -7126,9 +7116,7 @@
     </spec>
 
 - name: is_head_late#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public static boolean isHeadLate(
+  sources: []
   spec: |
     <spec fn="is_head_late" fork="gloas" hash="dd4c9308">
     def is_head_late(store: Store, head_root: Root) -> bool:
@@ -7149,9 +7137,7 @@
     </spec>
 
 - name: is_head_weak#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public boolean isHeadWeak(
+  sources: []
   spec: |
     <spec fn="is_head_weak" fork="gloas" hash="a763a3db">
     def is_head_weak(store: Store, head_root: Root) -> bool:
@@ -7209,9 +7195,7 @@
     </spec>
 
 - name: is_merge_transition_complete#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/helpers/MiscHelpersCapella.java
-      search: public boolean isMergeTransitionComplete(
+  sources: []
   spec: |
     <spec fn="is_merge_transition_complete" fork="gloas" hash="b13c98c6">
     def is_merge_transition_complete(state: BeaconState) -> bool:
@@ -7224,6 +7208,29 @@
     <spec fn="is_next_sync_committee_known" fork="altair" hash="f5d3196e">
     def is_next_sync_committee_known(store: LightClientStore) -> bool:
         return store.next_sync_committee != SyncCommittee()
+    </spec>
+
+- name: is_non_strict_superset#phase0
+  sources: []
+  spec: |
+    <spec fn="is_non_strict_superset" fork="phase0" hash="2f69cb02">
+    def is_non_strict_superset(
+        seen_bits_set: Set[Tuple[boolean, ...]],
+        new_bits: Tuple[boolean, ...],
+    ) -> bool:
+        """
+        Return True if any prior bitset in ``seen_bits_set`` is a non-strict
+        superset of ``new_bits`` (every bit set in new is also set in that prior).
+        """
+        for prior_bits in seen_bits_set:
+            is_superset = True
+            for prior_bit, new_bit in zip(prior_bits, new_bits):
+                if new_bit and not prior_bit:
+                    is_superset = False
+                    break
+            if is_superset:
+                return True
+        return False
     </spec>
 
 - name: is_one_confirmed#phase0
@@ -7290,9 +7297,7 @@
     </spec>
 
 - name: is_parent_strong#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public boolean isParentStrong(
+  sources: []
   spec: |
     <spec fn="is_parent_strong" fork="gloas" hash="37089462">
     def is_parent_strong(store: Store, root: Root) -> bool:
@@ -7345,29 +7350,6 @@
             and has_max_effective_balance
             and has_excess_balance
         )
-    </spec>
-
-- name: is_payload_data_available#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: private boolean isPayloadDataAvailable(
-  spec: |
-    <spec fn="is_payload_data_available" fork="gloas" hash="e061dae8">
-    def is_payload_data_available(store: Store, root: Root) -> bool:
-        """
-        Return whether the blob data for the beacon block with root ``root``
-        was voted as present by the PTC, and was locally determined to be available.
-        """
-        # The beacon block root must be known
-        assert root in store.payload_data_availability_vote
-
-        # If the payload is not locally available, the blob data
-        # is not considered available regardless of the PTC vote
-        if not is_payload_verified(store, root):
-            return False
-
-        votes = store.payload_data_availability_vote[root]
-        return sum(vote is True for vote in votes) > DATA_AVAILABILITY_TIMELY_THRESHOLD
     </spec>
 
 - name: is_payload_timely#gloas
@@ -7536,11 +7518,7 @@
     </spec>
 
 - name: is_supporting_vote#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public Optional<ForkChoiceNode> resolveVoteNode(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public Optional<ForkChoiceNode> getAncestorNode(
+  sources: []
   spec: |
     <spec fn="is_supporting_vote" fork="gloas" hash="17be703c">
     def is_supporting_vote(store: Store, node: ForkChoiceNode, message: LatestMessage) -> bool:
@@ -7763,9 +7741,7 @@
     </spec>
 
 - name: is_valid_proposal_slot#gloas
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/ProposerPreferencesGossipValidator.java
-      search: public SafeFuture<InternalValidationResult> validate(
+  sources: []
   spec: |
     <spec fn="is_valid_proposal_slot" fork="gloas" hash="33b8f094">
     def is_valid_proposal_slot(state: BeaconState, preferences: ProposerPreferences) -> bool:
@@ -7961,9 +7937,7 @@
     </spec>
 
 - name: notify_ptc_messages#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public void onPtcVote(
+  sources: []
   spec: |
     <spec fn="notify_ptc_messages" fork="gloas" hash="f28f190f">
     def notify_ptc_messages(
@@ -8294,13 +8268,7 @@
     </spec>
 
 - name: on_block#gloas
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private SafeFuture<BlockImportResult> onBlock(
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public void processBlock(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void executionProcessing(
+  sources: []
   spec: |
     <spec fn="on_block" fork="gloas" hash="57c61016">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
@@ -8359,35 +8327,6 @@
         compute_pulled_up_tip(store, block_root)
     </spec>
 
-- name: on_execution_payload_envelope#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public void onExecutionPayload(
-  spec: |
-    <spec fn="on_execution_payload_envelope" fork="gloas" hash="c28e6c12">
-    def on_execution_payload_envelope(
-        store: Store, signed_envelope: SignedExecutionPayloadEnvelope
-    ) -> None:
-        """
-        Run ``on_execution_payload_envelope`` upon receiving a new execution payload envelope.
-        """
-        envelope = signed_envelope.message
-        # The corresponding beacon block root needs to be known
-        assert envelope.beacon_block_root in store.block_states
-
-        # Check if blob data is available
-        # If not, this payload MAY be queued and subsequently considered when blob data becomes available
-        assert is_data_available(envelope.beacon_block_root)
-
-        state = store.block_states[envelope.beacon_block_root]
-
-        # Verify the execution payload envelope
-        verify_execution_payload_envelope(state, signed_envelope, EXECUTION_ENGINE)
-
-        # Add execution payload envelope to the store
-        store.payloads[envelope.beacon_block_root] = envelope
-    </spec>
-
 - name: on_fast_confirmation#phase0
   sources: []
   spec: |
@@ -8398,9 +8337,7 @@
     </spec>
 
 - name: on_payload_attestation_message#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public void onPtcVote(
+  sources: []
   spec: |
     <spec fn="on_payload_attestation_message" fork="gloas" hash="fd6b84cb">
     def on_payload_attestation_message(
@@ -8670,11 +8607,7 @@
     </spec>
 
 - name: prepare_execution_payload#gloas
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<ChainHead> resolveProposerHeadOverride(
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
-      search: private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
+  sources: []
   spec: |
     <spec fn="prepare_execution_payload" fork="gloas" hash="36e9467d">
     def prepare_execution_payload(
@@ -8915,15 +8848,7 @@
     </spec>
 
 - name: process_attestation#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/block/BlockProcessorAltair.java
-      search: public AttestationProcessingResult processAttestation(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected int getBuilderPaymentIndex(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected UInt64 updateBuilderPaymentWeight(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected void consumeAttestationProcessingResult(
+  sources: []
   spec: |
     <spec fn="process_attestation" fork="gloas" hash="2258b5bb">
     def process_attestation(state: BeaconState, attestation: Attestation) -> None:
@@ -9117,11 +9042,7 @@
     </spec>
 
 - name: process_block#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: protected void processBlock(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void executionProcessing(
+  sources: []
   spec: |
     <spec fn="process_block" fork="gloas" hash="a911a43e">
     def process_block(state: BeaconState, block: BeaconBlock) -> None:
@@ -10330,9 +10251,7 @@
     </spec>
 
 - name: process_parent_execution_payload#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void processParentExecutionPayload(
+  sources: []
   spec: |
     <spec fn="process_parent_execution_payload" fork="gloas" hash="e5d997a4">
     def process_parent_execution_payload(state: BeaconState, block: BeaconBlock) -> None:
@@ -10619,11 +10538,7 @@
     </spec>
 
 - name: process_proposer_slashing#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: public void processProposerSlashings(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected void removeBuilderPendingPayment(
+  sources: []
   spec: |
     <spec fn="process_proposer_slashing" fork="gloas" hash="10bda1c5">
     def process_proposer_slashing(state: BeaconState, proposer_slashing: ProposerSlashing) -> None:
@@ -10952,9 +10867,7 @@
     </spec>
 
 - name: process_slot#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/StateTransition.java
-      search: private BeaconState processSlot(
+  sources: []
   spec: |
     <spec fn="process_slot" fork="gloas" hash="976fd16f">
     def process_slot(state: BeaconState) -> None:
@@ -11155,13 +11068,7 @@
     </spec>
 
 - name: process_voluntary_exit#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: public void processVoluntaryExits(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/operations/validation/VoluntaryExitValidatorGloas.java
-      search: public Optional<OperationInvalidReason> validate(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected void initiateExit(
+  sources: []
   spec: |
     <spec fn="process_voluntary_exit" fork="gloas" hash="2a22a698">
     def process_voluntary_exit(state: BeaconState, signed_voluntary_exit: SignedVoluntaryExit) -> None:
@@ -11392,11 +11299,7 @@
     </spec>
 
 - name: record_block_timeliness#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public BlockTimeliness computeBlockTimeliness(
-    - file: storage/src/main/java/tech/pegasys/teku/storage/client/BlockTimelinessTracker.java
-      search: public void setBlockTimelinessFromArrivalTime(
+  sources: []
   spec: |
     <spec fn="record_block_timeliness" fork="gloas" hash="84a253c3">
     def record_block_timeliness(store: Store, root: Root) -> None:
@@ -11599,9 +11502,7 @@
     </spec>
 
 - name: settle_builder_payment#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateMutatorsGloas.java
-      search: public void settleBuilderPayment(
+  sources: []
   spec: |
     <spec fn="settle_builder_payment" fork="gloas" hash="42ebaa70">
     def settle_builder_payment(state: BeaconState, payment_index: uint64) -> None:
@@ -11613,9 +11514,7 @@
     </spec>
 
 - name: should_apply_proposer_boost#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public boolean shouldApplyProposerBoost(
+  sources: []
   spec: |
     <spec fn="should_apply_proposer_boost" fork="gloas" hash="a18e5701">
     def should_apply_proposer_boost(store: Store) -> bool:
@@ -12041,13 +11940,7 @@
     </spec>
 
 - name: update_latest_messages#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
-      search: public void onAttestation(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public boolean shouldUpdateVote(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public boolean getFullPayloadVoteHint(
+  sources: []
   spec: |
     <spec fn="update_latest_messages" fork="gloas" hash="c7de718c">
     def update_latest_messages(
@@ -12169,9 +12062,7 @@
     </spec>
 
 - name: update_proposer_boost_root#gloas
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private boolean shouldUpdateProposerBoostRoot(
+  sources: []
   spec: |
     <spec fn="update_proposer_boost_root" fork="gloas" hash="d813a162">
     def update_proposer_boost_root(store: Store, root: Root) -> None:
@@ -12251,6 +12142,18 @@
         )
     </spec>
 
+- name: upgrade_lc_bootstrap_to_gloas#gloas
+  sources: []
+  spec: |
+    <spec fn="upgrade_lc_bootstrap_to_gloas" fork="gloas" hash="d7fb2b11">
+    def upgrade_lc_bootstrap_to_gloas(pre: electra.LightClientBootstrap) -> LightClientBootstrap:
+        return LightClientBootstrap(
+            header=upgrade_lc_header_to_gloas(pre.header),
+            current_sync_committee=pre.current_sync_committee,
+            current_sync_committee_branch=pre.current_sync_committee_branch,
+        )
+    </spec>
+
 - name: upgrade_lc_finality_update_to_capella#capella
   sources: []
   spec: |
@@ -12294,6 +12197,22 @@
             attested_header=upgrade_lc_header_to_electra(pre.attested_header),
             finalized_header=upgrade_lc_header_to_electra(pre.finalized_header),
             finality_branch=normalize_merkle_branch(pre.finality_branch, FINALIZED_ROOT_GINDEX_ELECTRA),
+            sync_aggregate=pre.sync_aggregate,
+            signature_slot=pre.signature_slot,
+        )
+    </spec>
+
+- name: upgrade_lc_finality_update_to_gloas#gloas
+  sources: []
+  spec: |
+    <spec fn="upgrade_lc_finality_update_to_gloas" fork="gloas" hash="b0e9270b">
+    def upgrade_lc_finality_update_to_gloas(
+        pre: electra.LightClientFinalityUpdate,
+    ) -> LightClientFinalityUpdate:
+        return LightClientFinalityUpdate(
+            attested_header=upgrade_lc_header_to_gloas(pre.attested_header),
+            finalized_header=upgrade_lc_header_to_gloas(pre.finalized_header),
+            finality_branch=pre.finality_branch,
             sync_aggregate=pre.sync_aggregate,
             signature_slot=pre.signature_slot,
         )
@@ -12355,6 +12274,64 @@
         )
     </spec>
 
+- name: upgrade_lc_header_to_gloas#gloas
+  sources: []
+  spec: |
+    <spec fn="upgrade_lc_header_to_gloas" fork="gloas" hash="1acacdb8">
+    def upgrade_lc_header_to_gloas(pre: electra.LightClientHeader) -> LightClientHeader:
+        if pre == electra.LightClientHeader():
+            return LightClientHeader()
+
+        epoch = compute_epoch_at_slot(pre.beacon.slot)
+
+        if epoch >= DENEB_FORK_EPOCH:
+            BLOCK_HASH_GINDEX = get_generalized_index(deneb.ExecutionPayloadHeader, "block_hash")
+            return LightClientHeader(
+                beacon=pre.beacon,
+                execution_block_hash=pre.execution.block_hash,
+                execution_branch=ExecutionBranch(
+                    normalize_merkle_branch(
+                        list(compute_merkle_proof(pre.execution, BLOCK_HASH_GINDEX))
+                        + list(pre.execution_branch),
+                        EXECUTION_BLOCK_HASH_GINDEX_GLOAS,
+                    )
+                ),
+            )
+
+        if epoch >= CAPELLA_FORK_EPOCH:
+            execution_header = capella.ExecutionPayloadHeader(
+                parent_hash=pre.execution.parent_hash,
+                fee_recipient=pre.execution.fee_recipient,
+                state_root=pre.execution.state_root,
+                receipts_root=pre.execution.receipts_root,
+                logs_bloom=pre.execution.logs_bloom,
+                prev_randao=pre.execution.prev_randao,
+                block_number=pre.execution.block_number,
+                gas_limit=pre.execution.gas_limit,
+                gas_used=pre.execution.gas_used,
+                timestamp=pre.execution.timestamp,
+                extra_data=pre.execution.extra_data,
+                base_fee_per_gas=pre.execution.base_fee_per_gas,
+                block_hash=pre.execution.block_hash,
+                transactions_root=pre.execution.transactions_root,
+                withdrawals_root=pre.execution.withdrawals_root,
+            )
+            BLOCK_HASH_GINDEX = get_generalized_index(capella.ExecutionPayloadHeader, "block_hash")
+            return LightClientHeader(
+                beacon=pre.beacon,
+                execution_block_hash=pre.execution.block_hash,
+                execution_branch=ExecutionBranch(
+                    normalize_merkle_branch(
+                        list(compute_merkle_proof(execution_header, BLOCK_HASH_GINDEX))
+                        + list(pre.execution_branch),
+                        EXECUTION_BLOCK_HASH_GINDEX_GLOAS,
+                    )
+                ),
+            )
+
+        return LightClientHeader(beacon=pre.beacon)
+    </spec>
+
 - name: upgrade_lc_optimistic_update_to_capella#capella
   sources: []
   spec: |
@@ -12392,6 +12369,20 @@
     ) -> LightClientOptimisticUpdate:
         return LightClientOptimisticUpdate(
             attested_header=upgrade_lc_header_to_electra(pre.attested_header),
+            sync_aggregate=pre.sync_aggregate,
+            signature_slot=pre.signature_slot,
+        )
+    </spec>
+
+- name: upgrade_lc_optimistic_update_to_gloas#gloas
+  sources: []
+  spec: |
+    <spec fn="upgrade_lc_optimistic_update_to_gloas" fork="gloas" hash="b9a211e4">
+    def upgrade_lc_optimistic_update_to_gloas(
+        pre: electra.LightClientOptimisticUpdate,
+    ) -> LightClientOptimisticUpdate:
+        return LightClientOptimisticUpdate(
+            attested_header=upgrade_lc_header_to_gloas(pre.attested_header),
             sync_aggregate=pre.sync_aggregate,
             signature_slot=pre.signature_slot,
         )
@@ -12457,6 +12448,26 @@
         )
     </spec>
 
+- name: upgrade_lc_store_to_gloas#gloas
+  sources: []
+  spec: |
+    <spec fn="upgrade_lc_store_to_gloas" fork="gloas" hash="bbf6e13a">
+    def upgrade_lc_store_to_gloas(pre: electra.LightClientStore) -> LightClientStore:
+        if pre.best_valid_update is None:
+            best_valid_update = None
+        else:
+            best_valid_update = upgrade_lc_update_to_gloas(pre.best_valid_update)
+        return LightClientStore(
+            finalized_header=upgrade_lc_header_to_gloas(pre.finalized_header),
+            current_sync_committee=pre.current_sync_committee,
+            next_sync_committee=pre.next_sync_committee,
+            best_valid_update=best_valid_update,
+            optimistic_header=upgrade_lc_header_to_gloas(pre.optimistic_header),
+            previous_max_active_participants=pre.previous_max_active_participants,
+            current_max_active_participants=pre.current_max_active_participants,
+        )
+    </spec>
+
 - name: upgrade_lc_update_to_capella#capella
   sources: []
   spec: |
@@ -12502,6 +12513,22 @@
             ),
             finalized_header=upgrade_lc_header_to_electra(pre.finalized_header),
             finality_branch=normalize_merkle_branch(pre.finality_branch, FINALIZED_ROOT_GINDEX_ELECTRA),
+            sync_aggregate=pre.sync_aggregate,
+            signature_slot=pre.signature_slot,
+        )
+    </spec>
+
+- name: upgrade_lc_update_to_gloas#gloas
+  sources: []
+  spec: |
+    <spec fn="upgrade_lc_update_to_gloas" fork="gloas" hash="bf716977">
+    def upgrade_lc_update_to_gloas(pre: electra.LightClientUpdate) -> LightClientUpdate:
+        return LightClientUpdate(
+            attested_header=upgrade_lc_header_to_gloas(pre.attested_header),
+            next_sync_committee=pre.next_sync_committee,
+            next_sync_committee_branch=pre.next_sync_committee_branch,
+            finalized_header=upgrade_lc_header_to_gloas(pre.finalized_header),
+            finality_branch=pre.finality_branch,
             sync_aggregate=pre.sync_aggregate,
             signature_slot=pre.signature_slot,
         )
@@ -13723,9 +13750,7 @@
     </spec>
 
 - name: validate_merge_block#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/helpers/BellatrixTransitionHelpers.java
-      search: public SafeFuture<PayloadStatus> validateMergeBlock(
+  sources: []
   spec: |
     <spec fn="validate_merge_block" fork="gloas" hash="d51209cc">
     def validate_merge_block(block: BeaconBlock) -> None:
@@ -13787,13 +13812,7 @@
     </spec>
 
 - name: validate_on_attestation#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public AttestationProcessingResult validateOnAttestation(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
-      search: public AttestationValidationResult validateCommitteeIndexValue(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
-      search: public AttestationValidationResult validatePayloadStatus(
+  sources: []
   spec: |
     <spec fn="validate_on_attestation" fork="gloas" hash="41ce6a87">
     def validate_on_attestation(store: Store, attestation: Attestation, is_from_block: bool) -> None:
@@ -14548,9 +14567,7 @@
     </spec>
 
 - name: verify_execution_payload_envelope#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionPayloadVerifierGloas.java
-      search: public void verifyExecutionPayloadEnvelope(
+  sources: []
   spec: |
     <spec fn="verify_execution_payload_envelope" fork="gloas" hash="450a2b1c">
     def verify_execution_payload_envelope(
