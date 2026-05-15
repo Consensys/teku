@@ -103,6 +103,9 @@ specrefs:
       - PayloadAttributes#heze
 
     functions:
+      # Unnecessary
+      - xor#phase0
+
       # Functions implemented by KZG library for EIP-4844
       - bit_reversal_permutation#deneb
       - blob_to_kzg_commitment#deneb
@@ -211,11 +214,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - xor#phase0
-      - compute_proposer_score#phase0
-      - get_attestation_score#phase0
-      - is_proposer_equivocation#phase0
-      - record_block_timeliness#phase0
       - update_proposer_boost_root#phase0
       - adjust_committee_weight_estimate_to_ensure_safety#phase0
       - apply_parent_execution_payload#gloas

@@ -1610,7 +1610,9 @@
     </spec>
 
 - name: compute_proposer_score#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateAccessors.java
+      search: public UInt64 getProposerBoostAmount(final BeaconState state) {
   spec: |
     <spec fn="compute_proposer_score" fork="phase0" hash="43ff8b01">
     def compute_proposer_score(state: BeaconState) -> Gwei:
@@ -3205,7 +3207,11 @@
     </spec>
 
 - name: get_attestation_score#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArrayScoreCalculator.java
+      search: static LongList computeDeltas(
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArrayScoreCalculator.java
+      search: private static void computeDelta(
   spec: |
     <spec fn="get_attestation_score" fork="phase0" hash="da969f50">
     def get_attestation_score(store: Store, root: Root, state: BeaconState) -> Gwei:
@@ -7545,7 +7551,9 @@
     </spec>
 
 - name: is_proposer_equivocation#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: synchronized EquivocationCheckResult performBlockEquivocationCheck(
   spec: |
     <spec fn="is_proposer_equivocation" fork="phase0" hash="8e90bb33">
     def is_proposer_equivocation(store: Store, root: Root) -> bool:
@@ -11499,7 +11507,11 @@
     </spec>
 
 - name: record_block_timeliness#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public BlockTimeliness computeBlockTimeliness(
+    - file: storage/src/main/java/tech/pegasys/teku/storage/client/BlockTimelinessTracker.java
+      search: public void setBlockTimelinessFromArrivalTime(
   spec: |
     <spec fn="record_block_timeliness" fork="phase0" hash="0a633d56">
     def record_block_timeliness(store: Store, root: Root) -> None:
@@ -14948,15 +14960,4 @@
         total_active_balance = get_total_active_balance(state)
         honest_ffg_support = compute_honest_ffg_support_for_current_target(store)
         return 3 * honest_ffg_support > 1 * total_active_balance
-    </spec>
-
-- name: xor#phase0
-  sources: []
-  spec: |
-    <spec fn="xor" fork="phase0" hash="3b45f2e1">
-    def xor(bytes_1: Bytes32, bytes_2: Bytes32) -> Bytes32:
-        """
-        Return the exclusive-or of two 32-byte strings.
-        """
-        return Bytes32(a ^ b for a, b in zip(bytes_1, bytes_2))
     </spec>
