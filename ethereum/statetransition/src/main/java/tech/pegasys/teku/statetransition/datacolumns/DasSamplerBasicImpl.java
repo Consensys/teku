@@ -373,15 +373,15 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
       return;
     }
     tracker
-            .completionFuture()
-            .thenCompose(__ -> blockImportChannel.importBlock(block))
-            .finish(
-                    () ->
-                            LOG.debug("Block {} re-imported after DAS sampling completion", block::toLogString),
-                    error ->
-                            LOG.error(
-                                    "Failed to re-import block {} after DAS sampling completion",
-                                    block.toLogString(),
-                                    error));
+        .completionFuture()
+        .thenCompose(__ -> blockImportChannel.importBlock(block))
+        .finish(
+            () ->
+                LOG.debug("Block {} re-imported after DAS sampling completion", block::toLogString),
+            error ->
+                LOG.error(
+                    "Failed to re-import block {} after DAS sampling completion",
+                    block.toLogString(),
+                    error));
   }
 }

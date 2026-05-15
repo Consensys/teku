@@ -611,16 +611,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadProvider executionPayloadProvider =
         createExecutionPayloadProvider(blindedExecutionPayloadProvider);
 
-      // Used to optimize the case where we receive a block and are still importing its blobs/data
-      // columns,
-      // in the meantime we can serve the block if we receive an RPC request
-      final SingleBlockProvider singleBlockProviderResolver =
-              new SingleBlockProviderResolver(
-                      (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
-                      (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
+    // Used to optimize the case where we receive a block and are still importing its blobs/data
+    // columns,
+    // in the meantime we can serve the block if we receive an RPC request
+    final SingleBlockProvider singleBlockProviderResolver =
+        new SingleBlockProviderResolver(
+            (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+            (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
 
-
-      // Init other services
+    // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
