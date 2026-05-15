@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -62,6 +63,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
   private final boolean halfColumnsSamplingCompletionEnabled;
+  private final BlockImportChannel blockImportChannel;
 
   public DasSamplerBasicImpl(
       final Spec spec,
@@ -74,7 +76,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
       final RecentChainData recentChainData,
       final boolean halfColumnsSamplingCompletionEnabled,
       final MetricsSystem metricsSystem,
-      final int maxRecentlySampledBlocks) {
+      final int maxRecentlySampledBlocks,
+      final BlockImportChannel blockImportChannel) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -86,6 +89,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     this.halfColumnsSamplingCompletionEnabled = halfColumnsSamplingCompletionEnabled;
     this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
     this.recentlySampledColumnsByRoot = new ConcurrentHashMap<>(maxRecentlySampledBlocks);
+    this.blockImportChannel = blockImportChannel;
     metricsSystem.createGauge(
         BEACON,
         "das_recently_sampled_blocks_size",
@@ -361,6 +365,23 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   @Override
   public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
-    // nothing to do
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(block.getRoot());
+    if (tracker == null) {
+      return;
+    }
+    if (!tracker.enableBlockImportOnCompletion()) {
+      return;
+    }
+    tracker
+            .completionFuture()
+            .thenCompose(__ -> blockImportChannel.importBlock(block))
+            .finish(
+                    () ->
+                            LOG.debug("Block {} re-imported after DAS sampling completion", block::toLogString),
+                    error ->
+                            LOG.error(
+                                    "Failed to re-import block {} after DAS sampling completion",
+                                    block.toLogString(),
+                                    error));
   }
 }

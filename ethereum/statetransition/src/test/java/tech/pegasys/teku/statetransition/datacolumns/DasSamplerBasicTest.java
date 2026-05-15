@@ -123,7 +123,7 @@ public class DasSamplerBasicTest {
         true,
         metricsSystem,
         maxRecentlySampledBlocks,
-            blockImportChannel);
+        blockImportChannel);
   }
 
   @Test

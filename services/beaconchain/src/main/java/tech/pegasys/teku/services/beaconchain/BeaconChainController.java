@@ -1149,6 +1149,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManager,
             recentChainData,
             beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled(),
+            metricsSystem,
+            beaconConfig.syncConfig().getMaxRecentlySampledBlocks(),
             dasBlockImportChannel);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
