@@ -7129,7 +7129,9 @@
     </spec>
 
 - name: is_finalization_ok#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public boolean isFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
   spec: |
     <spec fn="is_finalization_ok" fork="phase0" hash="760ff77e">
     def is_finalization_ok(store: Store, slot: Slot) -> bool:
@@ -7532,7 +7534,10 @@
     </spec>
 
 - name: is_proposer#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/GossipValidationHelper.java
+      search: public boolean isProposerTheExpectedProposer\(\s*final UInt64 proposerIndex
+      regex: true
   spec: |
     <spec fn="is_proposer" fork="phase0" hash="d9e66d76">
     def is_proposer(state: BeaconState, validator_index: ValidatorIndex) -> bool:
@@ -8576,7 +8581,9 @@
     </spec>
 
 - name: on_tick_per_slot#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: private void processOnTick(final MutableStore store, final UInt64 timeMillis) {
   spec: |
     <spec fn="on_tick_per_slot" fork="phase0" hash="ae9ef172">
     def on_tick_per_slot(store: Store, time: uint64) -> None:
@@ -11688,7 +11695,9 @@
     </spec>
 
 - name: seconds_to_milliseconds#phase0
-  sources: []
+  sources:
+    - file: infrastructure/time/src/main/java/tech/pegasys/teku/infrastructure/time/TimeUtilities.java
+      search: public static UInt64 secondsToMillis(final UInt64 timeInSeconds) {
   spec: |
     <spec fn="seconds_to_milliseconds" fork="phase0" hash="b2cc9743">
     def seconds_to_milliseconds(seconds: uint64) -> uint64:
