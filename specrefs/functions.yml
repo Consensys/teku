@@ -2845,7 +2845,9 @@
     </spec>
 
 - name: get_aggregate_and_proof#phase0
-  sources: []
+  sources:
+    - file: validator/client/src/main/java/tech/pegasys/teku/validator/client/duties/attestations/AggregationDuty.java
+      search: private SafeFuture<ProductionResult<SignedAggregateAndProof>> createSignedAggregateAndProof(
   spec: |
     <spec fn="get_aggregate_and_proof" fork="phase0" hash="bb7f6018">
     def get_aggregate_and_proof(
@@ -2901,7 +2903,11 @@
     </spec>
 
 - name: get_aggregate_signature#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/AggregateAttestationBuilder.java
+      search: public PooledAttestation buildAggregate() {
+    - file: infrastructure/bls/src/main/java/tech/pegasys/teku/bls/BLS.java
+      search: public static BLSSignature aggregate(final List<BLSSignature> signatures) throws BlsException {
   spec: |
     <spec fn="get_aggregate_signature" fork="phase0" hash="1797b223">
     def get_aggregate_signature(attestations: Sequence[Attestation]) -> BLSSignature:
@@ -3004,7 +3010,9 @@
     </spec>
 
 - name: get_attestation_deltas#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/RewardsAndPenaltiesCalculatorPhase0.java
+      search: public RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException {
   spec: |
     <spec fn="get_attestation_deltas" fork="phase0" hash="17fcc0d9">
     def get_attestation_deltas(state: BeaconState) -> Tuple[Sequence[Gwei], Sequence[Gwei]]:
@@ -3270,7 +3278,11 @@
     </spec>
 
 - name: get_attesting_balance#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/status/AbstractValidatorStatusFactory.java
+      search: protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/status/TotalBalances.java
+      search: public UInt64 getPreviousEpochSourceAttesters() {
   spec: |
     <spec fn="get_attesting_balance" fork="phase0" hash="bc7890c1">
     def get_attesting_balance(state: BeaconState, attestations: Sequence[PendingAttestation]) -> Gwei:

@@ -211,10 +211,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - get_aggregate_and_proof#phase0
-      - get_aggregate_signature#phase0
-      - get_attestation_deltas#phase0
-      - get_attesting_balance#phase0
       - get_checkpoint_block#phase0
       - get_current_store_epoch#phase0
       - get_eligible_validator_indices#phase0
