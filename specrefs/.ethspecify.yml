@@ -211,10 +211,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - check_if_validator_active#phase0
-      - compute_new_state_root#phase0
-      - compute_pulled_up_tip#phase0
-      - filter_block_tree#phase0
       - get_aggregate_and_proof#phase0
       - get_aggregate_signature#phase0
       - get_attestation_deltas#phase0

@@ -567,7 +567,9 @@
     </spec>
 
 - name: check_if_validator_active#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/Predicates.java
+      search: public boolean isActiveValidator(final Validator validator, final UInt64 epoch) {
   spec: |
     <spec fn="check_if_validator_active" fork="phase0" hash="66fe85e7">
     def check_if_validator_active(state: BeaconState, validator_index: ValidatorIndex) -> bool:
@@ -1457,7 +1459,9 @@
     </spec>
 
 - name: compute_new_state_root#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/util/BlockProposalUtilPhase0.java
+      search: public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
   spec: |
     <spec fn="compute_new_state_root" fork="phase0" hash="ad3c03b7">
     def compute_new_state_root(state: BeaconState, block: BeaconBlock) -> Root:
@@ -1638,7 +1642,13 @@
     </spec>
 
 - name: compute_pulled_up_tip#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public BlockCheckpoints calculateBlockCheckpoints(final BeaconState preState) {
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelPhase0.java
+      search: public void pullUpBlockCheckpoints(
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoNode.java
+      search: public void pullUpCheckpoints() {
   spec: |
     <spec fn="compute_pulled_up_tip" fork="phase0" hash="ef9c1f02">
     def compute_pulled_up_tip(store: Store, block_root: Root) -> None:
@@ -2576,7 +2586,9 @@
     </spec>
 
 - name: filter_block_tree#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArray.java
+      search: public boolean nodeIsViableForHead(final ProtoNode node) {
   spec: |
     <spec fn="filter_block_tree" fork="phase0" hash="a1924421">
     def filter_block_tree(store: Store, block_root: Root, blocks: Dict[Root, BeaconBlock]) -> bool:
