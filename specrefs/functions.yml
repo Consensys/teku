@@ -12035,7 +12035,11 @@
     </spec>
 
 - name: store_target_checkpoint_state#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/store/Store.java
+      search: public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
+    - file: ethereum/dataproviders/src/main/java/tech/pegasys/teku/dataproviders/generators/StateAtSlotTask.java
+      search: private BeaconState regenerateFromState(final BeaconState state) {
   spec: |
     <spec fn="store_target_checkpoint_state" fork="phase0" hash="2e4ff2b7">
     def store_target_checkpoint_state(store: Store, target: Checkpoint) -> None:
@@ -12147,7 +12151,12 @@
     </spec>
 
 - name: update_latest_messages#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
+      search: void processAttestation\(\s*final VoteUpdater voteUpdater,\s*final UInt64 validatorIndex,\s*final Bytes32 blockRoot,\s*final UInt64 targetEpoch,\s*final UInt64 attestationSlot,
+      regex: true
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public boolean shouldUpdateVote(
   spec: |
     <spec fn="update_latest_messages" fork="phase0" hash="3da3b413">
     def update_latest_messages(
@@ -12316,7 +12325,11 @@
     </spec>
 
 - name: update_unrealized_checkpoints#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public BlockCheckpoints calculateBlockCheckpoints(final BeaconState preState) {
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BlockCheckpoints.java
+      search: public Checkpoint getUnrealizedJustifiedCheckpoint() {
   spec: |
     <spec fn="update_unrealized_checkpoints" fork="phase0" hash="8cee5d3b">
     def update_unrealized_checkpoints(
@@ -14183,7 +14196,9 @@
     </spec>
 
 - name: validate_target_epoch_against_current_time#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public AttestationProcessingResult validateOnAttestation(
   spec: |
     <spec fn="validate_target_epoch_against_current_time" fork="phase0" hash="f7352056">
     def validate_target_epoch_against_current_time(store: Store, attestation: Attestation) -> None:

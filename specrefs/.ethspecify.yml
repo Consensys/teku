@@ -211,10 +211,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - store_target_checkpoint_state#phase0
-      - update_latest_messages#phase0
-      - update_unrealized_checkpoints#phase0
-      - validate_target_epoch_against_current_time#phase0
       - xor#phase0
       - compute_proposer_score#phase0
       - get_attestation_score#phase0
