@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.OkHttpClient;
@@ -43,6 +44,8 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final long CONNECT_TIMEOUT_SECONDS = 10;
+
   private final OkHttpClient httpClient;
   private final Request wsRequest;
   private final ConcurrentHashMap<Long, SafeFuture<JsonNode>> pendingRequests =
@@ -50,6 +53,7 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
   private final AtomicBoolean connected = new AtomicBoolean(false);
 
   private volatile WebSocket webSocket;
+  private volatile CountDownLatch connectionLatch;
 
   OkHttpWebSocketExecutionEngineClient(
       final OkHttpClient httpClient,
@@ -66,12 +70,25 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
     if (connected.get()) {
       return;
     }
+    final CountDownLatch latch;
     synchronized (this) {
       if (connected.get()) {
         return;
       }
+      latch = new CountDownLatch(1);
+      connectionLatch = latch;
       webSocket = httpClient.newWebSocket(wsRequest, new JsonRpcWebSocketListener());
-      connected.set(true);
+    }
+    try {
+      if (!latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        throw new RuntimeException(
+            "Timed out waiting for WebSocket connection to open after "
+                + CONNECT_TIMEOUT_SECONDS
+                + " seconds");
+      }
+    } catch (final InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted while waiting for WebSocket to open", e);
     }
   }
 
@@ -164,6 +181,15 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
   private class JsonRpcWebSocketListener extends WebSocketListener {
 
     @Override
+    public void onOpen(final WebSocket ws, final okhttp3.Response response) {
+      connected.set(true);
+      final CountDownLatch latch = connectionLatch;
+      if (latch != null) {
+        latch.countDown();
+      }
+    }
+
+    @Override
     public void onMessage(final WebSocket ws, final String text) {
       onMessageInternal(text.getBytes(StandardCharsets.UTF_8));
     }
@@ -215,6 +241,11 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
         connected.set(false);
         pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
         pendingRequests.clear();
+      }
+      // Release any thread waiting in ensureConnected() so it fails fast instead of timing out.
+      final CountDownLatch latch = connectionLatch;
+      if (latch != null) {
+        latch.countDown();
       }
     }
   }
