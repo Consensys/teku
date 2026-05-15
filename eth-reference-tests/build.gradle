@@ -59,13 +59,13 @@ task generateReferenceTestClasses(type: JavaExec) {
 	// Declare inputs and outputs so Gradle can skip the task when nothing relevant
 	// changed, and reuse outputs via the build cache.
 	inputs.dir(consensusSpecTestsDir)
-		.withPropertyName('consensusSpecTests')
-		.withPathSensitivity(PathSensitivity.RELATIVE)
+			.withPropertyName('consensusSpecTests')
+			.withPathSensitivity(PathSensitivity.RELATIVE)
 	inputs.files(configurations.refTestGenerator)
-		.withPropertyName('generatorClasspath')
-		.withNormalizer(ClasspathNormalizer)
+			.withPropertyName('generatorClasspath')
+			.withNormalizer(ClasspathNormalizer)
 	outputs.dir(generatedTestsDir)
-		.withPropertyName('generatedTests')
+			.withPropertyName('generatedTests')
 	outputs.cacheIf { true }
 
 	// Always start from a clean output directory so files for removed test
