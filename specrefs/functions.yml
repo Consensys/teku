@@ -1915,7 +1915,9 @@
     </spec>
 
 - name: compute_subnets_for_sync_committee#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
+      search: public IntSet getSyncSubcommittees(final IntSet committeeIndices) {
   spec: |
     <spec fn="compute_subnets_for_sync_committee" fork="altair" hash="637ad33a">
     def compute_subnets_for_sync_committee(
@@ -3882,7 +3884,9 @@
     </spec>
 
 - name: get_contribution_and_proof#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
+      search: public ContributionAndProof createContributionAndProof(
   spec: |
     <spec fn="get_contribution_and_proof" fork="altair" hash="ea4e6980">
     def get_contribution_and_proof(
@@ -5009,7 +5013,9 @@
     </spec>
 
 - name: get_index_for_new_validator#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
+      search: public void addValidatorToRegistry(
   spec: |
     <spec fn="get_index_for_new_validator" fork="altair" hash="e78e8714">
     def get_index_for_new_validator(state: BeaconState) -> ValidatorIndex:
@@ -5923,7 +5929,11 @@
     </spec>
 
 - name: get_sync_committee_message#altair
-  sources: []
+  sources:
+    - file: validator/client/src/main/java/tech/pegasys/teku/validator/client/duties/synccommittee/SyncCommitteeProductionDuty.java
+      search: private SyncCommitteeMessage createSyncCommitteeMessage(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
+      search: public Bytes32 getSyncCommitteeMessageSigningRoot(
   spec: |
     <spec fn="get_sync_committee_message" fork="altair" hash="f5ff7ff2">
     def get_sync_committee_message(

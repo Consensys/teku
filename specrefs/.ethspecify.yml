@@ -250,10 +250,6 @@ specrefs:
       - will_no_conflicting_checkpoint_be_justified#phase0
 
       # Not implemented: altair
-      - compute_subnets_for_sync_committee#altair
-      - get_contribution_and_proof#altair
-      - get_index_for_new_validator#altair
-      - get_sync_committee_message#altair
       - get_sync_committee_selection_proof#altair
       - get_sync_subcommittee_pubkeys#altair
       - process_justification_and_finalization#altair
