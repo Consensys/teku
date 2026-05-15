@@ -20,6 +20,8 @@ on:
       - master
     tags:
       - '*'
+    # Keep in sync with ci-skipped.yml `paths:` — that stub reports the required
+    # checks green when only these paths change; without it the PR would stall.
     paths-ignore:
       - '**/*.md'
       - 'LICENSE*'
@@ -36,6 +38,8 @@ on:
       - master
       - '**prototype**'
       - '**devnet**'
+    # Keep in sync with ci-skipped.yml `paths:` — that stub reports the required
+    # checks green when only these paths change; without it the PR would stall.
     paths-ignore:
       - '**/*.md'
       - 'LICENSE*'
