@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -44,6 +46,8 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfigGloas specConfig;
   private final SchemaDefinitionsGloas schemaDefinitions;
@@ -162,6 +166,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
 
   /** Applies any pending deposit for builders, effectively onboarding builders at the fork. */
   private void onboardBuildersFromPendingDeposits(final MutableBeaconStateGloas state) {
+    final long startTimeNanos = System.nanoTime();
+    LOG.debug(
+        "Starting processing builder deposits from {} pending deposits at timestampNanos={}",
+        state.getPendingDeposits().size(),
+        startTimeNanos);
     final Set<BLSPublicKey> validatorPubkeys =
         state.getValidators().stream().map(Validator::getPublicKey).collect(Collectors.toSet());
     final SszList<PendingDeposit> pendingDeposits =
@@ -199,5 +208,12 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                 })
             .collect(schemaDefinitions.getPendingDepositsSchema().collector());
     state.setPendingDeposits(pendingDeposits);
+    final long finishTimeNanos = System.nanoTime();
+    LOG.debug(
+        "Finished processing builder deposits at timestampNanos={}. Pending deposits remaining: {}, builders: {}, elapsedNanos={}",
+        finishTimeNanos,
+        pendingDeposits.size(),
+        state.getBuilders().size(),
+        finishTimeNanos - startTimeNanos);
   }
 }

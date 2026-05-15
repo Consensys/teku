@@ -1,7 +1,7 @@
 FROM mirror.gcr.io/library/eclipse-temurin:25 AS jre-build
 
 # Create a custom Java runtime
-RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/jlink \
+RUN $JAVA_HOME/bin/jlink \
          --add-modules java.base \
          --add-modules java.se \
          --add-modules java.management \

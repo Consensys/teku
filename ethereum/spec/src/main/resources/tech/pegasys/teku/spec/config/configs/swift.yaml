@@ -94,6 +94,14 @@ SYNC_MESSAGE_DUE_BPS_GLOAS: 2500
 CONTRIBUTION_DUE_BPS_GLOAS: 5000
 # 7500 basis points, 75% of SLOT_DURATION_MS
 PAYLOAD_ATTESTATION_DUE_BPS: 7500
+# EIP-8061
+# [customized] 2**4 (= 16)
+CHURN_LIMIT_QUOTIENT_GLOAS: 16
+# [customized] 2**5 (= 32)
+CONSOLIDATION_CHURN_LIMIT_QUOTIENT: 32
+# [customized] 2**7 * 10**9 (= 128,000,000,000) Gwei
+MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT_GLOAS: 128000000000
+
 
 # Validator cycle
 # ---------------------------------------------------------------
