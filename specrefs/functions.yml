@@ -1462,7 +1462,9 @@
     </spec>
 
 - name: compute_merkle_proof#altair
-  sources: []
+  sources:
+    - file: infrastructure/ssz/src/main/java/tech/pegasys/teku/infrastructure/ssz/tree/MerkleUtil.java
+      search: public static List<Bytes32> constructMerkleProof(
   spec: |
     <spec fn="compute_merkle_proof" fork="altair" hash="073d848c">
     def compute_merkle_proof(object: SSZObject, index: GeneralizedIndex) -> Sequence[Bytes32]: ...
@@ -11054,7 +11056,9 @@
     </spec>
 
 - name: process_slashings#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processSlashings(
   spec: |
     <spec fn="process_slashings" fork="altair" style="diff" hash="96cce87d">
     --- phase0
@@ -11255,7 +11259,9 @@
     </spec>
 
 - name: process_sync_committee_contributions#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
+      search: public SyncAggregate createSyncAggregate(
   spec: |
     <spec fn="process_sync_committee_contributions" fork="altair" hash="34e95c46">
     def process_sync_committee_contributions(
@@ -11791,7 +11797,9 @@
     </spec>
 
 - name: set_or_append_list#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateMutatorsAltair.java
+      search: public void addValidatorToRegistry(
   spec: |
     <spec fn="set_or_append_list" fork="altair" hash="a48f6f4c">
     def set_or_append_list(list: List, index: ValidatorIndex, value: Any) -> None:
