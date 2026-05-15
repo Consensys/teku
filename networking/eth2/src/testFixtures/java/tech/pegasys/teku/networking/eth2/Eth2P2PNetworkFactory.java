@@ -194,9 +194,7 @@ public class Eth2P2PNetworkFactory {
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
-      final Eth2P2PNetwork network = buildAndStartNetwork();
-      networks.add(network);
-      return network;
+      return buildAndStartNetwork();
     }
 
     protected Eth2P2PNetwork buildAndStartNetwork() throws Exception {
@@ -218,6 +216,10 @@ public class Eth2P2PNetworkFactory {
                   });
           try {
             network.start().get(30, TimeUnit.SECONDS);
+            // Register for cleanup as soon as the network is bound to a port, so that any
+            // subsequent failure (timeout waiting for peers, symmetric check, etc.) still results
+            // in the network being stopped by stopAll() during teardown.
+            networks.add(network);
             if (expected == 0) {
               allPeersReady.complete(null);
             } else {
