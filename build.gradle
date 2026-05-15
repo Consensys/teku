@@ -626,10 +626,9 @@ tasks.register('deploy') {}
 // Gradle process with --no-parallel.
 generateLicenseReport.enabled = false
 checkLicense.enabled = false
-def gradlewCommand = System.getProperty('os.name').toLowerCase().contains('windows') ? 'gradlew.bat' : './gradlew'
 tasks.register('licenseCheck', Exec) {
 	workingDir rootDir
-	commandLine gradlewCommand, 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
+	commandLine './gradlew', 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
 }
 if (project.hasProperty('enableLicenseReport')) {
 	generateLicenseReport.enabled = true
@@ -795,20 +794,8 @@ startScripts {
 
 	unixStartScriptGenerator.template = resources.text.fromFile("${projectDir}/teku/src/main/scripts/unixStartScript.txt")
 
-	def shortenWindowsClasspath = { line ->
-		line = line.replaceAll(/^set CLASSPATH=.*$/, "set CLASSPATH=%APP_HOME%/lib/*")
-	}
-
 	doLast {
 		unixScript.text = unixScript.text.replace('TEKU_HOME', '\$APP_HOME')
-		windowsScript.text = windowsScript.text.replace('TEKU_HOME', '%~dp0..')
-
-		// Prevent the error originating from the 8191 chars limit on Windows
-		windowsScript.text =
-				windowsScript
-				.readLines()
-				.collect(shortenWindowsClasspath)
-				.join('\r\n')
 	}
 }
 
@@ -843,7 +830,7 @@ def dockerJdkVariants = ["jdk25", "jdk26"]
 def dockerBuildDir = "build/docker-teku/"
 def localDockerImage = "local/teku"
 
-def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
+def executableAndArg = ["sh", "-c"]
 
 tasks.register('localDocker') {
 	dependsOn dockerDistUntar

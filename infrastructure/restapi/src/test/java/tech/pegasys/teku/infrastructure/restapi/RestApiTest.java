@@ -27,8 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
@@ -54,7 +52,6 @@ class RestApiTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   void build_shouldFailFastWhenTokenNotWritable(@TempDir final Path tempDir) throws IOException {
     final Path managerDir = tempDir.resolve("manager");
     Files.createDirectory(
