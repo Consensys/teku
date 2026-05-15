@@ -317,7 +317,9 @@ public class ChainUpdater {
         blobSidecars,
         earliestBlobSidecarSlot);
     assertThat(tx.commit()).isCompleted();
-    // no need to call onExecutionPayloadResult when in Gloas
+    // Pre-Gloas blocks have a single fork-choice node, so direct block insertion must also mark
+    // that node as execution-valid. Gloas block insertion only creates the BASE/EMPTY nodes; the
+    // FULL payload node is created and marked when the execution payload envelope is saved.
     if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
       recentChainData
           .getUpdatableForkChoiceStrategy()
