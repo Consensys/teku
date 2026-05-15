@@ -207,10 +207,6 @@ specrefs:
       - upgrade_lc_store_to_gloas#gloas
       - upgrade_lc_update_to_gloas#gloas
 
-      # Still need to implement this for Phase0
-      - is_not_from_future_slot#phase0
-      - is_within_slot_range#phase0
-
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
 

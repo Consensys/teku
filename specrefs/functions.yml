@@ -7226,6 +7226,25 @@
         return store.next_sync_committee != SyncCommittee()
     </spec>
 
+- name: is_not_from_future_slot#phase0
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/GossipValidationHelper.java
+      search: public boolean isSlotFromFuture(
+  spec: |
+    <spec fn="is_not_from_future_slot" fork="phase0" hash="7e35ef32">
+    def is_not_from_future_slot(
+        state: BeaconState,
+        slot: Slot,
+        current_time_ms: uint64,
+    ) -> bool:
+        """
+        Check if the given slot is not from the future
+        (with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance).
+        """
+        slot_time_ms = compute_time_at_slot_ms(state, slot)
+        return current_time_ms + MAXIMUM_GOSSIP_CLOCK_DISPARITY >= slot_time_ms
+    </spec>
+
 - name: is_one_confirmed#phase0
   sources: []
   spec: |
@@ -7834,6 +7853,31 @@
         is_total_difficulty_reached = block.total_difficulty >= TERMINAL_TOTAL_DIFFICULTY
         is_parent_total_difficulty_valid = parent.total_difficulty < TERMINAL_TOTAL_DIFFICULTY
         return is_total_difficulty_reached and is_parent_total_difficulty_valid
+    </spec>
+
+- name: is_within_slot_range#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/util/AttestationUtilPhase0.java
+      search: public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
+  spec: |
+    <spec fn="is_within_slot_range" fork="phase0" hash="7a6f6f51">
+    def is_within_slot_range(
+        state: BeaconState,
+        slot: Slot,
+        slot_range: uint64,
+        current_time_ms: uint64,
+    ) -> bool:
+        """
+        Check if the current time is within the inclusive slot range ``[slot, slot + slot_range]``
+        (with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance on both ends).
+        """
+        start_time_ms = compute_time_at_slot_ms(state, slot)
+        if current_time_ms + MAXIMUM_GOSSIP_CLOCK_DISPARITY < start_time_ms:
+            return False
+        end_time_ms = compute_time_at_slot_ms(state, Slot(slot + slot_range + 1))
+        if end_time_ms + MAXIMUM_GOSSIP_CLOCK_DISPARITY < current_time_ms:
+            return False
+        return True
     </spec>
 
 - name: is_within_weak_subjectivity_period#phase0
