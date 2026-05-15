@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -112,9 +113,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void putExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     executionPayloadData.put(
-        executionPayload.getBeaconBlockRoot(), new ExecutionPayloadUpdate(executionPayload, false));
+        executionPayload.getBeaconBlockRoot(),
+        new ExecutionPayloadUpdate(executionPayload, executionOptimistic));
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -441,6 +444,18 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               .map(ExecutionPayloadUpdate::executionPayload));
     }
     return store.retrieveSignedExecutionPayload(blockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
+    if (executionPayloadData.containsKey(blockRoot)) {
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloadData.get(blockRoot))
+              .map(
+                  executionPayloadUpdate -> executionPayloadUpdate.executionPayload().blind(spec)));
+    }
+    return store.retrieveSignedBlindedExecutionPayload(blockRoot);
   }
 
   @Override

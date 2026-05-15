@@ -92,7 +92,7 @@ class DefaultExecutionPayloadManagerTest {
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
 
     verify(receivedExecutionPayloadEventsChannelPublisher)
-        .onExecutionPayloadImported(signedExecutionPayload);
+        .onExecutionPayloadImported(signedExecutionPayload, false);
 
     // verify the `beacon_block_root` is cached
     assertThat(
@@ -150,30 +150,30 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
-  public void shouldProcessExecutionPayloadWhichHaveBeenReceivedBeforeTheBlock() {
+  public void shouldProcessExecutionPayloadWhichHasBeenReceivedBeforeTheBlock() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(SafeFuture.completedFuture(successfulImportResult));
 
     // should just cache the payload for future processing
     SafeFutureAssert.safeJoin(
         executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload));
 
     asyncRunner.executeDueActions();
-    verifyNoInteractions(forkChoice, receivedExecutionPayloadEventsChannelPublisher);
+    verifyNoInteractions(receivedExecutionPayloadEventsChannelPublisher);
 
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(SafeFuture.completedFuture(successfulImportResult));
     executionPayloadManager.onBlockImported(block, false);
 
     asyncRunner.executeDueActions();
     // verify the payload has been processed
     verify(receivedExecutionPayloadEventsChannelPublisher)
-        .onExecutionPayloadImported(signedExecutionPayload);
+        .onExecutionPayloadImported(signedExecutionPayload, false);
 
     // verify the payload has been published
     assertThat(publishedExecutionPayload).hasValue(signedExecutionPayload);

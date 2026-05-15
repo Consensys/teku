@@ -39,7 +39,8 @@ record DataColumnSamplingTracker(
     AtomicBoolean rpcFetchInProgress,
     SafeFuture<List<UInt64>> completionFuture,
     AtomicBoolean fullySampled,
-    Optional<Integer> earlyCompletionRequirementCount,
+    AtomicBoolean blockImportOnCompletionEnabled,
+    Optional<Integer> earlyCompletionRequirementCount
     AtomicReference<Optional<SignedBeaconBlock>> block,
     long createdAtNanos) {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,6 +62,7 @@ record DataColumnSamplingTracker(
         new AtomicBoolean(false),
         completionFuture,
         new AtomicBoolean(false),
+        new AtomicBoolean(false),
         completionColumnCount,
         new AtomicReference<>(Optional.empty()),
         System.nanoTime());
@@ -79,6 +81,10 @@ record DataColumnSamplingTracker(
     }
     LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
     return true;
+  }
+
+  boolean enableBlockImportOnCompletion() {
+    return blockImportOnCompletionEnabled.compareAndSet(false, true);
   }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {

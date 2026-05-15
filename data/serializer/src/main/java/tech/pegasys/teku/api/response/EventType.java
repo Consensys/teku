@@ -33,6 +33,8 @@ public enum EventType {
   block_gossip,
   single_attestation,
   data_column_sidecar,
+  execution_payload,
+  execution_payload_gossip,
   execution_payload_available,
   execution_payload_bid,
   payload_attestation_message;

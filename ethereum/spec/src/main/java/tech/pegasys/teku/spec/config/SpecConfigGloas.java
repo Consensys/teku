@@ -48,6 +48,13 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
 
   int getMaxBuildersPerWithdrawalsSweep();
 
+  // EIP-8061: Increase exit and consolidation churn
+  int getChurnLimitQuotientGloas();
+
+  int getConsolidationChurnLimitQuotient();
+
+  UInt64 getMaxPerEpochActivationChurnLimitGloas();
+
   default int getPayloadTimelyThreshold() {
     return getPtcSize() / 2;
   }

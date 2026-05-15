@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
@@ -24,11 +26,13 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerPreferencesSchema
-    extends ContainerSchema4<ProposerPreferences, SszUInt64, SszUInt64, SszByteVector, SszUInt64> {
+    extends ContainerSchema5<
+        ProposerPreferences, SszBytes32, SszUInt64, SszUInt64, SszByteVector, SszUInt64> {
 
   public ProposerPreferencesSchema() {
     super(
         "ProposerPreferences",
+        namedSchema("dependent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("proposal_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("fee_recipient", SszByteVectorSchema.create(Bytes20.SIZE)),
@@ -36,11 +40,13 @@ public class ProposerPreferencesSchema
   }
 
   public ProposerPreferences create(
+      final Bytes32 dependentRoot,
       final UInt64 proposalSlot,
       final UInt64 validatorIndex,
       final Eth1Address feeRecipient,
       final UInt64 gasLimit) {
-    return new ProposerPreferences(this, proposalSlot, validatorIndex, feeRecipient, gasLimit);
+    return new ProposerPreferences(
+        this, dependentRoot, proposalSlot, validatorIndex, feeRecipient, gasLimit);
   }
 
   @Override

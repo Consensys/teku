@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +26,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -40,12 +43,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private final ProposersDataManager proposersDataManager;
   private final Spec spec;
   private final TimeProvider timeProvider;
-  private final boolean forkChoiceLateBlockReorgEnabled;
 
   private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
+
+  // Pinned proposing slot for which forkChoiceUpdateData must remain stable. Set when block
+  // production starts (proposingSlot is supplied). Cleared as soon as the produced block is
+  // imported (head advances past it).
+  private Optional<UInt64> lastProposingSlot = Optional.empty();
 
   private boolean inSync = false; // Assume we are not in sync at startup.
 
@@ -56,8 +63,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final ProposersDataManager proposersDataManager,
-      final boolean forkChoiceLateBlockReorgEnabled) {
+      final ProposersDataManager proposersDataManager) {
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.eventThread = eventThread;
     this.spec = spec;
@@ -65,7 +71,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
     this.timeProvider = timeProvider;
-    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
   }
 
   @Override
@@ -114,8 +119,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, blockSlot));
+      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
+    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlock, blockSlot));
   }
 
   @Override
@@ -131,40 +136,45 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   /**
-   * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
+   * @param parentBeaconBlock fork choice node of the beacon block the new block will be built on
    * @param blockSlot slot of the block being produced, for which the payloadId has been requested
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the bellatrix fork and before Terminal Block arrival)
    *     <p>Optional.of(executionPayloadContext) when one of the following:
-   *     <p>1. builds on top of execution head of parentBeaconBlockRoot
+   *     <p>1. builds on top of execution head of parentBeaconBlock
    *     <p>2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
-      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
+      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
 
     LOG.debug(
-        "internalGetPayloadId parentBeaconBlockRoot {} blockSlot {}",
-        parentBeaconBlockRoot,
-        blockSlot);
+        "internalGetPayloadId parentBeaconBlock {} blockSlot {}", parentBeaconBlock, blockSlot);
 
     final Bytes32 parentExecutionHash =
         recentChainData
-            .getExecutionBlockHashForBlockRoot(parentBeaconBlockRoot)
+            .getExecutionBlockHashForBlock(parentBeaconBlock)
             .orElseThrow(
                 () ->
                     new IllegalStateException(
                         "Failed to retrieve execution payload hash from beacon block root"));
 
     final UInt64 timestamp = spec.computeTimeAtSlot(blockSlot, recentChainData.getGenesisTime());
+
+    validateForkChoiceHeadMatchesParent(parentBeaconBlock, parentExecutionHash);
+
     if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
       return forkChoiceUpdateData.getExecutionPayloadContext();
     } else if (parentExecutionHash.isZero() && !forkChoiceUpdateData.hasTerminalBlockHash()) {
       // Pre-merge so ok to use default payload
       return SafeFuture.completedFuture(Optional.empty());
     } else {
+      // TODO: with the pinned forkChoiceUpdateData there is no point in trying to refresh.
+      // Now we should have a stable forkChoiceUpdateData which must be compatible with
+      // parentBeaconBlockRoot and slot by blockSlot. So we can just throw here.
+
       // Request a new payload with refreshed forkChoiceState and payloadBuildingAttributes
 
       LOG.warn(
@@ -188,6 +198,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
                 sendForkChoiceUpdated();
 
+                validateForkChoiceHeadMatchesParent(parentBeaconBlock, parentExecutionHash);
+
                 if (!forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
                   throw new IllegalStateException(
                       "payloadId still not suitable after requesting a new one via FcU with recalculated data");
@@ -206,6 +218,19 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     }
   }
 
+  private void validateForkChoiceHeadMatchesParent(
+      final ForkChoiceNode parentBeaconBlock, final Bytes32 parentExecutionHash) {
+    if (parentExecutionHash.isZero()) {
+      return;
+    }
+
+    checkState(
+        forkChoiceUpdateData.getForkChoiceState().headBlock().equals(parentBeaconBlock),
+        "Fork choice update head %s does not match requested block production parent %s",
+        forkChoiceUpdateData.getForkChoiceState().headBlock(),
+        parentBeaconBlock);
+  }
+
   private void internalForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     eventThread.checkOnEventThread();
@@ -215,13 +240,40 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     final Optional<UInt64> localProposingSlot =
         calculatePayloadAttributesSlot(forkChoiceState, proposingSlot);
 
-    if (forkChoiceLateBlockReorgEnabled
-        && localProposingSlot.isPresent()
-        && recentChainData.shouldOverrideForkChoiceUpdate(
-            forkChoiceState.getHeadBlockRoot(), forkChoiceState.getHeadBlockSlot())) {
+    // Reset rule: if our produced block (or a later block) has been imported, clear the pin and
+    // let this fcU through so the EL learns the new head immediately. The fall-through path below
+    // refreshes forkChoiceUpdateData and broadcasts on the same event-thread tick.
+    if (lastProposingSlot.isPresent()
+        && forkChoiceState.headBlockSlot().isGreaterThanOrEqualTo(lastProposingSlot.get())) {
       LOG.debug(
-          "internalForkChoiceUpdated skipped due to late block reorg override producing block at slot {}",
-          localProposingSlot.get());
+          "internalForkChoiceUpdated clearing pin for slot {} (head advanced to slot {})",
+          lastProposingSlot.get(),
+          forkChoiceState.headBlockSlot());
+      lastProposingSlot = Optional.empty();
+    }
+
+    if (proposingSlot.isPresent()) {
+      // Production trigger: refresh forkChoiceUpdateData and (re)set the pin to the proposing slot
+      // regardless of any cached value. ForkChoice has already substituted the proposer head
+      // (incl. late-block reorg) so the broadcast is correct without an override gate here.
+      this.forkChoiceUpdateData = this.forkChoiceUpdateData.withForkChoiceState(forkChoiceState);
+      lastProposingSlot = localProposingSlot;
+      LOG.debug(
+          "internalForkChoiceUpdated forkChoiceUpdateData {} pinned for slot {}",
+          forkChoiceUpdateData,
+          lastProposingSlot);
+      localProposingSlot.ifPresent(this::updatePayloadAttributes);
+      sendForkChoiceUpdated();
+      return;
+    }
+
+    if (localProposingSlot.isPresent()
+        && lastProposingSlot.isPresent()
+        && localProposingSlot.get().equals(lastProposingSlot.get())) {
+      // Pin-hold: a background fcU arrived during the active proposing window. Skip the swap
+      // (which would also wipe payloadBuildingAttributes via withForkChoiceState) so the
+      // proposing-slot state stays stable.
+      LOG.debug("internalForkChoiceUpdated skipped — pinned for slot {}", lastProposingSlot.get());
       return;
     }
 
@@ -260,13 +312,13 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     final Optional<UInt64> maybeCurrentPayloadAttributesSlot =
         forkChoiceUpdateData
             .getPayloadBuildingAttributes()
-            .map(PayloadBuildingAttributes::getProposalSlot);
+            .map(PayloadBuildingAttributes::proposalSlot);
 
     if (maybeCurrentPayloadAttributesSlot.isPresent()
         // we are still in the same slot as the last proposing slot
         && currentSlot.get().equals(maybeCurrentPayloadAttributesSlot.get())
         // we have not yet imported our own produced block
-        && forkChoiceState.getHeadBlockSlot().isLessThan(maybeCurrentPayloadAttributesSlot.get())) {
+        && forkChoiceState.headBlockSlot().isLessThan(maybeCurrentPayloadAttributesSlot.get())) {
 
       LOG.debug(
           "current payload attributes slot has been chosen for payload attributes calculation: {}",
@@ -304,15 +356,22 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
-    forkChoiceUpdateData
+    final ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
+    localForkChoiceUpdateData
         .withPayloadBuildingAttributesAsync(
             () ->
                 proposersDataManager.calculatePayloadBuildingAttributes(
-                    blockSlot, inSync, forkChoiceUpdateData, false),
+                    blockSlot, inSync, localForkChoiceUpdateData, false),
             eventThread)
         .thenAccept(
             newForkChoiceUpdateData -> {
               if (newForkChoiceUpdateData.isPresent()) {
+                if (isStaleForkChoiceUpdateData(localForkChoiceUpdateData)) {
+                  LOG.debug(
+                      "Ignoring stale payload attributes for slot {} because fork choice update data has changed",
+                      blockSlot);
+                  return;
+                }
                 forkChoiceUpdateData = newForkChoiceUpdateData.get();
                 sendForkChoiceUpdated();
               }
@@ -320,5 +379,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         .finish(
             error ->
                 LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error));
+  }
+
+  @SuppressWarnings("ReferenceComparison")
+  private boolean isStaleForkChoiceUpdateData(
+      final ForkChoiceUpdateData localForkChoiceUpdateData) {
+    return forkChoiceUpdateData != localForkChoiceUpdateData;
   }
 }

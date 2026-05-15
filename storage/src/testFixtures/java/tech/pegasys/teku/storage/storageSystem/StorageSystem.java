@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import tech.pegasys.teku.beacon.pow.api.TrackingEth1EventsChannel;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
@@ -26,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
@@ -112,6 +112,7 @@ public class StorageSystem implements AutoCloseable {
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             chainStorageServer,
             chainStorageServer,
             chainStorageServer,
@@ -122,12 +123,7 @@ public class StorageSystem implements AutoCloseable {
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            chainStorageServer,
-            spec,
-            LateBlockReorgPreparationHandler.NOOP,
-            false);
+        new CombinedChainDataClient(recentChainData, chainStorageServer, spec);
 
     final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 

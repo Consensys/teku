@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ChainHead implements MinimalBeaconBlockSummary {
@@ -128,6 +129,14 @@ public class ChainHead implements MinimalBeaconBlockSummary {
     return forkChoiceNode;
   }
 
+  public boolean isSameHeadAs(final Optional<ChainHead> other) {
+    return other.filter(this::equals).isPresent();
+  }
+
+  public boolean isSameHeadAs(final SlotAndForkChoiceNode other) {
+    return blockData.getSlot().equals(other.slot()) && forkChoiceNode.equals(other.node());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -137,12 +146,13 @@ public class ChainHead implements MinimalBeaconBlockSummary {
       return false;
     }
     final ChainHead chainHead = (ChainHead) o;
-    return Objects.equals(blockData, chainHead.blockData)
-        && Objects.equals(forkChoiceNode, chainHead.forkChoiceNode);
+    return isOptimistic == chainHead.isOptimistic
+        && Objects.equals(forkChoiceNode, chainHead.forkChoiceNode)
+        && Objects.equals(executionPayloadBlockHash, chainHead.executionPayloadBlockHash);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(blockData, forkChoiceNode);
+    return Objects.hash(isOptimistic, forkChoiceNode, executionPayloadBlockHash);
   }
 }

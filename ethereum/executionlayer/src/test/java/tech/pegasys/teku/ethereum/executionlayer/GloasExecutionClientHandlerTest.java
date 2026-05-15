@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -144,7 +145,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomBytes32());
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
     final PayloadAttributesV4 payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(attributes);
     final ForkChoiceUpdatedResult responseData =

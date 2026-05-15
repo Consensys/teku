@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
@@ -76,6 +77,54 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     this.configGloas = config;
     this.miscHelpersGloas = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  /**
+   * EIP-8061: scaled balance churn limit using the supplied quotient. Returns
+   * max(MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA, total_active_balance // quotient), rounded down to
+   * EFFECTIVE_BALANCE_INCREMENT.
+   */
+  private UInt64 computeBalanceChurnLimit(final BeaconStateElectra state, final UInt64 quotient) {
+    final UInt64 churn =
+        configElectra
+            .getMinPerEpochChurnLimitElectra()
+            .max(getTotalActiveBalance(state).dividedBy(quotient));
+    return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
+  }
+
+  /**
+   * get_activation_churn_limit
+   *
+   * <p>EIP-8061: capped activation-only churn limit. Used when admitting validators from the
+   * pending-deposit queue.
+   */
+  public UInt64 getActivationChurnLimit(final BeaconStateElectra state) {
+    return computeBalanceChurnLimit(state, UInt64.valueOf(configGloas.getChurnLimitQuotientGloas()))
+        .min(configGloas.getMaxPerEpochActivationChurnLimitGloas());
+  }
+
+  /**
+   * get_exit_churn_limit
+   *
+   * <p>EIP-8061: uncapped exit churn limit. Used when scheduling validator exits.
+   */
+  public UInt64 getExitChurnLimit(final BeaconStateElectra state) {
+    return computeBalanceChurnLimit(
+        state, UInt64.valueOf(configGloas.getChurnLimitQuotientGloas()));
+  }
+
+  /**
+   * get_consolidation_churn_limit
+   *
+   * <p>EIP-8061: consolidation churn is now derived independently from the activation/exit churn
+   * via {@code CONSOLIDATION_CHURN_LIMIT_QUOTIENT}. Unlike the activation/exit churn limits, no
+   * {@code MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA} floor is applied.
+   */
+  @Override
+  public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
+    final UInt64 churn =
+        getTotalActiveBalance(state).dividedBy(configGloas.getConsolidationChurnLimitQuotient());
+    return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
   }
 
   public UInt64 getPendingBalanceToWithdrawForBuilder(

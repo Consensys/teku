@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -62,6 +63,15 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
         timeProvider);
     this.beaconStateAccessorsGloas = beaconStateAccessors;
     this.schemaDefinitionsGloas = schemaDefinitions;
+  }
+
+  /**
+   * EIP-8061: deposits consume the activation-only churn budget; consolidation churn is now tracked
+   * independently via {@code CONSOLIDATION_CHURN_LIMIT_QUOTIENT}.
+   */
+  @Override
+  protected UInt64 getPendingDepositsChurnLimit(final MutableBeaconStateElectra state) {
+    return beaconStateAccessorsGloas.getActivationChurnLimit(state);
   }
 
   /**
