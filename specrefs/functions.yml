@@ -5953,7 +5953,9 @@
     </spec>
 
 - name: get_sync_committee_selection_proof#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
+      search: public Bytes getSyncAggregatorSelectionDataSigningRoot(
   spec: |
     <spec fn="get_sync_committee_selection_proof" fork="altair" hash="fa4e7704">
     def get_sync_committee_selection_proof(
@@ -5994,7 +5996,9 @@
     </spec>
 
 - name: get_sync_subcommittee_pubkeys#altair
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/synccommittee/SignedContributionAndProofValidator.java
+      search: private BLSPublicKey getParticipantPublicKey(
   spec: |
     <spec fn="get_sync_subcommittee_pubkeys" fork="altair" hash="772addda">
     def get_sync_subcommittee_pubkeys(
@@ -10247,7 +10251,9 @@
     </spec>
 
 - name: process_justification_and_finalization#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processJustificationAndFinalization(
   spec: |
     <spec fn="process_justification_and_finalization" fork="altair" style="diff" hash="863cfca6">
     --- phase0
@@ -10996,7 +11002,9 @@
     </spec>
 
 - name: process_rewards_and_penalties#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processRewardsAndPenalties(
   spec: |
     <spec fn="process_rewards_and_penalties" fork="altair" style="diff" hash="373af4c1">
     --- phase0
