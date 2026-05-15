@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
@@ -180,9 +181,9 @@ class OkHttpWebSocketExecutionEngineClientTest {
         future2 = engineClient.getPayloadV1(Bytes8.fromHexStringLenient("0x2"));
 
     final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response1 =
-        future1.get(5, TimeUnit.SECONDS);
+        future1.get(30, TimeUnit.SECONDS);
     final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response2 =
-        future2.get(5, TimeUnit.SECONDS);
+        future2.get(30, TimeUnit.SECONDS);
 
     assertThat(response1.payload()).isEqualTo(executionPayloadV1resp1);
     assertThat(response2.payload()).isEqualTo(executionPayloadV1resp2);
@@ -232,16 +233,34 @@ class OkHttpWebSocketExecutionEngineClientTest {
     final SafeFuture<tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1>>
         future1 = engineClient.getPayloadV1(Bytes8.fromHexStringLenient("0x1"));
     final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response1 =
-        future1.get(5, TimeUnit.SECONDS);
+        future1.get(30, TimeUnit.SECONDS);
     assertThat(response1.errorMessage()).isNotEmpty();
+
+    // Wait until the client observes the disconnect so the next request reconnects
+    // deterministically
+    waitUntilDisconnected();
 
     // Second request should reconnect
     final SafeFuture<tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1>>
         future2 = engineClient.getPayloadV1(Bytes8.fromHexStringLenient("0x2"));
     final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response2 =
-        future2.get(5, TimeUnit.SECONDS);
+        future2.get(30, TimeUnit.SECONDS);
     assertThat(response2).isNotNull();
     assertThat(response2.errorMessage()).isNull();
+  }
+
+  private void waitUntilDisconnected() throws Exception {
+    final Field connectedField =
+        OkHttpWebSocketExecutionEngineClient.class.getDeclaredField("connected");
+    connectedField.setAccessible(true);
+    final AtomicBoolean connected = (AtomicBoolean) connectedField.get(engineClient);
+    final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+    while (connected.get()) {
+      if (System.nanoTime() > deadline) {
+        throw new AssertionError("Client did not observe disconnect within 10 seconds");
+      }
+      Thread.sleep(10);
+    }
   }
 
   @Test

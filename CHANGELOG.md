@@ -2,13 +2,13 @@
 
 ## Upcoming Breaking Changes
 
- * Teku will be moving to Java JDK 25 in a future release.
-
 ## Current Releases
 
 ## Unreleased Changes
 
 ### Breaking Changes
+
+ * Teku now targets Java JDK 25 for builds and runtime.
 
 ### Additions and Improvements
 

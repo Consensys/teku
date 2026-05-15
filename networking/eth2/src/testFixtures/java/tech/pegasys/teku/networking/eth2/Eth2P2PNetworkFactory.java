@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -87,6 +88,7 @@ import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.mock.MockDiscoveryNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
@@ -192,9 +194,7 @@ public class Eth2P2PNetworkFactory {
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
-      final Eth2P2PNetwork network = buildAndStartNetwork();
-      networks.add(network);
-      return network;
+      return buildAndStartNetwork();
     }
 
     protected Eth2P2PNetwork buildAndStartNetwork() throws Exception {
@@ -203,10 +203,48 @@ public class Eth2P2PNetworkFactory {
         final P2PConfig config = generateConfig();
         final Eth2P2PNetwork network = buildNetwork(config);
         try {
-          network.start().get(30, TimeUnit.SECONDS);
-          networks.add(network);
-          Waiter.waitFor(() -> assertThat(network.getPeerCount()).isEqualTo(peers.size()));
-          return network;
+          final int expected = peers.size();
+          final SafeFuture<Void> allPeersReady = new SafeFuture<>();
+          final Set<NodeId> readyPeers = ConcurrentHashMap.newKeySet();
+          final long subscriptionId =
+              network.subscribeConnect(
+                  eth2Peer -> {
+                    readyPeers.add(eth2Peer.getId());
+                    if (readyPeers.size() >= expected) {
+                      allPeersReady.complete(null);
+                    }
+                  });
+          try {
+            network.start().get(30, TimeUnit.SECONDS);
+            // Register for cleanup as soon as the network is bound to a port, so that any
+            // subsequent failure (timeout waiting for peers, symmetric check, etc.) still results
+            // in the network being stopped by stopAll() during teardown.
+            networks.add(network);
+            if (expected == 0) {
+              allPeersReady.complete(null);
+            } else {
+              // Handle the "already arrived" case where peers connected before we subscribed.
+              network.streamPeers().forEach(p -> readyPeers.add(p.getId()));
+              if (readyPeers.size() >= expected) {
+                allPeersReady.complete(null);
+              }
+            }
+            allPeersReady.get(30, TimeUnit.SECONDS);
+
+            // Symmetric check: wait for each pre-existing peer to observe THIS network on its end.
+            for (Eth2P2PNetwork remote : peers) {
+              Waiter.waitFor(
+                  () ->
+                      assertThat(
+                              remote
+                                  .streamPeers()
+                                  .anyMatch(p -> p.getId().equals(network.getNodeId())))
+                          .isTrue());
+            }
+            return network;
+          } finally {
+            network.unsubscribeConnect(subscriptionId);
+          }
         } catch (ExecutionException e) {
           if (e.getCause() instanceof BindException) {
             if (attempt > 10) {
