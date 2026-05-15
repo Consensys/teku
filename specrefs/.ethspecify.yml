@@ -211,10 +211,6 @@ specrefs:
       - compute_weak_subjectivity_period#electra
 
       # Not implemented: phase0
-      - get_slots_since_genesis#phase0
-      - get_unslashed_attesting_indices#phase0
-      - get_voting_source#phase0
-      - is_candidate_block#phase0
       - is_finalization_ok#phase0
       - is_proposer#phase0
       - on_tick_per_slot#phase0

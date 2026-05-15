@@ -5847,7 +5847,11 @@
     </spec>
 
 - name: get_slots_since_genesis#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public UInt64 getCurrentSlot(final ReadOnlyStore store) {
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
+      search: public UInt64 computeSlotAtTime(final UInt64 genesisTime, final UInt64 currentTime) {
   spec: |
     <spec fn="get_slots_since_genesis" fork="phase0" hash="80c67100">
     def get_slots_since_genesis(store: Store) -> int:
@@ -6041,7 +6045,11 @@
     </spec>
 
 - name: get_unslashed_attesting_indices#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/ValidatorStatusFactoryPhase0.java
+      search: protected void processParticipation(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/RewardsAndPenaltiesCalculatorPhase0.java
+      search: public void applyAttestationComponentDelta(
   spec: |
     <spec fn="get_unslashed_attesting_indices" fork="phase0" hash="21c7dd12">
     def get_unslashed_attesting_indices(
@@ -6308,7 +6316,11 @@
     </spec>
 
 - name: get_voting_source#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoNode.java
+      search: public Checkpoint getJustifiedCheckpoint() {
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoNode.java
+      search: public void pullUpCheckpoints() {
   spec: |
     <spec fn="get_voting_source" fork="phase0" hash="0af91bae">
     def get_voting_source(store: Store, block_root: Root) -> Checkpoint:
@@ -6882,7 +6894,13 @@
     </spec>
 
 - name: is_candidate_block#phase0
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/Eth1VotingPeriod.java
+      search: public UInt64 getSpecRangeLowerBound(final UInt64 slot, final UInt64 genesisTime) {
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/Eth1VotingPeriod.java
+      search: public UInt64 getSpecRangeUpperBound(final UInt64 slot, final UInt64 genesisTime) {
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/Eth1DataCache.java
+      search: private NavigableMap<UInt64, Eth1Data> getVotesToConsider(
   spec: |
     <spec fn="is_candidate_block" fork="phase0" hash="c588dc0a">
     def is_candidate_block(block: Eth1Block, period_start: uint64) -> bool:
