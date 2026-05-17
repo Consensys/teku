@@ -681,6 +681,8 @@ tasks.register('autocomplete', JavaExec) {
 	mainClass = application.getMainClass()
 	args "debug-tools", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
 	classpath sourceSets.main.runtimeClasspath
+	// avoids JDK 24+ warning from native libraries (e.g. hawtjni via picocli/jline)
+	jvmArgs "--enable-native-access=ALL-UNNAMED"
 }
 
 installDist {
@@ -1223,6 +1225,11 @@ subprojects {
 		testClassesDirs = sourceSets.referenceTest.output.classesDirs
 		classpath = sourceSets.referenceTest.runtimeClasspath
 		finalizedBy 'jacocoReferenceTestReport'
+	}
+
+	// avoids JDK 24+ warning from native libraries (e.g. jblst) across all Test tasks
+	tasks.withType(Test).configureEach {
+		jvmArgs '--enable-native-access=ALL-UNNAMED'
 	}
 }
 
