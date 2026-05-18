@@ -22,10 +22,14 @@ public class GossipTests {
   public static final ImmutableMap<String, TestExecutor> GOSSIP_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTestExecutor())
-          .put("networking/gossip_beacon_aggregate_and_proof", new  GossipBeaconAggregateAndProofTestExecutor())
+          .put(
+              "networking/gossip_beacon_aggregate_and_proof",
+              new GossipBeaconAggregateAndProofTestExecutor())
           .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
           .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
-          .put("networking/gossip_bls_to_execution_change", new GossipBlsToExecutionChangeTestExecutor())
+          .put(
+              "networking/gossip_bls_to_execution_change",
+              new GossipBlsToExecutionChangeTestExecutor())
           .put(
               "networking/gossip_sync_committee_contribution_and_proof",
               new GossipSyncCommitteeContributionAndProofTestExecutor())
