@@ -182,6 +182,20 @@ tasks.named("dependencyUpdates").configure {
 	}
 }
 
+spotless {
+	groovyGradle {
+		target files(
+				fileTree(rootDir) {
+					include '*.gradle'
+					include 'gradle/*.gradle'
+				},
+				allprojects.collect { project -> project.file('build.gradle') }.findAll { it.isFile() })
+		trimTrailingWhitespace()
+		endWithNewline()
+		greclipse()
+	}
+}
+
 allprojects {
 	apply plugin: 'java-library'
 	apply plugin: 'java-test-fixtures'
@@ -262,13 +276,6 @@ allprojects {
 			licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
 			// See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
 			googleJavaFormat('1.35.0')
-		}
-
-		groovyGradle {
-			target '*.gradle', 'gradle/*.gradle'
-			trimTrailingWhitespace()
-			endWithNewline()
-			greclipse()
 		}
 	}
 
