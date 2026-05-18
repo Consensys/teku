@@ -727,14 +727,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
-        streamDataColumnIdentifiers(UInt64.ZERO, UInt64.MAX_VALUE)) {
-      return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
-    }
-  }
-
-  @Override
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
     return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
   }

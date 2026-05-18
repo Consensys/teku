@@ -250,13 +250,6 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
-        streamDataColumnIdentifiers(UInt64.ZERO, UInt64.MAX_VALUE)) {
-      return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
-    }
-  }
-
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
     return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
   }

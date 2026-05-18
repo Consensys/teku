@@ -1204,7 +1204,14 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
-    return dao.getEarliestDataSidecarColumnSlot();
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
+    if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
+      return Optional.empty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
+        streamDataColumnIdentifiers(maybeFirstDataColumnSidecarSlot.get(), UInt64.MAX_VALUE)) {
+      return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
+    }
   }
 
   @Override
@@ -1280,11 +1287,22 @@ public class KvStoreDatabase implements Database {
 
     final long startTime = System.currentTimeMillis();
     int prunedSlots = 0;
-    UInt64 nextSlotToSearch = UInt64.ZERO;
 
     if (pruneSlotLimit <= 0) {
       return true;
     }
+
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
+    if (maybeFirstDataColumnSidecarSlot.isEmpty()
+        || maybeFirstDataColumnSidecarSlot.get().isGreaterThan(tillSlotInclusive)) {
+      LOG.debug(
+          "No {} data column sidecars to prune before Fulu starts at {}",
+          sidecarType,
+          maybeFirstDataColumnSidecarSlot.map(UInt64::toString).orElse("unsupported"));
+      return false;
+    }
+
+    UInt64 nextSlotToSearch = maybeFirstDataColumnSidecarSlot.get();
 
     Optional<UInt64> maybeSlot =
         findNextDataColumnSidecarSlot(
@@ -1404,6 +1422,10 @@ public class KvStoreDatabase implements Database {
           maybeSlot.map(UInt64::toString).orElse("empty"));
       return maybeSlot;
     }
+  }
+
+  private Optional<UInt64> getFirstDataColumnSidecarSlot() {
+    return spec.computeFirstSlotWithDataColumnSidecarSupport();
   }
 
   @Override
