@@ -1260,17 +1260,11 @@ public class KvStoreDatabase implements Database {
     LOG.debug(
         "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-    if (pruneDataColumnSidecars(
-        pruneLimit, tillSlotInclusive, dao::getEarliestDataSidecarColumnSlot, false, "canonical")) {
+    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, false, "canonical")) {
       LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
     }
 
-    if (pruneDataColumnSidecars(
-        pruneLimit,
-        tillSlotInclusive,
-        dao::getEarliestNonCanonicalDataSidecarColumnSlot,
-        true,
-        "non-canonical")) {
+    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, true, "non-canonical")) {
       LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
     }
 
@@ -1281,15 +1275,20 @@ public class KvStoreDatabase implements Database {
   boolean pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final UInt64 tillSlotInclusive,
-      final Supplier<Optional<UInt64>> earliestSlotSupplier,
       final boolean nonCanonicalSidecars,
       final String sidecarType) {
 
     final long startTime = System.currentTimeMillis();
     int prunedSlots = 0;
+    UInt64 nextSlotToSearch = UInt64.ZERO;
+
+    if (pruneSlotLimit <= 0) {
+      return true;
+    }
 
     Optional<UInt64> maybeSlot =
-        getEarliestDataColumnSidecarSlot(sidecarType, earliestSlotSupplier);
+        findNextDataColumnSidecarSlot(
+            nextSlotToSearch, tillSlotInclusive, nonCanonicalSidecars, sidecarType);
     while (prunedSlots < pruneSlotLimit
         && maybeSlot.isPresent()
         && maybeSlot.get().isLessThanOrEqualTo(tillSlotInclusive)) {
@@ -1359,7 +1358,16 @@ public class KvStoreDatabase implements Database {
           sidecarType,
           slot,
           System.currentTimeMillis() - slotStartTime);
-      maybeSlot = getEarliestDataColumnSidecarSlot(sidecarType, earliestSlotSupplier);
+      if (prunedSlots >= pruneSlotLimit || slot.equals(UInt64.MAX_VALUE)) {
+        break;
+      }
+      nextSlotToSearch = slot.increment();
+      if (nextSlotToSearch.isGreaterThan(tillSlotInclusive)) {
+        break;
+      }
+      maybeSlot =
+          findNextDataColumnSidecarSlot(
+              nextSlotToSearch, tillSlotInclusive, nonCanonicalSidecars, sidecarType);
     }
 
     LOG.debug(
@@ -1370,16 +1378,32 @@ public class KvStoreDatabase implements Database {
     return prunedSlots >= pruneSlotLimit;
   }
 
-  private Optional<UInt64> getEarliestDataColumnSidecarSlot(
-      final String sidecarType, final Supplier<Optional<UInt64>> earliestSlotSupplier) {
+  private Optional<UInt64> findNextDataColumnSidecarSlot(
+      final UInt64 firstSlot,
+      final UInt64 lastSlot,
+      final boolean nonCanonicalSidecars,
+      final String sidecarType) {
     final long startTime = System.currentTimeMillis();
-    final Optional<UInt64> maybeSlot = earliestSlotSupplier.get();
     LOG.debug(
-        "Earliest {} data column sidecar slot lookup completed in {} ms: {}",
+        "Looking up next {} data column sidecar slot from {} to {}",
         sidecarType,
-        System.currentTimeMillis() - startTime,
-        maybeSlot.map(UInt64::toString).orElse("empty"));
-    return maybeSlot;
+        firstSlot,
+        lastSlot);
+    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
+        nonCanonicalSidecars
+            ? streamNonCanonicalDataColumnIdentifiers(firstSlot, lastSlot)
+            : streamDataColumnIdentifiers(firstSlot, lastSlot)) {
+      final Optional<UInt64> maybeSlot =
+          identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
+      LOG.debug(
+          "Next {} data column sidecar slot lookup from {} to {} completed in {} ms: {}",
+          sidecarType,
+          firstSlot,
+          lastSlot,
+          System.currentTimeMillis() - startTime,
+          maybeSlot.map(UInt64::toString).orElse("empty"));
+      return maybeSlot;
+    }
   }
 
   @Override

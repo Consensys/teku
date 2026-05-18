@@ -251,15 +251,10 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
-  public Optional<UInt64> getEarliestNonCanonicalDataSidecarColumnSlot() {
-    return db.getFirstEntry(schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
+    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
+        streamDataColumnIdentifiers(UInt64.ZERO, UInt64.MAX_VALUE)) {
+      return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
+    }
   }
 
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {

@@ -40,29 +40,30 @@ class KvStoreDatabaseTest {
   void pruneDataColumnSidecarsStreamsOnlySlotsBeingPruned() {
     final AtomicInteger removals = new AtomicInteger();
     final List<UInt64> streamedSlots = new ArrayList<>();
-    final KvStoreDatabase database = databaseWithUpdater(removals, streamedSlots);
-    final Queue<Optional<UInt64>> earliestSlots =
+    final List<UInt64> lookupStartSlots = new ArrayList<>();
+    final Queue<Optional<UInt64>> nextSlots =
         new ArrayDeque<>(
             List.of(
                 Optional.of(UInt64.ONE),
                 Optional.of(UInt64.valueOf(2)),
                 Optional.of(UInt64.valueOf(3))));
+    final KvStoreDatabase database =
+        databaseWithUpdater(removals, streamedSlots, lookupStartSlots, nextSlots);
 
     final boolean limitReached =
-        database.pruneDataColumnSidecars(
-            2,
-            UInt64.MAX_VALUE,
-            () -> earliestSlots.isEmpty() ? Optional.empty() : earliestSlots.remove(),
-            false,
-            "canonical");
+        database.pruneDataColumnSidecars(2, UInt64.MAX_VALUE, false, "canonical");
 
     assertThat(limitReached).isTrue();
+    assertThat(lookupStartSlots).containsExactly(UInt64.ZERO, UInt64.valueOf(2));
     assertThat(streamedSlots).containsExactly(UInt64.ONE, UInt64.valueOf(2));
     assertThat(removals).hasValue(2);
   }
 
   private static KvStoreDatabase databaseWithUpdater(
-      final AtomicInteger removals, final List<UInt64> streamedSlots) {
+      final AtomicInteger removals,
+      final List<UInt64> streamedSlots,
+      final List<UInt64> lookupStartSlots,
+      final Queue<Optional<UInt64>> nextSlots) {
     return new KvStoreDatabase(
         mock(KvStoreCombinedDao.class), StateStorageMode.PRUNE, false, mock(Spec.class)) {
 
@@ -74,6 +75,15 @@ class KvStoreDatabaseTest {
       @Override
       public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
           final UInt64 firstSlot, final UInt64 lastSlot) {
+        if (!firstSlot.equals(lastSlot)) {
+          lookupStartSlots.add(firstSlot);
+          final Optional<UInt64> nextSlot =
+              nextSlots.isEmpty() ? Optional.empty() : nextSlots.remove();
+          return nextSlot
+              .<Stream<DataColumnSlotAndIdentifier>>map(
+                  slot -> Stream.of(identifier(slot.longValue(), 0)))
+              .orElseGet(Stream::empty);
+        }
         streamedSlots.add(firstSlot);
         return Stream.of(identifier(firstSlot.longValue(), 0));
       }
