@@ -1013,7 +1013,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         },
         error -> {
           // Pass FatalServiceFailureException up to the uncaught exception handler.
-          // This will cause teku to exit because the error is unrecoverable.
+          // This will cause Teku to exit because the error is unrecoverable.
           // We specifically do this here because a FatalServiceFailureException will be thrown if
           // a justified or finalized block is found to be invalid.
           if (ExceptionUtil.hasCause(error, FatalServiceFailureException.class)) {
