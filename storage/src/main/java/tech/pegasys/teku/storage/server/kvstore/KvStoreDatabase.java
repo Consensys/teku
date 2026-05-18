@@ -1257,13 +1257,14 @@ public class KvStoreDatabase implements Database {
   @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
-            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
-        final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
-            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
-
+        streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
       if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
         LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
       }
+    }
+
+    try (final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
+        streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
       if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
         LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
       }
@@ -1279,11 +1280,17 @@ public class KvStoreDatabase implements Database {
 
     final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
 
-    dataColumnSlotAndIdentifierStream
-        .takeWhile(
-            item -> prunableMap.size() < pruneSlotLimit || prunableMap.containsKey(item.slot()))
-        .forEach(
-            item -> prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
+    if (pruneSlotLimit > 0) {
+      final Iterator<DataColumnSlotAndIdentifier> iterator =
+          dataColumnSlotAndIdentifierStream.iterator();
+      while (iterator.hasNext()) {
+        final DataColumnSlotAndIdentifier item = iterator.next();
+        if (!prunableMap.containsKey(item.slot()) && prunableMap.size() >= pruneSlotLimit) {
+          break;
+        }
+        prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item);
+      }
+    }
 
     final List<UInt64> slots = prunableMap.keySet().stream().sorted().toList();
 
