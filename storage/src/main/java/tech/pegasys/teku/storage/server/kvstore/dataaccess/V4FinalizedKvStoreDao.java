@@ -256,6 +256,12 @@ public class V4FinalizedKvStoreDao {
         .map(DataColumnSlotAndIdentifier::slot);
   }
 
+  public Optional<UInt64> getEarliestNonCanonicalDataSidecarColumnSlot() {
+    return db.getFirstEntry(schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
+        .map(ColumnEntry::getKey)
+        .map(DataColumnSlotAndIdentifier::slot);
+  }
+
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
     return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
   }

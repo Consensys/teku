@@ -18,6 +18,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,32 +37,45 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.Fi
 class KvStoreDatabaseTest {
 
   @Test
-  void pruneDataColumnSidecarsStopsCollectingAfterPruneSlotLimit() {
-    final AtomicInteger inspectedIdentifiers = new AtomicInteger();
+  void pruneDataColumnSidecarsStreamsOnlySlotsBeingPruned() {
     final AtomicInteger removals = new AtomicInteger();
-    final KvStoreDatabase database = databaseWithUpdater(removals);
+    final List<UInt64> streamedSlots = new ArrayList<>();
+    final KvStoreDatabase database = databaseWithUpdater(removals, streamedSlots);
+    final Queue<Optional<UInt64>> earliestSlots =
+        new ArrayDeque<>(
+            List.of(
+                Optional.of(UInt64.ONE),
+                Optional.of(UInt64.valueOf(2)),
+                Optional.of(UInt64.valueOf(3))));
 
     final boolean limitReached =
         database.pruneDataColumnSidecars(
             2,
-            Stream.concat(
-                    Stream.of(identifier(1, 0), identifier(2, 0), identifier(3, 0)),
-                    Stream.generate(() -> identifier(4, 0)).limit(1000))
-                .peek(__ -> inspectedIdentifiers.incrementAndGet()),
-            false);
+            UInt64.MAX_VALUE,
+            () -> earliestSlots.isEmpty() ? Optional.empty() : earliestSlots.remove(),
+            false,
+            "canonical");
 
     assertThat(limitReached).isTrue();
-    assertThat(inspectedIdentifiers).hasValue(3);
+    assertThat(streamedSlots).containsExactly(UInt64.ONE, UInt64.valueOf(2));
     assertThat(removals).hasValue(2);
   }
 
-  private static KvStoreDatabase databaseWithUpdater(final AtomicInteger removals) {
+  private static KvStoreDatabase databaseWithUpdater(
+      final AtomicInteger removals, final List<UInt64> streamedSlots) {
     return new KvStoreDatabase(
         mock(KvStoreCombinedDao.class), StateStorageMode.PRUNE, false, mock(Spec.class)) {
 
       @Override
       protected FinalizedUpdater finalizedUpdater() {
         return updaterCountingRemovals(removals);
+      }
+
+      @Override
+      public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+          final UInt64 firstSlot, final UInt64 lastSlot) {
+        streamedSlots.add(firstSlot);
+        return Stream.of(identifier(firstSlot.longValue(), 0));
       }
     };
   }
