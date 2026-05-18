@@ -40,24 +40,33 @@ class KvStoreDatabaseTest {
   @Test
   void pruneDataColumnSidecarsStreamsOnlySlotsBeingPruned() {
     final UInt64 firstFuluSlot = UInt64.valueOf(10);
+    final UInt64 earliestAvailableDataColumnSlot = UInt64.valueOf(20);
     final AtomicInteger removals = new AtomicInteger();
     final List<UInt64> streamedSlots = new ArrayList<>();
     final List<UInt64> lookupStartSlots = new ArrayList<>();
     final Queue<Optional<UInt64>> nextSlots =
         new ArrayDeque<>(
             List.of(
-                Optional.of(firstFuluSlot),
-                Optional.of(firstFuluSlot.plus(1)),
-                Optional.of(firstFuluSlot.plus(2))));
+                Optional.of(earliestAvailableDataColumnSlot),
+                Optional.of(earliestAvailableDataColumnSlot.plus(1)),
+                Optional.of(earliestAvailableDataColumnSlot.plus(2))));
     final KvStoreDatabase database =
-        databaseWithUpdater(removals, streamedSlots, lookupStartSlots, nextSlots, firstFuluSlot);
+        databaseWithUpdater(
+            removals,
+            streamedSlots,
+            lookupStartSlots,
+            nextSlots,
+            firstFuluSlot,
+            Optional.of(earliestAvailableDataColumnSlot));
 
     final boolean limitReached =
         database.pruneDataColumnSidecars(2, UInt64.MAX_VALUE, false, "canonical");
 
     assertThat(limitReached).isTrue();
-    assertThat(lookupStartSlots).containsExactly(firstFuluSlot, firstFuluSlot.plus(1));
-    assertThat(streamedSlots).containsExactly(firstFuluSlot, firstFuluSlot.plus(1));
+    assertThat(lookupStartSlots)
+        .containsExactly(earliestAvailableDataColumnSlot, earliestAvailableDataColumnSlot.plus(1));
+    assertThat(streamedSlots)
+        .containsExactly(earliestAvailableDataColumnSlot, earliestAvailableDataColumnSlot.plus(1));
     assertThat(removals).hasValue(2);
   }
 
@@ -66,12 +75,14 @@ class KvStoreDatabaseTest {
       final List<UInt64> streamedSlots,
       final List<UInt64> lookupStartSlots,
       final Queue<Optional<UInt64>> nextSlots,
-      final UInt64 firstFuluSlot) {
+      final UInt64 firstFuluSlot,
+      final Optional<UInt64> earliestAvailableDataColumnSlot) {
     final Spec spec = mock(Spec.class);
     when(spec.computeFirstSlotWithDataColumnSidecarSupport())
         .thenReturn(Optional.of(firstFuluSlot));
-    return new KvStoreDatabase(
-        mock(KvStoreCombinedDao.class), StateStorageMode.PRUNE, false, spec) {
+    final KvStoreCombinedDao dao = mock(KvStoreCombinedDao.class);
+    when(dao.getEarliestAvailableDataColumnSlot()).thenReturn(earliestAvailableDataColumnSlot);
+    return new KvStoreDatabase(dao, StateStorageMode.PRUNE, false, spec) {
 
       @Override
       protected FinalizedUpdater finalizedUpdater() {

@@ -1204,7 +1204,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
-    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSearchSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
       return Optional.empty();
     }
@@ -1292,7 +1292,7 @@ public class KvStoreDatabase implements Database {
       return true;
     }
 
-    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSearchSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()
         || maybeFirstDataColumnSidecarSlot.get().isGreaterThan(tillSlotInclusive)) {
       LOG.debug(
@@ -1424,8 +1424,13 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private Optional<UInt64> getFirstDataColumnSidecarSlot() {
-    return spec.computeFirstSlotWithDataColumnSidecarSupport();
+  private Optional<UInt64> getFirstDataColumnSidecarSearchSlot() {
+    return spec.computeFirstSlotWithDataColumnSidecarSupport()
+        .map(
+            firstDataColumnSidecarSlot ->
+                dao.getEarliestAvailableDataColumnSlot()
+                    .map(firstDataColumnSidecarSlot::max)
+                    .orElse(firstDataColumnSidecarSlot));
   }
 
   @Override
