@@ -186,7 +186,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // and fetching from the config would break when not in fulu
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
             recentChainData,
-            false);
+            false,
+            (block, level, origin) -> new SafeFuture<>());
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);

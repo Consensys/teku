@@ -1348,6 +1348,11 @@ public class Spec {
     return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
   }
 
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtSlot(
+      final ReadOnlyStore store, final UInt64 slot) {
+    return isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(store, computeEpochAtSlot(slot));
+  }
+
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
     if (getSpecConfigFulu().isEmpty()) {

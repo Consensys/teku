@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -36,9 +37,11 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -97,6 +100,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -250,6 +254,36 @@ class ForkChoiceTest {
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
+  void onBlock_shouldFailWhenDataColumnAvailabilityNeverCompletes() throws Exception {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    final DataAvailabilitySampler dataAvailabilitySampler = mock(DataAvailabilitySampler.class);
+    when(dataAvailabilitySampler.checkSamplingEligibility(any()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    when(dataAvailabilitySampler.checkDataAvailability(any(), any()))
+        .thenReturn(new SafeFuture<>());
+    doReturn(true).when(spec).isAvailabilityOfDataColumnSidecarsRequiredAtSlot(any(), any());
+    spec.reinitializeForTesting(
+        block -> blobSidecarsAvailabilityChecker,
+        block ->
+            new DataColumnSidecarAvailabilityChecker(
+                dataAvailabilitySampler, spec, recentChainData, block, Duration.ofMillis(1)),
+        KZG.DISABLED);
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+
+    final SafeFuture<BlockImportResult> importResult = importBlockNoResultCheck(blockAndState);
+
+    final BlockImportResult result = importResult.get(5, TimeUnit.SECONDS);
+    assertThat(result.getFailureReason())
+        .isEqualTo(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
+    assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
+        .isNotEqualTo(Optional.of(blockAndState.getRoot()));
+    verify(dataAvailabilitySampler)
+        .checkDataAvailability(blockAndState.getSlot(), blockAndState.getRoot());
+    verify(dataAvailabilitySampler).flush();
+    verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
   @Test

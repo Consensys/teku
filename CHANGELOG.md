@@ -2,13 +2,13 @@
 
 ## Upcoming Breaking Changes
 
- * Teku will be moving to Java JDK 25 in a future release.
-
 ## Current Releases
 
 ## Unreleased Changes
 
 ### Breaking Changes
+
+ * Teku now targets Java JDK 25 for builds and runtime.
 
 ### Additions and Improvements
 
@@ -17,3 +17,5 @@
    To work around this issue, users should either keep slashing protection enabled on the external signer or restart the node after calling the add api. 
  - Fixed automatic detection of local node IPv6 address
  - Make sure duties do not execute while the EL is optimistic.
+ - Fixed a potential issue in importing blocks when data is not available.
+ - Fixed potential NPE when SSE are not closed correctly.

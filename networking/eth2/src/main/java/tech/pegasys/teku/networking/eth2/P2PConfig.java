@@ -59,7 +59,6 @@ public class P2PConfig {
 
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS = 30;
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 3;
-  public static final boolean DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER = true;
 
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
@@ -95,11 +94,10 @@ public class P2PConfig {
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
   private final boolean allTopicsFilterEnabled;
-  private final int reworkedSidecarRecoveryTimeout;
-  private final int reworkedSidecarDownloadTimeout;
-  private final int reworkedSidecarSyncBatchSize;
-  private final int reworkedSidecarSyncPollPeriod;
-  private final boolean reworkedSidecarSyncEnabled;
+  private final int sidecarRecoveryTimeout;
+  private final int sidecarDownloadTimeout;
+  private final int sidecarSyncBatchSize;
+  private final int sidecarSyncPollPeriod;
   private final boolean columnsDataAvailabilityHalfCheckEnabled;
   private final boolean executionProofTopicEnabled;
   private final boolean subscribeAllCustodySubnetsEnabled;
@@ -127,11 +125,10 @@ public class P2PConfig {
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
-      final int reworkedSidecarRecoveryTimeout,
-      final int reworkedSidecarDownloadTimeout,
-      final boolean reworkedSidecarSyncEnabled,
-      final Integer reworkedSidecarSyncBatchSize,
-      final Integer reworkedSidecarSyncPollPeriod,
+      final int sidecarRecoveryTimeout,
+      final int sidecarDownloadTimeout,
+      final Integer sidecarSyncBatchSize,
+      final Integer sidecarSyncPollPeriod,
       final boolean columnsDataAvailabilityHalfCheckEnabled,
       final boolean executionProofTopicEnabled,
       final boolean subscribeAllCustodySubnetsEnabled,
@@ -158,11 +155,10 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
-    this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
-    this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
-    this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
-    this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
-    this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
+    this.sidecarDownloadTimeout = sidecarDownloadTimeout;
+    this.sidecarRecoveryTimeout = sidecarRecoveryTimeout;
+    this.sidecarSyncBatchSize = sidecarSyncBatchSize;
+    this.sidecarSyncPollPeriod = sidecarSyncPollPeriod;
     this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
     this.subscribeAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
@@ -269,24 +265,20 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
-  public int getReworkedSidecarRecoveryTimeout() {
-    return reworkedSidecarRecoveryTimeout;
+  public int getSidecarRecoveryTimeout() {
+    return sidecarRecoveryTimeout;
   }
 
-  public int getReworkedSidecarDownloadTimeout() {
-    return reworkedSidecarDownloadTimeout;
+  public int getSidecarDownloadTimeout() {
+    return sidecarDownloadTimeout;
   }
 
-  public boolean isReworkedSidecarSyncEnabled() {
-    return reworkedSidecarSyncEnabled;
+  public int getSidecarSyncBatchSize() {
+    return sidecarSyncBatchSize;
   }
 
-  public int getReworkedSidecarSyncBatchSize() {
-    return reworkedSidecarSyncBatchSize;
-  }
-
-  public int getReworkedSidecarSyncPollPeriod() {
-    return reworkedSidecarSyncPollPeriod;
+  public int getSidecarSyncPollPeriod() {
+    return sidecarSyncPollPeriod;
   }
 
   public boolean isColumnsDataAvailabilityHalfCheckEnabled() {
@@ -330,15 +322,13 @@ public class P2PConfig {
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
-    private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
-    private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
+    private Integer sidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
+    private Integer sidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
-    private boolean reworkedSidecarSyncEnabled = DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
     private boolean columnsDataAvailabilityHalfCheckEnabled =
         DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED;
-    private Integer reworkedSidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
-    private Integer reworkedSidecarSyncPollPeriod =
-        DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
+    private Integer sidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
+    private Integer sidecarSyncPollPeriod = DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
     private Integer minBidIncrementPercentage = DEFAULT_MIN_BID_INCREMENT_PERCENTAGE;
 
     private Builder() {}
@@ -405,11 +395,10 @@ public class P2PConfig {
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
-          reworkedSidecarRecoveryTimeout,
-          reworkedSidecarDownloadTimeout,
-          reworkedSidecarSyncEnabled,
-          reworkedSidecarSyncBatchSize,
-          reworkedSidecarSyncPollPeriod,
+          sidecarRecoveryTimeout,
+          sidecarDownloadTimeout,
+          sidecarSyncBatchSize,
+          sidecarSyncPollPeriod,
           columnsDataAvailabilityHalfCheckEnabled,
           executionProofTopicEnabled,
           subscribeAllCustodySubnetsEnabled,
@@ -583,28 +572,23 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder reworkedSidecarRecoveryTimeout(final Integer reworkedSidecarRecoveryTimeout) {
-      this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
+    public Builder sidecarRecoveryTimeout(final Integer sidecarRecoveryTimeout) {
+      this.sidecarRecoveryTimeout = sidecarRecoveryTimeout;
       return this;
     }
 
-    public Builder reworkedSidecarDownloadTimeout(final Integer reworkedSidecarDownloadTimeout) {
-      this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
+    public Builder sidecarDownloadTimeout(final Integer sidecarDownloadTimeout) {
+      this.sidecarDownloadTimeout = sidecarDownloadTimeout;
       return this;
     }
 
-    public Builder reworkedSidecarSyncBatchSize(final Integer reworkedSidecarSyncBatchSize) {
-      this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
+    public Builder sidecarSyncBatchSize(final Integer sidecarSyncBatchSize) {
+      this.sidecarSyncBatchSize = sidecarSyncBatchSize;
       return this;
     }
 
-    public Builder reworkedSidecarSyncPollPeriod(final Integer reworkedSidecarSyncPollPeriod) {
-      this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
-      return this;
-    }
-
-    public Builder reworkedSidecarSyncEnabled(final boolean reworkedSidecarSyncEnabled) {
-      this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
+    public Builder sidecarSyncPollPeriod(final Integer sidecarSyncPollPeriod) {
+      this.sidecarSyncPollPeriod = sidecarSyncPollPeriod;
       return this;
     }
 

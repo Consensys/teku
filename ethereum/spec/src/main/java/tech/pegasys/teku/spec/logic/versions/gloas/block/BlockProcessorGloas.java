@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -62,6 +64,8 @@ import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelper
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BlockProcessorGloas extends BlockProcessorFulu {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final PredicatesGloas predicatesGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
@@ -166,7 +170,19 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
     // Process execution requests from parent's payload. The execution requests are processed at
     // state.slot (child's slot), not the parent's slot.
+    final long startTimeNanos = System.nanoTime();
+    LOG.debug(
+        "Starting processing builder deposits from {} execution request deposits at timestampNanos={}",
+        requests.getDeposits().size(),
+        startTimeNanos);
     executionRequestsProcessor.processDepositRequests(state, requests.getDeposits());
+    final long finishTimeNanos = System.nanoTime();
+    LOG.debug(
+        "Finished processing builder deposits at timestampNanos={}. Pending deposits: {}, builders: {}, elapsedNanos={}",
+        finishTimeNanos,
+        state.getPendingDeposits().size(),
+        state.getBuilders().size(),
+        finishTimeNanos - startTimeNanos);
     executionRequestsProcessor.processWithdrawalRequests(
         state, requests.getWithdrawals(), validatorExitContextSupplier);
     executionRequestsProcessor.processConsolidationRequests(state, requests.getConsolidations());
