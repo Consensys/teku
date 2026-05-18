@@ -169,14 +169,17 @@ class StoreTransactionUpdates {
     store.cacheExecutionPayloads(
         Maps.transformValues(hotExecutionPayloads, ExecutionPayloadUpdate::executionPayload));
 
+    final Optional<BlockAndCheckpoints> finalizedExecutionPayloadBoundaryBlock =
+        finalizedChainData.flatMap(FinalizedChainData::getFinalizedExecutionPayloadBoundaryBlock);
     store
         .getForkChoiceStrategy()
         .applyUpdate(
             hotBlocks.values(),
-            hotExecutionPayloads.values(),
+            hotExecutionPayloads,
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
-            store.getFinalizedCheckpoint());
+            store.getFinalizedCheckpoint(),
+            finalizedExecutionPayloadBoundaryBlock);
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

@@ -73,18 +73,18 @@ class ForkChoicePayloadExecutorGloasTest {
     verify(executionLayer).engineNewPayload(payloadRequest, UInt64.ZERO);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValueMatching(result -> result.getStatus().hasFailedExecution());
+        .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
   }
 
   @Test
   void shouldReturnExecutionResultWhenExecuted() {
     payloadExecutor.optimisticallyExecute(Optional.empty(), payloadRequest);
 
-    final SafeFuture<PayloadValidationResult> result = payloadExecutor.getExecutionResult();
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();
 
     this.executionResult.complete(VALID);
 
-    assertThat(result).isCompletedWithValue(PayloadValidationResult.VALID);
+    assertThat(result).isCompletedWithValue(VALID);
   }
 }
