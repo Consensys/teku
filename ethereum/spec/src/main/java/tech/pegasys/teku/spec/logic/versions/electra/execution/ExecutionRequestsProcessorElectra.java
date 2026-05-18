@@ -88,32 +88,25 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     for (DepositRequest depositRequest : depositRequests) {
-      processDepositRequest(stateElectra, depositRequest, false, false);
-    }
-  }
+      final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
+      if (stateElectra
+          .getDepositRequestsStartIndex()
+          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+        stateElectra.setDepositRequestsStartIndex(depositRequest.getIndex());
+      }
 
-  protected void processDepositRequest(
-      final MutableBeaconStateElectra state,
-      final DepositRequest depositRequest,
-      final boolean isNewBuilderDeposit,
-      final boolean signatureAlreadyVerified) {
-    final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
-    if (state
-        .getDepositRequestsStartIndex()
-        .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
-      state.setDepositRequestsStartIndex(depositRequest.getIndex());
+      final PendingDeposit deposit =
+          schemaDefinitions
+              .getPendingDepositSchema()
+              .create(
+                  new SszPublicKey(depositRequest.getPubkey()),
+                  SszBytes32.of(depositRequest.getWithdrawalCredentials()),
+                  SszUInt64.of(depositRequest.getAmount()),
+                  new SszSignature(depositRequest.getSignature()),
+                  SszUInt64.of(state.getSlot()));
+      pendingDeposits.append(deposit);
+      ;
     }
-
-    final PendingDeposit deposit =
-        schemaDefinitions
-            .getPendingDepositSchema()
-            .create(
-                new SszPublicKey(depositRequest.getPubkey()),
-                SszBytes32.of(depositRequest.getWithdrawalCredentials()),
-                SszUInt64.of(depositRequest.getAmount()),
-                new SszSignature(depositRequest.getSignature()),
-                SszUInt64.of(state.getSlot()));
-    pendingDeposits.append(deposit);
   }
 
   /** Implements process_withdrawal_request from consensus-specs (EIP-7002 &amp; EIP-7251). */

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -242,9 +242,14 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   }
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
-  public boolean isPendingValidator(final BeaconState state, final BLSPublicKey pubkey) {
-    for (final PendingDeposit pendingDeposit :
-        BeaconStateGloas.required(state).getPendingDeposits()) {
+  public boolean isPendingValidator(
+      final SszList<PendingDeposit> pendingDeposits,
+      final BLSPublicKey pubkey,
+      final Set<BLSPublicKey> verifiedPendingValidators) {
+    if (verifiedPendingValidators.contains(pubkey)) {
+      return true;
+    }
+    for (final PendingDeposit pendingDeposit : pendingDeposits) {
       if (!pendingDeposit.getPublicKey().equals(pubkey)) {
         continue;
       }
@@ -253,6 +258,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
           pendingDeposit.getWithdrawalCredentials(),
           pendingDeposit.getAmount(),
           pendingDeposit.getSignature())) {
+        verifiedPendingValidators.add(pubkey);
         return true;
       }
     }
