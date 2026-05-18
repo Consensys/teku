@@ -83,7 +83,9 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       final boolean isValidator =
           validatorsUtil.getValidatorIndex(state, depositRequest.getPubkey()).isPresent();
       final boolean isNewBuilderDeposit =
-          predicatesGloas.isBuilderWithdrawalCredential(depositRequest.getWithdrawalCredentials())
+          !isBuilder
+              && predicatesGloas.isBuilderWithdrawalCredential(
+                  depositRequest.getWithdrawalCredentials())
               && !isValidator
               && !miscHelpersGloas.isPendingValidator(
                   stateElectra.getPendingDeposits(),
