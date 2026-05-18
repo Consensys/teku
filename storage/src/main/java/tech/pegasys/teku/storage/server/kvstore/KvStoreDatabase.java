@@ -1286,7 +1286,11 @@ public class KvStoreDatabase implements Database {
       while (iterator.hasNext()) {
         final DataColumnSlotAndIdentifier item = iterator.next();
         if (!prunableMap.containsKey(item.slot()) && prunableMap.size() >= pruneSlotLimit) {
+          LOG.debug("Slot limit reached at {}", item.slot());
           break;
+        }
+        if (!prunableMap.containsKey(item.slot())) {
+          LOG.debug("pruning columns for slot {}", item.slot());
         }
         prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item);
       }
