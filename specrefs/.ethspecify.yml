@@ -253,10 +253,6 @@ specrefs:
       - will_no_conflicting_checkpoint_be_justified#phase0
 
       # Not implemented: bellatrix
-      - is_optimistic_candidate_block#bellatrix
-      - is_valid_terminal_pow_block#bellatrix
-      - latest_verified_ancestor#bellatrix
-      - prepare_execution_payload#bellatrix
       - process_slashings#bellatrix
       - validate_beacon_block_gossip#bellatrix
 

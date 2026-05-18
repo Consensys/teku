@@ -7438,7 +7438,9 @@
     </spec>
 
 - name: is_optimistic_candidate_block#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public boolean canOptimisticallyImport(final ReadOnlyStore store, final SignedBeaconBlock block) {
   spec: |
     <spec fn="is_optimistic_candidate_block" fork="bellatrix" hash="fdb54007">
     def is_optimistic_candidate_block(
@@ -8020,7 +8022,9 @@
     </spec>
 
 - name: is_valid_terminal_pow_block#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/helpers/BellatrixTransitionHelpers.java
+      search: public SafeFuture<PayloadStatus> validateMergeBlock(
   spec: |
     <spec fn="is_valid_terminal_pow_block" fork="bellatrix" hash="96a7d581">
     def is_valid_terminal_pow_block(block: PowBlock, parent: PowBlock) -> bool:
@@ -8773,7 +8777,10 @@
     </spec>
 
 - name: prepare_execution_payload#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionLayerChannel.java
+      search: ^  SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated\(
+      regex: true
   spec: |
     <spec fn="prepare_execution_payload" fork="bellatrix" hash="6af4de76">
     def prepare_execution_payload(
