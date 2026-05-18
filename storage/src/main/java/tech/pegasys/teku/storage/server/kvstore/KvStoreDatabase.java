@@ -1204,7 +1204,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
-    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSearchSlot();
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
       return Optional.empty();
     }
@@ -1292,21 +1292,24 @@ public class KvStoreDatabase implements Database {
       return true;
     }
 
-    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSearchSlot();
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()
         || maybeFirstDataColumnSidecarSlot.get().isGreaterThan(tillSlotInclusive)) {
       LOG.debug(
-          "No {} data column sidecars to prune before Fulu starts at {}",
+          "No {} data column sidecars to prune before first data column sidecar slot {}",
           sidecarType,
           maybeFirstDataColumnSidecarSlot.map(UInt64::toString).orElse("unsupported"));
       return false;
     }
 
-    UInt64 nextSlotToSearch = maybeFirstDataColumnSidecarSlot.get();
+    UInt64 nextSlotToSearch = tillSlotInclusive;
 
     Optional<UInt64> maybeSlot =
-        findNextDataColumnSidecarSlot(
-            nextSlotToSearch, tillSlotInclusive, nonCanonicalSidecars, sidecarType);
+        findPreviousDataColumnSidecarSlot(
+            nextSlotToSearch,
+            maybeFirstDataColumnSidecarSlot.get(),
+            nonCanonicalSidecars,
+            sidecarType);
     while (prunedSlots < pruneSlotLimit
         && maybeSlot.isPresent()
         && maybeSlot.get().isLessThanOrEqualTo(tillSlotInclusive)) {
@@ -1376,16 +1379,16 @@ public class KvStoreDatabase implements Database {
           sidecarType,
           slot,
           System.currentTimeMillis() - slotStartTime);
-      if (prunedSlots >= pruneSlotLimit || slot.equals(UInt64.MAX_VALUE)) {
+      if (prunedSlots >= pruneSlotLimit || slot.equals(maybeFirstDataColumnSidecarSlot.get())) {
         break;
       }
-      nextSlotToSearch = slot.increment();
-      if (nextSlotToSearch.isGreaterThan(tillSlotInclusive)) {
-        break;
-      }
+      nextSlotToSearch = slot.minus(1);
       maybeSlot =
-          findNextDataColumnSidecarSlot(
-              nextSlotToSearch, tillSlotInclusive, nonCanonicalSidecars, sidecarType);
+          findPreviousDataColumnSidecarSlot(
+              nextSlotToSearch,
+              maybeFirstDataColumnSidecarSlot.get(),
+              nonCanonicalSidecars,
+              sidecarType);
     }
 
     LOG.debug(
@@ -1396,41 +1399,29 @@ public class KvStoreDatabase implements Database {
     return prunedSlots >= pruneSlotLimit;
   }
 
-  private Optional<UInt64> findNextDataColumnSidecarSlot(
-      final UInt64 firstSlot,
-      final UInt64 lastSlot,
+  private Optional<UInt64> findPreviousDataColumnSidecarSlot(
+      final UInt64 latestSlot,
+      final UInt64 firstDataColumnSidecarSlot,
       final boolean nonCanonicalSidecars,
       final String sidecarType) {
     final long startTime = System.currentTimeMillis();
     LOG.debug(
-        "Looking up next {} data column sidecar slot from {} to {}",
-        sidecarType,
-        firstSlot,
-        lastSlot);
-    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
+        "Looking up latest {} data column sidecar slot at or before {}", sidecarType, latestSlot);
+    final Optional<UInt64> maybeSlot =
         nonCanonicalSidecars
-            ? streamNonCanonicalDataColumnIdentifiers(firstSlot, lastSlot)
-            : streamDataColumnIdentifiers(firstSlot, lastSlot)) {
-      final Optional<UInt64> maybeSlot =
-          identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
-      LOG.debug(
-          "Next {} data column sidecar slot lookup from {} to {} completed in {} ms: {}",
-          sidecarType,
-          firstSlot,
-          lastSlot,
-          System.currentTimeMillis() - startTime,
-          maybeSlot.map(UInt64::toString).orElse("empty"));
-      return maybeSlot;
-    }
+            ? dao.getLatestNonCanonicalDataSidecarColumnSlotAtOrBefore(latestSlot)
+            : dao.getLatestDataSidecarColumnSlotAtOrBefore(latestSlot);
+    LOG.debug(
+        "Latest {} data column sidecar slot lookup at or before {} completed in {} ms: {}",
+        sidecarType,
+        latestSlot,
+        System.currentTimeMillis() - startTime,
+        maybeSlot.map(UInt64::toString).orElse("empty"));
+    return maybeSlot.filter(slot -> slot.isGreaterThanOrEqualTo(firstDataColumnSidecarSlot));
   }
 
-  private Optional<UInt64> getFirstDataColumnSidecarSearchSlot() {
-    return spec.computeFirstSlotWithDataColumnSidecarSupport()
-        .map(
-            firstDataColumnSidecarSlot ->
-                dao.getEarliestAvailableDataColumnSlot()
-                    .map(firstDataColumnSidecarSlot::max)
-                    .orElse(firstDataColumnSidecarSlot));
+  private Optional<UInt64> getFirstDataColumnSidecarSlot() {
+    return spec.computeFirstSlotWithDataColumnSidecarSupport();
   }
 
   @Override
