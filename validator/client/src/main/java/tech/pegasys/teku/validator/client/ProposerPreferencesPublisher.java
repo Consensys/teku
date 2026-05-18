@@ -72,7 +72,8 @@ public class ProposerPreferencesPublisher {
     }
 
     // Gloas's get_proposer_dependent_root(state, e) returns the block root at
-    // start_of_(e-1) - 1. For next-epoch duties, BlockProposalUtilFulu's
+    // start_of_(e-MIN_SEED_LOOKAHEAD) - 1. As far as MIN_SEED_LOOKAHEAD == 1,
+    // for next-epoch duties, BlockProposalUtilFulu's
     // getBlockProposalDependentRoot returns the same value, so we reuse it here.
     final Bytes32 dependentRoot = proposerDuties.getDependentRoot();
 

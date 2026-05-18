@@ -5512,9 +5512,7 @@
     </spec>
 
 - name: get_proposer_dependent_root#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/BlockProposalUtilFulu.java
-      search: public Bytes32 getBlockProposalDependentRoot(
+  sources: []
   spec: |
     <spec fn="get_proposer_dependent_root" fork="gloas" hash="2fabad44">
     def get_proposer_dependent_root(state: BeaconState, epoch: Epoch) -> Root:

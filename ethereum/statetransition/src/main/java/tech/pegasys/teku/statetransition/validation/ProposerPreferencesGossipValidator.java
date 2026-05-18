@@ -67,16 +67,17 @@ public class ProposerPreferencesGossipValidator {
     final Bytes32 dependentRoot = proposerPreferences.getDependentRoot();
 
     /*
-     * [IGNORE] preferences.proposal_slot is in the current or next epoch
+     * [IGNORE]_ `preferences.proposal_slot` is within the proposer lookahead --
+     * i.e. `compute_epoch_at_slot(preferences.proposal_slot)` is in the range
+     * [compute_epoch_at_slot(current_slot), compute_epoch_at_slot(current_slot) + MIN_SEED_LOOKAHEAD]`.
      */
-    if (!gossipValidationHelper.isSlotInCurrentEpoch(proposalSlot)
-        && !gossipValidationHelper.isSlotInNextEpoch(proposalSlot)) {
+    if (!gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot)) {
       LOG.trace(
-          "Proposer preferences proposal slot {} is not in the current or next epoch",
+          "Proposer preferences proposal slot {} is not in the current or within lookahead epoch",
           proposalSlot);
       return completedFuture(
           ignore(
-              "Proposer preferences proposal slot %s is not in the current or next epoch",
+              "Proposer preferences proposal slot %s is not in the current or within lookahead epoch",
               proposalSlot));
     }
 
@@ -112,11 +113,13 @@ public class ProposerPreferencesGossipValidator {
     }
 
     /*
-     * Look up the checkpoint state at (proposal_epoch - 1, dependent_root). The state used by
-     * is_valid_proposal_slot has current_epoch == proposal_epoch - 1, so the lookahead index for
+     * Look up the checkpoint state at (proposal_epoch - MIN_SEED_LOOKAHEAD, dependent_root). The state used by
+     * is_valid_proposal_slot has current_epoch == proposal_epoch - MIN_SEED_LOOKAHEAD, so the lookahead index for
      * proposal_slot is always SLOTS_PER_EPOCH + (proposal_slot % SLOTS_PER_EPOCH).
      */
-    final UInt64 checkpointEpoch = spec.computeEpochAtSlot(proposalSlot).minusMinZero(1);
+    final int minSeedLookahead = spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead();
+    final UInt64 checkpointEpoch =
+        spec.computeEpochAtSlot(proposalSlot).minusMinZero(minSeedLookahead);
     return recentChainData
         .retrieveCheckpointState(new Checkpoint(checkpointEpoch, dependentRoot))
         .thenApply(
