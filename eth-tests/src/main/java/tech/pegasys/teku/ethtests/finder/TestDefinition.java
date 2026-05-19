@@ -120,12 +120,11 @@ public class TestDefinition {
    * Pyspec ships per-fixture {@code config.yaml} files that may override fork epochs (e.g. {@code
    * CAPELLA_FORK_EPOCH: 1}) so that the fixture can exercise pre-fork validator behaviour even
    * inside a post-fork suite. {@link TestSpecFactory#create(SpecMilestone, Eth2Network, Consumer)}
-   * hardcodes every fork epoch up to the test milestone to {@code 0}, which loses this
-   * information. Re-apply non-{@code FAR_FUTURE_EPOCH} fork epoch values from the fixture so the
-   * validator's fork-schedule checks behave as the fixture intends. Fork epochs set to
-   * {@code FAR_FUTURE_EPOCH} are ignored — these signal "fork not relevant to this fixture" and we
-   * keep Teku's defaults (the surrounding suite milestone is still authoritative for schema
-   * selection).
+   * hardcodes every fork epoch up to the test milestone to {@code 0}, which loses this information.
+   * Re-apply non-{@code FAR_FUTURE_EPOCH} fork epoch values from the fixture so the validator's
+   * fork-schedule checks behave as the fixture intends. Fork epochs set to {@code FAR_FUTURE_EPOCH}
+   * are ignored — these signal "fork not relevant to this fixture" and we keep Teku's defaults (the
+   * surrounding suite milestone is still authoritative for schema selection).
    */
   private Consumer<SpecConfigBuilder> readForkEpochOverridesFromConfigYaml() {
     final Path configPath = getTestDirectory().resolve("config.yaml");
@@ -134,20 +133,30 @@ public class TestDefinition {
     }
     final Map<String, Object> config;
     try (final InputStream in = Files.newInputStream(configPath)) {
-      config =
-          new ObjectMapper(new YAMLFactory()).readValue(in, new TypeReference<>() {});
+      config = new ObjectMapper(new YAMLFactory()).readValue(in, new TypeReference<>() {});
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }
     Consumer<SpecConfigBuilder> overrides = __ -> {};
-    overrides = applyIfPresent(overrides, config, "ALTAIR_FORK_EPOCH", SpecConfigBuilder::altairForkEpoch);
-    overrides = applyIfPresent(overrides, config, "BELLATRIX_FORK_EPOCH", SpecConfigBuilder::bellatrixForkEpoch);
-    overrides = applyIfPresent(overrides, config, "CAPELLA_FORK_EPOCH", SpecConfigBuilder::capellaForkEpoch);
-    overrides = applyIfPresent(overrides, config, "DENEB_FORK_EPOCH", SpecConfigBuilder::denebForkEpoch);
-    overrides = applyIfPresent(overrides, config, "ELECTRA_FORK_EPOCH", SpecConfigBuilder::electraForkEpoch);
-    overrides = applyIfPresent(overrides, config, "FULU_FORK_EPOCH", SpecConfigBuilder::fuluForkEpoch);
-    overrides = applyIfPresent(overrides, config, "GLOAS_FORK_EPOCH", SpecConfigBuilder::gloasForkEpoch);
-    overrides = applyIfPresent(overrides, config, "HEZE_FORK_EPOCH", SpecConfigBuilder::hezeForkEpoch);
+    overrides =
+        applyIfPresent(overrides, config, "ALTAIR_FORK_EPOCH", SpecConfigBuilder::altairForkEpoch);
+    overrides =
+        applyIfPresent(
+            overrides, config, "BELLATRIX_FORK_EPOCH", SpecConfigBuilder::bellatrixForkEpoch);
+    overrides =
+        applyIfPresent(
+            overrides, config, "CAPELLA_FORK_EPOCH", SpecConfigBuilder::capellaForkEpoch);
+    overrides =
+        applyIfPresent(overrides, config, "DENEB_FORK_EPOCH", SpecConfigBuilder::denebForkEpoch);
+    overrides =
+        applyIfPresent(
+            overrides, config, "ELECTRA_FORK_EPOCH", SpecConfigBuilder::electraForkEpoch);
+    overrides =
+        applyIfPresent(overrides, config, "FULU_FORK_EPOCH", SpecConfigBuilder::fuluForkEpoch);
+    overrides =
+        applyIfPresent(overrides, config, "GLOAS_FORK_EPOCH", SpecConfigBuilder::gloasForkEpoch);
+    overrides =
+        applyIfPresent(overrides, config, "HEZE_FORK_EPOCH", SpecConfigBuilder::hezeForkEpoch);
     return overrides;
   }
 
