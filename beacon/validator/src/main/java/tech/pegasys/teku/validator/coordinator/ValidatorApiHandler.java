@@ -412,11 +412,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Boolean> isExecutionOptimistic() {
-    return SafeFuture.completedFuture(combinedChainDataClient.isChainHeadOptimistic());
-  }
-
-  @Override
   public SafeFuture<Optional<Map<BLSPublicKey, StateValidatorData>>> getValidatorStatuses(
       final Collection<BLSPublicKey> validatorIdentifiers) {
     return isSyncActive()

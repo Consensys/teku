@@ -114,23 +114,6 @@ public class ProposerPreferencesPublisherTest {
   }
 
   @TestTemplate
-  void shouldNotPublishWhenDutiesAreExecutionOptimistic(final SpecContext specContext) {
-    setUp(specContext);
-    final UInt64 epoch = UInt64.valueOf(6);
-    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
-
-    publisher.onProposerDutiesLoaded(
-        epoch,
-        new ProposerDuties(
-            dataStructureUtil.randomBytes32(),
-            List.of(new ProposerDuty(publicKey, 42, slot)),
-            true));
-
-    verify(signer, never()).signProposerPreferences(any(), any());
-    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
-  }
-
-  @TestTemplate
   void shouldNotPublishWhenNoDutiesForOurValidators(final SpecContext specContext) {
     setUp(specContext);
     final UInt64 epoch = UInt64.valueOf(6);

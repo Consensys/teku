@@ -19,9 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.time.Duration;
@@ -42,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.client.AttestationDutyBatchSchedulingStrategy.SlotBatchingOptions;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
@@ -141,23 +138,7 @@ class AttestationDutyBatchSchedulingStrategyTest {
     verify(beaconCommitteeSubscriptions).sendRequests();
   }
 
-  @Test
-  void shouldNotScheduleDutiesWhenExecutionOptimistic() {
-    final AttesterDuties duties = getTestDuties(UInt64.ZERO, true);
-
-    final SafeFuture<SlotBasedScheduledDuties<?, ?>> result =
-        dutySchedulingStrategy.scheduleAllDuties(UInt64.ZERO, duties);
-
-    assertThatSafeFuture(result).isCompletedExceptionallyWith(NodeSyncingException.class);
-    assertThat(asyncRunner.countDelayedActions()).isZero();
-    verifyNoInteractions(scheduledDuties, signer, beaconCommitteeSubscriptions);
-  }
-
   private AttesterDuties getTestDuties(final UInt64 epoch) {
-    return getTestDuties(epoch, false);
-  }
-
-  private AttesterDuties getTestDuties(final UInt64 epoch, final boolean executionOptimistic) {
     // 8 duties
     final List<AttesterDuty> duties =
         UInt64.range(
@@ -174,6 +155,6 @@ class AttestationDutyBatchSchedulingStrategyTest {
                         0,
                         slot))
             .toList();
-    return new AttesterDuties(executionOptimistic, dataStructureUtil.randomBytes32(), duties);
+    return new AttesterDuties(false, dataStructureUtil.randomBytes32(), duties);
   }
 }

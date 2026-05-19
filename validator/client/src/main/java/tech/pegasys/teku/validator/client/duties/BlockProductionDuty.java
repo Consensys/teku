@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -86,19 +85,9 @@ public class BlockProductionDuty implements Duty {
   @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    return validatorApiChannel
-        .isExecutionOptimistic()
-        .thenCompose(
-            executionOptimistic -> {
-              if (executionOptimistic) {
-                LOG.debug(
-                    "Skipping block production for validator {} at slot {} because execution is optimistic",
-                    validator.getPublicKey().toAbbreviatedString(),
-                    slot);
-                return NodeSyncingException.<DutyResult>failedFuture();
-              }
-              return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
-            })
+    return forkProvider
+        .getForkInfo(slot)
+        .thenCompose(this::produceBlock)
         .exceptionally(this::handleBlockProductionError);
   }
 

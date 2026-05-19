@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -116,7 +115,6 @@ class BlockProductionDutyTest {
             validatorDutyMetrics,
             executionPayloadBidEventsChannelPublisher);
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
-    when(validatorApiChannel.isExecutionOptimistic()).thenReturn(completedFuture(false));
   }
 
   @ParameterizedTest
@@ -164,20 +162,6 @@ class BlockProductionDutyTest {
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
-  }
-
-  @Test
-  public void shouldNotCreateBlockWhenExecutionIsOptimistic() {
-    when(validatorApiChannel.isExecutionOptimistic()).thenReturn(completedFuture(true));
-
-    performAndReportDuty();
-
-    verify(validatorLogger).dutySkippedWhileSyncing(TYPE, CAPELLA_SLOT, 1);
-    verifyNoMoreInteractions(validatorLogger);
-    verify(forkProvider, never()).getForkInfo(any());
-    verify(signer, never()).createRandaoReveal(any(), any());
-    verify(validatorApiChannel, never()).createUnsignedBlock(any(), any(), any(), any());
-    verifyNoInteractions(validatorDutyMetrics);
   }
 
   @Test

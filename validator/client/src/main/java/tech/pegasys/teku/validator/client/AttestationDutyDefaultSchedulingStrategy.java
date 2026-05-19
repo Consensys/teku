@@ -15,14 +15,11 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
@@ -32,7 +29,6 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutyDefaultSchedulingStrategy
     extends AbstractAttestationDutySchedulingStrategy {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
   private final boolean useDvtEndpoint;
@@ -54,10 +50,6 @@ public class AttestationDutyDefaultSchedulingStrategy
   @Override
   public SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
       final UInt64 epoch, final AttesterDuties duties) {
-    if (duties.isExecutionOptimistic()) {
-      LOG.debug("Skipping scheduling for Attestation duties as execution is optimistic.");
-      return NodeSyncingException.failedFuture();
-    }
     final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         getScheduledDuties(duties);
 

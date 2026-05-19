@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
@@ -103,10 +102,6 @@ public class AttestationDutyBatchSchedulingStrategy
   @Override
   public SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
       final UInt64 epoch, final AttesterDuties duties) {
-    if (duties.isExecutionOptimistic()) {
-      LOG.debug("Skipping scheduling for Attestation duties as execution is optimistic.");
-      return NodeSyncingException.failedFuture();
-    }
     final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         getScheduledDuties(duties);
 

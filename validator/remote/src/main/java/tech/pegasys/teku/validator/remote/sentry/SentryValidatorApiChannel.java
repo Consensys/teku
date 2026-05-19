@@ -123,11 +123,6 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Boolean> isExecutionOptimistic() {
-    return blockHandlerChannel.orElse(dutiesProviderChannel).isExecutionOptimistic();
-  }
-
-  @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,

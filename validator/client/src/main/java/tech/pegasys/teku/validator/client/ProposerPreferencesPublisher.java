@@ -60,12 +60,6 @@ public class ProposerPreferencesPublisher {
     if (!spec.isProposerPreferencesAvailableAtEpoch(epoch)) {
       return;
     }
-    if (proposerDuties.isExecutionOptimistic()) {
-      LOG.debug(
-          "Skipping proposer preferences for epoch {} because duties are execution optimistic",
-          epoch);
-      return;
-    }
 
     final List<ProposerDuty> ownedProposerDuties =
         proposerDuties.getDuties().stream()

@@ -153,12 +153,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Boolean> isExecutionOptimistic() {
-    return countDataRequest(
-        delegate.isExecutionOptimistic(), BeaconNodeRequestLabels.GET_SYNCING_STATUS_METHOD);
-  }
-
-  @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,

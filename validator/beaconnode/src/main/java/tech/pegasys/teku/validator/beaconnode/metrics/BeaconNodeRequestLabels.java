@@ -22,7 +22,6 @@ public class BeaconNodeRequestLabels {
   public static final String GET_PROPOSER_DUTIES_REQUESTS_METHOD = "get_proposer_duties";
   public static final String GET_PEER_COUNT_METHOD = "get_peer_count";
   public static final String GET_SYNC_COMMITTEE_DUTIES_METHOD = "get_sync_committee_duties";
-  public static final String GET_SYNCING_STATUS_METHOD = "get_syncing_status";
   public static final String CREATE_UNSIGNED_BLOCK_METHOD = "create_unsigned_block";
   public static final String CREATE_ATTESTATION_METHOD = "create_attestation";
   public static final String CREATE_AGGREGATE_METHOD = "create_aggregate";

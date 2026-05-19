@@ -18,9 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
@@ -39,7 +37,6 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
@@ -150,32 +147,6 @@ class AttestationDutyDefaultSchedulingStrategyTest {
             new CommitteeSubscriptionRequest(
                 validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, false));
     verify(beaconCommitteeSubscriptions).sendRequests();
-  }
-
-  @Test
-  void shouldNotScheduleDutiesWhenExecutionOptimistic() {
-    final UInt64 slot = UInt64.ONE;
-    final int validatorIndex = VALIDATOR_INDICES.getInt(0);
-    final int committeeLength = 1;
-    final int committeeIndex = 3;
-    final int committeesAtSlot = 4;
-    final AttesterDuty duty =
-        new AttesterDuty(
-            validatorKey,
-            validatorIndex,
-            committeeLength,
-            committeeIndex,
-            committeesAtSlot,
-            0,
-            slot);
-    final AttesterDuties duties =
-        new AttesterDuties(true, dataStructureUtil.randomBytes32(), List.of(duty));
-
-    final SafeFuture<SlotBasedScheduledDuties<?, ?>> result =
-        dutySchedulingStrategy.scheduleAllDuties(UInt64.ONE, duties);
-
-    assertThatSafeFuture(result).isCompletedExceptionallyWith(NodeSyncingException.class);
-    verifyNoInteractions(scheduledDuties, signer, beaconCommitteeSubscriptions);
   }
 
   @Test
