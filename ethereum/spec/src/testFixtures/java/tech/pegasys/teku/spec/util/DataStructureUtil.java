@@ -1502,7 +1502,7 @@ public final class DataStructureUtil {
                 builder.executionRequests(randomExecutionRequests());
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
-                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
+                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBidAtSlot(slot));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -1558,14 +1558,16 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithEmptyCommitments() {
+    final UInt64 slot = randomUInt64();
     return randomBeaconBlockBody(
+        slot,
         builder -> {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(emptyBlobKzgCommitments());
           }
           if (builder.supportsSignedExecutionPayloadBid()) {
             builder.signedExecutionPayloadBid(
-                randomSignedExecutionPayloadBidWithCommitments(emptyBlobKzgCommitments()));
+                randomSignedExecutionPayloadBidWithCommitments(slot, emptyBlobKzgCommitments()));
           }
         });
   }
@@ -1576,14 +1578,16 @@ public final class DataStructureUtil {
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
+    final UInt64 slot = randomUInt64();
     return randomBeaconBlockBody(
+        slot,
         builder -> {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(commitments);
           }
           if (builder.supportsSignedExecutionPayloadBid()) {
             builder.signedExecutionPayloadBid(
-                randomSignedExecutionPayloadBidWithCommitments(commitments));
+                randomSignedExecutionPayloadBidWithCommitments(slot, commitments));
           }
         });
   }
@@ -1636,7 +1640,7 @@ public final class DataStructureUtil {
                 builder.executionRequests(randomExecutionRequests());
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
-                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
+                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBidAtSlot(slot));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -1707,7 +1711,7 @@ public final class DataStructureUtil {
                 builder.executionRequests(randomExecutionRequests());
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
-                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
+                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBidAtSlot(slot));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -1994,9 +1998,10 @@ public final class DataStructureUtil {
 
   public PayloadBuildingAttributes randomPayloadBuildingAttributes(
       final boolean withValidatorRegistration) {
+    final UInt64 proposalSlot = randomUInt64();
     return new PayloadBuildingAttributes(
         randomUInt64(),
-        randomUInt64(),
+        proposalSlot,
         randomUInt64(),
         randomBytes32(),
         randomEth1Address(),
@@ -2005,7 +2010,7 @@ public final class DataStructureUtil {
             : Optional.empty(),
         randomWithdrawalList(),
         new ForkChoiceNode(randomBytes32(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING),
-        randomInclusionListTransactions(randomSlot()));
+        randomInclusionListTransactionsIfSupported(proposalSlot));
   }
 
   public ClientVersion randomClientVersion() {
@@ -2159,7 +2164,8 @@ public final class DataStructureUtil {
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
       case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
-      case GLOAS, HEZE -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
+      case GLOAS -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
+      case HEZE -> stateBuilderHeze(validatorCount, builderCount, numItemsInSszLists);
     };
   }
 
@@ -2221,6 +2227,18 @@ public final class DataStructureUtil {
       final int defaultItemsInSSZLists) {
     return BeaconStateBuilderGloas.create(
         this, spec, defaultValidatorCount, defaultBuilderCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderGloas stateBuilderHeze(
+      final int defaultValidatorCount,
+      final int defaultBuilderCount,
+      final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderGloas.create(
+        this,
+        spec.forMilestone(SpecMilestone.HEZE),
+        defaultValidatorCount,
+        defaultBuilderCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {
@@ -3283,8 +3301,25 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(final UInt64 executionPayment) {
-    return randomExecutionPayloadBid(
-        randomBytes32(), randomSlot(), randomBuilderIndex(), randomUInt64(), executionPayment);
+    final Bytes32 parentBlockHash = randomBytes32();
+    final UInt64 slot = randomSlot();
+    final UInt64 builderIndex = randomBuilderIndex();
+    final UInt64 value = randomUInt64();
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadBidSchema()
+        .create(
+            parentBlockHash,
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes32(),
+            randomEth1Address(),
+            randomUInt64(),
+            builderIndex,
+            slot,
+            value,
+            executionPayment,
+            randomBlobKzgCommitments(),
+            randomBytes32());
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(
@@ -3292,7 +3327,7 @@ public final class DataStructureUtil {
       final UInt64 builderIndex,
       final Bytes32 blockHash,
       final Bytes32 executionRequestsRoot) {
-    return getGloasSchemaDefinitions()
+    return getGloasSchemaDefinitions(slot)
         .getExecutionPayloadBidSchema()
         .create(
             randomBytes32(),
@@ -3321,7 +3356,7 @@ public final class DataStructureUtil {
       final UInt64 builderIndex,
       final UInt64 value,
       final UInt64 executionPayment) {
-    return getGloasSchemaDefinitions()
+    return getGloasSchemaDefinitions(slot)
         .getExecutionPayloadBidSchema()
         .create(
             parentBlockHash,
@@ -3343,9 +3378,7 @@ public final class DataStructureUtil {
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(final UInt64 executionPayment) {
-    return getGloasSchemaDefinitions()
-        .getSignedExecutionPayloadBidSchema()
-        .create(randomExecutionPayloadBid(executionPayment), randomSignature());
+    return randomSignedExecutionPayloadBid(randomExecutionPayloadBid(executionPayment));
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(
@@ -3355,9 +3388,40 @@ public final class DataStructureUtil {
         .create(executionPayloadBid, randomSignature());
   }
 
+  private SignedExecutionPayloadBid randomSignedExecutionPayloadBidAtSlot(final UInt64 slot) {
+    return createSignedExecutionPayloadBid(
+        getGloasSchemaDefinitions(slot), randomSignedExecutionPayloadBid());
+  }
+
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBidWithCommitments(
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     final SchemaDefinitionsGloas schemaDefinitions = getGloasSchemaDefinitions();
+    return createSignedExecutionPayloadBidWithCommitments(
+        schemaDefinitions, randomSlot(), blobKzgCommitments);
+  }
+
+  private SignedExecutionPayloadBid randomSignedExecutionPayloadBidWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> blobKzgCommitments) {
+    return createSignedExecutionPayloadBid(
+        getGloasSchemaDefinitions(slot),
+        randomSignedExecutionPayloadBidWithCommitments(blobKzgCommitments));
+  }
+
+  private SignedExecutionPayloadBid createSignedExecutionPayloadBid(
+      final SchemaDefinitionsGloas schemaDefinitions, final SignedExecutionPayloadBid bid) {
+    return schemaDefinitions
+        .getSignedExecutionPayloadBidSchema()
+        .create(
+            schemaDefinitions
+                .getExecutionPayloadBidSchema()
+                .createFromExecutionPayloadBid(bid.getMessage()),
+            bid.getSignature());
+  }
+
+  private SignedExecutionPayloadBid createSignedExecutionPayloadBidWithCommitments(
+      final SchemaDefinitionsGloas schemaDefinitions,
+      final UInt64 slot,
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(
@@ -3371,7 +3435,7 @@ public final class DataStructureUtil {
                     randomEth1Address(),
                     randomUInt64(),
                     randomBuilderIndex(),
-                    randomSlot(),
+                    slot,
                     randomUInt64(),
                     randomUInt64(),
                     blobKzgCommitments,
@@ -3464,6 +3528,18 @@ public final class DataStructureUtil {
   public List<Bytes> randomInclusionListTransactions(final UInt64 slot) {
     final SpecConfigHeze specConfigHeze =
         spec.atSlot(slot).getConfig().toVersionHeze().orElseThrow();
+    return randomInclusionListTransactions(specConfigHeze);
+  }
+
+  private List<Bytes> randomInclusionListTransactionsIfSupported(final UInt64 slot) {
+    return spec.atSlot(slot)
+        .getConfig()
+        .toVersionHeze()
+        .map(this::randomInclusionListTransactions)
+        .orElse(List.of());
+  }
+
+  private List<Bytes> randomInclusionListTransactions(final SpecConfigHeze specConfigHeze) {
     final int maxTransactionsSize = specConfigHeze.getMaxBytesPerInclusionList();
     final List<Bytes> transactions = new ArrayList<>();
     int currentTransactionsSize = 0;
@@ -3516,6 +3592,10 @@ public final class DataStructureUtil {
   private SchemaDefinitionsGloas getGloasSchemaDefinitions() {
     return SchemaDefinitionsGloas.required(
         spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+  }
+
+  private SchemaDefinitionsGloas getGloasSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {

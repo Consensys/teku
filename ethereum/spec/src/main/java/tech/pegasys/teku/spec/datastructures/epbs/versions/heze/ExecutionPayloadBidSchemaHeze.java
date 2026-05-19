@@ -45,7 +45,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -152,24 +151,6 @@ public class ExecutionPayloadBidSchemaHeze
         executionPayment,
         blobKzgCommitments,
         executionRequestsRoot,
-        inclusionListBitsSchema.ofBits());
-  }
-
-  public ExecutionPayloadBidHeze createFromGloasBid(final ExecutionPayloadBid gloasBid) {
-    return new ExecutionPayloadBidHeze(
-        this,
-        gloasBid.getParentBlockHash(),
-        gloasBid.getParentBlockRoot(),
-        gloasBid.getBlockHash(),
-        gloasBid.getPrevRandao(),
-        gloasBid.getFeeRecipient(),
-        gloasBid.getGasLimit(),
-        gloasBid.getBuilderIndex(),
-        gloasBid.getSlot(),
-        gloasBid.getValue(),
-        gloasBid.getExecutionPayment(),
-        gloasBid.getBlobKzgCommitments(),
-        gloasBid.getExecutionRequestsRoot(),
         inclusionListBitsSchema.ofBits());
   }
 
