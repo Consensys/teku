@@ -29,10 +29,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoArray {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int UNKNOWN_LATEST_VALID_HASH_LOG_CACHE_SIZE = 16;
 
   private final Spec spec;
   private int pruneThreshold;
@@ -54,6 +57,8 @@ public class ProtoArray {
   // When starting from genesis, this value is zero (genesis epoch)
   private final UInt64 initialEpoch;
   private final StatusLogger statusLog;
+  private final Set<Bytes32> loggedUnknownLatestValidHashes =
+      LimitedSet.createSynchronized(UNKNOWN_LATEST_VALID_HASH_LOG_CACHE_SIZE);
 
   /**
    * Lists all the known nodes. It is guaranteed that a node will be after its parent in the list.
@@ -438,7 +443,9 @@ public class ProtoArray {
     // Couldn't find the last valid hash - so can't take advantage of it.
     // Alert this user as it may indicate that invalid payloads have been finalized
     // (or the EL client is malfunctioning somehow).
-    statusLog.unknownLatestValidHash(latestValidHash);
+    if (loggedUnknownLatestValidHashes.add(latestValidHash)) {
+      statusLog.unknownLatestValidHash(latestValidHash);
+    }
     return Optional.empty();
   }
 

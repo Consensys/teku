@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.protoarray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -423,6 +425,20 @@ class ProtoArrayTest {
 
     assertHead(block3a);
     assertThat(protoArray.contains(block3a)).isTrue();
+  }
+
+  @Test
+  void findAndMarkInvalidChain_shouldOnlyLogUnknownLatestValidHashOnce() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    protoArray.markParentChainInvalid(block3a, Optional.of(Bytes32.ZERO));
+    protoArray.markParentChainInvalid(block3a, Optional.of(Bytes32.ZERO));
+
+    assertHead(block3a);
+    assertThat(protoArray.contains(block3a)).isTrue();
+    verify(statusLog, times(1)).unknownLatestValidHash(Bytes32.ZERO);
   }
 
   @Test
