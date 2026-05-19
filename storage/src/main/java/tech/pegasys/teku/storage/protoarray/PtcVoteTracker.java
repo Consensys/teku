@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Tracks the per-root PTC vote material consumed by the Gloas fork-choice helpers
@@ -30,50 +30,54 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_payload_timely
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_payload_data_available
  *
- * <p>Teku stores the information as per-root validator sets because fork choice only needs the
- * resulting counts, not the spec's exact vector layout.
+ * <p>Teku stores the information as per-root PTC position sets because fork choice only needs the
+ * resulting counts, while duplicate validators in the PTC must count once for each assigned
+ * position.
  */
 class PtcVoteTracker {
 
-  private record VotesPerValidator(Set<UInt64> payload, Set<UInt64> data) {}
+  private record VotesPerPtcPosition(Set<Integer> payload, Set<Integer> data) {}
 
-  private final Map<Bytes32, VotesPerValidator> votesByRoot = new ConcurrentHashMap<>();
+  private final Map<Bytes32, VotesPerPtcPosition> votesByRoot = new ConcurrentHashMap<>();
 
   void recordVote(
       final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
+      final IntSet ptcPositions,
       final boolean payloadPresent,
       final boolean blobDataAvailable) {
     votesByRoot.compute(
         blockRoot,
         (__, existingVotes) -> {
-          final VotesPerValidator updatedVotes =
+          final VotesPerPtcPosition updatedVotes =
               existingVotes != null
                   ? existingVotes
-                  : new VotesPerValidator(
+                  : new VotesPerPtcPosition(
                       ConcurrentHashMap.newKeySet(), ConcurrentHashMap.newKeySet());
-          if (payloadPresent) {
-            updatedVotes.payload.add(validatorIndex);
-          } else {
-            updatedVotes.payload.remove(validatorIndex);
-          }
+          ptcPositions.forEach(
+              (int ptcPosition) -> {
+                if (payloadPresent) {
+                  updatedVotes.payload.add(ptcPosition);
+                } else {
+                  updatedVotes.payload.remove(ptcPosition);
+                }
 
-          if (blobDataAvailable) {
-            updatedVotes.data.add(validatorIndex);
-          } else {
-            updatedVotes.data.remove(validatorIndex);
-          }
+                if (blobDataAvailable) {
+                  updatedVotes.data.add(ptcPosition);
+                } else {
+                  updatedVotes.data.remove(ptcPosition);
+                }
+              });
           return updatedVotes;
         });
   }
 
   int getPayloadPresentVoteCount(final Bytes32 blockRoot) {
-    final VotesPerValidator votes = votesByRoot.get(blockRoot);
+    final VotesPerPtcPosition votes = votesByRoot.get(blockRoot);
     return votes != null ? votes.payload.size() : 0;
   }
 
   int getDataAvailableVoteCount(final Bytes32 blockRoot) {
-    final VotesPerValidator votes = votesByRoot.get(blockRoot);
+    final VotesPerPtcPosition votes = votesByRoot.get(blockRoot);
     return votes != null ? votes.data.size() : 0;
   }
 
