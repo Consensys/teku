@@ -111,17 +111,6 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
-     * [REJECT] bid.gas_limit matches the gas_limit from the proposer's
-     * SignedProposerPreferences associated with bid.slot
-     */
-    if (!bid.getGasLimit().equals(proposerPreferences.get().getGasLimit())) {
-      return completedFuture(
-          reject(
-              "Bid gas_limit %s does not match proposer preferences gas_limit %s",
-              bid.getGasLimit(), proposerPreferences.get().getGasLimit()));
-    }
-
-    /*
      * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.
      */
     if (seenExecutionPayloadBids
@@ -168,6 +157,27 @@ public class ExecutionPayloadBidGossipValidator {
           "Bid's parent block hash {} is not the block hash of a known execution payload in fork choice. It will be saved for future processing",
           bid.getParentBlockHash());
       return completedFuture(SAVE_FOR_FUTURE);
+    }
+
+    /*
+     * [IGNORE] bid.gas_limit is compatible with proposer_preferences.target_gas_limit under the
+     * EIP-1559 transition rule from the parent execution payload gas limit.
+     */
+    final Optional<UInt64> maybeParentGasLimit =
+        gossipValidationHelper.getGasLimitForExecutionPayload(bid.getParentBlockRoot());
+    if (maybeParentGasLimit.isEmpty()) {
+      LOG.trace(
+          "Gas limit for parent execution payload with block hash {} is unavailable. It will be saved for future processing",
+          bid.getParentBlockHash());
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+    final UInt64 parentGasLimit = maybeParentGasLimit.get();
+    final UInt64 targetGasLimit = proposerPreferences.get().getTargetGasLimit();
+    if (!isGasLimitTargetCompatible(parentGasLimit, bid.getGasLimit(), targetGasLimit)) {
+      return completedFuture(
+          ignore(
+              "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+              bid.getGasLimit(), parentGasLimit, targetGasLimit));
     }
 
     /*
@@ -342,6 +352,23 @@ public class ExecutionPayloadBidGossipValidator {
         signedExecutionPayloadBid.getMessage().getBuilderIndex(),
         signedExecutionPayloadBid.getSignature(),
         state);
+  }
+
+  static boolean isGasLimitTargetCompatible(
+      final UInt64 parentGasLimit, final UInt64 gasLimit, final UInt64 targetGasLimit) {
+    final UInt64 maxGasLimitDifference =
+        parentGasLimit.dividedBy(1024).max(UInt64.ONE).minus(UInt64.ONE);
+    final UInt64 minGasLimit = parentGasLimit.minus(maxGasLimitDifference);
+    final UInt64 maxGasLimit = parentGasLimit.plus(maxGasLimitDifference);
+
+    if (targetGasLimit.isGreaterThanOrEqualTo(minGasLimit)
+        && targetGasLimit.isLessThanOrEqualTo(maxGasLimit)) {
+      return gasLimit.equals(targetGasLimit);
+    }
+    if (targetGasLimit.isGreaterThan(maxGasLimit)) {
+      return gasLimit.equals(maxGasLimit);
+    }
+    return gasLimit.equals(minGasLimit);
   }
 
   record SlotAndBlockHash(UInt64 slot, Bytes32 blockHash) {}

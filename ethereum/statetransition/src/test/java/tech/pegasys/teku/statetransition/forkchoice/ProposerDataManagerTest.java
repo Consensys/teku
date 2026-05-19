@@ -192,7 +192,7 @@ public class ProposerDataManagerTest {
     when(proposerPreferencesManager.getProposerPreferences(blockSlot))
         .thenReturn(Optional.of(proposerPreferences));
     when(proposerPreferences.getValidatorIndex()).thenReturn(proposerIndex);
-    when(proposerPreferences.getGasLimit()).thenReturn(targetGasLimit);
+    when(proposerPreferences.getTargetGasLimit()).thenReturn(targetGasLimit);
 
     final Optional<PayloadBuildingAttributes> result =
         eventThread

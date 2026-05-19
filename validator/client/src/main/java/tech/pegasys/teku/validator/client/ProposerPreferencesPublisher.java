@@ -124,14 +124,14 @@ public class ProposerPreferencesPublisher {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final UInt64 gasLimit = proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
+    final UInt64 targetGasLimit = proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
     final Optional<ProposerPreferences> maybePreferences =
         preferencesUtil.createProposerPreferences(
             dependentRoot,
             duty.getSlot(),
             UInt64.valueOf(duty.getValidatorIndex()),
             maybeFeeRecipient.get(),
-            gasLimit);
+            targetGasLimit);
     if (maybePreferences.isEmpty()) {
       // Pre-Gloas, the util is NOOP, nothing to publish
       return SafeFuture.completedFuture(Optional.empty());

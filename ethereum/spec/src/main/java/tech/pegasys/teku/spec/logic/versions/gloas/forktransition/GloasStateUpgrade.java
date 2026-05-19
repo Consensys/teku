@@ -96,6 +96,8 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               // New in Gloas
               final Bytes32 latestBlockHash =
                   preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
+              final UInt64 latestGasLimit =
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getGasLimit();
               state.setLatestBlockHash(latestBlockHash);
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
@@ -143,7 +145,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                           latestBlockHash,
                           Bytes32.ZERO,
                           Bytes20.ZERO,
-                          UInt64.ZERO,
+                          latestGasLimit,
                           UInt64.ZERO,
                           UInt64.ZERO,
                           UInt64.ZERO,
