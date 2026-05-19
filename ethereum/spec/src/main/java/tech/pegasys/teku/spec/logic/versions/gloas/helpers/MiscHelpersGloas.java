@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -243,12 +242,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
   public boolean isPendingValidator(
-      final SszList<PendingDeposit> pendingDeposits,
-      final BLSPublicKey pubkey,
-      final Set<BLSPublicKey> verifiedPendingValidators) {
-    if (verifiedPendingValidators.contains(pubkey)) {
-      return true;
-    }
+      final SszList<PendingDeposit> pendingDeposits, final BLSPublicKey pubkey) {
     for (final PendingDeposit pendingDeposit : pendingDeposits) {
       if (!pendingDeposit.getPublicKey().equals(pubkey)) {
         continue;
@@ -258,7 +252,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
           pendingDeposit.getWithdrawalCredentials(),
           pendingDeposit.getAmount(),
           pendingDeposit.getSignature())) {
-        verifiedPendingValidators.add(pubkey);
         return true;
       }
     }

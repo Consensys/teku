@@ -73,24 +73,25 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
 
     final List<DepositRequest> newBuilderDeposits = new ArrayList<>();
-    final Set<BLSPublicKey> verifiedPendingValidators = new HashSet<>();
+    // Avoids re-scanning pending deposits and re-verifying signatures for repeated pubkeys
+    final Set<BLSPublicKey> verifiedPendingValidatorPubkeys = new HashSet<>();
 
     for (final DepositRequest depositRequest : depositRequests) {
+      final BLSPublicKey pubkey = depositRequest.getPubkey();
       // Regardless of the withdrawal credentials prefix, if a builder/validator already exists with
       // this pubkey, apply the deposit to their balance
-      final boolean isBuilder =
-          beaconStateAccessorsGloas.getBuilderIndex(state, depositRequest.getPubkey()).isPresent();
-      final boolean isValidator =
-          validatorsUtil.getValidatorIndex(state, depositRequest.getPubkey()).isPresent();
+      final boolean isBuilder = beaconStateAccessorsGloas.getBuilderIndex(state, pubkey).isPresent();
+      final boolean isValidator = validatorsUtil.getValidatorIndex(state, pubkey).isPresent();
+      final boolean isPendingValidator =
+          verifiedPendingValidatorPubkeys.contains(pubkey)
+              || (miscHelpersGloas.isPendingValidator(stateElectra.getPendingDeposits(), pubkey)
+                  && verifiedPendingValidatorPubkeys.add(pubkey));
       final boolean isNewBuilderDeposit =
           !isBuilder
               && predicatesGloas.isBuilderWithdrawalCredential(
                   depositRequest.getWithdrawalCredentials())
               && !isValidator
-              && !miscHelpersGloas.isPendingValidator(
-                  stateElectra.getPendingDeposits(),
-                  depositRequest.getPubkey(),
-                  verifiedPendingValidators);
+              && !isPendingValidator;
 
       if (isNewBuilderDeposit) {
         // new builder deposits will be processed at the end so we can batch the signature
@@ -105,7 +106,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
             schemaDefinitions
                 .getPendingDepositSchema()
                 .create(
-                    new SszPublicKey(depositRequest.getPubkey()),
+                    new SszPublicKey(pubkey),
                     SszBytes32.of(depositRequest.getWithdrawalCredentials()),
                     SszUInt64.of(depositRequest.getAmount()),
                     new SszSignature(depositRequest.getSignature()),
