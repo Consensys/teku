@@ -80,7 +80,8 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       final BLSPublicKey pubkey = depositRequest.getPubkey();
       // Regardless of the withdrawal credentials prefix, if a builder/validator already exists with
       // this pubkey, apply the deposit to their balance
-      final boolean isBuilder = beaconStateAccessorsGloas.getBuilderIndex(state, pubkey).isPresent();
+      final boolean isBuilder =
+          beaconStateAccessorsGloas.getBuilderIndex(state, pubkey).isPresent();
       final boolean isValidator = validatorsUtil.getValidatorIndex(state, pubkey).isPresent();
       final boolean isPendingValidator =
           verifiedPendingValidatorPubkeys.contains(pubkey)
