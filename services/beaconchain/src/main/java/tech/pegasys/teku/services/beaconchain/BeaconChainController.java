@@ -2319,7 +2319,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
-            eventThread, timeProvider, spec, executionLayer, recentChainData, proposersDataManager);
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayer,
+            recentChainData,
+            proposersDataManager,
+            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled());
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

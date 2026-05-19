@@ -42,6 +42,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private final ProposersDataManager proposersDataManager;
   private final Spec spec;
   private final TimeProvider timeProvider;
+  private final boolean forkChoiceLateBlockReorgEnabled;
 
   private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
@@ -57,13 +58,15 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final ProposersDataManager proposersDataManager) {
+      final ProposersDataManager proposersDataManager,
+      final boolean forkChoiceLateBlockReorgEnabled) {
     this.eventThread = eventThread;
     this.spec = spec;
     this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
     this.timeProvider = timeProvider;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
   }
 
   @Override
@@ -290,6 +293,10 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
     clearProductionSessionIfHeadAdvanced(forkChoiceState);
 
+    if (shouldSkipForkChoiceUpdateDueToLateBlockReorg(forkChoiceState, localProposingSlot)) {
+      return;
+    }
+
     if (proposingSlot.isPresent()) {
       localProposingSlot.ifPresent(slot -> startOrPromoteProductionSession(forkChoiceState, slot));
       return;
@@ -374,6 +381,23 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     return currentSlot.map(UInt64::increment);
   }
 
+  private boolean shouldSkipForkChoiceUpdateDueToLateBlockReorg(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    if (!forkChoiceLateBlockReorgEnabled || proposingSlot.isEmpty()) {
+      return false;
+    }
+    final boolean shouldOverrideForkChoiceUpdate =
+        recentChainData.shouldOverrideForkChoiceUpdate(
+            forkChoiceState.headBlock().blockRoot(), forkChoiceState.headBlockSlot());
+    if (!shouldOverrideForkChoiceUpdate) {
+      return false;
+    }
+    LOG.debug(
+        "internalForkChoiceUpdated skipped due to late block reorg override producing block at slot {}",
+        proposingSlot.orElseThrow());
+    return true;
+  }
+
   private void prepareNextSlotProposal(final UInt64 slot) {
     // Assume `slot` is empty and check if we need to prepare to propose in the next slot
     final UInt64 proposalSlot = slot.plus(1);
@@ -429,12 +453,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     final SafeFuture<Optional<PayloadBuildingAttributes>> payloadBuildingAttributesFuture =
         proposersDataManager.calculatePayloadBuildingAttributes(
             proposalSlot, inSync, session.getForkChoiceUpdateData(), production);
-    if (!production && !payloadBuildingAttributesFuture.isDone()) {
-      // Keep the EL informed about the current head while next-slot attributes are still being
-      // calculated. Production sessions wait instead, because they must not build until the
-      // payload attributes are known to match the pinned parent and slot.
-      sendForkChoiceUpdated(session.getForkChoiceUpdateData());
-    }
     final SafeFuture<Void> completion =
         payloadBuildingAttributesFuture.thenAcceptAsync(
             payloadBuildingAttributes ->

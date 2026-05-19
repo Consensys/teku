@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -104,6 +105,16 @@ class ForkChoiceNotifierTest {
   void setUp(
       final boolean doNotInitializeWithDefaultFeeRecipient,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+    setUp(
+        doNotInitializeWithDefaultFeeRecipient,
+        forkChoiceUpdatedAlwaysSendPayloadAttributes,
+        false);
+  }
+
+  void setUp(
+      final boolean doNotInitializeWithDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
+      final boolean forkChoiceLateBlockReorgEnabled) {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(numberOfValidators, spec);
     recentChainData = storageSystem.recentChainData();
@@ -125,7 +136,8 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            forkChoiceLateBlockReorgEnabled);
     notifier.onSyncingStatusChanged(true); // Start in sync to make testing easier
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -167,13 +179,31 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            false);
     notifier.onSyncingStatusChanged(true);
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
     storageSystem.chainUpdater().initializeGenesis(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
+    forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
+  }
+
+  private void recreateNotifierWithForkChoiceLateBlockReorgEnabled() {
+    recentChainData = spy(recentChainData);
+    notifier =
+        new ForkChoiceNotifierImpl(
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayerChannel,
+            recentChainData,
+            proposersDataManager,
+            true);
+    notifier.onSyncingStatusChanged(true);
+    notifier.subscribeToForkChoiceUpdatedResult(
+        notification -> forkChoiceUpdatedResultNotification = notification);
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
   }
 
@@ -328,8 +358,9 @@ class ForkChoiceNotifierTest {
         .when(proposersDataManager)
         .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
 
-    notifyForkChoiceUpdated(forkChoiceState);
-    verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+    notifyForkChoiceUpdated(
+        forkChoiceState, Optional.empty(), notification -> assertThat(notification).isNull());
+    verifyNoInteractions(executionLayerChannel);
 
     doAnswer(InvocationOnMock::callRealMethod)
         .when(proposersDataManager)
@@ -492,6 +523,53 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  void onForkChoiceUpdated_shouldKeepPreparedPayloadWhenLateBlockReorgOverridesForkChoiceUpdate() {
+    recreateNotifierWithForkChoiceLateBlockReorgEnabled();
+
+    final ForkChoiceState preparedForkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(preparedForkChoiceState, headState, blockSlot);
+
+    final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            preparedForkChoiceState, Optional.of(payloadBuildingAttributes)))
+        .thenReturn(responseFuture);
+
+    notifyForkChoiceUpdated(preparedForkChoiceState);
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(preparedForkChoiceState, Optional.of(payloadBuildingAttributes));
+    responseFuture.complete(
+        createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
+
+    final ForkChoiceState lateForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),
+            preparedForkChoiceState.headBlockSlot(),
+            preparedForkChoiceState.headExecutionBlockNumber(),
+            preparedForkChoiceState.headExecutionBlockHash(),
+            preparedForkChoiceState.safeExecutionBlockHash(),
+            preparedForkChoiceState.finalizedExecutionBlockHash(),
+            preparedForkChoiceState.isHeadOptimistic());
+    doReturn(true)
+        .when(recentChainData)
+        .shouldOverrideForkChoiceUpdate(
+            lateForkChoiceState.headBlock().blockRoot(), lateForkChoiceState.headBlockSlot());
+
+    notifyForkChoiceUpdated(
+        lateForkChoiceState, Optional.empty(), notification -> assertThat(notification).isNull());
+
+    verifyNoMoreInteractions(executionLayerChannel);
+    assertThatSafeFuture(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot))
+        .isCompletedWithOptionalContaining(
+            new ExecutionPayloadContext(
+                payloadId, preparedForkChoiceState, payloadBuildingAttributes));
+  }
+
+  @Test
   void onForkChoiceUpdated_shouldSendNotificationWithStableSlot() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
@@ -616,10 +694,13 @@ class ForkChoiceNotifierTest {
         .when(proposersDataManager)
         .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
 
-    notifyForkChoiceUpdated(forkChoiceState); // calculate attributes for slot 2
+    notifyForkChoiceUpdated(
+        forkChoiceState,
+        Optional.empty(),
+        notification -> assertThat(notification).isNull()); // calculate attributes for slot 2
 
-    // it is called once with no attributes. the one with attributes is pending
-    verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+    // The preparing session waits for attributes before sending anything to the EL.
+    verifyNoInteractions(executionLayerChannel);
 
     // forward to real method call
     doAnswer(InvocationOnMock::callRealMethod)
@@ -660,9 +741,11 @@ class ForkChoiceNotifierTest {
         .when(proposersDataManager)
         .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
 
-    notifyForkChoiceUpdated(forkChoiceState);
+    notifyForkChoiceUpdated(
+        forkChoiceState, Optional.empty(), notification -> assertThat(notification).isNull());
 
-    verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+    // The non-production preparing session is still waiting for attributes, so nothing is sent.
+    verifyNoInteractions(executionLayerChannel);
 
     doAnswer(InvocationOnMock::callRealMethod)
         .when(proposersDataManager)
@@ -764,10 +847,13 @@ class ForkChoiceNotifierTest {
         .when(proposersDataManager)
         .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
 
-    notifyForkChoiceUpdated(forkChoiceStateSlot3); // calculate attributes for slot 2
+    notifyForkChoiceUpdated(
+        forkChoiceStateSlot3,
+        Optional.empty(),
+        notification -> assertThat(notification).isNull()); // calculate attributes for slot 3
 
-    // it is called once with no attributes. the one with attributes is pending
-    verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceStateSlot3, Optional.empty());
+    // The preparing session waits for attributes before sending anything new to the EL.
+    verifyNoMoreInteractions(executionLayerChannel);
 
     // let the payload attributes for slot 3 return
     actualResponseA.get().propagateTo(deferredResponseA);
