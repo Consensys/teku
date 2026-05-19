@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 @TestSpecContext(milestone = {SpecMilestone.GLOAS})
 public class ExecutionPayloadBidGossipValidatorTest {
   private static final int MIN_BID_INCREMENT_PERCENTAGE = 1;
+  private static final UInt64 DEFAULT_GAS_LIMIT = UInt64.valueOf(60_000_000);
 
   private final Spec spec = mock(Spec.class);
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
@@ -72,8 +73,25 @@ public class ExecutionPayloadBidGossipValidatorTest {
         new ExecutionPayloadBidGossipValidator(
             spec, gossipValidationHelper, proposerPreferencesManager, MIN_BID_INCREMENT_PERCENTAGE);
 
-    signedBid = dataStructureUtil.randomSignedExecutionPayloadBid(UInt64.ZERO);
-    bid = signedBid.getMessage();
+    final ExecutionPayloadBid randomBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(UInt64.ZERO).getMessage();
+    bid =
+        randomBid
+            .getSchema()
+            .create(
+                randomBid.getParentBlockHash(),
+                randomBid.getParentBlockRoot(),
+                randomBid.getBlockHash(),
+                randomBid.getPrevRandao(),
+                randomBid.getFeeRecipient(),
+                DEFAULT_GAS_LIMIT,
+                randomBid.getBuilderIndex(),
+                randomBid.getSlot(),
+                randomBid.getValue(),
+                randomBid.getExecutionPayment(),
+                randomBid.getBlobKzgCommitments(),
+                randomBid.getExecutionRequestsRoot());
+    signedBid = dataStructureUtil.randomSignedExecutionPayloadBid(bid);
     slot = bid.getSlot();
     builderIndex = bid.getBuilderIndex();
     parentBlockRoot = bid.getParentBlockRoot();
@@ -82,13 +100,15 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
     final ProposerPreferences proposerPreferences = mock(ProposerPreferences.class);
     when(proposerPreferences.getFeeRecipient()).thenReturn(bid.getFeeRecipient());
-    when(proposerPreferences.getGasLimit()).thenReturn(bid.getGasLimit());
+    when(proposerPreferences.getTargetGasLimit()).thenReturn(bid.getGasLimit());
     when(proposerPreferencesManager.getProposerPreferences(any()))
         .thenReturn(Optional.of(proposerPreferences));
 
     when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockHashKnown(parentBlockHash, parentBlockRoot))
         .thenReturn(true);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+        .thenReturn(Optional.of(bid.getGasLimit()));
     when(gossipValidationHelper.getSlotForBlockRoot(parentBlockRoot))
         .thenReturn(Optional.of(slot.decrement()));
     when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
@@ -144,7 +164,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
   void shouldReject_whenFeeRecipientDoesNotMatchProposerPreferences() {
     final ProposerPreferences mismatchedPreferences = mock(ProposerPreferences.class);
     when(mismatchedPreferences.getFeeRecipient()).thenReturn(dataStructureUtil.randomEth1Address());
-    when(mismatchedPreferences.getGasLimit()).thenReturn(bid.getGasLimit());
+    when(mismatchedPreferences.getTargetGasLimit()).thenReturn(bid.getGasLimit());
     when(proposerPreferencesManager.getProposerPreferences(slot))
         .thenReturn(Optional.of(mismatchedPreferences));
 
@@ -153,15 +173,68 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldReject_whenGasLimitDoesNotMatchProposerPreferences() {
-    final ProposerPreferences mismatchedPreferences = mock(ProposerPreferences.class);
-    when(mismatchedPreferences.getFeeRecipient()).thenReturn(bid.getFeeRecipient());
-    when(mismatchedPreferences.getGasLimit()).thenReturn(bid.getGasLimit().plus(1));
-    when(proposerPreferencesManager.getProposerPreferences(slot))
-        .thenReturn(Optional.of(mismatchedPreferences));
+  void shouldIgnore_whenGasLimitIsNotCompatibleWithTargetGasLimit() {
+    final UInt64 parentGasLimit = UInt64.valueOf(60_000_000);
+    final UInt64 bidGasLimit = UInt64.valueOf(60_000_000);
+    final UInt64 targetGasLimit = UInt64.valueOf(60_000_001);
+    final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
+    mockProposerPreferences(bidWithGasLimit, targetGasLimit);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+        .thenReturn(Optional.of(parentGasLimit));
 
-    assertThatSafeFuture(bidValidator.validate(signedBid))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+    assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @TestTemplate
+  void shouldAccept_whenTargetGasLimitExceedsAllowedIncreaseAndBidUsesMaximumAllowedGasLimit() {
+    final UInt64 parentGasLimit = UInt64.valueOf(60_000_000);
+    final UInt64 bidGasLimit = UInt64.valueOf(60_058_592);
+    final UInt64 targetGasLimit = UInt64.valueOf(100_000_000);
+    final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
+    mockProposerPreferences(bidWithGasLimit, targetGasLimit);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+        .thenReturn(Optional.of(parentGasLimit));
+
+    assertThatSafeFuture(bidValidator.validate(bidWithGasLimit)).isCompletedWithValue(ACCEPT);
+  }
+
+  @TestTemplate
+  void shouldIgnore_whenTargetGasLimitExceedsAllowedIncreaseAndBidGasLimitIsTooHigh() {
+    final UInt64 parentGasLimit = UInt64.valueOf(60_000_000);
+    final UInt64 bidGasLimit = UInt64.valueOf(60_058_593);
+    final UInt64 targetGasLimit = UInt64.valueOf(100_000_000);
+    final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
+    mockProposerPreferences(bidWithGasLimit, targetGasLimit);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+        .thenReturn(Optional.of(parentGasLimit));
+
+    assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
+        .isCompletedWithValue(
+            ignore(
+                "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+                bidGasLimit, parentGasLimit, targetGasLimit));
+  }
+
+  @TestTemplate
+  void shouldAccept_whenTargetGasLimitExceedsAllowedDecreaseAndBidUsesMinimumAllowedGasLimit() {
+    final UInt64 parentGasLimit = UInt64.valueOf(60_000_000);
+    final UInt64 bidGasLimit = UInt64.valueOf(59_941_408);
+    final UInt64 targetGasLimit = UInt64.valueOf(30_000_000);
+    final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
+    mockProposerPreferences(bidWithGasLimit, targetGasLimit);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+        .thenReturn(Optional.of(parentGasLimit));
+
+    assertThatSafeFuture(bidValidator.validate(bidWithGasLimit)).isCompletedWithValue(ACCEPT);
+  }
+
+  @TestTemplate
+  void shouldSaveForFuture_whenParentGasLimitIsUnavailable() {
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+        .thenReturn(Optional.empty());
+
+    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @TestTemplate
@@ -187,7 +260,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final ProposerPreferences lowerBidPreferences = mock(ProposerPreferences.class);
     when(lowerBidPreferences.getFeeRecipient())
         .thenReturn(lowerValueBid.getMessage().getFeeRecipient());
-    when(lowerBidPreferences.getGasLimit()).thenReturn(lowerValueBid.getMessage().getGasLimit());
+    when(lowerBidPreferences.getTargetGasLimit())
+        .thenReturn(lowerValueBid.getMessage().getGasLimit());
     when(proposerPreferencesManager.getProposerPreferences(slot))
         .thenReturn(Optional.of(lowerBidPreferences));
 
@@ -195,6 +269,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.isBlockHashKnown(
             parentBlockHash, lowerValueBid.getMessage().getParentBlockRoot()))
         .thenReturn(true);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(
+            lowerValueBid.getMessage().getParentBlockRoot()))
+        .thenReturn(Optional.of(lowerValueBid.getMessage().getGasLimit()));
     when(gossipValidationHelper.getSlotForBlockRoot(
             lowerValueBid.getMessage().getParentBlockRoot()))
         .thenReturn(Optional.of(slot.decrement()));
@@ -269,7 +346,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final ProposerPreferences intermediateBidPreferences = mock(ProposerPreferences.class);
     when(intermediateBidPreferences.getFeeRecipient())
         .thenReturn(intermediateValueValidBid.getMessage().getFeeRecipient());
-    when(intermediateBidPreferences.getGasLimit())
+    when(intermediateBidPreferences.getTargetGasLimit())
         .thenReturn(intermediateValueValidBid.getMessage().getGasLimit());
     when(proposerPreferencesManager.getProposerPreferences(slot))
         .thenReturn(Optional.of(intermediateBidPreferences));
@@ -277,6 +354,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.isBlockHashKnown(
             parentBlockHash, intermediateValueValidBid.getMessage().getParentBlockRoot()))
         .thenReturn(true);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(
+            intermediateValueValidBid.getMessage().getParentBlockRoot()))
+        .thenReturn(Optional.of(intermediateValueValidBid.getMessage().getGasLimit()));
     when(gossipValidationHelper.isActiveBuilder(intermediateBidBuilderIndex, postState, slot))
         .thenReturn(true);
     when(gossipValidationHelper.getSlotForBlockRoot(
@@ -557,13 +637,15 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final UInt64 slot = message.getSlot();
     final ProposerPreferences matchingPreferences = mock(ProposerPreferences.class);
     when(matchingPreferences.getFeeRecipient()).thenReturn(message.getFeeRecipient());
-    when(matchingPreferences.getGasLimit()).thenReturn(message.getGasLimit());
+    when(matchingPreferences.getTargetGasLimit()).thenReturn(message.getGasLimit());
     when(proposerPreferencesManager.getProposerPreferences(slot))
         .thenReturn(Optional.of(matchingPreferences));
     when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockHashKnown(
             message.getParentBlockHash(), message.getParentBlockRoot()))
         .thenReturn(true);
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(message.getParentBlockRoot()))
+        .thenReturn(Optional.of(message.getGasLimit()));
     when(gossipValidationHelper.getSlotForBlockRoot(message.getParentBlockRoot()))
         .thenReturn(Optional.of(slot.decrement()));
     when(gossipValidationHelper.getParentStateInBlockEpoch(
@@ -573,5 +655,34 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bidValue, builderIndex, postState, slot))
         .thenReturn(true);
+  }
+
+  private SignedExecutionPayloadBid signedBidWithGasLimit(final UInt64 gasLimit) {
+    final ExecutionPayloadBid bidWithGasLimit =
+        bid.getSchema()
+            .create(
+                bid.getParentBlockHash(),
+                bid.getParentBlockRoot(),
+                bid.getBlockHash(),
+                bid.getPrevRandao(),
+                bid.getFeeRecipient(),
+                gasLimit,
+                bid.getBuilderIndex(),
+                bid.getSlot(),
+                bid.getValue(),
+                bid.getExecutionPayment(),
+                bid.getBlobKzgCommitments(),
+                bid.getExecutionRequestsRoot());
+    return dataStructureUtil.randomSignedExecutionPayloadBid(bidWithGasLimit);
+  }
+
+  private void mockProposerPreferences(
+      final SignedExecutionPayloadBid signedBid, final UInt64 targetGasLimit) {
+    final ProposerPreferences proposerPreferences = mock(ProposerPreferences.class);
+    when(proposerPreferences.getFeeRecipient())
+        .thenReturn(signedBid.getMessage().getFeeRecipient());
+    when(proposerPreferences.getTargetGasLimit()).thenReturn(targetGasLimit);
+    when(proposerPreferencesManager.getProposerPreferences(signedBid.getMessage().getSlot()))
+        .thenReturn(Optional.of(proposerPreferences));
   }
 }

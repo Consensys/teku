@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
@@ -297,6 +298,41 @@ public class GossipValidationHelperTest {
 
     assertThat(gossipValidationHelper.isBlockAvailable(dataStructureUtil.randomBytes32()))
         .isFalse();
+  }
+
+  @TestTemplate
+  void getGasLimitForExecutionPayload_shouldReturnGasLimitFromAvailableExecutionPayload(
+      final SpecContext specContext) {
+    assumeThat(specContext.getSpecMilestone()).isEqualTo(SpecMilestone.GLOAS);
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final Bytes32 blockRoot = executionPayload.getBeaconBlockRoot();
+
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(blockRoot)).thenReturn(Optional.of(executionPayload));
+
+    final GossipValidationHelper helper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
+    assertThat(helper.getGasLimitForExecutionPayload(blockRoot))
+        .contains(executionPayload.getMessage().getPayload().getGasLimit());
+  }
+
+  @TestTemplate
+  void getGasLimitForExecutionPayload_shouldReturnEmptyWhenExecutionPayloadIsUnavailable(
+      final SpecContext specContext) {
+    assumeThat(specContext.getSpecMilestone()).isEqualTo(SpecMilestone.GLOAS);
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(blockRoot)).thenReturn(Optional.empty());
+
+    final GossipValidationHelper helper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
+    assertThat(helper.getGasLimitForExecutionPayload(blockRoot)).isEmpty();
   }
 
   @TestTemplate
