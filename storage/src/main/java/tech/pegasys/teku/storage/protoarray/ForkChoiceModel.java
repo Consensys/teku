@@ -47,6 +47,18 @@ interface ForkChoiceModel {
       Optional<Bytes32> executionBlockHash,
       boolean optimisticallyProcessed);
 
+  void processAnchorBlock(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      UInt64 blockSlot,
+      Bytes32 blockRoot,
+      Bytes32 parentRoot,
+      Bytes32 stateRoot,
+      BlockCheckpoints checkpoints,
+      Optional<UInt64> executionBlockNumber,
+      Optional<Bytes32> executionBlockHash,
+      boolean optimisticallyProcessed);
+
   void onExecutionPayload(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,

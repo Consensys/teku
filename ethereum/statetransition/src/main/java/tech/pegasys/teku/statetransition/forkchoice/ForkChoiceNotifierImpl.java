@@ -171,7 +171,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       // Pre-merge so ok to use default payload
       return SafeFuture.completedFuture(Optional.empty());
     } else {
-      // TODO: with the pinned forkChoiceUpdateData there is no point in trying to refresh.
+      // TODO-GLOAS: with the pinned forkChoiceUpdateData there is no point in trying to refresh.
       // Now we should have a stable forkChoiceUpdateData which must be compatible with
       // parentBeaconBlockRoot and slot by blockSlot. So we can just throw here.
 
