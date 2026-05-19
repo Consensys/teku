@@ -174,15 +174,23 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     if (productionSession.isPresent()
         && !hasPayloadAttributesForProduction(
             localForkChoiceUpdateData, parentBeaconBlock, blockSlot)) {
-      LOG.debug(
-          "Waiting for pending payload attributes for block production at slot {}", blockSlot);
-      return productionSession
-          .orElseThrow()
-          .getPayloadAttributesApplied()
-          .thenCompose(
-              __ ->
-                  eventThread.executeFuture(
-                      () -> internalGetPayloadId(parentBeaconBlock, blockSlot)));
+      final PayloadBuildSession session = productionSession.orElseThrow();
+      // Production may arrive while the payload attributes calculation is still in flight. In that
+      // case, wait for the calculation so the payload id is requested with attributes pinned to the
+      // requested parent and slot.
+      if (!session.arePayloadAttributesApplied()) {
+        LOG.debug(
+            "Waiting for pending payload attributes for block production at slot {}", blockSlot);
+        return session
+            .getPayloadAttributesApplied()
+            .thenCompose(
+                __ ->
+                    eventThread.executeFuture(
+                        () -> internalGetPayloadId(parentBeaconBlock, blockSlot)));
+      }
+      // If the calculation has already completed but still did not produce matching attributes,
+      // do not wait again. Fall through to the validation below so we fail fast instead of
+      // recursively re-entering this branch.
     }
 
     validatePayloadAttributesMatchBlockProductionRequest(
@@ -453,9 +461,13 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
             .getSessionFor(proposalSlot)
             .filter(session -> session.hasForkChoiceState(forkChoiceState));
     if (existingSession.isPresent()) {
-      existingSession.orElseThrow().promoteToProduction();
-      sendForkChoiceUpdated(existingSession.orElseThrow().getForkChoiceUpdateData());
-      return;
+      final PayloadBuildSession session = existingSession.orElseThrow();
+      if (hasPayloadAttributesForProduction(
+          session.getForkChoiceUpdateData(), forkChoiceState.headBlock(), proposalSlot)) {
+        session.promoteToProduction();
+        sendForkChoiceUpdated(session.getForkChoiceUpdateData());
+        return;
+      }
     }
     startPayloadBuildSession(forkChoiceState, proposalSlot, true);
   }

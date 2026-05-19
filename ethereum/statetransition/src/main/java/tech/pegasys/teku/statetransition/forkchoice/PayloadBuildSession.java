@@ -64,6 +64,10 @@ final class PayloadBuildSession {
     return payloadAttributesApplied;
   }
 
+  boolean arePayloadAttributesApplied() {
+    return payloadAttributesApplied.isDone();
+  }
+
   boolean hasForkChoiceState(final ForkChoiceState forkChoiceState) {
     return forkChoiceUpdateData.getForkChoiceState().equals(forkChoiceState);
   }
