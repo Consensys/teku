@@ -175,7 +175,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState block = chainBuilder.generateNextBlock();
 
     final ForkChoiceStrategy forkChoiceStrategy =
-        createGloasForkChoiceStrategy(gloasSpec, genesis, block, emptyList());
+        createGloasForkChoiceStrategy(gloasSpec, genesis, block, emptyMap());
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
     when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
     when(store.getExecutionPayloadIfAvailable(block.getRoot())).thenReturn(Optional.empty());
@@ -197,7 +197,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             gloasSpec,
             genesis,
             block,
-            List.of(new ExecutionPayloadUpdate(executionPayload, false)));
+            Map.of(block.getRoot(), new ExecutionPayloadUpdate(executionPayload, false)));
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
     when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
     when(store.getExecutionPayloadIfAvailable(block.getRoot()))
@@ -877,7 +877,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
       final Spec gloasSpec,
       final SignedBlockAndState genesis,
       final SignedBlockAndState block,
-      final List<ExecutionPayloadUpdate> executionPayloads) {
+      final Map<Bytes32, ExecutionPayloadUpdate> executionPayloads) {
     final ProtoArray protoArray = createProtoArray(gloasSpec, block.getState());
     final ForkChoiceStrategy forkChoiceStrategy =
         ForkChoiceStrategy.initialize(gloasSpec, protoArray);

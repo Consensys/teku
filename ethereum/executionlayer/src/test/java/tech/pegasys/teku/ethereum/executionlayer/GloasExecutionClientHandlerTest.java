@@ -145,7 +145,8 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),
+            List.of());
     final PayloadAttributesV4 payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(attributes);
     final ForkChoiceUpdatedResult responseData =

@@ -144,7 +144,8 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),
+            List.of());
     final Optional<PayloadAttributesV3> payloadAttributes =
         PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =
