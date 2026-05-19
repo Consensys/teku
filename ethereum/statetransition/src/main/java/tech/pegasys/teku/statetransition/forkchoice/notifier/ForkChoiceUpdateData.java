@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice;
+package tech.pegasys.teku.statetransition.forkchoice.notifier;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
