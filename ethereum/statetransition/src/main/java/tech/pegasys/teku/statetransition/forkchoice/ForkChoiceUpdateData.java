@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,9 +48,6 @@ public class ForkChoiceUpdateData {
   private final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext =
       new SafeFuture<>();
   private UInt64 toBeSentAtTime = UInt64.ZERO;
-
-  private long payloadBuildingAttributesSequenceProducer = 0;
-  private long payloadBuildingAttributesSequenceConsumer = -1;
 
   public ForkChoiceUpdateData() {
     this.forkChoiceState = DEFAULT_FORK_CHOICE_STATE;
@@ -113,30 +108,6 @@ public class ForkChoiceUpdateData {
     }
     return new ForkChoiceUpdateData(
         forkChoiceState, payloadBuildingAttributes, Optional.of(terminalBlockHash));
-  }
-
-  public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadBuildingAttributesAsync(
-      final Supplier<SafeFuture<Optional<PayloadBuildingAttributes>>> payloadAttributesCalculator,
-      final Executor executor) {
-    // we want to preserve ordering in payload calculation,
-    // so we first generate a sequence for each calculation request
-    final long sequenceNumber = payloadBuildingAttributesSequenceProducer++;
-
-    return payloadAttributesCalculator
-        .get()
-        .thenApplyAsync(
-            newPayloadBuildingAttributes -> {
-              // to preserve ordering we make sure we haven't already calculated a payload that has
-              // been requested later than the current one
-              if (sequenceNumber <= payloadBuildingAttributesSequenceConsumer) {
-                LOG.debug(
-                    "Ignoring calculated payload building attributes since it violates ordering");
-                return Optional.empty();
-              }
-              payloadBuildingAttributesSequenceConsumer = sequenceNumber;
-              return Optional.of(this.withPayloadBuildingAttributes(newPayloadBuildingAttributes));
-            },
-            executor);
   }
 
   public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {
