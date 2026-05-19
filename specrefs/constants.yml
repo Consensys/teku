@@ -465,6 +465,26 @@
     PAYLOAD_STATUS_FULL: PayloadStatus = 1
     </spec>
 
+- name: PAYLOAD_STATUS_INVALIDATED#bellatrix
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionPayloadStatus.java
+      search: ^\s+INVALID$
+      regex: true
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_INVALIDATED" fork="bellatrix" hash="573428af">
+    PAYLOAD_STATUS_INVALIDATED: PayloadValidationStatus = 1
+    </spec>
+
+- name: PAYLOAD_STATUS_NOT_VALIDATED#bellatrix
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionPayloadStatus.java
+      search: ^\s+NOT_VALIDATED,$
+      regex: true
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_NOT_VALIDATED" fork="bellatrix" hash="d15db48c">
+    PAYLOAD_STATUS_NOT_VALIDATED: PayloadValidationStatus = 2
+    </spec>
+
 - name: PAYLOAD_STATUS_PENDING#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/PayloadStatus.java
@@ -472,6 +492,16 @@
   spec: |
     <spec constant_var="PAYLOAD_STATUS_PENDING" fork="gloas" hash="6a0d6cbf">
     PAYLOAD_STATUS_PENDING: PayloadStatus = 2
+    </spec>
+
+- name: PAYLOAD_STATUS_VALID#bellatrix
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionPayloadStatus.java
+      search: ^\s+VALID,$
+      regex: true
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_VALID" fork="bellatrix" hash="1e190907">
+    PAYLOAD_STATUS_VALID: PayloadValidationStatus = 0
     </spec>
 
 - name: PRIMITIVE_ROOT_OF_UNITY#deneb

@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public interface ForkChoiceNotifier {
@@ -33,13 +34,13 @@ public interface ForkChoiceNotifier {
   void onSyncingStatusChanged(boolean inSync);
 
   SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      Bytes32 parentBeaconBlockRoot, UInt64 blockSlot);
+      ForkChoiceNode parentBeaconBlock, UInt64 blockSlot);
 
   default SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot,
+      final ForkChoiceNode parentBeaconBlock,
       final UInt64 blockSlot,
       final List<Bytes> inclusionListTransactions) {
-    return getPayloadId(parentBeaconBlockRoot, blockSlot);
+    return getPayloadId(parentBeaconBlock, blockSlot);
   }
 
   void onTerminalBlockReached(Bytes32 executionBlockHash);

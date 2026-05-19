@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-@Disabled("Temporarily disable till we found how to pass a valid blockAccessList to Besu")
 public class GloasUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
@@ -73,7 +71,9 @@ public class GloasUpgradeAcceptanceTest extends AcceptanceTestBase {
     tekuNode.start();
 
     tekuNode.waitForMilestone(SpecMilestone.GLOAS);
-    tekuNode.waitForNewBlockAndNewExecutionPayload();
+    tekuNode.waitForNewBlock();
+
+    tekuNode.waitForExecutionPayload(tekuNode.getHeadBlock().getRoot());
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
@@ -83,7 +83,7 @@ public class GloasUpgradeAcceptanceTest extends AcceptanceTestBase {
         Map.of("amsterdamTime", String.valueOf(amsterdamTime));
 
     return createBesuNode(
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()

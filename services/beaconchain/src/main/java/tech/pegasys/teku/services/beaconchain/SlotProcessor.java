@@ -392,7 +392,6 @@ public class SlotProcessor {
                     nodeSlot.getValue(),
                     head.getSlot(),
                     head.getExecutionBlockHash(),
-                    head.getForkChoiceNode().payloadStatus().getShortName(),
                     p2pNetwork.getPeerCount()));
   }
 

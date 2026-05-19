@@ -70,12 +70,10 @@ public class ReferenceTestFinder {
                       new PyspecTestFinder(
                           List.of(),
                           List.of(
-                              // TODO-GLOAS: Limit what tests we run for Gloas while it is
-                              // under development. This is temporary and should be removed once we
-                              // are up-to-date with Gloas specs (see
-                              // https://github.com/Consensys/teku-internal/issues/221)
-                              "gloas - minimal - fork_choice/reorg",
-                              "on_execution_payload_envelope__wrong_withdrawals")),
+                              // TODO-GLOAS: the following tests require equivocation
+                              // see https://github.com/Consensys/teku/issues/10608)
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_previous_epoch",
+                              "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

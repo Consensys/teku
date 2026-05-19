@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -42,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -62,6 +65,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -286,7 +290,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         List.of(
             BlockAndCheckpoints.fromBlockAndState(spec, bestBlock),
             BlockAndCheckpoints.fromBlockAndState(spec, forkBlock)),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         emptyMap(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -365,7 +369,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
     strategy.applyUpdate(
         emptyList(),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         Map.of(block2.getRoot(), block2.getSlot()),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -386,7 +390,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         List.of(
             BlockAndCheckpoints.fromBlockAndState(spec, block1),
             BlockAndCheckpoints.fromBlockAndState(spec, block2)),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         emptyMap(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -409,7 +413,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Not pruned because threshold isn't reached.
     strategy.applyUpdate(
-        emptyList(), emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, block2.getRoot()));
+        emptyList(), emptyMap(), emptySet(), emptyMap(), new Checkpoint(ONE, block2.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isTrue();
     assertThat(strategy.contains(block2.getRoot())).isTrue();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -417,7 +421,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Prune when threshold is exceeded
     strategy.applyUpdate(
-        emptyList(), emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, block3.getRoot()));
+        emptyList(), emptyMap(), emptySet(), emptyMap(), new Checkpoint(ONE, block3.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isFalse();
     assertThat(strategy.contains(block2.getRoot())).isFalse();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -434,7 +438,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
     forkChoiceStrategy.setPruneThreshold(0);
     forkChoiceStrategy.applyUpdate(
-        emptyList(), emptyList(), emptySet(), emptyMap(), finalizedCheckpoint);
+        emptyList(), emptyMap(), emptySet(), emptyMap(), finalizedCheckpoint);
 
     // Check that all blocks prior to latest finalized have been pruned
     final List<SignedBlockAndState> allBlocks =
@@ -454,6 +458,150 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void applyUpdate_shouldAttachDescendantToFinalizedBoundaryFullNode() {
+    final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
+
+    assertThat(
+            BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())
+                .getExecutionBlockHash())
+        .contains(
+            fixture
+                .boundaryExecutionPayload()
+                .executionPayload()
+                .getMessage()
+                .getPayload()
+                .getBlockHash());
+
+    fixture
+        .strategy()
+        .applyUpdate(
+            List.of(
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
+            Map.of(fixture.boundary().getRoot(), fixture.boundaryExecutionPayload()),
+            emptySet(),
+            emptyMap(),
+            fixture.finalizedCheckpoint(),
+            Optional.of(fixture.boundaryBlockAndCheckpoints()));
+
+    final Optional<Integer> boundaryFullNodeIndex =
+        fixture.protoArray().getNodeIndex(ForkChoiceNode.createFull(fixture.boundary().getRoot()));
+    assertThat(boundaryFullNodeIndex).isPresent();
+    assertThat(boundaryBaseNode(fixture).getParentIndex()).isEmpty();
+    assertThat(childBaseNode(fixture).getParentIndex()).isEqualTo(boundaryFullNodeIndex);
+  }
+
+  @Test
+  void applyUpdate_shouldAttachDescendantToFinalizedBoundaryEmptyNodeWhenPayloadIsUnavailable() {
+    final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
+
+    fixture
+        .strategy()
+        .applyUpdate(
+            List.of(
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
+            emptyMap(),
+            emptySet(),
+            emptyMap(),
+            fixture.finalizedCheckpoint(),
+            Optional.of(fixture.boundaryBlockAndCheckpoints()));
+
+    final Optional<Integer> boundaryEmptyNodeIndex =
+        fixture.protoArray().getNodeIndex(ForkChoiceNode.createEmpty(fixture.boundary().getRoot()));
+    assertThat(boundaryEmptyNodeIndex).isPresent();
+    assertThat(
+            fixture
+                .protoArray()
+                .getNodeIndex(ForkChoiceNode.createFull(fixture.boundary().getRoot())))
+        .isEmpty();
+    assertThat(boundaryBaseNode(fixture).getParentIndex()).isEmpty();
+    assertThat(childBaseNode(fixture).getParentIndex()).isEqualTo(boundaryEmptyNodeIndex);
+  }
+
+  @Test
+  void applyUpdate_shouldPruneToFinalizedBoundaryAnchorInsertedIntoNonEmptyProtoArray() {
+    final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
+    fixture.protoArray().setPruneThreshold(0);
+
+    fixture
+        .strategy()
+        .applyUpdate(
+            List.of(
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
+            emptyMap(),
+            emptySet(),
+            emptyMap(),
+            fixture.finalizedCheckpoint(),
+            Optional.of(fixture.boundaryBlockAndCheckpoints()));
+
+    assertThat(fixture.protoArray().getNode(ForkChoiceNode.createBase(fixture.genesis().getRoot())))
+        .isEmpty();
+    assertThat(fixture.protoArray().getNodes().get(0).getForkChoiceNode())
+        .isEqualTo(ForkChoiceNode.createBase(fixture.boundary().getRoot()));
+    assertThat(
+            fixture
+                .protoArray()
+                .getNodeIndex(ForkChoiceNode.createBase(fixture.boundary().getRoot())))
+        .contains(0);
+    assertThat(boundaryBaseNode(fixture).getParentIndex()).isEmpty();
+    assertThat(boundaryBaseNode(fixture).getParentRoot())
+        .isEqualTo(fixture.boundary().getParentRoot());
+    assertProtoArrayParentIndicesAreValid(fixture.protoArray());
+  }
+
+  @Test
+  void applyUpdate_shouldRejectNormalGloasBlockWithMissingParentVariants() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState child = chainBuilder.generateBlockAtSlot(2);
+    final ProtoArray protoArray = createProtoArray(gloasSpec, genesis.getState());
+    addBlockToProtoArray(gloasSpec, protoArray, genesis);
+    final ForkChoiceStrategy strategy = ForkChoiceStrategy.initialize(gloasSpec, protoArray);
+
+    assertThatThrownBy(
+            () ->
+                strategy.applyUpdate(
+                    List.of(BlockAndCheckpoints.fromBlockAndState(gloasSpec, child)),
+                    emptyMap(),
+                    emptySet(),
+                    emptyMap(),
+                    new Checkpoint(ZERO, genesis.getRoot())))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Missing GLOAS parent variants");
+  }
+
+  @Test
+  void applyUpdate_shouldAcceptPreGloasBlockWithMissingParentVariants() {
+    final Spec preGloasSpec = TestSpecFactory.createMinimalBellatrix();
+    final ChainBuilder chainBuilder = ChainBuilder.create(preGloasSpec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState child = chainBuilder.generateBlockAtSlot(2);
+    final ProtoArray protoArray = createProtoArray(preGloasSpec, genesis.getState());
+    addBlockToProtoArray(preGloasSpec, protoArray, genesis);
+    final ForkChoiceStrategy strategy = ForkChoiceStrategy.initialize(preGloasSpec, protoArray);
+
+    strategy.applyUpdate(
+        List.of(BlockAndCheckpoints.fromBlockAndState(preGloasSpec, child)),
+        emptyMap(),
+        emptySet(),
+        emptyMap(),
+        new Checkpoint(ZERO, genesis.getRoot()));
+
+    assertThat(strategy.contains(child.getRoot())).isTrue();
+    assertThat(
+            protoArray
+                .getNode(ForkChoiceNode.createBase(child.getRoot()))
+                .orElseThrow()
+                .getParentIndex())
+        .isEmpty();
+  }
+
+  @Test
   void applyScoreChanges_shouldWorkAfterRemovingNodes() {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
@@ -465,7 +613,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     strategy.applyUpdate(
         emptyList(),
-        emptyList(),
+        emptyMap(),
         emptySet(),
         Map.of(block1.getRoot(), block1.getSlot(), block2.getRoot(), block2.getSlot()),
         new Checkpoint(ONE, block3.getRoot()));
@@ -668,16 +816,47 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     final ForkChoiceState forkChoiceState =
         protoArray.getForkChoiceState(
+            Optional.empty(),
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
             recentChainData.getFinalizedCheckpoint().orElseThrow());
 
     // Should have reverted to the justified checkpoint as head
-    assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(currentJustified.getRoot());
+    assertThat(forkChoiceState.headBlock().blockRoot()).isEqualTo(currentJustified.getRoot());
     // The current head block itself is fully validated
     assertThat(protoArray.isFullyValidated(currentJustified.getRoot())).isTrue();
     // the head is optimistic because it is not viable
     assertThat(forkChoiceState.isHeadOptimistic()).isTrue();
+  }
+
+  @Test
+  void getForkChoiceState_shouldUseProposingHeadWhenProvided() {
+    final InternalPayloadTraversalFixture fixture = createInternalPayloadTraversalFixture();
+    final ProtoNodeData fullPayloadBlockData =
+        fixture
+            .strategy()
+            .getBlockData(fixture.block1().getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+            .orElseThrow();
+    final ChainHead proposingHead =
+        ChainHead.create(
+            fullPayloadBlockData,
+            SafeFuture.completedFuture(StateAndBlockSummary.create(fixture.block1())));
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(fixture.block2().getSlot());
+    final Checkpoint justifiedCheckpoint =
+        fixture.block2().getState().getCurrentJustifiedCheckpoint();
+    final Checkpoint finalizedCheckpoint = fixture.block2().getState().getFinalizedCheckpoint();
+
+    final ForkChoiceState proposingForkChoiceState =
+        fixture
+            .strategy()
+            .getForkChoiceState(
+                Optional.of(proposingHead), currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
+
+    assertThat(proposingForkChoiceState.headBlock())
+        .isEqualTo(ForkChoiceNode.createFull(fixture.block1().getRoot()));
+    assertThat(proposingForkChoiceState.headBlockSlot()).isEqualTo(fixture.block1().getSlot());
+    assertThat(proposingForkChoiceState.headExecutionBlockHash())
+        .isEqualTo(fullPayloadBlockData.getExecutionBlockHash());
   }
 
   private StorageSystem initStorageSystem() {
@@ -808,6 +987,84 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     updateBestChildAndDescendantOfParent(spec, protoArray, nodeIdentity);
   }
 
+  private GloasBoundaryFixture createGloasBoundaryFixture() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
+    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    chainBuilder.generateBlocksUpToSlot(gloasSpec.computeStartSlotAtEpoch(ONE));
+    final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(ONE);
+    final SignedBlockAndState boundary =
+        chainBuilder.getBlockAndState(finalizedCheckpoint.getRoot()).orElseThrow();
+    final ExecutionPayloadUpdate boundaryExecutionPayload =
+        new ExecutionPayloadUpdate(
+            chainBuilder.getExecutionPayloadAtSlot(boundary.getSlot()).orElseThrow(), false);
+    final UInt64 childSlot = boundary.getSlot().plus(1);
+    final BeaconState childPreState = chainBuilder.getLatestBlockAndState().getState();
+    final Bytes32 childPrevRandao =
+        gloasSpec
+            .atSlot(childSlot)
+            .beaconStateAccessors()
+            .getRandaoMix(
+                childPreState,
+                gloasSpec.atSlot(childSlot).beaconStateAccessors().getCurrentEpoch(childPreState));
+    final SignedBlockAndState child =
+        chainBuilder.generateBlockAtSlot(
+            childSlot,
+            BlockOptions.create()
+                .setExecutionPayload(
+                    gloasDataStructureUtil.randomExecutionPayload(
+                        childSlot,
+                        builder ->
+                            builder
+                                .parentHash(
+                                    boundaryExecutionPayload
+                                        .executionPayload()
+                                        .getMessage()
+                                        .getPayload()
+                                        .getBlockHash())
+                                .prevRandao(childPrevRandao))));
+    final ProtoArray protoArray = createProtoArray(gloasSpec, genesis.getState());
+    addBlockToProtoArray(gloasSpec, protoArray, genesis);
+    final ForkChoiceStrategy strategy = ForkChoiceStrategy.initialize(gloasSpec, protoArray);
+    final BlockAndCheckpoints boundaryBlockAndCheckpoints =
+        BlockAndCheckpoints.fromBlockAndState(gloasSpec, boundary);
+    return new GloasBoundaryFixture(
+        gloasSpec,
+        protoArray,
+        strategy,
+        genesis,
+        boundary,
+        child,
+        finalizedCheckpoint,
+        boundaryBlockAndCheckpoints,
+        boundaryExecutionPayload);
+  }
+
+  private ProtoNode boundaryBaseNode(final GloasBoundaryFixture fixture) {
+    return fixture
+        .protoArray()
+        .getNode(ForkChoiceNode.createBase(fixture.boundary().getRoot()))
+        .orElseThrow();
+  }
+
+  private ProtoNode childBaseNode(final GloasBoundaryFixture fixture) {
+    return fixture
+        .protoArray()
+        .getNode(ForkChoiceNode.createBase(fixture.child().getRoot()))
+        .orElseThrow();
+  }
+
+  private void assertProtoArrayParentIndicesAreValid(final ProtoArray protoArray) {
+    final int nodeCount = protoArray.getTotalTrackedNodeCount();
+    protoArray
+        .getNodes()
+        .forEach(
+            node ->
+                node.getParentIndex()
+                    .ifPresent(parentIndex -> assertThat(parentIndex).isBetween(0, nodeCount - 1)));
+  }
+
   private void addProjectedNodeToProtoArray(
       final ProtoArray protoArray,
       final SignedBlockAndState blockAndState,
@@ -886,4 +1143,15 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
       SignedBlockAndState genesis,
       SignedBlockAndState block1,
       SignedBlockAndState block2) {}
+
+  private record GloasBoundaryFixture(
+      Spec spec,
+      ProtoArray protoArray,
+      ForkChoiceStrategy strategy,
+      SignedBlockAndState genesis,
+      SignedBlockAndState boundary,
+      SignedBlockAndState child,
+      Checkpoint finalizedCheckpoint,
+      BlockAndCheckpoints boundaryBlockAndCheckpoints,
+      ExecutionPayloadUpdate boundaryExecutionPayload) {}
 }

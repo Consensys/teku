@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,6 +33,7 @@ public class ProposerPreferencesUtilGloas implements ProposerPreferencesUtil {
 
   @Override
   public Optional<ProposerPreferences> createProposerPreferences(
+      final Bytes32 dependentRoot,
       final UInt64 slot,
       final UInt64 validatorIndex,
       final Eth1Address feeRecipient,
@@ -39,7 +41,7 @@ public class ProposerPreferencesUtilGloas implements ProposerPreferencesUtil {
     return Optional.of(
         schemaDefinitions
             .getProposerPreferencesSchema()
-            .create(slot, validatorIndex, feeRecipient, gasLimit));
+            .create(dependentRoot, slot, validatorIndex, feeRecipient, gasLimit));
   }
 
   @Override

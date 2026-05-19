@@ -31,12 +31,14 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -80,6 +82,8 @@ class InclusionListsBlockUpdaterTest {
     final UInt64 inclusionListSlot = UInt64.valueOf(10);
     final UInt64 proposerSlot = inclusionListSlot.increment();
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode parentForkChoiceNode = ForkChoiceNode.createFull(parentRoot);
+    final ChainHead chainHead = mock(ChainHead.class);
     final Bytes8 payloadId = Bytes8.fromHexString("0x0102030405060708");
     final InclusionList inclusionList = dataStructureUtil.randomInclusionList(2);
     final List<Bytes> transactions =
@@ -97,13 +101,16 @@ class InclusionListsBlockUpdaterTest {
     when(store.getInclusionLists(inclusionListSlot))
         .thenReturn(Optional.of(List.of(inclusionList)));
     when(spec.getBlockRootAtSlot(state, inclusionListSlot)).thenReturn(parentRoot);
-    when(forkChoiceNotifier.getPayloadId(parentRoot, proposerSlot, transactions))
+    when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(chainHead.getRoot()).thenReturn(parentRoot);
+    when(chainHead.getForkChoiceNode()).thenReturn(parentForkChoiceNode);
+    when(forkChoiceNotifier.getPayloadId(parentForkChoiceNode, proposerSlot, transactions))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
     assertThatSafeFuture(
             inclusionListsBlockUpdater.onUpdateBlockWithInclusionListsDue(inclusionListSlot))
         .isCompletedWithOptionalContaining(payloadId);
 
-    verify(forkChoiceNotifier).getPayloadId(parentRoot, proposerSlot, transactions);
+    verify(forkChoiceNotifier).getPayloadId(parentForkChoiceNode, proposerSlot, transactions);
   }
 }

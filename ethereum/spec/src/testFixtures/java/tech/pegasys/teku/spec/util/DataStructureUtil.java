@@ -172,6 +172,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -2002,7 +2004,8 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32());
+        new ForkChoiceNode(randomBytes32(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING),
+        randomInclusionListTransactions(randomSlot()));
   }
 
   public ClientVersion randomClientVersion() {
@@ -2055,7 +2058,7 @@ public final class DataStructureUtil {
   public ForkChoiceState randomForkChoiceState(
       final UInt64 headBlockSlot, final Bytes32 finalizedBlockHash, final boolean optimisticHead) {
     return new ForkChoiceState(
-        randomBytes32(),
+        new ForkChoiceNode(randomBytes32(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING),
         headBlockSlot,
         randomUInt64(),
         randomBytes32(),
@@ -3379,7 +3382,7 @@ public final class DataStructureUtil {
   public ProposerPreferences randomProposerPreferences() {
     return getGloasSchemaDefinitions()
         .getProposerPreferencesSchema()
-        .create(randomSlot(), randomUInt64(), randomEth1Address(), randomUInt64());
+        .create(randomBytes32(), randomSlot(), randomUInt64(), randomEth1Address(), randomUInt64());
   }
 
   public SignedProposerPreferences randomSignedProposerPreferences() {
@@ -3404,7 +3407,7 @@ public final class DataStructureUtil {
                 .getMessage()
                 .getBuilderIndex(),
             block.getRoot(),
-            block.getMessage().getParentRoot());
+            block.getParentRoot());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {

@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
@@ -30,6 +31,11 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class TestDataUtils {
@@ -111,5 +117,19 @@ public class TestDataUtils {
     try (final InputStream in = Files.newInputStream(path)) {
       return JsonUtil.parse(in, type);
     }
+  }
+
+  /**
+   * Builds an {@link AnchorPoint} from a state without the genesis-block body-root check that
+   * {@link AnchorPoint#fromGenesisState} performs. Some forks (e.g. gloas) define a genesis state
+   * whose {@code latest_block_header.body_root} does not match the body produced by {@code
+   * BeaconBlock.fromGenesisState}, so the anchor block is always synthesised from the state's
+   * {@code latest_block_header}.
+   */
+  public static AnchorPoint createAnchorFromState(final Spec spec, final BeaconState state) {
+    final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+    final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
+    final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
+    return AnchorPoint.create(spec, checkpoint, state, Optional.empty());
   }
 }

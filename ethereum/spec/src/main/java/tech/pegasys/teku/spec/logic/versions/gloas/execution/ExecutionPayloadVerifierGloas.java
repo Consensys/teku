@@ -78,6 +78,10 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
       throw new ExecutionPayloadVerificationException(
           "Envelope beacon block root is not consistent with the latest beacon block from the state");
     }
+    if (!envelope.getParentBeaconBlockRoot().equals(state.getLatestBlockHeader().getParentRoot())) {
+      throw new ExecutionPayloadVerificationException(
+          "Envelope parent beacon block root is not consistent with the latest beacon block parent root from the state");
+    }
     if (!envelope.getSlot().equals(state.getSlot())) {
       throw new ExecutionPayloadVerificationException(
           "Envelope slot is not consistent with the state slot");
@@ -134,7 +138,7 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
     }
     if (payloadExecutor.isPresent()) {
       final NewPayloadRequest payloadToExecute =
-          computeNewPayloadRequest(state, envelope, committedBid.getBlobKzgCommitments());
+          computeNewPayloadRequest(envelope, committedBid.getBlobKzgCommitments());
       final boolean optimisticallyAccept =
           payloadExecutor.get().optimisticallyExecute(Optional.empty(), payloadToExecute);
       if (!optimisticallyAccept) {
@@ -167,9 +171,7 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
   }
 
   protected NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state,
-      final ExecutionPayloadEnvelope envelope,
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final ExecutionPayloadEnvelope envelope, final SszList<SszKZGCommitment> blobKzgCommitments) {
     final List<VersionedHash> versionedHashes =
         blobKzgCommitments.stream()
             .map(SszKZGCommitment::getKZGCommitment)

@@ -357,7 +357,7 @@
       },
       "payload_attestations": [
         {
-          "aggregation_bits": "0x02",
+          "aggregation_bits": "0xaeb0",
           "data": {
             "beacon_block_root": "0xdbabc5418e28d8265fe892d2129c8395d0dd064a0845545f3a3c532fa2eddf8c",
             "slot": "16699259415",
@@ -367,7 +367,7 @@
           "signature": "0x98ffde69b4d92a4510b5d42ae9bcc05315ed0a20fab2ff6fc8e416678f150d7bfb961da6774e86213ee711a2b065c3d300a13fcf630d7f303c59d848ec47905d2b439e7bb4f3348b6ddc448aa00f7c6eb6f64513182a3d335e2753f66cbec83e"
         },
         {
-          "aggregation_bits": "0x02",
+          "aggregation_bits": "0xba32",
           "data": {
             "beacon_block_root": "0x9ecb7542cf4bad14a20f79bc45931b8d1483242ea9bf8c8edd186ab70a94624b",
             "slot": "11686939575",
@@ -377,7 +377,7 @@
           "signature": "0xb9014738ce2ebfe44a8255a53e34b604f223702435a966b81276bd7967cc1e172a4dbace09be70a1f73b300d83a7a8ec161cdc911b167a8a6489def11edca95a3587eab704e98325ce29eb4f86a477755421b480ca39020c82f07e4977d9e859"
         },
         {
-          "aggregation_bits": "0x00",
+          "aggregation_bits": "0x4c37",
           "data": {
             "beacon_block_root": "0x5d163b420f4066c536ad816e89ebe88f53a11ae2c99624d4a7240d8a925c8cb6",
             "slot": "23308551639",
@@ -387,7 +387,7 @@
           "signature": "0x954da68af7adf486693e9213a63a082fcf1b1ed99c320314b73e64c322470329df27c891348c17b92dc7972dbc7d9b4215c7746c756c1aa2194c7217ab902459290981a0905683fa8563a2a7241f2bc3a3d6e4fca48d9fce1c6c322c4835dc1b"
         },
         {
-          "aggregation_bits": "0x00",
+          "aggregation_bits": "0x18d1",
           "data": {
             "beacon_block_root": "0x83582f424fd7244f213350c530fd112a5fa71806352876480227941a471efbcb",
             "slot": "17944383863",

@@ -207,7 +207,16 @@ public class EventSubscriptionManager
   }
 
   @Override
-  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void onExecutionPayloadValidated(final SignedExecutionPayloadEnvelope executionPayload) {
+    onNewExecutionPayloadGossip(executionPayload);
+  }
+
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    onNewExecutionPayload(executionPayload, executionOptimistic);
+    // TODO-GLOAS: potentially we can emit this event earlier when blob availability and
+    // verification is complete (before importing)
     onExecutionPayloadAvailable(executionPayload);
   }
 
@@ -306,7 +315,7 @@ public class EventSubscriptionManager
         .ifPresent(
             payloadAttributes -> {
               final SpecMilestone milestone =
-                  spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
+                  spec.atSlot(payloadAttributes.proposalSlot()).getMilestone();
               final PayloadAttributesEvent payloadAttributesEvent =
                   PayloadAttributesEvent.create(
                       milestone,
@@ -318,6 +327,20 @@ public class EventSubscriptionManager
 
   protected void onSyncStateChange(final SyncState syncState) {
     notifySubscribersOfEvent(EventType.sync_state, new SyncStateChangeEvent(syncState.name()));
+  }
+
+  protected void onNewExecutionPayloadGossip(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    final ExecutionPayloadGossipEvent executionPayloadGossipEvent =
+        new ExecutionPayloadGossipEvent(executionPayload);
+    notifySubscribersOfEvent(EventType.execution_payload_gossip, executionPayloadGossipEvent);
+  }
+
+  protected void onNewExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    final ExecutionPayloadEvent executionPayloadEvent =
+        new ExecutionPayloadEvent(executionPayload, executionOptimistic);
+    notifySubscribersOfEvent(EventType.execution_payload, executionPayloadEvent);
   }
 
   protected void onExecutionPayloadAvailable(
