@@ -34,12 +34,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
@@ -59,6 +61,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute;
+  private final ProposerPreferencesManager proposerPreferencesManager;
 
   public ProposersDataManager(
       final EventThread eventThread,
@@ -68,6 +71,26 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       final RecentChainData recentChainData,
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute) {
+    this(
+        eventThread,
+        spec,
+        metricsSystem,
+        executionLayerChannel,
+        recentChainData,
+        proposerDefaultFeeRecipient,
+        forkChoiceUpdatedAlwaysSendPayloadAttribute,
+        ProposerPreferencesManager.NOOP);
+  }
+
+  public ProposersDataManager(
+      final EventThread eventThread,
+      final Spec spec,
+      final MetricsSystem metricsSystem,
+      final ExecutionLayerChannel executionLayerChannel,
+      final RecentChainData recentChainData,
+      final Optional<Eth1Address> proposerDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute,
+      final ProposerPreferencesManager proposerPreferencesManager) {
     final LabelledSuppliedMetric labelledGauge =
         metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.BEACON,
@@ -84,6 +107,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.forkChoiceUpdatedAlwaysSendPayloadAttribute = forkChoiceUpdatedAlwaysSendPayloadAttribute;
+    this.proposerPreferencesManager = proposerPreferencesManager;
   }
 
   @Override
@@ -254,6 +278,8 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
     final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
+    final UInt64 targetGasLimit =
+        getTargetGasLimit(blockSlot, proposerIndex, validatorRegistration);
 
     return Optional.of(
         new PayloadBuildingAttributes(
@@ -262,9 +288,25 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
             timestamp,
             random,
             feeRecipient,
+            targetGasLimit,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlock));
+  }
+
+  private UInt64 getTargetGasLimit(
+      final UInt64 blockSlot,
+      final UInt64 proposerIndex,
+      final Optional<SignedValidatorRegistration> validatorRegistration) {
+    return proposerPreferencesManager
+        .getProposerPreferences(blockSlot)
+        .filter(
+            proposerPreferences -> proposerPreferences.getValidatorIndex().equals(proposerIndex))
+        .map(ProposerPreferences::getGasLimit)
+        .or(
+            () ->
+                validatorRegistration.map(registration -> registration.getMessage().getGasLimit()))
+        .orElse(UInt64.ZERO);
   }
 
   // this function MUST return a fee recipient.

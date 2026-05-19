@@ -136,6 +136,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final UInt64 targetGasLimit = dataStructureUtil.randomUInt64();
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
@@ -143,11 +144,13 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
+            targetGasLimit,
             Optional.empty(),
             Optional.of(List.of()),
             ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
     final PayloadAttributesV4 payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(attributes);
+    assertThat(payloadAttributes.targetGasLimit).isEqualTo(targetGasLimit);
     final ForkChoiceUpdatedResult responseData =
         new ForkChoiceUpdatedResult(
             new PayloadStatusV1(
