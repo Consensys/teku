@@ -143,7 +143,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
   @Override
   public SafeFuture<Boolean> isBlockProposerConnected(final UInt64 blockSlot) {
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    return getStateInEpoch(epoch)
+    return getChainHeadStateInEpoch(epoch)
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
@@ -211,7 +211,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
     final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
     final ForkChoiceNode currentHeadBlock = forkChoiceState.headBlock();
-    return getStateInEpoch(epoch)
+    return getStateForPayloadBuildingAttributes(blockSlot, forkChoiceState)
         .thenApplyAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
@@ -281,7 +281,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     return Eth1Address.ZERO;
   }
 
-  private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
+  private SafeFuture<Optional<BeaconState>> getChainHeadStateInEpoch(final UInt64 requiredEpoch) {
     final Optional<ChainHead> chainHead = recentChainData.getChainHead();
     if (chainHead.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
@@ -293,6 +293,12 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       return recentChainData.retrieveBlockState(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
     }
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateForPayloadBuildingAttributes(
+      final UInt64 blockSlot, final ForkChoiceState forkChoiceState) {
+    return recentChainData.retrieveBlockState(
+        new SlotAndBlockRoot(blockSlot, forkChoiceState.headBlock().blockRoot()));
   }
 
   public Map<UInt64, PreparedProposerInfo> getPreparedProposerInfo() {

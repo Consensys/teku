@@ -88,8 +88,6 @@ class ForkChoiceNotifierTest {
       Optional.of(Eth1Address.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
   private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
-  private final ForkChoiceStateProvider forkChoiceStateProvider =
-      mock(ForkChoiceStateProvider.class);
 
   private ForkChoiceNotifierImpl notifier;
   private ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification;
@@ -122,7 +120,6 @@ class ForkChoiceNotifierTest {
                 forkChoiceUpdatedAlwaysSendPayloadAttributes));
     notifier =
         new ForkChoiceNotifierImpl(
-            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -165,7 +162,6 @@ class ForkChoiceNotifierTest {
                 false));
     notifier =
         new ForkChoiceNotifierImpl(
-            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -231,6 +227,99 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void onForkChoiceUpdated_shouldWaitForPayloadBuildingAttributesAtProposingSlot() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+
+    final AtomicReference<SafeFuture<Optional<PayloadBuildingAttributes>>> actualResponse =
+        new AtomicReference<>();
+    final SafeFuture<Optional<PayloadBuildingAttributes>> deferredResponse = new SafeFuture<>();
+    doAnswer(
+            invocation -> {
+              actualResponse.set(
+                  (SafeFuture<Optional<PayloadBuildingAttributes>>) invocation.callRealMethod());
+              return deferredResponse;
+            })
+        .when(proposersDataManager)
+        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+
+    notifyForkChoiceUpdated(
+        forkChoiceState, Optional.of(blockSlot), notification -> assertThat(notification).isNull());
+    verifyNoInteractions(executionLayerChannel);
+
+    actualResponse.get().propagateTo(deferredResponse);
+
+    assertThat(forkChoiceUpdatedResultNotification).isNotNull();
+    assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+        .contains(payloadBuildingAttributes);
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void getPayloadId_shouldWaitWhenPendingPayloadAttributesSessionIsPromotedToProduction() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+
+    final AtomicReference<SafeFuture<Optional<PayloadBuildingAttributes>>> actualResponse =
+        new AtomicReference<>();
+    final SafeFuture<Optional<PayloadBuildingAttributes>> deferredResponse = new SafeFuture<>();
+    doAnswer(
+            invocation -> {
+              actualResponse.set(
+                  (SafeFuture<Optional<PayloadBuildingAttributes>>) invocation.callRealMethod());
+              return deferredResponse;
+            })
+        .when(proposersDataManager)
+        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+
+    notifyForkChoiceUpdated(forkChoiceState);
+    verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+
+    doAnswer(InvocationOnMock::callRealMethod)
+        .when(proposersDataManager)
+        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+
+    final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadBuildingAttributes)))
+        .thenReturn(responseFuture);
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+    notifyForkChoiceUpdated(
+        forkChoiceState, Optional.of(blockSlot), notification -> assertThat(notification).isNull());
+
+    final SafeFuture<Optional<ExecutionPayloadContext>> futureExecutionPayloadContext =
+        notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot);
+    assertThatSafeFuture(futureExecutionPayloadContext).isNotCompleted();
+
+    actualResponse.get().propagateTo(deferredResponse);
+
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+    assertThatSafeFuture(futureExecutionPayloadContext).isNotCompleted();
+
+    responseFuture.complete(
+        createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
+
+    assertThatSafeFuture(futureExecutionPayloadContext)
+        .isCompletedWithOptionalContaining(
+            new ExecutionPayloadContext(payloadId, forkChoiceState, payloadBuildingAttributes));
+  }
+
+  @Test
   void onForkChoiceUpdated_shouldSendWhenProposingSlotAlreadyResolvedLateBlockReorgOverride() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
@@ -238,7 +327,6 @@ class ForkChoiceNotifierTest {
     recentChainData = mock(RecentChainData.class);
     notifier =
         new ForkChoiceNotifierImpl(
-            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -265,7 +353,6 @@ class ForkChoiceNotifierTest {
     recentChainData = mock(RecentChainData.class);
     notifier =
         new ForkChoiceNotifierImpl(
-            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -326,6 +413,12 @@ class ForkChoiceNotifierTest {
     // fcu call with same state but no proposerSlot should not cause a new call to the EL
     notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState);
     verifyNoMoreInteractions(executionLayerChannel);
+
+    assertThatSafeFuture(
+            notifier.getPayloadId(
+                ForkChoiceNode.createBase(recentChainData.getBestBlockRoot().orElseThrow()),
+                blockSlot))
+        .isCompletedExceptionally();
 
     // when attestation due arrives, the next proposer attributes should be sent
     forkChoiceUpdatedResultNotification = null;
@@ -822,12 +915,10 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
 
-    // we expect head block root and slot to be ZERO since in the test we do not send an
-    // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            ForkChoiceNode.createBase(Bytes32.ZERO),
-            UInt64.ZERO,
+            ForkChoiceNode.createBase(blockRoot),
+            headState.getSlot(),
             UInt64.ZERO,
             terminalBlockHash,
             Bytes32.ZERO,
@@ -1044,33 +1135,33 @@ class ForkChoiceNotifierTest {
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
-    when(forkChoiceStateProvider.getForkChoiceStateAsync())
-        .thenReturn(SafeFuture.completedFuture(forkChoiceState));
-
     when(executionLayerChannel.engineForkChoiceUpdated(
             forkChoiceState, Optional.of(payloadBuildingAttributes)))
         .thenReturn(responseFuture);
 
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot), __ -> {});
+
     // Initially has no payload ID.
     SafeFuture<Optional<ExecutionPayloadContext>> futureExecutionPayloadContext =
         notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot);
+    if (mustFail) {
+      assertThatSafeFuture(futureExecutionPayloadContext).isCompletedExceptionally();
+      return;
+    }
+
     assertThatSafeFuture(futureExecutionPayloadContext).isNotCompleted();
 
     responseFuture.complete(
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
 
-    if (mustFail) {
-      assertThatSafeFuture(futureExecutionPayloadContext).isCompletedExceptionally();
-    } else {
-      final ExecutionPayloadContext executionPayloadContext =
-          new ExecutionPayloadContext(payloadId, forkChoiceState, payloadBuildingAttributes);
-      assertThatSafeFuture(futureExecutionPayloadContext)
-          .isCompletedWithOptionalContaining(executionPayloadContext);
-      // verify subscribers notified
-      assertThat(forkChoiceUpdatedResultNotification.forkChoiceState()).isEqualTo(forkChoiceState);
-      assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
-          .hasValue(payloadBuildingAttributes);
-    }
+    final ExecutionPayloadContext executionPayloadContext =
+        new ExecutionPayloadContext(payloadId, forkChoiceState, payloadBuildingAttributes);
+    assertThatSafeFuture(futureExecutionPayloadContext)
+        .isCompletedWithOptionalContaining(executionPayloadContext);
+    // verify subscribers notified
+    assertThat(forkChoiceUpdatedResultNotification.forkChoiceState()).isEqualTo(forkChoiceState);
+    assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+        .hasValue(payloadBuildingAttributes);
   }
 
   private PayloadBuildingAttributes withProposerForSlot(final UInt64 blockSlot) {

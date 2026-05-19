@@ -89,12 +89,21 @@ public class ForkChoiceUpdateData {
     return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
   }
 
+  public ForkChoiceUpdateData withFreshForkChoiceState(final ForkChoiceState forkChoiceState) {
+    return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
+  }
+
   public ForkChoiceUpdateData withPayloadBuildingAttributes(
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     if (this.payloadBuildingAttributes.equals(payloadBuildingAttributes)) {
       return this;
     }
-    return new ForkChoiceUpdateData(forkChoiceState, payloadBuildingAttributes, terminalBlockHash);
+    final ForkChoiceUpdateData updated =
+        new ForkChoiceUpdateData(forkChoiceState, payloadBuildingAttributes, terminalBlockHash);
+    // Same fork-choice head, newer payload attributes: callers may already be waiting on this
+    // instance's payload context, so bridge completion from the replacement back to this one.
+    updated.executionPayloadContext.propagateTo(executionPayloadContext);
+    return updated;
   }
 
   public ForkChoiceUpdateData withTerminalBlockHash(final Bytes32 terminalBlockHash) {
@@ -181,9 +190,11 @@ public class ForkChoiceUpdateData {
       return Optional.empty();
     }
 
+    final Optional<PayloadBuildingAttributes> maybePayloadBuildingAttributes =
+        getPayloadBuildingAttributes();
     logSendingForkChoiceUpdated();
     final SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
-        executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
+        executionLayer.engineForkChoiceUpdated(forkChoiceState, maybePayloadBuildingAttributes);
 
     forkChoiceUpdatedResult
         .thenApply(ForkChoiceUpdatedResult::getPayloadId)
@@ -198,7 +209,7 @@ public class ForkChoiceUpdateData {
 
                             // it is safe to use orElseThrow() since it should be impossible to
                             // receive a payloadId without having previously sent payloadAttributes
-                            payloadBuildingAttributes.orElseThrow())))
+                            maybePayloadBuildingAttributes.orElseThrow())))
         .propagateTo(executionPayloadContext);
 
     return Optional.of(forkChoiceUpdatedResult);
