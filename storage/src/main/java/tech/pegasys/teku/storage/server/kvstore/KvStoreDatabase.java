@@ -1298,11 +1298,9 @@ public class KvStoreDatabase implements Database {
       return false;
     }
 
-    UInt64 nextSlotToSearch = tillSlotInclusive;
-
     Optional<UInt64> maybeSlot =
         findPreviousDataColumnSidecarSlot(
-            nextSlotToSearch, maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
+            tillSlotInclusive, maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
     while (prunedSlots < pruneSlotLimit
         && maybeSlot.isPresent()
         && maybeSlot.get().isLessThanOrEqualTo(tillSlotInclusive)) {
@@ -1335,10 +1333,9 @@ public class KvStoreDatabase implements Database {
       if (prunedSlots >= pruneSlotLimit || slot.equals(maybeFirstDataColumnSidecarSlot.get())) {
         break;
       }
-      nextSlotToSearch = slot.minus(1);
       maybeSlot =
           findPreviousDataColumnSidecarSlot(
-              nextSlotToSearch, maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
+              slot.minus(1), maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
     }
 
     LOG.debug(
