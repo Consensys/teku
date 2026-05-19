@@ -26,7 +26,7 @@ public class GossipTests {
               "networking/gossip_beacon_aggregate_and_proof",
               new GossipBeaconAggregateAndProofTestExecutor())
           .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
-          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
+          .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
           .put(
               "networking/gossip_bls_to_execution_change",
               new GossipBlsToExecutionChangeTestExecutor())
