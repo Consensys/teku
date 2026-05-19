@@ -143,7 +143,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
   @Override
   public SafeFuture<Boolean> isBlockProposerConnected(final UInt64 blockSlot) {
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    return getChainHeadStateInEpoch(epoch)
+    return getStateInEpoch(epoch)
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
@@ -281,7 +281,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     return Eth1Address.ZERO;
   }
 
-  private SafeFuture<Optional<BeaconState>> getChainHeadStateInEpoch(final UInt64 requiredEpoch) {
+  private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
     final Optional<ChainHead> chainHead = recentChainData.getChainHead();
     if (chainHead.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
