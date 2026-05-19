@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -73,7 +74,7 @@ class KvStoreDatabaseTest {
         .thenReturn(Optional.of(firstFuluSlot));
     final KvStoreCombinedDao dao = mock(KvStoreCombinedDao.class);
     doAnswer(
-            invocation -> {
+            (final InvocationOnMock invocation) -> {
               lookupSlots.add(invocation.getArgument(0));
               return nextSlots.isEmpty() ? Optional.empty() : nextSlots.remove();
             })
@@ -99,7 +100,7 @@ class KvStoreDatabaseTest {
   private static FinalizedUpdater updaterCountingRemovals(final AtomicInteger removals) {
     final FinalizedUpdater updater = mock(FinalizedUpdater.class);
     doAnswer(
-            __ -> {
+            (final InvocationOnMock __) -> {
               removals.incrementAndGet();
               return null;
             })
