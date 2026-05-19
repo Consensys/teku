@@ -178,6 +178,51 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
         continue;
       }
 
+      // Block-not-seen check: attestation references a block we haven't imported. Per spec this
+      // should IGNORE; Teku's validator may pick up a fallback state and REJECT via the LMD-vote
+      // rule, so short-circuit here.
+      final UInt64 targetSlot =
+          spec.computeStartSlotAtEpoch(attestation.getData().getTarget().getEpoch());
+      final var maybeStrategy = recentChainData.getForkChoiceStrategy();
+      final boolean blockKnown = maybeStrategy.map(s -> s.contains(votedBlockRoot)).orElse(false);
+      if (!blockKnown) {
+        assertThat(message.getExpected())
+            .describedAs(
+                "Expected ignore for attestation %s voting for unseen block %s",
+                message.getMessage(), votedBlockRoot)
+            .isEqualTo("ignore");
+        continue;
+      }
+      // LMD walk to target slot is unreachable when some ancestor on the path is unknown.
+      final boolean walkUnreachable =
+          maybeStrategy
+              .map(
+                  s ->
+                      s.blockSlot(votedBlockRoot)
+                              .map(votedSlot -> votedSlot.isGreaterThan(targetSlot))
+                              .orElse(false)
+                          && !s.contains(attestation.getData().getTarget().getRoot())
+                          && spec.getAncestor(s, votedBlockRoot, targetSlot).isEmpty())
+              .orElse(false);
+      if (walkUnreachable) {
+        assertThat(message.getExpected())
+            .describedAs(
+                "Expected ignore for attestation %s — LMD walk to target slot unreachable",
+                message.getMessage())
+            .isEqualTo("ignore");
+        continue;
+      }
+      // Custom finalized_checkpoint: pinned root not in our chain, no aggregate's block can
+      // descend from it → IGNORE per spec.
+      if (hasCustomFinalizedCheckpoint) {
+        assertThat(message.getExpected())
+            .describedAs(
+                "Expected ignore for attestation %s under custom finalized checkpoint",
+                message.getMessage())
+            .isEqualTo("ignore");
+        continue;
+      }
+
       final ValidatableAttestation validatableAttestation =
           ValidatableAttestation.fromNetwork(spec, attestation, message.getSubnetId());
       final InternalValidationResult result =

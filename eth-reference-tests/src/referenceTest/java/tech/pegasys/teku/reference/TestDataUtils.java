@@ -125,11 +125,22 @@ public class TestDataUtils {
    * whose {@code latest_block_header.body_root} does not match the body produced by {@code
    * BeaconBlock.fromGenesisState}, so the anchor block is always synthesised from the state's
    * {@code latest_block_header}.
+   *
+   * <p>Networking-test fixtures sometimes supply a state advanced past the anchor block ({@code
+   * state.slot > latest_block_header.slot}). {@code StoreBuilder} indexes the anchor in the
+   * proto-array using {@code state.slot}, which would place the anchor at the wrong slot and break
+   * {@code getAncestor} lookups. To compensate, the state is rolled back to the anchor block's slot
+   * before constructing the anchor; downstream validators process slots forward on demand.
    */
   public static AnchorPoint createAnchorFromState(final Spec spec, final BeaconState state) {
-    final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
-    final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
+    final UInt64 anchorBlockSlot = state.getLatestBlockHeader().getSlot();
+    final BeaconState anchorState =
+        state.getSlot().equals(anchorBlockSlot)
+            ? state
+            : state.updated(s -> s.setSlot(anchorBlockSlot));
+    final BeaconBlockHeader header = BeaconBlockHeader.fromState(anchorState);
+    final UInt64 epoch = spec.computeNextEpochBoundary(anchorState.getSlot());
     final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
-    return AnchorPoint.create(spec, checkpoint, state, Optional.empty());
+    return AnchorPoint.create(spec, checkpoint, anchorState, Optional.empty());
   }
 }
