@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -168,50 +169,55 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
   private void onboardBuildersFromPendingDeposits(final MutableBeaconStateGloas state) {
     final long startTimeNanos = System.nanoTime();
     LOG.debug(
-        "Starting processing builder deposits from {} pending deposits at timestampNanos={}",
+        "Starting onboarding builders at fork from {} pending deposits at timestampNanos={}",
         state.getPendingDeposits().size(),
         startTimeNanos);
     final Set<BLSPublicKey> validatorPubkeys =
         state.getValidators().stream().map(Validator::getPublicKey).collect(Collectors.toSet());
-    final SszList<PendingDeposit> pendingDeposits =
-        state.getPendingDeposits().stream()
-            .filter(
-                deposit -> {
-                  if (validatorPubkeys.contains(deposit.getPublicKey())) {
-                    return true;
-                  }
-                  final Set<BLSPublicKey> builderPubkeys =
-                      state.getBuilders().stream()
-                          .map(Builder::getPublicKey)
-                          .collect(Collectors.toSet());
-                  if (builderPubkeys.contains(deposit.getPublicKey())
-                      || predicates.isBuilderWithdrawalCredential(
-                          deposit.getWithdrawalCredentials())) {
-                    beaconStateMutators.applyDepositForBuilder(
-                        state,
-                        deposit.getPublicKey(),
-                        deposit.getWithdrawalCredentials(),
-                        deposit.getAmount(),
-                        deposit.getSignature(),
-                        deposit.getSlot(),
-                        false);
-                    return false;
-                  }
-                  if (miscHelpers.isValidDepositSignature(
-                      deposit.getPublicKey(),
-                      deposit.getWithdrawalCredentials(),
-                      deposit.getAmount(),
-                      deposit.getSignature())) {
-                    validatorPubkeys.add(deposit.getPublicKey());
-                    return true;
-                  }
-                  return false;
-                })
-            .collect(schemaDefinitions.getPendingDepositsSchema().collector());
-    state.setPendingDeposits(pendingDeposits);
+    final List<PendingDeposit> pendingDeposits = new ArrayList<>();
+    // Avoids re-scanning pending deposits and re-verifying signatures for repeated pubkeys
+    final Set<BLSPublicKey> verifiedPendingValidatorPubkeys = new HashSet<>();
+
+    for (final PendingDeposit deposit : state.getPendingDeposits()) {
+      final BLSPublicKey pubkey = deposit.getPublicKey();
+      // Deposits for existing validators stay in the pending queue
+      if (validatorPubkeys.contains(pubkey)) {
+        pendingDeposits.add(deposit);
+        continue;
+      }
+      final Set<BLSPublicKey> builderPubkeys =
+          state.getBuilders().stream().map(Builder::getPublicKey).collect(Collectors.toSet());
+      if (!builderPubkeys.contains(pubkey)) {
+        // Deposits without builder credentials stay in the pending queue
+        if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
+          pendingDeposits.add(deposit);
+          continue;
+        }
+        // If there is a valid pending deposit for a new validator with this pubkey, keep this
+        // deposit in the pending queue to be applied to that validator later.
+        final boolean isPendingValidator =
+            verifiedPendingValidatorPubkeys.contains(pubkey)
+                || (miscHelpers.isPendingValidator(pendingDeposits, pubkey)
+                    && verifiedPendingValidatorPubkeys.add(pubkey));
+        if (isPendingValidator) {
+          pendingDeposits.add(deposit);
+          continue;
+        }
+      }
+      beaconStateMutators.applyDepositForBuilder(
+          state,
+          deposit.getPublicKey(),
+          deposit.getWithdrawalCredentials(),
+          deposit.getAmount(),
+          deposit.getSignature(),
+          deposit.getSlot(),
+          false);
+    }
+    state.setPendingDeposits(
+        schemaDefinitions.getPendingDepositsSchema().createFromElements(pendingDeposits));
     final long finishTimeNanos = System.nanoTime();
     LOG.debug(
-        "Finished processing builder deposits at timestampNanos={}. Pending deposits remaining: {}, builders: {}, elapsedNanos={}",
+        "Finished onboarding builders at fork at timestampNanos={}. Pending deposits remaining: {}, builders: {}, elapsedNanos={}",
         finishTimeNanos,
         pendingDeposits.size(),
         state.getBuilders().size(),
