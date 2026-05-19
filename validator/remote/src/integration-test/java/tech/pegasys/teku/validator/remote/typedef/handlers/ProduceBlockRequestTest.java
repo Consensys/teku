@@ -99,8 +99,10 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainerAndMetaData.get().blockContainer().getBlock())
-        .isEqualTo(blockResponse.getData());
+    final BeaconBlock actualBlock =
+        maybeBlockContainerAndMetaData.get().blockContainer().getBlock();
+    final BeaconBlock expectedBlock = blockResponse.getData().getBlock();
+    assertThat(actualBlock).isEqualTo(expectedBlock);
 
     assertThat(maybeBlockContainerAndMetaData.get().consensusBlockValue())
         .isEqualTo(UInt256.valueOf(123000000000L));

@@ -207,7 +207,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 return;
               }
               onForkChoiceUpdatedPayloadResult(
-                  forkChoiceUpdatedResultNotification.forkChoiceState().headBlock(),
+                  forkChoiceUpdatedResultNotification.forkChoiceState(),
                   forkChoiceUpdatedResult.getPayloadStatus());
             })
         .finish(
@@ -223,10 +223,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public SafeFuture<Optional<ChainHead>> processHead() {
     return processHead(Optional.empty(), false);
-  }
-
-  public boolean isForkChoiceLateBlockReorgEnabled() {
-    return forkChoiceLateBlockReorgEnabled;
   }
 
   /** on_block */
@@ -723,8 +719,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
+    // Invalid payload statuses returned above, so the direct-invalid flag is irrelevant here.
+    // Gloas skips this on_block notification entirely.
     if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
-      forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+      forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, false);
     }
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
@@ -758,10 +756,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private ExecutionPayloadImportResult importExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceUtil forkChoiceUtil,
-      final PayloadValidationResult payloadResult,
+      final PayloadStatus payloadStatus,
       final DataAndValidationResult<?> dataAndValidationResult) {
-    final PayloadStatus payloadStatus = payloadResult.getStatus();
-
     if (payloadStatus.hasInvalidStatus()) {
       final ExecutionPayloadImportResult result =
           ExecutionPayloadImportResult.failedVerification(
@@ -810,7 +806,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
 
     forkChoiceStrategy.onExecutionPayloadResult(
-        signedEnvelope.getBeaconBlockRoot(), payloadStatus, true);
+        signedEnvelope.getBeaconBlockRoot(), payloadStatus, false);
 
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
@@ -977,7 +973,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void onForkChoiceUpdatedPayloadResult(
-      final ForkChoiceNode node, final PayloadStatus payloadResult) {
+      final ForkChoiceState forkChoiceState, final PayloadStatus payloadResult) {
+    final ForkChoiceNode node = forkChoiceState.headBlock();
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
     if (payloadResult.hasValidStatus()) {
       transitionValidatedStatus =
@@ -989,8 +986,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     transitionValidatedStatus.finishAsync(
         result -> {
           final PayloadStatus resultStatus = result.getStatus();
-          final Bytes32 validatedBlockRoot =
-              result.getInvalidTransitionBlockRoot().orElse(node.blockRoot());
+          final Optional<Bytes32> maybeInvalidTransitionBlockRoot =
+              result.getInvalidTransitionBlockRoot();
+          final Bytes32 invalidBlockRoot = maybeInvalidTransitionBlockRoot.orElse(node.blockRoot());
 
           if (resultStatus.hasValidStatus()) {
             // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
@@ -998,18 +996,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             // collapsing to block root.
             getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, false);
           } else {
-            getForkChoiceStrategy()
-                .onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
+            // invalidTransitionBlockRoot is only populated when merge-transition validation found a
+            // specific Bellatrix transition block to invalidate. Otherwise the EL verdict applies
+            // to the exact fork-choice node we sent in forkchoiceUpdated.
+            maybeInvalidTransitionBlockRoot.ifPresentOrElse(
+                invalidTransitionBlockRoot ->
+                    getForkChoiceStrategy()
+                        .onExecutionPayloadResult(invalidTransitionBlockRoot, resultStatus, true),
+                () -> getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, true));
           }
 
           if (resultStatus.hasInvalidStatus()) {
-            LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);
+            LOG.warn("Will run fork choice because head block {} was invalid", invalidBlockRoot);
             processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
           }
         },
         error -> {
           // Pass FatalServiceFailureException up to the uncaught exception handler.
-          // This will cause teku to exit because the error is unrecoverable.
+          // This will cause Teku to exit because the error is unrecoverable.
           // We specifically do this here because a FatalServiceFailureException will be thrown if
           // a justified or finalized block is found to be invalid.
           if (ExceptionUtil.hasCause(error, FatalServiceFailureException.class)) {
@@ -1032,7 +1036,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
 
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+    if (!currentHead.isSameHeadAs(bestHeadBlock)) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
 
@@ -1060,7 +1064,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStrategy forkChoiceStrategy) {
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
     final SlotAndForkChoiceNode bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.node().equals(currentHead.getForkChoiceNode())) {
+    if (!currentHead.isSameHeadAs(bestHeadBlock)) {
       recentChainData.updateHead(bestHeadBlock.node(), bestHeadBlock.slot());
     }
   }
