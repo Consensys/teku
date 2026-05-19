@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -142,7 +143,7 @@ interface ForkChoiceModel {
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
   void onPtcVote(
-      Bytes32 blockRoot, UInt64 validatorIndex, boolean payloadPresent, boolean blobDataAvailable);
+      Bytes32 blockRoot, IntSet ptcPositions, boolean payloadPresent, boolean blobDataAvailable);
 
   void onRemovedBlockRoot(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
