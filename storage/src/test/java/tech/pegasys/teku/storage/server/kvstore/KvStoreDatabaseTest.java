@@ -55,7 +55,8 @@ class KvStoreDatabaseTest {
         databaseWithUpdater(removals, streamedSlots, lookupSlots, nextSlots, firstFuluSlot);
 
     final boolean limitReached =
-        database.pruneDataColumnSidecars(2, pruneCutoff, false, "canonical");
+        database.pruneDataColumnSidecars(
+            2, pruneCutoff, KvStoreDatabase.DataColumnSidecarType.CANONICAL);
 
     assertThat(limitReached).isTrue();
     assertThat(lookupSlots).containsExactly(pruneCutoff, pruneCutoff.minus(1));
@@ -79,7 +80,7 @@ class KvStoreDatabaseTest {
               return nextSlots.isEmpty() ? Optional.empty() : nextSlots.remove();
             })
         .when(dao)
-        .getLatestDataSidecarColumnSlotAtOrBefore(any());
+        .getPreviousDataColumnSidecarSlotAtOrBefore(any());
     return new KvStoreDatabase(dao, StateStorageMode.PRUNE, false, spec) {
 
       @Override

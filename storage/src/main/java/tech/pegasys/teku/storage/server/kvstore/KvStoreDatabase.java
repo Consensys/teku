@@ -107,6 +107,21 @@ public class KvStoreDatabase implements Database {
   @VisibleForTesting final KvStoreCombinedDao dao;
   private final StateStorageMode stateStorageMode;
 
+  enum DataColumnSidecarType {
+    CANONICAL("canonical"),
+    NON_CANONICAL("non-canonical");
+
+    private final String displayName;
+
+    DataColumnSidecarType(final String displayName) {
+      this.displayName = displayName;
+    }
+
+    String displayName() {
+      return displayName;
+    }
+  }
+
   KvStoreDatabase(
       final KvStoreCombinedDao dao,
       final StateStorageMode stateStorageMode,
@@ -1267,11 +1282,12 @@ public class KvStoreDatabase implements Database {
     LOG.debug(
         "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, false, "canonical")) {
+    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL)) {
       LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
     }
 
-    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, true, "non-canonical")) {
+    if (pruneDataColumnSidecars(
+        pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL)) {
       LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
     }
 
@@ -1279,11 +1295,15 @@ public class KvStoreDatabase implements Database {
         "Data column sidecars pruning completed in {} ms", System.currentTimeMillis() - startTime);
   }
 
+  /**
+   * Prunes data column sidecars from newest to oldest. The sidecar column can be large, so pruning
+   * uses a floor lookup to jump directly to the newest stored slot at or before the cutoff, streams
+   * only that slot, removes it, then seeks to the previous eligible slot for the next batch item.
+   */
   boolean pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final UInt64 tillSlotInclusive,
-      final boolean nonCanonicalSidecars,
-      final String sidecarType) {
+      final DataColumnSidecarType sidecarType) {
 
     final long startTime = System.currentTimeMillis();
     int prunedSlots = 0;
@@ -1300,31 +1320,23 @@ public class KvStoreDatabase implements Database {
 
     Optional<UInt64> maybeSlot =
         findPreviousDataColumnSidecarSlot(
-            tillSlotInclusive, maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
-    while (prunedSlots < pruneSlotLimit
-        && maybeSlot.isPresent()
-        && maybeSlot.get().isLessThanOrEqualTo(tillSlotInclusive)) {
+            tillSlotInclusive, maybeFirstDataColumnSidecarSlot.get(), sidecarType);
+    while (prunedSlots < pruneSlotLimit && maybeSlot.isPresent()) {
       final UInt64 slot = maybeSlot.get();
-      final List<DataColumnSlotAndIdentifier> keys;
-      try (final Stream<DataColumnSlotAndIdentifier> identifiersForSlot =
-          nonCanonicalSidecars
-              ? streamNonCanonicalDataColumnIdentifiers(slot, slot)
-              : streamDataColumnIdentifiers(slot, slot)) {
-        keys = identifiersForSlot.toList();
-      }
+      final List<DataColumnSlotAndIdentifier> keys =
+          getDataColumnIdentifiersForSlot(sidecarType, slot);
 
       if (keys.isEmpty()) {
-        LOG.warn("No {} data column sidecars found for sidecar slot {}", sidecarType, slot);
+        LOG.warn(
+            "No {} data column sidecars found for sidecar slot {}",
+            sidecarType.displayName(),
+            slot);
         break;
       }
 
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         for (final DataColumnSlotAndIdentifier key : keys) {
-          if (nonCanonicalSidecars) {
-            updater.removeNonCanonicalSidecar(key);
-          } else {
-            updater.removeSidecar(key);
-          }
+          removeDataColumnSidecar(sidecarType, updater, key);
         }
         updater.commit();
       }
@@ -1335,25 +1347,55 @@ public class KvStoreDatabase implements Database {
       }
       maybeSlot =
           findPreviousDataColumnSidecarSlot(
-              slot.minus(1), maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
+              slot.minus(1), maybeFirstDataColumnSidecarSlot.get(), sidecarType);
     }
 
     LOG.debug(
         "Pruned {} data column sidecars in {} slots in {} ms",
-        sidecarType,
+        sidecarType.displayName(),
         prunedSlots,
         System.currentTimeMillis() - startTime);
     return prunedSlots >= pruneSlotLimit;
   }
 
+  private List<DataColumnSlotAndIdentifier> getDataColumnIdentifiersForSlot(
+      final DataColumnSidecarType sidecarType, final UInt64 slot) {
+    return switch (sidecarType) {
+      case CANONICAL -> {
+        try (final Stream<DataColumnSlotAndIdentifier> identifiersForSlot =
+            streamDataColumnIdentifiers(slot)) {
+          yield identifiersForSlot.toList();
+        }
+      }
+      case NON_CANONICAL -> {
+        try (final Stream<DataColumnSlotAndIdentifier> identifiersForSlot =
+            streamNonCanonicalDataColumnIdentifiers(slot)) {
+          yield identifiersForSlot.toList();
+        }
+      }
+    };
+  }
+
+  private void removeDataColumnSidecar(
+      final DataColumnSidecarType sidecarType,
+      final FinalizedUpdater updater,
+      final DataColumnSlotAndIdentifier key) {
+    switch (sidecarType) {
+      case CANONICAL -> updater.removeSidecar(key);
+      case NON_CANONICAL -> updater.removeNonCanonicalSidecar(key);
+    }
+  }
+
   private Optional<UInt64> findPreviousDataColumnSidecarSlot(
       final UInt64 latestSlot,
       final UInt64 firstDataColumnSidecarSlot,
-      final boolean nonCanonicalSidecars) {
+      final DataColumnSidecarType sidecarType) {
     final Optional<UInt64> maybeSlot =
-        nonCanonicalSidecars
-            ? dao.getLatestNonCanonicalDataSidecarColumnSlotAtOrBefore(latestSlot)
-            : dao.getLatestDataSidecarColumnSlotAtOrBefore(latestSlot);
+        switch (sidecarType) {
+          case CANONICAL -> dao.getPreviousDataColumnSidecarSlotAtOrBefore(latestSlot);
+          case NON_CANONICAL -> dao.getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(
+              latestSlot);
+        };
     return maybeSlot.filter(slot -> slot.isGreaterThanOrEqualTo(firstDataColumnSidecarSlot));
   }
 

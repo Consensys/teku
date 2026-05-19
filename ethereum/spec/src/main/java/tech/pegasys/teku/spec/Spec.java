@@ -1372,9 +1372,11 @@ public class Spec {
   }
 
   public Optional<UInt64> computeFirstSlotWithDataColumnSidecarSupport() {
+    if (!supportsDataColumnSidecars()) {
+      return Optional.empty();
+    }
     return getSpecConfigFulu()
         .map(SpecConfigFulu::getFuluForkEpoch)
-        .filter(epoch -> !epoch.equals(UInt64.MAX_VALUE))
         .map(this::computeStartSlotAtEpoch);
   }
 

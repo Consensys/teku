@@ -192,9 +192,18 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
-  Optional<UInt64> getLatestDataSidecarColumnSlotAtOrBefore(UInt64 slot);
+  /**
+   * Returns the greatest data column sidecar slot less than or equal to {@code slot}. The lookup
+   * uses a floor key for {@code slot}, so it seeks directly to the newest eligible sidecar entry.
+   */
+  Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(UInt64 slot);
 
-  Optional<UInt64> getLatestNonCanonicalDataSidecarColumnSlotAtOrBefore(UInt64 slot);
+  /**
+   * Returns the greatest non-canonical data column sidecar slot less than or equal to {@code slot}.
+   * The lookup uses a floor key for {@code slot}, so it seeks directly to the newest eligible
+   * sidecar entry.
+   */
+  Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(UInt64 slot);
 
   Optional<UInt64> getEarliestAvailableDataColumnSlot();
 

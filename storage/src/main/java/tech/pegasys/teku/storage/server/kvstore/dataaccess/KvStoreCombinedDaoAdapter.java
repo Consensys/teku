@@ -379,13 +379,14 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<UInt64> getLatestDataSidecarColumnSlotAtOrBefore(final UInt64 slot) {
-    return finalizedDao.getLatestDataSidecarColumnSlotAtOrBefore(slot);
+  public Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(final UInt64 slot) {
+    return finalizedDao.getPreviousDataColumnSidecarSlotAtOrBefore(slot);
   }
 
   @Override
-  public Optional<UInt64> getLatestNonCanonicalDataSidecarColumnSlotAtOrBefore(final UInt64 slot) {
-    return finalizedDao.getLatestNonCanonicalDataSidecarColumnSlotAtOrBefore(slot);
+  public Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(
+      final UInt64 slot) {
+    return finalizedDao.getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(slot);
   }
 
   @Override
