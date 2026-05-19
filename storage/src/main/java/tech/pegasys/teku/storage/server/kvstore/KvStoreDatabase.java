@@ -1295,10 +1295,6 @@ public class KvStoreDatabase implements Database {
     final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()
         || maybeFirstDataColumnSidecarSlot.get().isGreaterThan(tillSlotInclusive)) {
-      LOG.debug(
-          "No {} data column sidecars to prune before first data column sidecar slot {}",
-          sidecarType,
-          maybeFirstDataColumnSidecarSlot.map(UInt64::toString).orElse("unsupported"));
       return false;
     }
 
@@ -1306,50 +1302,25 @@ public class KvStoreDatabase implements Database {
 
     Optional<UInt64> maybeSlot =
         findPreviousDataColumnSidecarSlot(
-            nextSlotToSearch,
-            maybeFirstDataColumnSidecarSlot.get(),
-            nonCanonicalSidecars,
-            sidecarType);
+            nextSlotToSearch, maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
     while (prunedSlots < pruneSlotLimit
         && maybeSlot.isPresent()
         && maybeSlot.get().isLessThanOrEqualTo(tillSlotInclusive)) {
       final UInt64 slot = maybeSlot.get();
-      final long slotStartTime = System.currentTimeMillis();
-      LOG.debug("Pruning {} data column sidecars for slot {}", sidecarType, slot);
       final List<DataColumnSlotAndIdentifier> keys;
-      final long openStreamStartTime = System.currentTimeMillis();
       try (final Stream<DataColumnSlotAndIdentifier> identifiersForSlot =
           nonCanonicalSidecars
               ? streamNonCanonicalDataColumnIdentifiers(slot, slot)
               : streamDataColumnIdentifiers(slot, slot)) {
-        LOG.debug(
-            "Opened {} data column sidecar stream for slot {} in {} ms",
-            sidecarType,
-            slot,
-            System.currentTimeMillis() - openStreamStartTime);
-        final long collectKeysStartTime = System.currentTimeMillis();
         keys = identifiersForSlot.toList();
-        LOG.debug(
-            "Collected {} {} data column sidecar identifiers for slot {} in {} ms",
-            keys.size(),
-            sidecarType,
-            slot,
-            System.currentTimeMillis() - collectKeysStartTime);
       }
 
       if (keys.isEmpty()) {
-        LOG.warn(
-            "No {} data column sidecars found for earliest sidecar slot {}", sidecarType, slot);
+        LOG.warn("No {} data column sidecars found for sidecar slot {}", sidecarType, slot);
         break;
       }
 
-      final long openUpdaterStartTime = System.currentTimeMillis();
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        LOG.debug(
-            "Opened finalized updater for {} data column sidecar pruning in {} ms",
-            sidecarType,
-            System.currentTimeMillis() - openUpdaterStartTime);
-        final long scheduleRemovalsStartTime = System.currentTimeMillis();
         for (final DataColumnSlotAndIdentifier key : keys) {
           if (nonCanonicalSidecars) {
             updater.removeNonCanonicalSidecar(key);
@@ -1357,38 +1328,17 @@ public class KvStoreDatabase implements Database {
             updater.removeSidecar(key);
           }
         }
-        LOG.debug(
-            "Scheduled removal of {} {} data column sidecars for slot {} in {} ms",
-            keys.size(),
-            sidecarType,
-            slot,
-            System.currentTimeMillis() - scheduleRemovalsStartTime);
-        final long commitStartTime = System.currentTimeMillis();
         updater.commit();
-        LOG.debug(
-            "Committed removal of {} {} data column sidecars for slot {} in {} ms",
-            keys.size(),
-            sidecarType,
-            slot,
-            System.currentTimeMillis() - commitStartTime);
       }
 
       ++prunedSlots;
-      LOG.debug(
-          "Pruned {} data column sidecars for slot {} in {} ms",
-          sidecarType,
-          slot,
-          System.currentTimeMillis() - slotStartTime);
       if (prunedSlots >= pruneSlotLimit || slot.equals(maybeFirstDataColumnSidecarSlot.get())) {
         break;
       }
       nextSlotToSearch = slot.minus(1);
       maybeSlot =
           findPreviousDataColumnSidecarSlot(
-              nextSlotToSearch,
-              maybeFirstDataColumnSidecarSlot.get(),
-              nonCanonicalSidecars,
-              sidecarType);
+              nextSlotToSearch, maybeFirstDataColumnSidecarSlot.get(), nonCanonicalSidecars);
     }
 
     LOG.debug(
@@ -1402,21 +1352,11 @@ public class KvStoreDatabase implements Database {
   private Optional<UInt64> findPreviousDataColumnSidecarSlot(
       final UInt64 latestSlot,
       final UInt64 firstDataColumnSidecarSlot,
-      final boolean nonCanonicalSidecars,
-      final String sidecarType) {
-    final long startTime = System.currentTimeMillis();
-    LOG.debug(
-        "Looking up latest {} data column sidecar slot at or before {}", sidecarType, latestSlot);
+      final boolean nonCanonicalSidecars) {
     final Optional<UInt64> maybeSlot =
         nonCanonicalSidecars
             ? dao.getLatestNonCanonicalDataSidecarColumnSlotAtOrBefore(latestSlot)
             : dao.getLatestDataSidecarColumnSlotAtOrBefore(latestSlot);
-    LOG.debug(
-        "Latest {} data column sidecar slot lookup at or before {} completed in {} ms: {}",
-        sidecarType,
-        latestSlot,
-        System.currentTimeMillis() - startTime,
-        maybeSlot.map(UInt64::toString).orElse("empty"));
     return maybeSlot.filter(slot -> slot.isGreaterThanOrEqualTo(firstDataColumnSidecarSlot));
   }
 
