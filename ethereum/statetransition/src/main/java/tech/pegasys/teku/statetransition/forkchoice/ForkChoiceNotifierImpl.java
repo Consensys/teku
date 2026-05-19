@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice.notifier;
+package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -30,10 +30,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
