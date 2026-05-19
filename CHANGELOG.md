@@ -18,3 +18,4 @@
  - Fixed automatic detection of local node IPv6 address
  - Fixed a potential issue in importing blocks when data is not available.
  - Fixed potential NPE when SSE are not closed correctly.
+ - Improved pruning for data column sidecars.
