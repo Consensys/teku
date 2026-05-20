@@ -351,6 +351,15 @@ public class SlotProcessor {
   private void processSlotPayloadAttestation() {
     onTickSlotPayloadAttestation = nodeSlot.getValue();
     forkChoiceNotifier.onPayloadAttestationsDue(onTickSlotPayloadAttestation);
+    recentChainData
+        .getChainHead()
+        .ifPresent(
+            (head) ->
+                eventLog.slotPayloadEvent(
+                    nodeSlot.getValue(),
+                    head.getSlot(),
+                    head.getExecutionBlockHash(),
+                    p2pNetwork.getPeerCount()));
   }
 
   @VisibleForTesting

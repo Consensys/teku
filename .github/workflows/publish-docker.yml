@@ -10,7 +10,7 @@ on:
       jdk_version:
         required: true
         type: string
-        default: "jdk21"
+        default: "jdk25"
       include_hash_in_docker:
         required: false
         type: string
@@ -19,9 +19,8 @@ on:
 
 jobs:
   # DockerTags
-  # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
-  # develop = develop-jdk21
-  # develop-jdk24
+  # The default Docker tag tracks the Java 25 runtime image.
+  # develop = develop-jdk25
   publishDocker:
     runs-on: ubuntu-24.04
     permissions:
@@ -32,7 +31,7 @@ jobs:
       image_digest: ${{ steps.dockerBuildPush.outputs.digest }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -41,7 +40,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd 
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -76,7 +75,7 @@ jobs:
           else
             echo "buildVersion=develop" >> $GITHUB_OUTPUT
             dockertags="consensys/teku:develop-${{ inputs.jdk_version }}"
-            if [ "${{ inputs.jdk_version }}" = "jdk21" ]; then
+            if [ "${{ inputs.jdk_version }}" = "jdk25" ]; then
               dockertags="$dockertags,consensys/teku:develop"
             fi
             if [ "${{ inputs.include_hash_in_docker }}" = "true" ]; then

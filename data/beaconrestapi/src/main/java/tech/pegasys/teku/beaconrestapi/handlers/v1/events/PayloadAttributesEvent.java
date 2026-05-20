@@ -111,19 +111,19 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
         new PayloadAttributesData(
             milestone,
             new PayloadAttributesEvent.Data(
-                payloadAttributes.getProposalSlot(),
-                payloadAttributes.getParentBeaconBlockRoot(),
-                forkChoiceState.getHeadExecutionBlockNumber(),
-                forkChoiceState.getHeadExecutionBlockHash(),
-                payloadAttributes.getProposerIndex(),
+                payloadAttributes.proposalSlot(),
+                payloadAttributes.parentBeaconBlock().blockRoot(),
+                forkChoiceState.headExecutionBlockNumber(),
+                forkChoiceState.headExecutionBlockHash(),
+                payloadAttributes.proposerIndex(),
                 // based on PayloadAttributesV<N> as defined by the execution-apis specification
                 new PayloadAttributes(
-                    payloadAttributes.getTimestamp(),
-                    payloadAttributes.getPrevRandao(),
-                    payloadAttributes.getFeeRecipient(),
-                    payloadAttributes.getWithdrawals(),
+                    payloadAttributes.timestamp(),
+                    payloadAttributes.prevRandao(),
+                    payloadAttributes.feeRecipient(),
+                    payloadAttributes.withdrawals(),
                     milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-                        ? Optional.of(payloadAttributes.getParentBeaconBlockRoot())
+                        ? Optional.of(payloadAttributes.parentBeaconBlock().blockRoot())
                         : Optional.empty())));
     return new PayloadAttributesEvent(data);
   }

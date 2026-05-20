@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -127,7 +128,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -1161,6 +1161,12 @@ public class Spec {
             () -> new IllegalStateException("DataColumnSidecarUtil not available at slot " + slot));
   }
 
+  // Proposer Preferences Util
+
+  public ProposerPreferencesUtil getProposerPreferencesUtil(final UInt64 epoch) {
+    return atEpoch(epoch).getProposerPreferencesUtil();
+  }
+
   // Execution Payload Verifier Utils
 
   public ExecutionPayloadVerifier getExecutionPayloadVerifier(final UInt64 slot) {
@@ -1207,8 +1213,7 @@ public class Spec {
 
   // get_ptc
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
-    return BeaconStateAccessorsGloas.required(atSlot(slot).beaconStateAccessors())
-        .getPtc(state, slot);
+    return atSlot(slot).beaconStateAccessors().getPtc(state, slot);
   }
 
   // Builder Utils
@@ -1222,7 +1227,7 @@ public class Spec {
   }
 
   // Attestation helpers
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()
         .getAttestingIndices(state, attestation);
@@ -1344,6 +1349,11 @@ public class Spec {
     return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
   }
 
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtSlot(
+      final ReadOnlyStore store, final UInt64 slot) {
+    return isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(store, computeEpochAtSlot(slot));
+  }
+
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
     if (getSpecConfigFulu().isEmpty()) {
@@ -1374,6 +1384,11 @@ public class Spec {
   // Electra Utils
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return atState(state).miscHelpers().isFormerDepositMechanismDisabled(state);
+  }
+
+  // Gloas Utils
+  public boolean isProposerPreferencesAvailableAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).miscHelpers().toVersionGloas().isPresent();
   }
 
   // Deneb private helpers

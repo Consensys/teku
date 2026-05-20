@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPrefere
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -54,6 +56,7 @@ public class ProposerPreferencesGossipValidatorTest {
   private BeaconState state;
   private UInt64 proposalSlot;
   private UInt64 validatorIndex;
+  private Bytes32 dependentRoot;
   private SignedProposerPreferences signedProposerPreferences;
 
   @BeforeEach
@@ -73,14 +76,20 @@ public class ProposerPreferencesGossipValidatorTest {
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(state.getSlot());
     proposalSlot = spec.computeStartSlotAtEpoch(currentEpoch.plus(1));
+    dependentRoot = dataStructureUtil.randomBytes32();
 
-    signedProposerPreferences = createSignedProposerPreferences(proposalSlot, validatorIndex);
+    signedProposerPreferences =
+        createSignedProposerPreferences(dependentRoot, proposalSlot, validatorIndex);
 
+    when(gossipValidationHelper.isSlotInCurrentEpoch(proposalSlot)).thenReturn(false);
     when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(true);
+    when(gossipValidationHelper.isSlotFromFuture(proposalSlot)).thenReturn(true);
+    when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(true);
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), any(), any(), any()))
         .thenReturn(true);
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
   }
 
   @TestTemplate
@@ -90,11 +99,28 @@ public class ProposerPreferencesGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenSlotNotInNextEpoch() {
+  void shouldIgnore_whenSlotNotInCurrentOrNextEpoch() {
     when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
-    verify(recentChainData, never()).getBestState();
+    verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
+  }
+
+  @TestTemplate
+  void shouldIgnore_whenSlotHasAlreadyPassed() {
+    when(gossipValidationHelper.isSlotFromFuture(proposalSlot)).thenReturn(false);
+    when(gossipValidationHelper.isSlotCurrent(proposalSlot)).thenReturn(false);
+    assertThatSafeFuture(validator.validate(signedProposerPreferences))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+    verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
+  }
+
+  @TestTemplate
+  void shouldSaveForFuture_whenDependentRootBlockNotSeen() {
+    when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(false);
+    assertThatSafeFuture(validator.validate(signedProposerPreferences))
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+    verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 
   @TestTemplate
@@ -104,14 +130,14 @@ public class ProposerPreferencesGossipValidatorTest {
 
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
-    verify(recentChainData, times(1)).getBestState();
+    verify(recentChainData, times(1)).retrieveCheckpointState(any(Checkpoint.class));
   }
 
   @TestTemplate
   void shouldReject_whenValidatorIndexDoesNotMatchLookahead() {
     final UInt64 wrongValidatorIndex = validatorIndex.plus(9999);
     final SignedProposerPreferences wrongIndexPreferences =
-        createSignedProposerPreferences(proposalSlot, wrongValidatorIndex);
+        createSignedProposerPreferences(dependentRoot, proposalSlot, wrongValidatorIndex);
 
     assertThatSafeFuture(validator.validate(wrongIndexPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -150,16 +176,18 @@ public class ProposerPreferencesGossipValidatorTest {
 
   @TestTemplate
   void shouldIgnore_whenDuplicateArrivesWhileValidating() {
-    // Create a slow state future
-    final SafeFuture<BeaconState> slowStateFuture = new SafeFuture<>();
-    when(recentChainData.getBestState()).thenReturn(Optional.of(slowStateFuture));
+    // Create a slow checkpoint state future
+    final SafeFuture<Optional<BeaconState>> slowStateFuture = new SafeFuture<>();
+    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
+        .thenReturn(slowStateFuture);
 
     // Start first validation (will block on state)
     final SafeFuture<InternalValidationResult> firstResult =
         validator.validate(signedProposerPreferences);
 
     // Reset to return completed state for second validation
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     // Second validation completes first
     final SafeFuture<InternalValidationResult> secondResult =
@@ -167,13 +195,13 @@ public class ProposerPreferencesGossipValidatorTest {
     assertThatSafeFuture(secondResult).isCompletedWithValue(ACCEPT);
 
     // Now complete first validation - should be ignored due to race condition
-    slowStateFuture.complete(state);
+    slowStateFuture.complete(Optional.of(state));
     assertThatSafeFuture(firstResult)
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   private SignedProposerPreferences createSignedProposerPreferences(
-      final UInt64 proposalSlot, final UInt64 validatorIndex) {
+      final Bytes32 dependentRoot, final UInt64 proposalSlot, final UInt64 validatorIndex) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(proposalSlot).getSchemaDefinitions());
     final ProposerPreferencesSchema proposerPreferencesSchema =
@@ -183,6 +211,7 @@ public class ProposerPreferencesGossipValidatorTest {
 
     final ProposerPreferences proposerPreferences =
         proposerPreferencesSchema.create(
+            dependentRoot,
             proposalSlot,
             validatorIndex,
             dataStructureUtil.randomEth1Address(),

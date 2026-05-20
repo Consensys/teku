@@ -54,9 +54,9 @@ Release notifications are available via:
 
 ### Install Prerequisites
 
-* Java 21+
+* Java 25+
 
-Note: Official builds of Teku are performed with Java 21.
+Note: Official builds of Teku are performed with Java 25.
 Building on a more recent version of Java is supported, but the resulting build will not work on earlier versions of Java.
 
 

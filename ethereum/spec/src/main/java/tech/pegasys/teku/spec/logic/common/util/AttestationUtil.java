@@ -31,7 +31,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -40,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -97,36 +96,34 @@ public abstract class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
-  public IndexedAttestation getIndexedAttestation(
+  public IndexedAttestationLight getIndexedAttestation(
       final BeaconState state, final Attestation attestation) {
-    final List<Integer> attestingIndices = getAttestingIndices(state, attestation);
-
-    final IndexedAttestationSchema indexedAttestationSchema =
-        schemaDefinitions.getIndexedAttestationSchema();
-
-    return indexedAttestationSchema.create(
-        attestingIndices.stream()
-            .sorted()
-            .map(UInt64::valueOf)
-            .collect(indexedAttestationSchema.getAttestingIndicesSchema().collectorUnboxed()),
+    // Indices are produced via aggregation-bit positions over a committee, so they are unique by
+    // construction. Order is irrelevant for downstream light consumers and for BLS aggregate
+    // signature verification (commutative). The spec's sorted-by-validator-index form is only
+    // enforced for SSZ-derived IndexedAttestations reaching isValidIndexedAttestation via the
+    // AttesterSlashing path.
+    return new IndexedAttestationLight(
+        getAttestingIndices(state, attestation),
         attestation.getData(),
         attestation.getAggregateSignature());
   }
 
   /**
-   * Return the sorted attesting indices corresponding to ``data`` and ``bits``.
+   * Return the attesting indices corresponding to ``data`` and ``bits``, in committee-position
+   * order (i.e. the order in which aggregation bits are set over the committee). NOT sorted by
+   * validator index — committees are a pseudorandom permutation of active validators. Callers that
+   * need the spec-canonical sorted form (e.g. when serialising to an SSZ {@link IndexedAttestation}
+   * embedded in an {@code AttesterSlashing}) must sort explicitly; see {@link
+   * IndexedAttestationLight#toSsz}.
    *
-   * @param state
-   * @param attestation
-   * @return
-   * @throws IllegalArgumentException
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/beacon-chain.md#get_attesting_indices</a>
    */
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
-    return IntList.of(
-        streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
-            .toArray());
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
+    return streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
+        .mapToObj(UInt64::valueOf)
+        .toList();
   }
 
   public IntStream streamAttestingIndices(
@@ -156,7 +153,7 @@ public abstract class AttestationUtil {
     return SafeFuture.of(
             () -> {
               // getIndexedAttestation() throws, so wrap it in a future
-              final IndexedAttestation indexedAttestation =
+              final IndexedAttestationLight indexedAttestation =
                   getIndexedAttestation(state, attestation.getAttestation());
               attestation.setIndexedAttestation(indexedAttestation);
               return indexedAttestation;
@@ -207,6 +204,34 @@ public abstract class AttestationUtil {
       final BeaconState state,
       final IndexedAttestation indexedAttestation,
       final BLSSignatureVerifier signatureVerifier) {
+    // SSZ-derived path (reached only via AttesterSlashing received off the wire): enforce the
+    // spec-mandated sorted-and-unique property on the indices. Internally-produced light
+    // attestations skip this check because they are unique by construction and order-agnostic
+    // for downstream consumers.
+    final IndexedAttestationLight light = IndexedAttestationLight.fromSsz(indexedAttestation);
+    final AttestationProcessingResult sortedCheck = checkSortedAndUnique(light.attestingIndices());
+    if (!sortedCheck.isSuccessful()) {
+      return sortedCheck;
+    }
+    return isValidIndexedAttestation(fork, state, light, signatureVerifier);
+  }
+
+  private AttestationProcessingResult checkSortedAndUnique(final List<UInt64> indices) {
+    UInt64 lastIndex = null;
+    for (final UInt64 index : indices) {
+      if (lastIndex != null && index.isLessThanOrEqualTo(lastIndex)) {
+        return AttestationProcessingResult.invalid("Attesting indices are not sorted");
+      }
+      lastIndex = index;
+    }
+    return AttestationProcessingResult.SUCCESSFUL;
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      final Fork fork,
+      final BeaconState state,
+      final IndexedAttestationLight indexedAttestation,
+      final BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
             fork, state, indexedAttestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
@@ -217,24 +242,21 @@ public abstract class AttestationUtil {
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
-      final IndexedAttestation indexedAttestation,
+      final IndexedAttestationLight indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
-    final SszUInt64List indices = indexedAttestation.getAttestingIndices();
+    final List<UInt64> indices = indexedAttestation.attestingIndices();
 
     if (indices.isEmpty()) {
       return completedFuture(
           AttestationProcessingResult.invalid("Attesting indices must not be empty"));
     }
 
-    UInt64 lastIndex = null;
+    // Sorted+unique is enforced by the SSZ-taking overload for AttesterSlashing-derived inputs.
+    // Internally-produced light attestations have unique indices by construction, and downstream
+    // consumers are order-agnostic, so we skip the check here.
     final List<BLSPublicKey> pubkeys = new ArrayList<>(indices.size());
 
-    for (final UInt64 index : indices.asListUnboxed()) {
-      if (lastIndex != null && index.isLessThanOrEqualTo(lastIndex)) {
-        return completedFuture(
-            AttestationProcessingResult.invalid("Attesting indices are not sorted"));
-      }
-      lastIndex = index;
+    for (final UInt64 index : indices) {
       final Optional<BLSPublicKey> validatorPubKey =
           beaconStateAccessors.getValidatorPubKey(state, index);
       if (validatorPubKey.isEmpty()) {
@@ -249,8 +271,8 @@ public abstract class AttestationUtil {
         fork,
         state,
         Collections.unmodifiableList(pubkeys),
-        indexedAttestation.getSignature(),
-        indexedAttestation.getData(),
+        indexedAttestation.signature(),
+        indexedAttestation.data(),
         signatureVerifier);
   }
 

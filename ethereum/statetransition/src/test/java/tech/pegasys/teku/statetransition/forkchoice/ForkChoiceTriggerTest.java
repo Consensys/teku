@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.DEBUG_TIME_MILLIS;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.WARNING_TIME_MILLIS;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.storage.client.ChainHead;
 
 class ForkChoiceTriggerTest {
 
@@ -46,7 +48,7 @@ class ForkChoiceTriggerTest {
 
   @BeforeEach
   void setUp() {
-    when(forkChoice.processHead(any())).thenReturn(SafeFuture.completedFuture(true));
+    when(forkChoice.processHead(any())).thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test
@@ -58,7 +60,7 @@ class ForkChoiceTriggerTest {
 
   @Test
   void shouldFailToWaitWithTimeout() {
-    final SafeFuture<Boolean> future = new SafeFuture<>();
+    final SafeFuture<Optional<ChainHead>> future = new SafeFuture<>();
     when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     when(forkChoice.processHead(UInt64.ONE)).thenReturn(future);
 
@@ -107,7 +109,7 @@ class ForkChoiceTriggerTest {
             forkChoice,
             Eth2NetworkConfiguration.DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS,
             localTime);
-    final SafeFuture<Boolean> processHeadFuture = new SafeFuture<>();
+    final SafeFuture<Optional<ChainHead>> processHeadFuture = new SafeFuture<>();
     when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     when(localTime.getTimeInMillis())
         .thenReturn(startTimeMillis, startTimeMillis.plus(durationMillis));
@@ -115,7 +117,7 @@ class ForkChoiceTriggerTest {
 
     final CompletableFuture<Void> attestationsDueFuture =
         SafeFuture.runAsync(() -> localTrigger.onAttestationsDueForSlot(UInt64.ONE));
-    processHeadFuture.complete(true);
+    processHeadFuture.complete(Optional.empty());
 
     // Wait for the async operation to complete using proper synchronization
     // instead of polling with Thread.sleep which is flaky on Windows
@@ -131,9 +133,9 @@ class ForkChoiceTriggerTest {
 
   @Test
   void shouldRunForkChoicePriorToBlockProduction() {
-    final SafeFuture<Void> prepareFuture = new SafeFuture<>();
+    final SafeFuture<ChainHead> prepareFuture = new SafeFuture<>();
     when(forkChoice.prepareForBlockProduction(any(), any())).thenReturn(prepareFuture);
-    final SafeFuture<Void> result =
+    final SafeFuture<ChainHead> result =
         trigger.prepareForBlockProduction(UInt64.ONE, BlockProductionPerformance.NOOP);
     assertThatSafeFuture(result).isNotDone();
     verify(forkChoice).prepareForBlockProduction(UInt64.ONE, BlockProductionPerformance.NOOP);

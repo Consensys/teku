@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
@@ -52,7 +53,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -91,6 +95,7 @@ public abstract class RecentChainData
 
   private final BlockProvider blockProvider;
   private final ExecutionPayloadProvider executionPayloadProvider;
+  private final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
@@ -128,6 +133,7 @@ public abstract class RecentChainData
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
@@ -143,6 +149,7 @@ public abstract class RecentChainData
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.executionPayloadProvider = executionPayloadProvider;
+    this.blindedExecutionPayloadProvider = blindedExecutionPayloadProvider;
     this.stateProvider = stateProvider;
     this.validatedBlockProvider = validatedBlockProvider;
     this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
@@ -190,6 +197,7 @@ public abstract class RecentChainData
             .specProvider(spec)
             .blockProvider(blockProvider)
             .executionPayloadProvider(executionPayloadProvider)
+            .blindedExecutionPayloadProvider(blindedExecutionPayloadProvider)
             .stateProvider(stateProvider)
             .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
             .storeConfig(storeConfig)
@@ -350,27 +358,54 @@ public abstract class RecentChainData
   // NETWORKING RELATED INFORMATION METHODS:
 
   /**
+   * Set the block that is the current chain head according to fork-choice processing using the full
+   * node identity. In Gloas, the same block root may have PENDING, EMPTY, and FULL nodes.
+   *
+   * @param headNode The fork choice node identifying the new head
+   * @param currentSlot The current slot - the slot at which the new head was selected
+   */
+  public void updateHead(final ForkChoiceNode headNode, final UInt64 currentSlot) {
+    updateHeadInternal(headNode.blockRoot(), headNode.payloadStatus(), currentSlot);
+  }
+
+  /**
    * Set the block that is the current chain head according to fork-choice processing.
    *
    * @param root The new head block root
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
   public void updateHead(final Bytes32 root, final UInt64 currentSlot) {
+    updateHeadInternal(root, Optional.empty(), currentSlot);
+  }
+
+  private void updateHeadInternal(
+      final Bytes32 root, final ForkChoicePayloadStatus payloadStatus, final UInt64 currentSlot) {
+    updateHeadInternal(root, Optional.of(payloadStatus), currentSlot);
+  }
+
+  private void updateHeadInternal(
+      final Bytes32 root,
+      final Optional<ForkChoicePayloadStatus> maybePayloadStatus,
+      final UInt64 currentSlot) {
     synchronized (this) {
-      if (chainHead.map(head -> head.getRoot().equals(root)).orElse(false)) {
-        LOG.trace("Skipping head update because new head is same as previous head");
-        return;
-      }
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
-      final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
+      final Optional<ProtoNodeData> maybeBlockData =
+          maybePayloadStatus
+              .map(status -> forkChoiceStrategy.getBlockData(root, status))
+              .orElseGet(() -> forkChoiceStrategy.getBlockData(root));
       if (maybeBlockData.isEmpty()) {
         LOG.error(
             "Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
         return;
       }
       final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
+      if (newChainHead.isSameHeadAs(originalChainHead)) {
+        LOG.trace("Skipping head update because new head is same as previous head");
+        return;
+      }
+
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext =
           computeReorgContext(forkChoiceStrategy, originalChainHead, newChainHead);
@@ -633,6 +668,12 @@ public abstract class RecentChainData
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
   }
 
+  public Optional<Bytes32> getExecutionBlockHashForBlock(final ForkChoiceNode block) {
+    return getForkChoiceStrategy()
+        .flatMap(forkChoice -> forkChoice.getNodeData(block))
+        .map(ProtoNodeData::getExecutionBlockHash);
+  }
+
   public Optional<List<BlobSidecar>> getBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(store)
         .flatMap(s -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));
@@ -674,6 +715,14 @@ public abstract class RecentChainData
       return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
     }
     return store.retrieveSignedExecutionPayload(beaconBlockRoot);
+  }
+
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayloadByBlockRoot(final Bytes32 beaconBlockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return store.retrieveSignedBlindedExecutionPayload(beaconBlockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {

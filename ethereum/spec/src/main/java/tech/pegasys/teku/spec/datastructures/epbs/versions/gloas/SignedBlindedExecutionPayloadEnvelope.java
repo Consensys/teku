@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -51,6 +52,10 @@ public class SignedBlindedExecutionPayloadEnvelope
   @Override
   public SignedBlindedExecutionPayloadEnvelopeSchema getSchema() {
     return (SignedBlindedExecutionPayloadEnvelopeSchema) super.getSchema();
+  }
+
+  public ExecutionRequests getExecutionRequests() {
+    return getMessage().getExecutionRequests();
   }
 
   public UInt64 getSlot() {

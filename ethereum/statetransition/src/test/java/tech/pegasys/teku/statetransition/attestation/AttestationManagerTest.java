@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -150,7 +150,10 @@ class AttestationManagerTest {
 
     ValidatableAttestation attestation =
         ValidatableAttestation.from(spec, attestationFromSlot(futureSlot));
-    IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    IndexedAttestationLight randomIndexedAttestation =
+        IndexedAttestationLight.fromSsz(
+            dataStructureUtil.randomIndexedAttestation(
+                UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
     assertThat(attestationManager.onAttestation(attestation)).isCompleted();
 
@@ -182,7 +185,10 @@ class AttestationManagerTest {
     ValidatableAttestation attestation =
         ValidatableAttestation.aggregateFromValidator(
             spec, aggregateFromSlot(futureSlot, dataStructureUtil.randomBytes32()));
-    IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    IndexedAttestationLight randomIndexedAttestation =
+        IndexedAttestationLight.fromSsz(
+            dataStructureUtil.randomIndexedAttestation(
+                UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
     when(aggregateValidator.validate(attestation))
         .thenReturn(completedFuture(InternalValidationResult.IGNORE));
@@ -204,8 +210,11 @@ class AttestationManagerTest {
 
   @Test
   public void shouldNotAddDeferredAttestationsToFuturePool() {
-    IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
-    final UInt64 attestationSlot = randomIndexedAttestation.getData().getSlot();
+    IndexedAttestationLight randomIndexedAttestation =
+        IndexedAttestationLight.fromSsz(
+            dataStructureUtil.randomIndexedAttestation(
+                UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+    final UInt64 attestationSlot = randomIndexedAttestation.data().getSlot();
     final UInt64 currentSlot = attestationSlot.minus(1);
     attestationManager.onSlot(currentSlot);
 

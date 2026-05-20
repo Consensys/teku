@@ -44,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -102,11 +101,7 @@ public class HistoricalBatchFetcherTest {
 
     chainDataClient =
         new CombinedChainDataClient(
-            storageSystem.recentChainData(),
-            mock(StorageQueryChannel.class),
-            spec,
-            LateBlockReorgPreparationHandler.NOOP,
-            false);
+            storageSystem.recentChainData(), mock(StorageQueryChannel.class), spec);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =

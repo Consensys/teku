@@ -13,13 +13,20 @@
 
 package tech.pegasys.teku.storage.api;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
@@ -29,6 +36,7 @@ public class StoredBlockMetadata {
   private final Optional<UInt64> executionBlockNumber;
   private final Optional<Bytes32> executionBlockHash;
   private final Optional<BlockCheckpoints> checkpointEpochs;
+  private final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData;
 
   public StoredBlockMetadata(
       final UInt64 blockSlot,
@@ -38,6 +46,26 @@ public class StoredBlockMetadata {
       final Optional<UInt64> executionBlockNumber,
       final Optional<Bytes32> executionBlockHash,
       final Optional<BlockCheckpoints> checkpointEpochs) {
+    this(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        executionBlockNumber,
+        executionBlockHash,
+        checkpointEpochs,
+        Optional.empty());
+  }
+
+  public StoredBlockMetadata(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<Bytes32> executionBlockHash,
+      final Optional<BlockCheckpoints> checkpointEpochs,
+      final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData) {
     this.blockSlot = blockSlot;
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
@@ -45,6 +73,7 @@ public class StoredBlockMetadata {
     this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
     this.checkpointEpochs = checkpointEpochs;
+    this.gloasForkChoiceRebuildData = gloasForkChoiceRebuildData;
   }
 
   public static StoredBlockMetadata fromBlockAndState(
@@ -57,7 +86,10 @@ public class StoredBlockMetadata {
         blockAndState.getStateRoot(),
         blockAndState.getExecutionBlockNumber(),
         blockAndState.getExecutionBlockHash(),
-        Optional.of(epochs));
+        Optional.of(epochs),
+        blockAndState
+            .getSignedBeaconBlock()
+            .flatMap(StoredBlockMetadata::extractGloasForkChoiceRebuildData));
   }
 
   public UInt64 getBlockSlot() {
@@ -88,6 +120,10 @@ public class StoredBlockMetadata {
     return checkpointEpochs;
   }
 
+  public Optional<GloasForkChoiceRebuildData> getGloasForkChoiceRebuildData() {
+    return gloasForkChoiceRebuildData;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -103,7 +139,8 @@ public class StoredBlockMetadata {
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(executionBlockNumber, that.executionBlockNumber)
         && Objects.equals(executionBlockHash, that.executionBlockHash)
-        && Objects.equals(checkpointEpochs, that.checkpointEpochs);
+        && Objects.equals(checkpointEpochs, that.checkpointEpochs)
+        && Objects.equals(gloasForkChoiceRebuildData, that.gloasForkChoiceRebuildData);
   }
 
   @Override
@@ -115,6 +152,54 @@ public class StoredBlockMetadata {
         stateRoot,
         executionBlockNumber,
         executionBlockHash,
-        checkpointEpochs);
+        checkpointEpochs,
+        gloasForkChoiceRebuildData);
+  }
+
+  public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final SignedBeaconBlock block) {
+    return extractGloasForkChoiceRebuildData(block, Optional.empty());
+  }
+
+  public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final SignedBeaconBlock block,
+      final Optional<SignedBlindedExecutionPayloadEnvelope> maybeBlindedEnvelope) {
+    return block
+        .getMessage()
+        .getBody()
+        .getOptionalSignedExecutionPayloadBid()
+        .map(SignedExecutionPayloadBid::getMessage)
+        .map(
+            bid ->
+                new GloasForkChoiceRebuildData(
+                    bid.getParentBlockHash(),
+                    bid.getBlockHash(),
+                    maybeBlindedEnvelope.map(
+                        envelope -> getPayloadBlockNumber(block.getRoot(), bid, envelope))));
+  }
+
+  private static UInt64 getPayloadBlockNumber(
+      final Bytes32 blockRoot,
+      final ExecutionPayloadBid bid,
+      final SignedBlindedExecutionPayloadEnvelope envelope) {
+    checkState(
+        envelope.getBeaconBlockRoot().equals(blockRoot),
+        "Blinded execution payload envelope block root %s does not match stored block root %s",
+        envelope.getBeaconBlockRoot(),
+        blockRoot);
+    final ExecutionPayloadHeader payloadHeader = envelope.getMessage().getPayloadHeader();
+    checkState(
+        payloadHeader.getParentHash().equals(bid.getParentBlockHash()),
+        "Blinded execution payload envelope parent block hash %s does not match GLOAS block bid parent block hash %s for block root %s",
+        payloadHeader.getParentHash(),
+        bid.getParentBlockHash(),
+        blockRoot);
+    checkState(
+        payloadHeader.getBlockHash().equals(bid.getBlockHash()),
+        "Blinded execution payload envelope block hash %s does not match GLOAS block bid block hash %s for block root %s",
+        payloadHeader.getBlockHash(),
+        bid.getBlockHash(),
+        blockRoot);
+    return payloadHeader.getBlockNumber();
   }
 }

@@ -34,8 +34,7 @@ class FailedExecutionPayloadImportResult implements ExecutionPayloadImportResult
 
   @Override
   public boolean hasFailedExecution() {
-    return failureReason == FailureReason.FAILED_EXECUTION
-        || failureReason == FailureReason.FAILED_EXECUTION_SYNCING;
+    return failureReason == FailureReason.FAILED_EXECUTION;
   }
 
   @Override

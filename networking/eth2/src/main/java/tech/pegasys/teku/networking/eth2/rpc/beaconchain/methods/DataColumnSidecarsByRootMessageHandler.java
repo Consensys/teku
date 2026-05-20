@@ -44,8 +44,9 @@ import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogg
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
- * <a href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface
- * .md#datacolumnsidecarsbyroot-v1">DataColumnSidecarsByRoot v1</a>
+ * <a
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#datacolumnsidecarsbyroot-v1">DataColumnSidecarsByRoot
+ * v1</a>
  */
 public class DataColumnSidecarsByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<

@@ -1,5 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import groovy.json.JsonSlurper
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import io.consensys.protocols.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
@@ -17,12 +18,13 @@ buildscript {
 }
 
 plugins {
-	id 'com.diffplug.spotless' version '7.2.1'
+	id 'com.diffplug.spotless' version '8.5.1'
 	id 'com.github.ben-manes.versions' version '0.53.0'
 	id 'com.github.jk1.dependency-license-report' version '3.1.2'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
+	id 'org.jreleaser' version '1.23.0'
 }
 
 // --- Git CLI helpers (replaces grgit plugin for worktree compatibility) ---
@@ -71,8 +73,11 @@ ext.gitBranchName = {
 rootProject.version = calculatePublishVersion()
 def specificVersion = calculateVersion()
 def isDevelopBuild = rootProject.version.contains('develop')
+def targetJavaVersion = JavaVersion.VERSION_25
+def targetJavaLanguageVersion = JavaLanguageVersion.of(25)
 
 apply plugin: 'application'
+apply plugin: 'jacoco'
 apply plugin: DepCheckPlugin
 
 defaultTasks 'build','licenseCheck'
@@ -177,6 +182,20 @@ tasks.named("dependencyUpdates").configure {
 	}
 }
 
+spotless {
+	groovyGradle {
+		target files(
+				fileTree(rootDir) {
+					include '*.gradle'
+					include 'gradle/*.gradle'
+				},
+				allprojects.collect { project -> project.file('build.gradle') }.findAll { it.isFile() })
+		trimTrailingWhitespace()
+		endWithNewline()
+		greclipse()
+	}
+}
+
 allprojects {
 	apply plugin: 'java-library'
 	apply plugin: 'java-test-fixtures'
@@ -194,12 +213,20 @@ allprojects {
 		jar.preserveFileTimestamps = false
 	}
 
-	java {
-		sourceCompatibility = JavaVersion.VERSION_21
+	tasks.register('javadocJar', Jar) {
+		dependsOn javadoc
+		archiveClassifier = 'javadoc'
+		from javadoc.destinationDir
 	}
 
+	assemble.dependsOn javadocJar
+
 	java {
-		targetCompatibility = JavaVersion.VERSION_21
+		toolchain {
+			languageVersion = targetJavaLanguageVersion
+		}
+		sourceCompatibility = targetJavaVersion
+		targetCompatibility = targetJavaVersion
 	}
 
 	repositories {
@@ -248,14 +275,7 @@ allprojects {
 			endWithNewline()
 			licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
 			// See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
-			googleJavaFormat('1.23.0')
-		}
-
-		groovyGradle {
-			target '*.gradle', 'gradle/*.gradle'
-			trimTrailingWhitespace()
-			endWithNewline()
-			greclipse()
+			googleJavaFormat('1.35.0')
 		}
 	}
 
@@ -387,7 +407,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.5"
+def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.7"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-specs/releases/download'
@@ -653,7 +673,11 @@ application {
 		// 32Mb for Netty Direct ByteBuf
 		"-Dio.netty.maxDirectMemory=33554432",
 		// avoids JDK 24+ warning
-		"--enable-native-access=ALL-UNNAMED"
+		"--enable-native-access=ALL-UNNAMED",
+		// avoids JDK 25+ warning due to protobuf and others
+		"--sun-misc-unsafe-memory-access=allow",
+		// avoids JDK 26+ warning due to picocli
+		// "--enable-final-field-mutation=ALL-UNNAMED"
 	]
 }
 
@@ -664,6 +688,8 @@ tasks.register('autocomplete', JavaExec) {
 	mainClass = application.getMainClass()
 	args "debug-tools", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
 	classpath sourceSets.main.runtimeClasspath
+	// avoids JDK 24+ warning from native libraries (e.g. hawtjni via picocli/jline)
+	jvmArgs "--enable-native-access=ALL-UNNAMED"
 }
 
 installDist {
@@ -742,7 +768,7 @@ tasks.register("dockerDistUntar") {
 	}
 }
 
-def dockerJdkVariants = ["jdk21", "jdk25"]
+def dockerJdkVariants = ["jdk25", "jdk26"]
 def dockerBuildDir = "build/docker-teku/"
 def localDockerImage = "local/teku"
 
@@ -769,6 +795,12 @@ tasks.register('localDocker') {
 			executable executableAndArg[0]
 			args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
 		}
+		// tag with commit hash for traceability
+		def commitHash = gitCommitHashShort()
+		system.executor.exec {
+			executable executableAndArg[0]
+			args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}-${commitHash}"
+		}
 	}
 }
 
@@ -777,9 +809,10 @@ tasks.register('localDockerClean') {
 	def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
 	def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 	doLast {
+		def commitHash = gitCommitHashShort()
 		system.executor.exec {
 			executable executableAndArg[0]
-			args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+			args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}-${commitHash}"
 		}
 	}
 }
@@ -915,6 +948,28 @@ subprojects {
 		}
 	}
 
+	apply plugin: 'jacoco'
+
+	jacocoTestReport {
+		reports {
+			xml.required = true
+			html.required = true
+		}
+	}
+
+	tasks.named('test') {
+		finalizedBy jacocoTestReport
+	}
+
+	tasks.register('jacocoReferenceTestReport', JacocoReport) {
+		sourceSets sourceSets.main
+		executionData fileTree(layout.buildDirectory.dir('jacoco')).include('referenceTest.exec')
+		reports {
+			xml.required = true
+			html.required = true
+		}
+	}
+
 	tasks.withType(JavaCompile) {
 		options.fork = true
 		options.incremental = true
@@ -988,6 +1043,10 @@ subprojects {
 						password = cloudsmithKey
 					}
 				}
+				maven {
+					name = "staging"
+					url = rootProject.layout.buildDirectory.dir("staging-deploy")
+				}
 			}
 			publications {
 				mavenJava(MavenPublication) {
@@ -996,6 +1055,7 @@ subprojects {
 					if (sourceSetIsPopulated("main")) {
 						from components.java
 						artifact sourcesJar
+						artifact javadocJar
 					}
 
 					versionMapping {
@@ -1171,6 +1231,97 @@ subprojects {
 
 		testClassesDirs = sourceSets.referenceTest.output.classesDirs
 		classpath = sourceSets.referenceTest.runtimeClasspath
+		finalizedBy 'jacocoReferenceTestReport'
+	}
+
+	// avoids JDK 24+ warning from native libraries (e.g. jblst) across all Test tasks
+	tasks.withType(Test).configureEach {
+		jvmArgs '--enable-native-access=ALL-UNNAMED'
+	}
+}
+
+tasks.register('jacocoRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates an aggregate JaCoCo coverage report for all submodule unit tests'
+
+	subprojects.each { subproject ->
+		subproject.tasks.matching { t -> t.name == 'test' }.each { testTask ->
+			executionData(testTask)
+		}
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/aggregate/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/aggregate/jacocoRootReport.xml')
+		}
+	}
+}
+
+tasks.register('jacocoReferenceTestRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates an aggregate JaCoCo coverage report for all submodule reference tests'
+
+	mustRunAfter 'jacocoRootReport'
+
+	subprojects.each { subproject ->
+		subproject.tasks.matching { t -> t.name == 'referenceTest' }.each { refTestTask ->
+			executionData(refTestTask)
+		}
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/referenceTest/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/referenceTest/jacocoReferenceTestRootReport.xml')
+		}
+	}
+}
+
+tasks.register('jacocoCombinedRootReport', JacocoReport) {
+	group = 'verification'
+	description = 'Generates a combined aggregate JaCoCo coverage report for unit tests and reference tests'
+
+	dependsOn tasks.named('jacocoRootReport'), tasks.named('jacocoReferenceTestRootReport')
+
+	subprojects.each { subproject ->
+		subproject.tasks.matching { t -> t.name == 'test' }.each { testTask ->
+			executionData(testTask)
+		}
+		subproject.tasks.matching { t -> t.name == 'referenceTest' }.each { refTestTask ->
+			executionData(refTestTask)
+		}
+		if (subproject.plugins.hasPlugin('java-library')) {
+			sourceDirectories.from subproject.sourceSets.main.allSource.srcDirs
+			classDirectories.from subproject.sourceSets.main.output.classesDirs
+		}
+	}
+
+	reports {
+		html {
+			required = true
+			outputLocation = layout.buildDirectory.dir('reports/jacoco/combined/html')
+		}
+		xml {
+			required = true
+			outputLocation = layout.buildDirectory.file('reports/jacoco/combined/jacocoCombinedRootReport.xml')
+		}
 	}
 }
 
@@ -1290,6 +1441,38 @@ tasks.register('cloudsmithUpload') {
 		system.executor.exec {
 			executable project.file("scripts/cloudsmith-upload.sh")
 			args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
+		}
+	}
+}
+
+jreleaser {
+	project {
+		java {
+			groupId = 'tech.pegasys.teku'
+		}
+	}
+	release {
+		github {
+			skipRelease = true
+			skipTag = true
+			token = "foobar"
+		}
+	}
+	signing {
+		active = 'ALWAYS'
+		armored = true
+	}
+	deploy {
+		maven {
+			mavenCentral {
+				sonatype {
+					active = 'ALWAYS'
+					url = 'https://central.sonatype.com/api/v1/publisher'
+					stagingRepository('build/staging-deploy')
+					retryDelay = 15
+					maxRetries = 100
+				}
+			}
 		}
 	}
 }

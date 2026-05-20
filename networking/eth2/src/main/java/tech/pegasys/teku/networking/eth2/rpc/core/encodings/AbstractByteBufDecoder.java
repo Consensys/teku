@@ -34,10 +34,9 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
 
   @Override
   public Optional<TMessage> decodeOneMessage(final ByteBuf in) throws TException {
-    if (!in.isReadable()) {
+    if (!in.isReadable() || closed) {
       return Optional.empty();
     }
-    assertNotClosed();
 
     compositeByteBuf.addComponent(true, in.retainedSlice());
     try {

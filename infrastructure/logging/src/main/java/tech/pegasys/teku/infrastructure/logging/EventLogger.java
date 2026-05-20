@@ -271,6 +271,22 @@ public class EventLogger {
     info(slotEventLog, Color.WHITE);
   }
 
+  public void slotPayloadEvent(
+      final UInt64 nodeSlot,
+      final UInt64 headSlot,
+      final Bytes32 bestExecutionBlockHash,
+      final int numPeers) {
+    String executionBlockHash = "                                                       ... empty";
+    if (nodeSlot.equals(headSlot)) {
+      executionBlockHash = LogFormatter.formatHashRoot(bestExecutionBlockHash);
+    }
+    final String slotPayloadEventLog =
+        String.format(
+            "Slot Payload Event  *** Slot: %s, Execution Block: %s, Peers: %d",
+            nodeSlot, executionBlockHash, numPeers);
+    info(slotPayloadEventLog, Color.WHITE);
+  }
+
   public void reorgEvent(
       final Bytes32 previousHeadRoot,
       final UInt64 previousHeadSlot,

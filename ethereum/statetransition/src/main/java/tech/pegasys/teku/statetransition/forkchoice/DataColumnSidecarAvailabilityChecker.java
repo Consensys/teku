@@ -13,15 +13,22 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker<UInt64> {
   private static final Logger LOG = LogManager.getLogger();
@@ -29,16 +36,34 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
   private final DataAvailabilitySampler dataAvailabilitySampler;
   private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
   final Spec spec;
-
+  private final RecentChainData recentChainData;
   private final SignedBeaconBlock block;
+  private final Duration waitForSamplerCompletionTimeout;
 
   public DataColumnSidecarAvailabilityChecker(
       final DataAvailabilitySampler dataAvailabilitySampler,
       final Spec spec,
+      final RecentChainData recentChainData,
       final SignedBeaconBlock block) {
     this.dataAvailabilitySampler = dataAvailabilitySampler;
     this.spec = spec;
+    this.recentChainData = recentChainData;
     this.block = block;
+    this.waitForSamplerCompletionTimeout = calculateCompletionTimeout(spec, block.getSlot());
+  }
+
+  @VisibleForTesting
+  DataColumnSidecarAvailabilityChecker(
+      final DataAvailabilitySampler dataAvailabilitySampler,
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SignedBeaconBlock block,
+      final Duration waitForSamplerCompletionTimeout) {
+    this.dataAvailabilitySampler = dataAvailabilitySampler;
+    this.spec = spec;
+    this.recentChainData = recentChainData;
+    this.block = block;
+    this.waitForSamplerCompletionTimeout = waitForSamplerCompletionTimeout;
   }
 
   @Override
@@ -59,14 +84,38 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
       default -> {
+        // Propagate to a local future before applying orTimeout: orTimeout mutates the future
+        // in-place, and the sampler's tracker future is shared/cached, so timing it out directly
+        // would permanently poison it and prevent later column arrivals from recovering it.
+        final SafeFuture<List<UInt64>> localFuture = new SafeFuture<>();
         dataAvailabilitySampler
             .checkDataAvailability(block.getSlot(), block.getRoot())
-            .finish(
-                sampleIndices -> {
-                  validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
-                },
-                throwable ->
-                    validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+            .propagateTo(localFuture);
+        localFuture
+            .orTimeout(waitForSamplerCompletionTimeout)
+            .thenApply(DataAndValidationResult::validResult)
+            .exceptionallyCompose(
+                error ->
+                    ExceptionUtil.getCause(error, TimeoutException.class)
+                        .<SafeFuture<DataAndValidationResult<UInt64>>>map(
+                            timeoutException -> {
+                              if (isBlockOutsideDataAvailabilityWindow()) {
+                                return SafeFuture.completedFuture(
+                                    DataAndValidationResult.notRequired());
+                              }
+                              return SafeFuture.completedFuture(
+                                  DataAndValidationResult.notAvailable(timeoutException));
+                            })
+                        .orElseGet(
+                            () -> {
+                              final Throwable cause =
+                                  error instanceof CompletionException && error.getCause() != null
+                                      ? error.getCause()
+                                      : error;
+                              return SafeFuture.completedFuture(
+                                  DataAndValidationResult.notAvailable(cause));
+                            }))
+            .propagateTo(validationResult);
         dataAvailabilitySampler.flush();
       }
     }
@@ -76,5 +125,14 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
   @Override
   public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
     return validationResult;
+  }
+
+  private boolean isBlockOutsideDataAvailabilityWindow() {
+    return !spec.isAvailabilityOfDataColumnSidecarsRequiredAtSlot(
+        recentChainData.getStore(), block.getSlot());
+  }
+
+  static Duration calculateCompletionTimeout(final Spec spec, final UInt64 slot) {
+    return Duration.ofMillis(spec.getSlotDurationMillis(slot));
   }
 }

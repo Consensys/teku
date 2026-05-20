@@ -61,7 +61,8 @@ public class StoreAssertions {
             "blobSidecars",
             "blobSidecarsBlocksCountGauge",
             "executionPayloads",
-            "executionPayloadProvider")
+            "executionPayloadProvider",
+            "blindedExecutionPayloadProvider")
         .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());

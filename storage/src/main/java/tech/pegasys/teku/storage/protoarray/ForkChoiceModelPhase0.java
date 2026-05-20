@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 
@@ -53,6 +54,31 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
         executionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
         optimisticallyProcessed);
     blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
+  }
+
+  @Override
+  public void processAnchorBlock(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<Bytes32> executionBlockHash,
+      final boolean optimisticallyProcessed) {
+    processBlock(
+        protoArray,
+        blockNodeIndex,
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        checkpoints,
+        executionBlockNumber,
+        executionBlockHash,
+        optimisticallyProcessed);
   }
 
   @Override
@@ -119,8 +145,28 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public boolean shouldExtendPayload(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final Bytes32 blockRoot) {
+    return false;
+  }
+
+  @Override
   public boolean isHeadCandidate(final ProtoNode node) {
     return true;
+  }
+
+  @Override
+  public ProtoNode resolveBestDescendant(
+      final ProtoNode candidate,
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 currentSlot,
+      final Optional<Bytes32> proposerBoostRoot) {
+    // Phase0 has a single node per block — no sibling structure, no redirection needed.
+    return candidate;
   }
 
   @Override
@@ -197,5 +243,24 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   @Override
   public void onPrunedBlocks(final BlockNodeVariantsIndex blockNodeIndex) {
     // not used in phase0
+  }
+
+  @Override
+  public void onForkChoiceUpdatedResult(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ForkChoiceNode node,
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash,
+      final boolean verifiedInvalidTransition,
+      final HeadSelectionContext headSelectionContext) {
+    onExecutionPayloadResult(
+        protoArray,
+        blockNodeIndex,
+        node.blockRoot(),
+        status,
+        latestValidHash,
+        verifiedInvalidTransition,
+        headSelectionContext);
   }
 }

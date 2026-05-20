@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 
@@ -35,6 +36,18 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 interface ForkChoiceModel {
 
   void processBlock(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      UInt64 blockSlot,
+      Bytes32 blockRoot,
+      Bytes32 parentRoot,
+      Bytes32 stateRoot,
+      BlockCheckpoints checkpoints,
+      Optional<UInt64> executionBlockNumber,
+      Optional<Bytes32> executionBlockHash,
+      boolean optimisticallyProcessed);
+
+  void processAnchorBlock(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
       UInt64 blockSlot,
@@ -87,6 +100,12 @@ interface ForkChoiceModel {
   Optional<ProtoNodeData> getBaseNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
+  boolean shouldExtendPayload(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ReadOnlyStore store,
+      Bytes32 blockRoot);
+
   /**
    * Returns whether the supplied node is a valid head candidate for this fork-aware model.
    *
@@ -94,6 +113,24 @@ interface ForkChoiceModel {
    * head and only the EMPTY/FULL children are valid terminal heads.
    */
   boolean isHeadCandidate(ProtoNode node);
+
+  /**
+   * Resolves the model-preferred best descendant for the given candidate during head selection. The
+   * structural {@code bestDescendantIndex} field is only locally updated by {@code
+   * onExecutionPayload} and {@code processBlock}, so on a stale upper-chain pointer the chain-walk
+   * can land on the wrong sibling (e.g. an EMPTY node when its FULL sibling is now the
+   * model-preferred best child of the same parent). This method patches up that staleness in a
+   * model-aware way: implementations should follow the candidate's own {@code bestDescendantIndex}
+   * when present, and otherwise consult the parent BASE's preferred sibling.
+   *
+   * <p>Implementations should return {@code candidate} unchanged when no redirection is needed.
+   */
+  ProtoNode resolveBestDescendant(
+      ProtoNode candidate,
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      UInt64 currentSlot,
+      Optional<Bytes32> proposerBoostRoot);
 
   Optional<ForkChoiceNode> resolveBaseNode(
       BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
@@ -114,6 +151,15 @@ interface ForkChoiceModel {
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
       Bytes32 blockRoot,
+      ExecutionPayloadStatus status,
+      Optional<Bytes32> latestValidHash,
+      boolean verifiedInvalidTransition,
+      HeadSelectionContext headSelectionContext);
+
+  void onForkChoiceUpdatedResult(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ForkChoiceNode node,
       ExecutionPayloadStatus status,
       Optional<Bytes32> latestValidHash,
       boolean verifiedInvalidTransition,
