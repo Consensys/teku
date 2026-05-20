@@ -19,3 +19,4 @@
  - Make sure sync committee duties are retried while the EL is optimistic.
  - Fixed a potential issue in importing blocks when data is not available.
  - Fixed potential NPE when SSE are not closed correctly.
+ - Improved pruning for data column sidecars.
