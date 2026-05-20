@@ -115,7 +115,7 @@ public class ProposerPreferencesGossipValidator {
     /*
      * Look up the checkpoint state at (proposal_epoch - MIN_SEED_LOOKAHEAD, dependent_root). The state used by
      * is_valid_proposal_slot has current_epoch == proposal_epoch - MIN_SEED_LOOKAHEAD, so the lookahead index for
-     * proposal_slot is always SLOTS_PER_EPOCH + (proposal_slot % SLOTS_PER_EPOCH).
+     * proposal_slot is MIN_SEED_LOOKAHEAD * SLOTS_PER_EPOCH + (proposal_slot % SLOTS_PER_EPOCH).
      */
     final int minSeedLookahead = spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead();
     final UInt64 checkpointEpoch =
@@ -137,7 +137,8 @@ public class ProposerPreferencesGossipValidator {
                * [REJECT] is_valid_proposal_slot(state, preferences) returns True
                */
               final int slotsPerEpoch = spec.atSlot(proposalSlot).getConfig().getSlotsPerEpoch();
-              final int lookaheadIndex = slotsPerEpoch + proposalSlot.mod(slotsPerEpoch).intValue();
+              final int lookaheadIndex =
+                  minSeedLookahead * slotsPerEpoch + proposalSlot.mod(slotsPerEpoch).intValue();
               final UInt64 expectedValidatorIndex =
                   BeaconStateFulu.required(state).getProposerLookahead().getElement(lookaheadIndex);
               if (!expectedValidatorIndex.equals(proposerPreferences.getValidatorIndex())) {
