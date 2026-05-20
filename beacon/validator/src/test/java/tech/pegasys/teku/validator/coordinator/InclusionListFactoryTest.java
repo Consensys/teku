@@ -53,7 +53,7 @@ class InclusionListFactoryTest {
             parentBlockHash, slot, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
     final BeaconState state =
         dataStructureUtil
-            .stateBuilderGloas(64, 16, 4)
+            .stateBuilderHeze(64, 16, 4)
             .slot(slot)
             .latestExecutionPayloadBid(latestExecutionPayloadBid)
             .build();

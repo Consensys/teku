@@ -351,7 +351,8 @@
             "0x2f82fa41ee7ffebac08df14ba1ccca5f98c20f289e36e5d39eb1f324f4856daca09209d0f23e6da0ef71eb6df438007c",
             "0x8e27dd410efa5a138adcf524c3783161b7d10a022e22b1768337450e386a02629630e8a9d723cf4553eb3acbd81ff3fb"
           ],
-          "execution_requests_root": "0xa148d741ae453a587f1f5d509701462ebdd40994e5ead930b1b888d612cbb9ec"
+          "execution_requests_root": "0xa148d741ae453a587f1f5d509701462ebdd40994e5ead930b1b888d612cbb9ec",
+          "inclusion_list_bits": "0x0000"
         },
         "signature": "0xb6df5347cf18c72adf3ee1e2e5e942d8b3b7ab160b1f66d4991bab95e7050f302d723406d3410b9275700b3b998f2cd517c4da35e0294235f656d5c53cabc553f02b6a8f0e14a74571029f380c52a935c0230f4507ac486e4cf01ede4d04270f"
       },

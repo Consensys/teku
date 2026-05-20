@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BeaconStateBuilderGloas
     extends AbstractBeaconStateBuilder<
@@ -93,9 +94,8 @@ public class BeaconStateBuilderGloas
 
   @Override
   protected BeaconStateGloas getEmptyState() {
-    return BeaconStateSchemaGloas.create(
-            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
-        .createEmpty();
+    return BeaconStateGloas.required(
+        spec.getSchemaDefinitions().getBeaconStateSchema().createEmpty());
   }
 
   @Override
@@ -137,6 +137,20 @@ public class BeaconStateBuilderGloas
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderGloas(
         spec.forMilestone(SpecMilestone.GLOAS),
+        dataStructureUtil,
+        defaultValidatorCount,
+        defaultBuilderCount,
+        defaultItemsInSSZLists);
+  }
+
+  public static BeaconStateBuilderGloas create(
+      final DataStructureUtil dataStructureUtil,
+      final SpecVersion spec,
+      final int defaultValidatorCount,
+      final int defaultBuilderCount,
+      final int defaultItemsInSSZLists) {
+    return new BeaconStateBuilderGloas(
+        spec,
         dataStructureUtil,
         defaultValidatorCount,
         defaultBuilderCount,
@@ -204,7 +218,10 @@ public class BeaconStateBuilderGloas
   public BeaconStateBuilderGloas latestExecutionPayloadBid(
       final ExecutionPayloadBid latestExecutionPayloadBid) {
     checkNotNull(latestExecutionPayloadBid);
-    this.latestExecutionPayloadBid = latestExecutionPayloadBid;
+    this.latestExecutionPayloadBid =
+        SchemaDefinitionsGloas.required(spec.getSchemaDefinitions())
+            .getExecutionPayloadBidSchema()
+            .createFromExecutionPayloadBid(latestExecutionPayloadBid);
     return this;
   }
 
@@ -314,7 +331,22 @@ public class BeaconStateBuilderGloas
                     ? dataStructureUtil.randomUInt64(defaultValidatorCount)
                     : UInt64.ZERO);
 
-    this.latestExecutionPayloadBid = dataStructureUtil.randomExecutionPayloadBid();
+    this.latestExecutionPayloadBid =
+        SchemaDefinitionsGloas.required(spec.getSchemaDefinitions())
+            .getExecutionPayloadBidSchema()
+            .create(
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomEth1Address(),
+                dataStructureUtil.randomUInt64(),
+                dataStructureUtil.randomBuilderIndex(),
+                dataStructureUtil.randomSlot(),
+                dataStructureUtil.randomUInt64(),
+                dataStructureUtil.randomUInt64(),
+                dataStructureUtil.randomBlobKzgCommitments(),
+                dataStructureUtil.randomBytes32());
 
     this.builders =
         dataStructureUtil.randomSszList(

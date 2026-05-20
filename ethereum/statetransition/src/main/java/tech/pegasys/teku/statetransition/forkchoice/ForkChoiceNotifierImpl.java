@@ -122,16 +122,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
       final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlock, blockSlot));
+    return getPayloadId(parentBeaconBlock, blockSlot, List.of());
   }
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot,
+      final ForkChoiceNode parentBeaconBlock,
       final UInt64 blockSlot,
       final List<Bytes> inclusionListTransactions) {
     return eventThread.executeFuture(
-        () -> internalGetPayloadId(parentBeaconBlockRoot, blockSlot, inclusionListTransactions));
+        () -> internalGetPayloadId(parentBeaconBlock, blockSlot, inclusionListTransactions));
   }
 
   @Override

@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -117,7 +118,10 @@ class DefaultExecutionPayloadManagerTest {
     asyncRunner.executeDueActions();
 
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
-    verifyNoInteractions(receivedExecutionPayloadEventsChannelPublisher);
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadValidated(signedExecutionPayload);
+    verify(receivedExecutionPayloadEventsChannelPublisher, never())
+        .onExecutionPayloadImported(signedExecutionPayload, false);
     assertThat(
             executionPayloadManager.isExecutionPayloadRecentlySeen(
                 signedExecutionPayload.getBeaconBlockRoot()))
@@ -164,6 +168,10 @@ class DefaultExecutionPayloadManagerTest {
     }
 
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadValidated(signedExecutionPayload);
+    verify(receivedExecutionPayloadEventsChannelPublisher, never())
+        .onExecutionPayloadImported(signedExecutionPayload, false);
 
     // `beacon_block_root` should not be cached when import fails
     assertThat(

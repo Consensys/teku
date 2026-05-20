@@ -53,12 +53,11 @@ class ForkChoicePayloadExecutorGloas implements OptimisticExecutionPayloadExecut
   public boolean optimisticallyExecute(
       final Optional<ExecutionPayloadHeader> latestExecutionPayloadHeader,
       final NewPayloadRequest payloadToExecute) {
+    final NewPayloadRequest preparedPayloadToExecute = preparePayloadToExecute(payloadToExecute);
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(
-                    preparePayloadToExecute(payloadToExecute), signedEnvelope.getSlot())
-                .thenApply(PayloadValidationResult::new)
+                .engineNewPayload(preparedPayloadToExecute, signedEnvelope.getSlot())
                 .exceptionally(
                     error -> {
                       LOG.error("Error while validating payload", error);

@@ -37,10 +37,10 @@ public interface ForkChoiceNotifier {
       ForkChoiceNode parentBeaconBlock, UInt64 blockSlot);
 
   default SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot,
+      final ForkChoiceNode parentBeaconBlock,
       final UInt64 blockSlot,
       final List<Bytes> inclusionListTransactions) {
-    return getPayloadId(parentBeaconBlockRoot, blockSlot);
+    return getPayloadId(parentBeaconBlock, blockSlot);
   }
 
   void onTerminalBlockReached(Bytes32 executionBlockHash);

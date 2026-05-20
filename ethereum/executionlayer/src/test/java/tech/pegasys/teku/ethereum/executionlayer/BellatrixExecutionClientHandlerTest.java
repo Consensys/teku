@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +103,8 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.empty(),
-            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),
+            List.of());
     final Optional<PayloadAttributesV1> payloadAttributes =
         PayloadAttributesV1.fromInternalPayloadBuildingAttributes(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =

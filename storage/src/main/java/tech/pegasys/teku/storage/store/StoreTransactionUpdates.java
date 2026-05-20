@@ -90,9 +90,10 @@ class StoreTransactionUpdates {
     checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
-    checkNotNull(maybeInclusionList, "Inclusion list is required");
-    checkNotNull(maybeUnsatisfiedInclusionListBlockRoot, "Unsatisfied inclusion list is required");
-    checkNotNull(maybeEquivocatedInclusionList, "Equivocated inclusion list required");
+    checkNotNull(maybeInclusionList, "Inclusion lists are required");
+    checkNotNull(
+        maybeUnsatisfiedInclusionListBlockRoot, "Unsatisfied inclusion lists are required");
+    checkNotNull(maybeEquivocatedInclusionList, "Equivocated inclusion lists are required");
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");

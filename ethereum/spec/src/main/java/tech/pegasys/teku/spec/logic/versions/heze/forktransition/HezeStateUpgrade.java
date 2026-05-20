@@ -86,7 +86,7 @@ public class HezeStateUpgrade implements StateUpgrade<BeaconStateGloas> {
               state.setBuilderPendingPayments(preStateGloas.getBuilderPendingPayments());
               state.setBuilderPendingWithdrawals(preStateGloas.getBuilderPendingWithdrawals());
               state.setLatestExecutionPayloadBid(
-                  executionPayloadBidSchema.createFromGloasBid(
+                  executionPayloadBidSchema.createFromExecutionPayloadBid(
                       preStateGloas.getLatestExecutionPayloadBid()));
               state.setPayloadExpectedWithdrawals(preStateGloas.getPayloadExpectedWithdrawals());
               state.setPtcWindow(preStateGloas.getPtcWindow());

@@ -137,7 +137,8 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),
+            List.of());
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
     // headBlockSlot in ForkChoiceState is still in Bellatrix

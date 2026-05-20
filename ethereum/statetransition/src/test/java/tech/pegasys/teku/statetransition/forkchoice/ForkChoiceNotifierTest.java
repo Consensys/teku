@@ -770,7 +770,8 @@ class ForkChoiceNotifierTest {
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(initialPayloadId)));
 
     final SafeFuture<Optional<ExecutionPayloadContext>> updatedExecutionPayloadContext =
-        notifier.getPayloadId(blockRoot, blockSlot, inclusionListTransactions);
+        notifier.getPayloadId(
+            ForkChoiceNode.createBase(blockRoot), blockSlot, inclusionListTransactions);
     assertThatSafeFuture(updatedExecutionPayloadContext).isNotCompleted();
 
     updatedResponseFuture.complete(
@@ -1233,21 +1234,22 @@ class ForkChoiceNotifierTest {
         feeRecipient,
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
-        forkChoiceState.headBlock());
+        forkChoiceState.headBlock(),
+        List.of());
   }
 
   private PayloadBuildingAttributes withInclusionListTransactions(
       final PayloadBuildingAttributes payloadBuildingAttributes,
       final List<Bytes> inclusionListTransactions) {
     return new PayloadBuildingAttributes(
-        payloadBuildingAttributes.getProposerIndex(),
-        payloadBuildingAttributes.getProposalSlot(),
-        payloadBuildingAttributes.getTimestamp(),
-        payloadBuildingAttributes.getPrevRandao(),
-        payloadBuildingAttributes.getFeeRecipient(),
-        payloadBuildingAttributes.getValidatorRegistration(),
-        payloadBuildingAttributes.getWithdrawals(),
-        payloadBuildingAttributes.getParentBeaconBlockRoot(),
+        payloadBuildingAttributes.proposerIndex(),
+        payloadBuildingAttributes.proposalSlot(),
+        payloadBuildingAttributes.timestamp(),
+        payloadBuildingAttributes.prevRandao(),
+        payloadBuildingAttributes.feeRecipient(),
+        payloadBuildingAttributes.validatorRegistration(),
+        payloadBuildingAttributes.withdrawals(),
+        payloadBuildingAttributes.parentBeaconBlock(),
         inclusionListTransactions);
   }
 

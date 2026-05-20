@@ -26,8 +26,13 @@ public class SignedExecutionPayloadBidSchema
     extends ContainerSchema2<SignedExecutionPayloadBid, ExecutionPayloadBid, SszSignature> {
 
   public SignedExecutionPayloadBidSchema(final SchemaRegistry schemaRegistry) {
+    this("SignedExecutionPayloadBid", schemaRegistry);
+  }
+
+  public SignedExecutionPayloadBidSchema(
+      final String schemaName, final SchemaRegistry schemaRegistry) {
     super(
-        "SignedExecutionPayloadBid",
+        schemaName,
         namedSchema("message", schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }

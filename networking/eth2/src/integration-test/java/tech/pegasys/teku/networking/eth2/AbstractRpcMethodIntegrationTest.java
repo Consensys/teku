@@ -339,4 +339,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case GLOAS, HEZE -> BeaconBlockBodyGloas.class;
     };
   }
+
+  protected static boolean milestonesUseCompatibleBeaconBlockBodySchema(
+      final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) {
+    return milestoneToBeaconBlockBodyClass(baseMilestone)
+            .equals(milestoneToBeaconBlockBodyClass(nextMilestone))
+        && nextMilestone != SpecMilestone.HEZE;
+  }
 }

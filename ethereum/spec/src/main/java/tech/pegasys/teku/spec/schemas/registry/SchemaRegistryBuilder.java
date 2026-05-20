@@ -478,6 +478,11 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 BeaconStateSchemaGloas.create(SpecConfigGloas.required(specConfig), registry))
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaGloas.create(
+                    schemaName, SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
@@ -1022,7 +1027,8 @@ public class SchemaRegistryBuilder {
         .withCreator(
             HEZE,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadBidSchemaHeze(registry, SpecConfigHeze.required(specConfig))
+                new ExecutionPayloadBidSchemaHeze(
+                        schemaName, registry, SpecConfigHeze.required(specConfig))
                     .castTypeToExecutionPayloadBidSchema())
         .build();
   }
@@ -1032,6 +1038,10 @@ public class SchemaRegistryBuilder {
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) -> new SignedExecutionPayloadBidSchema(registry))
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadBidSchema(schemaName, registry))
         .build();
   }
 
