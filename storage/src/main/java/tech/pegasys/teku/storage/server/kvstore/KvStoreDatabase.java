@@ -1393,8 +1393,8 @@ public class KvStoreDatabase implements Database {
     final Optional<UInt64> maybeSlot =
         switch (sidecarType) {
           case CANONICAL -> dao.getPreviousDataColumnSidecarSlotAtOrBefore(latestSlot);
-          case NON_CANONICAL -> dao.getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(
-              latestSlot);
+          case NON_CANONICAL ->
+              dao.getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(latestSlot);
         };
     return maybeSlot.filter(slot -> slot.isGreaterThanOrEqualTo(firstDataColumnSidecarSlot));
   }
