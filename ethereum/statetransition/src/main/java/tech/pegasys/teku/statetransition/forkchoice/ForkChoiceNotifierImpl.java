@@ -283,22 +283,25 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   private void internalForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> requestedBlockProductionSlot) {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalForkChoiceUpdated forkChoiceState {}", forkChoiceState);
 
-    final Optional<UInt64> localProposingSlot =
-        calculatePayloadAttributesSlot(forkChoiceState, proposingSlot);
-
     clearProductionSessionIfHeadAdvanced(forkChoiceState);
 
-    if (shouldSkipForkChoiceUpdateDueToLateBlockReorg(forkChoiceState, localProposingSlot)) {
+    if (requestedBlockProductionSlot.isPresent()) {
+      startOrPromoteProductionSessionAndSendForkChoiceUpdated(
+          forkChoiceState, requestedBlockProductionSlot.get());
       return;
     }
 
-    if (proposingSlot.isPresent()) {
-      localProposingSlot.ifPresent(slot -> startOrPromoteProductionSession(forkChoiceState, slot));
+    // this is the slot for which we should calculate payload attributes for, in case we are a
+    // proposer for that slot. it will be empty only in pre-genesis.
+    final Optional<UInt64> payloadAttributesSlot =
+        requestedBlockProductionSlot.or(() -> calculatePayloadAttributesSlot(forkChoiceState));
+
+    if (shouldSkipForkChoiceUpdateDueToLateBlockReorg(forkChoiceState, payloadAttributesSlot)) {
       return;
     }
 
@@ -312,10 +315,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     }
 
     final Optional<PayloadBuildSession> sameSlotSession =
-        localProposingSlot
+        payloadAttributesSlot
             .flatMap(forkChoiceUpdateContext::getSessionFor)
             .filter(session -> session.hasForkChoiceState(forkChoiceState));
     if (sameSlotSession.isPresent()) {
+      LOG.debug("nothing changed, send FCU again");
       sendForkChoiceUpdated(sameSlotSession.orElseThrow().getForkChoiceUpdateData());
       return;
     }
@@ -328,8 +332,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         "internalForkChoiceUpdated forkChoiceUpdateData {}",
         forkChoiceUpdateContext.getForkChoiceUpdateData());
 
-    localProposingSlot.ifPresentOrElse(
-        slot -> startPayloadBuildSession(forkChoiceState, slot, false),
+    payloadAttributesSlot.ifPresentOrElse(
+        slot -> setupPayloadBuildSessionAndSendForkChoiceUpdated(forkChoiceState, slot, false),
         this::sendForkChoiceUpdated);
   }
 
@@ -343,12 +347,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
    * 2. we imported the block for current slot and has become the head
    * </pre>
    */
-  private Optional<UInt64> calculatePayloadAttributesSlot(
-      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
-    if (proposingSlot.isPresent()) {
-      // We are in the context of a block production, so we should use the proposing slot
-      return proposingSlot;
-    }
+  private Optional<UInt64> calculatePayloadAttributesSlot(final ForkChoiceState forkChoiceState) {
 
     final Optional<UInt64> currentSlot = recentChainData.getCurrentSlot();
     if (currentSlot.isEmpty()) {
@@ -416,7 +415,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       sendForkChoiceUpdated(existingSession.orElseThrow().getForkChoiceUpdateData());
       return;
     }
-    startPayloadBuildSession(
+    setupPayloadBuildSessionAndSendForkChoiceUpdated(
         getCurrentForkChoiceUpdateData().getForkChoiceState(), proposalSlot, false);
   }
 
@@ -438,41 +437,47 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                         forkChoiceUpdatedResultFuture)));
   }
 
-  private void startPayloadBuildSession(
-      final ForkChoiceState forkChoiceState, final UInt64 proposalSlot, final boolean production) {
+  private void setupPayloadBuildSessionAndSendForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState,
+      final UInt64 payloadAttributesSlot,
+      final boolean production) {
     final ForkChoiceUpdateData baseForkChoiceUpdateData = getCurrentForkChoiceUpdateData();
     final ForkChoiceUpdateData sessionForkChoiceUpdateData =
         production
             ? baseForkChoiceUpdateData.withFreshForkChoiceState(forkChoiceState)
             : baseForkChoiceUpdateData.withForkChoiceState(forkChoiceState);
     final PayloadBuildSession session =
-        new PayloadBuildSession(proposalSlot, sessionForkChoiceUpdateData, production);
+        new PayloadBuildSession(payloadAttributesSlot, sessionForkChoiceUpdateData, production);
     forkChoiceUpdateContext = ForkChoiceUpdateContext.preparing(session);
-    LOG.debug("Starting payload build session {}", session);
 
     final SafeFuture<Optional<PayloadBuildingAttributes>> payloadBuildingAttributesFuture =
         proposersDataManager.calculatePayloadBuildingAttributes(
-            proposalSlot, inSync, session.getForkChoiceUpdateData(), production);
-    final SafeFuture<Void> completion =
-        payloadBuildingAttributesFuture.thenAcceptAsync(
+            payloadAttributesSlot, inSync, session.getForkChoiceUpdateData(), production);
+
+    payloadBuildingAttributesFuture
+        .thenAcceptAsync(
             payloadBuildingAttributes ->
-                completePayloadBuildSession(session, payloadBuildingAttributes),
-            eventThread);
-    completion.finish(
-        error -> {
-          if (production
-              && !session.getForkChoiceUpdateData().getExecutionPayloadContext().isDone()) {
-            session
-                .getForkChoiceUpdateData()
-                .getExecutionPayloadContext()
-                .completeExceptionally(error);
-          }
-          session.completePayloadAttributesExceptionally(error);
-          LOG.error("Failed to calculate payload attributes for slot {}", proposalSlot, error);
-        });
+                completePayloadBuildSessionAndSendForkChoiceUpdated(
+                    session, payloadBuildingAttributes),
+            eventThread)
+        .finish(
+            error -> {
+              if (production
+                  && !session.getForkChoiceUpdateData().getExecutionPayloadContext().isDone()) {
+                session
+                    .getForkChoiceUpdateData()
+                    .getExecutionPayloadContext()
+                    .completeExceptionally(error);
+              }
+              session.completePayloadAttributesExceptionally(error);
+              LOG.error(
+                  "Failed to calculate payload attributes for slot {}",
+                  payloadAttributesSlot,
+                  error);
+            });
   }
 
-  private void startOrPromoteProductionSession(
+  private void startOrPromoteProductionSessionAndSendForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final UInt64 proposalSlot) {
     final Optional<PayloadBuildSession> existingSession =
         forkChoiceUpdateContext
@@ -482,15 +487,17 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       final PayloadBuildSession session = existingSession.orElseThrow();
       if (hasPayloadAttributesForProduction(
           session.getForkChoiceUpdateData(), forkChoiceState.headBlock(), proposalSlot)) {
+        LOG.debug("promoting to production session for slot {}", proposalSlot);
         session.promoteToProduction();
         sendForkChoiceUpdated(session.getForkChoiceUpdateData());
         return;
       }
     }
-    startPayloadBuildSession(forkChoiceState, proposalSlot, true);
+    LOG.debug("start building session for slot {}", proposalSlot);
+    setupPayloadBuildSessionAndSendForkChoiceUpdated(forkChoiceState, proposalSlot, true);
   }
 
-  private void completePayloadBuildSession(
+  private void completePayloadBuildSessionAndSendForkChoiceUpdated(
       final PayloadBuildSession session,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     if (!isCurrentPayloadBuildSession(session)) {
@@ -507,6 +514,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     session.withPayloadBuildingAttributes(payloadBuildingAttributes);
     sendForkChoiceUpdated(session.getForkChoiceUpdateData());
     session.completePayloadAttributesApplied();
+
+    LOG.debug(
+        "completePayloadBuildSession for slot {}: {}",
+        session.getProposalSlot(),
+        payloadBuildingAttributes);
   }
 
   @SuppressWarnings("ReferenceComparison")
