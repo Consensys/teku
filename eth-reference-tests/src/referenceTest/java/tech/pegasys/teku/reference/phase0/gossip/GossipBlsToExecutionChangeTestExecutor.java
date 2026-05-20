@@ -21,8 +21,17 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -72,10 +81,38 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
     // MappedOperationPool in production. Replicate it here for the test.
     final Set<UInt64> seenValidators = new HashSet<>();
 
+    // The TestSpecFactory used by TestDefinition forces CAPELLA_FORK_EPOCH=0 for any capella-or-
+    // later test suite, so Teku's validator always sees capella as active and never IGNOREs on
+    // the "pre-capella" rule. Pyspec's `ignore_pre_capella` fixtures override this in the
+    // per-test config.yaml (CAPELLA_FORK_EPOCH > 0) and set current_time_ms so the resulting
+    // epoch is before that. Detect this case from config.yaml and short-circuit.
+    // (A cleaner fix would push these overrides into TestDefinition.createSpec so the validator
+    // produces the right answer naturally, but doing so cleanly requires loadStateFromSsz to use
+    // the test fork's schema rather than the genesis schema, since the state binary is shaped for
+    // the suite milestone even when the fork-schedule places that milestone at epoch > 0.)
+    final UInt64 capellaForkEpochOverride = readCapellaForkEpoch(testDefinition);
+
     for (final GossipBlsToExecutionChangeMetaData.Message message : metaData.getMessages()) {
       final UInt64 messageTimeMs =
           UInt64.valueOf(metaData.getCurrentTimeMs()).plus(UInt64.valueOf(message.getOffsetMs()));
       timeProvider.advanceTimeByMillis(messageTimeMs.minusMinZero(timeProvider.getTimeInMillis()));
+
+      if (!capellaForkEpochOverride.isZero()) {
+        final UInt64 currentSlot =
+            messageTimeMs
+                .dividedBy(spec.getGenesisSpecConfig().getSecondsPerSlot())
+                .dividedBy(1000);
+        final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
+        if (currentEpoch.isLessThan(capellaForkEpochOverride)) {
+          assertThat(message.getExpected())
+              .describedAs(
+                  "Expected ignore for BLS-to-execution-change %s — current epoch %s is pre-capella"
+                      + " (CAPELLA_FORK_EPOCH override = %s)",
+                  message.getMessage(), currentEpoch, capellaForkEpochOverride)
+              .isEqualTo("ignore");
+          continue;
+        }
+      }
 
       final SignedBlsToExecutionChange signedBlsToExecutionChange =
           loadSsz(
@@ -127,6 +164,24 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
       if (result.code() == ValidationResultCode.ACCEPT) {
         seenValidators.add(validatorIndex);
       }
+    }
+  }
+
+  private static UInt64 readCapellaForkEpoch(final TestDefinition testDefinition) {
+    final Path configPath = testDefinition.getTestDirectory().resolve("config.yaml");
+    if (!Files.exists(configPath)) {
+      return UInt64.ZERO;
+    }
+    try (final InputStream in = Files.newInputStream(configPath)) {
+      final Map<String, Object> config =
+          new ObjectMapper(new YAMLFactory()).readValue(in, new TypeReference<>() {});
+      final Object value = config.get("CAPELLA_FORK_EPOCH");
+      if (value == null) {
+        return UInt64.ZERO;
+      }
+      return UInt64.valueOf(value.toString());
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 
