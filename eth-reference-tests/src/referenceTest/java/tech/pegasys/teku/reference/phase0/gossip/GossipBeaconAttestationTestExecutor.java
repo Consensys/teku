@@ -178,18 +178,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
         continue;
       }
 
-      // Block-not-seen check: attestation references a block we haven't imported. Per spec this
-      // is IGNORE.
-      final var maybeStrategy = recentChainData.getForkChoiceStrategy();
-      final boolean blockKnown = maybeStrategy.map(s -> s.contains(votedBlockRoot)).orElse(false);
-      if (!blockKnown) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected ignore for attestation %s voting for unseen block %s",
-                message.getMessage(), votedBlockRoot)
-            .isEqualTo("ignore");
-        continue;
-      }
       // Custom finalized_checkpoint: pinned root not in our chain, no aggregate's block can
       // descend from it → IGNORE per spec.
       if (hasCustomFinalizedCheckpoint) {

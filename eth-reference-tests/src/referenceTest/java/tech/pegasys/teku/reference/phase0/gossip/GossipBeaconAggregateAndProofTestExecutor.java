@@ -164,19 +164,6 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         continue;
       }
 
-      // Block-not-seen check: attestation references a block we haven't imported. Per spec this
-      // is IGNORE.
-      final var maybeStrategy = recentChainData.getForkChoiceStrategy();
-      final boolean blockKnown = maybeStrategy.map(s -> s.contains(votedBlockRoot)).orElse(false);
-      if (!blockKnown) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected ignore for aggregate %s voting for unseen block %s",
-                message.getMessage(), votedBlockRoot)
-            .isEqualTo("ignore");
-        continue;
-      }
-
       // Custom finalized_checkpoint case: the fixture pins a finalized root not in our chain,
       // so by definition the aggregate's block cannot descend from it. Per spec, this is IGNORE.
       // Teku's validator skips this check (relies on proto-array invariant), so handle it here.
