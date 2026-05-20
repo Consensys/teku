@@ -94,9 +94,8 @@ public class BeaconStateBuilderGloas
 
   @Override
   protected BeaconStateGloas getEmptyState() {
-    return BeaconStateSchemaGloas.create(
-            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
-        .createEmpty();
+    return BeaconStateGloas.required(
+        spec.getSchemaDefinitions().getBeaconStateSchema().createEmpty());
   }
 
   @Override
@@ -219,7 +218,10 @@ public class BeaconStateBuilderGloas
   public BeaconStateBuilderGloas latestExecutionPayloadBid(
       final ExecutionPayloadBid latestExecutionPayloadBid) {
     checkNotNull(latestExecutionPayloadBid);
-    this.latestExecutionPayloadBid = latestExecutionPayloadBid;
+    this.latestExecutionPayloadBid =
+        SchemaDefinitionsGloas.required(spec.getSchemaDefinitions())
+            .getExecutionPayloadBidSchema()
+            .createFromExecutionPayloadBid(latestExecutionPayloadBid);
     return this;
   }
 

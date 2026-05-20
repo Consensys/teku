@@ -72,8 +72,15 @@ public class ExecutionPayloadBidSchemaHeze
 
   public ExecutionPayloadBidSchemaHeze(
       final SchemaRegistry schemaRegistry, final SpecConfigHeze specConfig) {
+    this("ExecutionPayloadBid", schemaRegistry, specConfig);
+  }
+
+  public ExecutionPayloadBidSchemaHeze(
+      final String schemaName,
+      final SchemaRegistry schemaRegistry,
+      final SpecConfigHeze specConfig) {
     super(
-        "ExecutionPayloadBid",
+        schemaName,
         namedSchema(PARENT_BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(PARENT_BLOCK_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
