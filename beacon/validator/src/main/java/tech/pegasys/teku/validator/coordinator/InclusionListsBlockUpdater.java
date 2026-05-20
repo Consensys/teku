@@ -26,9 +26,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class InclusionListsBlockUpdater {
@@ -100,8 +102,16 @@ public class InclusionListsBlockUpdater {
           slot);
       final Bytes32 parentRoot = spec.getBlockRootAtSlot(state, slot);
       final UInt64 proposerSlot = slot.increment();
+      final Optional<ForkChoiceNode> maybeParentForkChoiceNode =
+          getParentForkChoiceNode(parentRoot);
+      if (maybeParentForkChoiceNode.isEmpty()) {
+        LOG.warn(
+            "Unable to update block with inclusion lists because parent root {} is not the chain head",
+            parentRoot);
+        return SafeFuture.completedFuture(Optional.empty());
+      }
       return forkChoiceNotifier
-          .getPayloadId(parentRoot, proposerSlot, transactions)
+          .getPayloadId(maybeParentForkChoiceNode.get(), proposerSlot, transactions)
           .thenApply(
               maybeExecutionPayloadContext ->
                   extractUpdatedPayloadId(
@@ -149,5 +159,12 @@ public class InclusionListsBlockUpdater {
         .flatMap(List::stream)
         .map(SszByteListImpl::getBytes)
         .toList();
+  }
+
+  private Optional<ForkChoiceNode> getParentForkChoiceNode(final Bytes32 parentRoot) {
+    return combinedChainDataClient
+        .getChainHead()
+        .filter(chainHead -> chainHead.getRoot().equals(parentRoot))
+        .map(ChainHead::getForkChoiceNode);
   }
 }

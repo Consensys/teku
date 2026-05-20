@@ -65,7 +65,12 @@ public class BeaconStateSchemaGloas
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    super("BeaconStateGloas", getUniqueFields(specConfig, schemaRegistry), specConfig);
+    this("BeaconStateGloas", specConfig, schemaRegistry);
+  }
+
+  private BeaconStateSchemaGloas(
+      final String schemaName, final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super(schemaName, getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
   private static List<SszField> getUniqueFields(
@@ -207,6 +212,11 @@ public class BeaconStateSchemaGloas
   public static BeaconStateSchemaGloas create(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     return new BeaconStateSchemaGloas(specConfig, schemaRegistry);
+  }
+
+  public static BeaconStateSchemaGloas create(
+      final String schemaName, final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaGloas(schemaName, specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaGloas required(final BeaconStateSchema<?, ?> schema) {

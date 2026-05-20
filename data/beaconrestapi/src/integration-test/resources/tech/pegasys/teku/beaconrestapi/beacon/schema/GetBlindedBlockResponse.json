@@ -30,6 +30,8 @@
         "$ref" : "#/components/schemas/SignedBlindedBeaconBlockElectra"
       }, {
         "$ref" : "#/components/schemas/SignedBeaconBlockGloas"
+      }, {
+        "$ref" : "#/components/schemas/SignedBeaconBlockHeze"
       } ]
     }
   }

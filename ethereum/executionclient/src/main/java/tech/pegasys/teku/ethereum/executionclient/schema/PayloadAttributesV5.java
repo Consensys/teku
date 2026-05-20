@@ -49,16 +49,16 @@ public class PayloadAttributesV5 extends PayloadAttributesV4 {
   public static PayloadAttributesV5 fromInternalPayloadBuildingAttributesV5(
       final PayloadBuildingAttributes payloadBuildingAttributes) {
     final List<String> inclusionListTransactionHexes =
-        payloadBuildingAttributes.getInclusionListTransactions().stream()
+        payloadBuildingAttributes.inclusionListTransactions().stream()
             .map(Bytes::toHexString)
             .collect(Collectors.toList());
     return new PayloadAttributesV5(
-        payloadBuildingAttributes.getTimestamp(),
-        payloadBuildingAttributes.getPrevRandao(),
-        payloadBuildingAttributes.getFeeRecipient(),
+        payloadBuildingAttributes.timestamp(),
+        payloadBuildingAttributes.prevRandao(),
+        payloadBuildingAttributes.feeRecipient(),
         getWithdrawals(payloadBuildingAttributes),
-        payloadBuildingAttributes.getParentBeaconBlockRoot(),
-        payloadBuildingAttributes.getProposalSlot(),
+        payloadBuildingAttributes.parentBeaconBlock().blockRoot(),
+        payloadBuildingAttributes.proposalSlot(),
         inclusionListTransactionHexes);
   }
 

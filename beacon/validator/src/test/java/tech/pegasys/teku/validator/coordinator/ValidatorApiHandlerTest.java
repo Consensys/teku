@@ -21,9 +21,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -34,6 +36,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
@@ -98,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -124,6 +128,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -142,6 +147,7 @@ class ValidatorApiHandlerTest {
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
 
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final ChainHead chainHead = mock(ChainHead.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
@@ -183,8 +189,16 @@ class ValidatorApiHandlerTest {
       mock(SyncCommitteeSubscriptionManager.class);
 
   private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
-      new BlockProductionAndPublishingPerformanceFactory(
-          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0, Optional.empty());
+      spy(
+          new BlockProductionAndPublishingPerformanceFactory(
+              StubTimeProvider.withTimeInMillis(0),
+              __ -> ZERO,
+              false,
+              0,
+              0,
+              0,
+              0,
+              Optional.empty()));
 
   private Spec spec;
   private UInt64 epochStartSlot;
@@ -233,9 +247,14 @@ class ValidatorApiHandlerTest {
             signedInclusionListPublisher,
             inclusionListFactory);
 
+    doReturn(BlockProductionPerformance.NOOP)
+        .when(blockProductionPerformanceFactory)
+        .createForProduction(any());
     when(chainDataClient.getStore()).thenReturn(store);
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
+    when(forkChoiceTrigger.prepareForBlockProduction(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(chainHead));
+    when(chainHead.getPayloadStatus()).thenReturn(PAYLOAD_STATUS_PENDING);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
     when(chainDataClient.getStore()).thenReturn(store);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
@@ -557,8 +576,7 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldFailWhenParentBlockIsOptimistic() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
-    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
+    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
     when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
 
@@ -579,15 +597,8 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
-    when(blockFactory.createUnsignedBlock(
-            blockSlotState,
-            newSlot,
-            randaoReveal,
-            Optional.empty(),
-            Optional.of(ONE),
-            BlockProductionPerformance.NOOP))
+    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
+    when(blockFactory.createUnsignedBlock(any()))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
     // even if passing a non-empty requestedBlinded and requestedBuilderBoostFactor isn't a valid
@@ -607,14 +618,7 @@ class ValidatorApiHandlerTest {
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
 
     // only produced once
-    verify(blockFactory)
-        .createUnsignedBlock(
-            blockSlotState,
-            newSlot,
-            randaoReveal,
-            Optional.empty(),
-            Optional.of(ONE),
-            BlockProductionPerformance.NOOP);
+    verify(blockFactory).createUnsignedBlock(any());
 
     verify(performanceTracker).reportBlockProductionAttempt(spec.computeEpochAtSlot(newSlot));
     verify(performanceTracker)
@@ -630,15 +634,9 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
-    when(blockFactory.createUnsignedBlock(
-            blockSlotState,
-            newSlot,
-            randaoReveal,
-            Optional.empty(),
-            Optional.of(ONE),
-            BlockProductionPerformance.NOOP))
+    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
+
+    when(blockFactory.createUnsignedBlock(any()))
         .thenThrow(new IllegalStateException("oopsy"))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
@@ -657,14 +655,7 @@ class ValidatorApiHandlerTest {
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
 
     // attempted to produce twice
-    verify(blockFactory, times(2))
-        .createUnsignedBlock(
-            blockSlotState,
-            newSlot,
-            randaoReveal,
-            Optional.empty(),
-            Optional.of(ONE),
-            BlockProductionPerformance.NOOP);
+    verify(blockFactory, times(2)).createUnsignedBlock(any());
   }
 
   @Test
@@ -675,20 +666,11 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
+    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
 
     validatorApiHandler.onBlockProductionPreparationDue(newSlot);
 
-    verify(chainDataClient).getStateForBlockProduction(eq(newSlot), eq(false), any());
-
-    when(blockFactory.createUnsignedBlock(
-            blockSlotState,
-            newSlot,
-            randaoReveal,
-            Optional.empty(),
-            Optional.of(ONE),
-            BlockProductionPerformance.NOOP))
+    when(blockFactory.createUnsignedBlock(any()))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> result =
@@ -697,7 +679,7 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
 
-    verify(chainDataClient).getStateForBlockProduction(eq(newSlot), eq(false), any());
+    verify(chainDataClient).getStateForBlockProduction(eq(chainHead), eq(newSlot));
   }
 
   @Test
@@ -1084,15 +1066,8 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
-    when(blockFactory.createUnsignedBlock(
-            blockSlotState,
-            newSlot,
-            randaoReveal,
-            Optional.empty(),
-            Optional.of(ONE),
-            BlockProductionPerformance.NOOP))
+    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
+    when(blockFactory.createUnsignedBlock(any()))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
     assertThat(
@@ -1546,6 +1521,15 @@ class ValidatorApiHandlerTest {
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendPayloadAttestationMessages(List.of(payloadAttestationMessage));
     assertThat(result).isCompletedWithValue(List.of());
+  }
+
+  private void mockRequiredMethodsForBlockProduction(
+      final BeaconState blockSlotState, final UInt64 newSlot) {
+    when(chainDataClient.getStateForBlockProduction(eq(chainHead), eq(newSlot)))
+        .thenReturn(SafeFuture.completedFuture(blockSlotState));
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.decrement());
+    when(chainHead.getRoot()).thenReturn(parentRoot);
+    when(chainHead.getForkChoiceNode()).thenReturn(ForkChoiceNode.createBase(parentRoot));
   }
 
   private boolean validatorIsLive(

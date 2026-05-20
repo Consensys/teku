@@ -13,24 +13,29 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerPreferences
-    extends Container4<ProposerPreferences, SszUInt64, SszUInt64, SszByteVector, SszUInt64> {
+    extends Container5<
+        ProposerPreferences, SszBytes32, SszUInt64, SszUInt64, SszByteVector, SszUInt64> {
 
   protected ProposerPreferences(
       final ProposerPreferencesSchema schema,
+      final Bytes32 dependentRoot,
       final UInt64 proposalSlot,
       final UInt64 validatorIndex,
       final Eth1Address feeRecipient,
       final UInt64 gasLimit) {
     super(
         schema,
+        SszBytes32.of(dependentRoot),
         SszUInt64.of(proposalSlot),
         SszUInt64.of(validatorIndex),
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
@@ -42,20 +47,24 @@ public class ProposerPreferences
     super(schema, backingTree);
   }
 
-  public UInt64 getProposalSlot() {
+  public Bytes32 getDependentRoot() {
     return getField0().get();
   }
 
-  public UInt64 getValidatorIndex() {
+  public UInt64 getProposalSlot() {
     return getField1().get();
   }
 
+  public UInt64 getValidatorIndex() {
+    return getField2().get();
+  }
+
   public Eth1Address getFeeRecipient() {
-    return Eth1Address.fromBytes(getField2().getBytes());
+    return Eth1Address.fromBytes(getField3().getBytes());
   }
 
   public UInt64 getGasLimit() {
-    return getField3().get();
+    return getField4().get();
   }
 
   @Override

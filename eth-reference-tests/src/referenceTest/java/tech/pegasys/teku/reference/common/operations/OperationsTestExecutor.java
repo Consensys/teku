@@ -118,6 +118,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/voluntary_exit",
               new OperationsTestExecutor<>("voluntary_exit.ssz_snappy", Operation.VOLUNTARY_EXIT))
           .put(
+              "operations/voluntary_exit_churn",
+              new OperationsTestExecutor<>("voluntary_exit.ssz_snappy", Operation.VOLUNTARY_EXIT))
+          .put(
               "operations/attestation",
               new OperationsTestExecutor<>("attestation.ssz_snappy", Operation.ATTESTATION))
           .put(

@@ -192,7 +192,11 @@
             },
             "signature": "0xaacffaf60c8253477ecad70de8589f2ef7670d0b0dc446d4baac3b465a901d3e64bb6d2c3d8bdb58aed45ac30466261416d152d5ae242204201bf6decfddde697ae0c5d44cf31ca3d43aa18f2799461fc1ee14dbf905b1e31f242fd31c083c5a"
           }
-        ]
+        ],
+        "sync_aggregate": {
+          "sync_committee_bits": "0x01000000",
+          "sync_committee_signature": "0x86e947b46923b26125a7dab3240481ddc1b910c1e6393b90df6e2de3809b8b35e450dc8264ecedd8f6bfc736e7114d841428b2469441d2d1d501015eb99e0d7090f11a1185b566dc42f94b79d0a08b22718a39b57e912a304419361108434ec8"
+        }
       }
     },
     "signature": "0xb4619694384c8eb2975580bcf872825989dbe1a3cb79f1683c64ce3ab62431f6d80b10ae018bb0d4d4c9519e086a731413ef29fe7d0586ced2220a9cab11b70a8cd2dbaaa8e28e2ce6d913f4437e28752d4cbfe17a1fbd433dd22d33ee148ff1"

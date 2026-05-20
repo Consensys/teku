@@ -15,14 +15,18 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.executionlayer.PayloadStatus.VALID;
 
+import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,6 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -56,6 +61,11 @@ class ForkChoicePayloadExecutorGloasTest {
     when(executionLayer.engineNewPayload(any(), any())).thenReturn(executionResult);
   }
 
+  @AfterEach
+  void tearDown() {
+    executionResult.cancel(true);
+  }
+
   @Test
   void optimisticallyExecute_shouldSendToExecutionEngineAndReturnTrue() {
     final boolean result = payloadExecutor.optimisticallyExecute(Optional.empty(), payloadRequest);
@@ -73,18 +83,60 @@ class ForkChoicePayloadExecutorGloasTest {
     verify(executionLayer).engineNewPayload(payloadRequest, UInt64.ZERO);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValueMatching(result -> result.getStatus().hasFailedExecution());
+        .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
   }
 
   @Test
   void shouldReturnExecutionResultWhenExecuted() {
     payloadExecutor.optimisticallyExecute(Optional.empty(), payloadRequest);
 
-    final SafeFuture<PayloadValidationResult> result = payloadExecutor.getExecutionResult();
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();
 
     this.executionResult.complete(VALID);
 
-    assertThat(result).isCompletedWithValue(PayloadValidationResult.VALID);
+    assertThat(result).isCompletedWithValue(VALID);
+  }
+
+  @Test
+  void optimisticallyExecute_shouldPreparePayloadBeforeSendingToExecutionEngine() {
+    final NewPayloadRequest preparedPayloadRequest = new NewPayloadRequest(payload);
+    final ForkChoicePayloadExecutorGloas payloadExecutor =
+        new ForkChoicePayloadExecutorGloas(signedEnvelope, executionLayer) {
+          @Override
+          protected NewPayloadRequest preparePayloadToExecute(
+              final NewPayloadRequest payloadToExecute) {
+            return preparedPayloadRequest;
+          }
+        };
+
+    final boolean result = payloadExecutor.optimisticallyExecute(Optional.empty(), payloadRequest);
+
+    verify(executionLayer).engineNewPayload(preparedPayloadRequest, UInt64.ZERO);
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  void
+      hezeOptimisticallyExecute_shouldAddInclusionListTransactionsBeforeSendingToExecutionEngine() {
+    final Spec hezeSpec =
+        TestSpecFactory.createMinimalHeze(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
+    final DataStructureUtil hezeDataStructureUtil = new DataStructureUtil(hezeSpec);
+    final InclusionList inclusionList = hezeDataStructureUtil.randomInclusionList(2);
+    final NewPayloadRequest payloadRequest =
+        new NewPayloadRequest(payload, List.of(), dataStructureUtil.randomBytes32(), List.of());
+    final ForkChoicePayloadExecutorHeze payloadExecutor =
+        ForkChoicePayloadExecutorHeze.create(
+            signedEnvelope, executionLayer, List.of(inclusionList));
+
+    final boolean result = payloadExecutor.optimisticallyExecute(Optional.empty(), payloadRequest);
+
+    final ArgumentCaptor<NewPayloadRequest> payloadRequestCaptor =
+        ArgumentCaptor.forClass(NewPayloadRequest.class);
+    verify(executionLayer).engineNewPayload(payloadRequestCaptor.capture(), eq(UInt64.ZERO));
+    assertThat(payloadRequestCaptor.getValue().getInclusionList())
+        .contains(inclusionList.getTransactions());
+    assertThat(result).isTrue();
   }
 }

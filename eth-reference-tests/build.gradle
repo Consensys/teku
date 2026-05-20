@@ -27,6 +27,7 @@ dependencies {
 	referenceTestImplementation testFixtures(project(':infrastructure:kzg'))
 	referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
 	referenceTestImplementation project(':infrastructure:time')
+	referenceTestImplementation testFixtures(project(':infrastructure:time'))
 	referenceTestImplementation project(':data:dataexchange')
 
 	referenceTestImplementation 'org.hyperledger.besu:besu-plugin-api'
@@ -42,16 +43,37 @@ task cleanReferenceTestClasses(type: Delete) {
 	delete project.file('src/referenceTest/generated_tests')
 }
 
+def consensusSpecTestsDir = project.file('src/referenceTest/resources/consensus-spec-tests/tests')
+def generatedTestsDir = project.file('src/referenceTest/generated_tests')
+
 task generateReferenceTestClasses(type: JavaExec) {
-	dependsOn(cleanReferenceTestClasses)
 	group = "Execution"
 	description = "Generate reference test classes"
 	classpath = configurations.refTestGenerator
 	mainClass = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
 	args = [
-		project.file('src/referenceTest/generated_tests').absolutePath
+		generatedTestsDir.absolutePath
 	]
 	systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
+
+	// Declare inputs and outputs so Gradle can skip the task when nothing relevant
+	// changed, and reuse outputs via the build cache.
+	inputs.dir(consensusSpecTestsDir)
+			.withPropertyName('consensusSpecTests')
+			.withPathSensitivity(PathSensitivity.RELATIVE)
+	inputs.files(configurations.refTestGenerator)
+			.withPropertyName('generatorClasspath')
+			.withNormalizer(ClasspathNormalizer)
+	outputs.dir(generatedTestsDir)
+			.withPropertyName('generatedTests')
+	outputs.cacheIf { true }
+
+	// Always start from a clean output directory so files for removed test
+	// fixtures do not linger when the task does need to re-run.
+	doFirst {
+		delete generatedTestsDir
+		generatedTestsDir.mkdirs()
+	}
 }
 
 compileReferenceTestJava {

@@ -58,7 +58,6 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void shouldGetCorrectMainnetConfig() throws Exception {
     final ConfigProvider configProvider = new ConfigProvider(SpecFactory.create("mainnet"));
     setHandler(new GetSpec(configProvider));

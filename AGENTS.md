@@ -4,7 +4,7 @@ This file provides guidance to AI assistants when working with code in this repo
 
 ## Project Overview
 
-Teku is an open-source Ethereum consensus client written in Java, implementing a full beacon node and validator client. It is written in Java 21+ and follows the Ethereum consensus specifications.
+Teku is an open-source Ethereum consensus client written in Java, implementing a full beacon node and validator client. It is written in Java 25+ and follows the Ethereum consensus specifications.
 
 ## Build and Development Commands
 

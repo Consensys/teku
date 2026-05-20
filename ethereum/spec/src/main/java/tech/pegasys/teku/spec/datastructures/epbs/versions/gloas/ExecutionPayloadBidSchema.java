@@ -39,6 +39,22 @@ public interface ExecutionPayloadBidSchema<T extends ExecutionPayloadBid>
       SszList<SszKZGCommitment> blobKzgCommitments,
       Bytes32 executionRequestsRoot);
 
+  default T createFromExecutionPayloadBid(final ExecutionPayloadBid executionPayloadBid) {
+    return create(
+        executionPayloadBid.getParentBlockHash(),
+        executionPayloadBid.getParentBlockRoot(),
+        executionPayloadBid.getBlockHash(),
+        executionPayloadBid.getPrevRandao(),
+        executionPayloadBid.getFeeRecipient(),
+        executionPayloadBid.getGasLimit(),
+        executionPayloadBid.getBuilderIndex(),
+        executionPayloadBid.getSlot(),
+        executionPayloadBid.getValue(),
+        executionPayloadBid.getExecutionPayment(),
+        executionPayloadBid.getBlobKzgCommitments(),
+        executionPayloadBid.getExecutionRequestsRoot());
+  }
+
   T createLocalSelfBuiltBid(
       Bytes32 parentBlockRoot,
       UInt64 slot,

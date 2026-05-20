@@ -33,8 +33,8 @@ public class ExecutionPayloadEnvelopeInvariants {
       BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getSszFixedPartSize();
 
   // Fixed part of ExecutionPayloadEnvelope:
-  // payload_offset(4) + execution_requests_offset(4) + builder_index(8) + beacon_block_root(32)
-  // + parent_beacon_block_root(32)
+  // payload_offset(4) + execution_requests_offset(4) + builder_index(8) +
+  // beacon_block_root(32) + parent_beacon_block_root(32)
   private static final int EXECUTION_PAYLOAD_ENVELOPE_FIXED_PART_SIZE =
       BYTES_PER_LENGTH_OFFSET
           + BYTES_PER_LENGTH_OFFSET

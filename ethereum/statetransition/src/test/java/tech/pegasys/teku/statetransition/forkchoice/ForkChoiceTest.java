@@ -16,9 +16,11 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -36,10 +38,12 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_C
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -75,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -98,15 +103,18 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -176,6 +184,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
@@ -248,6 +257,36 @@ class ForkChoiceTest {
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
+  void onBlock_shouldFailWhenDataColumnAvailabilityNeverCompletes() throws Exception {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    final DataAvailabilitySampler dataAvailabilitySampler = mock(DataAvailabilitySampler.class);
+    when(dataAvailabilitySampler.checkSamplingEligibility(any()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    when(dataAvailabilitySampler.checkDataAvailability(any(), any()))
+        .thenReturn(new SafeFuture<>());
+    doReturn(true).when(spec).isAvailabilityOfDataColumnSidecarsRequiredAtSlot(any(), any());
+    spec.reinitializeForTesting(
+        block -> blobSidecarsAvailabilityChecker,
+        block ->
+            new DataColumnSidecarAvailabilityChecker(
+                dataAvailabilitySampler, spec, recentChainData, block, Duration.ofMillis(1)),
+        KZG.DISABLED);
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+
+    final SafeFuture<BlockImportResult> importResult = importBlockNoResultCheck(blockAndState);
+
+    final BlockImportResult result = importResult.get(5, TimeUnit.SECONDS);
+    assertThat(result.getFailureReason())
+        .isEqualTo(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
+    assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
+        .isNotEqualTo(Optional.of(blockAndState.getRoot()));
+    verify(dataAvailabilitySampler)
+        .checkDataAvailability(blockAndState.getSlot(), blockAndState.getRoot());
+    verify(dataAvailabilitySampler).flush();
+    verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
   @Test
@@ -427,6 +466,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
@@ -917,6 +957,89 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onForkChoiceUpdatedResult_validGloasNode_shouldForwardExactHeadNode() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
+            debugDataDumper,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    final Bytes32 blockRoot = Bytes32.random();
+    final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+
+    when(recentChainData.getUpdatableForkChoiceStrategy())
+        .thenReturn(Optional.of(forkChoiceStrategy));
+    when(transitionBlockValidator.verifyAncestorTransitionBlock(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
+
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                emptyNode, ONE, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(PayloadStatus.VALID, Optional.empty()))));
+
+    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, PayloadStatus.VALID, false);
+    verify(transitionBlockValidator).verifyAncestorTransitionBlock(blockRoot);
+    verify(forkChoiceStrategy, never())
+        .onExecutionPayloadResult(eq(blockRoot), eq(PayloadStatus.VALID), anyBoolean());
+  }
+
+  @Test
+  void onForkChoiceUpdatedResult_invalidGloasNode_shouldForwardExactHeadNode() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
+            debugDataDumper,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    final Bytes32 blockRoot = Bytes32.random();
+    final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+    final PayloadStatus invalidPayloadStatus =
+        PayloadStatus.invalid(Optional.empty(), Optional.of("invalid payload"));
+
+    when(recentChainData.getUpdatableForkChoiceStrategy())
+        .thenReturn(Optional.of(forkChoiceStrategy));
+
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                emptyNode, ONE, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(invalidPayloadStatus, Optional.empty()))));
+
+    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, invalidPayloadStatus, true);
+    verify(forkChoiceStrategy, never())
+        .onExecutionPayloadResult(eq(blockRoot), eq(invalidPayloadStatus), anyBoolean());
+  }
+
+  @Test
   void processHead_shouldMarkHeadInvalidAndRunForkChoiceWhenTransitionBlockFoundToBeInvalid() {
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
@@ -954,8 +1077,8 @@ class ForkChoiceTest {
     // EL should have been notified of the invalid head first and after that the valid
     // head
     List<ForkChoiceState> notifiedStates = forkChoiceStateCaptor.getAllValues();
-    assertThat(notifiedStates.get(0).getHeadBlockRoot()).isEqualTo(chainHeadRoot);
-    assertThat(notifiedStates.get(1).getHeadBlockRoot()).isEqualTo(initialHeadRoot);
+    assertThat(notifiedStates.get(0).headBlock().blockRoot()).isEqualTo(chainHeadRoot);
+    assertThat(notifiedStates.get(1).headBlock().blockRoot()).isEqualTo(initialHeadRoot);
   }
 
   @Test
@@ -1036,7 +1159,7 @@ class ForkChoiceTest {
 
     // last notification to EL should be a valid block
     ForkChoiceState lastNotifiedState = forkChoiceStateCaptor.getValue();
-    assertThat(lastNotifiedState.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+    assertThat(lastNotifiedState.headBlock().blockRoot()).isEqualTo(blockAndState.getRoot());
 
     // New head is optimistic because latestValidHash might still point to an optimistic block
     assertHeadIsOptimistic(blockAndState);
@@ -1047,8 +1170,9 @@ class ForkChoiceTest {
   void onForkChoiceUpdatedResult_shouldLogWhenInvalidTerminalBlock(
       final ForkChoiceUpdatedResult result) {
     final ForkChoiceState state = mock(ForkChoiceState.class);
-    when(state.getHeadExecutionBlockHash()).thenReturn(Bytes32.random());
-    when(state.getHeadBlockRoot()).thenReturn(Bytes32.random());
+    when(state.headExecutionBlockHash()).thenReturn(Bytes32.random());
+    when(state.headBlock()).thenReturn(ForkChoiceNode.createBase(Bytes32.random()));
+    when(state.headBlockSlot()).thenReturn(ZERO);
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
@@ -1138,7 +1262,7 @@ class ForkChoiceTest {
     verify(forkChoiceNotifier, mode)
         .onForkChoiceUpdated(
             new ForkChoiceState(
-                blockAndState.getRoot(),
+                ForkChoiceNode.createBase(blockAndState.getRoot()),
                 blockAndState.getSlot(),
                 headExecutionBlockNumber,
                 headExecutionHash,

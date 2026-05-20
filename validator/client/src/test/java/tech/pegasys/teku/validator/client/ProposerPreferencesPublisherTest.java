@@ -194,7 +194,7 @@ public class ProposerPreferencesPublisherTest {
 
     final UInt64 gloasEpoch = UInt64.ONE;
     final UInt64 firstGloasSlot = spec.computeStartSlotAtEpoch(gloasEpoch);
-    assertThat(spec.isProposerPreferencesAvailableAtSlot(firstGloasSlot.decrement())).isFalse();
+    assertThat(spec.isProposerPreferencesAvailableAtEpoch(UInt64.ZERO)).isFalse();
 
     publisher.onProposerDutiesLoaded(
         gloasEpoch,

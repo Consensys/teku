@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -43,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -75,17 +73,13 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayload(executionPayload);
+    tx.putExecutionPayload(executionPayload, false);
 
     assertThat(tx.commit()).isCompleted();
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
     verify(channel).onStorageUpdate(captor.capture());
     assertThat(captor.getValue().getBlindedExecutionPayloads())
-        .containsEntry(
-            blockAndState.getRoot(),
-            executionPayload.blind(
-                SchemaDefinitionsGloas.required(
-                    spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
+        .containsEntry(blockAndState.getRoot(), executionPayload.blind(spec));
   }
 
   @Test
@@ -103,10 +97,10 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(
         firstBlockAndState, spec.calculateBlockCheckpoints(firstBlockAndState.getState()));
-    tx.putExecutionPayload(firstExecutionPayload);
+    tx.putExecutionPayload(firstExecutionPayload, false);
     tx.putBlockAndState(
         secondBlockAndState, spec.calculateBlockCheckpoints(secondBlockAndState.getState()));
-    tx.putExecutionPayload(secondExecutionPayload);
+    tx.putExecutionPayload(secondExecutionPayload, false);
 
     assertThat(tx.commit()).isCompleted();
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
@@ -116,7 +110,6 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   }
 
   @Test
-  @Disabled
   public void commit_shouldRetainBlindedEnvelopesForBlocksFinalizedInSameTransaction() {
     final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(16);
     final ChainBuilder gloasChainBuilder = ChainBuilder.create(spec, keys);
@@ -171,7 +164,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
                   blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
               gloasChainBuilder
                   .getExecutionPayloadAtSlot(blockAndState.getSlot())
-                  .ifPresent(tx::putExecutionPayload);
+                  .ifPresent(payload -> tx.putExecutionPayload(payload, false));
             });
 
     // Finalize at epoch 1 — blocks before this checkpoint will be pruned from hot
@@ -207,7 +200,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayload(executionPayload);
+    tx.putExecutionPayload(executionPayload, false);
     assertThat(tx.commit()).isCompleted();
 
     assertThat(store.retrieveSignedExecutionPayload(blockAndState.getRoot()))
@@ -216,17 +209,25 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
   @Test
   public void retrieveSignedExecutionPayload_fromExternalProvider() {
+    final StoreBuilder storeBuilder = createStoreBuilder(defaultStoreConfig);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final SignedExecutionPayloadEnvelope envelope =
-        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
     final Bytes32 blockRoot = envelope.getBeaconBlockRoot();
 
     final UpdatableStore store =
-        createStoreBuilder(defaultStoreConfig)
+        storeBuilder
             .executionPayloadProvider(
                 roots ->
                     SafeFuture.completedFuture(
                         roots.contains(blockRoot) ? Map.of(blockRoot, envelope) : Map.of()))
             .build();
+
+    // Load the block into forkChoiceStrategy so containsBlock(blockRoot) returns true, but
+    // skip putExecutionPayload so retrieval must fall through to the external provider.
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+    assertThat(tx.commit()).isCompleted();
 
     assertThat(store.retrieveSignedExecutionPayload(blockRoot))
         .isCompletedWithValue(Optional.of(envelope));

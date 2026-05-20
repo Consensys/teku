@@ -22,6 +22,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
@@ -45,6 +46,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
   private final ExecutionPayloadProvider executionPayloadProvider;
+  private final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
@@ -56,6 +58,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -69,6 +72,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
         executionPayloadProvider,
+        blindedExecutionPayloadProvider,
         validatedBlockProvider,
         validatedBlobSidecarProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
@@ -83,6 +87,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.executionPayloadProvider = executionPayloadProvider;
+    this.blindedExecutionPayloadProvider = blindedExecutionPayloadProvider;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
   }
 
@@ -93,6 +98,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -108,6 +114,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             validatedBlockProvider,
             validatedBlobSidecarProvider,
             executionPayloadProvider,
+            blindedExecutionPayloadProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -127,6 +134,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -142,6 +150,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             validatedBlockProvider,
             validatedBlobSidecarProvider,
             executionPayloadProvider,
+            blindedExecutionPayloadProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -183,6 +192,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
                   .executionPayloadProvider(executionPayloadProvider)
+                  .blindedExecutionPayloadProvider(blindedExecutionPayloadProvider)
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();

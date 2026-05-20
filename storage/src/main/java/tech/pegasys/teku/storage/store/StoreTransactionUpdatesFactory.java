@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
@@ -61,8 +61,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
-  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
-  private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -85,12 +84,7 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
-    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
-    hotExecutionPayloads =
-        hotExecutionPayloadAndStates.entrySet().stream()
-            .collect(
-                Collectors.toConcurrentMap(
-                    Map.Entry::getKey, entry -> entry.getValue().executionPayload()));
+    hotExecutionPayloads = new ConcurrentHashMap<>(tx.executionPayloadData);
     maybeInclusionList = tx.maybeInclusionList;
     maybeUnsatisfiedInclusionListBlockRoot = tx.maybeUnsatisfiedInclusionListBlockRoot;
     maybeEquivocatedInclusionList = tx.maybeEquivocatedInclusionList;
@@ -133,6 +127,8 @@ class StoreTransactionUpdatesFactory {
     final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads =
         createBlindedExecutionPayloads();
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
+    createFinalizedExecutionPayloadBoundaryBlock()
+        .ifPresent(finalizedChainDataBuilder::finalizedExecutionPayloadBoundaryBlock);
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
     if (tx.clearFinalizedOptimisticTransitionPayload) {
@@ -159,7 +155,6 @@ class StoreTransactionUpdatesFactory {
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
-              hotExecutionPayloadAndStates.remove(blockRoot);
               hotExecutionPayloads.remove(blockRoot);
             });
 
@@ -301,7 +296,6 @@ class StoreTransactionUpdatesFactory {
         spec.supportsBlobSidecars(),
         spec.supportsDataColumnSidecars(),
         spec.supportsExecutionPayloadEnvelopes(),
-        hotExecutionPayloadAndStates,
         hotExecutionPayloads,
         blindedExecutionPayloads);
   }
@@ -310,13 +304,19 @@ class StoreTransactionUpdatesFactory {
     return hotExecutionPayloads.entrySet().stream()
         .map(
             entry -> {
-              final SignedExecutionPayloadEnvelope executionPayload = entry.getValue();
-              return Map.entry(
-                  entry.getKey(),
-                  executionPayload.blind(
-                      SchemaDefinitionsGloas.required(
-                          spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
+              final SignedExecutionPayloadEnvelope executionPayload =
+                  entry.getValue().executionPayload();
+              return Map.entry(entry.getKey(), executionPayload.blind(spec));
             })
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private Optional<BlockAndCheckpoints> createFinalizedExecutionPayloadBoundaryBlock() {
+    if (!spec.atSlot(latestFinalized.getBlockSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(hotBlocks.get(latestFinalized.getRoot()));
   }
 }

@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -221,12 +222,12 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
     final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
-    final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
+    final ForkChoiceNode currentHeadBlock = forkChoiceState.headBlock();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
-                    currentHeadBlockRoot,
+                    currentHeadBlock,
                     blockSlot,
                     epoch,
                     maybeState,
@@ -244,7 +245,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
    *     where payloadId hasn't been retrieved from EL for the block slot)
    */
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
-      final Bytes32 currentHeadBlockRoot,
+      final ForkChoiceNode currentHeadBlock,
       final UInt64 blockSlot,
       final UInt64 epoch,
       final Optional<BeaconState> maybeState,
@@ -281,7 +282,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
             feeRecipient,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
-            currentHeadBlockRoot,
+            currentHeadBlock,
             inclusionListTransactions));
   }
 
