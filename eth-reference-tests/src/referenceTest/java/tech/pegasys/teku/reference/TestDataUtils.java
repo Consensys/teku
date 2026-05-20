@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -34,6 +35,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -131,5 +134,16 @@ public class TestDataUtils {
     final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
     final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
     return AnchorPoint.create(spec, checkpoint, state, Optional.empty());
+  }
+
+  public static AnchorPoint createAnchorFromStateAndMatchingBlock(
+      final Spec spec, final BeaconState state, final Collection<SignedBeaconBlock> blocks) {
+    return blocks.stream()
+        .filter(block -> block.getStateRoot().equals(state.hashTreeRoot()))
+        .findFirst()
+        .map(
+            block ->
+                AnchorPoint.fromInitialBlockAndState(spec, new SignedBlockAndState(block, state)))
+        .orElseGet(() -> createAnchorFromState(spec, state));
   }
 }

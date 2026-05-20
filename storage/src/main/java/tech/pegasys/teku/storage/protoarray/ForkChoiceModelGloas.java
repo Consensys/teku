@@ -609,6 +609,18 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public Optional<Boolean> getPayloadTimelinessVote(
+      final Bytes32 blockRoot, final int ptcPosition) {
+    return ptcVoteTracker.getPayloadPresentVote(blockRoot, ptcPosition);
+  }
+
+  @Override
+  public Optional<Boolean> getPayloadDataAvailabilityVote(
+      final Bytes32 blockRoot, final int ptcPosition) {
+    return ptcVoteTracker.getDataAvailableVote(blockRoot, ptcPosition);
+  }
+
+  @Override
   public void onRemovedBlockRoot(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
