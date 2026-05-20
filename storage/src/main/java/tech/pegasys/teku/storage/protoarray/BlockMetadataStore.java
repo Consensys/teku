@@ -41,7 +41,7 @@ public interface BlockMetadataStore {
 
   void applyUpdate(
       Collection<BlockAndCheckpoints> addedBlocks,
-      Collection<ExecutionPayloadUpdate> executionPayloads,
+      Map<Bytes32, ExecutionPayloadUpdate> executionPayloads,
       Collection<Bytes32> pulledUpBlocks,
       Map<Bytes32, UInt64> removedBlocks,
       Checkpoint finalizedCheckpoint);

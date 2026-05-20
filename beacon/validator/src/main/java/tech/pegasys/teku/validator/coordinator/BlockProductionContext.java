@@ -71,7 +71,7 @@ public record BlockProductionContext(
     return parentForkChoiceNode.blockRoot();
   }
 
-  public ForkChoicePayloadStatus payloadStatus() {
+  public ForkChoicePayloadStatus parentPayloadStatus() {
     return parentForkChoiceNode.payloadStatus();
   }
 }
