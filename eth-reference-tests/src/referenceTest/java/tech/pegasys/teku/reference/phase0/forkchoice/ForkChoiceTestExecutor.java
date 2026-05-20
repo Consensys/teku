@@ -122,11 +122,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor())
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/get_parent_payload_status", new ForkChoiceTestExecutor())
-          // TODO-GLOAS: re-enable on_execution_payload_envelope__valid once the spec test fixture
-          // is fixed; the block in the fixture is not correctly built over the payload.
-          .put(
-              "fork_choice/on_execution_payload_envelope",
-              new ForkChoiceTestExecutor("on_execution_payload_envelope__valid"))
+          .put("fork_choice/on_execution_payload_envelope", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_payload_attestation_message", new ForkChoiceTestExecutor())
           // Fork choice generated test types
           .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
           .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())
@@ -297,7 +294,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else if (step.containsKey("block_hash")) {
         applyPosBlock(step, executionLayer);
 
-      } else if (step.containsKey("payload_attestation")) {
+      } else if (step.containsKey("payload_attestation")
+          || step.containsKey("payload_attestation_message")) {
         applyPayloadAttestation(testDefinition, spec, recentChainData, forkChoice, step);
 
       } else if (step.containsKey("execution_payload")) {
@@ -392,7 +390,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final Map<String, Object> step) {
-    final String payloadAttestationName = get(step, "payload_attestation");
+    final String payloadAttestationName =
+        ForkChoiceTestExecutor.<String>getOptionally(step, "payload_attestation")
+            .orElseGet(
+                () -> ForkChoiceTestExecutor.<String>get(step, "payload_attestation_message"));
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final PayloadAttestationMessage payloadAttestationMessage =
         TestDataUtils.loadSsz(
             testDefinition,
@@ -401,24 +403,28 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 .getPayloadAttestationMessageSchema());
     final ValidatablePayloadAttestationMessage validatablePayloadAttestationMessage =
         ValidatablePayloadAttestationMessage.fromNetwork(payloadAttestationMessage);
-    final BeaconState state =
-        safeJoin(
-                recentChainData.retrieveBlockState(
-                    new SlotAndBlockRoot(
-                        payloadAttestationMessage.getData().getSlot(),
-                        payloadAttestationMessage.getData().getBeaconBlockRoot())))
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "State is unavailable for payload attestation slot "
-                            + payloadAttestationMessage.getData().getSlot()
-                            + " and block root "
-                            + payloadAttestationMessage.getData().getBeaconBlockRoot()));
-    validatablePayloadAttestationMessage.calculatePtcPositions(spec, state);
+    if (valid) {
+      final BeaconState state =
+          safeJoin(
+                  recentChainData.retrieveBlockState(
+                      new SlotAndBlockRoot(
+                          payloadAttestationMessage.getData().getSlot(),
+                          payloadAttestationMessage.getData().getBeaconBlockRoot())))
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "State is unavailable for payload attestation slot "
+                              + payloadAttestationMessage.getData().getSlot()
+                              + " and block root "
+                              + payloadAttestationMessage.getData().getBeaconBlockRoot()));
+      validatablePayloadAttestationMessage.calculatePtcPositions(spec, state);
+    }
     assertDoesNotThrow(
         () ->
             forkChoice.onPayloadAttestationMessage(
-                validatablePayloadAttestationMessage, InternalValidationResult.ACCEPT, true));
+                validatablePayloadAttestationMessage,
+                valid ? InternalValidationResult.ACCEPT : InternalValidationResult.IGNORE,
+                true));
   }
 
   private void applyExecutionPayloadEnvelope(
@@ -689,6 +695,20 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 .isEqualTo(expectedValue);
           }
 
+          case "payload_timeliness_vote" ->
+              assertPayloadVote(
+                  recentChainData,
+                  checkType,
+                  get(checks, checkType),
+                  ReadOnlyForkChoiceStrategy::getPayloadTimelinessVote);
+
+          case "payload_data_availability_vote" ->
+              assertPayloadVote(
+                  recentChainData,
+                  checkType,
+                  get(checks, checkType),
+                  ReadOnlyForkChoiceStrategy::getPayloadDataAvailabilityVote);
+
           default ->
               throw new UnsupportedOperationException("Unsupported check type: " + checkType);
         }
@@ -715,6 +735,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     assertThat(actual)
         .describedAs(checkpointType)
         .isEqualTo(new Checkpoint(expectedEpoch, expectedRoot));
+  }
+
+  private void assertPayloadVote(
+      final RecentChainData recentChainData,
+      final String checkType,
+      final Map<String, Object> expectedPayloadVote,
+      final PayloadVoteGetter payloadVoteGetter) {
+    final Bytes32 blockRoot = getBytes32(expectedPayloadVote, "block_root");
+    final List<Boolean> expectedVotes = get(expectedPayloadVote, "votes");
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    final List<Boolean> actualVotes = new ArrayList<>();
+    for (int ptcPosition = 0; ptcPosition < expectedVotes.size(); ptcPosition++) {
+      actualVotes.add(
+          payloadVoteGetter.get(forkChoiceStrategy, blockRoot, ptcPosition).orElse(null));
+    }
+    assertThat(actualVotes).describedAs(checkType).isEqualTo(expectedVotes);
+  }
+
+  @FunctionalInterface
+  private interface PayloadVoteGetter {
+    Optional<Boolean> get(
+        ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 blockRoot, int ptcPosition);
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})

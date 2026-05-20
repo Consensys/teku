@@ -15,7 +15,7 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromState;
+import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
@@ -37,9 +37,12 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -72,6 +75,17 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
     final boolean signatureVerificationDisabled = metaData.getBlsSetting() == BlsSetting.IGNORED;
     final Spec spec = testDefinition.getSpec(!signatureVerificationDisabled);
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
+    final List<BlockEntryAndBlock> blocks =
+        metaData.getBlocks().stream()
+            .map(
+                blockEntry ->
+                    new BlockEntryAndBlock(
+                        blockEntry,
+                        loadSsz(
+                            testDefinition,
+                            blockEntry.getBlock() + ".ssz_snappy",
+                            spec::deserializeSignedBeaconBlock)))
+            .toList();
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
     // Set up chain storage
@@ -82,8 +96,15 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
             .build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
 
-    // Initialize from state with time 0 (will be advanced via onTick)
-    recentChainData.initializeFromAnchorPoint(createAnchorFromState(spec, state), UInt64.ZERO);
+    final AnchorPoint anchorPoint =
+        createAnchorFromStateAndMatchingBlock(
+            spec,
+            state,
+            blocks.stream()
+                .filter(blockEntryAndBlock -> !blockEntryAndBlock.blockEntry().isFailed())
+                .map(BlockEntryAndBlock::block)
+                .toList());
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
 
     // Set up ForkChoice for block importing
     final InlineEventThread eventThread = new InlineEventThread();
@@ -115,20 +136,44 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
 
     // Import blocks from the blocks[] list. Failed blocks are recorded but not imported so that
     // child blocks of a failed parent can be rejected by the executor's short-circuit check.
-    for (final GossipBeaconBlockMetaData.BlockEntry blockEntry : metaData.getBlocks()) {
-      final SignedBeaconBlock block =
-          loadSsz(
-              testDefinition,
-              blockEntry.getBlock() + ".ssz_snappy",
-              spec::deserializeSignedBeaconBlock);
+    for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
+      final GossipBeaconBlockMetaData.BlockEntry blockEntry = blockEntryAndBlock.blockEntry();
+      final SignedBeaconBlock block = blockEntryAndBlock.block();
+      blockEntry
+          .getPayloadStatus()
+          .ifPresent(
+              payloadStatus ->
+                  block
+                      .getMessage()
+                      .getBody()
+                      .getOptionalExecutionPayload()
+                      .ifPresent(
+                          executionPayload ->
+                              executionLayer.addPosBlock(
+                                  executionPayload.getBlockHash(),
+                                  payloadStatus.toPayloadStatus())));
       if (blockEntry.isFailed()) {
-        // Record the root so children of this invalid block are rejected.
+        // Record roots whose execution payload status is still unknown so children can be rejected.
         // Don't import it — a NOOP BLS verifier would accept it despite any bad signature.
-        failedBlockRoots.add(block.getRoot());
-      } else {
-        safeJoin(
-            forkChoice.onBlock(
-                block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+        if (blockEntry.shouldRejectDescendants()) {
+          failedBlockRoots.add(block.getRoot());
+        }
+      } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
+        final BlockImportResult importResult =
+            safeJoin(
+                forkChoice.onBlock(
+                    block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+        if (blockEntry.isExecutionInvalidated()) {
+          assertThat(importResult.isSuccessful())
+              .describedAs(
+                  "Expected setup block %s import to fail with invalid execution payload",
+                  blockEntry.getBlock())
+              .isFalse();
+        } else {
+          assertThat(importResult.isSuccessful())
+              .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
+              .isTrue();
+        }
       }
     }
 
@@ -301,6 +346,7 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
       return finalizedCheckpoint;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class BlockEntry {
 
       @JsonProperty(value = "block", required = true)
@@ -309,6 +355,9 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
       @JsonProperty(value = "failed", defaultValue = "false")
       private boolean failed;
 
+      @JsonProperty(value = "payload_status")
+      private FixturePayloadStatus payloadStatus;
+
       public String getBlock() {
         return block;
       }
@@ -316,8 +365,36 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
       public boolean isFailed() {
         return failed;
       }
+
+      public Optional<FixturePayloadStatus> getPayloadStatus() {
+        return Optional.ofNullable(payloadStatus);
+      }
+
+      public boolean isExecutionInvalidated() {
+        return payloadStatus == FixturePayloadStatus.INVALIDATED;
+      }
+
+      public boolean shouldRejectDescendants() {
+        return payloadStatus == null || payloadStatus == FixturePayloadStatus.NOT_VALIDATED;
+      }
     }
 
+    private enum FixturePayloadStatus {
+      VALID,
+      NOT_VALIDATED,
+      INVALIDATED;
+
+      public PayloadStatus toPayloadStatus() {
+        return switch (this) {
+          case VALID -> PayloadStatus.VALID;
+          case NOT_VALIDATED -> PayloadStatus.ACCEPTED;
+          case INVALIDATED ->
+              PayloadStatus.invalid(Optional.empty(), Optional.of("Fixture execution invalidated"));
+        };
+      }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Message {
 
       @JsonProperty(value = "offset_ms", required = true)
@@ -379,4 +456,7 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
       }
     }
   }
+
+  private record BlockEntryAndBlock(
+      GossipBeaconBlockMetaData.BlockEntry blockEntry, SignedBeaconBlock block) {}
 }
