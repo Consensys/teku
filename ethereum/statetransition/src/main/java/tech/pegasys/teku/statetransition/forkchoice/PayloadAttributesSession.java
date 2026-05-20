@@ -20,20 +20,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
-final class PayloadBuildSession {
+final class PayloadAttributesSession {
   private final UInt64 proposalSlot;
   private ForkChoiceUpdateData forkChoiceUpdateData;
-  private final SafeFuture<Void> payloadAttributesApplied = new SafeFuture<>();
-  private boolean production;
+  private final SafeFuture<Void> payloadAttributesResolved = new SafeFuture<>();
+  private boolean forBlockProduction;
   private boolean payloadIdRequested = false;
 
-  PayloadBuildSession(
+  PayloadAttributesSession(
       final UInt64 proposalSlot,
       final ForkChoiceUpdateData forkChoiceUpdateData,
-      final boolean production) {
+      final boolean forBlockProduction) {
     this.proposalSlot = proposalSlot;
     this.forkChoiceUpdateData = forkChoiceUpdateData;
-    this.production = production;
+    this.forBlockProduction = forBlockProduction;
   }
 
   UInt64 getProposalSlot() {
@@ -44,12 +44,12 @@ final class PayloadBuildSession {
     return forkChoiceUpdateData;
   }
 
-  boolean isProduction() {
-    return production;
+  boolean isForBlockProduction() {
+    return forBlockProduction;
   }
 
-  boolean isProductionFor(final UInt64 blockSlot) {
-    return production && proposalSlot.equals(blockSlot);
+  boolean isForBlockProductionAtSlot(final UInt64 blockSlot) {
+    return forBlockProduction && proposalSlot.equals(blockSlot);
   }
 
   boolean isFor(final UInt64 blockSlot) {
@@ -57,27 +57,27 @@ final class PayloadBuildSession {
   }
 
   boolean isBlockingForkChoiceUpdates() {
-    return production && !payloadIdRequested;
+    return forBlockProduction && !payloadIdRequested;
   }
 
-  SafeFuture<Void> getPayloadAttributesApplied() {
-    return payloadAttributesApplied;
+  SafeFuture<Void> getPayloadAttributesResolved() {
+    return payloadAttributesResolved;
   }
 
-  boolean arePayloadAttributesApplied() {
-    return payloadAttributesApplied.isDone();
+  boolean arePayloadAttributesResolved() {
+    return payloadAttributesResolved.isDone();
   }
 
   boolean hasForkChoiceState(final ForkChoiceState forkChoiceState) {
     return forkChoiceUpdateData.getForkChoiceState().equals(forkChoiceState);
   }
 
-  void promoteToProduction() {
-    production = true;
+  void promoteToBlockProduction() {
+    forBlockProduction = true;
   }
 
   void markPayloadIdRequested(final UInt64 blockSlot) {
-    if (isProductionFor(blockSlot)) {
+    if (isForBlockProductionAtSlot(blockSlot)) {
       payloadIdRequested = true;
     }
   }
@@ -92,21 +92,21 @@ final class PayloadBuildSession {
     forkChoiceUpdateData = forkChoiceUpdateData.withTerminalBlockHash(executionBlockHash);
   }
 
-  void completePayloadAttributesApplied() {
-    payloadAttributesApplied.complete(null);
+  void completePayloadAttributesResolved() {
+    payloadAttributesResolved.complete(null);
   }
 
   void completePayloadAttributesExceptionally(final Throwable error) {
-    payloadAttributesApplied.completeExceptionally(error);
+    payloadAttributesResolved.completeExceptionally(error);
   }
 
   @Override
   public String toString() {
-    return "PayloadBuildSession{"
+    return "PayloadAttributesSession{"
         + "proposalSlot="
         + proposalSlot
-        + ", production="
-        + production
+        + ", forBlockProduction="
+        + forBlockProduction
         + ", payloadIdRequested="
         + payloadIdRequested
         + ", forkChoiceUpdateData="

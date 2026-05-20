@@ -17,72 +17,68 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-sealed interface ForkChoiceUpdateContext
-    permits PlainForkChoiceUpdateContext, PreparingForkChoiceUpdateContext {
+final class ForkChoiceUpdateContext {
+  private final ForkChoiceUpdateData forkChoiceUpdateData;
+  private final Optional<PayloadAttributesSession> payloadAttributesSession;
+
+  private ForkChoiceUpdateContext(final ForkChoiceUpdateData forkChoiceUpdateData) {
+    this.forkChoiceUpdateData = forkChoiceUpdateData;
+    this.payloadAttributesSession = Optional.empty();
+  }
+
+  private ForkChoiceUpdateContext(final PayloadAttributesSession payloadAttributesSession) {
+    this.forkChoiceUpdateData = payloadAttributesSession.getForkChoiceUpdateData();
+    this.payloadAttributesSession = Optional.of(payloadAttributesSession);
+  }
+
   static ForkChoiceUpdateContext plain(final ForkChoiceUpdateData forkChoiceUpdateData) {
-    return new PlainForkChoiceUpdateContext(forkChoiceUpdateData);
+    return new ForkChoiceUpdateContext(forkChoiceUpdateData);
   }
 
-  static ForkChoiceUpdateContext preparing(final PayloadBuildSession payloadBuildSession) {
-    return new PreparingForkChoiceUpdateContext(payloadBuildSession);
+  static ForkChoiceUpdateContext preparing(
+      final PayloadAttributesSession payloadAttributesSession) {
+    return new ForkChoiceUpdateContext(payloadAttributesSession);
   }
 
-  ForkChoiceUpdateData getForkChoiceUpdateData();
+  ForkChoiceUpdateData getForkChoiceUpdateData() {
+    return payloadAttributesSession
+        .map(PayloadAttributesSession::getForkChoiceUpdateData)
+        .orElse(forkChoiceUpdateData);
+  }
 
-  default ForkChoiceUpdateData getForkChoiceUpdateDataForPayloadId(final UInt64 blockSlot) {
+  ForkChoiceUpdateData getForkChoiceUpdateDataForPayloadId(final UInt64 blockSlot) {
     return getSessionFor(blockSlot)
-        .map(PayloadBuildSession::getForkChoiceUpdateData)
+        .map(PayloadAttributesSession::getForkChoiceUpdateData)
         .orElse(getForkChoiceUpdateData());
   }
 
-  default Optional<PayloadBuildSession> getPayloadBuildSession() {
-    return Optional.empty();
+  Optional<PayloadAttributesSession> getPayloadAttributesSession() {
+    return payloadAttributesSession;
   }
 
-  default Optional<PayloadBuildSession> getSessionFor(final UInt64 proposalSlot) {
-    return getPayloadBuildSession().filter(session -> session.isFor(proposalSlot));
+  Optional<PayloadAttributesSession> getSessionFor(final UInt64 proposalSlot) {
+    return getPayloadAttributesSession().filter(session -> session.isFor(proposalSlot));
   }
 
-  default Optional<PayloadBuildSession> getProductionSessionFor(final UInt64 blockSlot) {
-    return getPayloadBuildSession().filter(session -> session.isProductionFor(blockSlot));
+  Optional<PayloadAttributesSession> getBlockProductionSessionFor(final UInt64 blockSlot) {
+    return getPayloadAttributesSession()
+        .filter(session -> session.isForBlockProductionAtSlot(blockSlot));
   }
 
-  default boolean isBlockingForkChoiceUpdates() {
-    return getPayloadBuildSession()
-        .filter(PayloadBuildSession::isBlockingForkChoiceUpdates)
-        .isPresent();
+  Optional<PayloadAttributesSession> getBlockingForkChoiceUpdatesSession() {
+    return getPayloadAttributesSession()
+        .filter(PayloadAttributesSession::isBlockingForkChoiceUpdates);
   }
 
-  default ForkChoiceUpdateContext withTerminalBlockHash(final Bytes32 executionBlockHash) {
+  boolean isBlockingForkChoiceUpdates() {
+    return getBlockingForkChoiceUpdatesSession().isPresent();
+  }
+
+  ForkChoiceUpdateContext withTerminalBlockHash(final Bytes32 executionBlockHash) {
+    if (payloadAttributesSession.isPresent()) {
+      payloadAttributesSession.orElseThrow().withTerminalBlockHash(executionBlockHash);
+      return this;
+    }
     return plain(getForkChoiceUpdateData().withTerminalBlockHash(executionBlockHash));
-  }
-}
-
-record PlainForkChoiceUpdateContext(ForkChoiceUpdateData forkChoiceUpdateData)
-    implements ForkChoiceUpdateContext {
-
-  @Override
-  public ForkChoiceUpdateData getForkChoiceUpdateData() {
-    return forkChoiceUpdateData;
-  }
-}
-
-record PreparingForkChoiceUpdateContext(PayloadBuildSession payloadBuildSession)
-    implements ForkChoiceUpdateContext {
-
-  @Override
-  public ForkChoiceUpdateData getForkChoiceUpdateData() {
-    return payloadBuildSession.getForkChoiceUpdateData();
-  }
-
-  @Override
-  public Optional<PayloadBuildSession> getPayloadBuildSession() {
-    return Optional.of(payloadBuildSession);
-  }
-
-  @Override
-  public ForkChoiceUpdateContext withTerminalBlockHash(final Bytes32 executionBlockHash) {
-    payloadBuildSession.withTerminalBlockHash(executionBlockHash);
-    return this;
   }
 }

@@ -505,6 +505,44 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  void onAttestationsDue_shouldPrepareNextSlotAfterStaleProductionPin() {
+    setUp(false, true);
+
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final UInt64 nextSlot = blockSlot.plus(1);
+    final UInt64 nextProposalSlot = nextSlot.plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlotButDoNotPrepare(
+            forkChoiceState, headState, blockSlot, defaultFeeRecipient);
+    final PayloadBuildingAttributes nextPayloadBuildingAttributes =
+        withProposerForSlotButDoNotPrepare(
+            forkChoiceState, headState, nextProposalSlot, defaultFeeRecipient);
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+
+    forkChoiceUpdatedResultNotification = null;
+    notifier.onAttestationsDue(blockSlot);
+
+    assertThat(forkChoiceUpdatedResultNotification).isNull();
+    verifyNoMoreInteractions(executionLayerChannel);
+
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+    notifier.onAttestationsDue(nextSlot);
+
+    assertThat(forkChoiceUpdatedResultNotification).isNotNull();
+    assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+        .contains(nextPayloadBuildingAttributes);
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(nextPayloadBuildingAttributes));
+    verifyNoMoreInteractions(executionLayerChannel);
+  }
+
+  @Test
   void
       onForkChoiceUpdated_shouldSendNotificationWithoutPayloadBuildingAttributesWhenNotProposingNext() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
@@ -558,7 +596,6 @@ class ForkChoiceNotifierTest {
         .when(recentChainData)
         .shouldOverrideForkChoiceUpdate(
             lateForkChoiceState.headBlock().blockRoot(), lateForkChoiceState.headBlockSlot());
-
     notifyForkChoiceUpdated(
         lateForkChoiceState, Optional.empty(), notification -> assertThat(notification).isNull());
 
@@ -567,6 +604,30 @@ class ForkChoiceNotifierTest {
         .isCompletedWithOptionalContaining(
             new ExecutionPayloadContext(
                 payloadId, preparedForkChoiceState, payloadBuildingAttributes));
+  }
+
+  @Test
+  void onForkChoiceUpdated_shouldNotCheckLateBlockReorgOverrideWhenBlockProductionRequested() {
+    recreateNotifierWithForkChoiceLateBlockReorgEnabled();
+
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+
+    notifyForkChoiceUpdated(
+        forkChoiceState,
+        Optional.of(blockSlot),
+        notification ->
+            assertThat(notification.payloadAttributes()).contains(payloadBuildingAttributes));
+
+    verify(recentChainData, times(0))
+        .shouldOverrideForkChoiceUpdate(
+            forkChoiceState.headBlock().blockRoot(), forkChoiceState.headBlockSlot());
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+    verifyNoMoreInteractions(executionLayerChannel);
   }
 
   @Test
