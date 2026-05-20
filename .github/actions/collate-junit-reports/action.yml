@@ -4,7 +4,6 @@ description: 'Composite action to gather junit results'
 
 inputs:
   stage_key:
-    type: string
     required: true
 
 runs:
@@ -37,47 +36,41 @@ runs:
         use-actions-summary: 'true'
         # all/none/failed
 
-    - name: Setup Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-      with:
-        node-version: '22'
-
-    # Convert JUnit XML to CTRF JSON
-    - name: Convert JUnit to CTRF
-      shell: bash
-      run: |
-        npm install -g junit-to-ctrf
-        mkdir -p ./ctrf/${{inputs.stage_key}}/
-        npx junit-to-ctrf 'reports/${{inputs.stage_key}}/**/TEST-*.xml' -o ./ctrf/${{inputs.stage_key}}/ctrf-report.json
-
     # Publish test report
-    # v1
     - name: Publish Summary of Test Reports
-      uses: ctrf-io/github-test-reporter@024bc4b64d997ca9da86833c6b9548c55c620e40
+      uses: ctrf-io/github-test-reporter@024bc4b64d997ca9da86833c6b9548c55c620e40 # v1
       with:
-        report-path: './ctrf/${{inputs.stage_key}}/ctrf-report.json'
+        report-path: 'reports/${{inputs.stage_key}}/**/TEST-*.xml'
+        integrations-config: |
+          {
+            "junit-to-ctrf": {
+              "enabled": true,
+              "action": "convert"
+            }
+          }
         # Disable PR interaction
         pull-request: false
         status-check: false
         update-comment: false
         overwrite-comment: true
+        title: '${{inputs.stage_key}} test report'
+        artifact-name: ctrf-${{inputs.stage_key}}-tests
+        upload-artifact: true
         # generate reports
         suite-folded-report: false
         summary-report: true
+        summary-delta-report: true
         failed-report: true
-        flaky-report: true
+        fail-rate-report: true
+        flaky-rate-report: true
+        skipped-report: true
         # some aggregated analytics and trends (failures over time, etc)
         insights-report: true
+        slowest-report: true
         # Enables a full test report type — typically lists all tests and their statuses, not just failed.
         test-report: false
         previous-results-report: true
         max-previous-runs-to-fetch: 10
-        report-order: 'summary-report,failed-report,flaky-report,insights-report,test-report'
+        report-order: 'summary-report,summary-delta-report,failed-report,fail-rate-report,flaky-rate-report,slowest-report,skipped-report,insights-report,previous-results-report'
       env:
         GITHUB_TOKEN: ${{ github.token }}
-                
-    - name: Upload CTRF artifact
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-      with:
-        name: ctrf-${{inputs.stage_key}}-tests
-        path: ./ctrf/${{inputs.stage_key}}/ctrf-report.json 
