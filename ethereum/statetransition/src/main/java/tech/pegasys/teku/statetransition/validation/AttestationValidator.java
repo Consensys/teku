@@ -19,6 +19,7 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -210,15 +211,19 @@ public class AttestationValidator {
                         }
 
                         // The attestation's target block is an ancestor of the block named in the
-                        // LMD vote
-                        if (!spec.getAncestor(
+                        // LMD vote. Distinguish "ancestry walk failed because an ancestor is not in
+                        // the store" (IGNORE — insufficient data to judge) from "ancestor resolved
+                        // and is not the target" (REJECT — definitively wrong vote).
+                        final Optional<Bytes32> ancestorOfLMDVote =
+                            spec.getAncestor(
                                 gossipValidationHelper.getForkChoiceStrategy(),
                                 data.getBeaconBlockRoot(),
-                                spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()))
-                            .map(
-                                ancestorOfLMDVote ->
-                                    ancestorOfLMDVote.equals(data.getTarget().getRoot()))
-                            .orElse(false)) {
+                                spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()));
+                        if (ancestorOfLMDVote.isEmpty()) {
+                          return InternalValidationResultWithState.ignore(
+                              "Attestation LMD ancestry to target slot is not available");
+                        }
+                        if (!ancestorOfLMDVote.get().equals(data.getTarget().getRoot())) {
                           return InternalValidationResultWithState.reject(
                               "Attestation LMD vote block does not descend from target block");
                         }

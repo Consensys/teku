@@ -164,14 +164,8 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         continue;
       }
 
-      // Block/target-not-seen check: per spec, if the LMD walk back from beacon_block_root to
-      // target_slot can't complete (because some ancestor block on the path isn't in the store),
-      // the result is IGNORE — we lack enough chain data to make a judgement. Teku's validator
-      // collapses this into REJECT via the "LMD vote does not descend from target" rule, so
-      // short-circuit here. We detect the walk-failure case as: voted block known, voted block's
-      // slot strictly greater than target slot, and target root absent from fork choice.
-      final var aggData = signedAggregateAndProof.getMessage().getAggregate().getData();
-      final UInt64 targetSlot = spec.computeStartSlotAtEpoch(aggData.getTarget().getEpoch());
+      // Block-not-seen check: attestation references a block we haven't imported. Per spec this
+      // is IGNORE.
       final var maybeStrategy = recentChainData.getForkChoiceStrategy();
       final boolean blockKnown = maybeStrategy.map(s -> s.contains(votedBlockRoot)).orElse(false);
       if (!blockKnown) {
@@ -179,24 +173,6 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             .describedAs(
                 "Expected ignore for aggregate %s voting for unseen block %s",
                 message.getMessage(), votedBlockRoot)
-            .isEqualTo("ignore");
-        continue;
-      }
-      final boolean walkUnreachable =
-          maybeStrategy
-              .map(
-                  s ->
-                      s.blockSlot(votedBlockRoot)
-                              .map(votedSlot -> votedSlot.isGreaterThan(targetSlot))
-                              .orElse(false)
-                          && !s.contains(aggData.getTarget().getRoot())
-                          && spec.getAncestor(s, votedBlockRoot, targetSlot).isEmpty())
-              .orElse(false);
-      if (walkUnreachable) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected ignore for aggregate %s — LMD walk to target slot unreachable",
-                message.getMessage())
             .isEqualTo("ignore");
         continue;
       }
