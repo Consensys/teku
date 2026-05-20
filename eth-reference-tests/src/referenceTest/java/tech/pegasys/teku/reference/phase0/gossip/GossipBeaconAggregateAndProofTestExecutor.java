@@ -164,9 +164,11 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         continue;
       }
 
-      // Custom finalized_checkpoint case: the fixture pins a finalized root not in our chain,
-      // so by definition the aggregate's block cannot descend from it. Per spec, this is IGNORE.
-      // Teku's validator skips this check (relies on proto-array invariant), so handle it here.
+      // Custom finalized_checkpoint: the fixture pins a finalized root not in our chain, so by
+      // definition the aggregate's block cannot descend from it. Per spec, this is IGNORE. Teku's
+      // validator skips this check (it relies on the proto-array invariant that every node
+      // descends from the finalized block — an invariant the fixture deliberately violates), so
+      // handle it here.
       if (hasCustomFinalizedCheckpoint) {
         assertThat(message.getExpected())
             .describedAs(
