@@ -98,10 +98,9 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
       timeProvider.advanceTimeByMillis(messageTimeMs.minusMinZero(timeProvider.getTimeInMillis()));
 
       if (!capellaForkEpochOverride.isZero()) {
+        final UInt64 genesisTimeMs = state.getGenesisTime().times(1000);
         final UInt64 currentSlot =
-            messageTimeMs
-                .dividedBy(spec.getGenesisSpecConfig().getSecondsPerSlot())
-                .dividedBy(1000);
+            spec.getCurrentSlotFromTimeMillis(messageTimeMs, genesisTimeMs);
         final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
         if (currentEpoch.isLessThan(capellaForkEpochOverride)) {
           assertThat(message.getExpected())
