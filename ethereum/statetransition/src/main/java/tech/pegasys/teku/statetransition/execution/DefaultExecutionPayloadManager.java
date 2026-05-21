@@ -110,8 +110,6 @@ public class DefaultExecutionPayloadManager
             case ACCEPT -> {
               receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
                   signedExecutionPayload);
-              // cache the seen `beacon_block_root` when the gossip checks pass
-              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
               importExecutionPayload(signedExecutionPayload).finishError(LOG);
             }
             case SAVE_FOR_FUTURE -> {
