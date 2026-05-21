@@ -364,7 +364,6 @@ Add:
 ```java
 @Test
 void getPayloadId_shouldFailAfterHeadAdvancementClearsPinnedBlockProduction() {
-  final Bytes8 payloadId = dataStructureUtil.randomBytes8();
   final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
   final BeaconState headState = getHeadState();
   final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
@@ -372,23 +371,26 @@ void getPayloadId_shouldFailAfterHeadAdvancementClearsPinnedBlockProduction() {
   final PayloadBuildingAttributes payloadBuildingAttributes =
       withProposerForSlot(forkChoiceState, headState, blockSlot);
 
+  final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
   when(executionLayerChannel.engineForkChoiceUpdated(
           forkChoiceState, Optional.of(payloadBuildingAttributes)))
-      .thenReturn(
-          SafeFuture.completedFuture(
-              createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId))));
+      .thenReturn(responseFuture);
 
   notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+  final SafeFuture<Optional<ExecutionPayloadContext>> payloadContextFuture =
+      notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot);
+  assertThatSafeFuture(payloadContextFuture).isNotCompleted();
+
   storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
   notifyForkChoiceUpdated(getCurrentForkChoiceState());
 
+  assertThatSafeFuture(payloadContextFuture).isCompletedExceptionally();
   assertThatSafeFuture(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot))
       .isCompletedExceptionally();
 }
 
 @Test
 void getPayloadId_shouldFailAfterAttestationsDueClearsPinnedBlockProduction() {
-  final Bytes8 payloadId = dataStructureUtil.randomBytes8();
   final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
   final BeaconState headState = getHeadState();
   final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
@@ -396,15 +398,19 @@ void getPayloadId_shouldFailAfterAttestationsDueClearsPinnedBlockProduction() {
   final PayloadBuildingAttributes payloadBuildingAttributes =
       withProposerForSlot(forkChoiceState, headState, blockSlot);
 
+  final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
   when(executionLayerChannel.engineForkChoiceUpdated(
           forkChoiceState, Optional.of(payloadBuildingAttributes)))
-      .thenReturn(
-          SafeFuture.completedFuture(
-              createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId))));
+      .thenReturn(responseFuture);
 
   notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+  final SafeFuture<Optional<ExecutionPayloadContext>> payloadContextFuture =
+      notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot);
+  assertThatSafeFuture(payloadContextFuture).isNotCompleted();
+
   notifier.onAttestationsDue(blockSlot);
 
+  assertThatSafeFuture(payloadContextFuture).isCompletedExceptionally();
   assertThatSafeFuture(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot))
       .isCompletedExceptionally();
 }
@@ -551,6 +557,17 @@ private void internalForkChoiceUpdated(
 Add:
 
 ```java
+private void completePinnedBlockProductionExceptionally(
+    final PinnedBlockProductionPreparation preparation, final String reason) {
+  if (!preparation.executionPayloadContext().isDone()) {
+    preparation
+        .executionPayloadContext()
+        .completeExceptionally(
+            new IllegalStateException(
+                "Pinned block production for slot " + preparation.slot() + " " + reason));
+  }
+}
+
 private void clearPinnedBlockProductionIfHeadAdvanced(final ForkChoiceState forkChoiceState) {
   pinnedBlockProductionPreparation
       .filter(preparation -> preparation.isClearedByHead(forkChoiceState))
@@ -560,6 +577,9 @@ private void clearPinnedBlockProductionIfHeadAdvanced(final ForkChoiceState fork
                 "Clearing pinned block production for slot {} because head advanced to slot {}",
                 preparation.slot(),
                 forkChoiceState.headBlockSlot());
+            completePinnedBlockProductionExceptionally(
+                preparation,
+                "was cleared because head advanced to slot " + forkChoiceState.headBlockSlot());
             pinnedBlockProductionPreparation = Optional.empty();
           });
 }
@@ -573,6 +593,8 @@ private void clearPinnedBlockProductionIfExpired(final UInt64 slot) {
                 "Clearing pinned block production for slot {} because attestations are due for slot {}",
                 preparation.slot(),
                 slot);
+            completePinnedBlockProductionExceptionally(
+                preparation, "expired when attestations were due for slot " + slot);
             pinnedBlockProductionPreparation = Optional.empty();
           });
 }
@@ -1028,11 +1050,12 @@ This call should reuse the already-sent ordinary FCU only if the `ForkChoiceUpda
 
 - [ ] **Step 2: Ensure stale pinned async results complete predictably**
 
-In `updatePayloadAttributesForPinnedBlockProduction`, when a stale pinned calculation returns, complete the stale record future with empty before returning:
+In `updatePayloadAttributesForPinnedBlockProduction`, when a stale pinned calculation returns, complete the stale record future exceptionally before returning:
 
 ```java
 if (!isCurrentPinnedBlockProduction(preparation)) {
-  preparation.executionPayloadContext().complete(Optional.empty());
+  completePinnedBlockProductionExceptionally(
+      preparation, "was replaced before payload attributes were resolved");
   LOG.debug(
       "Ignoring stale pinned block production payload attributes for slot {}",
       preparation.slot());

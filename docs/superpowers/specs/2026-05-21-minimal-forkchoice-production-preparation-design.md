@@ -45,11 +45,13 @@ The pinned record is not cleared when `getPayloadId` consumes it. A validator cl
 - success: fork choice head advances to the pinned slot or later, which means the locally produced block was imported or superseded by a later head.
 - abandonment: attestations are due for the pinned slot or later, which means the block production flow did not complete in the intended slot window.
 
+When either cleanup path clears the pinned record, it also completes the pinned record future exceptionally. This prevents an already-returned `getPayloadId` future from hanging after the record is no longer reachable from the notifier.
+
 ## Head Update Path
 
 For `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = empty)`:
 
-1. If the head slot is greater than or equal to the pinned slot, clear the pinned record.
+1. If the head slot is greater than or equal to the pinned slot, clear the pinned record and complete its future exceptionally if it is still pending.
 2. If late-block reorg is enabled and `recentChainData.shouldOverrideForkChoiceUpdate(...)` says the ordinary head should be overridden, skip replacing/sending the ordinary FCU.
 3. Otherwise replace ordinary `forkChoiceUpdateData` with the new head.
 4. Calculate payload attributes for the current or next proposal slot from that same FCU head.
@@ -61,7 +63,7 @@ This keeps ordinary head advancement separate from pinned block production.
 
 For `onAttestationsDue(slot)`:
 
-1. Clear the pinned block-production record when it belongs to `slot <= attestationDueSlot`.
+1. Clear the pinned block-production record when it belongs to `slot <= attestationDueSlot`, and complete its future exceptionally if it is still pending.
 2. Prepare payload attributes for `slot + 1` using the current ordinary FCU head.
 3. Send the ordinary FCU when payload attributes are available.
 
@@ -107,8 +109,8 @@ Add or update unit tests for:
 - Non-production FCU updates are skipped when late-block reorg override is active.
 - Payload attribute calculation retrieves state from the FCU head.
 - `getPayloadId` does not clear the pinned record, allowing same-slot retry after production failure.
-- Head advancement clears the pinned record as the success signal.
-- Attestations due clears the expired pinned block-production record and prepares `slot + 1`.
+- Head advancement clears the pinned record as the success signal and completes any already-returned pinned future exceptionally.
+- Attestations due clears the expired pinned block-production record, completes any already-returned pinned future exceptionally, and prepares `slot + 1`.
 
 Run:
 
