@@ -980,22 +980,12 @@ Add helper below `calculatePayloadBuildingAttributes`:
 ```java
 private SafeFuture<Optional<BeaconState>> getStateForPayloadBuildingAttributes(
     final UInt64 blockSlot, final ForkChoiceState forkChoiceState) {
-  final Bytes32 headRoot = forkChoiceState.headBlock().blockRoot();
-  if (headRoot.isZero()) {
-    return recentChainData
-        .getBestBlockRoot()
-        .map(bestBlockRoot -> recentChainData.retrieveBlockState(new SlotAndBlockRoot(blockSlot, bestBlockRoot)))
-        .orElse(SafeFuture.completedFuture(Optional.empty()));
-  }
-  return recentChainData.retrieveBlockState(new SlotAndBlockRoot(blockSlot, headRoot));
+  return recentChainData.retrieveBlockState(
+      new SlotAndBlockRoot(blockSlot, forkChoiceState.headBlock().blockRoot()));
 }
 ```
 
-Add import:
-
-```java
-import org.apache.tuweni.bytes.Bytes32;
-```
+No zero-root fallback is included. Payload attributes are derived from the FCU head; if that head does not identify a retrievable state, attributes are not built.
 
 - [ ] **Step 4: Run ProposersDataManager tests**
 
