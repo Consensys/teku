@@ -232,7 +232,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     private int blsSetting;
 
     @JsonProperty(value = "finalized_checkpoint", required = false)
-    private Object finalizedCheckpoint;
+    private FinalizedCheckpointSpec finalizedCheckpoint;
 
     public List<BlockEntry> getBlocks() {
       return blocks;
@@ -250,8 +250,17 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       return BlsSetting.forCode(blsSetting);
     }
 
-    public Object getFinalizedCheckpoint() {
+    public FinalizedCheckpointSpec getFinalizedCheckpoint() {
       return finalizedCheckpoint;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class FinalizedCheckpointSpec {
+      @JsonProperty(value = "epoch", required = true)
+      private long epoch;
+
+      @JsonProperty(value = "root", required = true)
+      private String root;
     }
 
     private static class BlockEntry {

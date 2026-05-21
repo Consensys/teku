@@ -179,8 +179,8 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       }
 
       // Custom finalized_checkpoint: the fixture pins a finalized root not in our chain, so by
-      // definition the attestation's block cannot descend from it. Per spec, this is IGNORE. Teku's
-      // validator skips this check (it relies on the proto-array invariant that every node
+      // definition the attestation's block cannot descend from it. Per spec, this is IGNORE.
+      // Teku's validator skips this check (it relies on the proto-array invariant that every node
       // descends from the finalized block — an invariant the fixture deliberately violates), so
       // handle it here.
       if (hasCustomFinalizedCheckpoint) {
@@ -247,7 +247,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
     private int blsSetting;
 
     @JsonProperty(value = "finalized_checkpoint", required = false)
-    private Object finalizedCheckpoint;
+    private FinalizedCheckpointSpec finalizedCheckpoint;
 
     public List<BlockEntry> getBlocks() {
       return blocks;
@@ -265,8 +265,17 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       return BlsSetting.forCode(blsSetting);
     }
 
-    public Object getFinalizedCheckpoint() {
+    public FinalizedCheckpointSpec getFinalizedCheckpoint() {
       return finalizedCheckpoint;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class FinalizedCheckpointSpec {
+      @JsonProperty(value = "epoch", required = true)
+      private long epoch;
+
+      @JsonProperty(value = "root", required = true)
+      private String root;
     }
 
     private static class BlockEntry {
