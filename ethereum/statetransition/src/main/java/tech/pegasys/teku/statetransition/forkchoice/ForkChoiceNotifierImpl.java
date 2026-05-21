@@ -403,15 +403,12 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private void updatePayloadAttributesForPinnedBlockProduction(
       final PinnedBlockProductionPreparation preparation) {
     final ForkChoiceUpdateData localForkChoiceUpdateData = preparation.forkChoiceUpdateData();
-    localForkChoiceUpdateData
-        .withPayloadBuildingAttributesAsync(
-            () ->
-                proposersDataManager.calculatePayloadBuildingAttributes(
-                    preparation.slot(), inSync, localForkChoiceUpdateData, true),
-            eventThread)
+    proposersDataManager
+        .calculatePayloadBuildingAttributes(
+            preparation.slot(), inSync, localForkChoiceUpdateData, true)
         .thenAccept(
-            maybeForkChoiceUpdateData -> {
-              if (maybeForkChoiceUpdateData.isEmpty()) {
+            payloadBuildingAttributes -> {
+              if (payloadBuildingAttributes.isEmpty()) {
                 if (isCurrentPinnedBlockProduction(preparation)) {
                   preparation.executionPayloadContext().complete(Optional.empty());
                 }
@@ -427,7 +424,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
               }
 
               final ForkChoiceUpdateData updatedForkChoiceUpdateData =
-                  maybeForkChoiceUpdateData.get();
+                  localForkChoiceUpdateData.withPayloadBuildingAttributes(
+                      payloadBuildingAttributes);
               forkChoiceUpdateData = updatedForkChoiceUpdateData;
               final PinnedBlockProductionPreparation updatedPreparation =
                   preparation.withForkChoiceUpdateData(updatedForkChoiceUpdateData);
@@ -530,24 +528,20 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
     final ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
-    localForkChoiceUpdateData
-        .withPayloadBuildingAttributesAsync(
-            () ->
-                proposersDataManager.calculatePayloadBuildingAttributes(
-                    blockSlot, inSync, localForkChoiceUpdateData, false),
-            eventThread)
+    proposersDataManager
+        .calculatePayloadBuildingAttributes(blockSlot, inSync, localForkChoiceUpdateData, false)
         .thenAccept(
-            newForkChoiceUpdateData -> {
-              if (newForkChoiceUpdateData.isPresent()) {
-                if (isStaleForkChoiceUpdateData(localForkChoiceUpdateData)) {
-                  LOG.debug(
-                      "Ignoring stale payload attributes for slot {} because fork choice update data has changed",
-                      blockSlot);
-                  return;
-                }
-                forkChoiceUpdateData = newForkChoiceUpdateData.get();
-                sendForkChoiceUpdated();
+            payloadBuildingAttributes -> {
+              if (isStaleForkChoiceUpdateData(localForkChoiceUpdateData)) {
+                LOG.debug(
+                    "Ignoring stale payload attributes for slot {} because fork choice update data has changed",
+                    blockSlot);
+                return;
               }
+              forkChoiceUpdateData =
+                  localForkChoiceUpdateData.withPayloadBuildingAttributes(
+                      payloadBuildingAttributes);
+              sendForkChoiceUpdated();
             })
         .finish(
             error ->

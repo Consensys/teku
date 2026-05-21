@@ -234,6 +234,7 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
+    notifier.onSyncingStatusChanged(true);
 
     final UInt64 blockSlot = headState.getSlot().plus(1);
 
@@ -261,6 +262,7 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
+    notifier.onSyncingStatusChanged(true);
 
     final UInt64 blockSlot = headState.getSlot().plus(1);
 

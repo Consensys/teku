@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -105,17 +103,6 @@ public class ForkChoiceUpdateData {
     }
     return new ForkChoiceUpdateData(
         forkChoiceState, payloadBuildingAttributes, Optional.of(terminalBlockHash));
-  }
-
-  public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadBuildingAttributesAsync(
-      final Supplier<SafeFuture<Optional<PayloadBuildingAttributes>>> payloadAttributesCalculator,
-      final Executor executor) {
-    return payloadAttributesCalculator
-        .get()
-        .thenApplyAsync(
-            newPayloadBuildingAttributes ->
-                Optional.of(this.withPayloadBuildingAttributes(newPayloadBuildingAttributes)),
-            executor);
   }
 
   public Optional<PayloadBuildingAttributes> getPayloadBuildingAttributes() {
