@@ -178,11 +178,14 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
         continue;
       }
 
-      // Custom finalized_checkpoint: the fixture pins a finalized root not in our chain, so by
-      // definition the attestation's block cannot descend from it. Per spec, this is IGNORE.
-      // Teku's validator skips this check (it relies on the proto-array invariant that every node
-      // descends from the finalized block — an invariant the fixture deliberately violates), so
-      // handle it here.
+      /**
+       * Custom finalized_checkpoint: the fixture pins a finalized root not in our chain, so by
+       * definition the attestation's block cannot descend from it. Per spec, this is IGNORE. Teku's
+       * skips this check (it relies on the proto-array invariant that every node descends from the
+       * finalized block, instead of skipping the whole suite we skip this case
+       *
+       * @see tech.pegasys.teku.statetransition.validation.AttestationValidator#231
+       */
       if (hasCustomFinalizedCheckpoint) {
         assertThat(message.getExpected())
             .describedAs(
