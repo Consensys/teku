@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.7
+version: v1.7.0-alpha.8
 style: full
 
 specrefs:
@@ -103,8 +103,11 @@ specrefs:
       # Not implemented: capella
       - Seen#capella
 
-      # Not implemented: gloas
-      - PayloadAttributes#gloas
+      # Not implemented: deneb
+      - Seen#deneb
+
+      # Not implemented: electra
+      - Seen#electra
 
       # Not implemented: heze
       - GetInclusionListResponse#heze
@@ -411,7 +414,6 @@ specrefs:
       - should_apply_proposer_boost#gloas
       - update_proposer_boost_root#gloas
       - is_data_available#gloas
-      - is_payload_data_available#gloas
       - get_latest_message_epoch#gloas
       - process_parent_execution_payload#gloas
       - settle_builder_payment#gloas
