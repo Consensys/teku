@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -1076,6 +1077,35 @@ class ForkChoiceNotifierTest {
     // we are pre-merge, we can continue producing blocks with no execution payload
     assertThatSafeFuture(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot))
         .isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  void getPayloadId_shouldAcceptTerminalBlockPayloadForPreMergeParent() {
+    reInitializePreMerge();
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+    final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            any(), eq(Optional.of(payloadBuildingAttributes))))
+        .thenReturn(responseFuture);
+
+    notifier.onTerminalBlockReached(terminalBlockHash);
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+
+    responseFuture.complete(
+        createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(payloadId)));
+
+    final Optional<ExecutionPayloadContext> executionPayloadContext =
+        safeJoin(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot));
+    assertThat(executionPayloadContext).isPresent();
+    assertThat(executionPayloadContext.orElseThrow().getParentHash()).isEqualTo(terminalBlockHash);
   }
 
   private void notifyForkChoiceUpdated(final ForkChoiceState forkChoiceState) {

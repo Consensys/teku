@@ -180,6 +180,10 @@ public class ForkChoiceUpdateData {
     return terminalBlockHash.isPresent();
   }
 
+  public boolean isTerminalBlockHash(final Bytes32 executionBlockHash) {
+    return terminalBlockHash.map(executionBlockHash::equals).orElse(false);
+  }
+
   public ForkChoiceState getForkChoiceState() {
     return forkChoiceState;
   }

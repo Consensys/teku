@@ -230,7 +230,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                   executionPayloadContext.getForkChoiceState().headBlock(),
                   parentBeaconBlock);
               checkState(
-                  executionPayloadContext.getParentHash().equals(parentExecutionHash),
+                  executionPayloadContext.getParentHash().equals(parentExecutionHash)
+                      || isTerminalBlockPayload(
+                          preparation, parentExecutionHash, executionPayloadContext),
                   "Pinned block production parent execution hash %s does not match requested parent execution hash %s",
                   executionPayloadContext.getParentHash(),
                   parentExecutionHash);
@@ -244,6 +246,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                   timestamp);
               return maybeExecutionPayloadContext;
             });
+  }
+
+  private boolean isTerminalBlockPayload(
+      final PinnedBlockProductionPreparation preparation,
+      final Bytes32 parentExecutionHash,
+      final ExecutionPayloadContext executionPayloadContext) {
+    return parentExecutionHash.isZero()
+        && preparation
+            .forkChoiceUpdateData()
+            .isTerminalBlockHash(executionPayloadContext.getParentHash());
   }
 
   private void internalForkChoiceUpdated(
