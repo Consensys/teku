@@ -485,6 +485,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
+  public boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForPayloadDecision(store, head.blockRoot())
+          .shouldBuildOnFull(protoArray, blockNodeIndex, store, head);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
   public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {

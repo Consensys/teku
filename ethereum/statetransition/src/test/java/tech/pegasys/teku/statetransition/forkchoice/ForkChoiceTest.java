@@ -38,6 +38,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_C
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.time.Duration;
 import java.util.List;
@@ -71,6 +72,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -81,6 +83,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -612,6 +615,29 @@ class ForkChoiceTest {
     assertThat(messages.get(0).getValidatorIndex()).isEqualTo(UInt64.valueOf(42));
     assertThat(messages.get(0).calculatePtcPositions(spec, attestedBlockState))
         .isEqualTo(IntSet.of(0, 2, 4));
+  }
+
+  @Test
+  void prepareForBlockProduction_shouldUseEmptyParentWhenPtcVotesDataUnavailable() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+
+    final UInt64 parentSlot = UInt64.ONE;
+    final UInt64 proposalSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState parentBlock = storageSystem.chainUpdater().advanceChain(parentSlot);
+    final ForkChoiceStrategy strategy = recentChainData.getStore().getForkChoiceStrategy();
+    final int threshold =
+        SpecConfigGloas.required(spec.atSlot(parentSlot).getConfig())
+            .getDataAvailabilityTimelyThreshold();
+    strategy.onPtcVote(parentBlock.getRoot(), ptcPositions(threshold + 1), true, false);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(proposalSlot);
+
+    final ChainHead blockProductionHead =
+        safeJoin(
+            forkChoice.prepareForBlockProduction(proposalSlot, BlockProductionPerformance.NOOP));
+
+    assertThat(blockProductionHead.getRoot()).isEqualTo(parentBlock.getRoot());
+    assertThat(blockProductionHead.getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY);
   }
 
   @Test
@@ -1528,6 +1554,14 @@ class ForkChoiceTest {
 
   private void processHead(final UInt64 slot) {
     assertThat(forkChoice.processHead(slot)).isCompleted();
+  }
+
+  private IntSet ptcPositions(final int count) {
+    final IntSet positions = new IntOpenHashSet();
+    for (int i = 0; i < count; i++) {
+      positions.add(i);
+    }
+    return positions;
   }
 
   private void setForkChoiceNotifierForkChoiceUpdatedResult(final PayloadStatus status) {

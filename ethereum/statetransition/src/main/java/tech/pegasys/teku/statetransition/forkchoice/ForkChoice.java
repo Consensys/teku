@@ -1298,7 +1298,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         () -> {
           final Optional<ChainHead> overriddenHead =
               resolveProposerHeadOverride(canonicalHead, slot);
-          final ChainHead proposerHead = overriddenHead.orElse(canonicalHead);
+          final ChainHead forkChoiceProposerHead = overriddenHead.orElse(canonicalHead);
+          final ChainHead proposerHead = selectBlockProductionHead(forkChoiceProposerHead);
           final SafeFuture<Void> preparation;
           if (overriddenHead.isPresent()) {
             // Run preparation in parallel; await it before returning so block-body construction
@@ -1343,15 +1344,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ForkChoiceStrategy strategy = getForkChoiceStrategy();
     final UpdatableStore store = recentChainData.getStore();
-    final ForkChoicePayloadStatus parentPayloadStatus =
-        strategy.shouldExtendPayload(store, proposerHeadRoot)
-            ? ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
-            : ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
-    // Phase0/non-Gloas blocks only have a base node; fall back if the variant lookup misses.
     final Optional<ProtoNodeData> parentBlockData =
-        strategy
-            .getBlockData(proposerHeadRoot, parentPayloadStatus)
-            .or(() -> strategy.getBlockData(proposerHeadRoot));
+        getForkChoicePreferredBlockData(strategy, store, proposerHeadRoot);
 
     if (parentBlockData.isEmpty()) {
       LOG.warn(
@@ -1374,6 +1368,60 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                     proposerHeadRoot, slot))));
 
     return Optional.of(ChainHead.create(parentBlockData.get(), parentStateAndBlock));
+  }
+
+  private Optional<ProtoNodeData> getForkChoicePreferredBlockData(
+      final ForkChoiceStrategy strategy, final UpdatableStore store, final Bytes32 blockRoot) {
+    final Optional<ProtoNodeData> emptyBlockData =
+        strategy.getBlockData(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY);
+    final Optional<ProtoNodeData> fullBlockData =
+        strategy.getBlockData(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+    if (emptyBlockData.isEmpty() && fullBlockData.isEmpty()) {
+      // Pre-Gloas and base-only roots have no EMPTY/FULL variants; fall back to the normal base
+      // node lookup.
+      return strategy.getBlockData(blockRoot);
+    }
+
+    final ForkChoicePayloadStatus forkChoicePayloadStatus =
+        strategy.shouldExtendPayload(store, blockRoot)
+            ? ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
+            : ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
+    return strategy
+        .getBlockData(blockRoot, forkChoicePayloadStatus)
+        .or(() -> fullBlockData)
+        .or(() -> emptyBlockData);
+  }
+
+  private ChainHead selectBlockProductionHead(final ChainHead forkChoiceHead) {
+    if (forkChoiceHead.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING) {
+      return forkChoiceHead;
+    }
+
+    final ForkChoiceStrategy strategy = getForkChoiceStrategy();
+    final UpdatableStore store = recentChainData.getStore();
+    final ForkChoicePayloadStatus payloadStatusForBlockProduction =
+        strategy.shouldBuildOnFull(store, forkChoiceHead.getForkChoiceNode())
+            ? ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
+            : ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
+
+    if (forkChoiceHead.getPayloadStatus() == payloadStatusForBlockProduction) {
+      return forkChoiceHead;
+    }
+
+    // EMPTY/FULL variants share the same beacon state; only the fork-choice node metadata changes.
+    // If the selected variant is unexpectedly missing, keep the original fork-choice head.
+    return strategy
+        .getBlockData(forkChoiceHead.getRoot(), payloadStatusForBlockProduction)
+        .map(blockData -> ChainHead.create(blockData, forkChoiceHead.asStateAndBlockSummary()))
+        .orElseGet(
+            () -> {
+              LOG.warn(
+                  "Unable to resolve {} payload variant for block production parent {}; using fork-choice head {}",
+                  payloadStatusForBlockProduction,
+                  forkChoiceHead.getRoot(),
+                  forkChoiceHead.getForkChoiceNode());
+              return forkChoiceHead;
+            });
   }
 
   private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {

@@ -155,6 +155,15 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public boolean shouldBuildOnFull(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final ForkChoiceNode head) {
+    return false;
+  }
+
+  @Override
   public boolean isHeadCandidate(final ProtoNode node) {
     return true;
   }

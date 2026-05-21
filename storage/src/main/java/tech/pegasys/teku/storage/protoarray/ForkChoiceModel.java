@@ -107,6 +107,12 @@ interface ForkChoiceModel {
       ReadOnlyStore store,
       Bytes32 blockRoot);
 
+  boolean shouldBuildOnFull(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ReadOnlyStore store,
+      ForkChoiceNode head);
+
   /**
    * Returns whether the supplied node is a valid head candidate for this fork-aware model.
    *

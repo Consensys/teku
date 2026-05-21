@@ -73,6 +73,8 @@ class PtcVoteTrackerTest {
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(1);
+    assertThat(tracker.getPayloadPresentVoteCount(ROOT_1, false)).isEqualTo(1);
+    assertThat(tracker.getDataAvailableVoteCount(ROOT_1, false)).isEqualTo(1);
     assertThat(tracker.getPayloadPresentVote(ROOT_1, 0)).contains(false);
     assertThat(tracker.getDataAvailableVote(ROOT_1, 0)).contains(false);
   }
