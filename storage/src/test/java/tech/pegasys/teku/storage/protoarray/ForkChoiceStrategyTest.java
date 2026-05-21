@@ -818,6 +818,44 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         .isEqualTo(fullPayloadBlockData.getExecutionBlockHash());
   }
 
+  @Test
+  void getForkChoiceState_shouldUseGloasBidParentBlockHashForSafeAndFinalizedBlocks() {
+    final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
+    fixture
+        .strategy()
+        .applyUpdate(
+            List.of(
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
+            Map.of(fixture.boundary().getRoot(), fixture.boundaryExecutionPayload()),
+            emptySet(),
+            emptyMap(),
+            fixture.finalizedCheckpoint(),
+            Optional.of(fixture.boundaryBlockAndCheckpoints()));
+    final Bytes32 boundaryBidParentBlockHash =
+        fixture.boundaryBlockAndCheckpoints().getExecutionBlockHash().orElseThrow();
+    final Bytes32 boundaryPayloadBlockHash =
+        fixture
+            .boundaryExecutionPayload()
+            .executionPayload()
+            .getMessage()
+            .getPayload()
+            .getBlockHash();
+    final Checkpoint justifiedCheckpoint = fixture.finalizedCheckpoint();
+    final ForkChoiceState forkChoiceState =
+        fixture
+            .strategy()
+            .getForkChoiceState(
+                Optional.empty(),
+                fixture.spec().computeEpochAtSlot(fixture.child().getSlot()),
+                justifiedCheckpoint,
+                fixture.finalizedCheckpoint());
+
+    assertThat(boundaryBidParentBlockHash).isNotEqualTo(boundaryPayloadBlockHash);
+    assertThat(forkChoiceState.safeExecutionBlockHash()).isEqualTo(boundaryBidParentBlockHash);
+    assertThat(forkChoiceState.finalizedExecutionBlockHash()).isEqualTo(boundaryBidParentBlockHash);
+  }
+
   private StorageSystem initStorageSystem() {
     return initStorageSystem(spec);
   }
