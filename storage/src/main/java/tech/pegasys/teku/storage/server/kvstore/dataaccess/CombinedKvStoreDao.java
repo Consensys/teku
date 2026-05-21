@@ -727,8 +727,20 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
+  public Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(final UInt64 slot) {
+    return db.getFloorEntry(
+            schema.getColumnSidecarByColumnSlotAndIdentifier(),
+            new DataColumnSlotAndIdentifier(slot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE))
+        .map(ColumnEntry::getKey)
+        .map(DataColumnSlotAndIdentifier::slot);
+  }
+
+  @Override
+  public Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(
+      final UInt64 slot) {
+    return db.getFloorEntry(
+            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+            new DataColumnSlotAndIdentifier(slot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE))
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
   }
