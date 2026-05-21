@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -44,5 +45,42 @@ class SpecTest {
             spec.computeSubnetForAttestation(
                 chain.getLast().getState(), dataStructureUtil.randomAttestation(100)))
         .isEqualTo(48);
+  }
+
+  @Test
+  void isTimeReached_shouldReturnFalseWhenTimeNotReached() {
+    final UInt64 currentTimeMillis = UInt64.valueOf(1_000);
+
+    assertThat(spec.isTimeReached(currentTimeMillis, currentTimeMillis.plus(1))).isFalse();
+  }
+
+  @Test
+  void isTimeReached_shouldReturnTrueWhenTimeMatches() {
+    final UInt64 currentTimeMillis = UInt64.valueOf(1_000);
+
+    assertThat(spec.isTimeReached(currentTimeMillis, currentTimeMillis)).isTrue();
+  }
+
+  @Test
+  void isBeforeTimeInSlot_shouldExcludeAllowedTimeInSlot() {
+    final UInt64 genesisTimeMillis = UInt64.valueOf(1_000);
+    final UInt64 slot = UInt64.valueOf(3);
+    final UInt64 slotStartTimeMillis = spec.computeTimeMillisAtSlot(slot, genesisTimeMillis);
+    final int timeInSlotMillisExclusive = 2_000;
+
+    assertThat(
+            spec.isBeforeTimeInSlot(
+                slot,
+                genesisTimeMillis,
+                slotStartTimeMillis.plus(timeInSlotMillisExclusive).minus(1),
+                timeInSlotMillisExclusive))
+        .isTrue();
+    assertThat(
+            spec.isBeforeTimeInSlot(
+                slot,
+                genesisTimeMillis,
+                slotStartTimeMillis.plus(timeInSlotMillisExclusive),
+                timeInSlotMillisExclusive))
+        .isFalse();
   }
 }

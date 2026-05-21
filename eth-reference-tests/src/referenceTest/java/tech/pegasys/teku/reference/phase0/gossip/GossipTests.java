@@ -22,7 +22,7 @@ public class GossipTests {
   public static final ImmutableMap<String, TestExecutor> GOSSIP_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTestExecutor())
-           // TODO: https://github.com/Consensys/teku/issues/10578
+          // TODO: https://github.com/Consensys/teku/issues/10578
           .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
