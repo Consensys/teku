@@ -40,14 +40,20 @@ The record owns the stable future consumed by `getPayloadId`. `ForkChoiceUpdateD
 
 The future represents the complete production path needed by `getPayloadId`: payload attributes calculated, FCU sent, and EL payload context available.
 
+The pinned record is not cleared when `getPayloadId` consumes it. A validator client request retry after a production failure can trigger another `getPayloadId(parent, N)` for the same slot, and the same pinned record should still be available. The record is cleared only by success or abandonment signals:
+
+- success: fork choice head advances to the pinned slot or later, which means the locally produced block was imported or superseded by a later head.
+- abandonment: attestations are due for the pinned slot or later, which means the block production flow did not complete in the intended slot window.
+
 ## Head Update Path
 
 For `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = empty)`:
 
-1. If late-block reorg is enabled and `recentChainData.shouldOverrideForkChoiceUpdate(...)` says the ordinary head should be overridden, skip replacing/sending the ordinary FCU.
-2. Otherwise replace ordinary `forkChoiceUpdateData` with the new head.
-3. Calculate payload attributes for the current or next proposal slot from that same FCU head.
-4. Send the ordinary FCU when payload attributes are available.
+1. If the head slot is greater than or equal to the pinned slot, clear the pinned record.
+2. If late-block reorg is enabled and `recentChainData.shouldOverrideForkChoiceUpdate(...)` says the ordinary head should be overridden, skip replacing/sending the ordinary FCU.
+3. Otherwise replace ordinary `forkChoiceUpdateData` with the new head.
+4. Calculate payload attributes for the current or next proposal slot from that same FCU head.
+5. Send the ordinary FCU when payload attributes are available.
 
 This keeps ordinary head advancement separate from pinned block production.
 
@@ -80,7 +86,8 @@ For `getPayloadId(parent, N)`:
 1. Require a matching `PinnedBlockProductionPreparation` for parent and slot `N`.
 2. Wait on its stable `executionPayloadContext`.
 3. Fail clearly if there is no matching pinned record, the pinned record has expired, or the EL does not return a payload context.
-4. Do not fallback to a fresh FCU recalculation.
+4. Leave the pinned record in place after a successful match so same-slot retry can reuse it.
+5. Do not fallback to a fresh FCU recalculation.
 
 This turns missing pinned block-production state into an invariant violation instead of hidden recovery logic.
 
@@ -99,6 +106,8 @@ Add or update unit tests for:
 - Pinned block production calculates payload attributes from the pinned block-production head, not a later chain head.
 - Non-production FCU updates are skipped when late-block reorg override is active.
 - Payload attribute calculation retrieves state from the FCU head.
+- `getPayloadId` does not clear the pinned record, allowing same-slot retry after production failure.
+- Head advancement clears the pinned record as the success signal.
 - Attestations due clears the expired pinned block-production record and prepares `slot + 1`.
 
 Run:
