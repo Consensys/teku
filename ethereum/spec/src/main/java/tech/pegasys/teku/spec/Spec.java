@@ -1372,6 +1372,15 @@ public class Spec {
         .map(this::computeStartSlotAtEpoch);
   }
 
+  public Optional<UInt64> computeFirstSlotWithDataColumnSidecarSupport() {
+    if (!supportsDataColumnSidecars()) {
+      return Optional.empty();
+    }
+    return getSpecConfigFulu()
+        .map(SpecConfigFulu::getFuluForkEpoch)
+        .map(this::computeStartSlotAtEpoch);
+  }
+
   // Gloas Utils
   public boolean isExecutionPayloadEnvelopeAvailableAtSlot(final UInt64 slot) {
     return atSlot(slot)

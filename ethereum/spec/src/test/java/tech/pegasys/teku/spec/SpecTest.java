@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -44,5 +45,21 @@ class SpecTest {
             spec.computeSubnetForAttestation(
                 chain.getLast().getState(), dataStructureUtil.randomAttestation(100)))
         .isEqualTo(48);
+  }
+
+  @Test
+  void shouldNotComputeFirstSlotWithDataColumnSidecarSupportWhenFuluIsUnsupported() {
+    final Spec electraSpec = TestSpecFactory.createMinimalElectra();
+
+    assertThat(electraSpec.computeFirstSlotWithDataColumnSidecarSupport()).isEmpty();
+  }
+
+  @Test
+  void shouldComputeFirstSlotWithDataColumnSidecarSupportWhenFuluIsSupported() {
+    final UInt64 fuluForkEpoch = UInt64.valueOf(12);
+    final Spec fuluSpec = TestSpecFactory.createMinimalWithFuluForkEpoch(fuluForkEpoch);
+
+    assertThat(fuluSpec.computeFirstSlotWithDataColumnSidecarSupport())
+        .contains(fuluSpec.computeStartSlotAtEpoch(fuluForkEpoch));
   }
 }
