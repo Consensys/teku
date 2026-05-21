@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -154,6 +155,15 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public boolean shouldBuildOnFull(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final ForkChoiceNode head) {
+    return false;
+  }
+
+  @Override
   public boolean isHeadCandidate(final ProtoNode node) {
     return true;
   }
@@ -223,7 +233,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   @Override
   public void onPtcVote(
       final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
+      final IntSet ptcPositions,
       final boolean payloadPresent,
       final boolean blobDataAvailable) {
     // No-op
