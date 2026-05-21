@@ -730,7 +730,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
-    applyPayloadAttestationsFromBlock(block);
     // Invalid payload statuses returned above, so the direct-invalid flag is irrelevant here.
     // Gloas skips this on_block notification entirely.
     if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
@@ -746,6 +745,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
       // We also need to handle recent AttesterSlashings to update equivocating validator indices
       // We don't need any epochs older than previous as it doesn't affect ForkChoice
+      applyPayloadAttestationsFromBlock(block);
       applyAttesterSlashingsFromBlock(block, voteUpdater);
       applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache, voteUpdater);
       voteUpdater.commit();
