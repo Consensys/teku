@@ -1,12 +1,12 @@
-# Minimal Fork Choice Production Preparation Design
+# Minimal Fork Choice Pinned Block Production Design
 
 ## Summary
 
-Introduce a minimal production-preparation state in `ForkChoiceNotifierImpl` so block production no longer depends on fallback recalculation in `internalGetPayloadId`.
+Introduce a minimal pinned block-production record in `ForkChoiceNotifierImpl` so block production no longer depends on fallback recalculation in `internalGetPayloadId`.
 
-The design assumes that `forkchoiceUpdated` with a requested block production slot is always called before `getPayloadId` for that block. Under that invariant, `getPayloadId` should consume the already-prepared production state or fail clearly if the preparation is missing or expired.
+The design assumes that `forkchoiceUpdated` with a requested block production slot is always called before `getPayloadId` for that block. Under that invariant, `getPayloadId` should consume the pinned block-production record or fail clearly if the record is missing or expired.
 
-This design intentionally avoids the broader session redesign. It only adds the state needed to make production payload attributes awaitable and parent/slot scoped.
+This design intentionally avoids broader lifecycle redesigns. It only adds the state needed to make production payload attributes awaitable and parent/slot scoped.
 
 ## Goals
 
@@ -19,24 +19,24 @@ This design intentionally avoids the broader session redesign. It only adds the 
 
 ## Non-Goals
 
-- Do not implement the full payload-attributes session redesign.
+- Do not implement a general payload-attributes lifecycle redesign.
 - Do not add merge/terminal-block recovery behavior beyond the current practical post-merge path.
-- Do not preserve recovery for extremely slow block production after the production preparation has expired.
+- Do not preserve recovery for extremely slow block production after the pinned block-production record has expired.
 - Do not address Gloas-specific withdrawals or remote-proposer bid behavior in this change.
 
-## Production Preparation State
+## Pinned Block-Production Record
 
-Replace `lastProposingSlot` with a small record that represents the active production preparation:
+Replace `lastProposingSlot` with a small record that remains stable between `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = N)` and the corresponding `getPayloadId(parent, N)`:
 
 ```java
-record BlockProductionPreparation(
+record PinnedBlockProductionPreparation(
     UInt64 slot,
     ForkChoiceNode parentBeaconBlock,
     ForkChoiceUpdateData forkChoiceUpdateData,
     SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext) {}
 ```
 
-The record owns the stable future consumed by `getPayloadId`. `ForkChoiceUpdateData` remains an EL-call snapshot: when payload attributes resolve, the production preparation is updated with a new `ForkChoiceUpdateData` containing those attributes, and the sent FCU's execution payload context is propagated into the preparation future. The ordinary `forkChoiceUpdateData` field remains the non-production FCU state and is not the source of truth for an active production preparation.
+The record owns the stable future consumed by `getPayloadId`. `ForkChoiceUpdateData` remains an EL-call snapshot: when payload attributes resolve, the pinned record is updated with a new `ForkChoiceUpdateData` containing those attributes, and the sent FCU's execution payload context is propagated into the record's future. The ordinary `forkChoiceUpdateData` field remains the non-production FCU state and is not the source of truth while a matching pinned block-production record is active.
 
 The future represents the complete production path needed by `getPayloadId`: payload attributes calculated, FCU sent, and EL payload context available.
 
@@ -49,27 +49,27 @@ For `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = e
 3. Calculate payload attributes for the current or next proposal slot from that same FCU head.
 4. Send the ordinary FCU when payload attributes are available.
 
-This keeps ordinary head advancement separate from production preparation.
+This keeps ordinary head advancement separate from pinned block production.
 
 ## Attestations-Due Path
 
 For `onAttestationsDue(slot)`:
 
-1. Clear expired production preparation when it belongs to `slot <= attestationDueSlot`.
+1. Clear the pinned block-production record when it belongs to `slot <= attestationDueSlot`.
 2. Prepare payload attributes for `slot + 1` using the current ordinary FCU head.
 3. Send the ordinary FCU when payload attributes are available.
 
-If block production is so late that its preparation has already expired, `getPayloadId` is allowed to fail instead of attempting fallback recalculation.
+If block production is so late that its pinned record has already expired, `getPayloadId` is allowed to fail instead of attempting fallback recalculation.
 
 ## Production Path
 
 For `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = N)`:
 
 1. Use the pinned block-production head in `forkChoiceState`.
-2. Create or replace `BlockProductionPreparation` for slot `N` and that parent.
+2. Create or replace `PinnedBlockProductionPreparation` for slot `N` and that parent.
 3. Calculate payload attributes for slot `N` from the pinned block-production head state.
 4. Send the production FCU.
-5. Propagate the production FCU execution payload context into the preparation future.
+5. Propagate the production FCU execution payload context into the pinned record future.
 
 This guarantees randao, withdrawals, parent, and payload ID are all derived from the same production head.
 
@@ -77,12 +77,12 @@ This guarantees randao, withdrawals, parent, and payload ID are all derived from
 
 For `getPayloadId(parent, N)`:
 
-1. Require a matching `BlockProductionPreparation` for parent and slot `N`.
+1. Require a matching `PinnedBlockProductionPreparation` for parent and slot `N`.
 2. Wait on its stable `executionPayloadContext`.
-3. Fail clearly if there is no matching preparation, the preparation has expired, or the EL does not return a payload context.
+3. Fail clearly if there is no matching pinned record, the pinned record has expired, or the EL does not return a payload context.
 4. Do not fallback to a fresh FCU recalculation.
 
-This turns missing production preparation into an invariant violation instead of hidden recovery logic.
+This turns missing pinned block-production state into an invariant violation instead of hidden recovery logic.
 
 ## Payload Attribute State Selection
 
@@ -94,12 +94,12 @@ This turns missing production preparation into an invariant violation instead of
 
 Add or update unit tests for:
 
-- `getPayloadId` waits for pending production payload attributes and resolves through the preparation future.
-- `getPayloadId` fails when no matching production preparation exists.
-- Production preparation calculates payload attributes from the pinned block-production head, not a later chain head.
+- `getPayloadId` waits for pending production payload attributes and resolves through the pinned record future.
+- `getPayloadId` fails when no matching pinned block-production record exists.
+- Pinned block production calculates payload attributes from the pinned block-production head, not a later chain head.
 - Non-production FCU updates are skipped when late-block reorg override is active.
 - Payload attribute calculation retrieves state from the FCU head.
-- Attestations due clears expired production preparation and prepares `slot + 1`.
+- Attestations due clears the expired pinned block-production record and prepares `slot + 1`.
 
 Run:
 
