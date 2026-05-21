@@ -119,9 +119,7 @@ public class HistoricalBatchFetcherDenebTest {
         new CombinedChainDataClient(
             storageSystem.recentChainData(),
             mock(StorageQueryChannel.class),
-            spec,
-            LateBlockReorgPreparationHandler.NOOP,
-            false);
+            spec);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =
