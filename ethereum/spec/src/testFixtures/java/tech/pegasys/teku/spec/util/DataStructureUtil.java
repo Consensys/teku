@@ -174,8 +174,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
