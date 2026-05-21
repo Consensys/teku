@@ -13,64 +13,38 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
-
-import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**
- * This utility contains helpers for calculating weak-subjectivity-related values. Logic is derived
- * from <a href=https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2>Weak Subjectivity in
- * Eth2.0</a> and the <a
- * href=https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/weak-subjectivity.md>Weak
- * Subjectivity Guide</a>.
+ * <a href="https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2">Weak Subjectivity in
+ * Eth2.0</a> and the per-fork weak-subjectivity guides under <a
+ * href="https://github.com/ethereum/consensus-specs">consensus-specs</a>.
+ *
+ * <p>Essentially it is a tiny wrapper over {@link
+ * tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator}
  */
 public class WeakSubjectivityCalculator {
 
   private final Spec spec;
-  private final UInt64 safetyDecay;
-  // Use injectable StateCalculator to make unit testing simpler
-  private final StateCalculator stateCalculator;
 
-  WeakSubjectivityCalculator(
-      final Spec spec, final UInt64 safetyDecay, final StateCalculator stateCalculator) {
+  public WeakSubjectivityCalculator(final Spec spec) {
     this.spec = spec;
-    this.safetyDecay = safetyDecay;
-    this.stateCalculator = stateCalculator;
-  }
-
-  public static WeakSubjectivityCalculator create(final WeakSubjectivityConfig config) {
-    final Spec spec = config.getSpec();
-    return new WeakSubjectivityCalculator(
-        spec, config.getSafetyDecay(), StateCalculator.getDefaultCalculator(spec));
   }
 
   /**
-   * Determines whether the weak subjectivity period calculated from the latest finalized checkpoint
-   * extends through the current epoch.
-   *
    * @param finalizedCheckpoint The latest finalized checkpoint
    * @param currentSlot The current slot by clock time
    * @return True if the latest finalized checkpoint is still within the weak subjectivity period
    */
   public boolean isWithinWeakSubjectivityPeriod(
       final CheckpointState finalizedCheckpoint, final UInt64 currentSlot) {
-    final UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint);
-    final UInt64 wsStateEpoch = spec.computeEpochAtSlot(finalizedCheckpoint.getState().getSlot());
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-
-    return wsStateEpoch.plus(wsPeriod).isGreaterThanOrEqualTo(currentEpoch);
+    final BeaconState state = finalizedCheckpoint.getState();
+    return spec.atSlot(state.getSlot())
+        .weakSubjectivityCalculator()
+        .isWithinWeakSubjectivityPeriod(state, currentSlot);
   }
 
   /**
@@ -79,128 +53,8 @@ public class WeakSubjectivityCalculator {
    */
   public UInt64 computeWeakSubjectivityPeriod(final CheckpointState checkpointState) {
     final BeaconState state = checkpointState.getState();
-    final SpecVersion specVersion = spec.atSlot(state.getSlot());
-    // https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/weak-subjectivity.md
-    if (specVersion.getMilestone().isGreaterThanOrEqualTo(GLOAS)) {
-      return computeWeakSubjectivityPeriodForGloas(specVersion, state);
-    }
-    // https://github.com/ethereum/consensus-specs/blob/master/specs/electra/weak-subjectivity.md
-    if (specVersion.getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
-      return computeWeakSubjectivityPeriodForElectra(specVersion, state);
-    }
-    // https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/weak-subjectivity.md
-    final int activeValidators = stateCalculator.getActiveValidators(state);
-    final UInt64 totalActiveValidatorBalance =
-        stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
-    return computeWeakSubjectivityPeriod(
-        specVersion, activeValidators, totalActiveValidatorBalance);
-  }
-
-  private UInt64 computeWeakSubjectivityPeriodForGloas(
-      final SpecVersion specVersion, final BeaconState state) {
-    final BeaconStateAccessorsGloas beaconStateAccessors =
-        BeaconStateAccessorsGloas.required(specVersion.beaconStateAccessors());
-    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
-    final UInt64 delta =
-        beaconStateAccessors
-            .getExitChurnLimit(stateElectra)
-            .times(2)
-            .dividedBy(3)
-            .plus(beaconStateAccessors.getActivationChurnLimit(stateElectra).dividedBy(3))
-            .plus(beaconStateAccessors.getConsolidationChurnLimit(stateElectra));
-    return computeWeakSubjectivityPeriodFromTotalActiveBalance(
-        specVersion.getConfig(), beaconStateAccessors.getTotalActiveBalance(state), delta);
-  }
-
-  private UInt64 computeWeakSubjectivityPeriodForElectra(
-      final SpecVersion specVersion, final BeaconState state) {
-    final BeaconStateAccessorsElectra beaconStateAccessors =
-        BeaconStateAccessorsElectra.required(specVersion.beaconStateAccessors());
-    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
-    return computeWeakSubjectivityPeriodFromTotalActiveBalance(
-        specVersion.getConfig(),
-        beaconStateAccessors.getTotalActiveBalance(state),
-        beaconStateAccessors.getBalanceChurnLimit(stateElectra));
-  }
-
-  private UInt64 computeWeakSubjectivityPeriodFromTotalActiveBalance(
-      final SpecConfig constants, final UInt64 totalActiveBalance, final UInt64 delta) {
-    final UInt64 epochsForValidatorSetChurn =
-        safetyDecay.times(totalActiveBalance).dividedBy(delta.times(2).times(100));
-    return epochsForValidatorSetChurn.plus(constants.getMinValidatorWithdrawabilityDelay());
-  }
-
-  @VisibleForTesting
-  @SuppressWarnings("JavaCase") // Mathematicians...
-  UInt64 computeWeakSubjectivityPeriod(
-      final SpecVersion specVersion,
-      final int activeValidatorCount,
-      final UInt64 totalValidatorBalance) {
-    final SpecConfig constants = specVersion.getConfig();
-    final UInt64 N = UInt64.valueOf(activeValidatorCount);
-    final UInt64 t = totalValidatorBalance.dividedBy(N).dividedBy(EthConstants.ETH_TO_GWEI);
-    final UInt64 T = constants.getMaxEffectiveBalance().dividedBy(EthConstants.ETH_TO_GWEI);
-    final UInt64 delta =
-        specVersion.beaconStateAccessors().getValidatorChurnLimit(activeValidatorCount);
-    final UInt64 Delta =
-        UInt64.valueOf(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
-    final UInt64 D = safetyDecay;
-
-    final UInt64 wsPeriod;
-    final UInt64 maxBalanceMultiplier = D.times(3).plus(200);
-    final UInt64 scaledMaxBalance = T.times(maxBalanceMultiplier);
-    final UInt64 scaledAverageBalance = t.times(D.times(12).plus(200));
-    if (scaledMaxBalance.isLessThan(scaledAverageBalance)) {
-      final UInt64 churnDivisor = delta.times(600).times(t.times(2).plus(T));
-      final UInt64 epochsForValidatorChurnSet =
-          N.times(scaledAverageBalance.minus(scaledMaxBalance)).dividedBy(churnDivisor);
-      final UInt64 epochsForBalanceTopUps =
-          N.times(maxBalanceMultiplier).dividedBy(Delta.times(600));
-
-      wsPeriod = epochsForValidatorChurnSet.max(epochsForBalanceTopUps);
-    } else {
-      final UInt64 divisor = Delta.times(200).times(T.minus(t));
-      wsPeriod = N.times(D).times(t).times(3).dividedBy(divisor);
-    }
-
-    return wsPeriod.plus(constants.getMinValidatorWithdrawabilityDelay());
-  }
-
-  interface StateCalculator {
-    static StateCalculator getDefaultCalculator(final Spec spec) {
-      return new StateCalculator() {
-        @Override
-        public int getActiveValidators(final BeaconState state) {
-          final UInt64 currentEpoch = spec.getCurrentEpoch(state);
-          return spec.getActiveValidatorIndices(state, currentEpoch).size();
-        }
-
-        @Override
-        public UInt64 getTotalActiveValidatorBalance(
-            final BeaconState state, final int activeValidatorCount) {
-          return spec.getTotalActiveBalance(state);
-        }
-      };
-    }
-
-    static StateCalculator createStaticCalculator(
-        final int activeValidators, final UInt64 totalActiveValidatorBalance) {
-      return new StateCalculator() {
-        @Override
-        public int getActiveValidators(final BeaconState state) {
-          return activeValidators;
-        }
-
-        @Override
-        public UInt64 getTotalActiveValidatorBalance(
-            final BeaconState state, final int activeValidatorCount) {
-          return totalActiveValidatorBalance;
-        }
-      };
-    }
-
-    int getActiveValidators(final BeaconState state);
-
-    UInt64 getTotalActiveValidatorBalance(final BeaconState state, final int activeValidatorCount);
+    return spec.atSlot(state.getSlot())
+        .weakSubjectivityCalculator()
+        .computeWeakSubjectivityPeriod(state);
   }
 }

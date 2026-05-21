@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGlo
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ProposerPreferencesUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.weaksubjectivity.WeakSubjectivityCalculatorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.forktransition.HezeStateUpgrade;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
@@ -73,6 +74,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final BeaconStateMutatorsGloas beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculatorGloas weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtilGloas attestationUtil,
@@ -98,6 +100,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -135,6 +138,10 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifierGloas operationSignatureVerifier =
         new OperationSignatureVerifierGloas(miscHelpers, beaconStateAccessors, predicates);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculatorGloas weakSubjectivityCalculator =
+        new WeakSubjectivityCalculatorGloas(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtilGloas validatorsUtil =
@@ -241,6 +248,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,

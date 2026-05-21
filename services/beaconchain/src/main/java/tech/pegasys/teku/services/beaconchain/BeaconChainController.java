@@ -675,8 +675,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void validateWeakSubjectivityPeriod(final RecentChainData client) {
     final AnchorPoint latestFinalizedAnchor = client.getStore().getLatestFinalized();
     final UInt64 currentSlot = getCurrentSlot(client.getGenesisTime());
-    final WeakSubjectivityCalculator wsCalculator =
-        WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity());
+    final WeakSubjectivityCalculator wsCalculator = new WeakSubjectivityCalculator(spec);
     wsInitializer.validateAnchorIsWithinWeakSubjectivityPeriod(
         latestFinalizedAnchor, currentSlot, spec, wsCalculator);
   }
@@ -2362,8 +2361,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (isAllowSyncOutsideWeakSubjectivityPeriod()) {
       maybeWsCalculator = Optional.empty();
     } else {
-      maybeWsCalculator =
-          Optional.of(WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity()));
+      maybeWsCalculator = Optional.of(new WeakSubjectivityCalculator(spec));
     }
 
     // Validate
