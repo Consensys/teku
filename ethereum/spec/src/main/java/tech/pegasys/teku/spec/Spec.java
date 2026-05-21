@@ -1408,6 +1408,15 @@ public class Spec {
         .map(this::computeStartSlotAtEpoch);
   }
 
+  public Optional<UInt64> computeFirstSlotWithDataColumnSidecarSupport() {
+    if (!supportsDataColumnSidecars()) {
+      return Optional.empty();
+    }
+    return getSpecConfigFulu()
+        .map(SpecConfigFulu::getFuluForkEpoch)
+        .map(this::computeStartSlotAtEpoch);
+  }
+
   // Electra Utils
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return atState(state).miscHelpers().isFormerDepositMechanismDisabled(state);

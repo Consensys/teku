@@ -90,7 +90,7 @@ class BlockProductionDutyLoaderTest {
   @Test
   void shouldScheduleBlockProductionAndInvokePreferencesPublisher() {
     final UInt64 epoch = UInt64.valueOf(1);
-    final ProposerDuties duties = createProposerDuties();
+    final ProposerDuties duties = createProposerDuties(false);
     when(validatorApiChannel.getProposerDuties(epoch, true))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
@@ -104,7 +104,7 @@ class BlockProductionDutyLoaderTest {
   @Test
   void shouldContinueSchedulingWhenPublishProposerPreferencesThrows() {
     final UInt64 epoch = UInt64.valueOf(1);
-    final ProposerDuties duties = createProposerDuties();
+    final ProposerDuties duties = createProposerDuties(false);
     when(validatorApiChannel.getProposerDuties(epoch, true))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
     // Simulate a failure inside the proposer preferences callback.
@@ -118,14 +118,28 @@ class BlockProductionDutyLoaderTest {
     verify(publishProposerPreferences).accept(epoch, duties);
   }
 
-  private ProposerDuties createProposerDuties() {
+  @Test
+  void shouldScheduleBlockProductionWhenExecutionOptimistic() {
+    final UInt64 epoch = UInt64.valueOf(1);
+    final ProposerDuties duties = createProposerDuties(true);
+    when(validatorApiChannel.getProposerDuties(epoch, true))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
+
+    loadDuties(epoch);
+
+    verify(scheduledDuties).scheduleProduction(eq(UInt64.valueOf(9)), eq(validator1));
+    verify(scheduledDuties).scheduleProduction(eq(UInt64.valueOf(10)), eq(validator2));
+    verify(publishProposerPreferences).accept(epoch, duties);
+  }
+
+  private ProposerDuties createProposerDuties(final boolean executionOptimistic) {
     final Bytes32 dependentRoot = dataStructureUtil.randomBytes32();
     return new ProposerDuties(
         dependentRoot,
         List.of(
             new ProposerDuty(validator1.getPublicKey(), validator1Index, UInt64.valueOf(9)),
             new ProposerDuty(validator2.getPublicKey(), validator2Index, UInt64.valueOf(10))),
-        false);
+        executionOptimistic);
   }
 
   private void loadDuties(final UInt64 epoch) {
