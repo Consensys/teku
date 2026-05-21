@@ -21,17 +21,8 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -58,7 +49,7 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
     final GossipBlsToExecutionChangeMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", GossipBlsToExecutionChangeMetaData.class);
     final GossipBlsToExecutionChangeConfig config =
-            loadYaml(testDefinition, "config.yaml", GossipBlsToExecutionChangeConfig.class);
+        loadYaml(testDefinition, "config.yaml", GossipBlsToExecutionChangeConfig.class);
     final Spec spec = testDefinition.getSpec();
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
 
@@ -90,10 +81,10 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
 
       if (isBeforeCapella(spec, state, config, timeProvider.getTimeInSeconds())) {
         assertThat(message.getExpected())
-                .describedAs(
-                        "Expected ignore for BLS-to-execution-change %s before Capella",
-                        message.getMessage())
-                .isEqualTo("ignore");
+            .describedAs(
+                "Expected ignore for BLS-to-execution-change %s before Capella",
+                message.getMessage())
+            .isEqualTo("ignore");
         continue;
       }
 
@@ -151,10 +142,10 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
   }
 
   private static boolean isBeforeCapella(
-          final Spec spec,
-          final BeaconState state,
-          final GossipBlsToExecutionChangeConfig config,
-          final UInt64 currentTimeSeconds) {
+      final Spec spec,
+      final BeaconState state,
+      final GossipBlsToExecutionChangeConfig config,
+      final UInt64 currentTimeSeconds) {
     final UInt64 currentSlot = spec.getCurrentSlot(currentTimeSeconds, state.getGenesisTime());
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
     return currentEpoch.isLessThan(config.getCapellaForkEpoch());
