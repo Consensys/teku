@@ -4,7 +4,7 @@
 
 Introduce a minimal production-preparation state in `ForkChoiceNotifierImpl` so block production no longer depends on fallback recalculation in `internalGetPayloadId`.
 
-The design assumes that `forkchoiceUpdated` with a proposing slot is always called before `getPayloadId` for that block. Under that invariant, `getPayloadId` should consume the already-prepared production state or fail clearly if the preparation is missing or expired.
+The design assumes that `forkchoiceUpdated` with a requested block production slot is always called before `getPayloadId` for that block. Under that invariant, `getPayloadId` should consume the already-prepared production state or fail clearly if the preparation is missing or expired.
 
 This design intentionally avoids the broader session redesign. It only adds the state needed to make production payload attributes awaitable and parent/slot scoped.
 
@@ -12,7 +12,7 @@ This design intentionally avoids the broader session redesign. It only adds the 
 
 - Remove the fallback recalculation attempt from `internalGetPayloadId`.
 - Make block-production payload attributes awaitable when `getPayloadId` arrives before async calculation completes.
-- Keep production attributes tied to the pinned/proposer head selected for block production.
+- Keep production attributes tied to the pinned block-production head selected for block production.
 - Restore late-block reorg suppression via `shouldOverrideForkChoiceUpdate`.
 - Calculate payload attributes from the same head used by the FCU being sent.
 - Keep `getStateInEpoch` for proposer-connectivity checks only.
@@ -42,7 +42,7 @@ The future represents the complete production path needed by `getPayloadId`: pay
 
 ## Head Update Path
 
-For `internalForkChoiceUpdated(forkChoiceState, proposingSlot = empty)`:
+For `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = empty)`:
 
 1. If late-block reorg is enabled and `recentChainData.shouldOverrideForkChoiceUpdate(...)` says the ordinary head should be overridden, skip replacing/sending the ordinary FCU.
 2. Otherwise replace ordinary `forkChoiceUpdateData` with the new head.
@@ -63,11 +63,11 @@ If block production is so late that its preparation has already expired, `getPay
 
 ## Production Path
 
-For `internalForkChoiceUpdated(forkChoiceState, proposingSlot = N)`:
+For `internalForkChoiceUpdated(forkChoiceState, requestedBlockProductionSlot = N)`:
 
-1. Use the pinned/proposer head in `forkChoiceState`.
+1. Use the pinned block-production head in `forkChoiceState`.
 2. Create or replace `BlockProductionPreparation` for slot `N` and that parent.
-3. Calculate payload attributes for slot `N` from the pinned/proposer head state.
+3. Calculate payload attributes for slot `N` from the pinned block-production head state.
 4. Send the production FCU.
 5. Propagate the production FCU execution payload context into the preparation future.
 
@@ -96,7 +96,7 @@ Add or update unit tests for:
 
 - `getPayloadId` waits for pending production payload attributes and resolves through the preparation future.
 - `getPayloadId` fails when no matching production preparation exists.
-- Production preparation calculates payload attributes from the pinned/proposer head, not a later chain head.
+- Production preparation calculates payload attributes from the pinned block-production head, not a later chain head.
 - Non-production FCU updates are skipped when late-block reorg override is active.
 - Payload attribute calculation retrieves state from the FCU head.
 - Attestations due clears expired production preparation and prepares `slot + 1`.
