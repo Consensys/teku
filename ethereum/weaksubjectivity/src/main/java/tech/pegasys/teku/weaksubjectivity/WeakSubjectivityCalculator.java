@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
+
 import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -21,6 +24,9 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**
@@ -60,14 +66,11 @@ public class WeakSubjectivityCalculator {
    */
   public boolean isWithinWeakSubjectivityPeriod(
       final CheckpointState finalizedCheckpoint, final UInt64 currentSlot) {
-    UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint);
+    final UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint);
+    final UInt64 wsStateEpoch = spec.computeEpochAtSlot(finalizedCheckpoint.getState().getSlot());
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
-    return finalizedCheckpoint
-        .getCheckpoint()
-        .getEpoch()
-        .plus(wsPeriod)
-        .isGreaterThanOrEqualTo(currentEpoch);
+    return wsStateEpoch.plus(wsPeriod).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   /**
@@ -76,12 +79,55 @@ public class WeakSubjectivityCalculator {
    */
   public UInt64 computeWeakSubjectivityPeriod(final CheckpointState checkpointState) {
     final BeaconState state = checkpointState.getState();
+    final SpecVersion specVersion = spec.atSlot(state.getSlot());
+    // https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/weak-subjectivity.md
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(GLOAS)) {
+      return computeWeakSubjectivityPeriodForGloas(specVersion, state);
+    }
+    // https://github.com/ethereum/consensus-specs/blob/master/specs/electra/weak-subjectivity.md
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
+      return computeWeakSubjectivityPeriodForElectra(specVersion, state);
+    }
+    // https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/weak-subjectivity.md
     final int activeValidators = stateCalculator.getActiveValidators(state);
     final UInt64 totalActiveValidatorBalance =
         stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
-    final SpecVersion specVersion = spec.atEpoch(checkpointState.getEpoch());
     return computeWeakSubjectivityPeriod(
         specVersion, activeValidators, totalActiveValidatorBalance);
+  }
+
+  private UInt64 computeWeakSubjectivityPeriodForGloas(
+      final SpecVersion specVersion, final BeaconState state) {
+    final BeaconStateAccessorsGloas beaconStateAccessors =
+        BeaconStateAccessorsGloas.required(specVersion.beaconStateAccessors());
+    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
+    final UInt64 delta =
+        beaconStateAccessors
+            .getExitChurnLimit(stateElectra)
+            .times(2)
+            .dividedBy(3)
+            .plus(beaconStateAccessors.getActivationChurnLimit(stateElectra).dividedBy(3))
+            .plus(beaconStateAccessors.getConsolidationChurnLimit(stateElectra));
+    return computeWeakSubjectivityPeriodFromTotalActiveBalance(
+        specVersion.getConfig(), beaconStateAccessors.getTotalActiveBalance(state), delta);
+  }
+
+  private UInt64 computeWeakSubjectivityPeriodForElectra(
+      final SpecVersion specVersion, final BeaconState state) {
+    final BeaconStateAccessorsElectra beaconStateAccessors =
+        BeaconStateAccessorsElectra.required(specVersion.beaconStateAccessors());
+    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
+    return computeWeakSubjectivityPeriodFromTotalActiveBalance(
+        specVersion.getConfig(),
+        beaconStateAccessors.getTotalActiveBalance(state),
+        beaconStateAccessors.getBalanceChurnLimit(stateElectra));
+  }
+
+  private UInt64 computeWeakSubjectivityPeriodFromTotalActiveBalance(
+      final SpecConfig constants, final UInt64 totalActiveBalance, final UInt64 delta) {
+    final UInt64 epochsForValidatorSetChurn =
+        safetyDecay.times(totalActiveBalance).dividedBy(delta.times(2).times(100));
+    return epochsForValidatorSetChurn.plus(constants.getMinValidatorWithdrawabilityDelay());
   }
 
   @VisibleForTesting
