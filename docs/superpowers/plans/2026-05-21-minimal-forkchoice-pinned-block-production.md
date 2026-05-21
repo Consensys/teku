@@ -549,12 +549,12 @@ private void prepareNextSlotProposal(final UInt64 slot) {
 }
 ```
 
-- [ ] **Step 5: Add pinned production start helper**
+- [ ] **Step 5: Add block-production fork choice pinning helper**
 
 Add:
 
 ```java
-private void startPinnedBlockProduction(
+private void pinForkChoiceStateForBlockProduction(
     final ForkChoiceState forkChoiceState, final UInt64 requestedBlockProductionSlot) {
   final ForkChoiceUpdateData productionForkChoiceUpdateData =
       forkChoiceUpdateData.withFreshForkChoiceState(forkChoiceState);
@@ -673,7 +673,7 @@ In `internalForkChoiceUpdated`, replace the `if (proposingSlot.isPresent())` bra
 clearPinnedBlockProductionIfHeadAdvanced(forkChoiceState);
 
 if (requestedBlockProductionSlot.isPresent()) {
-  startPinnedBlockProduction(forkChoiceState, requestedBlockProductionSlot.orElseThrow());
+  pinForkChoiceStateForBlockProduction(forkChoiceState, requestedBlockProductionSlot.orElseThrow());
   return;
 }
 ```
