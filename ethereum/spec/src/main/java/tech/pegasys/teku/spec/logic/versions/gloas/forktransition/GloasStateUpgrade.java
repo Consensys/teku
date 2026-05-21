@@ -195,10 +195,14 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         }
         // If there is a valid pending deposit for a new validator with this pubkey, keep this
         // deposit in the pending queue to be applied to that validator later.
-        final boolean isPendingValidator =
-            verifiedPendingValidatorPubkeys.contains(pubkey)
-                || (miscHelpers.isPendingValidator(pendingDeposits, pubkey)
-                    && verifiedPendingValidatorPubkeys.add(pubkey));
+        boolean isPendingValidator;
+        if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
+          isPendingValidator = true;
+        } else {
+          isPendingValidator =
+              miscHelpers.isPendingValidator(pendingDeposits, pubkey)
+                  && verifiedPendingValidatorPubkeys.add(pubkey);
+        }
         if (isPendingValidator) {
           pendingDeposits.add(deposit);
           continue;
