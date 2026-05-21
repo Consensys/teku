@@ -51,9 +51,6 @@ public class ForkChoiceUpdateData {
       new SafeFuture<>();
   private UInt64 toBeSentAtTime = UInt64.ZERO;
 
-  private long payloadBuildingAttributesSequenceProducer = 0;
-  private long payloadBuildingAttributesSequenceConsumer = -1;
-
   public ForkChoiceUpdateData() {
     this.forkChoiceState = DEFAULT_FORK_CHOICE_STATE;
     this.payloadBuildingAttributes = Optional.empty();
@@ -89,6 +86,10 @@ public class ForkChoiceUpdateData {
     return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
   }
 
+  public ForkChoiceUpdateData withFreshForkChoiceState(final ForkChoiceState forkChoiceState) {
+    return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
+  }
+
   public ForkChoiceUpdateData withPayloadBuildingAttributes(
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     if (this.payloadBuildingAttributes.equals(payloadBuildingAttributes)) {
@@ -109,55 +110,12 @@ public class ForkChoiceUpdateData {
   public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadBuildingAttributesAsync(
       final Supplier<SafeFuture<Optional<PayloadBuildingAttributes>>> payloadAttributesCalculator,
       final Executor executor) {
-    // we want to preserve ordering in payload calculation,
-    // so we first generate a sequence for each calculation request
-    final long sequenceNumber = payloadBuildingAttributesSequenceProducer++;
-
     return payloadAttributesCalculator
         .get()
         .thenApplyAsync(
-            newPayloadBuildingAttributes -> {
-              // to preserve ordering we make sure we haven't already calculated a payload that has
-              // been requested later than the current one
-              if (sequenceNumber <= payloadBuildingAttributesSequenceConsumer) {
-                LOG.debug(
-                    "Ignoring calculated payload building attributes since it violates ordering");
-                return Optional.empty();
-              }
-              payloadBuildingAttributesSequenceConsumer = sequenceNumber;
-              return Optional.of(this.withPayloadBuildingAttributes(newPayloadBuildingAttributes));
-            },
+            newPayloadBuildingAttributes ->
+                Optional.of(this.withPayloadBuildingAttributes(newPayloadBuildingAttributes)),
             executor);
-  }
-
-  public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {
-    if (payloadBuildingAttributes.isEmpty()) {
-      LOG.debug("isPayloadIdSuitable - payloadAttributes.isEmpty, returning false");
-      // EL is not building a block
-      return false;
-    }
-
-    final PayloadBuildingAttributes attributes = this.payloadBuildingAttributes.get();
-    if (!attributes.timestamp().equals(timestamp)) {
-      LOG.debug("isPayloadIdSuitable - wrong timestamp, returning false");
-      // EL building a block with wrong timestamp
-      return false;
-    }
-
-    // payloadId is suitable if builds on top of the correct parent hash
-    if (parentExecutionHash.isZero()) {
-      // pre-merge, must build on top of a detected terminal block
-      boolean isSuitable =
-          terminalBlockHash.isPresent()
-              && forkChoiceState.headExecutionBlockHash().equals(terminalBlockHash.get());
-      LOG.debug("isPayloadIdSuitable - pre-merge: returning {}", isSuitable);
-      return isSuitable;
-    } else {
-      // post-merge, must build on top of the existing parent
-      boolean isSuitable = forkChoiceState.headExecutionBlockHash().equals(parentExecutionHash);
-      LOG.debug("isPayloadIdSuitable - post-merge: returning {}", isSuitable);
-      return isSuitable;
-    }
   }
 
   public Optional<PayloadBuildingAttributes> getPayloadBuildingAttributes() {
