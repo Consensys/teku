@@ -44,7 +44,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -117,9 +116,7 @@ public class HistoricalBatchFetcherDenebTest {
 
     chainDataClient =
         new CombinedChainDataClient(
-            storageSystem.recentChainData(),
-            mock(StorageQueryChannel.class),
-            spec);
+            storageSystem.recentChainData(), mock(StorageQueryChannel.class), spec);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =
