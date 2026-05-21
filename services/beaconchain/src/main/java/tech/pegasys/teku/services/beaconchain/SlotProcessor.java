@@ -256,7 +256,7 @@ public class SlotProcessor {
     final UInt64 earliestTimeInMillis =
         nodeSlotStartTimeMillis.plus(spec.getAttestationDueMillis(calculatedSlot));
 
-    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
+    return spec.isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   // Attestations are due 3/4 of the way through the slots time period
@@ -267,7 +267,7 @@ public class SlotProcessor {
     return spec.getPayloadAttestationDueMillis(calculatedSlot)
         .filter(__ -> isProcessingDueForSlot(calculatedSlot, onTickSlotPayloadAttestation))
         .map(nodeSlotStartTimeMillis::plus)
-        .map(earliestTimeMillis -> isTimeReached(currentTimeMillis, earliestTimeMillis))
+        .map(earliestTimeMillis -> spec.isTimeReached(currentTimeMillis, earliestTimeMillis))
         .orElse(false);
   }
 
@@ -287,7 +287,7 @@ public class SlotProcessor {
         spec.computeTimeMillisAtSlot(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
         nextEpochStartTimeMillis.minusMinZero(spec.getAttestationDueMillis(firstSlotOfNextEpoch));
-    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
+    return spec.isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   boolean isFutureBlockProductionPreparationDue(
@@ -300,11 +300,7 @@ public class SlotProcessor {
         spec.computeTimeMillisAtSlot(calculatedSlot.increment(), genesisTimeMillis)
             .minus(BLOCK_CREATION_TOLERANCE_MS);
 
-    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
-  }
-
-  boolean isTimeReached(final UInt64 currentTime, final UInt64 earliestTime) {
-    return currentTime.isGreaterThanOrEqualTo(earliestTime);
+    return spec.isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   private void processSlotStart(final UInt64 nodeEpoch) {

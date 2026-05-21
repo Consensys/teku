@@ -37,4 +37,40 @@ public class LimitedSetTest {
     assertThat(set.contains(3)).isTrue();
     assertThat(set.contains(1)).isTrue();
   }
+
+  @Test
+  public void createSynchronizedNatural_evictNaturalOrder() {
+    final Set<Integer> set = LimitedSet.createSynchronizedNatural(2);
+    set.add(1);
+    assertThat(set.size()).isEqualTo(1);
+    set.add(2);
+    assertThat(set.size()).isEqualTo(2);
+
+    // Re-add element 1 then add a new element that will refresh it
+    set.add(1);
+
+    set.add(3);
+    assertThat(set.size()).isEqualTo(2);
+    // Element 2 should have been evicted
+    assertThat(set.contains(3)).isTrue();
+    assertThat(set.contains(1)).isTrue();
+  }
+
+  @Test
+  public void createSynchronizedNatural_shouldNotRefreshNaturalOrderOnRead() {
+    final Set<Integer> set = LimitedSet.createSynchronizedNatural(2);
+    set.add(1);
+    assertThat(set.size()).isEqualTo(1);
+    set.add(3);
+    assertThat(set.size()).isEqualTo(2);
+
+    // Read element 1 then add a new element that will put us over the limit
+    assertThat(set.contains(1)).isTrue();
+
+    set.add(2);
+    assertThat(set.size()).isEqualTo(2);
+    // Element 1 should have been evicted
+    assertThat(set.contains(2)).isTrue();
+    assertThat(set.contains(3)).isTrue();
+  }
 }

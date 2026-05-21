@@ -20,7 +20,10 @@ final class SynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
   final boolean accessOrder;
 
   public SynchronizedLimitedMap(final int maxSize, final boolean accessOrder) {
-    super(Collections.synchronizedMap(createLimitedMap(maxSize, accessOrder)), maxSize);
+    super(
+        Collections.synchronizedMap(
+            accessOrder ? createLimitedMap(maxSize, true) : createWriteOrderedLimitedMap(maxSize)),
+        maxSize);
     this.accessOrder = accessOrder;
   }
 
