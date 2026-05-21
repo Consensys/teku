@@ -410,17 +410,55 @@ void getPayloadId_shouldFailAfterAttestationsDueClearsPinnedBlockProduction() {
 }
 ```
 
-- [ ] **Step 5: Run failing tests**
+- [ ] **Step 5: Add test for stale pinned async attributes after abandonment**
+
+Add:
+
+```java
+@Test
+@SuppressWarnings("unchecked")
+void onForkChoiceUpdated_shouldIgnoreStalePinnedBlockProductionPayloadAttributesAfterAbandonment() {
+  final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+  final BeaconState headState = getHeadState();
+  final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+  final UInt64 blockSlot = headState.getSlot().plus(1);
+  withProposerForSlot(forkChoiceState, headState, blockSlot);
+
+  final AtomicReference<SafeFuture<Optional<PayloadBuildingAttributes>>> actualAttributesFuture =
+      new AtomicReference<>();
+  final SafeFuture<Optional<PayloadBuildingAttributes>> deferredAttributesFuture =
+      new SafeFuture<>();
+  doAnswer(
+          invocation -> {
+            actualAttributesFuture.set(
+                (SafeFuture<Optional<PayloadBuildingAttributes>>) invocation.callRealMethod());
+            return deferredAttributesFuture;
+          })
+      .when(proposersDataManager)
+      .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+
+  notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+  notifier.onAttestationsDue(blockSlot);
+
+  actualAttributesFuture.get().propagateTo(deferredAttributesFuture);
+
+  verifyNoInteractions(executionLayerChannel);
+  assertThatSafeFuture(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot))
+      .isCompletedExceptionally();
+}
+```
+
+- [ ] **Step 6: Run failing tests**
 
 Run:
 
 ```bash
-./gradlew ethereum:statetransition:test --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldWaitForPinnedBlockProductionPayloadAttributes --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldKeepPinnedBlockProductionForSameSlotRetry --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldFailAfterHeadAdvancementClearsPinnedBlockProduction --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldFailAfterAttestationsDueClearsPinnedBlockProduction
+./gradlew ethereum:statetransition:test --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldWaitForPinnedBlockProductionPayloadAttributes --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldKeepPinnedBlockProductionForSameSlotRetry --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldFailAfterHeadAdvancementClearsPinnedBlockProduction --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.getPayloadId_shouldFailAfterAttestationsDueClearsPinnedBlockProduction --tests tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierTest.onForkChoiceUpdated_shouldIgnoreStalePinnedBlockProductionPayloadAttributesAfterAbandonment
 ```
 
 Expected: at least one test fails because pinned block-production state does not exist yet.
 
-- [ ] **Step 6: Commit tests**
+- [ ] **Step 7: Commit tests**
 
 ```bash
 git add ethereum/statetransition/src/test/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceNotifierTest.java
