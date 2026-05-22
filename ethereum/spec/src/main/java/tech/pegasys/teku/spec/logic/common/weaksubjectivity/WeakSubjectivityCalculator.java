@@ -53,7 +53,7 @@ public class WeakSubjectivityCalculator {
     final UInt64 wsStateEpoch = miscHelpers.computeEpochAtSlot(wsState.getSlot());
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
 
-    return wsStateEpoch.plus(wsPeriod).isGreaterThanOrEqualTo(currentEpoch);
+    return currentEpoch.isLessThanOrEqualTo(wsStateEpoch.plus(wsPeriod));
   }
 
   /** Returns the weak subjectivity period for the state */
