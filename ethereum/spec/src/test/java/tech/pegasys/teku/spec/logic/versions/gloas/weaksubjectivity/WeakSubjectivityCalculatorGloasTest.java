@@ -32,9 +32,11 @@ class WeakSubjectivityCalculatorGloasTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
+  // test based on https://eips.ethereum.org/EIPS/eip-8061#weak-subjectivity-period
   @Test
   public void computeWeakSubjectivityPeriod() {
-    final int numberOfConsolidatingValidators = 512;
+    // amounts to total stake of ~ 36M ETH
+    final int numberOfConsolidatingValidators = 17578;
     final BeaconStateTestBuilder stateBuilder =
         new BeaconStateTestBuilder(dataStructureUtil).slot(42);
     for (int i = 0; i < numberOfConsolidatingValidators; i++) {
@@ -45,7 +47,8 @@ class WeakSubjectivityCalculatorGloasTest {
 
     final WeakSubjectivityCalculator calculator = specVersion.weakSubjectivityCalculator();
 
-    final int expectedWeakSubjectivityPeriod = 620;
+    // ~ 7.0 days
+    final int expectedWeakSubjectivityPeriod = 1573;
     assertThat(calculator.computeWeakSubjectivityPeriod(state))
         .isEqualTo(UInt64.valueOf(expectedWeakSubjectivityPeriod));
   }
