@@ -84,6 +84,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -128,6 +130,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -1040,6 +1043,26 @@ public class Spec {
     return atState(state)
         .getWithdrawalsHelpers()
         .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
+  }
+
+  public Optional<List<Withdrawal>> getPayloadAttributeWithdrawals(
+      final BeaconState state,
+      final ForkChoicePayloadStatus parentPayloadStatus,
+      final Optional<ExecutionRequests> parentExecutionRequests)
+      throws BlockProcessingException {
+    if (parentPayloadStatus != ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL) {
+      return getExpectedWithdrawals(state);
+    }
+
+    final ExecutionRequests executionRequests =
+        parentExecutionRequests.orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Parent execution requests are required for GLOAS FULL parent payload attributes"));
+    final BlockProcessorGloas blockProcessorGloas =
+        (BlockProcessorGloas) getBlockProcessor(state.getSlot());
+    return Optional.of(
+        blockProcessorGloas.calculatePayloadExpectedWithdrawals(state, executionRequests).asList());
   }
 
   // Block Processor Utils

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -223,6 +224,21 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
     safelyProcess(() -> withdrawalsHelpers.processWithdrawals(state));
+  }
+
+  public SszList<Withdrawal> calculatePayloadExpectedWithdrawals(
+      final BeaconState state, final ExecutionRequests parentExecutionRequests)
+      throws BlockProcessingException {
+    final BeaconState effectiveState =
+        state.updated(
+            stateMutable -> {
+              final MutableBeaconStateGloas stateGloas =
+                  MutableBeaconStateGloas.required(stateMutable);
+              applyParentExecutionPayload(
+                  stateGloas, parentExecutionRequests, getValidatorExitContextSupplier(stateGloas));
+              processWithdrawals(stateGloas, Optional.empty());
+            });
+    return BeaconStateGloas.required(effectiveState).getPayloadExpectedWithdrawals();
   }
 
   // process_execution_payload_bid
