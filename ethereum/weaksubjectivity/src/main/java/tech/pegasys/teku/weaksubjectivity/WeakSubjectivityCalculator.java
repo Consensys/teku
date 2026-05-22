@@ -28,9 +28,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
  */
 public class WeakSubjectivityCalculator {
 
+  public static WeakSubjectivityCalculator create(final Spec spec) {
+    return new WeakSubjectivityCalculator(spec);
+  }
+
   private final Spec spec;
 
-  public WeakSubjectivityCalculator(final Spec spec) {
+  private WeakSubjectivityCalculator(final Spec spec) {
     this.spec = spec;
   }
 

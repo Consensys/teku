@@ -62,15 +62,17 @@ public class WeakSubjectivityValidator {
   }
 
   public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
-    final WeakSubjectivityCalculator calculator = new WeakSubjectivityCalculator(config.getSpec());
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.moderate());
+        config,
+        WeakSubjectivityCalculator.create(config.getSpec()),
+        WeakSubjectivityViolationPolicy.moderate());
   }
 
   public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
-    final WeakSubjectivityCalculator calculator = new WeakSubjectivityCalculator(config.getSpec());
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.lenient());
+        config,
+        WeakSubjectivityCalculator.create(config.getSpec()),
+        WeakSubjectivityViolationPolicy.lenient());
   }
 
   public Optional<Checkpoint> getWSCheckpoint() {

@@ -341,6 +341,6 @@ public class WeakSubjectivityInitializerTest {
   }
 
   private WeakSubjectivityCalculator createWSCalculator() {
-    return new WeakSubjectivityCalculator(spec);
+    return WeakSubjectivityCalculator.create(spec);
   }
 }
