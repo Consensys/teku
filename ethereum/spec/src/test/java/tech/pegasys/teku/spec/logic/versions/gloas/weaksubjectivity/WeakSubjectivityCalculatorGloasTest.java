@@ -21,47 +21,32 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
-import tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity.WeakSubjectivityCalculatorElectraTest;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class WeakSubjectivityCalculatorGloasTest extends WeakSubjectivityCalculatorElectraTest {
+class WeakSubjectivityCalculatorGloasTest {
 
-  private final Spec spec =
-      TestSpecFactory.createMinimalGloas(
-          builder ->
-              builder
-                  .electraBuilder(e -> e.minPerEpochChurnLimitElectra(ETH_TO_GWEI))
-                  .gloasBuilder(
-                      g ->
-                          g.churnLimitQuotientGloas(65_536)
-                              .consolidationChurnLimitQuotient(65_536)
-                              .maxPerEpochActivationChurnLimitGloas(ETH_TO_GWEI.times(4096))));
+  private final Spec spec = TestSpecFactory.createMainnetGloas();
 
-  @Override
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
   @Test
   public void computeWeakSubjectivityPeriod() {
-    final BeaconState state =
-        createStateWithSingleActiveConsolidatingValidator(spec, ETH_TO_GWEI.times(2048));
+    final int numberOfConsolidatingValidators = 512;
+    final BeaconStateTestBuilder stateBuilder =
+        new BeaconStateTestBuilder(dataStructureUtil).slot(42);
+    for (int i = 0; i < numberOfConsolidatingValidators; i++) {
+      stateBuilder.activeConsolidatingValidator(ETH_TO_GWEI.times(2048));
+    }
+    final BeaconState state = stateBuilder.build();
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
-    final BeaconStateAccessorsGloas accessors =
-        BeaconStateAccessorsGloas.required(specVersion.beaconStateAccessors());
-    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
-    final UInt64 delta =
-        accessors
-            .getExitChurnLimit(stateElectra)
-            .times(2)
-            .dividedBy(3)
-            .plus(accessors.getActivationChurnLimit(stateElectra).dividedBy(3))
-            .plus(accessors.getConsolidationChurnLimit(stateElectra));
-    final UInt64 totalActiveBalance = accessors.getTotalActiveBalance(state);
-    final UInt64 expected =
-        computeExpectedWeakSubjectivityPeriod(specVersion.getConfig(), totalActiveBalance, delta);
 
     final WeakSubjectivityCalculator calculator = specVersion.weakSubjectivityCalculator();
 
-    assertThat(calculator.computeWeakSubjectivityPeriod(state)).isEqualTo(expected);
+    final int expectedWeakSubjectivityPeriod = 620;
+    assertThat(calculator.computeWeakSubjectivityPeriod(state))
+        .isEqualTo(UInt64.valueOf(expectedWeakSubjectivityPeriod));
   }
 }

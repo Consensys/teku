@@ -31,8 +31,8 @@ public class WeakSubjectivityCalculator {
   public static final UInt64 SAFETY_DECAY = UInt64.valueOf(10);
 
   protected final SpecConfig specConfig;
-  protected final BeaconStateAccessors beaconStateAccessors;
-  protected final MiscHelpers miscHelpers;
+  private final BeaconStateAccessors beaconStateAccessors;
+  private final MiscHelpers miscHelpers;
 
   public WeakSubjectivityCalculator(
       final SpecConfig specConfig,

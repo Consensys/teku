@@ -15,60 +15,55 @@ package tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
-import static tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator.SAFETY_DECAY;
 
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class WeakSubjectivityCalculatorElectraTest {
 
-  private final Spec spec =
-      TestSpecFactory.createMinimalElectra(
-          builder -> builder.electraBuilder(e -> e.minPerEpochChurnLimitElectra(ETH_TO_GWEI)));
+  private final Spec spec = TestSpecFactory.createMainnetElectra();
 
-  @Test
-  public void computeWeakSubjectivityPeriod() {
-    final BeaconState state =
-        createStateWithSingleActiveConsolidatingValidator(spec, ETH_TO_GWEI.times(2048));
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  @ParameterizedTest(name = "totalActiveBalanceInEth: {0}")
+  @MethodSource("computeWeakSubjectivityParams")
+  public void computeWeakSubjectivityPeriod(
+      final UInt64 totalActiveBalanceInEth, final int expectedResult) {
+    final int balanceInEth = 2048;
+    final UInt64 numberOfConsolidatingValidators = totalActiveBalanceInEth.dividedBy(balanceInEth);
+    final BeaconStateTestBuilder stateBuilder =
+        new BeaconStateTestBuilder(dataStructureUtil).slot(42);
+    for (int i = 0; i < numberOfConsolidatingValidators.intValue(); i++) {
+      stateBuilder.activeConsolidatingValidator(ETH_TO_GWEI.times(balanceInEth));
+    }
+    final BeaconState state = stateBuilder.build();
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
-    final BeaconStateAccessorsElectra accessors =
-        BeaconStateAccessorsElectra.required(specVersion.beaconStateAccessors());
-    final UInt64 totalActiveBalance = accessors.getTotalActiveBalance(state);
-    final UInt64 expected =
-        computeExpectedWeakSubjectivityPeriod(
-            specVersion.getConfig(),
-            totalActiveBalance,
-            accessors.getBalanceChurnLimit(BeaconStateElectra.required(state)));
 
     final WeakSubjectivityCalculator calculator = specVersion.weakSubjectivityCalculator();
 
-    assertThat(calculator.computeWeakSubjectivityPeriod(state)).isEqualTo(expected);
+    assertThat(calculator.computeWeakSubjectivityPeriod(state))
+        .isEqualTo(UInt64.valueOf(expectedResult));
   }
 
-  protected BeaconState createStateWithSingleActiveConsolidatingValidator(
-      final Spec spec, final UInt64 balance) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    return new BeaconStateTestBuilder(dataStructureUtil)
-        .slot(0)
-        .activeConsolidatingValidator(balance)
-        .build();
-  }
-
-  protected UInt64 computeExpectedWeakSubjectivityPeriod(
-      final SpecConfig specConfig, final UInt64 totalActiveBalance, final UInt64 delta) {
-    return SAFETY_DECAY
-        .times(totalActiveBalance)
-        .dividedBy(delta.times(2).times(100))
-        .plus(specConfig.getMinValidatorWithdrawabilityDelay());
+  // Parameters from the table here:
+  // https://github.com/ethereum/consensus-specs/blob/master/specs/electra/weak-subjectivity.md#modified-compute_weak_subjectivity_period
+  public static Stream<Arguments> computeWeakSubjectivityParams() {
+    return Stream.of(
+        Arguments.of(UInt64.valueOf(1_048_576), 665),
+        Arguments.of(UInt64.valueOf(2_097_152), 1075),
+        Arguments.of(UInt64.valueOf(4_194_304), 1894),
+        Arguments.of(UInt64.valueOf(8_388_608), 3532),
+        Arguments.of(UInt64.valueOf(16_777_216), 3532),
+        Arguments.of(UInt64.valueOf(33_554_432), 3532));
   }
 }
