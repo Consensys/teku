@@ -44,7 +44,9 @@ public class WeakSubjectivityCalculator {
   }
 
   /**
-   * Determines whether the weak subjectivity period computed for the state extends through the
+   * is_within_weak_subjectivity_period
+   *
+   * <p>Determines whether the weak subjectivity period computed for the state extends through the
    * current epoch.
    */
   public boolean isWithinWeakSubjectivityPeriod(
@@ -56,7 +58,11 @@ public class WeakSubjectivityCalculator {
     return currentEpoch.isLessThanOrEqualTo(wsStateEpoch.plus(wsPeriod));
   }
 
-  /** Returns the weak subjectivity period for the state */
+  /**
+   * compute_weak_subjectivity_period
+   *
+   * <p>Returns the weak subjectivity period for the state
+   */
   public UInt64 computeWeakSubjectivityPeriod(final BeaconState state) {
     final int activeValidatorCount =
         beaconStateAccessors
