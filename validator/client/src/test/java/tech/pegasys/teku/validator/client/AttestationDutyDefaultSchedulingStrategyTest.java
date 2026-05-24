@@ -192,6 +192,30 @@ class AttestationDutyDefaultSchedulingStrategyTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
+  void dvtSubmissionForCurrentEpochActivatesImmediately() {
+    final AttestationDutyDefaultSchedulingStrategy dvtStrategy = createDvtStrategy();
+    final UInt64 currentEpoch = UInt64.ONE;
+    final UInt64 firstSlotOfCurrentEpoch = spec.computeStartSlotAtEpoch(currentEpoch);
+    final AttesterDuties duties =
+        new AttesterDuties(
+            false,
+            dataStructureUtil.randomBytes32(),
+            List.of(createAggregatorDuty(firstSlotOfCurrentEpoch)));
+
+    when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
+    when(signer.signAggregationSlot(firstSlotOfCurrentEpoch, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+    when(validatorApiChannel.getBeaconCommitteeSelectionProof(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    dvtStrategy.onSlot(firstSlotOfCurrentEpoch);
+    dvtStrategy.scheduleAllDuties(currentEpoch, duties);
+
+    verify(validatorApiChannel).getBeaconCommitteeSelectionProof(any());
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void dvtSubmissionActivatedOnLaterSlotWhenEpochBoundaryMissed() {
     final AttestationDutyDefaultSchedulingStrategy dvtStrategy = createDvtStrategy();
     final UInt64 lookaheadEpoch = UInt64.ONE;
