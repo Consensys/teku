@@ -14,63 +14,13 @@
 package tech.pegasys.teku.infrastructure.collections;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
-
-  protected static <K, V> Map<K, V> createLimitedMap(final int maxSize, final boolean accessOrder) {
-    return new LinkedHashMap<>(16, 0.75f, accessOrder) {
-      @Override
-      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return this.size() > maxSize;
-      }
-    };
-  }
-
-  protected static <K, V> Map<K, V> createWriteOrderedLimitedMap(final int maxSize) {
-    return new LinkedHashMap<>(16, 0.75f, false) {
-      @Override
-      public V put(final K key, final V value) {
-        if (containsKey(key)) {
-          final V previousValue = remove(key);
-          super.put(key, value);
-          return previousValue;
-        }
-        return super.put(key, value);
-      }
-
-      @Override
-      public V merge(
-          final K key,
-          final V value,
-          final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        if (containsKey(key)) {
-          Objects.requireNonNull(value);
-          Objects.requireNonNull(remappingFunction);
-          final V oldValue = get(key);
-          final V newValue = oldValue == null ? value : remappingFunction.apply(oldValue, value);
-          if (newValue == null) {
-            remove(key);
-          } else {
-            put(key, newValue);
-          }
-          return newValue;
-        }
-        return super.merge(key, value, remappingFunction);
-      }
-
-      @Override
-      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return this.size() > maxSize;
-      }
-    };
-  }
 
   protected final Map<K, V> delegate;
   protected final int maxSize;
