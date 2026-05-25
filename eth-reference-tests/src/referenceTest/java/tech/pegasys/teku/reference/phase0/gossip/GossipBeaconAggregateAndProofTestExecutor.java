@@ -164,7 +164,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         continue;
       }
 
-      /**
+      /*
        * Custom finalized_checkpoint: the fixture pins a finalized root not in our chain, so by
        * definition the attestation's block cannot descend from it. Per spec, this is IGNORE. Teku's
        * skips this check (it relies on the proto-array invariant that every node descends from the
