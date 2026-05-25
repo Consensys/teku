@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,6 +37,18 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 interface ForkChoiceModel {
 
   void processBlock(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      UInt64 blockSlot,
+      Bytes32 blockRoot,
+      Bytes32 parentRoot,
+      Bytes32 stateRoot,
+      BlockCheckpoints checkpoints,
+      Optional<UInt64> executionBlockNumber,
+      Optional<Bytes32> executionBlockHash,
+      boolean optimisticallyProcessed);
+
+  void processAnchorBlock(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
       UInt64 blockSlot,
@@ -130,7 +143,7 @@ interface ForkChoiceModel {
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
   void onPtcVote(
-      Bytes32 blockRoot, UInt64 validatorIndex, boolean payloadPresent, boolean blobDataAvailable);
+      Bytes32 blockRoot, IntSet ptcPositions, boolean payloadPresent, boolean blobDataAvailable);
 
   void onRemovedBlockRoot(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);

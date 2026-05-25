@@ -313,6 +313,9 @@ specrefs:
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
 
+      # Not needed: gloas
+      - get_proposer_dependent_root#gloas
+
       # Not implemented: gloas
       - compute_weak_subjectivity_period#gloas
 

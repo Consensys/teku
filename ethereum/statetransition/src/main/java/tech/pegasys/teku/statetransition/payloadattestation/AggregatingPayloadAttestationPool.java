@@ -62,6 +62,8 @@ public class AggregatingPayloadAttestationPool
 
   private final Subscribers<OperationAddedSubscriber<PayloadAttestationMessage>> subscribers =
       Subscribers.create(true);
+  private final Subscribers<OperationAddedSubscriber<ValidatablePayloadAttestationMessage>>
+      validatedSubscribers = Subscribers.create(true);
 
   private final ConcurrentMap<Bytes, MatchingDataPayloadAttestationGroup>
       payloadAttestationGroupByDataHash = new ConcurrentHashMap<>();
@@ -110,7 +112,7 @@ public class AggregatingPayloadAttestationPool
         .forEach(
             attestation -> {
               pendingPayloadAttestations.remove(attestation);
-              add(attestation, true)
+              add(ValidatablePayloadAttestationMessage.fromNetwork(attestation), true)
                   .finish(
                       err ->
                           LOG.error(
@@ -147,25 +149,39 @@ public class AggregatingPayloadAttestationPool
   }
 
   @Override
+  public void subscribeValidatedOperationAdded(
+      final OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber) {
+    validatedSubscribers.subscribe(subscriber);
+  }
+
+  @Override
   public SafeFuture<InternalValidationResult> addLocal(
       final PayloadAttestationMessage payloadAttestationMessage) {
-    return add(payloadAttestationMessage, false);
+    return add(
+        ValidatablePayloadAttestationMessage.fromValidator(payloadAttestationMessage), false);
   }
 
   @Override
   public SafeFuture<InternalValidationResult> addRemote(
       final PayloadAttestationMessage payloadAttestationMessage,
       final Optional<UInt64> arrivalTimestamp) {
-    return add(payloadAttestationMessage, true);
+    return add(ValidatablePayloadAttestationMessage.fromNetwork(payloadAttestationMessage), true);
   }
 
   private SafeFuture<InternalValidationResult> add(
-      final PayloadAttestationMessage payloadAttestationMessage, final boolean fromNetwork) {
+      final ValidatablePayloadAttestationMessage validatablePayloadAttestationMessage,
+      final boolean fromNetwork) {
+    final PayloadAttestationMessage payloadAttestationMessage =
+        validatablePayloadAttestationMessage.getMessage();
     return validator
-        .validate(payloadAttestationMessage)
+        .validate(validatablePayloadAttestationMessage)
         .thenPeek(
             result -> {
               if (result.isAccept()) {
+                validatedSubscribers.forEach(
+                    subscriber ->
+                        subscriber.onOperationAdded(
+                            validatablePayloadAttestationMessage, result, fromNetwork));
                 subscribers.forEach(
                     subscriber ->
                         subscriber.onOperationAdded(

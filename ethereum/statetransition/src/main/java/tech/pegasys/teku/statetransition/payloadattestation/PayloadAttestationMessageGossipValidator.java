@@ -20,6 +20,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +44,7 @@ public class PayloadAttestationMessageGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final SigningRootUtil signingRootUtil;
@@ -54,14 +56,17 @@ public class PayloadAttestationMessageGossipValidator {
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
+    this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
     signingRootUtil = new SigningRootUtil(spec);
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final PayloadAttestationMessage payloadAttestationMessage) {
-    final PayloadAttestationData data = payloadAttestationMessage.getData();
+      final ValidatablePayloadAttestationMessage validatablePayloadAttestationMessage) {
+    final PayloadAttestationMessage payloadAttestationMessage =
+        validatablePayloadAttestationMessage.getMessage();
+    final PayloadAttestationData data = validatablePayloadAttestationMessage.getData();
 
     /*
      * [IGNORE] The message's slot is for the current slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance),
@@ -127,8 +132,9 @@ public class PayloadAttestationMessageGossipValidator {
                * The state is the head state corresponding to processing the block up to the current slot as determined
                * by the fork choice.
                */
-              if (!gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
-                  payloadAttestationMessage.getValidatorIndex(), state, data.getSlot())) {
+              final IntSet ptcPositions =
+                  validatablePayloadAttestationMessage.calculatePtcPositions(spec, state);
+              if (ptcPositions.isEmpty()) {
                 LOG.trace(
                     "Payload attestation's validator index {} is not in the payload committee for slot {}",
                     payloadAttestationMessage.getValidatorIndex(),
