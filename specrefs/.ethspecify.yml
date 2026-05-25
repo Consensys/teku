@@ -109,6 +109,9 @@ specrefs:
       # Will not implement
       - get_pow_block_at_terminal_total_difficulty#bellatrix
 
+      # Defined in optimistic sync spec, but not implemented as an explicit helper
+      - latest_verified_ancestor#bellatrix
+
       # Functions implemented by KZG library for EIP-4844
       - bit_reversal_permutation#deneb
       - blob_to_kzg_commitment#deneb
@@ -251,10 +254,6 @@ specrefs:
       - update_fast_confirmation_variables#phase0
       - will_current_target_be_justified#phase0
       - will_no_conflicting_checkpoint_be_justified#phase0
-
-      # Not implemented: bellatrix
-      - process_slashings#bellatrix
-      - validate_beacon_block_gossip#bellatrix
 
       # Not implemented: capella
       - prepare_execution_payload#capella

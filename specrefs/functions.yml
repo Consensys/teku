@@ -11119,7 +11119,9 @@
     </spec>
 
 - name: process_slashings#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processSlashings(
   spec: |
     <spec fn="process_slashings" fork="bellatrix" style="diff" hash="0c8f6e6e">
     --- altair
@@ -13607,7 +13609,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="bellatrix" hash="0fd58589">
     def validate_beacon_block_gossip(
