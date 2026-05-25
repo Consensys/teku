@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -1156,7 +1157,7 @@ class ProtoArrayTest {
   }
 
   @Test
-  void gloas_onExecutionPayloadResult_invalid_shouldOnlyInvalidateFullNode() {
+  void gloas_onExecutionPayloadResult_invalid_shouldNotDirectlyInvalidateFullNode() {
     // Set up a Gloas block with base + EMPTY + FULL nodes (FULL stays optimistic)
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     protoArray.createEmptyNode(block1a);
@@ -1167,7 +1168,10 @@ class ProtoArrayTest {
     final int fullNodeIndex = protoArray.getFullNodeIndices().getInt(block1a);
     assertThat(protoArray.getNodeByIndex(fullNodeIndex).isOptimistic()).isTrue();
 
-    // Mark payload as INVALID via the Gloas model (verified transition)
+    final int emptyNodeIndex = protoArray.getEmptyNodeIndices().getInt(block1a);
+
+    // Mark payload as INVALID via the block-root API. Gloas should ignore the direct-invalid flag
+    // here because exact invalidation requires the node-aware FCU path.
     gloasModel.onExecutionPayloadResult(
         protoArray.protoArray(),
         protoArray.blockNodeIndex(),
@@ -1178,14 +1182,11 @@ class ProtoArrayTest {
         new HeadSelectionContext(
             gloasModel, protoArray.blockNodeIndex(), UInt64.ZERO, Optional.empty()));
 
-    // FULL node should be invalid
-    assertThat(protoArray.getNodeByIndex(fullNodeIndex).isInvalid()).isTrue();
-
-    // Base + EMPTY nodes should remain in the tree (not invalidated)
+    // Base + EMPTY + FULL nodes should remain optimistic.
     assertThat(protoArray.contains(block1a)).isTrue();
     assertThat(protoArray.getProtoNode(block1a).orElseThrow().isOptimistic()).isTrue();
-    final int emptyNodeIndex = protoArray.getEmptyNodeIndices().getInt(block1a);
     assertThat(protoArray.getNodeByIndex(emptyNodeIndex).isOptimistic()).isTrue();
+    assertThat(protoArray.getNodeByIndex(fullNodeIndex).isOptimistic()).isTrue();
   }
 
   @Test
@@ -1212,6 +1213,31 @@ class ProtoArrayTest {
             gloasModel, protoArray.blockNodeIndex(), UInt64.ZERO, Optional.empty()));
 
     assertThat(protoArray.getNodeByIndex(emptyNodeIndex).isFullyValidated()).isTrue();
+    assertThat(protoArray.getNodeByIndex(fullNodeIndex).isOptimistic()).isTrue();
+  }
+
+  @Test
+  void gloas_onForkChoiceUpdatedResult_invalid_shouldMarkExactNodeInvalid() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    protoArray.createEmptyNode(block1a);
+    protoArray.onExecutionPayload(block1a, EXECUTION_BLOCK_NUMBER, EXECUTION_BLOCK_HASH);
+
+    final ForkChoiceNode emptyNode =
+        protoArray.blockNodeIndex().getEmptyNode(block1a).orElseThrow();
+    final int emptyNodeIndex = protoArray.getEmptyNodeIndices().getInt(block1a);
+    final int fullNodeIndex = protoArray.getFullNodeIndices().getInt(block1a);
+
+    gloasModel.onForkChoiceUpdatedResult(
+        protoArray.protoArray(),
+        protoArray.blockNodeIndex(),
+        emptyNode,
+        ExecutionPayloadStatus.INVALID,
+        Optional.empty(),
+        true,
+        new HeadSelectionContext(
+            gloasModel, protoArray.blockNodeIndex(), UInt64.ZERO, Optional.empty()));
+
+    assertThat(protoArray.getNodeByIndex(emptyNodeIndex).isInvalid()).isTrue();
     assertThat(protoArray.getNodeByIndex(fullNodeIndex).isOptimistic()).isTrue();
   }
 
@@ -1256,7 +1282,7 @@ class ProtoArrayTest {
         validatorIndex++) {
       ptcVoteTracker.recordVote(
           blockRoot,
-          UInt64.valueOf(validatorIndex),
+          IntSet.of(validatorIndex),
           validatorIndex < payloadPresentVoteCount,
           validatorIndex < dataAvailableVoteCount);
     }

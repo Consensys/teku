@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -131,6 +132,65 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         executionBlockHash,
         isParentOptimistic);
     blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
+  }
+
+  /**
+   * Inserts a Gloas finalized-boundary block as an anchor instead of as a normal block.
+   *
+   * <p>Normal Gloas blocks require their parent variants to already exist so BASE, EMPTY, and FULL
+   * nodes can be attached consistently. A finalized anchor deliberately has no tracked parent node:
+   * it keeps the finalized block's real parent root as metadata, but makes the block's BASE node a
+   * root in protoarray so descendants can attach to the anchor's EMPTY or FULL variant after older
+   * finalized nodes have been pruned.
+   */
+  @Override
+  public void processAnchorBlock(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final Optional<UInt64> maybeExecutionBlockNumber,
+      final Optional<Bytes32> maybeExecutionBlockHash,
+      final boolean optimisticallyProcessed) {
+    // Anchor blocks preserve their real beacon parent root as metadata while deliberately having
+    // no tracked parent node. Descendants then attach to the anchor's FULL or EMPTY child.
+    final ForkChoiceNode baseNode = ForkChoiceNode.createBase(blockRoot);
+    if (blockNodeIndex.getBaseNode(blockRoot).isEmpty()) {
+      protoArray.addNode(
+          baseNode,
+          blockSlot,
+          parentRoot,
+          Optional.empty(),
+          stateRoot,
+          checkpoints,
+          maybeExecutionBlockNumber.orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+          maybeExecutionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+          optimisticallyProcessed);
+      blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
+    } else {
+      blockNodeIndex
+          .getBaseNode(blockRoot)
+          .flatMap(protoArray::getNode)
+          .ifPresent(node -> node.setParentIndex(Optional.empty()));
+    }
+
+    if (blockNodeIndex.getEmptyNode(blockRoot).isEmpty()) {
+      final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+      protoArray.addNode(
+          emptyNode,
+          blockSlot,
+          parentRoot,
+          Optional.of(baseNode),
+          stateRoot,
+          checkpoints,
+          maybeExecutionBlockNumber.orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+          maybeExecutionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+          optimisticallyProcessed);
+      blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
+    }
   }
 
   @VisibleForTesting
@@ -413,23 +473,13 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       // import
       blockNodeIndex.getFullNode(blockRoot).ifPresent(protoArray::markNodeValid);
     } else if (status.isInvalid()) {
-      if (verifiedInvalidTransition) {
-        // In Gloas, an invalid execution payload only invalidates the FULL path.
-        // The beacon block (base + EMPTY) remains valid — the builder, not the proposer, is at
-        // fault.
-        blockNodeIndex
-            .getFullNode(blockRoot)
-            .ifPresent(
-                node -> protoArray.markNodeInvalid(node, latestValidHash, headSelectionContext));
-      } else {
-        // Unverified: a child's payload was invalid, pointing at this parent.
-        // The base node is the correct anchor for parent-chain invalidation search.
-        blockNodeIndex
-            .getBaseNode(blockRoot)
-            .ifPresent(
-                node ->
-                    protoArray.markParentChainInvalid(node, latestValidHash, headSelectionContext));
-      }
+      // Block-root invalidation in Gloas is upstream-oriented. Exact node verdicts are handled by
+      // onForkChoiceUpdatedResult, which has the specific BASE/EMPTY/FULL node.
+      blockNodeIndex
+          .getBaseNode(blockRoot)
+          .ifPresent(
+              node ->
+                  protoArray.markParentChainInvalid(node, latestValidHash, headSelectionContext));
     }
   }
 
@@ -444,6 +494,13 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final HeadSelectionContext headSelectionContext) {
     if (status.isValid()) {
       protoArray.markNodeValid(node);
+      return;
+    }
+    if (status.isInvalid() && verifiedInvalidTransition) {
+      // Despite the legacy name, this flag means the caller has a direct invalid verdict for this
+      // exact node. Gloas has multiple nodes per block root, so keep the node-aware FCU result
+      // here.
+      protoArray.markNodeInvalid(node, latestValidHash, headSelectionContext);
       return;
     }
     onExecutionPayloadResult(
@@ -544,11 +601,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   @Override
   public void onPtcVote(
       final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
+      final IntSet ptcPositions,
       final boolean payloadPresent,
       final boolean blobDataAvailable) {
     // Spec mapping: on_payload_attestation_message / notify_ptc_messages
-    ptcVoteTracker.recordVote(blockRoot, validatorIndex, payloadPresent, blobDataAvailable);
+    ptcVoteTracker.recordVote(blockRoot, ptcPositions, payloadPresent, blobDataAvailable);
   }
 
   @Override

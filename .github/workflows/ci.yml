@@ -294,6 +294,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   unitTestsResult:
+    name: unitTests
     runs-on: ubuntu-24.04
     needs: unitTests
     if: always()
@@ -339,6 +340,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   integrationTestsResult:
+    name: integrationTests
     runs-on: ubuntu-24.04
     needs: integrationTests
     if: always()
@@ -384,6 +386,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   propertyTestsResult:
+    name: propertyTests
     runs-on: ubuntu-24.04
     needs: propertyTests
     if: always()
@@ -429,6 +432,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   acceptanceTestsResult:
+    name: acceptanceTests
     runs-on: ubuntu-24.04
     needs: acceptanceTests
     if: always()
@@ -460,6 +464,8 @@ jobs:
   referenceTestsPrep:
     needs: assemble
     runs-on: ubuntu-latest-128
+    outputs:
+      cache-key: ${{ steps.ref-cache-key.outputs.key }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -475,11 +481,24 @@ jobs:
           run-id: ${{ github.run_id }}
           name: assemble-output
           merge-multiple: true
-          path: ${{ github.workspace }}          
+          path: ${{ github.workspace }}
+      - name: Compute reference test cache key
+        id: ref-cache-key
+        shell: bash
+        run: |
+          # Derive the cache key from the refTestVersion definition only, so unrelated
+          # build.gradle edits don't bust the consensus-spec-tests fixtures cache.
+          LINE=$(grep -E '^def refTestVersion' build.gradle)
+          if [ -z "$LINE" ]; then
+            echo "Could not find refTestVersion definition in build.gradle" >&2
+            exit 1
+          fi
+          HASH=$(echo -n "$LINE" | sha256sum | cut -c1-16)
+          echo "key=reftests-$HASH" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+          key: ${{ steps.ref-cache-key.outputs.key }}
       - shell: bash
         run: |
           ls -R ./eth-reference-tests/
@@ -494,11 +513,11 @@ jobs:
         shell: bash
         run: |
           ./gradlew --no-daemon --parallel compileReferenceTestJava
-      - name: Caching reference tests 
+      - name: Caching reference tests
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+          key: ${{ steps.ref-cache-key.outputs.key }}
       - name: Compress reftests
         shell: bash
         run: |
@@ -537,7 +556,7 @@ jobs:
       - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+          key: ${{ needs.referenceTestsPrep.outputs.cache-key }}
       - name: Download reftests
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -593,6 +612,7 @@ jobs:
           retention-days: 1
 
   referenceTestsResult:
+    name: referenceTests
     runs-on: ubuntu-24.04
     needs: referenceTests
     if: always()

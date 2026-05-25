@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.client;
 
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
@@ -23,6 +25,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -30,7 +33,7 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class SyncCommitteeDutyLoader
     extends AbstractDutyLoader<SyncCommitteeDuties, SyncCommitteeScheduledDuties> {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final ValidatorApiChannel validatorApiChannel;
   private final ChainHeadTracker chainHeadTracker;
@@ -76,12 +79,20 @@ public class SyncCommitteeDutyLoader
         .getSyncCommitteeDuties(epoch, validatorIndices)
         .thenPeek(
             maybeDuties ->
-                currentSyncDutyCount.set(maybeDuties.map(d -> d.getDuties().size()).orElse(0)));
+                currentSyncDutyCount.set(
+                    maybeDuties
+                        .filter(duties -> !duties.isExecutionOptimistic())
+                        .map(duties -> duties.getDuties().size())
+                        .orElse(0)));
   }
 
   @Override
   protected SafeFuture<SyncCommitteeScheduledDuties> scheduleAllDuties(
       final UInt64 epoch, final SyncCommitteeDuties duties) {
+    if (duties.isExecutionOptimistic()) {
+      LOG.debug("Skipping Sync committee duties because execution is optimistic.");
+      return NodeSyncingException.failedFuture();
+    }
     final UInt64 lastEpochInCommitteePeriod =
         spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(epoch))
             .computeFirstEpochOfNextSyncCommitteePeriod(epoch)

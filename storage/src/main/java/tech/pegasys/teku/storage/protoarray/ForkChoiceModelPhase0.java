@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -54,6 +55,31 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
         executionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
         optimisticallyProcessed);
     blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
+  }
+
+  @Override
+  public void processAnchorBlock(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<Bytes32> executionBlockHash,
+      final boolean optimisticallyProcessed) {
+    processBlock(
+        protoArray,
+        blockNodeIndex,
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        checkpoints,
+        executionBlockNumber,
+        executionBlockHash,
+        optimisticallyProcessed);
   }
 
   @Override
@@ -198,7 +224,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   @Override
   public void onPtcVote(
       final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
+      final IntSet ptcPositions,
       final boolean payloadPresent,
       final boolean blobDataAvailable) {
     // No-op

@@ -209,11 +209,6 @@ public class GossipValidationHelper {
         .isActiveBuilder(state, builderIndex);
   }
 
-  public boolean isValidatorInPayloadTimelinessCommittee(
-      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
-    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
-  }
-
   public boolean isSlotCurrentOrNext(final UInt64 slot) {
     return recentChainData
         .getCurrentSlot()

@@ -50,7 +50,7 @@ public interface ExecutionPayloadManager {
         public SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
             final UInt64 slot,
             final Bytes32 parentRoot,
-            final ForkChoicePayloadStatus payloadStatus) {
+            final ForkChoicePayloadStatus parentPayloadStatus) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -84,7 +84,7 @@ public interface ExecutionPayloadManager {
 
   /** Retrieves parent execution requests (used in block production) */
   SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
-      UInt64 slot, Bytes32 parentRoot, ForkChoicePayloadStatus payloadStatus);
+      UInt64 slot, Bytes32 parentRoot, ForkChoicePayloadStatus parentPayloadStatus);
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {

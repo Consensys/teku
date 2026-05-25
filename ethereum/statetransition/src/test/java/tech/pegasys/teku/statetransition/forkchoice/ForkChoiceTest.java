@@ -37,6 +37,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +76,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
@@ -83,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
@@ -99,10 +104,12 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
@@ -574,6 +581,40 @@ class ForkChoiceTest {
   }
 
   @Test
+  void payloadAttestationsFromBlock_shouldExpandVotesForDuplicatedPtcValidators() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState attestedBlockState = mock(BeaconState.class);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+    final PayloadAttestationData data =
+        schemaDefinitions
+            .getPayloadAttestationDataSchema()
+            .create(dataStructureUtil.randomBytes32(), slot, true, true);
+    final PayloadAttestation payloadAttestation =
+        schemaDefinitions
+            .getPayloadAttestationSchema()
+            .create(
+                schemaDefinitions
+                    .getPayloadAttestationSchema()
+                    .getAggregationBitsSchema()
+                    .ofBits(0),
+                data,
+                dataStructureUtil.randomSignature());
+
+    doReturn(IntList.of(42, 1, 42, 2, 42)).when(spec).getPtc(attestedBlockState, slot);
+
+    final List<ValidatablePayloadAttestationMessage> messages =
+        forkChoice.getPayloadAttestationMessagesFromBlock(attestedBlockState, payloadAttestation);
+
+    assertThat(messages).hasSize(1);
+    assertThat(messages.get(0).getValidatorIndex()).isEqualTo(UInt64.valueOf(42));
+    assertThat(messages.get(0).calculatePtcPositions(spec, attestedBlockState))
+        .isEqualTo(IntSet.of(0, 2, 4));
+  }
+
+  @Test
   void onBlock_shouldUpdateVotesBasedOnAttesterSlashingEquivocationsInBlocks() {
     final ChainBuilder forkChain = chainBuilder.fork();
     final SignedBlockAndState forkBlock =
@@ -990,8 +1031,50 @@ class ForkChoiceTest {
                 new ForkChoiceUpdatedResult(PayloadStatus.VALID, Optional.empty()))));
 
     verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, PayloadStatus.VALID, false);
+    verify(transitionBlockValidator).verifyAncestorTransitionBlock(blockRoot);
     verify(forkChoiceStrategy, never())
         .onExecutionPayloadResult(eq(blockRoot), eq(PayloadStatus.VALID), anyBoolean());
+  }
+
+  @Test
+  void onForkChoiceUpdatedResult_invalidGloasNode_shouldForwardExactHeadNode() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
+            debugDataDumper,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    final Bytes32 blockRoot = Bytes32.random();
+    final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
+    final PayloadStatus invalidPayloadStatus =
+        PayloadStatus.invalid(Optional.empty(), Optional.of("invalid payload"));
+
+    when(recentChainData.getUpdatableForkChoiceStrategy())
+        .thenReturn(Optional.of(forkChoiceStrategy));
+
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                emptyNode, ONE, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(invalidPayloadStatus, Optional.empty()))));
+
+    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, invalidPayloadStatus, true);
+    verify(forkChoiceStrategy, never())
+        .onExecutionPayloadResult(eq(blockRoot), eq(invalidPayloadStatus), anyBoolean());
   }
 
   @Test
@@ -1127,6 +1210,7 @@ class ForkChoiceTest {
     final ForkChoiceState state = mock(ForkChoiceState.class);
     when(state.headExecutionBlockHash()).thenReturn(Bytes32.random());
     when(state.headBlock()).thenReturn(ForkChoiceNode.createBase(Bytes32.random()));
+    when(state.headBlockSlot()).thenReturn(ZERO);
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
