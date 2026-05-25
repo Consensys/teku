@@ -109,9 +109,6 @@ specrefs:
       # Will not implement
       - get_pow_block_at_terminal_total_difficulty#bellatrix
 
-      # Defined in optimistic sync spec, but not implemented as an explicit helper
-      - latest_verified_ancestor#bellatrix
-
       # Functions implemented by KZG library for EIP-4844
       - bit_reversal_permutation#deneb
       - blob_to_kzg_commitment#deneb

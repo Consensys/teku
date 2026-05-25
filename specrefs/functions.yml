@@ -8107,7 +8107,11 @@
     </spec>
 
 - name: latest_verified_ancestor#bellatrix
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArray.java
+      search: public void markNodeValid(final ForkChoiceNode nodeIdentity) {
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoNode.java
+      search: public boolean isFullyValidated() {
   spec: |
     <spec fn="latest_verified_ancestor" fork="bellatrix" hash="c2ee2c55">
     def latest_verified_ancestor(opt_store: OptimisticStore, block: BeaconBlock) -> BeaconBlock:
