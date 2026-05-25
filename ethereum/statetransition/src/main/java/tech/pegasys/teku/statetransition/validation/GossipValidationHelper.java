@@ -216,21 +216,16 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
-  public boolean isSlotInNextEpoch(final UInt64 slot) {
+  public boolean isSlotInCurrentEpochWithMinSeedLookaheadTolerance(final UInt64 slot) {
     return recentChainData
-        .getCurrentSlot()
+        .getCurrentEpoch()
         .map(
-            currentSlot ->
-                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot).plus(1)))
-        .orElse(false);
-  }
-
-  public boolean isSlotInCurrentEpoch(final UInt64 slot) {
-    return recentChainData
-        .getCurrentSlot()
-        .map(
-            currentSlot ->
-                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot)))
+            currentEpoch -> {
+              final UInt64 slotEpoch = spec.computeEpochAtSlot(slot);
+              return slotEpoch.isGreaterThanOrEqualTo(currentEpoch)
+                  && slotEpoch.isLessThanOrEqualTo(
+                      currentEpoch.plus(spec.atSlot(slot).getConfig().getMinSeedLookahead()));
+            })
         .orElse(false);
   }
 
