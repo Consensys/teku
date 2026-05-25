@@ -298,6 +298,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   unitTestsResult:
+    name: unitTests
     runs-on: ubuntu-24.04
     needs: unitTests
     if: always()
@@ -343,6 +344,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   integrationTestsResult:
+    name: integrationTests
     runs-on: ubuntu-24.04
     needs: integrationTests
     if: always()
@@ -388,6 +390,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   propertyTestsResult:
+    name: propertyTests
     runs-on: ubuntu-24.04
     needs: propertyTests
     if: always()
@@ -433,6 +436,7 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   acceptanceTestsResult:
+    name: acceptanceTests
     runs-on: ubuntu-24.04
     needs: acceptanceTests
     if: always()
@@ -612,6 +616,7 @@ jobs:
           retention-days: 1
 
   referenceTestsResult:
+    name: referenceTests
     runs-on: ubuntu-24.04
     needs: referenceTests
     if: always()
