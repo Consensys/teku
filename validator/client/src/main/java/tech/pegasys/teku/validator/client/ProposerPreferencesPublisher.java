@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.List;
@@ -76,6 +77,12 @@ public class ProposerPreferencesPublisher {
     // for next-epoch duties, BlockProposalUtilFulu's
     // getBlockProposalDependentRoot returns the same value, so we reuse it here.
     final Bytes32 dependentRoot = proposerDuties.getDependentRoot();
+    final int minSeedLookahead = spec.getGenesisSpec().getConfig().getMinSeedLookahead();
+    checkArgument(
+        minSeedLookahead == 1,
+        "Proposer preferences can reuse the proposer duties dependent root only when "
+            + "MIN_SEED_LOOKAHEAD is 1, but it is %s",
+        minSeedLookahead);
 
     final ProposerPreferencesUtil preferencesUtil = spec.getProposerPreferencesUtil(epoch);
 
