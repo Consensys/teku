@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -515,7 +516,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   /**
-   * Records the latest payload-attestation vote for a validator on a given block root.
+   * Records the latest payload-attestation vote for PTC positions on a given block root.
    *
    * <p>Spec mapping: `on_payload_attestation_message(...)` updates the PTC vote material later
    * consumed by `notify_ptc_messages(...)` and the Gloas head-selection helpers.
@@ -524,7 +525,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    */
   public void onPtcVote(
       final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
+      final IntSet ptcPositions,
       final boolean payloadPresent,
       final boolean blobDataAvailable) {
     protoArrayLock.readLock().lock();
@@ -533,7 +534,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           .ifPresent(
               forkChoiceModel ->
                   forkChoiceModel.onPtcVote(
-                      blockRoot, validatorIndex, payloadPresent, blobDataAvailable));
+                      blockRoot, ptcPositions, payloadPresent, blobDataAvailable));
     } finally {
       protoArrayLock.readLock().unlock();
     }

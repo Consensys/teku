@@ -92,6 +92,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -296,7 +297,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         applyPosBlock(step, executionLayer);
 
       } else if (step.containsKey("payload_attestation")) {
-        applyPayloadAttestation(testDefinition, forkChoice, step);
+        applyPayloadAttestation(testDefinition, spec, recentChainData, forkChoice, step);
 
       } else if (step.containsKey("execution_payload")) {
         applyExecutionPayloadEnvelope(testDefinition, forkChoice, executionLayer, step);
@@ -386,6 +387,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   private void applyPayloadAttestation(
       final TestDefinition testDefinition,
+      final Spec spec,
+      final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final Map<String, Object> step) {
     final String payloadAttestationName = get(step, "payload_attestation");
@@ -393,12 +396,28 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         TestDataUtils.loadSsz(
             testDefinition,
             payloadAttestationName + SSZ_SNAPPY_EXTENSION,
-            SchemaDefinitionsGloas.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
+            SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
                 .getPayloadAttestationMessageSchema());
+    final ValidatablePayloadAttestationMessage validatablePayloadAttestationMessage =
+        ValidatablePayloadAttestationMessage.fromNetwork(payloadAttestationMessage);
+    final BeaconState state =
+        safeJoin(
+                recentChainData.retrieveBlockState(
+                    new SlotAndBlockRoot(
+                        payloadAttestationMessage.getData().getSlot(),
+                        payloadAttestationMessage.getData().getBeaconBlockRoot())))
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "State is unavailable for payload attestation slot "
+                            + payloadAttestationMessage.getData().getSlot()
+                            + " and block root "
+                            + payloadAttestationMessage.getData().getBeaconBlockRoot()));
+    validatablePayloadAttestationMessage.calculatePtcPositions(spec, state);
     assertDoesNotThrow(
         () ->
             forkChoice.onPayloadAttestationMessage(
-                payloadAttestationMessage, InternalValidationResult.ACCEPT, true));
+                validatablePayloadAttestationMessage, InternalValidationResult.ACCEPT, true));
   }
 
   private void applyExecutionPayloadEnvelope(
