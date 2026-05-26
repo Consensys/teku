@@ -6000,8 +6000,8 @@
 
 - name: get_sync_subcommittee_pubkeys#altair
   sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/synccommittee/SignedContributionAndProofValidator.java
-      search: private BLSPublicKey getParticipantPublicKey(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
+      search: public SyncSubcommitteeAssignments getSubcommitteeAssignments(
   spec: |
     <spec fn="get_sync_subcommittee_pubkeys" fork="altair" hash="772addda">
     def get_sync_subcommittee_pubkeys(
