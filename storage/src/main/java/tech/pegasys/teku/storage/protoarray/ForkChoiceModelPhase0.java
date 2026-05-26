@@ -160,7 +160,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
       final BlockNodeVariantsIndex blockNodeIndex,
       final ReadOnlyStore store,
       final ForkChoiceNode head) {
-    return false;
+    return shouldExtendPayload(protoArray, blockNodeIndex, store, head.blockRoot());
   }
 
   @Override
