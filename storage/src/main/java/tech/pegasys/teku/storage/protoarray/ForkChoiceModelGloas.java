@@ -323,6 +323,41 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public void rebuildAnchorBlockNodesFromMetadata(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final StoredBlockMetadata block,
+      final boolean optimisticallyProcessed) {
+    final Optional<Bytes32> parentBlockHash =
+        block
+            .getGloasForkChoiceRebuildData()
+            .map(GloasForkChoiceRebuildData::payloadParentBlockHash);
+    processAnchorBlock(
+        protoArray,
+        blockNodeIndex,
+        block.getBlockSlot(),
+        block.getBlockRoot(),
+        block.getParentRoot(),
+        block.getStateRoot(),
+        block.getCheckpointEpochs().orElseThrow(),
+        block.getExecutionBlockNumber(),
+        parentBlockHash,
+        optimisticallyProcessed);
+    block
+        .getGloasForkChoiceRebuildData()
+        .flatMap(this::getFullNodeRebuildPayload)
+        .ifPresent(
+            rebuildPayload ->
+                onExecutionPayload(
+                    protoArray,
+                    blockNodeIndex,
+                    block.getBlockRoot(),
+                    rebuildPayload.executionBlockNumber(),
+                    rebuildPayload.executionBlockHash(),
+                    optimisticallyProcessed));
+  }
+
+  @Override
   public Optional<ForkChoiceNode> resolveVoteNode(
       final Bytes32 voteRoot,
       final UInt64 voteSlot,
