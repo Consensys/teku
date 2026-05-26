@@ -8780,6 +8780,12 @@
 
 - name: prepare_execution_payload#bellatrix
   sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: final Optional<Bytes32> terminalBlockHash) {
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: public Optional<SafeFuture<ForkChoiceUpdatedResult>> send(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionLayerChannel.java
       search: ^  SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated\(
       regex: true
