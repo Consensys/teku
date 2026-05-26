@@ -1068,7 +1068,7 @@ public class Spec {
                 new IllegalStateException(
                     "Parent execution requests are required for GLOAS FULL parent payload attributes"));
     final BlockProcessorGloas blockProcessorGloas =
-        (BlockProcessorGloas) getBlockProcessor(state.getSlot());
+        BlockProcessorGloas.required(getBlockProcessor(state.getSlot()));
     return Optional.of(
         blockProcessorGloas.calculatePayloadExpectedWithdrawals(state, executionRequests).asList());
   }

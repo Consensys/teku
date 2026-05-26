@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -74,6 +75,16 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final AttestationUtilGloas attestationUtilGloas;
+
+  public static BlockProcessorGloas required(final BlockProcessor blockProcessor) {
+    return blockProcessor
+        .toVersionGloas()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected a gloas blockProcessor but got: "
+                        + blockProcessor.getClass().getSimpleName()));
+  }
 
   public BlockProcessorGloas(
       final SpecConfigGloas specConfig,
@@ -239,6 +250,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
               processWithdrawals(stateGloas, Optional.empty());
             });
     return BeaconStateGloas.required(effectiveState).getPayloadExpectedWithdrawals();
+  }
+
+  @Override
+  public Optional<BlockProcessorGloas> toVersionGloas() {
+    return Optional.of(this);
   }
 
   // process_execution_payload_bid
