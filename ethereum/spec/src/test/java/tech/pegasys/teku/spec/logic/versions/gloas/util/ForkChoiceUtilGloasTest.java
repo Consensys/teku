@@ -71,7 +71,7 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
-  void getPayloadAttributeWithdrawalsUsesEffectiveState() throws Exception {
+  void getPayloadAttributeWithdrawalsUsesEffectiveState() {
     final UInt64 stateSlot = gloasSlot.plus(spec.getSlotsPerEpoch(gloasSlot));
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(stateSlot).getSchemaDefinitions());
