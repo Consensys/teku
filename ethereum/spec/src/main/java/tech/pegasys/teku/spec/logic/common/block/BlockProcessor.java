@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 
 public interface BlockProcessor {
 
@@ -181,10 +180,6 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
-    return Optional.empty();
-  }
-
-  default Optional<BlockProcessorGloas> toVersionGloas() {
     return Optional.empty();
   }
 }

@@ -130,7 +130,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -1067,10 +1066,10 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Parent execution requests are required for GLOAS FULL parent payload attributes"));
-    final BlockProcessorGloas blockProcessorGloas =
-        BlockProcessorGloas.required(getBlockProcessor(state.getSlot()));
+    final ForkChoiceUtilGloas forkChoiceUtilGloas =
+        ForkChoiceUtilGloas.required(atState(state).getForkChoiceUtil());
     return Optional.of(
-        blockProcessorGloas.calculatePayloadExpectedWithdrawals(state, executionRequests).asList());
+        forkChoiceUtilGloas.getPayloadAttributeWithdrawals(state, executionRequests).asList());
   }
 
   // Block Processor Utils
