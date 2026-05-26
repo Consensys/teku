@@ -1055,8 +1055,7 @@ public class Spec {
   public Optional<List<Withdrawal>> getPayloadAttributeWithdrawals(
       final BeaconState state,
       final ForkChoicePayloadStatus parentPayloadStatus,
-      final Optional<ExecutionRequests> parentExecutionRequests)
-      throws BlockProcessingException {
+      final Optional<ExecutionRequests> parentExecutionRequests) {
     if (parentPayloadStatus != ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL) {
       return getExpectedWithdrawals(state);
     }
