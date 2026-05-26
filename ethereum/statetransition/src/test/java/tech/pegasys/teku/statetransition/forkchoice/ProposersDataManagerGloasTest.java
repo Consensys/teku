@@ -120,14 +120,15 @@ class ProposersDataManagerGloasTest {
       final ExecutionRequests parentExecutionRequests) {
     final UInt64 builderIndex = UInt64.ZERO;
     final UInt64 parentPayloadValue = UInt64.valueOf(1234);
-    final Bytes32 parentBlockHash = data.randomBytes32();
+    final Bytes32 latestExecutionPayloadBlockHash = Bytes32.fromHexString("0x01");
+    final Bytes32 latestBlockHash = Bytes32.fromHexString("0x02");
     final ExecutionPayloadBid latestExecutionPayloadBid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .create(
                 data.randomBytes32(),
                 data.randomBytes32(),
-                parentBlockHash,
+                latestExecutionPayloadBlockHash,
                 data.randomBytes32(),
                 data.randomEth1Address(),
                 data.randomUInt64(),
@@ -137,17 +138,12 @@ class ProposersDataManagerGloasTest {
                 UInt64.ZERO,
                 data.randomBlobKzgCommitments(),
                 parentExecutionRequests.hashTreeRoot());
-    Bytes32 latestBlockHash = data.randomBytes32();
-    while (latestBlockHash.equals(latestExecutionPayloadBid.getBlockHash())) {
-      latestBlockHash = data.randomBytes32();
-    }
-    final Bytes32 latestBlockHashForState = latestBlockHash;
 
     return data.randomBeaconState(blockSlot)
         .updated(
             state -> {
               final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
-              stateGloas.setLatestBlockHash(latestBlockHashForState);
+              stateGloas.setLatestBlockHash(latestBlockHash);
               stateGloas.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
               stateGloas.setNextWithdrawalBuilderIndex(builderIndex);
               stateGloas.setNextWithdrawalValidatorIndex(UInt64.ZERO);
