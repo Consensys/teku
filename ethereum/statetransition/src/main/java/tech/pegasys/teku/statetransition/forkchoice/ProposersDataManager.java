@@ -211,7 +211,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
     final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
     final ForkChoiceNode currentHeadBlock = forkChoiceState.headBlock();
-    return getStateInEpoch(epoch)
+    return getStateForPayloadBuildingAttributes(blockSlot, forkChoiceState)
         .thenApplyAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
@@ -265,6 +265,12 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlock));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateForPayloadBuildingAttributes(
+      final UInt64 blockSlot, final ForkChoiceState forkChoiceState) {
+    return recentChainData.retrieveBlockState(
+        new SlotAndBlockRoot(blockSlot, forkChoiceState.headBlock().blockRoot()));
   }
 
   // this function MUST return a fee recipient.
