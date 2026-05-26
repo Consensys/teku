@@ -9592,7 +9592,7 @@
 - name: process_deposit_request#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/execution/ExecutionRequestsProcessorElectra.java
-      search: protected void processDepositRequest(
+      search: public void processDepositRequests(
   spec: |
     <spec fn="process_deposit_request" fork="electra" hash="547c4a35">
     def process_deposit_request(state: BeaconState, deposit_request: DepositRequest) -> None:
@@ -9615,7 +9615,7 @@
 - name: process_deposit_request#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionRequestsProcessorGloas.java
-      search: protected void processDepositRequest(
+      search: public void processDepositRequests(
   spec: |
     <spec fn="process_deposit_request" fork="gloas" hash="0e8b94ab">
     def process_deposit_request(state: BeaconState, deposit_request: DepositRequest) -> None:
