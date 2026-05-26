@@ -193,7 +193,8 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                         deposit.getWithdrawalCredentials(),
                         deposit.getAmount(),
                         deposit.getSignature(),
-                        deposit.getSlot());
+                        deposit.getSlot(),
+                        false);
                     return false;
                   }
                   if (miscHelpers.isValidDepositSignature(
