@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -600,11 +601,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   @Override
   public void onPtcVote(
       final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
+      final IntSet ptcPositions,
       final boolean payloadPresent,
       final boolean blobDataAvailable) {
     // Spec mapping: on_payload_attestation_message / notify_ptc_messages
-    ptcVoteTracker.recordVote(blockRoot, validatorIndex, payloadPresent, blobDataAvailable);
+    ptcVoteTracker.recordVote(blockRoot, ptcPositions, payloadPresent, blobDataAvailable);
   }
 
   @Override

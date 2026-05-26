@@ -81,8 +81,8 @@ public class ProposerPreferencesGossipValidatorTest {
     signedProposerPreferences =
         createSignedProposerPreferences(dependentRoot, proposalSlot, validatorIndex);
 
-    when(gossipValidationHelper.isSlotInCurrentEpoch(proposalSlot)).thenReturn(false);
-    when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(true);
+    when(gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot))
+        .thenReturn(true);
     when(gossipValidationHelper.isSlotFromFuture(proposalSlot)).thenReturn(true);
     when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(true);
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
@@ -99,8 +99,9 @@ public class ProposerPreferencesGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenSlotNotInCurrentOrNextEpoch() {
-    when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(false);
+  void shouldIgnore_whenSlotNotInCurrentEpochWithMinSeedLookaheadTolerance() {
+    when(gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot))
+        .thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));

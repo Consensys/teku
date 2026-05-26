@@ -20,6 +20,8 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.ConnectException;
 import java.util.Collection;
 import java.util.List;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -91,6 +94,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -335,21 +339,28 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public void onPayloadAttestationMessage(
-      final PayloadAttestationMessage message,
+      final ValidatablePayloadAttestationMessage validatableMessage,
       final InternalValidationResult result,
       final boolean fromNetwork) {
     if (!result.isAccept()) {
       return;
     }
+    final IntSet ptcPositions =
+        validatableMessage
+            .getPtcPositions()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "PTC positions must be calculated before recording a payload attestation vote"));
     recentChainData
         .getUpdatableForkChoiceStrategy()
         .ifPresent(
             strategy ->
                 strategy.onPtcVote(
-                    message.getData().getBeaconBlockRoot(),
-                    message.getValidatorIndex(),
-                    message.getData().isPayloadPresent(),
-                    message.getData().isBlobDataAvailable()));
+                    validatableMessage.getData().getBeaconBlockRoot(),
+                    ptcPositions,
+                    validatableMessage.getData().isPayloadPresent(),
+                    validatableMessage.getData().isBlobDataAvailable()));
   }
 
   public void subscribeToOptimisticHeadChangesAndUpdate(final OptimisticHeadSubscriber subscriber) {
@@ -734,6 +745,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
       // We also need to handle recent AttesterSlashings to update equivocating validator indices
       // We don't need any epochs older than previous as it doesn't affect ForkChoice
+      applyPayloadAttestationsFromBlock(block);
       applyAttesterSlashingsFromBlock(block, voteUpdater);
       applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache, voteUpdater);
       voteUpdater.commit();
@@ -1167,6 +1179,58 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .getBody()
         .getAttesterSlashings()
         .forEach(attesterSlashing -> storeEquivocatingIndices(attesterSlashing, voteUpdater));
+  }
+
+  private void applyPayloadAttestationsFromBlock(final SignedBeaconBlock signedBeaconBlock) {
+    signedBeaconBlock
+        .getMessage()
+        .getBody()
+        .getOptionalPayloadAttestations()
+        .ifPresent(
+            payloadAttestations ->
+                payloadAttestations.forEach(this::applyPayloadAttestationFromBlock));
+  }
+
+  private void applyPayloadAttestationFromBlock(final PayloadAttestation payloadAttestation) {
+    recentChainData
+        .getStore()
+        .getBlockStateIfAvailable(payloadAttestation.getData().getBeaconBlockRoot())
+        .filter(
+            attestedBlockState ->
+                attestedBlockState.getSlot().equals(payloadAttestation.getData().getSlot()))
+        .ifPresent(
+            attestedBlockState ->
+                getPayloadAttestationMessagesFromBlock(attestedBlockState, payloadAttestation)
+                    .forEach(
+                        validatableMessage -> {
+                          validatableMessage.calculatePtcPositions(spec, attestedBlockState);
+                          onPayloadAttestationMessage(
+                              validatableMessage, InternalValidationResult.ACCEPT, false);
+                        }));
+  }
+
+  @VisibleForTesting
+  List<ValidatablePayloadAttestationMessage> getPayloadAttestationMessagesFromBlock(
+      final BeaconState attestedBlockState, final PayloadAttestation payloadAttestation) {
+    final UInt64 slot = payloadAttestation.getData().getSlot();
+    final IntList ptc = spec.getPtc(attestedBlockState, slot);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+    return payloadAttestation
+        .getAggregationBits()
+        .streamAllSetBits()
+        .mapToObj(
+            ptcPosition -> {
+              final PayloadAttestationMessage message =
+                  schemaDefinitions
+                      .getPayloadAttestationMessageSchema()
+                      .create(
+                          UInt64.valueOf(ptc.getInt(ptcPosition)),
+                          payloadAttestation.getData(),
+                          BLSSignature.empty());
+              return ValidatablePayloadAttestationMessage.fromBlock(message);
+            })
+        .toList();
   }
 
   private void storeEquivocatingIndices(

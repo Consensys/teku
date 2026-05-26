@@ -422,6 +422,32 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
+  void isSlotInCurrentEpochWithMinSeedLookaheadTolerance_shouldComputeCorrectly() {
+    final UInt64 currentEpoch = UInt64.valueOf(3);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+
+    final UInt64 lastToleratedEpoch =
+        currentEpoch.plus(spec.atSlot(currentSlot).getConfig().getMinSeedLookahead());
+
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(
+                spec.computeStartSlotAtEpoch(currentEpoch.minus(ONE))))
+        .isFalse();
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(currentSlot))
+        .isTrue();
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(
+                spec.computeStartSlotAtEpoch(lastToleratedEpoch)))
+        .isTrue();
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(
+                spec.computeStartSlotAtEpoch(lastToleratedEpoch.plus(ONE))))
+        .isFalse();
+  }
+
+  @TestTemplate
   void isValidBuilder_shouldReturnTrueForActiveBuilder(final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 finalizedEpoch = UInt64.valueOf(4);

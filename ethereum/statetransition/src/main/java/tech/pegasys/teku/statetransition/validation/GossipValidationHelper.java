@@ -209,11 +209,6 @@ public class GossipValidationHelper {
         .isActiveBuilder(state, builderIndex);
   }
 
-  public boolean isValidatorInPayloadTimelinessCommittee(
-      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
-    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
-  }
-
   public boolean isSlotCurrentOrNext(final UInt64 slot) {
     return recentChainData
         .getCurrentSlot()
@@ -221,21 +216,16 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
-  public boolean isSlotInNextEpoch(final UInt64 slot) {
+  public boolean isSlotInCurrentEpochWithMinSeedLookaheadTolerance(final UInt64 slot) {
     return recentChainData
-        .getCurrentSlot()
+        .getCurrentEpoch()
         .map(
-            currentSlot ->
-                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot).plus(1)))
-        .orElse(false);
-  }
-
-  public boolean isSlotInCurrentEpoch(final UInt64 slot) {
-    return recentChainData
-        .getCurrentSlot()
-        .map(
-            currentSlot ->
-                spec.computeEpochAtSlot(slot).equals(spec.computeEpochAtSlot(currentSlot)))
+            currentEpoch -> {
+              final UInt64 slotEpoch = spec.computeEpochAtSlot(slot);
+              return slotEpoch.isGreaterThanOrEqualTo(currentEpoch)
+                  && slotEpoch.isLessThanOrEqualTo(
+                      currentEpoch.plus(spec.atSlot(slot).getConfig().getMinSeedLookahead()));
+            })
         .orElse(false);
   }
 
