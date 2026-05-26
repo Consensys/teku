@@ -48,7 +48,8 @@ class BlockProcessorGloasTest {
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionRequests parentExecutionRequests =
         schemaDefinitions.getExecutionRequestsSchema().getDefault();
-    final Bytes32 parentBlockHash = Bytes32.fromHexString("0x01");
+    final Bytes32 latestExecutionPayloadBlockHash = Bytes32.fromHexString("0x01");
+    final Bytes32 latestBlockHash = Bytes32.fromHexString("0x02");
     final UInt64 builderIndex = UInt64.ZERO;
     final UInt64 parentPayloadValue = UInt64.valueOf(1234);
     final ExecutionPayloadBid latestExecutionPayloadBid =
@@ -57,7 +58,7 @@ class BlockProcessorGloasTest {
             .create(
                 dataStructureUtil.randomBytes32(),
                 dataStructureUtil.randomBytes32(),
-                parentBlockHash,
+                latestExecutionPayloadBlockHash,
                 dataStructureUtil.randomBytes32(),
                 dataStructureUtil.randomEth1Address(),
                 dataStructureUtil.randomUInt64(),
@@ -67,11 +68,6 @@ class BlockProcessorGloasTest {
                 UInt64.ZERO,
                 dataStructureUtil.randomBlobKzgCommitments(),
                 parentExecutionRequests.hashTreeRoot());
-    Bytes32 latestBlockHash = dataStructureUtil.randomBytes32();
-    while (latestBlockHash.equals(latestExecutionPayloadBid.getBlockHash())) {
-      latestBlockHash = dataStructureUtil.randomBytes32();
-    }
-    final Bytes32 latestBlockHashForState = latestBlockHash;
 
     final BeaconState originalState =
         dataStructureUtil
@@ -80,7 +76,7 @@ class BlockProcessorGloasTest {
                 state -> {
                   final MutableBeaconStateGloas stateGloas =
                       MutableBeaconStateGloas.required(state);
-                  stateGloas.setLatestBlockHash(latestBlockHashForState);
+                  stateGloas.setLatestBlockHash(latestBlockHash);
                   stateGloas.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
                   stateGloas.setNextWithdrawalBuilderIndex(builderIndex);
                   stateGloas.setBuilders(
