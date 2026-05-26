@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -300,7 +301,8 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
         new SlotAndBlockRoot(blockSlot, forkChoiceState.headBlock().blockRoot()));
   }
 
-  private UInt64 getTargetGasLimit(
+  @VisibleForTesting
+  UInt64 getTargetGasLimit(
       final UInt64 blockSlot,
       final UInt64 proposerIndex,
       final Optional<SignedValidatorRegistration> validatorRegistration) {

@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,16 +37,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
-import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerDataManagerTest {
@@ -150,67 +148,61 @@ public class ProposerDataManagerTest {
   @Test
   void shouldUseProposerPreferencesGasLimitForPayloadAttributes() {
     final UInt64 blockSlot = UInt64.valueOf(12);
-    final UInt64 epoch = UInt64.ZERO;
     final UInt64 proposerIndex = UInt64.ONE;
     final UInt64 targetGasLimit = UInt64.valueOf(45_000_000);
+    final SignedValidatorRegistration validatorRegistration =
+        validatorRegistrationWithGasLimit(UInt64.valueOf(30_000_000));
     final ProposerPreferencesManager proposerPreferencesManager =
         mock(ProposerPreferencesManager.class);
-    final ProposerPreferences proposerPreferences = mock(ProposerPreferences.class);
-    final ChainHead chainHead = mock(ChainHead.class);
-    final ProposersDataManager manager =
-        new ProposersDataManager(
-            eventThread,
-            specMock,
-            new StubMetricsSystem(),
-            executionLayerChannel,
-            recentChainData,
-            defaultFeeRecipient,
-            false,
-            proposerPreferencesManager);
-    final ForkChoiceNode headBlock =
-        new ForkChoiceNode(
-            dataStructureUtil.randomBytes32(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
-    final ForkChoiceState forkChoiceState =
-        new ForkChoiceState(
-            headBlock,
-            blockSlot,
-            UInt64.ZERO,
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            false);
-
-    when(recentChainData.isJustifiedCheckpointFullyValidated()).thenReturn(true);
-    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
-    when(chainHead.getSlot()).thenReturn(blockSlot);
-    when(chainHead.getState()).thenReturn(SafeFuture.completedFuture(state));
-    when(specMock.computeEpochAtSlot(blockSlot)).thenReturn(epoch);
-    when(specMock.getBeaconProposerIndex(state, blockSlot)).thenReturn(proposerIndex.intValue());
-    when(specMock.computeTimeAtSlot(state, blockSlot)).thenReturn(dataStructureUtil.randomUInt64());
-    when(specMock.getRandaoMix(state, epoch)).thenReturn(dataStructureUtil.randomBytes32());
-    when(specMock.getExpectedWithdrawals(state)).thenReturn(Optional.empty());
+    final ProposersDataManager manager = createProposersDataManager(proposerPreferencesManager);
     when(proposerPreferencesManager.getProposerPreferences(blockSlot))
-        .thenReturn(Optional.of(proposerPreferences));
-    when(proposerPreferences.getValidatorIndex()).thenReturn(proposerIndex);
-    when(proposerPreferences.getGasLimit()).thenReturn(targetGasLimit);
+        .thenReturn(Optional.of(proposerPreferences(proposerIndex, targetGasLimit)));
 
-    final Optional<PayloadBuildingAttributes> result =
-        eventThread
-            .execute(
-                () ->
-                    manager
-                        .calculatePayloadBuildingAttributes(
-                            blockSlot,
-                            true,
-                            new ForkChoiceUpdateData(
-                                forkChoiceState, Optional.empty(), Optional.empty()),
-                            true)
-                        .join())
-            .join();
+    assertThat(
+            manager.getTargetGasLimit(blockSlot, proposerIndex, Optional.of(validatorRegistration)))
+        .isEqualTo(targetGasLimit);
+  }
 
-    assertThat(result)
-        .hasValueSatisfying(
-            attributes -> assertThat(attributes.targetGasLimit()).isEqualTo(targetGasLimit));
+  @Test
+  void shouldUseValidatorRegistrationGasLimitWithoutProposerPreferences() {
+    final UInt64 blockSlot = UInt64.valueOf(12);
+    final UInt64 proposerIndex = UInt64.ONE;
+    final UInt64 registrationGasLimit = UInt64.valueOf(30_000_000);
+    final SignedValidatorRegistration validatorRegistration =
+        validatorRegistrationWithGasLimit(registrationGasLimit);
+
+    assertThat(
+            proposersDataManager.getTargetGasLimit(
+                blockSlot, proposerIndex, Optional.of(validatorRegistration)))
+        .isEqualTo(registrationGasLimit);
+  }
+
+  @Test
+  void shouldIgnoreProposerPreferencesGasLimitForDifferentValidator() {
+    final UInt64 blockSlot = UInt64.valueOf(12);
+    final UInt64 proposerIndex = UInt64.ONE;
+    final UInt64 registrationGasLimit = UInt64.valueOf(30_000_000);
+    final ProposerPreferencesManager proposerPreferencesManager =
+        mock(ProposerPreferencesManager.class);
+    final ProposersDataManager manager = createProposersDataManager(proposerPreferencesManager);
+    final SignedValidatorRegistration validatorRegistration =
+        validatorRegistrationWithGasLimit(registrationGasLimit);
+
+    when(proposerPreferencesManager.getProposerPreferences(blockSlot))
+        .thenReturn(
+            Optional.of(proposerPreferences(UInt64.valueOf(2), UInt64.valueOf(45_000_000))));
+
+    assertThat(
+            manager.getTargetGasLimit(blockSlot, proposerIndex, Optional.of(validatorRegistration)))
+        .isEqualTo(registrationGasLimit);
+  }
+
+  @Test
+  void shouldUseZeroTargetGasLimitWithoutProposerPreferencesOrValidatorRegistration() {
+    assertThat(
+            proposersDataManager.getTargetGasLimit(
+                UInt64.valueOf(12), UInt64.ONE, Optional.empty()))
+        .isEqualTo(UInt64.ZERO);
   }
 
   private void prepareRegistrations() {
@@ -223,6 +215,40 @@ public class ProposerDataManagerTest {
     when(specMock.getValidatorIndex(state, registrations.get(1).getMessage().getPublicKey()))
         .thenReturn(Optional.of(1));
     when(specMock.getSlotsPerEpoch(any())).thenReturn(spec.getSlotsPerEpoch(slot));
+  }
+
+  private ProposersDataManager createProposersDataManager(
+      final ProposerPreferencesManager proposerPreferencesManager) {
+    return new ProposersDataManager(
+        eventThread,
+        specMock,
+        new StubMetricsSystem(),
+        executionLayerChannel,
+        recentChainData,
+        defaultFeeRecipient,
+        false,
+        proposerPreferencesManager);
+  }
+
+  private ProposerPreferences proposerPreferences(
+      final UInt64 validatorIndex, final UInt64 gasLimit) {
+    return new ProposerPreferencesSchema()
+        .create(
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomSlot(),
+            validatorIndex,
+            dataStructureUtil.randomEth1Address(),
+            gasLimit);
+  }
+
+  private SignedValidatorRegistration validatorRegistrationWithGasLimit(final UInt64 gasLimit) {
+    return SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
+        VALIDATOR_REGISTRATION_SCHEMA.create(
+            dataStructureUtil.randomBytes20(),
+            gasLimit,
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomPublicKey()),
+        dataStructureUtil.randomSignature());
   }
 
   private void assertPreparedProposersCount(final int expectedCount) {
