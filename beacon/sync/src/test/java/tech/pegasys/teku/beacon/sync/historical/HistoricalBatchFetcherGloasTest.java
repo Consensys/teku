@@ -23,7 +23,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,8 +43,11 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderGloas;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -174,6 +179,25 @@ public class HistoricalBatchFetcherGloasTest {
 
   @TestTemplate
   public void
+      validateExecutionPayloadEnvelopesPresence_handlesUnorderedBlocksWhenDeliveredEnvelopeIsMissing() {
+    final SignedBeaconBlock withheldBlock = chainBuilder.getBlockAtSlot(15);
+
+    chainBuilder
+        .streamExecutionPayloads(10, 20)
+        .filter(envelope -> !envelope.getBeaconBlockRoot().equals(withheldBlock.getRoot()))
+        .forEach(fetcher::processExecutionPayload);
+
+    final List<SignedBeaconBlock> unorderedBlockBatch = new ArrayList<>(blockBatch);
+    Collections.reverse(unorderedBlockBatch);
+
+    assertThatThrownBy(() -> fetcher.validateExecutionPayloadEnvelopesPresence(unorderedBlockBatch))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Missing execution payload envelope")
+        .hasMessageContaining(withheldBlock.getRoot().toHexString());
+  }
+
+  @TestTemplate
+  public void
       validateExecutionPayloadEnvelopesPresence_throwsWhenLastBlockEnvelopeIsMissingAndNextBlockDeliveredIt() {
     chainBuilder.generateBlockAtSlot(21);
     final SignedBeaconBlock successor = chainBuilder.getBlockAtSlot(21);
@@ -217,28 +241,29 @@ public class HistoricalBatchFetcherGloasTest {
   }
 
   @TestTemplate
-  public void validateExecutionPayloadEnvelope_throwsWhenFieldsDoNotMatchBid() {
-    // Blind the envelope from slot 15 but pair it with the block at slot 16: every payload-header
-    // field (parent hash, block hash, prev randao, fee recipient, gas limit) and the builder index
-    // will disagree with the block's bid.
+  public void validateExecutionPayloadEnvelope_throwsWhenPayloadHeaderDoesNotMatchBid() {
     final SignedBeaconBlock block = chainBuilder.getBlockAtSlot(16);
     final SignedBeaconBlock otherBlock = chainBuilder.getBlockAtSlot(15);
     final SchemaDefinitionsGloas schemaDefinitions =
-        SchemaDefinitionsGloas.required(spec.atSlot(otherBlock.getSlot()).getSchemaDefinitions());
+        SchemaDefinitionsGloas.required(spec.atSlot(block.getSlot()).getSchemaDefinitions());
     final SignedBlindedExecutionPayloadEnvelope originalBlindedEnvelope =
         chainBuilder
             .getExecutionPayload(otherBlock.getRoot())
             .orElseThrow()
             .blind(schemaDefinitions);
-    // Rebuild the blinded envelope with the target block's slot + beaconBlockRoot so only the
-    // payloadHeader / builderIndex mismatches fire (not the slot/blockRoot preconditions)
+    final ExecutionPayloadHeader targetSlotPayloadHeader =
+        copyPayloadHeaderWithSlot(
+            schemaDefinitions,
+            originalBlindedEnvelope.getMessage().getPayloadHeader(),
+            block.getSlot());
+    final ExecutionPayloadBid blockBid = getExecutionPayloadBid(block);
     final BlindedExecutionPayloadEnvelope tamperedEnvelope =
         schemaDefinitions
             .getBlindedExecutionPayloadEnvelopeSchema()
             .create(
-                originalBlindedEnvelope.getMessage().getPayloadHeader(),
+                targetSlotPayloadHeader,
                 originalBlindedEnvelope.getMessage().getExecutionRequests(),
-                originalBlindedEnvelope.getMessage().getBuilderIndex(),
+                blockBid.getBuilderIndex(),
                 block.getRoot(),
                 block.getParentRoot());
     final SignedBlindedExecutionPayloadEnvelope signedTampered =
@@ -248,6 +273,49 @@ public class HistoricalBatchFetcherGloasTest {
 
     assertThatThrownBy(() -> fetcher.validateExecutionPayloadEnvelope(signedTampered, block))
         .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("parent block hash")
         .hasMessageContaining(block.getRoot().toHexString());
+  }
+
+  private ExecutionPayloadBid getExecutionPayloadBid(final SignedBeaconBlock block) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .orElseThrow()
+        .getSignedExecutionPayloadBid()
+        .getMessage();
+  }
+
+  private ExecutionPayloadHeader copyPayloadHeaderWithSlot(
+      final SchemaDefinitionsGloas schemaDefinitions,
+      final ExecutionPayloadHeader payloadHeader,
+      final UInt64 slot) {
+    final ExecutionPayloadHeaderGloas gloasPayloadHeader =
+        ExecutionPayloadHeaderGloas.required(payloadHeader);
+    return schemaDefinitions
+        .getExecutionPayloadHeaderSchema()
+        .createExecutionPayloadHeader(
+            builder ->
+                builder
+                    .parentHash(gloasPayloadHeader.getParentHash())
+                    .feeRecipient(gloasPayloadHeader.getFeeRecipient())
+                    .stateRoot(gloasPayloadHeader.getStateRoot())
+                    .receiptsRoot(gloasPayloadHeader.getReceiptsRoot())
+                    .logsBloom(gloasPayloadHeader.getLogsBloom())
+                    .prevRandao(gloasPayloadHeader.getPrevRandao())
+                    .blockNumber(gloasPayloadHeader.getBlockNumber())
+                    .gasLimit(gloasPayloadHeader.getGasLimit())
+                    .gasUsed(gloasPayloadHeader.getGasUsed())
+                    .timestamp(gloasPayloadHeader.getTimestamp())
+                    .extraData(gloasPayloadHeader.getExtraData())
+                    .baseFeePerGas(gloasPayloadHeader.getBaseFeePerGas())
+                    .blockHash(gloasPayloadHeader.getBlockHash())
+                    .transactionsRoot(gloasPayloadHeader.getTransactionsRoot())
+                    .withdrawalsRoot(gloasPayloadHeader::getWithdrawalsRoot)
+                    .blobGasUsed(gloasPayloadHeader::getBlobGasUsed)
+                    .excessBlobGas(gloasPayloadHeader::getExcessBlobGas)
+                    .blockAccessListRoot(gloasPayloadHeader::getBlockAccessListRoot)
+                    .slotNumber(() -> slot));
   }
 }

@@ -18,6 +18,7 @@ import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -496,7 +497,8 @@ public class HistoricalBatchFetcher {
   void validateExecutionPayloadEnvelopesPresence(final Collection<SignedBeaconBlock> blocks) {
     // For each Gloas block in the batch, verify whether its payload was delivered by comparing the
     // next block's bid.parentBlockHash with this block's bid.blockHash
-    final List<SignedBeaconBlock> orderedBlocks = new ArrayList<>(blocks);
+    final List<SignedBeaconBlock> orderedBlocks =
+        blocks.stream().sorted(Comparator.comparing(SignedBeaconBlock::getSlot)).toList();
     if (orderedBlocks.isEmpty()
         || !spec.isExecutionPayloadEnvelopeAvailableAtSlot(orderedBlocks.getLast().getSlot())) {
       // Entire batch is pre Gloas (or empty), nothing to check
