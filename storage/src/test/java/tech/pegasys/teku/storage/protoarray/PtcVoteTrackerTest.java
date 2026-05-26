@@ -14,12 +14,10 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class PtcVoteTrackerTest {
 
@@ -33,33 +31,51 @@ class PtcVoteTrackerTest {
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isZero();
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isZero();
 
-    tracker.recordVote(ROOT_1, ZERO, true, false);
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, false);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isZero();
 
-    tracker.recordVote(ROOT_1, ONE, true, true);
-    tracker.recordVote(ROOT_1, UInt64.valueOf(2), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(1), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(2), true, true);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(3);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(2);
   }
 
   @Test
-  void recordVote_tracksUniqueValidatorsPerBlock() {
-    tracker.recordVote(ROOT_1, ZERO, true, true);
-    tracker.recordVote(ROOT_1, ZERO, true, true);
-    tracker.recordVote(ROOT_1, ONE, true, false);
+  void recordVote_tracksUniquePtcPositionsPerBlock() {
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(1), true, false);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(2);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(1);
   }
 
   @Test
-  void recordVote_removesValidatorWhenPayloadOrDataBecomesAbsent() {
-    tracker.recordVote(ROOT_1, ZERO, true, true);
-    tracker.recordVote(ROOT_1, ONE, true, true);
-    tracker.recordVote(ROOT_1, ZERO, false, false);
+  void recordVote_tracksDuplicateValidatorPositionsIndependently() {
+    tracker.recordVote(ROOT_1, IntSet.of(0, 2, 4), true, true);
+
+    assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(3);
+    assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(3);
+  }
+
+  @Test
+  void recordVote_removesPtcPositionsWhenPayloadOrDataBecomesAbsent() {
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(1), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(0), false, false);
+
+    assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
+    assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(1);
+  }
+
+  @Test
+  void recordVote_removesAllPtcPositionsWhenPayloadOrDataBecomesAbsent() {
+    tracker.recordVote(ROOT_1, IntSet.of(0, 2, 4), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(1), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(0, 2, 4), false, false);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(1);
@@ -67,9 +83,9 @@ class PtcVoteTrackerTest {
 
   @Test
   void recordVote_tracksDifferentRootsSeparately() {
-    tracker.recordVote(ROOT_1, ZERO, true, true);
-    tracker.recordVote(ROOT_1, ONE, true, false);
-    tracker.recordVote(ROOT_2, ZERO, true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(1), true, false);
+    tracker.recordVote(ROOT_2, IntSet.of(0), true, true);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(2);
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_2)).isEqualTo(1);
@@ -79,7 +95,7 @@ class PtcVoteTrackerTest {
 
   @Test
   void remove_clearsTrackedVotesForRoot() {
-    tracker.recordVote(ROOT_1, ZERO, true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
 
     tracker.remove(ROOT_1);
 
@@ -89,8 +105,8 @@ class PtcVoteTrackerTest {
 
   @Test
   void removeIf_prunesMatchingRoots() {
-    tracker.recordVote(ROOT_1, ZERO, true, true);
-    tracker.recordVote(ROOT_2, ONE, true, true);
+    tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
+    tracker.recordVote(ROOT_2, IntSet.of(1), true, true);
 
     tracker.removeIf(ROOT_1::equals);
 
