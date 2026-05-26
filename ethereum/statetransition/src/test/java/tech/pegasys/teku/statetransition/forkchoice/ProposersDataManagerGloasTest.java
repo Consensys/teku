@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,11 +27,8 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -58,9 +56,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @TestSpecContext(milestone = GLOAS)
 class ProposersDataManagerGloasTest {
 
-  @Mock private RecentChainData recentChainData;
-
-  private AutoCloseable mocks;
+  private RecentChainData recentChainData;
   private Spec spec;
   private DataStructureUtil data;
   private InlineEventThread eventThread;
@@ -69,9 +65,9 @@ class ProposersDataManagerGloasTest {
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
-    mocks = MockitoAnnotations.openMocks(this);
     spec = specContext.getSpec();
     data = specContext.getDataStructureUtil();
+    recentChainData = mock(RecentChainData.class);
     eventThread = new InlineEventThread();
     defaultFeeRecipient = data.randomEth1Address();
     manager =
@@ -84,11 +80,6 @@ class ProposersDataManagerGloasTest {
             Optional.of(defaultFeeRecipient),
             false);
     when(recentChainData.isJustifiedCheckpointFullyValidated()).thenReturn(true);
-  }
-
-  @AfterEach
-  void tearDown() throws Exception {
-    mocks.close();
   }
 
   @TestTemplate
