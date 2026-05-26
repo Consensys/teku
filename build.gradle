@@ -672,6 +672,9 @@ application {
 		"-XX:NativeMemoryTracking=summary",
 		// 32Mb for Netty Direct ByteBuf
 		"-Dio.netty.maxDirectMemory=33554432",
+		// Use the pooled allocator instead of Netty 4.2's default AdaptivePoolingAllocator,
+		// whose per-event-loop magazines blow the 32Mb direct-memory cap above.
+		"-Dio.netty.allocator.type=pooled",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
