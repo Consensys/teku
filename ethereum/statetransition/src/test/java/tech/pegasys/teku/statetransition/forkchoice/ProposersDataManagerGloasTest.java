@@ -197,6 +197,24 @@ class ProposersDataManagerGloasTest {
   }
 
   @TestTemplate
+  void calculatePayloadBuildingAttributes_shouldNotFetchParentExecutionRequestsForPreGloasParent() {
+    final UInt64 blockSlot = UInt64.valueOf(16);
+    final Bytes32 parentRoot = data.randomBytes32();
+    final ForkChoiceNode parent = ForkChoiceNode.createBase(parentRoot);
+    final BeaconState state = data.randomBeaconState(blockSlot);
+    final ForkChoiceUpdateData forkChoiceUpdateData = forkChoiceUpdateData(parent, blockSlot);
+    prepareLocalProposer(state, blockSlot);
+    when(recentChainData.retrieveBlockState(new SlotAndBlockRoot(blockSlot, parentRoot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+
+    final PayloadBuildingAttributes attributes =
+        safeJoin(calculate(blockSlot, forkChoiceUpdateData)).orElseThrow();
+
+    assertThat(attributes.withdrawals()).isEqualTo(spec.getExpectedWithdrawals(state));
+    verify(recentChainData, never()).retrieveSignedBlindedExecutionPayloadByBlockRoot(any());
+  }
+
+  @TestTemplate
   void calculatePayloadBuildingAttributes_shouldFailWhenFullParentExecutionRequestsAreMissing() {
     final UInt64 blockSlot = UInt64.valueOf(16);
     final Bytes32 parentRoot = data.randomBytes32();
