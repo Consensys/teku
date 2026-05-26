@@ -398,7 +398,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   @Override
   public ForkChoiceNode getProposerHead(
-          final ForkChoiceReorgContext context, final ForkChoiceNode headNode, final UInt64 slot) {
+      final ForkChoiceReorgContext context, final ForkChoiceNode headNode, final UInt64 slot) {
     final ForkChoiceNode proposerHead = super.getProposerHead(context, headNode, slot);
 
     if (proposerHead.payloadStatus() == PAYLOAD_STATUS_PENDING) {

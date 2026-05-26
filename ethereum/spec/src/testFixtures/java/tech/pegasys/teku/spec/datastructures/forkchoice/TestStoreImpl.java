@@ -548,6 +548,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head) {
+      return shouldExtendPayload(store, head.blockRoot());
+    }
+
+    @Override
     public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
     }
