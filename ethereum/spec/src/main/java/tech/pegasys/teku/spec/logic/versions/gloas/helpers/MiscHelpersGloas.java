@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -246,9 +245,9 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   }
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
-  public boolean isPendingValidator(final BeaconState state, final BLSPublicKey pubkey) {
-    for (final PendingDeposit pendingDeposit :
-        BeaconStateGloas.required(state).getPendingDeposits()) {
+  public boolean isPendingValidator(
+      final SszList<PendingDeposit> pendingDeposits, final BLSPublicKey pubkey) {
+    for (final PendingDeposit pendingDeposit : pendingDeposits) {
       if (!pendingDeposit.getPublicKey().equals(pubkey)) {
         continue;
       }
