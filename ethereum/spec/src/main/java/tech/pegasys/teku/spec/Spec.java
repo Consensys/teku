@@ -1045,6 +1045,14 @@ public class Spec {
         .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
   }
 
+  /**
+   * Returns the withdrawals to include in Engine API payload attributes for the supplied
+   * post-slot-processing state.
+   *
+   * <p>For most parents this is the state's expected withdrawals. For a GLOAS parent with a full
+   * payload, the parent execution requests must be applied first so the withdrawals reflect the
+   * effective state used for payload building.
+   */
   public Optional<List<Withdrawal>> getPayloadAttributeWithdrawals(
       final BeaconState state,
       final ForkChoicePayloadStatus parentPayloadStatus,

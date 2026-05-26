@@ -284,7 +284,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
               spec.getPayloadAttributeWithdrawals(
                   state, currentHeadBlock.payloadStatus(), Optional.empty()));
     }
-    return retrieveParentExecutionRequests(currentHeadBlock, state.getSlot())
+    return retrieveParentExecutionRequests(currentHeadBlock.blockRoot(), state.getSlot())
         .thenApplyChecked(
             parentExecutionRequests ->
                 spec.getPayloadAttributeWithdrawals(
@@ -296,9 +296,9 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
   }
 
   private SafeFuture<ExecutionRequests> retrieveParentExecutionRequests(
-      final ForkChoiceNode currentHeadBlock, final UInt64 blockSlot) {
+      final Bytes32 blockRoot, final UInt64 blockSlot) {
     return recentChainData
-        .retrieveSignedBlindedExecutionPayloadByBlockRoot(currentHeadBlock.blockRoot())
+        .retrieveSignedBlindedExecutionPayloadByBlockRoot(blockRoot)
         .thenApply(
             executionPayload ->
                 executionPayload
@@ -308,7 +308,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
                             new IllegalStateException(
                                 String.format(
                                     "Execution Requests for parent root %s are not available during payload attribute calculation for slot %s",
-                                    currentHeadBlock.blockRoot(), blockSlot))));
+                                    blockRoot, blockSlot))));
   }
 
   private SafeFuture<Optional<BeaconState>> getStateForPayloadBuildingAttributes(
