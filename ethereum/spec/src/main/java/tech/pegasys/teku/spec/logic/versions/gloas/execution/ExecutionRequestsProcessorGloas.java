@@ -158,7 +158,8 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       final boolean isValidator = validatorsUtil.getValidatorIndex(state, pubkey).isPresent();
       final boolean isPendingValidator =
           verifiedPendingValidatorPubkeys.contains(pubkey)
-              || (miscHelpersGloas.isPendingValidator(stateElectra.getPendingDeposits(), pubkey)
+              || (miscHelpersGloas.isPendingValidator(
+                      stateElectra.getPendingDeposits().asList(), pubkey)
                   && verifiedPendingValidatorPubkeys.add(pubkey));
       final boolean isNewBuilderDeposit =
           !isBuilder
