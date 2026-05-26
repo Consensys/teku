@@ -237,6 +237,10 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     safelyProcess(() -> withdrawalsHelpers.processWithdrawals(state));
   }
 
+  /**
+   * Applies the parent execution payload and withdrawal processing to a transient state copy, then
+   * returns its payload_expected_withdrawals.
+   */
   public SszList<Withdrawal> calculatePayloadExpectedWithdrawals(
       final BeaconState state, final ExecutionRequests parentExecutionRequests)
       throws BlockProcessingException {
