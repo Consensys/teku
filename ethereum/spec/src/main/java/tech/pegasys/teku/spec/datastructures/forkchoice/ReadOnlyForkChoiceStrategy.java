@@ -41,6 +41,8 @@ public interface ReadOnlyForkChoiceStrategy {
     return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
   }
 
+  Optional<ForkChoiceNode> getParentBeaconBlockNode(ForkChoiceNode node);
+
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 
   List<Bytes32> getBlockRootsAtSlot(UInt64 slot);

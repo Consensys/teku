@@ -259,6 +259,42 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void getParentBeaconBlockNode_phase0_returnsParentBlockBaseNode() {
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(ONE);
+    final ProtoArray protoArray = createProtoArray(block.getState());
+    addBlockToProtoArray(protoArray, genesis);
+    addBlockToProtoArray(protoArray, block);
+    final ForkChoiceStrategy strategy = ForkChoiceStrategy.initialize(spec, protoArray);
+
+    assertThat(strategy.getParentBeaconBlockNode(ForkChoiceNode.createBase(block.getRoot())))
+        .contains(ForkChoiceNode.createBase(genesis.getRoot()));
+  }
+
+  @Test
+  void getParentBeaconBlockNode_gloas_skipsSameBlockBaseWhenInputIsFull() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final Bytes32 genesisRoot = fixture.block().getParentRoot();
+
+    // FULL(block) → BASE(block) → parent block's variant.
+    assertThat(fixture.strategy().getParentBeaconBlockNode(ForkChoiceNode.createFull(blockRoot)))
+        .contains(ForkChoiceNode.createBase(genesisRoot));
+  }
+
+  @Test
+  void getParentBeaconBlockNode_gloas_walksDirectlyFromBase() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final Bytes32 genesisRoot = fixture.block().getParentRoot();
+
+    // BASE(block) → parent block's variant directly (one hop).
+    assertThat(fixture.strategy().getParentBeaconBlockNode(ForkChoiceNode.createBase(blockRoot)))
+        .contains(ForkChoiceNode.createBase(genesisRoot));
+  }
+
+  @Test
   public void findHead_worksForChainInitializedFromNonGenesisAnchor() {
     // Set up store with an anchor point that has justified and finalized checkpoints prior to its
     // epoch

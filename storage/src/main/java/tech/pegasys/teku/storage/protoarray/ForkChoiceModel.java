@@ -101,6 +101,9 @@ interface ForkChoiceModel {
   Optional<ProtoNodeData> getBaseNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
+  Optional<ProtoNode> getParentBeaconBlockNode(
+      ProtoArray protoArray, ForkChoiceNode forkChoiceNode);
+
   boolean shouldExtendPayload(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,

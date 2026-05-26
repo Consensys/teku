@@ -537,6 +537,21 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public Optional<ProtoNode> getParentBeaconBlockNode(
+      final ProtoArray protoArray, final ForkChoiceNode forkChoiceNode) {
+    // FULL/EMPTY → BASE(same block) → parent block's variant.
+    // BASE → parent block's variant directly.
+    return protoArray
+        .getNode(forkChoiceNode)
+        .flatMap(
+            current ->
+                forkChoiceNode.payloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING
+                    ? Optional.of(current)
+                    : current.getParentIndex().map(protoArray::getNodeByIndex))
+        .flatMap(baseNode -> baseNode.getParentIndex().map(protoArray::getNodeByIndex));
+  }
+
+  @Override
   public boolean shouldExtendPayload(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
