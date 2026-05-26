@@ -84,6 +84,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -1040,6 +1042,33 @@ public class Spec {
     return atState(state)
         .getWithdrawalsHelpers()
         .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
+  }
+
+  /**
+   * Returns the withdrawals to include in Engine API payload attributes for the supplied
+   * post-slot-processing state.
+   *
+   * <p>For most parents this is the state's expected withdrawals. For a GLOAS parent with a full
+   * payload, the parent execution requests must be applied first so the withdrawals reflect the
+   * effective state used for payload building.
+   */
+  public Optional<List<Withdrawal>> getPayloadAttributeWithdrawals(
+      final BeaconState state,
+      final ForkChoicePayloadStatus parentPayloadStatus,
+      final Optional<ExecutionRequests> parentExecutionRequests) {
+    if (parentPayloadStatus != ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL) {
+      return getExpectedWithdrawals(state);
+    }
+
+    final ExecutionRequests executionRequests =
+        parentExecutionRequests.orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Parent execution requests are required for GLOAS FULL parent payload attributes"));
+    final ForkChoiceUtilGloas forkChoiceUtilGloas =
+        ForkChoiceUtilGloas.required(atState(state).getForkChoiceUtil());
+    return Optional.of(
+        forkChoiceUtilGloas.getPayloadAttributeWithdrawals(state, executionRequests).asList());
   }
 
   // Block Processor Utils
