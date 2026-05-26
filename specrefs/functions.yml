@@ -2019,20 +2019,6 @@
         return uint64(state.genesis_time * 1000 + slots_since_genesis * SLOT_DURATION_MS)
     </spec>
 
-- name: compute_time_at_slot_ms#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
-      search: public UInt64 computeTimeMillisAtSlot(
-  spec: |
-    <spec fn="compute_time_at_slot_ms" fork="phase0" hash="9e51db2a">
-    def compute_time_at_slot_ms(state: BeaconState, slot: Slot) -> uint64:
-        """
-        Return the time in milliseconds at the start of the given slot.
-        """
-        slots_since_genesis = slot - GENESIS_SLOT
-        return uint64(state.genesis_time * 1000 + slots_since_genesis * SLOT_DURATION_MS)
-    </spec>
-
 - name: compute_verify_cell_kzg_proof_batch_challenge#fulu
   sources: []
   spec: |
