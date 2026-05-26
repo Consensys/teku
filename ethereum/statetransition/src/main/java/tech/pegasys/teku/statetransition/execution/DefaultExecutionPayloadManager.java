@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYL
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +55,8 @@ public class DefaultExecutionPayloadManager
 
   private static final Logger LOG = LogManager.getLogger();
   private static final int UNVALIDATED_EXECUTION_PAYLOADS_CACHE_MULTIPLIER = 2;
+  private static final int UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE =
+      RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE * UNVALIDATED_EXECUTION_PAYLOADS_CACHE_MULTIPLIER;
 
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
@@ -64,15 +65,11 @@ public class DefaultExecutionPayloadManager
   private final Set<Bytes32> acceptedExecutionPayloadEnvelopeRoots =
       LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
   private final Map<Bytes32, UInt64> executionPayloadArrivalTimestamps =
-      LimitedMap.createSynchronizedNatural(
-          RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE
-              * UNVALIDATED_EXECUTION_PAYLOADS_CACHE_MULTIPLIER);
+      LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   // pending pool
   private final Map<BlockRootAndBuilderIndex, PendingExecutionPayloads> pendingExecutionPayloads =
-      LimitedMap.createSynchronizedNatural(
-          RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE
-              * UNVALIDATED_EXECUTION_PAYLOADS_CACHE_MULTIPLIER);
+      LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
       Subscribers.create(true);
@@ -346,7 +343,9 @@ public class DefaultExecutionPayloadManager
 
   private record PendingExecutionPayloads(Map<Bytes32, PendingExecutionPayload> payloads) {
     private PendingExecutionPayloads(final Map<Bytes32, PendingExecutionPayload> payloads) {
-      final Map<Bytes32, PendingExecutionPayload> limitedPayloads = new LinkedHashMap<>(payloads);
+      final Map<Bytes32, PendingExecutionPayload> limitedPayloads =
+          LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
+      limitedPayloads.putAll(payloads);
       this.payloads = Collections.unmodifiableMap(limitedPayloads);
     }
 
@@ -357,7 +356,9 @@ public class DefaultExecutionPayloadManager
     }
 
     private PendingExecutionPayloads merge(final PendingExecutionPayloads other) {
-      final Map<Bytes32, PendingExecutionPayload> mergedPayloads = new LinkedHashMap<>(payloads);
+      final Map<Bytes32, PendingExecutionPayload> mergedPayloads =
+          LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
+      mergedPayloads.putAll(payloads);
       other.payloads.forEach(
           (envelopeRoot, pendingExecutionPayload) ->
               mergedPayloads.merge(

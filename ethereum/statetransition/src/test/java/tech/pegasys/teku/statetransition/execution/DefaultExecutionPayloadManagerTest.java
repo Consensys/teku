@@ -16,16 +16,21 @@ package tech.pegasys.teku.statetransition.execution;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -253,6 +258,34 @@ class DefaultExecutionPayloadManagerTest {
     verify(receivedExecutionPayloadEventsChannelPublisher)
         .onExecutionPayloadImported(validExecutionPayload, false);
     assertThat(publishedExecutionPayload).hasValue(validExecutionPayload);
+  }
+
+  @Test
+  public void shouldLimitPendingExecutionPayloadCandidatesForSameBlockAndBuilder() {
+    final int pendingPayloadLimit = RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE * 2;
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+    final List<SignedExecutionPayloadEnvelope> executionPayloads =
+        IntStream.rangeClosed(0, pendingPayloadLimit)
+            .mapToObj(__ -> signedExecutionPayloadForBlock(block))
+            .toList();
+    executionPayloads.forEach(
+        executionPayload -> {
+          givenValidationResults(executionPayload, SAVE_FOR_FUTURE, ACCEPT);
+          givenSuccessfulImport(executionPayload);
+        });
+
+    for (int i = 0; i < executionPayloads.size(); i++) {
+      validateAndImportAndJoin(executionPayloads.get(i), UInt64.valueOf(i));
+    }
+
+    executionPayloadManager.onBlockImported(block, false);
+    asyncRunner.executeDueActions();
+
+    verify(executionPayloadGossipValidator, times(1)).validate(executionPayloads.get(0));
+    verify(forkChoice, never())
+        .onExecutionPayloadEnvelope(executionPayloads.get(0), executionLayer);
+    verify(executionPayloadGossipValidator, times(2)).validate(executionPayloads.get(1));
+    assertThat(publishedExecutionPayload).hasValue(executionPayloads.get(pendingPayloadLimit));
   }
 
   private void givenValidationResult(
