@@ -24,22 +24,25 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -57,6 +60,7 @@ class ProposersDataManagerTest {
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
+  private InlineEventThread eventThread;
   private ProposersDataManager manager;
   private Eth1Address defaultAddress;
 
@@ -77,10 +81,11 @@ class ProposersDataManagerTest {
               case HEZE -> TestSpecFactory.createMinimalWithHezeForkEpoch(currentForkEpoch);
             });
     dataStructureUtil = specContext.getDataStructureUtil();
+    eventThread = new InlineEventThread();
     defaultAddress = dataStructureUtil.randomEth1Address();
     manager =
         new ProposersDataManager(
-            mock(EventThread.class),
+            eventThread,
             spec,
             metricsSystem,
             channel,
@@ -157,5 +162,37 @@ class ProposersDataManagerTest {
 
     assertThat(manager.isBlockProposerConnected(UInt64.valueOf(10))).isCompletedWithValue(true);
     verify(recentChainData).retrieveBlockState(any(SlotAndBlockRoot.class));
+  }
+
+  @TestTemplate
+  void calculatePayloadBuildingAttributes_shouldRetrieveStateFromForkChoiceUpdateHead() {
+    final UInt64 blockSlot = UInt64.valueOf(2);
+    final Bytes32 forkChoiceHeadRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceState forkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(forkChoiceHeadRoot),
+            UInt64.ONE,
+            UInt64.ONE,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            false);
+    final ForkChoiceUpdateData forkChoiceUpdateData =
+        new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), Optional.empty());
+
+    when(recentChainData.isJustifiedCheckpointFullyValidated()).thenReturn(true);
+    when(recentChainData.retrieveBlockState(new SlotAndBlockRoot(blockSlot, forkChoiceHeadRoot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    eventThread
+        .execute(
+            () ->
+                manager
+                    .calculatePayloadBuildingAttributes(
+                        blockSlot, true, forkChoiceUpdateData, false)
+                    .join())
+        .join();
+
+    verify(recentChainData).retrieveBlockState(new SlotAndBlockRoot(blockSlot, forkChoiceHeadRoot));
   }
 }
