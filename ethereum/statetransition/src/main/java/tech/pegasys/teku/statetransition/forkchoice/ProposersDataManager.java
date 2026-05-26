@@ -285,7 +285,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
                   state, currentHeadBlock.payloadStatus(), Optional.empty()));
     }
     return retrieveParentExecutionRequests(currentHeadBlock.blockRoot(), state.getSlot())
-        .thenApplyChecked(
+        .thenApply(
             parentExecutionRequests ->
                 spec.getPayloadAttributeWithdrawals(
                     state, currentHeadBlock.payloadStatus(), Optional.of(parentExecutionRequests)));
