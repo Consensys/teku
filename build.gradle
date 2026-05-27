@@ -670,10 +670,10 @@ application {
 		"-Dlog4j2.formatMsgNoLookups=true",
 		// run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
 		"-XX:NativeMemoryTracking=summary",
-		// 64Mb for Netty Direct ByteBuf. The pooled allocator's per-arena 4Mb chunks
+		// 128Mb for Netty Direct ByteBuf. The pooled allocator's per-arena 4Mb chunks
 		// (one chunk retained per arena after first use) plus active cumulation buffers
 		// can exceed 32Mb under libp2p load.
-		"-Dio.netty.maxDirectMemory=67108864",
+		"-Dio.netty.maxDirectMemory=134217728",
 		// Use the pooled allocator instead of Netty 4.2's default AdaptivePoolingAllocator,
 		// whose per-event-loop magazines have an unbounded thread-count footprint.
 		"-Dio.netty.allocator.type=pooled",
