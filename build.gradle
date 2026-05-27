@@ -670,10 +670,14 @@ application {
 		"-Dlog4j2.formatMsgNoLookups=true",
 		// run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
 		"-XX:NativeMemoryTracking=summary",
-		// 64Mb for Netty Direct ByteBuf. Sized for libp2p baseline footprint
-		// (per-thread / per-arena chunks) plus active cumulation buffers under DAS load.
+		// 128Mb for Netty Direct ByteBuf. Sized for libp2p baseline footprint
+		// (per-arena chunks) plus active cumulation buffers under DAS load.
 		// Override at runtime with --Xnetty-max-direct-memory <MEGABYTES>.
-		"-Dio.netty.maxDirectMemory=67108864",
+		"-Dio.netty.maxDirectMemory=134217728",
+		// Force the pre-4.2 PooledByteBufAllocator instead of Netty 4.2's default
+		// AdaptivePoolingAllocator. Adaptive's per-event-loop magazines retain chunks
+		// indefinitely and OOM under DAS load even at 128Mb. Empirically tested 2026-05-27.
+		"-Dio.netty.allocator.type=pooled",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
