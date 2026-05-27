@@ -20,3 +20,4 @@
  - Fixed a potential issue in importing blocks when data is not available.
  - Fixed potential NPE when SSE are not closed correctly.
  - Improved pruning for data column sidecars.
+ - Delayed DVT attestation selection proof submissions until the target epoch starts, preventing lookahead duties from being submitted too early and ensuring stale pending batches are cancelled when duties are rescheduled.

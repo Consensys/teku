@@ -22,12 +22,15 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
@@ -37,22 +40,37 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
+  private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
+  private final WithdrawalsHelpersGloas withdrawalsHelpers;
+  private final ExecutionRequestsProcessorGloas executionRequestsProcessor;
+
   public ForkChoiceUtilGloas(
       final SpecConfigGloas specConfig,
       final BeaconStateAccessorsGloas beaconStateAccessors,
+      final BeaconStateMutatorsGloas beaconStateMutators,
       final EpochProcessorGloas epochProcessor,
       final AttestationUtilGloas attestationUtil,
-      final MiscHelpersGloas miscHelpers) {
+      final MiscHelpersGloas miscHelpers,
+      final WithdrawalsHelpersGloas withdrawalsHelpers,
+      final ExecutionRequestsProcessorGloas executionRequestsProcessor) {
     super(specConfig, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+    this.beaconStateMutatorsGloas = beaconStateMutators;
+    this.withdrawalsHelpers = withdrawalsHelpers;
+    this.executionRequestsProcessor = executionRequestsProcessor;
   }
 
   @Override
@@ -67,6 +85,26 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
         "Expected a ForkChoiceUtilGloas but was %s",
         forkChoiceUtil.getClass());
     return (ForkChoiceUtilGloas) forkChoiceUtil;
+  }
+
+  /**
+   * Applies parent execution payload processing to a transient state copy, then returns the
+   * payload_expected_withdrawals to include in Engine API payload attributes.
+   */
+  public SszList<Withdrawal> getPayloadAttributeWithdrawals(
+      final BeaconState state, final ExecutionRequests parentExecutionRequests) {
+    final BeaconState effectiveState =
+        state.updated(
+            stateMutable -> {
+              final MutableBeaconStateGloas stateGloas =
+                  MutableBeaconStateGloas.required(stateMutable);
+              executionRequestsProcessor.applyParentExecutionPayload(
+                  stateGloas,
+                  parentExecutionRequests,
+                  beaconStateMutatorsGloas.createValidatorExitContextSupplier(stateGloas));
+              withdrawalsHelpers.processWithdrawals(stateGloas);
+            });
+    return BeaconStateGloas.required(effectiveState).getPayloadExpectedWithdrawals();
   }
 
   @Override
