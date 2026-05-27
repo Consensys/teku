@@ -27,6 +27,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
@@ -87,9 +89,7 @@ public class StoredBlockMetadata {
         blockAndState.getExecutionBlockNumber(),
         blockAndState.getExecutionBlockHash(),
         Optional.of(epochs),
-        blockAndState
-            .getSignedBeaconBlock()
-            .flatMap(StoredBlockMetadata::extractGloasForkChoiceRebuildData));
+        extractGloasForkChoiceRebuildData(blockAndState));
   }
 
   public UInt64 getBlockSlot() {
@@ -157,6 +157,14 @@ public class StoredBlockMetadata {
   }
 
   public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final StateAndBlockSummary blockAndState) {
+    return blockAndState
+        .getSignedBeaconBlock()
+        .map(StoredBlockMetadata::extractGloasForkChoiceRebuildData)
+        .orElseGet(() -> extractGloasForkChoiceRebuildData(blockAndState.getState()));
+  }
+
+  public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
       final SignedBeaconBlock block) {
     return extractGloasForkChoiceRebuildData(block, Optional.empty());
   }
@@ -176,6 +184,21 @@ public class StoredBlockMetadata {
                     bid.getBlockHash(),
                     maybeBlindedEnvelope.map(
                         envelope -> getPayloadBlockNumber(block.getRoot(), bid, envelope))));
+  }
+
+  // State-only fallback. latest_execution_payload_bid is the promised (parent_block_hash,
+  // block_hash) committed by the beacon block, not proof of reveal — enough for BASE/EMPTY.
+  // FULL is skipped: state lacks the EL block_number (only in the envelope), so it will be
+  // attached later from a replayed/received envelope.
+  private static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final BeaconState state) {
+    return state
+        .toVersionGloas()
+        .map(BeaconStateGloas::getLatestExecutionPayloadBid)
+        .map(
+            bid ->
+                new GloasForkChoiceRebuildData(
+                    bid.getParentBlockHash(), bid.getBlockHash(), Optional.empty()));
   }
 
   private static UInt64 getPayloadBlockNumber(

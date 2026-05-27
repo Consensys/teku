@@ -278,12 +278,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                           headSelectionContext));
       final UInt64 headExecutionBlockNumber = headNode.getExecutionBlockNumber();
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
-      final Bytes32 justifiedExecutionHash =
-          getExecutionNodeData(justifiedCheckpoint.getRoot())
+      // FCU safe/finalized hashes use BASE data, not the execution/FULL variant.
+      // Pre-Gloas has only BASE, so this is the normal execution payload block hash.
+      // In Gloas, BASE/EMPTY carry the effective EL parent hash from the bid
+      // parent_block_hash; FULL carries the revealed payload hash for the selected head.
+      final Bytes32 safeExecutionHash =
+          getBaseNodeData(justifiedCheckpoint.getRoot())
               .map(ProtoNodeData::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
-          getExecutionNodeData(finalizedCheckpoint.getRoot())
+          getBaseNodeData(finalizedCheckpoint.getRoot())
               .map(ProtoNodeData::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       return new ForkChoiceState(
@@ -291,7 +295,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headNode.getBlockSlot(),
           headExecutionBlockNumber,
           headExecutionBlockHash,
-          justifiedExecutionHash,
+          safeExecutionHash,
           finalizedExecutionHash,
           headNode.isOptimistic() || !protoArray.nodeIsViableForHead(headNode));
     } finally {
@@ -451,9 +455,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.readLock().lock();
     try {
       return getForkChoiceModelForRoot(blockRoot)
-          .flatMap(
-              forkChoiceModel ->
-                  forkChoiceModel.getBaseNodeData(protoArray, blockNodeIndex, blockRoot));
+          .flatMap(forkChoiceModel -> getBaseNodeData(forkChoiceModel, blockRoot));
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -479,6 +481,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     try {
       return getForkChoiceModelForPayloadDecision(store, blockRoot)
           .shouldExtendPayload(protoArray, blockNodeIndex, store, blockRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForPayloadDecision(store, head.blockRoot())
+          .shouldBuildOnFull(protoArray, blockNodeIndex, store, head);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -561,6 +574,18 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   @Override
   public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
     return getAncestorProtoNode(blockRoot, slot).map(ProtoNode::getForkChoiceNode);
+  }
+
+  @Override
+  public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForRoot(node.blockRoot())
+          .flatMap(forkChoiceModel -> forkChoiceModel.getParentBeaconBlockNode(protoArray, node))
+          .map(ProtoNode::getForkChoiceNode);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
   }
 
   private Optional<ProtoNode> getAncestorProtoNode(final Bytes32 blockRoot, final UInt64 slot) {
@@ -868,6 +893,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private Optional<ProtoNodeData> getExecutionNodeData(final Bytes32 blockRoot) {
     return getForkChoiceModelForRoot(blockRoot)
         .flatMap(model -> model.getExecutionNodeData(protoArray, blockNodeIndex, blockRoot));
+  }
+
+  private Optional<ProtoNodeData> getBaseNodeData(final Bytes32 blockRoot) {
+    return getForkChoiceModelForRoot(blockRoot)
+        .flatMap(forkChoiceModel -> getBaseNodeData(forkChoiceModel, blockRoot));
+  }
+
+  private Optional<ProtoNodeData> getBaseNodeData(
+      final ForkChoiceModel forkChoiceModel, final Bytes32 blockRoot) {
+    return forkChoiceModel.getBaseNodeData(protoArray, blockNodeIndex, blockRoot);
   }
 
   private boolean isBaseNode(final ProtoNode node) {
