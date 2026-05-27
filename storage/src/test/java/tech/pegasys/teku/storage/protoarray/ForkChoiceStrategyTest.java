@@ -217,7 +217,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void shouldBuildOnFull_shouldReturnFalseForOptimisticFullNode() {
+  void shouldBuildOnFull_shouldReturnFalseForUnvalidatedFullNode() {
     final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture(true, false);
     final Bytes32 blockRoot = fixture.block().getRoot();
 

@@ -584,7 +584,6 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       return false;
     }
     // Spec is_payload_verified maps to a FULL node that has completed EL validation in Teku.
-    // Optimistic FULL nodes must not be used as block-production parents.
     if (blockNodeIndex
         .getFullNode(head.blockRoot())
         .flatMap(protoArray::getNode)
