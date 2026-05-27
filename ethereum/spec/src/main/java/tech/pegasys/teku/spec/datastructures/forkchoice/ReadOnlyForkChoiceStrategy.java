@@ -114,15 +114,5 @@ public interface ReadOnlyForkChoiceStrategy {
    */
   boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head);
 
-  default Optional<Boolean> getPayloadTimelinessVote(
-      final Bytes32 blockRoot, final int ptcPosition) {
-    return Optional.empty();
-  }
-
-  default Optional<Boolean> getPayloadDataAvailabilityVote(
-      final Bytes32 blockRoot, final int ptcPosition) {
-    return Optional.empty();
-  }
-
   Optional<UInt64> getWeight(Bytes32 blockRoot);
 }
