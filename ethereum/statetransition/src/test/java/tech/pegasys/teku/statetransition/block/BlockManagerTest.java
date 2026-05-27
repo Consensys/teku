@@ -73,7 +73,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -213,7 +212,6 @@ public class BlockManagerTest {
     localChain
         .chainUpdater()
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
-    seedGenesisExecutionPayloadForGloas();
     assertThat(blockManager.start()).isCompleted();
     when(blobSidecarManager.createAvailabilityChecker(any()))
         .thenReturn(AvailabilityChecker.NOOP_BLOB_SIDECAR);
@@ -230,12 +228,6 @@ public class BlockManagerTest {
             })
         .when(receivedBlockEventsChannelPublisher)
         .onBlockImported(any(), anyBoolean());
-  }
-
-  private void seedGenesisExecutionPayloadForGloas() {
-    if (spec.getGenesisSpecConfig().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      forkChoice.applyGenesisExecutionPayloadForGloas().join();
-    }
   }
 
   @AfterEach
@@ -394,6 +386,7 @@ public class BlockManagerTest {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
             builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    forkChoice.applyGenesisExecutionPayloadForGloas().join();
 
     final List<ParentExecutionPayloadDependency> requiredParentExecutionPayloads =
         new ArrayList<>();
