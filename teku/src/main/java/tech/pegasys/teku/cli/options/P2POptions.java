@@ -46,6 +46,18 @@ public class P2POptions {
   @Mixin private final NatOptions natOptions = new NatOptions();
 
   @Option(
+      names = {"--Xnetty-max-direct-memory"},
+      paramLabel = "<MEGABYTES>",
+      description =
+          "Max direct memory available to Netty buffers, in megabytes. Sets the io.netty.maxDirectMemory "
+              + "system property. Applied from the command line at JVM startup, before Netty loads. "
+              + "Has no effect if passed via a config file.",
+      arity = "1",
+      hidden = true)
+  @SuppressWarnings("UnusedVariable")
+  private Integer nettyMaxDirectMemoryMb;
+
+  @Option(
       names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,

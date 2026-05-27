@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Optional;
@@ -33,6 +34,7 @@ public final class Teku {
   }
 
   public static void main(final String[] args) {
+    applyNettyMaxDirectMemoryOverride(args);
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
 
     try {
@@ -103,6 +105,56 @@ public final class Teku {
 
   static ValidatorNode startValidatorNode(final TekuConfiguration config) {
     return (ValidatorNode) start(config, NodeMode.VC_ONLY);
+  }
+
+  // Netty's PlatformDependent reads io.netty.maxDirectMemory in a static initializer the
+  // first time the class is loaded. Apply the override from CLI args before anything else
+  // runs so it takes effect before PlatformDependent loads.
+  private static void applyNettyMaxDirectMemoryOverride(final String[] args) {
+    final String optionName = "--Xnetty-max-direct-memory";
+    final String raw = extractCliOptionValue(args, optionName);
+    if (raw == null) {
+      return;
+    }
+    final long bytes;
+    try {
+      bytes = megabytesToBytes(raw);
+    } catch (final IllegalArgumentException e) {
+      System.err.println("Invalid value for " + optionName + ": " + e.getMessage());
+      System.exit(2);
+      return;
+    }
+    System.setProperty("io.netty.maxDirectMemory", Long.toString(bytes));
+  }
+
+  @VisibleForTesting
+  static long megabytesToBytes(final String megabytes) {
+    final int mb;
+    try {
+      mb = Integer.parseInt(megabytes.trim());
+    } catch (final NumberFormatException e) {
+      throw new IllegalArgumentException(
+          "expected an integer number of megabytes, got '" + megabytes + "'");
+    }
+    if (mb <= 0) {
+      throw new IllegalArgumentException("must be positive, got " + mb);
+    }
+    return (long) mb * 1024L * 1024L;
+  }
+
+  @VisibleForTesting
+  static String extractCliOptionValue(final String[] args, final String optionName) {
+    final String prefix = optionName + "=";
+    for (int i = 0; i < args.length; i++) {
+      final String arg = args[i];
+      if (arg.startsWith(prefix)) {
+        return arg.substring(prefix.length());
+      }
+      if (arg.equals(optionName) && i + 1 < args.length) {
+        return args[i + 1];
+      }
+    }
+    return null;
   }
 
   private static class CLIException extends RuntimeException {
