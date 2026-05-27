@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGlo
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ProposerPreferencesUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.weaksubjectivity.WeakSubjectivityCalculatorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -75,6 +76,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculatorGloas weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtilGloas attestationUtil,
@@ -100,6 +102,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -137,6 +140,10 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifierGloas operationSignatureVerifier =
         new OperationSignatureVerifierGloas(miscHelpers, beaconStateAccessors, predicates);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculatorGloas weakSubjectivityCalculator =
+        new WeakSubjectivityCalculatorGloas(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtilGloas validatorsUtil =
@@ -217,7 +224,14 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             miscHelpers, beaconStateAccessors, executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilGloas(
-            config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+            config,
+            beaconStateAccessors,
+            beaconStateMutators,
+            epochProcessor,
+            attestationUtil,
+            miscHelpers,
+            withdrawalsHelpers,
+            executionRequestsProcessor);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
 
@@ -249,6 +263,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,

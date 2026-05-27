@@ -820,7 +820,7 @@ public abstract class RecentChainData
         .orElse(Collections.emptyList());
   }
 
-  public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
+  public ForkChoiceNode getProposerHead(final ForkChoiceNode headRoot, final UInt64 slot) {
     return spec.atSlot(slot).getForkChoiceUtil().getProposerHead(this, headRoot, slot);
   }
 

@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -442,10 +443,8 @@ class ForkChoiceUtilTest {
     setup.withHeadBlock();
     setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), true);
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.ONE))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.ONE)).isEqualTo(head);
   }
 
   @Test
@@ -456,10 +455,8 @@ class ForkChoiceUtilTest {
     when(setup.store.getProposerBoostRoot())
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.ONE))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.ONE)).isEqualTo(head);
   }
 
   @Test
@@ -473,10 +470,13 @@ class ForkChoiceUtilTest {
     setup.harness.headWeak = true;
     setup.harness.parentStrong = true;
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getParentRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode parent =
+        ForkChoiceNode.createBase(setup.signedBlockAndState.getParentRoot());
+    when(setup.forkChoiceStrategy.getParentBeaconBlockNode(head)).thenReturn(Optional.of(parent));
+
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(parent);
   }
 
   @Test
@@ -490,10 +490,9 @@ class ForkChoiceUtilTest {
     setup.harness.headWeak = true;
     setup.harness.parentStrong = false;
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test

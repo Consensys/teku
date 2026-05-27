@@ -41,6 +41,8 @@ public interface ReadOnlyForkChoiceStrategy {
     return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
   }
 
+  Optional<ForkChoiceNode> getParentBeaconBlockNode(ForkChoiceNode node);
+
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 
   List<Bytes32> getBlockRootsAtSlot(UInt64 slot);
@@ -103,6 +105,14 @@ public interface ReadOnlyForkChoiceStrategy {
    * selection rules.
    */
   boolean shouldExtendPayload(ReadOnlyStore store, Bytes32 blockRoot);
+
+  /**
+   * Returns whether block production should build on the FULL variant of {@code head}.
+   *
+   * <p>Pre-Gloas follows the existing {@link #shouldExtendPayload(ReadOnlyStore, Bytes32)}
+   * decision. Gloas overrides this to account for PTC votes that signal data unavailability.
+   */
+  boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head);
 
   Optional<UInt64> getWeight(Bytes32 blockRoot);
 }
