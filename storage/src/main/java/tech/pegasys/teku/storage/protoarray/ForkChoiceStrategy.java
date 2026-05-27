@@ -579,8 +579,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.readLock().lock();
     try {
       return getForkChoiceModelForRoot(node.blockRoot())
-          .orElseThrow()
-          .getParentBeaconBlockNode(protoArray, node)
+          .flatMap(forkChoiceModel -> forkChoiceModel.getParentBeaconBlockNode(protoArray, node))
           .map(ProtoNode::getForkChoiceNode);
     } finally {
       protoArrayLock.readLock().unlock();
