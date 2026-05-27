@@ -144,7 +144,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                           latestBlockHash,
                           Bytes32.ZERO,
                           Bytes20.ZERO,
-                          UInt64.ZERO,
+                          preStateFulu.getLatestExecutionPayloadHeaderRequired().getGasLimit(),
                           UInt64.ZERO,
                           UInt64.ZERO,
                           UInt64.ZERO,
