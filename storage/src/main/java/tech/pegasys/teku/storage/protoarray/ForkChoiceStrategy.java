@@ -487,6 +487,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
+  public boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForPayloadDecision(store, head.blockRoot())
+          .shouldBuildOnFull(protoArray, blockNodeIndex, store, head);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
   public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
@@ -563,6 +574,18 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   @Override
   public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
     return getAncestorProtoNode(blockRoot, slot).map(ProtoNode::getForkChoiceNode);
+  }
+
+  @Override
+  public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForRoot(node.blockRoot())
+          .flatMap(forkChoiceModel -> forkChoiceModel.getParentBeaconBlockNode(protoArray, node))
+          .map(ProtoNode::getForkChoiceNode);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
   }
 
   private Optional<ProtoNode> getAncestorProtoNode(final Bytes32 blockRoot, final UInt64 slot) {

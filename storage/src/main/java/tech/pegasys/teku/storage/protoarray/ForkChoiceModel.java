@@ -109,11 +109,20 @@ interface ForkChoiceModel {
   Optional<ProtoNodeData> getBaseNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
+  Optional<ProtoNode> getParentBeaconBlockNode(
+      ProtoArray protoArray, ForkChoiceNode forkChoiceNode);
+
   boolean shouldExtendPayload(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
       ReadOnlyStore store,
       Bytes32 blockRoot);
+
+  boolean shouldBuildOnFull(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ReadOnlyStore store,
+      ForkChoiceNode head);
 
   /**
    * Returns whether the supplied node is a valid head candidate for this fork-aware model.

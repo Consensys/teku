@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_node_children
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_parent_payload_status
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_parent_node_full
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-should_build_on_full
  */
 class ForkChoiceModelGloas implements ForkChoiceModel {
 
@@ -454,8 +457,9 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       return false;
     }
 
-    if (isPayloadTimely(blockNodeIndex, blockRoot)
-        && isPayloadDataAvailable(blockNodeIndex, blockRoot)) {
+    final boolean payloadIsTimely = payloadTimeliness(blockNodeIndex, blockRoot, true);
+    final boolean payloadDataIsAvailable = payloadDataAvailability(blockNodeIndex, blockRoot, true);
+    if (payloadIsTimely && payloadDataIsAvailable) {
       return true;
     }
     if (proposerBoostRoot.isEmpty()) {
@@ -478,20 +482,28 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         .orElse(false);
   }
 
-  private boolean isPayloadTimely(
-      final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
-    if (blockNodeIndex.getFullNode(blockRoot).isEmpty()) {
-      return false;
+  private boolean payloadTimeliness(
+      final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot, final boolean timely) {
+    if (!isPayloadVerified(blockNodeIndex, blockRoot)) {
+      return !timely;
     }
-    return ptcVoteTracker.getPayloadPresentVoteCount(blockRoot) > payloadTimelyThreshold;
+    return ptcVoteTracker.getPayloadPresentVoteCount(blockRoot, timely) > payloadTimelyThreshold;
   }
 
-  private boolean isPayloadDataAvailable(
-      final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
-    if (blockNodeIndex.getFullNode(blockRoot).isEmpty()) {
-      return false;
+  private boolean payloadDataAvailability(
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final Bytes32 blockRoot,
+      final boolean available) {
+    if (!isPayloadVerified(blockNodeIndex, blockRoot)) {
+      return !available;
     }
-    return ptcVoteTracker.getDataAvailableVoteCount(blockRoot) > dataAvailabilityTimelyThreshold;
+    return ptcVoteTracker.getDataAvailableVoteCount(blockRoot, available)
+        > dataAvailabilityTimelyThreshold;
+  }
+
+  private boolean isPayloadVerified(
+      final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
+    return blockNodeIndex.getFullNode(blockRoot).isPresent();
   }
 
   @Override
@@ -560,12 +572,61 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
+  public Optional<ProtoNode> getParentBeaconBlockNode(
+      final ProtoArray protoArray, final ForkChoiceNode forkChoiceNode) {
+    // FULL/EMPTY → BASE(same block) → parent block's variant.
+    // BASE → parent block's variant directly.
+    return protoArray
+        .getNode(forkChoiceNode)
+        .flatMap(
+            current ->
+                forkChoiceNode.payloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING
+                    ? Optional.of(current)
+                    : current.getParentIndex().map(protoArray::getNodeByIndex))
+        .flatMap(baseNode -> baseNode.getParentIndex().map(protoArray::getNodeByIndex));
+  }
+
+  @Override
   public boolean shouldExtendPayload(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final ReadOnlyStore store,
       final Bytes32 blockRoot) {
     return shouldExtendPayload(blockNodeIndex, blockRoot, protoArray, store.getProposerBoostRoot());
+  }
+
+  /**
+   * Spec mapping: `should_build_on_full(store, head)`.
+   *
+   * <p>The proposer calls this after fork choice has selected a non-pending head, before choosing
+   * whether block production should use the parent's FULL payload variant or reorg to its EMPTY
+   * variant. Like `should_extend_payload(...)`, this is a payload-variant decision, but it also
+   * respects the PTC data-availability view.
+   *
+   * <p>The local FULL-node validation check models the spec's `is_payload_verified(...)` guard. A
+   * verified FULL head is used unless the PTC has crossed the data-unavailable threshold.
+   */
+  @Override
+  public boolean shouldBuildOnFull(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final ForkChoiceNode head) {
+    checkArgument(
+        head.payloadStatus() != ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING,
+        "shouldBuildOnFull requires a non-pending head");
+    if (head.payloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY) {
+      return false;
+    }
+    // Spec is_payload_verified maps to a FULL node that has completed EL validation in Teku.
+    if (blockNodeIndex
+        .getFullNode(head.blockRoot())
+        .flatMap(protoArray::getNode)
+        .map(fullNode -> !fullNode.isFullyValidated())
+        .orElse(true)) {
+      return false;
+    }
+    return !payloadDataAvailability(blockNodeIndex, head.blockRoot(), false);
   }
 
   @Override
