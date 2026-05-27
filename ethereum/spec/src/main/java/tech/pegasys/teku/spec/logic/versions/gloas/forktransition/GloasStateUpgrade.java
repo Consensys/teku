@@ -167,11 +167,10 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
 
   /** Applies any pending deposit for builders, effectively onboarding builders at the fork. */
   private void onboardBuildersFromPendingDeposits(final MutableBeaconStateGloas state) {
-    final long startTimeNanos = System.nanoTime();
+    final long startTimeMillis = System.currentTimeMillis();
     LOG.debug(
-        "Starting onboarding builders at fork from {} pending deposits at timestampNanos={}",
-        state.getPendingDeposits().size(),
-        startTimeNanos);
+        "Starting onboarding builders at fork from {} pending deposits",
+        state.getPendingDeposits().size());
     final Set<BLSPublicKey> validatorPubkeys =
         state.getValidators().stream().map(Validator::getPublicKey).collect(Collectors.toSet());
     final List<PendingDeposit> pendingDeposits = new ArrayList<>();
@@ -219,12 +218,10 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
     }
     state.setPendingDeposits(
         schemaDefinitions.getPendingDepositsSchema().createFromElements(pendingDeposits));
-    final long finishTimeNanos = System.nanoTime();
     LOG.debug(
-        "Finished onboarding builders at fork at timestampNanos={}. Pending deposits remaining: {}, builders: {}, elapsedNanos={}",
-        finishTimeNanos,
+        "Finished onboarding builders at fork. Pending deposits remaining: {}, builders: {}. Took {} ms",
         pendingDeposits.size(),
         state.getBuilders().size(),
-        finishTimeNanos - startTimeNanos);
+        System.currentTimeMillis() - startTimeMillis);
   }
 }

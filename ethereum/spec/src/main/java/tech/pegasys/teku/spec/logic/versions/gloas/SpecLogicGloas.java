@@ -231,7 +231,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             attestationUtil,
             miscHelpers,
             withdrawalsHelpers,
-            executionRequestsProcessor);
+            blockProcessor);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
 

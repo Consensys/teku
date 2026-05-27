@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -27,18 +24,13 @@ import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -48,10 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorElectra {
-  private static final Logger LOG = LogManager.getLogger();
 
-  private final SchemaDefinitionsGloas schemaDefinitionsGloas;
-  private final SpecConfigGloas specConfigGloas;
   private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
@@ -73,71 +62,10 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
         validatorsUtil,
         beaconStateMutators,
         beaconStateAccessors);
-    this.schemaDefinitionsGloas = schemaDefinitions;
-    this.specConfigGloas = specConfig;
     this.miscHelpersGloas = miscHelpers;
     this.predicatesGloas = predicates;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.beaconStateAccessorsGloas = beaconStateAccessors;
-  }
-
-  // apply_parent_execution_payload
-  public void applyParentExecutionPayload(
-      final MutableBeaconStateGloas state,
-      final ExecutionRequests requests,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    final ExecutionPayloadBid parentBid = state.getLatestExecutionPayloadBid();
-    final UInt64 parentSlot = parentBid.getSlot();
-    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
-
-    // Process execution requests from parent's payload. The execution requests are processed at
-    // state.slot (child's slot), not the parent's slot.
-    final long startTimeNanos = System.nanoTime();
-    LOG.debug(
-        "Starting processing builder deposits from {} execution request deposits at timestampNanos={}",
-        requests.getDeposits().size(),
-        startTimeNanos);
-    processDepositRequests(state, requests.getDeposits());
-    final long finishTimeNanos = System.nanoTime();
-    LOG.debug(
-        "Finished processing builder deposits at timestampNanos={}. Pending deposits: {}, builders: {}, elapsedNanos={}",
-        finishTimeNanos,
-        state.getPendingDeposits().size(),
-        state.getBuilders().size(),
-        finishTimeNanos - startTimeNanos);
-    processWithdrawalRequests(state, requests.getWithdrawals(), validatorExitContextSupplier);
-    processConsolidationRequests(state, requests.getConsolidations());
-
-    // Settle the builder payment
-    if (parentEpoch.equals(beaconStateAccessorsGloas.getCurrentEpoch(state))) {
-      final UInt64 paymentIndex =
-          parentSlot
-              .mod(specConfigGloas.getSlotsPerEpoch())
-              .plus(specConfigGloas.getSlotsPerEpoch());
-      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
-    } else if (parentEpoch.equals(beaconStateAccessorsGloas.getPreviousEpoch(state))) {
-      final UInt64 paymentIndex = parentSlot.mod(specConfigGloas.getSlotsPerEpoch());
-      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
-    } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
-      // Parent is older than the previous epoch, its payment entry has been
-      // evicted from builder_pending_payments. Append the withdrawal directly.
-      state
-          .getBuilderPendingWithdrawals()
-          .append(
-              schemaDefinitionsGloas
-                  .getBuilderPendingWithdrawalSchema()
-                  .create(
-                      parentBid.getFeeRecipient(),
-                      parentBid.getValue(),
-                      parentBid.getBuilderIndex()));
-    }
-
-    // Update parent payload availability and latest block hash
-    state.setExecutionPayloadAvailability(
-        state
-            .getExecutionPayloadAvailability()
-            .withBit(parentSlot.mod(specConfigGloas.getSlotsPerHistoricalRoot()).intValue()));
-    state.setLatestBlockHash(parentBid.getBlockHash());
   }
 
   @Override
