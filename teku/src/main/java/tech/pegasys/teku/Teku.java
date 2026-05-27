@@ -13,11 +13,18 @@
 
 package tech.pegasys.teku;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.NodeMode;
@@ -27,6 +34,13 @@ import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
+
+  private static final String NETTY_MAX_DIRECT_MEMORY_PROPERTY = "io.netty.maxDirectMemory";
+  private static final String NETTY_MAX_DIRECT_MEMORY_OPTION = "--Xnetty-max-direct-memory";
+  private static final String NETTY_MAX_DIRECT_MEMORY_YAML_KEY = "Xnetty-max-direct-memory";
+  private static final String CONFIG_FILE_OPTION_LONG = "--config-file";
+  private static final String CONFIG_FILE_OPTION_SHORT = "-c";
+  private static final String CONFIG_FILE_ENV_VAR = "TEKU_CONFIG_FILE";
 
   static {
     // Disable libsodium in tuweni Hash because the check for it's presence can be very slow.
@@ -108,23 +122,54 @@ public final class Teku {
   }
 
   // Netty's PlatformDependent reads io.netty.maxDirectMemory in a static initializer the
-  // first time the class is loaded. Apply the override from CLI args before anything else
-  // runs so it takes effect before PlatformDependent loads.
+  // first time the class is loaded. Apply the override from CLI args (or the YAML config
+  // file, if any) before anything else runs so it takes effect before PlatformDependent loads.
   private static void applyNettyMaxDirectMemoryOverride(final String[] args) {
-    final String optionName = "--Xnetty-max-direct-memory";
-    final String raw = extractCliOptionValue(args, optionName);
-    if (raw == null) {
-      return;
-    }
-    final long bytes;
+    findCliOption(args, NETTY_MAX_DIRECT_MEMORY_OPTION)
+        .or(
+            () ->
+                findConfigFile(args, System::getenv)
+                    .flatMap(file -> readYamlEntry(file, NETTY_MAX_DIRECT_MEMORY_YAML_KEY)))
+        .map(Teku::parseMegabytesOrExit)
+        .ifPresent(
+            bytes -> System.setProperty(NETTY_MAX_DIRECT_MEMORY_PROPERTY, Long.toString(bytes)));
+  }
+
+  @VisibleForTesting
+  static Optional<File> findConfigFile(
+      final String[] args, final Function<String, String> envLookup) {
+    return findCliOption(args, CONFIG_FILE_OPTION_LONG)
+        .or(() -> findCliOption(args, CONFIG_FILE_OPTION_SHORT))
+        .or(() -> Optional.ofNullable(envLookup.apply(CONFIG_FILE_ENV_VAR)))
+        .map(File::new)
+        .filter(File::isFile);
+  }
+
+  @VisibleForTesting
+  static Optional<String> readYamlEntry(final File configFile, final String key) {
     try {
-      bytes = megabytesToBytes(raw);
-    } catch (final IllegalArgumentException e) {
-      System.err.println("Invalid value for " + optionName + ": " + e.getMessage());
-      System.exit(2);
-      return;
+      final Map<String, Object> map =
+          new ObjectMapper(new YAMLFactory()).readValue(configFile, new TypeReference<>() {});
+      return Optional.ofNullable(map).map(m -> m.get(key)).map(Object::toString);
+    } catch (final IOException e) {
+      // Silently ignore — picocli will surface a proper error when it loads the file later.
+      return Optional.empty();
     }
-    System.setProperty("io.netty.maxDirectMemory", Long.toString(bytes));
+  }
+
+  @VisibleForTesting
+  static Optional<String> findCliOption(final String[] args, final String optionName) {
+    final String prefix = optionName + "=";
+    for (int i = 0; i < args.length; i++) {
+      final String arg = args[i];
+      if (arg.startsWith(prefix)) {
+        return Optional.of(arg.substring(prefix.length()));
+      }
+      if (arg.equals(optionName) && i + 1 < args.length) {
+        return Optional.of(args[i + 1]);
+      }
+    }
+    return Optional.empty();
   }
 
   @VisibleForTesting
@@ -142,19 +187,15 @@ public final class Teku {
     return (long) mb * 1024L * 1024L;
   }
 
-  @VisibleForTesting
-  static String extractCliOptionValue(final String[] args, final String optionName) {
-    final String prefix = optionName + "=";
-    for (int i = 0; i < args.length; i++) {
-      final String arg = args[i];
-      if (arg.startsWith(prefix)) {
-        return arg.substring(prefix.length());
-      }
-      if (arg.equals(optionName) && i + 1 < args.length) {
-        return args[i + 1];
-      }
+  private static long parseMegabytesOrExit(final String raw) {
+    try {
+      return megabytesToBytes(raw);
+    } catch (final IllegalArgumentException e) {
+      System.err.println(
+          "Invalid value for " + NETTY_MAX_DIRECT_MEMORY_OPTION + ": " + e.getMessage());
+      System.exit(2);
+      throw new AssertionError("unreachable");
     }
-    return null;
   }
 
   private static class CLIException extends RuntimeException {

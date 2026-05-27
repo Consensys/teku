@@ -16,41 +16,54 @@ package tech.pegasys.teku;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class TekuTest {
 
   private static final String OPTION = "--Xnetty-max-direct-memory";
+  private static final String YAML_KEY = "Xnetty-max-direct-memory";
+  private static final Function<String, String> NO_ENV = name -> null;
+
+  // --- findCliOption ---------------------------------------------------------
 
   @Test
-  void extractCliOptionValue_returnsValueFromEqualsForm() {
+  void findCliOption_returnsValueFromEqualsForm() {
     final String[] args = {"--p2p-port=9000", OPTION + "=128", "--metrics-enabled"};
-    assertThat(Teku.extractCliOptionValue(args, OPTION)).isEqualTo("128");
+    assertThat(Teku.findCliOption(args, OPTION)).contains("128");
   }
 
   @Test
-  void extractCliOptionValue_returnsValueFromSpaceSeparatedForm() {
+  void findCliOption_returnsValueFromSpaceSeparatedForm() {
     final String[] args = {"--p2p-port", "9000", OPTION, "64", "--metrics-enabled"};
-    assertThat(Teku.extractCliOptionValue(args, OPTION)).isEqualTo("64");
+    assertThat(Teku.findCliOption(args, OPTION)).contains("64");
   }
 
   @Test
-  void extractCliOptionValue_returnsNullWhenAbsent() {
+  void findCliOption_isEmptyWhenAbsent() {
     final String[] args = {"--p2p-port=9000", "--metrics-enabled"};
-    assertThat(Teku.extractCliOptionValue(args, OPTION)).isNull();
+    assertThat(Teku.findCliOption(args, OPTION)).isEmpty();
   }
 
   @Test
-  void extractCliOptionValue_returnsNullWhenSpaceFormHasNoFollowingValue() {
+  void findCliOption_isEmptyWhenSpaceFormHasNoFollowingValue() {
     final String[] args = {"--p2p-port=9000", OPTION};
-    assertThat(Teku.extractCliOptionValue(args, OPTION)).isNull();
+    assertThat(Teku.findCliOption(args, OPTION)).isEmpty();
   }
 
   @Test
-  void extractCliOptionValue_doesNotMatchPrefixOfOtherOption() {
+  void findCliOption_doesNotMatchPrefixOfOtherOption() {
     final String[] args = {OPTION + "-extra=99", "--metrics-enabled"};
-    assertThat(Teku.extractCliOptionValue(args, OPTION)).isNull();
+    assertThat(Teku.findCliOption(args, OPTION)).isEmpty();
   }
+
+  // --- megabytesToBytes ------------------------------------------------------
 
   @Test
   void megabytesToBytes_convertsIntegerMb() {
@@ -75,5 +88,70 @@ class TekuTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> Teku.megabytesToBytes("-1"))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  // --- findConfigFile --------------------------------------------------------
+
+  @Test
+  void findConfigFile_returnsFileFromLongFlag(@TempDir final Path tmp) throws IOException {
+    final Path yaml = writeYaml(tmp, "p2p-port: 9001\n");
+    final Optional<File> result =
+        Teku.findConfigFile(new String[] {"--config-file=" + yaml}, NO_ENV);
+    assertThat(result).map(File::toPath).contains(yaml);
+  }
+
+  @Test
+  void findConfigFile_returnsFileFromShortFlag(@TempDir final Path tmp) throws IOException {
+    final Path yaml = writeYaml(tmp, "p2p-port: 9001\n");
+    final Optional<File> result = Teku.findConfigFile(new String[] {"-c", yaml.toString()}, NO_ENV);
+    assertThat(result).map(File::toPath).contains(yaml);
+  }
+
+  @Test
+  void findConfigFile_fallsBackToEnvVar(@TempDir final Path tmp) throws IOException {
+    final Path yaml = writeYaml(tmp, "p2p-port: 9001\n");
+    final Function<String, String> env =
+        name -> "TEKU_CONFIG_FILE".equals(name) ? yaml.toString() : null;
+    final Optional<File> result = Teku.findConfigFile(new String[] {}, env);
+    assertThat(result).map(File::toPath).contains(yaml);
+  }
+
+  @Test
+  void findConfigFile_isEmptyWhenNoneProvided() {
+    assertThat(Teku.findConfigFile(new String[] {"--p2p-port=9001"}, NO_ENV)).isEmpty();
+  }
+
+  @Test
+  void findConfigFile_isEmptyWhenPathDoesNotExist() {
+    final Optional<File> result =
+        Teku.findConfigFile(new String[] {"--config-file=/nonexistent/teku.yml"}, NO_ENV);
+    assertThat(result).isEmpty();
+  }
+
+  // --- readYamlEntry ---------------------------------------------------------
+
+  @Test
+  void readYamlEntry_returnsValueWhenKeyPresent(@TempDir final Path tmp) throws IOException {
+    final Path yaml = writeYaml(tmp, YAML_KEY + ": 128\np2p-port: 9001\n");
+    assertThat(Teku.readYamlEntry(yaml.toFile(), YAML_KEY)).contains("128");
+  }
+
+  @Test
+  void readYamlEntry_isEmptyWhenKeyMissing(@TempDir final Path tmp) throws IOException {
+    final Path yaml = writeYaml(tmp, "p2p-port: 9001\n");
+    assertThat(Teku.readYamlEntry(yaml.toFile(), YAML_KEY)).isEmpty();
+  }
+
+  @Test
+  void readYamlEntry_isEmptyOnMalformedYaml(@TempDir final Path tmp) throws IOException {
+    final Path yaml = tmp.resolve("broken.yml");
+    Files.writeString(yaml, "not: valid: yaml: ::: [\n");
+    assertThat(Teku.readYamlEntry(yaml.toFile(), YAML_KEY)).isEmpty();
+  }
+
+  private static Path writeYaml(final Path dir, final String content) throws IOException {
+    final Path file = dir.resolve("teku-config.yml");
+    Files.writeString(file, content);
+    return file;
   }
 }

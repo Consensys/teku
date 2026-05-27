@@ -50,8 +50,8 @@ public class P2POptions {
       paramLabel = "<MEGABYTES>",
       description =
           "Max direct memory available to Netty buffers, in megabytes. Sets the io.netty.maxDirectMemory "
-              + "system property. Applied from the command line at JVM startup, before Netty loads. "
-              + "Has no effect if passed via a config file.",
+              + "system property. Applied at JVM startup, before Netty loads, from either the command "
+              + "line or the YAML config file.",
       arity = "1",
       hidden = true)
   @SuppressWarnings("UnusedVariable")
