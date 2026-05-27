@@ -44,6 +44,11 @@ final class LimitedMapBackingMaps {
       }
 
       @Override
+      public void putAll(final Map<? extends K, ? extends V> map) {
+        map.forEach(this::put);
+      }
+
+      @Override
       public V merge(
           final K key,
           final V value,
