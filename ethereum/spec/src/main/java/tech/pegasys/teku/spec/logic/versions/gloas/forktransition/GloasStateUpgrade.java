@@ -219,7 +219,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
     state.setPendingDeposits(
         schemaDefinitions.getPendingDepositsSchema().createFromElements(pendingDeposits));
     LOG.debug(
-        "Finished onboarding builders at fork. Pending deposits remaining: {}, builders: {}. Took {} ms",
+        "Finished onboarding builders at fork. Pending deposits remaining: {}, builders: {}. Took {} ms.",
         pendingDeposits.size(),
         state.getBuilders().size(),
         System.currentTimeMillis() - startTimeMillis);

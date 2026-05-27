@@ -175,7 +175,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     LOG.debug("Starting processing {} deposit requests", requests.getDeposits().size());
     executionRequestsProcessorGloas.processDepositRequests(state, requests.getDeposits());
     LOG.debug(
-        "Finished processing {} deposit requests. Pending deposits: {}, builders: {}. Took {} ms",
+        "Finished processing {} deposit requests. Pending deposits: {}, builders: {}. Took {} ms.",
         requests.getDeposits().size(),
         state.getPendingDeposits().size(),
         state.getBuilders().size(),
