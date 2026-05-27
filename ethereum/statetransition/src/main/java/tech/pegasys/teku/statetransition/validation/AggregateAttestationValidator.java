@@ -80,6 +80,13 @@ public class AggregateAttestationValidator {
     final UInt64 aggregateSlot = aggregate.getData().getSlot();
     final SpecVersion specVersion = spec.atSlot(aggregateSlot);
 
+    // [New in Electra:EIP7549]
+    // [REJECT] Exactly one committee is specified by the committee bits
+    if (aggregate.requiresCommitteeBits()
+        && aggregate.getCommitteeBitsRequired().getBitCount() != 1) {
+      return completedFuture(reject("Rejecting attestation because committee bits count is not 1"));
+    }
+
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
             aggregateAndProof.getIndex(), spec.computeEpochAtSlot(aggregateSlot));

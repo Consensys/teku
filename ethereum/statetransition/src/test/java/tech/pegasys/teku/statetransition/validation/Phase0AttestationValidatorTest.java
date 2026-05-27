@@ -16,7 +16,9 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -30,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -57,6 +60,34 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
+  }
+
+  @Test
+  public void shouldIgnoreAttestationWhenFinalizedCheckpointIsNotAncestorOfBlock() {
+    final StateAndBlockSummary head = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(head);
+    final GossipValidationHelper gossipValidationHelper =
+        spy(new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem()));
+    doReturn(false)
+        .when(gossipValidationHelper)
+        .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+            attestation.getData().getBeaconBlockRoot());
+    final AttestationValidator validator =
+        new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
+
+    assertThat(
+            validator.validate(
+                ValidatableAttestation.fromNetwork(
+                    spec,
+                    attestation,
+                    spec.computeSubnetForAttestation(head.getState(), attestation))))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isIgnore()
+                    && result
+                        .getDescription()
+                        .orElse("")
+                        .contains("Finalized checkpoint is not an ancestor of block"));
   }
 
   @Test

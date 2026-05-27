@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
@@ -199,6 +200,35 @@ public class MiscHelpers {
   public UInt64 computeTimeMillisAtSlot(final UInt64 genesisTimeMillis, final UInt64 slot) {
     final UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
     return genesisTimeMillis.plus(slotsSinceGenesis.times(specConfig.getSlotDurationMillis()));
+  }
+
+  /**
+   * Mirrors the consensus-specs {@code is_within_slot_range} helper.
+   *
+   * <p>{@code inclusiveEndSlotOffset} is the offset from {@code startSlot} to the final included
+   * slot, not the number of slots in the range. For example, an epoch-sized range passes {@code
+   * SLOTS_PER_EPOCH - 1}, covering {@code [startSlot, startSlot + SLOTS_PER_EPOCH - 1]}. The time
+   * window ends at the start of the first slot after that inclusive range, with {@code
+   * MAXIMUM_GOSSIP_CLOCK_DISPARITY} applied to both boundaries.
+   */
+  public boolean isCurrentTimeWithinInclusiveSlotRange(
+      final UInt64 startSlot,
+      final UInt64 inclusiveEndSlotOffset,
+      final UInt64 genesisTimeSeconds,
+      final UInt64 currentTimeMillis) {
+    final UInt64 genesisTimeMillis = secondsToMillis(genesisTimeSeconds);
+    final UInt64 startTimeMillis = computeTimeMillisAtSlot(genesisTimeMillis, startSlot);
+    if (currentTimeMillis
+        .plus(specConfig.getMaximumGossipClockDisparity())
+        .isLessThan(startTimeMillis)) {
+      return false;
+    }
+
+    final UInt64 endTimeMillis =
+        computeTimeMillisAtSlot(genesisTimeMillis, startSlot.plus(inclusiveEndSlotOffset).plus(1));
+    return !endTimeMillis
+        .plus(specConfig.getMaximumGossipClockDisparity())
+        .isLessThan(currentTimeMillis);
   }
 
   public boolean isSlotAtNthEpochBoundary(
