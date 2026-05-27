@@ -186,6 +186,10 @@ public class StoredBlockMetadata {
                         envelope -> getPayloadBlockNumber(block.getRoot(), bid, envelope))));
   }
 
+  // State-only fallback. latest_execution_payload_bid is the promised (parent_block_hash,
+  // block_hash) committed by the beacon block, not proof of reveal — enough for BASE/EMPTY.
+  // FULL is skipped: state lacks the EL block_number (only in the envelope), so it will be
+  // attached later from a replayed/received envelope.
   private static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
       final BeaconState state) {
     return state
