@@ -66,9 +66,7 @@ public class DvtAttestationAggregations {
             .build();
 
     if (submitted.get()) {
-      return SafeFuture.failedFuture(
-          new RuntimeException(
-              "DVT attestation aggregation already submitted or cancelled for epoch " + epoch));
+      return SafeFuture.failedFuture(alreadySubmittedOrCancelledException());
     }
 
     final SafeFuture<BLSSignature> future = new SafeFuture<>();
@@ -76,14 +74,17 @@ public class DvtAttestationAggregations {
 
     if (submitted.get()) {
       pendingRequests.remove(request, future);
-      future.completeExceptionally(
-          new RuntimeException(
-              "DVT attestation aggregation already submitted or cancelled for epoch " + epoch));
+      future.completeExceptionally(alreadySubmittedOrCancelledException());
     } else if (activated && pendingRequests.size() >= expectedDutiesCount) {
       maybeSubmit();
     }
 
     return future;
+  }
+
+  private CancellationException alreadySubmittedOrCancelledException() {
+    return new CancellationException(
+        "DVT attestation aggregation already submitted or cancelled for epoch " + epoch);
   }
 
   public void activate() {

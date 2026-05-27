@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -232,7 +233,10 @@ class DvtAttestationAggregationsTest {
     final SafeFuture<BLSSignature> future =
         loader.getCombinedSelectionProofFuture(1, UInt64.ONE, dataStructureUtil.randomSignature());
 
-    assertThat(future).isCompletedExceptionally();
+    assertThat(future)
+        .isCompletedExceptionally()
+        .failsWithin(1, TimeUnit.SECONDS)
+        .withThrowableOfType(CancellationException.class);
     verifyNoInteractions(validatorApiChannel);
   }
 
