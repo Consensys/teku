@@ -74,6 +74,14 @@ interface ForkChoiceModel {
       StoredBlockMetadata block,
       boolean optimisticallyProcessed);
 
+  default void rebuildAnchorBlockNodesFromMetadata(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final StoredBlockMetadata block,
+      final boolean optimisticallyProcessed) {
+    rebuildBlockNodesFromMetadata(protoArray, blockNodeIndex, block, optimisticallyProcessed);
+  }
+
   /** Resolves a latest-message vote onto a concrete node identity. */
   Optional<ForkChoiceNode> resolveVoteNode(
       Bytes32 voteRoot,
