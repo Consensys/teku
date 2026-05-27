@@ -179,7 +179,10 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
         .flatMap(
             beaconBlockBodyGloas -> {
               final Bytes32 requiredParentBlockHash =
-                  beaconBlockBodyGloas.getSignedExecutionPayloadBid().getMessage().getParentBlockHash();
+                  beaconBlockBodyGloas
+                      .getSignedExecutionPayloadBid()
+                      .getMessage()
+                      .getParentBlockHash();
               return store
                   .getExecutionPayloadIfAvailable(block.getParentRoot())
                   .map(

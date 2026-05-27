@@ -105,7 +105,8 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
         blocksWaitingForParentExecutionPayload
             .getItemsDependingOn(parentExecutionPayloadDependency.parentBeaconBlockRoot(), false)
             .stream()
-            .filter(pendingBlock -> pendingBlock.dependency().equals(parentExecutionPayloadDependency))
+            .filter(
+                pendingBlock -> pendingBlock.dependency().equals(parentExecutionPayloadDependency))
             .toList();
     blocksToImport.forEach(blocksWaitingForParentExecutionPayload::remove);
     return blocksToImport.stream().map(PendingParentExecutionPayloadBlock::block).toList();

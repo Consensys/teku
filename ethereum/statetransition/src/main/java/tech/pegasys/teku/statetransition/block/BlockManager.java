@@ -385,7 +385,9 @@ public class BlockManager extends Service
   private void addBlockPendingParentExecutionPayload(final SignedBeaconBlock block) {
     final ParentExecutionPayloadDependency parentExecutionPayloadDependency =
         getRequiredParentExecutionPayloadDependency(block);
-    final boolean added = pendingBlockPool.addForMissingParentExecutionPayload(block, parentExecutionPayloadDependency);
+    final boolean added =
+        pendingBlockPool.addForMissingParentExecutionPayload(
+            block, parentExecutionPayloadDependency);
     if (!pendingBlockPool.contains(block)) {
       return;
     }
@@ -402,7 +404,8 @@ public class BlockManager extends Service
       pendingBlockPool.remove(block).ifPresent(this::importBlockIgnoringResult);
     } else if (added) {
       requiredParentExecutionPayloadSubscribers.deliver(
-          RequiredParentExecutionPayloadSubscriber::onRequiredParentExecutionPayload, parentExecutionPayloadDependency);
+          RequiredParentExecutionPayloadSubscriber::onRequiredParentExecutionPayload,
+          parentExecutionPayloadDependency);
     }
   }
 
