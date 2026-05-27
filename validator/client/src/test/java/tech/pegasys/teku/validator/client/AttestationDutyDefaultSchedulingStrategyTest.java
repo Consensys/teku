@@ -192,6 +192,32 @@ class AttestationDutyDefaultSchedulingStrategyTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
+  void dvtLookaheadDutiesAreAvailableBeforeDvtSubmissionCompletes() {
+    final AttestationDutyDefaultSchedulingStrategy dvtStrategy = createDvtStrategy();
+    final UInt64 lookaheadEpoch = UInt64.ONE;
+    final UInt64 firstSlotOfLookaheadEpoch = spec.computeStartSlotAtEpoch(lookaheadEpoch);
+    final AttesterDuties duties =
+        new AttesterDuties(
+            false,
+            dataStructureUtil.randomBytes32(),
+            List.of(createAggregatorDuty(firstSlotOfLookaheadEpoch)));
+
+    when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
+    when(signer.signAggregationSlot(firstSlotOfLookaheadEpoch, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+    when(validatorApiChannel.getBeaconCommitteeSelectionProof(any()))
+        .thenReturn(new SafeFuture<>());
+
+    final SafeFuture<SlotBasedScheduledDuties<?, ?>> result =
+        dvtStrategy.scheduleAllDuties(lookaheadEpoch, duties);
+
+    assertThat(result).isCompleted();
+    assertThat(result.getImmediately()).isSameAs(scheduledDuties);
+    verifyNoInteractions(validatorApiChannel);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void dvtSubmissionForCurrentEpochActivatesImmediately() {
     final AttestationDutyDefaultSchedulingStrategy dvtStrategy = createDvtStrategy();
     final UInt64 currentEpoch = UInt64.ONE;

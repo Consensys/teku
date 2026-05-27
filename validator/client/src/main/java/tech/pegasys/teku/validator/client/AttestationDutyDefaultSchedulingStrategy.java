@@ -78,9 +78,14 @@ public class AttestationDutyDefaultSchedulingStrategy
     final Optional<DvtAttestationAggregations> dvtAttestationAggregations =
         createDvtAttestationAggregations(epoch, duties.getDuties().size());
 
-    return scheduleDuties(scheduledDuties, duties.getDuties(), dvtAttestationAggregations)
-        .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
-        .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
+    final SafeFuture<Void> dutiesScheduling =
+        scheduleDuties(scheduledDuties, duties.getDuties(), dvtAttestationAggregations)
+            .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
+    if (dvtAttestationAggregations.isPresent()) {
+      dutiesScheduling.finishStackTrace();
+      return SafeFuture.completedFuture(scheduledDuties);
+    }
+    return dutiesScheduling.<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties);
   }
 
   private Optional<DvtAttestationAggregations> createDvtAttestationAggregations(
