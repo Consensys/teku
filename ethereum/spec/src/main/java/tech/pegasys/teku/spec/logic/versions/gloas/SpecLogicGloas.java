@@ -224,7 +224,14 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             miscHelpers, beaconStateAccessors, executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilGloas(
-            config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+            config,
+            beaconStateAccessors,
+            beaconStateMutators,
+            epochProcessor,
+            attestationUtil,
+            miscHelpers,
+            withdrawalsHelpers,
+            executionRequestsProcessor);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
 

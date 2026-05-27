@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +35,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -211,8 +216,8 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
     final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
     final ForkChoiceNode currentHeadBlock = forkChoiceState.headBlock();
-    return getStateInEpoch(epoch)
-        .thenApplyAsync(
+    return getStateForPayloadBuildingAttributes(blockSlot, forkChoiceState)
+        .thenComposeAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
                     currentHeadBlock, blockSlot, epoch, maybeState, mandatory),
@@ -227,7 +232,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
    * @param mandatory force to calculate {@link PayloadBuildingAttributes} (used in rare cases,
    *     where payloadId hasn't been retrieved from EL for the block slot)
    */
-  private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
+  private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
       final ForkChoiceNode currentHeadBlock,
       final UInt64 blockSlot,
       final UInt64 epoch,
@@ -235,7 +240,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       final boolean mandatory) {
     eventThread.checkOnEventThread();
     if (maybeState.isEmpty()) {
-      return Optional.empty();
+      return SafeFuture.completedFuture(Optional.empty());
     }
     final BeaconState state = maybeState.get();
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
@@ -244,7 +249,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
 
     if (proposerInfo == null && !(mandatory || forkChoiceUpdatedAlwaysSendPayloadAttribute)) {
       // Proposer is not one of our validators. No need to propose a block.
-      return Optional.empty();
+      return SafeFuture.completedFuture(Optional.empty());
     }
 
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
@@ -255,16 +260,61 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
 
     final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
 
-    return Optional.of(
-        new PayloadBuildingAttributes(
-            proposerIndex,
-            blockSlot,
-            timestamp,
-            random,
-            feeRecipient,
-            validatorRegistration,
-            spec.getExpectedWithdrawals(state),
-            currentHeadBlock));
+    return getPayloadAttributeWithdrawals(currentHeadBlock, state)
+        .thenApplyAsync(
+            withdrawals ->
+                Optional.of(
+                    new PayloadBuildingAttributes(
+                        proposerIndex,
+                        blockSlot,
+                        timestamp,
+                        random,
+                        feeRecipient,
+                        validatorRegistration,
+                        withdrawals,
+                        currentHeadBlock)),
+            eventThread);
+  }
+
+  private SafeFuture<Optional<List<Withdrawal>>> getPayloadAttributeWithdrawals(
+      final ForkChoiceNode currentHeadBlock, final BeaconState state) {
+    if (!requiresGloasParentExecutionRequests(currentHeadBlock)) {
+      return SafeFuture.of(
+          () ->
+              spec.getPayloadAttributeWithdrawals(
+                  state, currentHeadBlock.payloadStatus(), Optional.empty()));
+    }
+    return retrieveParentExecutionRequests(currentHeadBlock.blockRoot(), state.getSlot())
+        .thenApply(
+            parentExecutionRequests ->
+                spec.getPayloadAttributeWithdrawals(
+                    state, currentHeadBlock.payloadStatus(), Optional.of(parentExecutionRequests)));
+  }
+
+  private boolean requiresGloasParentExecutionRequests(final ForkChoiceNode currentHeadBlock) {
+    return currentHeadBlock.payloadStatus().equals(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+  }
+
+  private SafeFuture<ExecutionRequests> retrieveParentExecutionRequests(
+      final Bytes32 blockRoot, final UInt64 blockSlot) {
+    return recentChainData
+        .retrieveSignedBlindedExecutionPayloadByBlockRoot(blockRoot)
+        .thenApply(
+            executionPayload ->
+                executionPayload
+                    .map(SignedBlindedExecutionPayloadEnvelope::getExecutionRequests)
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Execution Requests for parent root %s are not available during payload attribute calculation for slot %s",
+                                    blockRoot, blockSlot))));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateForPayloadBuildingAttributes(
+      final UInt64 blockSlot, final ForkChoiceState forkChoiceState) {
+    return recentChainData.retrieveBlockState(
+        new SlotAndBlockRoot(blockSlot, forkChoiceState.headBlock().blockRoot()));
   }
 
   // this function MUST return a fee recipient.

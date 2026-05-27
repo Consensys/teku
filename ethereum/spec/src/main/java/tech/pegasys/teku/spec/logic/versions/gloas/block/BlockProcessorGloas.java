@@ -18,8 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -65,14 +63,13 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BlockProcessorGloas extends BlockProcessorFulu {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   private final PredicatesGloas predicatesGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
   private final MiscHelpersGloas miscHelpersGloas;
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final AttestationUtilGloas attestationUtilGloas;
+  private final ExecutionRequestsProcessorGloas executionRequestsProcessorGloas;
 
   public BlockProcessorGloas(
       final SpecConfigGloas specConfig,
@@ -112,6 +109,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     this.beaconStateAccessorsGloas = beaconStateAccessors;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.attestationUtilGloas = attestationUtil;
+    this.executionRequestsProcessorGloas = executionRequestsProcessor;
   }
 
   @Override
@@ -156,65 +154,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
 
-    applyParentExecutionPayload(stateGloas, requests, validatorExitContextSupplier);
-  }
-
-  // apply_parent_execution_payload
-  protected void applyParentExecutionPayload(
-      final MutableBeaconStateGloas state,
-      final ExecutionRequests requests,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    final ExecutionPayloadBid parentBid = state.getLatestExecutionPayloadBid();
-    final UInt64 parentSlot = parentBid.getSlot();
-    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
-
-    // Process execution requests from parent's payload. The execution requests are processed at
-    // state.slot (child's slot), not the parent's slot.
-    final long startTimeNanos = System.nanoTime();
-    LOG.debug(
-        "Starting processing builder deposits from {} execution request deposits at timestampNanos={}",
-        requests.getDeposits().size(),
-        startTimeNanos);
-    executionRequestsProcessor.processDepositRequests(state, requests.getDeposits());
-    final long finishTimeNanos = System.nanoTime();
-    LOG.debug(
-        "Finished processing builder deposits at timestampNanos={}. Pending deposits: {}, builders: {}, elapsedNanos={}",
-        finishTimeNanos,
-        state.getPendingDeposits().size(),
-        state.getBuilders().size(),
-        finishTimeNanos - startTimeNanos);
-    executionRequestsProcessor.processWithdrawalRequests(
-        state, requests.getWithdrawals(), validatorExitContextSupplier);
-    executionRequestsProcessor.processConsolidationRequests(state, requests.getConsolidations());
-
-    // Settle the builder payment
-    if (parentEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
-      final UInt64 paymentIndex =
-          parentSlot.mod(specConfig.getSlotsPerEpoch()).plus(specConfig.getSlotsPerEpoch());
-      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
-    } else if (parentEpoch.equals(beaconStateAccessors.getPreviousEpoch(state))) {
-      final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
-      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
-    } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
-      // Parent is older than the previous epoch, its payment entry has been
-      // evicted from builder_pending_payments. Append the withdrawal directly.
-      state
-          .getBuilderPendingWithdrawals()
-          .append(
-              schemaDefinitionsGloas
-                  .getBuilderPendingWithdrawalSchema()
-                  .create(
-                      parentBid.getFeeRecipient(),
-                      parentBid.getValue(),
-                      parentBid.getBuilderIndex()));
-    }
-
-    // Update parent payload availability and latest block hash
-    state.setExecutionPayloadAvailability(
-        state
-            .getExecutionPayloadAvailability()
-            .withBit(parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue()));
-    state.setLatestBlockHash(parentBid.getBlockHash());
+    executionRequestsProcessorGloas.applyParentExecutionPayload(
+        stateGloas, requests, validatorExitContextSupplier);
   }
 
   // process_withdrawals with only state as a parameter
