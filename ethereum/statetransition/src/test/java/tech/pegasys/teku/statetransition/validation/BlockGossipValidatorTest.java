@@ -466,6 +466,24 @@ public class BlockGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldSaveForFutureWhenParentFullPayloadIsNotAvailable(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(parentSlot);
+    storageSystem.chainUpdater().saveBlock(parentBlockAndState);
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(blockGossipValidator.validate(childBlockAndState.getBlock(), true))
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+  }
+
+  @TestTemplate
   void shouldRejectBlockWithIncorrectExecutionPayloadBidParentRoot(final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);

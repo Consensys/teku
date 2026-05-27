@@ -34,11 +34,13 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
@@ -186,12 +188,15 @@ public class BlockGossipValidator {
     return gossipValidationHelper
         .getParentStateInBlockEpoch(parentBlockSlot, block.getParentRoot(), block.getSlot())
         .thenApply(
-            maybeParentState -> performStatefulValidation(block, maybeParentState, markAsReceived));
+            maybeParentState ->
+                performStatefulValidation(
+                    block, maybeParentState, parentBlockSlot, markAsReceived));
   }
 
   private InternalValidationResult performStatefulValidation(
       final SignedBeaconBlock block,
       final Optional<BeaconState> maybeParentState,
+      final UInt64 parentBlockSlot,
       final boolean markAsReceived) {
 
     if (maybeParentState.isEmpty()) {
@@ -238,23 +243,28 @@ public class BlockGossipValidator {
       final ExecutionPayloadBid executionPayloadBid =
           maybeSignedExecutionPayloadBid.get().getMessage();
       /*
-       * If execution_payload verification of block's execution payload parent by an execution node is complete:
-       * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
-       */
-      if (!gossipValidationHelper.isBlockHashKnown(
-          executionPayloadBid.getParentBlockHash(), block.getParentRoot())) {
-        return reject(
-            "The parent block hash %s from the bid is not present or hasn't been passed validation",
-            executionPayloadBid.getParentBlockHash());
-      }
-
-      /*
        * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
        */
       if (!executionPayloadBid.getParentBlockRoot().equals(block.getParentRoot())) {
         return reject(
             "Execution payload bid has invalid parent block root %s, expecting %s",
             executionPayloadBid.getParentBlockRoot(), block.getParentRoot());
+      }
+
+      /*
+       * If execution_payload verification of block's execution payload parent by an execution node is complete:
+       * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
+       */
+      if (!gossipValidationHelper.isBlockHashKnown(
+          executionPayloadBid.getParentBlockHash(), block.getParentRoot())) {
+        if (isParentFullPayloadDependency(parentBlockSlot, parentState, executionPayloadBid)) {
+          LOG.trace(
+              "Block requires parent execution payload that is not available. Saving for future processing.");
+          return InternalValidationResult.SAVE_FOR_FUTURE;
+        }
+        return reject(
+            "The parent block hash %s from the bid is not present or hasn't been passed validation",
+            executionPayloadBid.getParentBlockHash());
       }
     }
 
@@ -284,6 +294,20 @@ public class BlockGossipValidator {
               IGNORE_ALREADY_SEEN,
               "Block is not the first with valid signature for its slot. It will be dropped.");
     };
+  }
+
+  private boolean isParentFullPayloadDependency(
+      final UInt64 parentBlockSlot,
+      final BeaconState parentState,
+      final ExecutionPayloadBid executionPayloadBid) {
+    if (spec.atSlot(parentBlockSlot).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      return false;
+    }
+    return parentState
+        .toVersionGloas()
+        .map(BeaconStateGloas::getLatestExecutionPayloadBid)
+        .map(parentBid -> parentBid.getBlockHash().equals(executionPayloadBid.getParentBlockHash()))
+        .orElse(false);
   }
 
   synchronized EquivocationCheckResult performBlockEquivocationCheck(

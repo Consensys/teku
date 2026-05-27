@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
@@ -145,8 +146,9 @@ public class SyncingNodeManager {
 
     final TimeProvider timeProvider = new SystemTimeProvider();
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
+    final PendingBlockPool pendingBlockPool = poolFactory.createPendingBlockPool(spec);
     final PendingPool<SignedBeaconBlock> pendingBlocks =
-        poolFactory.createPendingPoolForBlocks(spec);
+        pendingBlockPool.getBlocksWaitingForParent();
     final PendingPool<ValidatableAttestation> pendingAttestations =
         poolFactory.createPendingPoolForAttestations(spec, 10000);
     final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
@@ -176,7 +178,7 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -188,8 +190,8 @@ public class SyncingNodeManager {
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
         .subscribe(ReceivedBlockEventsChannel.class, blockManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
-        .subscribe(SlotEventsChannel.class, pendingBlocks);
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
+        .subscribe(SlotEventsChannel.class, pendingBlockPool);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory

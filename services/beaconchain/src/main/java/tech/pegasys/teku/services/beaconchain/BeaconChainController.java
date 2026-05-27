@@ -235,6 +235,7 @@ import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
@@ -372,6 +373,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
+  protected volatile PendingBlockPool pendingBlockPool;
   protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
   protected volatile PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
@@ -520,6 +522,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .finish(
                     err ->
                         LOG.error("Failed to process recently fetched execution payload.", err)));
+    blockManager.subscribeRequiredParentExecutionPayload(
+        parentExecutionPayloadDependency ->
+            recentExecutionPayloadsFetcher.requestRecentExecutionPayload(
+                parentExecutionPayloadDependency.parentBeaconBlockRoot()));
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
 
@@ -1291,8 +1297,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockPoolsAndCaches() {
     LOG.debug("BeaconChainController.initBlockPoolsAndCaches()");
-    pendingBlocks = poolFactory.createPendingPoolForBlocks(spec);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+    pendingBlockPool = poolFactory.createPendingBlockPool(spec);
+    pendingBlocks = pendingBlockPool.getBlocksWaitingForParent();
+    eventChannels
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
+        .subscribe(SlotEventsChannel.class, pendingBlockPool);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
   }
 
@@ -2189,7 +2198,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -2204,7 +2213,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(ReceivedBlockEventsChannel.class, blockManager);
+        .subscribe(ReceivedBlockEventsChannel.class, blockManager)
+        .subscribe(ReceivedExecutionPayloadEventsChannel.class, blockManager);
   }
 
   protected SyncServiceFactory createSyncServiceFactory() {

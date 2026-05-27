@@ -1091,7 +1091,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void reportInvalidBlock(final SignedBeaconBlock block, final BlockImportResult result) {
-    if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+    if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE
+        || result.getFailureReason() == FailureReason.UNKNOWN_PARENT_EXECUTION_PAYLOAD) {
       return;
     }
     debugDataDumper.saveInvalidBlock(
