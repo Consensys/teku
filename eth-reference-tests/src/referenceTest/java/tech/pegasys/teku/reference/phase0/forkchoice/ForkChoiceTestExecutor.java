@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -629,10 +630,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
           case "get_proposer_head" -> {
             final Bytes32 expectedProposerHead = getBytes32(checks, checkType);
-            final Bytes32 root =
+            final ForkChoiceNode proposerHead =
                 recentChainData.getProposerHead(
-                    expectedProposerHead, recentChainData.getHeadSlot().increment());
-            assertThat(root).describedAs("get_proposer_head").isEqualTo(expectedProposerHead);
+                    ForkChoiceNode.createBase(expectedProposerHead),
+                    recentChainData.getHeadSlot().increment());
+            assertThat(proposerHead.blockRoot())
+                .describedAs("get_proposer_head")
+                .isEqualTo(expectedProposerHead);
           }
 
           case "should_override_forkchoice_update" -> {

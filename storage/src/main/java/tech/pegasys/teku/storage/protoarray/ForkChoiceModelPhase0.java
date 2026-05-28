@@ -146,12 +146,29 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public Optional<ProtoNode> getParentBeaconBlockNode(
+      final ProtoArray protoArray, final ForkChoiceNode node) {
+    return protoArray
+        .getNode(node)
+        .flatMap(current -> current.getParentIndex().map(protoArray::getNodeByIndex));
+  }
+
+  @Override
   public boolean shouldExtendPayload(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final ReadOnlyStore store,
       final Bytes32 blockRoot) {
     return false;
+  }
+
+  @Override
+  public boolean shouldBuildOnFull(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final ForkChoiceNode head) {
+    return shouldExtendPayload(protoArray, blockNodeIndex, store, head.blockRoot());
   }
 
   @Override

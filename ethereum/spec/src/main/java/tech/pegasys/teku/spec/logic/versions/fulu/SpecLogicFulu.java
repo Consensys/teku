@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Attes
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity.WeakSubjectivityCalculatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
@@ -73,6 +75,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
       final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculator weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -95,6 +98,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -129,6 +133,10 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculatorElectra weakSubjectivityCalculator =
+        new WeakSubjectivityCalculatorElectra(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -225,6 +233,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
