@@ -1256,6 +1256,9 @@ class ForkChoiceNotifierTest {
         timestamp,
         random,
         feeRecipient,
+        validatorRegistration
+            .map(registration -> registration.getMessage().getGasLimit())
+            .orElse(UInt64.ZERO),
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
         forkChoiceState.headBlock());
