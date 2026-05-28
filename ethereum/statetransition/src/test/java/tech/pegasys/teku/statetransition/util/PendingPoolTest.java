@@ -17,10 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -264,11 +267,114 @@ public class PendingPoolTest {
     assertThat(pendingPool.size()).isEqualTo(maxItems);
   }
 
+  @Test
+  public void add_shouldDropOldestItemsWhenTotalWeightLimitExceeded() {
+    final PendingPool<PendingTestItem> weightedPendingPool = createWeightedPendingPool(10);
+
+    final PendingTestItem olderItem = createPendingTestItem(6, currentSlot);
+    final PendingTestItem firstNewerItem = createPendingTestItem(4, currentSlot.plus(UInt64.ONE));
+    final PendingTestItem secondNewerItem = createPendingTestItem(5, currentSlot.plus(UInt64.ONE));
+
+    weightedPendingPool.add(olderItem);
+    weightedPendingPool.add(firstNewerItem);
+    weightedPendingPool.add(secondNewerItem);
+
+    assertThat(weightedPendingPool.contains(olderItem)).isFalse();
+    assertThat(weightedPendingPool.contains(firstNewerItem)).isTrue();
+    assertThat(weightedPendingPool.contains(secondNewerItem)).isTrue();
+    assertThat(weightedPendingPool.size()).isEqualTo(2);
+    assertThat(weightedPendingPool.getTotalWeight()).isEqualTo(9);
+  }
+
+  @Test
+  public void add_shouldIgnoreItemsThatExceedTotalWeightLimit() {
+    final PendingPool<PendingTestItem> weightedPendingPool = createWeightedPendingPool(10);
+
+    final PendingTestItem retainedItem = createPendingTestItem(4, currentSlot);
+    final PendingTestItem tooLargeItem = createPendingTestItem(11, currentSlot.plus(UInt64.ONE));
+
+    weightedPendingPool.add(retainedItem);
+    weightedPendingPool.add(tooLargeItem);
+
+    assertThat(weightedPendingPool.contains(retainedItem)).isTrue();
+    assertThat(weightedPendingPool.contains(tooLargeItem)).isFalse();
+    assertThat(weightedPendingPool.size()).isEqualTo(1);
+    assertThat(weightedPendingPool.getTotalWeight()).isEqualTo(4);
+  }
+
+  @Test
+  public void createPendingPoolForBlocks_shouldLimitTotalWeightFromGossipPayloadSize() {
+    final int maxPayloadSize = 1024;
+    final Spec specWithSmallGossipPayload =
+        TestSpecFactory.createDefault(builder -> builder.maxPayloadSize(maxPayloadSize));
+
+    final PendingPool<SignedBeaconBlock> blockPendingPool =
+        new PoolFactory(new StubMetricsSystem())
+            .createPendingPoolForBlocks(
+                specWithSmallGossipPayload, historicalTolerance, futureTolerance, maxItems);
+
+    assertThat(blockPendingPool.getMaxTotalWeight()).isEqualTo(maxPayloadSize * 5L);
+  }
+
+  @Test
+  public void createPendingBlockPool_shouldUsePendingBlockByteLimit() {
+    final int maxPayloadSize = 1024;
+    final Spec specWithSmallGossipPayload =
+        TestSpecFactory.createDefault(builder -> builder.maxPayloadSize(maxPayloadSize));
+    final PoolFactory poolFactory = new PoolFactory(new StubMetricsSystem());
+    final PendingPool<SignedBeaconBlock> blockPendingPool =
+        poolFactory.createPendingPoolForBlocks(
+            specWithSmallGossipPayload, historicalTolerance, futureTolerance, maxItems);
+
+    final PendingBlockPool pendingBlockPool =
+        poolFactory.createPendingBlockPool(
+            specWithSmallGossipPayload, historicalTolerance, futureTolerance, maxItems);
+
+    assertThat(pendingBlockPool.getBlocksWaitingForParent().getMaxTotalWeight())
+        .isEqualTo(blockPendingPool.getMaxTotalWeight());
+    assertThat(pendingBlockPool.getBlocksWaitingForParentExecutionPayload().getMaxTotalWeight())
+        .isEqualTo(blockPendingPool.getMaxTotalWeight());
+  }
+
   private Checkpoint finalizedCheckpoint(final SignedBeaconBlock block) {
     final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot()).plus(UInt64.ONE);
     final Bytes32 root = block.getMessage().hashTreeRoot();
 
     return new Checkpoint(epoch, root);
+  }
+
+  private PendingPool<PendingTestItem> createWeightedPendingPool(final long maxTotalWeight) {
+    final PendingPool<PendingTestItem> weightedPendingPool =
+        new PendingPool<>(
+            SettableLabelledGauge.create(
+                metricsSystem,
+                TekuMetricCategory.BEACON,
+                "weighted_pending_pool_size",
+                "Number of items in weighted pending pool",
+                "type"),
+            "weighted_items",
+            spec,
+            historicalTolerance,
+            futureTolerance,
+            maxItems,
+            maxTotalWeight,
+            PendingTestItem::weight,
+            PendingTestItem::root,
+            PendingTestItem::requiredRoots,
+            PendingTestItem::slot);
+    weightedPendingPool.onSlot(currentSlot);
+    return weightedPendingPool;
+  }
+
+  private PendingTestItem createPendingTestItem(final long weight, final UInt64 slot) {
+    return new PendingTestItem(
+        dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32(), slot, weight);
+  }
+
+  private record PendingTestItem(Bytes32 root, Bytes32 requiredRoot, UInt64 slot, long weight) {
+    private Set<Bytes32> requiredRoots() {
+      return Set.of(requiredRoot);
+    }
   }
 
   @Test
