@@ -258,7 +258,7 @@ public class BlockGossipValidator {
       if (!gossipValidationHelper.isBlockHashKnown(
           executionPayloadBid.getParentBlockHash(), block.getParentRoot())) {
         if (isParentFullPayloadDependency(parentBlockSlot, parentState, executionPayloadBid)) {
-          LOG.trace(
+          LOG.debug(
               "Block requires parent execution payload that is not available. Saving for future processing.");
           return InternalValidationResult.SAVE_FOR_FUTURE;
         }

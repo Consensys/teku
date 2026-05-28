@@ -393,7 +393,7 @@ public class BlockManager extends Service
     }
 
     if (added) {
-      LOG.trace(
+      LOG.debug(
           "Save block {} until parent execution payload {} for parent block {} is imported",
           block::toLogString,
           parentExecutionPayloadDependency::parentExecutionBlockHash,
