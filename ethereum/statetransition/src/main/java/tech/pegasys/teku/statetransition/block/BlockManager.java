@@ -229,7 +229,7 @@ public class BlockManager extends Service
     final List<SignedBeaconBlock> blocksToRetry =
         removeBlocksPendingParentExecutionPayload(parentExecutionPayloadDependency);
     if (!blocksToRetry.isEmpty()) {
-      LOG.trace(
+      LOG.debug(
           "Retrying {} blocks waiting for parent execution payload {} for parent block {}",
           blocksToRetry::size,
           parentExecutionPayloadDependency::parentExecutionBlockHash,
