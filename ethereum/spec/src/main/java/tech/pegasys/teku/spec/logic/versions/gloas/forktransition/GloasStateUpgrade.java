@@ -183,14 +183,15 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         pendingDeposits.add(deposit);
         continue;
       }
+      // Deposits for non-builders stay in the pending queue. If there is a valid pending deposit
+      // for a new validator with this pubkey, keep this deposit in the pending queue to be
+      // applied to that validator later.
       if (beaconStateAccessors.getBuilderIndex(state, pubkey).isEmpty()) {
         // Deposits without builder credentials stay in the pending queue
         if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
           pendingDeposits.add(deposit);
           continue;
         }
-        // If there is a valid pending deposit for a new validator with this pubkey, keep this
-        // deposit in the pending queue to be applied to that validator later.
         boolean isPendingValidator;
         if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
           isPendingValidator = true;
