@@ -30,6 +30,7 @@ public class RestApiConstants {
 
   public static final String SLOT = "slot";
   public static final String EPOCH = "epoch";
+  public static final String INCLUDE_PAYLOAD = "include_payload";
   public static final String COMMITTEE_INDEX = "committee_index";
   public static final String SUBCOMMITTEE_INDEX = "subcommittee_index";
   public static final String RANDAO_REVEAL = "randao_reveal";
@@ -187,6 +188,25 @@ public class RestApiConstants {
   public static final String SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION =
       "Skip verification of the `randao_reveal` value. Ignored in the Teku implementation.";
 
+  public static final String INCLUDE_PAYLOAD_PARAM_DESCRIPTION =
+      """
+              Controls whether the execution payload envelope and blobs are included in the response
+              when self-building (using local execution payload).
+
+              When `true` (default), the response includes the full block contents: beacon block,
+              execution payload envelope, blobs, and KZG proofs. This enables stateless operation
+              where the validator client can use multiple beacon nodes (multi-BN setups, distributed validators, failover).
+
+              When `false`, only the beacon block is returned and the beacon node caches the execution
+              payload envelope and blobs internally. The validator client must then fetch them separately
+              via `GET /eth/v1/validator/execution_payload_envelope/{slot}`. This saves
+              bandwidth but requires the validator client to publish via the same beacon node that
+              produced the block (stateful operation).
+
+              This parameter only affects self-building scenarios. When using an external builder's bid,
+              only the beacon block is returned regardless of this parameter (the beacon node does not
+              have access to the builder's execution payload).""";
+
   public static final String BUILDER_BOOST_FACTOR = "builder_boost_factor";
   public static final String BUILDER_BOOST_FACTOR_DESCRIPTION =
       """
@@ -226,6 +246,7 @@ public class RestApiConstants {
   public static final String HEADER_CONSENSUS_BLOCK_VALUE = "Eth-Consensus-Block-Value";
   public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
   public static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
+  public static final String HEADER_INCLUDE_PAYLOAD = "Eth-Execution-Payload-Included";
 
   public static final String CACHE_NONE = "max-age=0";
 
