@@ -670,7 +670,6 @@ application {
 		"-Dlog4j2.formatMsgNoLookups=true",
 		// run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
 		"-XX:NativeMemoryTracking=summary",
-		"-Dio.netty.leakDetectionLevel=paranoid",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
