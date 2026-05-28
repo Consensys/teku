@@ -32,15 +32,21 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 slotNumber;
 
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
+  public final UInt64 targetGasLimit;
+
   public PayloadAttributesV4(
       final @JsonProperty("timestamp") UInt64 timestamp,
       final @JsonProperty("prevRandao") Bytes32 prevRandao,
       final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
       final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       final @JsonProperty("parentBeaconBlockRoot") Bytes32 parentBeaconBlockRoot,
-      final @JsonProperty("slotNumber") UInt64 slotNumber) {
+      final @JsonProperty("slotNumber") UInt64 slotNumber,
+      final @JsonProperty("targetGasLimit") UInt64 targetGasLimit) {
     super(timestamp, prevRandao, suggestedFeeRecipient, withdrawals, parentBeaconBlockRoot);
     this.slotNumber = slotNumber;
+    this.targetGasLimit = targetGasLimit;
   }
 
   public static PayloadAttributesV4 fromInternalPayloadBuildingAttributesV4(
@@ -51,7 +57,8 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
         payloadBuildingAttributes.feeRecipient(),
         getWithdrawals(payloadBuildingAttributes),
         payloadBuildingAttributes.parentBeaconBlock().blockRoot(),
-        payloadBuildingAttributes.proposalSlot());
+        payloadBuildingAttributes.proposalSlot(),
+        payloadBuildingAttributes.targetGasLimit());
   }
 
   @Override
@@ -66,12 +73,13 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
       return false;
     }
     final PayloadAttributesV4 that = (PayloadAttributesV4) o;
-    return Objects.equals(slotNumber, that.slotNumber);
+    return Objects.equals(slotNumber, that.slotNumber)
+        && Objects.equals(targetGasLimit, that.targetGasLimit);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), slotNumber);
+    return Objects.hash(super.hashCode(), slotNumber, targetGasLimit);
   }
 
   @Override
@@ -83,6 +91,7 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
         .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .add("slotNumber", slotNumber)
+        .add("targetGasLimit", targetGasLimit)
         .toString();
   }
 }

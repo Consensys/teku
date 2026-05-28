@@ -693,6 +693,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initDataColumnSidecarManager();
     initZkChain();
     initForkChoiceStateProvider();
+    initProposerPreferencesManager();
     initForkChoiceNotifier();
     initMergeMonitors();
     initSignatureVerificationService();
@@ -710,7 +711,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
-    initProposerPreferencesManager();
     initExecutionPayloadBidManager();
     initExecutionPayloadManager();
     initSyncCommitteePools();
@@ -2314,7 +2314,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayer,
             recentChainData,
             getProposerDefaultFeeRecipient(),
-            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes());
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes(),
+            proposerPreferencesManager);
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
