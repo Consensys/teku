@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
@@ -37,9 +35,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
-import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
+import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -56,6 +54,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
   private final PredicatesGloas predicates;
   private final BeaconStateMutatorsGloas beaconStateMutators;
   private final MiscHelpersGloas miscHelpers;
+  private final ValidatorsUtil validatorsUtil;
 
   public GloasStateUpgrade(
       final SpecConfigGloas specConfig,
@@ -63,13 +62,15 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final PredicatesGloas predicates,
       final BeaconStateMutatorsGloas beaconStateMutators,
-      final MiscHelpersGloas miscHelpers) {
+      final MiscHelpersGloas miscHelpers,
+      final ValidatorsUtil validatorsUtil) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
     this.miscHelpers = miscHelpers;
+    this.validatorsUtil = validatorsUtil;
   }
 
   @Override
@@ -171,8 +172,6 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
     LOG.debug(
         "Starting onboarding builders at fork from {} pending deposits",
         state.getPendingDeposits().size());
-    final Set<BLSPublicKey> validatorPubkeys =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(Collectors.toSet());
     final List<PendingDeposit> pendingDeposits = new ArrayList<>();
     // Avoids re-scanning pending deposits and re-verifying signatures for repeated pubkeys
     final Set<BLSPublicKey> verifiedPendingValidatorPubkeys = new HashSet<>();
@@ -180,13 +179,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
     for (final PendingDeposit deposit : state.getPendingDeposits()) {
       final BLSPublicKey pubkey = deposit.getPublicKey();
       // Deposits for existing validators stay in the pending queue
-      if (validatorPubkeys.contains(pubkey)) {
+      if (validatorsUtil.getValidatorIndex(state, pubkey).isPresent()) {
         pendingDeposits.add(deposit);
         continue;
       }
-      final Set<BLSPublicKey> builderPubkeys =
-          state.getBuilders().stream().map(Builder::getPublicKey).collect(Collectors.toSet());
-      if (!builderPubkeys.contains(pubkey)) {
+      if (beaconStateAccessors.getBuilderIndex(state, pubkey).isEmpty()) {
         // Deposits without builder credentials stay in the pending queue
         if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
           pendingDeposits.add(deposit);

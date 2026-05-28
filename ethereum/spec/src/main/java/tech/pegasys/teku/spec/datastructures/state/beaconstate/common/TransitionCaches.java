@@ -58,7 +58,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           ProgressiveTotalBalancesUpdates.NOOP,
           NoOpCache.getNoOpCache(),
-          NoOpCache.getNoOpCache()) {
+          BuilderIndexCache.NO_OP_INSTANCE) {
 
         @Override
         public TransitionCaches copy() {
@@ -88,7 +88,7 @@ public class TransitionCaches {
   private final Cache<UInt64, List<UInt64>> effectiveBalances;
   private final Cache<UInt64, UInt64> baseRewardPerIncrement;
   private final Cache<UInt64, BLSPublicKey> buildersPubKeys;
-  private final Cache<BLSPublicKey, Integer> builderIndexCache;
+  private final BuilderIndexCache builderIndexCache;
 
   private final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache;
 
@@ -110,7 +110,7 @@ public class TransitionCaches {
     baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
     buildersPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
-    builderIndexCache = LRUCache.create(Integer.MAX_VALUE - 1);
+    builderIndexCache = new BuilderIndexCache();
   }
 
   private TransitionCaches(
@@ -128,7 +128,7 @@ public class TransitionCaches {
       final Cache<UInt64, UInt64> baseRewardPerIncrement,
       final ProgressiveTotalBalancesUpdates progressiveTotalBalances,
       final Cache<UInt64, BLSPublicKey> buildersPubKeys,
-      final Cache<BLSPublicKey, Integer> builderIndexCache) {
+      final BuilderIndexCache builderIndexCache) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -239,13 +239,8 @@ public class TransitionCaches {
     return buildersPubKeys;
   }
 
-  /**
-   * (builder pub key) -> (builder index) cache
-   *
-   * <p>More complicated cache such as the {@link ValidatorIndexCache} is not required since the
-   * builders in the state are expected to be a tiny number initially
-   */
-  public Cache<BLSPublicKey, Integer> getBuilderIndexCache() {
+  /** (builder pub key) -> (builder index) cache */
+  public BuilderIndexCache getBuilderIndexCache() {
     return builderIndexCache;
   }
 
@@ -269,6 +264,6 @@ public class TransitionCaches {
         baseRewardPerIncrement.copy(),
         progressiveTotalBalances.copy(),
         buildersPubKeys.copy(),
-        builderIndexCache.copy());
+        builderIndexCache);
   }
 }
