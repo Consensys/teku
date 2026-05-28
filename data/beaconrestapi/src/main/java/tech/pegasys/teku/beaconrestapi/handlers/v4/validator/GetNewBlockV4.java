@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetNewBlockV4 extends RestApiEndpoint {
 
-  public static final String ROUTE = "/eth/v3/validator/blocks/{slot}";
+  public static final String ROUTE = "/eth/v4/validator/blocks/{slot}";
 
   protected final ValidatorDataProvider validatorDataProvider;
 
@@ -145,16 +145,12 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         getMultipleSchemaDefinitionFromMilestone(schemaDefinitionCache, "Block", schemaGetters);
 
     return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
-        .name("ProduceBlockV3Response")
+        .name("ProduceBlockV4Response")
         .withField("version", MILESTONE_TYPE, BlockContainerAndMetaData::specMilestone)
         .withField(
-            EXECUTION_PAYLOAD_BLINDED,
-            BOOLEAN_TYPE,
-            blockContainerAndMetaData -> blockContainerAndMetaData.blockContainer().isBlinded())
-        .withField(
-            EXECUTION_PAYLOAD_VALUE, UINT256_TYPE, BlockContainerAndMetaData::executionPayloadValue)
-        .withField(
             CONSENSUS_BLOCK_VALUE, UINT256_TYPE, BlockContainerAndMetaData::consensusBlockValue)
+        .withOptionalField( //TODO: derive whether execution payload is included from the BlockContainerAndMetaData or whatever object we have
+            INCLUDE_EXECUTION_PAYLOAD, BOOLEAN_TYPE, (b) -> Optional.of(BOOLEAN_TYPE.deserializeFromString("false")))
         .withField("data", blockContainerType, BlockContainerAndMetaData::blockContainer)
         .build();
   }
@@ -186,9 +182,8 @@ public class GetNewBlockV4 extends RestApiEndpoint {
   private static List<SerializableTypeDefinition<?>> getHeaders() {
     List<SerializableTypeDefinition<?>> headers = new ArrayList<>();
     headers.add(ETH_CONSENSUS_HEADER_TYPE);
-    headers.add(ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE);
-    headers.add(ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE);
     headers.add(ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE);
+    headers.add(ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE);
     return headers;
   }
 }
