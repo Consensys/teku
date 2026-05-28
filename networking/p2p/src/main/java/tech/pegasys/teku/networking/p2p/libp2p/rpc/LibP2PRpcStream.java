@@ -18,6 +18,7 @@ import io.libp2p.core.P2PChannel;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,7 +48,21 @@ public class LibP2PRpcStream implements RpcStream {
     final ByteBuf reqByteBuf = ctx.alloc().buffer();
     reqByteBuf.writeBytes(bytes.toArrayUnsafe());
 
-    return toSafeFuture(ctx.writeAndFlush(reqByteBuf));
+    final ChannelFuture writeFuture;
+    try {
+      writeFuture = ctx.writeAndFlush(reqByteBuf);
+    } catch (final Throwable t) {
+      ReferenceCountUtil.safeRelease(reqByteBuf);
+      throw t;
+    }
+
+    writeFuture.addListener(
+        future -> {
+          if (!future.isSuccess() && reqByteBuf.refCnt() > 0) {
+            reqByteBuf.release();
+          }
+        });
+    return toSafeFuture(writeFuture);
   }
 
   @Override
