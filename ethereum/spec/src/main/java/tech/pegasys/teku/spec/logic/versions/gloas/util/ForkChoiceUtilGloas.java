@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -431,6 +432,25 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     // Fail closed for late-reorg decisions: missing inputs mean "do not treat the parent as
     // strong".
     return false;
+  }
+
+  @Override
+  public ForkChoiceNode getProposerHead(
+      final ForkChoiceReorgContext context, final ForkChoiceNode headNode, final UInt64 slot) {
+    final ForkChoiceNode proposerHead = super.getProposerHead(context, headNode, slot);
+
+    if (proposerHead.payloadStatus() == PAYLOAD_STATUS_PENDING) {
+      // we reorged first GLOAS block, returning as is
+      return proposerHead;
+    }
+
+    if (context
+        .getStore()
+        .getForkChoiceStrategy()
+        .shouldBuildOnFull(context.getStore(), proposerHead)) {
+      return proposerHead.toFull();
+    }
+    return proposerHead.toEmpty();
   }
 
   /**
