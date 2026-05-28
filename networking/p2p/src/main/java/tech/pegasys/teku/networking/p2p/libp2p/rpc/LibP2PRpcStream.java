@@ -16,10 +16,12 @@ package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 import com.google.common.base.MoreObjects;
 import io.libp2p.core.P2PChannel;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.netty.util.ReferenceCountUtil;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
