@@ -678,6 +678,7 @@ application {
 		// AdaptivePoolingAllocator. Adaptive's per-event-loop magazines retain chunks
 		// indefinitely and OOM under DAS load even at 128Mb. Empirically tested 2026-05-27.
 		"-Dio.netty.allocator.type=pooled",
+		"-Dio.netty.leakDetectionLevel=paranoid",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
