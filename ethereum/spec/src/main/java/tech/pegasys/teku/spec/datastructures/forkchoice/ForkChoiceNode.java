@@ -36,4 +36,18 @@ public record ForkChoiceNode(Bytes32 blockRoot, ForkChoicePayloadStatus payloadS
   public static ForkChoiceNode createFull(final Bytes32 blockRoot) {
     return new ForkChoiceNode(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
   }
+
+  public ForkChoiceNode toFull() {
+    if (payloadStatus == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL) {
+      return this;
+    }
+    return new ForkChoiceNode(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+  }
+
+  public ForkChoiceNode toEmpty() {
+    if (payloadStatus == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY) {
+      return this;
+    }
+    return new ForkChoiceNode(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY);
+  }
 }
