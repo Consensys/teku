@@ -249,130 +249,33 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
   @TestTemplate
   void shouldNotCacheHigherBidIfInvalid() {
-    // valid, lower value bid is accepted and cached
-    final UInt64 lowerValue = UInt64.valueOf(10000);
-    final SignedExecutionPayloadBid lowerValueBid =
-        dataStructureUtil.randomSignedExecutionPayloadBid(
-            dataStructureUtil.randomExecutionPayloadBid(
-                parentBlockHash, slot, builderIndex, lowerValue, UInt64.ZERO));
+    final UInt64 lowerValue = UInt64.valueOf(10_000);
+    final SignedExecutionPayloadBid lowerValueBid = bidFromBuilder(builderIndex, lowerValue);
 
-    // Mock proposer preferences to match the lower value bid
-    final ProposerPreferences lowerBidPreferences = mock(ProposerPreferences.class);
-    when(lowerBidPreferences.getFeeRecipient())
-        .thenReturn(lowerValueBid.getMessage().getFeeRecipient());
-    when(lowerBidPreferences.getTargetGasLimit())
-        .thenReturn(lowerValueBid.getMessage().getGasLimit());
-    when(proposerPreferencesManager.getProposerPreferences(slot))
-        .thenReturn(Optional.of(lowerBidPreferences));
-
-    // Mock validation for the lower value bid
-    when(gossipValidationHelper.isBlockHashKnown(
-            parentBlockHash, lowerValueBid.getMessage().getParentBlockRoot()))
-        .thenReturn(true);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(
-            lowerValueBid.getMessage().getParentBlockRoot()))
-        .thenReturn(Optional.of(lowerValueBid.getMessage().getGasLimit()));
-    when(gossipValidationHelper.getSlotForBlockRoot(
-            lowerValueBid.getMessage().getParentBlockRoot()))
-        .thenReturn(Optional.of(slot.decrement()));
-    when(gossipValidationHelper.getParentStateInBlockEpoch(
-            slot.decrement(), lowerValueBid.getMessage().getParentBlockRoot(), slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
-    when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(true);
-    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
-            lowerValue, builderIndex, postState, slot))
-        .thenReturn(true);
-    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
-            any(), eq(builderIndex), any(), any()))
-        .thenReturn(true);
-
+    mockBidValidation(lowerValueBid);
     assertThatSafeFuture(bidValidator.validate(lowerValueBid)).isCompletedWithValue(ACCEPT);
 
-    // modified copy of the original bid with a higher value (at least MIN_BID_INCREMENT_PERCENTAGE
-    // higher) and different
-    // builder index
-    // Add a large increment to ensure it's over threshold (2x MIN_BID_INCREMENT_PERCENTAGE)
+    final UInt64 differentBuilderIndex = builderIndex.plus(1);
     final UInt64 higherValue =
         lowerValue.plus(lowerValue.times(2 * MIN_BID_INCREMENT_PERCENTAGE).dividedBy(100));
-    final UInt64 differentBuilderIndex = builderIndex.plus(1);
-    final ExecutionPayloadBid originalBidMessage = lowerValueBid.getMessage();
-    final ExecutionPayloadBid higherValueBidMessage =
-        originalBidMessage
-            .getSchema()
-            .create(
-                originalBidMessage.getParentBlockHash(),
-                originalBidMessage.getParentBlockRoot(),
-                originalBidMessage.getBlockHash(),
-                originalBidMessage.getPrevRandao(),
-                originalBidMessage.getFeeRecipient(),
-                originalBidMessage.getGasLimit(),
-                differentBuilderIndex,
-                originalBidMessage.getSlot(),
-                higherValue,
-                originalBidMessage.getExecutionPayment(),
-                originalBidMessage.getBlobKzgCommitments(),
-                originalBidMessage.getExecutionRequestsRoot());
-
     final SignedExecutionPayloadBid higherValueInvalidBid =
-        dataStructureUtil.randomSignedExecutionPayloadBid(higherValueBidMessage);
+        bidFromBuilder(differentBuilderIndex, higherValue);
 
-    when(gossipValidationHelper.isActiveBuilder(differentBuilderIndex, postState, slot))
-        .thenReturn(true);
-    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
-            higherValue, differentBuilderIndex, postState, slot))
-        .thenReturn(true);
-    // bad signature to make it fail validation
+    mockBidValidation(higherValueInvalidBid);
     when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
             any(), eq(higherValueInvalidBid.getMessage().getBuilderIndex()), any(), any()))
         .thenReturn(false);
-    // invalid, higher value bid is rejected
+
     assertThatSafeFuture(bidValidator.validate(higherValueInvalidBid))
         .isCompletedWithValue(reject("Invalid payload execution bid signature"));
 
-    // valid, intermediate value bid with a value higher than the initially cached one
-    // (1.5x MIN_BID_INCREMENT_PERCENTAGE)
     final UInt64 intermediateValue =
         lowerValue.times(200 + (3 * MIN_BID_INCREMENT_PERCENTAGE)).dividedBy(200);
     final UInt64 intermediateBidBuilderIndex = builderIndex.plus(2);
     final SignedExecutionPayloadBid intermediateValueValidBid =
-        dataStructureUtil.randomSignedExecutionPayloadBid(
-            dataStructureUtil.randomExecutionPayloadBid(
-                parentBlockHash,
-                slot,
-                intermediateBidBuilderIndex,
-                intermediateValue,
-                UInt64.ZERO));
+        bidFromBuilder(intermediateBidBuilderIndex, intermediateValue);
 
-    final ProposerPreferences intermediateBidPreferences = mock(ProposerPreferences.class);
-    when(intermediateBidPreferences.getFeeRecipient())
-        .thenReturn(intermediateValueValidBid.getMessage().getFeeRecipient());
-    when(intermediateBidPreferences.getTargetGasLimit())
-        .thenReturn(intermediateValueValidBid.getMessage().getGasLimit());
-    when(proposerPreferencesManager.getProposerPreferences(slot))
-        .thenReturn(Optional.of(intermediateBidPreferences));
-
-    when(gossipValidationHelper.isBlockHashKnown(
-            parentBlockHash, intermediateValueValidBid.getMessage().getParentBlockRoot()))
-        .thenReturn(true);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(
-            intermediateValueValidBid.getMessage().getParentBlockRoot()))
-        .thenReturn(Optional.of(intermediateValueValidBid.getMessage().getGasLimit()));
-    when(gossipValidationHelper.isActiveBuilder(intermediateBidBuilderIndex, postState, slot))
-        .thenReturn(true);
-    when(gossipValidationHelper.getSlotForBlockRoot(
-            intermediateValueValidBid.getMessage().getParentBlockRoot()))
-        .thenReturn(Optional.of(slot));
-    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
-            intermediateValue, intermediateBidBuilderIndex, postState, slot))
-        .thenReturn(true);
-    when(gossipValidationHelper.getParentStateInBlockEpoch(
-            slot, intermediateValueValidBid.getMessage().getParentBlockRoot(), slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
-    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
-            any(), eq(intermediateValueValidBid.getMessage().getBuilderIndex()), any(), any()))
-        .thenReturn(true);
-
-    // the intermediate value bid is accepted
+    mockBidValidation(intermediateValueValidBid);
     assertThatSafeFuture(bidValidator.validate(intermediateValueValidBid))
         .isCompletedWithValue(ACCEPT);
   }
@@ -655,6 +558,17 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bidValue, builderIndex, postState, slot))
         .thenReturn(true);
+  }
+
+  private void mockBidValidation(final SignedExecutionPayloadBid bid) {
+    mockBidValidation(bid, bid.getMessage().getBuilderIndex(), bid.getMessage().getValue());
+  }
+
+  private SignedExecutionPayloadBid bidFromBuilder(
+      final UInt64 builderIndex, final UInt64 bidValue) {
+    return dataStructureUtil.randomSignedExecutionPayloadBid(
+        dataStructureUtil.randomExecutionPayloadBid(
+            parentBlockHash, slot, builderIndex, bidValue, UInt64.ZERO));
   }
 
   private SignedExecutionPayloadBid signedBidWithGasLimit(final UInt64 gasLimit) {
