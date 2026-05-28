@@ -46,6 +46,9 @@ specrefs:
       # Not implemented: phase0
       - COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR#phase0
 
+      # Temporary exceptions: ignored until updated to alpha.8 spec
+      - SAFETY_DECAY#phase0
+
       # Not implemented: gloas
       - PTC_TIMELINESS_INDEX#gloas
       - NUM_BLOCK_TIMELINESS_DEADLINES#gloas
@@ -215,6 +218,14 @@ specrefs:
 
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
+
+      # Temporary exceptions: ignored until updated to alpha.8 spec
+      - apply_parent_execution_payload#gloas
+      - get_proposer_head#phase0
+      - is_payload_data_available#gloas
+      - is_payload_timely#gloas
+      - prepare_execution_payload#bellatrix
+      - prepare_execution_payload#gloas
 
       # Not implemented: fast confirmation
       - adjust_committee_weight_estimate_to_ensure_safety#phase0

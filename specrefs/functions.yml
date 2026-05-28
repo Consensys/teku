@@ -241,9 +241,7 @@
     </spec>
 
 - name: apply_parent_execution_payload#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected void applyParentExecutionPayload(
+  sources: []
   spec: |
     <spec fn="apply_parent_execution_payload" fork="gloas" hash="44874701">
     def apply_parent_execution_payload(
@@ -5626,9 +5624,7 @@
     </spec>
 
 - name: get_proposer_head#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public Bytes32 getProposerHead(
+  sources: []
   spec: |
     <spec fn="get_proposer_head" fork="phase0" hash="99e8fc05">
     def get_proposer_head(store: Store, head_root: Root, slot: Slot) -> Root:
@@ -7536,9 +7532,7 @@
     </spec>
 
 - name: is_payload_data_available#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: private boolean isPayloadDataAvailable(
+  sources: []
   spec: |
     <spec fn="is_payload_data_available" fork="gloas" hash="e061dae8">
     def is_payload_data_available(store: Store, root: Root) -> bool:
@@ -7559,9 +7553,7 @@
     </spec>
 
 - name: is_payload_timely#gloas
-  sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: "private boolean isPayloadTimely("
+  sources: []
   spec: |
     <spec fn="is_payload_timely" fork="gloas" hash="e49ecafe">
     def is_payload_timely(store: Store, root: Root) -> bool:
@@ -8779,16 +8771,7 @@
     </spec>
 
 - name: prepare_execution_payload#bellatrix
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
-      search: final Optional<Bytes32> terminalBlockHash) {
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
-      search: private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
-      search: public Optional<SafeFuture<ForkChoiceUpdatedResult>> send(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionLayerChannel.java
-      search: ^  SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated\(
-      regex: true
+  sources: []
   spec: |
     <spec fn="prepare_execution_payload" fork="bellatrix" hash="6af4de76">
     def prepare_execution_payload(
@@ -8905,11 +8888,7 @@
     </spec>
 
 - name: prepare_execution_payload#gloas
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<ChainHead> resolveProposerHeadOverride(
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
-      search: private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
+  sources: []
   spec: |
     <spec fn="prepare_execution_payload" fork="gloas" hash="36e9467d">
     def prepare_execution_payload(
