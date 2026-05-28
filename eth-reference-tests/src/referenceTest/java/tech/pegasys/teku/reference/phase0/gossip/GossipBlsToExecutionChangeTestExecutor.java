@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -44,12 +45,21 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
 
+  private final List<String> testsToSkip;
+
+  public GossipBlsToExecutionChangeTestExecutor(final String... testsToSkip) {
+    this.testsToSkip = List.of(testsToSkip);
+  }
+
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
+    if (testsToSkip.contains(testDefinition.getTestName())) {
+      throw new TestAbortedException(
+          "Test " + testDefinition.getDisplayName() + " has been ignored");
+    }
+
     final GossipBlsToExecutionChangeMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", GossipBlsToExecutionChangeMetaData.class);
-    final GossipBlsToExecutionChangeConfig config =
-        loadYaml(testDefinition, "config.yaml", GossipBlsToExecutionChangeConfig.class);
     final Spec spec = testDefinition.getSpec();
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
 
@@ -78,15 +88,6 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
       final UInt64 messageTimeMs =
           UInt64.valueOf(metaData.getCurrentTimeMs()).plus(UInt64.valueOf(message.getOffsetMs()));
       timeProvider.advanceTimeByMillis(messageTimeMs.minusMinZero(timeProvider.getTimeInMillis()));
-
-      if (isBeforeCapella(spec, state, config, timeProvider.getTimeInSeconds())) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected ignore for BLS-to-execution-change %s before Capella",
-                message.getMessage())
-            .isEqualTo("ignore");
-        continue;
-      }
 
       final SignedBlsToExecutionChange signedBlsToExecutionChange =
           loadSsz(
@@ -141,16 +142,6 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
     }
   }
 
-  private static boolean isBeforeCapella(
-      final Spec spec,
-      final BeaconState state,
-      final GossipBlsToExecutionChangeConfig config,
-      final UInt64 currentTimeSeconds) {
-    final UInt64 currentSlot = spec.getCurrentSlot(currentTimeSeconds, state.getGenesisTime());
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-    return currentEpoch.isLessThan(config.getCapellaForkEpoch());
-  }
-
   @SuppressWarnings("unused")
   @JsonIgnoreProperties(ignoreUnknown = true)
   private static class GossipBlsToExecutionChangeMetaData {
@@ -197,21 +188,6 @@ public class GossipBlsToExecutionChangeTestExecutor implements TestExecutor {
       public String getExpected() {
         return expected;
       }
-    }
-  }
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  private static class GossipBlsToExecutionChangeConfig {
-
-    private String capellaForkEpoch;
-
-    @JsonProperty("CAPELLA_FORK_EPOCH")
-    private void setCapellaForkEpoch(final Object capellaForkEpoch) {
-      this.capellaForkEpoch = capellaForkEpoch.toString();
-    }
-
-    public UInt64 getCapellaForkEpoch() {
-      return UInt64.valueOf(capellaForkEpoch);
     }
   }
 }

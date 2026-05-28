@@ -136,6 +136,17 @@ public class TestDataUtils {
     return AnchorPoint.create(spec, checkpoint, state, Optional.empty());
   }
 
+  /**
+   * Builds an {@link AnchorPoint} for gossip reference tests that load both an initial state and
+   * the fixture blocks that may have produced it.
+   *
+   * <p>When one of the supplied blocks has a {@code state_root} matching the supplied state, the
+   * anchor is created from that signed block and state. This keeps the store's anchor root and
+   * stored block aligned with the spec-test fixture, which matters for gossip validators that
+   * subsequently import or look up related blocks. If no matching block is available, the helper
+   * falls back to {@link #createAnchorFromState(Spec, BeaconState)}, which synthesizes an anchor
+   * from the state's {@code latest_block_header}.
+   */
   public static AnchorPoint createAnchorFromStateAndMatchingBlock(
       final Spec spec, final BeaconState state, final Collection<SignedBeaconBlock> blocks) {
     return blocks.stream()

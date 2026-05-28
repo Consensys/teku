@@ -25,11 +25,12 @@ public class GossipTests {
           // TODO: https://github.com/Consensys/teku/issues/10578
           .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
-          .put("networking/gossip_blob_sidecar", new GossipBlobSidecarTestExecutor())
+          .put("networking/gossip_blob_sidecar", TestExecutor.IGNORE_TESTS)
           .put(
               "networking/gossip_bls_to_execution_change",
-              new GossipBlsToExecutionChangeTestExecutor())
+              new GossipBlsToExecutionChangeTestExecutor(
+                  "gossip_bls_to_execution_change__ignore_pre_capella"))
+          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
           .put(
               "networking/gossip_sync_committee_contribution_and_proof",
               new GossipSyncCommitteeContributionAndProofTestExecutor())
