@@ -313,7 +313,7 @@ public class PendingPoolTest {
             .createPendingPoolForBlocks(
                 specWithSmallGossipPayload, historicalTolerance, futureTolerance, maxItems);
 
-    assertThat(blockPendingPool.getMaxTotalWeight()).isEqualTo(maxPayloadSize * 5L);
+    assertThat(blockPendingPool.getMaxTotalWeight()).isEqualTo(maxPayloadSize * 10L);
   }
 
   @Test

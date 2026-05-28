@@ -58,7 +58,7 @@ public class PoolFactory {
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
   private static final int DEFAULT_MAX_BLOCKS_PENDING_PARENT_EXECUTION_PAYLOAD = 1024;
-  private static final int DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER = 5;
+  private static final int DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER = 10;
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
