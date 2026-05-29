@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayload
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
