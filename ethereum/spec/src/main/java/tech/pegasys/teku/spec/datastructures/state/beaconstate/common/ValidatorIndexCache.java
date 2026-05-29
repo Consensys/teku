@@ -47,14 +47,12 @@ public class ValidatorIndexCache {
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
     final SszList<Validator> validators = state.getValidators();
-    final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
-    if (validatorIndex.isPresent()) {
-      // The cache is shared across states, so a cached index may be stale for the state being
-      // queried
-      return validatorIndex.filter(index -> index < validators.size());
-    }
-
-    return findIndexFromState(validators, publicKey);
+    return validatorIndices
+        .getCached(publicKey)
+        // The cache is shared across states, so a cached index may be stale for the state being
+        // queried
+        .filter(index -> index < validators.size())
+        .or(() -> findIndexFromState(validators, publicKey));
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
