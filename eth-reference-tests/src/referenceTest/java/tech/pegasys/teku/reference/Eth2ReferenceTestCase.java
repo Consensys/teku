@@ -123,12 +123,11 @@ public abstract class Eth2ReferenceTestCase {
 
   private static final ImmutableMap<String, TestExecutor> GLOAS_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          // TODO: unignore when all alpha.8 is done
-          //          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
-          //          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
-          //          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
-          //          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
-          //          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
