@@ -20,6 +20,8 @@ import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayload
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -55,6 +57,9 @@ import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochPr
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final WithdrawalsHelpersGloas withdrawalsHelpers;
   private final ExecutionRequestsProcessorGloas executionRequestsProcessor;
@@ -423,8 +428,14 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
     final Optional<UInt64> maybeHeadSlot = forkChoiceStrategy.blockSlot(root);
     if (maybeHeadSlot.isPresent()) {
+      final long start = System.currentTimeMillis();
       final UInt64 equivocatingWeight =
           computeEquivocatingCommitteeWeight(maybeHeadSlot.get(), store, headState, justifiedState);
+      LOG.debug(
+          "Computed equivocating committee weight {} for head {}, took {} ms",
+          equivocatingWeight,
+          root,
+          System.currentTimeMillis() - start);
       headWeight = headWeight.plus(equivocatingWeight);
     }
 
