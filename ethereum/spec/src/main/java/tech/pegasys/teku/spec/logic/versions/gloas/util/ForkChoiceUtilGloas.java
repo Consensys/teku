@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
@@ -184,12 +185,59 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return false;
   }
 
+  @Override
+  public BlockImportResult checkOnBlockConditions(
+      final SignedBeaconBlock block, final BeaconState blockSlotState, final ReadOnlyStore store) {
+    final BlockImportResult result = super.checkOnBlockConditions(block, blockSlotState, store);
+    if (!result.isSuccessful()) {
+      return result;
+    }
+    if (isParentFullPayloadRequired(block, store)
+        && !isRequiredParentFullPayloadAvailable(block, store)) {
+      return BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD;
+    }
+    return result;
+  }
+
   /**
    * Return whether the execution payload envelope for the beacon block with root ``root`` has been
    * locally delivered and verified via ``on_execution_payload_envelope``.
    */
   public boolean isPayloadVerified(final ReadOnlyStore store, final Bytes32 root) {
     return store.getExecutionPayloadIfAvailable(root).isPresent();
+  }
+
+  private boolean isParentFullPayloadRequired(
+      final SignedBeaconBlock block, final ReadOnlyStore store) {
+    return getParentPayloadStatusIfAvailable(store, block.getMessage().getBlock())
+        .map(PAYLOAD_STATUS_FULL::equals)
+        .orElse(false);
+  }
+
+  private boolean isRequiredParentFullPayloadAvailable(
+      final SignedBeaconBlock block, final ReadOnlyStore store) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .flatMap(
+            beaconBlockBodyGloas -> {
+              final Bytes32 requiredParentBlockHash =
+                  beaconBlockBodyGloas
+                      .getSignedExecutionPayloadBid()
+                      .getMessage()
+                      .getParentBlockHash();
+              return store
+                  .getExecutionPayloadIfAvailable(block.getParentRoot())
+                  .map(
+                      executionPayload ->
+                          executionPayload
+                              .getMessage()
+                              .getPayload()
+                              .getBlockHash()
+                              .equals(requiredParentBlockHash));
+            })
+        .orElse(false);
   }
 
   @Override
