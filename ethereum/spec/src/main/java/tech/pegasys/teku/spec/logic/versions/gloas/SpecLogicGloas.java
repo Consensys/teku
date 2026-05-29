@@ -231,7 +231,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             attestationUtil,
             miscHelpers,
             withdrawalsHelpers,
-            executionRequestsProcessor);
+            blockProcessor);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
 
@@ -248,7 +248,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             beaconStateAccessors,
             predicates,
             beaconStateMutators,
-            miscHelpers);
+            miscHelpers,
+            validatorsUtil);
 
     // Data column sidecar util
     final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas(miscHelpers);
