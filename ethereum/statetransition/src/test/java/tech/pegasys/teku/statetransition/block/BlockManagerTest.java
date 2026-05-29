@@ -79,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -96,6 +97,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -123,6 +125,7 @@ public class BlockManagerTest {
   private final BlockEventsListenerRouter blockEventsListenerRouter =
       mock(BlockEventsListenerRouter.class);
   private PendingPool<SignedBeaconBlock> pendingBlocks;
+  private PendingBlockPool pendingBlockPool;
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
@@ -167,10 +170,11 @@ public class BlockManagerTest {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-    this.pendingBlocks =
-        new PoolFactory(metricsSystem)
-            .createPendingPoolForBlocks(
-                spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+    final PoolFactory poolFactory = new PoolFactory(metricsSystem);
+    this.pendingBlockPool =
+        poolFactory.createPendingBlockPool(
+            spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+    this.pendingBlocks = pendingBlockPool.getBlocksWaitingForParent();
     this.localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
     this.localRecentChainData = localChain.recentChainData();
     this.transitionBlockValidator = new MergeTransitionBlockValidator(spec, localRecentChainData);
@@ -197,7 +201,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -338,7 +342,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -375,6 +379,49 @@ public class BlockManagerTest {
             .importBlock(eq(nextNextBlock), eq(Optional.empty()), any()));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
+  }
+
+  @Test
+  public void onGloasBlock_retryWhenRequiredParentExecutionPayloadIsImported() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalGloas(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    forkChoice.applyGenesisExecutionPayloadForGloas().join();
+
+    final List<ParentExecutionPayloadDependency> requiredParentExecutionPayloads =
+        new ArrayList<>();
+    blockManager.subscribeRequiredParentExecutionPayload(requiredParentExecutionPayloads::add);
+
+    final UInt64 parentSlot = incrementSlot();
+    final SignedBlockAndState parentBlockAndState =
+        localChain.chainBuilder().generateBlockAtSlot(parentSlot);
+    localChain.chainUpdater().saveBlock(parentBlockAndState);
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        localChain.chainBuilder().getExecutionPayloadAtSlot(parentSlot).orElseThrow();
+
+    final UInt64 childSlot = incrementSlot();
+    final SignedBeaconBlock childBlock =
+        localChain.chainBuilder().generateBlockAtSlot(childSlot).getBlock();
+
+    assertThatBlockImport(childBlock)
+        .isCompletedWithValue(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+    assertThat(localRecentChainData.containsBlock(childBlock.getRoot())).isFalse();
+    assertThat(pendingBlocks.size()).isZero();
+    assertThat(pendingBlockPool.contains(childBlock)).isTrue();
+    assertThat(requiredParentExecutionPayloads)
+        .containsExactly(
+            new ParentExecutionPayloadDependency(
+                parentBlockAndState.getRoot(),
+                parentExecutionPayload.getMessage().getPayload().getBlockHash()));
+
+    blockManager.onBlockImported(parentBlockAndState.getBlock(), false);
+    assertThat(localRecentChainData.containsBlock(childBlock.getRoot())).isFalse();
+    assertThat(pendingBlockPool.contains(childBlock)).isTrue();
+
+    localChain.chainUpdater().saveExecutionPayload(parentExecutionPayload);
+    blockManager.onExecutionPayloadImported(parentExecutionPayload, false);
+
+    assertThat(localRecentChainData.containsBlock(childBlock.getRoot())).isTrue();
   }
 
   @Test
@@ -912,6 +959,7 @@ public class BlockManagerTest {
   void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenItsDenebGenesis() {
     currentSlot = currentSlot.plus(10);
     localChain.chainUpdater().setCurrentSlot(currentSlot);
+    pendingBlockPool.onSlot(currentSlot);
     blockManager.onSlot(currentSlot);
     final SignedBlockAndState signedBlockAndState1 =
         localChain
@@ -943,6 +991,7 @@ public class BlockManagerTest {
 
     currentSlot = currentSlot.plus(slotsPerEpoch.plus(2));
     localChain.chainUpdater().setCurrentSlot(currentSlot);
+    pendingBlockPool.onSlot(currentSlot);
     blockManager.onSlot(currentSlot);
     final SignedBlockAndState signedBlockAndState1 =
         localChain
@@ -1119,6 +1168,7 @@ public class BlockManagerTest {
   private UInt64 incrementSlot() {
     currentSlot = currentSlot.plus(UInt64.ONE);
     localChain.chainUpdater().setCurrentSlot(currentSlot);
+    pendingBlockPool.onSlot(currentSlot);
     blockManager.onSlot(currentSlot);
     return currentSlot;
   }
@@ -1130,7 +1180,7 @@ public class BlockManagerTest {
         localRecentChainData,
         blockImporter,
         blockEventsListenerRouter,
-        pendingBlocks,
+        pendingBlockPool,
         futureBlocks,
         invalidBlockRoots,
         blockValidator,
