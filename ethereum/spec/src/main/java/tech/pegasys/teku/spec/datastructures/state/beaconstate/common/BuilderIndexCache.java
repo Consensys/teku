@@ -48,6 +48,8 @@ public class BuilderIndexCache {
     final SszList<Builder> builders = BeaconStateGloas.required(state).getBuilders();
     final Optional<Integer> builderIndex = builderIndices.getCached(publicKey);
     if (builderIndex.isPresent()) {
+      // The cache is shared across states, so a cached index may be stale for the state being
+      // queried
       return builderIndex.filter(index -> index < builders.size());
     }
 
