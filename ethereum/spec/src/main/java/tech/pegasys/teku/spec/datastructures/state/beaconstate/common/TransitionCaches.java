@@ -264,6 +264,8 @@ public class TransitionCaches {
         baseRewardPerIncrement.copy(),
         progressiveTotalBalances.copy(),
         buildersPubKeys.copy(),
-        builderIndexCache);
+        // Unlike validators, builder indices can be reassigned, so the cache must be copied to
+        // prevent invalidations in one branch from corrupting lookups in another.
+        builderIndexCache.copy());
   }
 }

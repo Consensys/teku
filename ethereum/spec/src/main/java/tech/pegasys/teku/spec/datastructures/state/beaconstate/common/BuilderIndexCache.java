@@ -62,6 +62,10 @@ public class BuilderIndexCache {
     builderIndices.invalidate(pubKey);
   }
 
+  public BuilderIndexCache copy() {
+    return new BuilderIndexCache(builderIndices.copy(), lastCachedIndex.get());
+  }
+
   @VisibleForTesting
   int getLastCachedIndex() {
     return lastCachedIndex.get();
