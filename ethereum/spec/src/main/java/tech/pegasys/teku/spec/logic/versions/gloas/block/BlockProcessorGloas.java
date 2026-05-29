@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -62,6 +64,8 @@ import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelper
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BlockProcessorGloas extends BlockProcessorFulu {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final PredicatesGloas predicatesGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
@@ -153,9 +157,62 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
+    applyParentExecutionPayload(stateGloas, requests, validatorExitContextSupplier);
+  }
 
-    executionRequestsProcessorGloas.applyParentExecutionPayload(
-        stateGloas, requests, validatorExitContextSupplier);
+  // apply_parent_execution_payload
+  public void applyParentExecutionPayload(
+      final MutableBeaconStateGloas state,
+      final ExecutionRequests requests,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    final ExecutionPayloadBid parentBid = state.getLatestExecutionPayloadBid();
+    final UInt64 parentSlot = parentBid.getSlot();
+    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
+
+    // Process execution requests from parent's payload. The execution requests are processed at
+    // state.slot (child's slot), not the parent's slot.
+    final long startTimeMillis = System.currentTimeMillis();
+    LOG.debug("Starting processing {} deposit requests", requests.getDeposits().size());
+    executionRequestsProcessorGloas.processDepositRequests(state, requests.getDeposits());
+    LOG.debug(
+        "Finished processing {} deposit requests. Pending deposits: {}, builders: {}. Took {} ms.",
+        requests.getDeposits().size(),
+        state.getPendingDeposits().size(),
+        state.getBuilders().size(),
+        System.currentTimeMillis() - startTimeMillis);
+    executionRequestsProcessorGloas.processWithdrawalRequests(
+        state, requests.getWithdrawals(), validatorExitContextSupplier);
+    executionRequestsProcessorGloas.processConsolidationRequests(
+        state, requests.getConsolidations());
+
+    // Settle the builder payment
+    if (parentEpoch.equals(beaconStateAccessorsGloas.getCurrentEpoch(state))) {
+      final UInt64 paymentIndex =
+          parentSlot.mod(specConfig.getSlotsPerEpoch()).plus(specConfig.getSlotsPerEpoch());
+      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
+    } else if (parentEpoch.equals(beaconStateAccessorsGloas.getPreviousEpoch(state))) {
+      final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
+      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
+    } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
+      // Parent is older than the previous epoch, its payment entry has been
+      // evicted from builder_pending_payments. Append the withdrawal directly.
+      state
+          .getBuilderPendingWithdrawals()
+          .append(
+              schemaDefinitionsGloas
+                  .getBuilderPendingWithdrawalSchema()
+                  .create(
+                      parentBid.getFeeRecipient(),
+                      parentBid.getValue(),
+                      parentBid.getBuilderIndex()));
+    }
+
+    // Update parent payload availability and latest block hash
+    state.setExecutionPayloadAvailability(
+        state
+            .getExecutionPayloadAvailability()
+            .withBit(parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue()));
+    state.setLatestBlockHash(parentBid.getBlockHash());
   }
 
   // process_withdrawals with only state as a parameter

@@ -21,43 +21,50 @@ import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 
-public class ValidatorIndexCache {
-  private final Cache<BLSPublicKey, Integer> validatorIndices;
+public class BuilderIndexCache {
+  private final Cache<BLSPublicKey, Integer> builderIndices;
   private final AtomicInteger lastCachedIndex;
 
   private static final int INDEX_NONE = -1;
-  public static final ValidatorIndexCache NO_OP_INSTANCE =
-      new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE);
+  public static final BuilderIndexCache NO_OP_INSTANCE =
+      new BuilderIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE);
 
   @VisibleForTesting
-  ValidatorIndexCache(
-      final Cache<BLSPublicKey, Integer> validatorIndices, final int lastCachedIndex) {
-    this.validatorIndices = validatorIndices;
+  BuilderIndexCache(final Cache<BLSPublicKey, Integer> builderIndices, final int lastCachedIndex) {
+    this.builderIndices = builderIndices;
     this.lastCachedIndex = new AtomicInteger(lastCachedIndex);
   }
 
-  public ValidatorIndexCache() {
-    this.validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
+  public BuilderIndexCache() {
+    this.builderIndices = LRUCache.create(Integer.MAX_VALUE - 1);
     this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
   }
 
-  public Optional<Integer> getValidatorIndex(
-      final BeaconState state, final BLSPublicKey publicKey) {
-    final SszList<Validator> validators = state.getValidators();
-    final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
-    if (validatorIndex.isPresent()) {
+  public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
+    final SszList<Builder> builders = BeaconStateGloas.required(state).getBuilders();
+    final Optional<Integer> builderIndex = builderIndices.getCached(publicKey);
+    if (builderIndex.isPresent()) {
       // The cache is shared across states, so a cached index may be stale for the state being
       // queried
-      return validatorIndex.filter(index -> index < validators.size());
+      return builderIndex.filter(index -> index < builders.size());
     }
-    return findIndexFromState(validators, publicKey);
+    return findIndexFromState(builders, publicKey);
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
+    builderIndices.invalidateWithNewValue(pubKey, updatedIndex);
+  }
+
+  public void invalidate(final BLSPublicKey pubKey) {
+    builderIndices.invalidate(pubKey);
+  }
+
+  public BuilderIndexCache copy() {
+    return new BuilderIndexCache(builderIndices.copy(), lastCachedIndex.get());
   }
 
   @VisibleForTesting
@@ -67,7 +74,7 @@ public class ValidatorIndexCache {
 
   @VisibleForTesting
   int getCacheSize() {
-    return validatorIndices.size();
+    return builderIndices.size();
   }
 
   private void updateLastIndex(final int i) {
@@ -75,16 +82,16 @@ public class ValidatorIndexCache {
   }
 
   @VisibleForTesting
-  Cache<BLSPublicKey, Integer> getValidatorIndices() {
-    return validatorIndices;
+  Cache<BLSPublicKey, Integer> getBuilderIndices() {
+    return builderIndices;
   }
 
   private Optional<Integer> findIndexFromState(
-      final SszList<Validator> validatorList, final BLSPublicKey publicKey) {
+      final SszList<Builder> builders, final BLSPublicKey publicKey) {
     final int initialCacheSize = getCacheSize();
-    for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < validatorList.size(); i++) {
-      final BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      validatorIndices.invalidateWithNewValue(pubKey, i);
+    for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < builders.size(); i++) {
+      final BLSPublicKey pubKey = builders.get(i).getPublicKey();
+      builderIndices.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
         if (initialCacheSize < getCacheSize()) {
           updateLastIndex(i);
