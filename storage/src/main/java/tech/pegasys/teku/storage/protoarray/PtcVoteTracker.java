@@ -15,28 +15,29 @@ package tech.pegasys.teku.storage.protoarray;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 
 /**
  * Tracks the per-root PTC vote material consumed by the Gloas fork-choice helpers
- * `is_payload_timely(...)` and `is_payload_data_available(...)`.
+ * `payload_timeliness(...)` and `payload_data_availability(...)`.
  *
  * <p>This is a storage-side representation of the state updated by `notify_ptc_messages(...)` and
- * later queried from `should_extend_payload(...)`:
+ * later queried from `should_extend_payload(...)` and `should_build_on_full(...)`:
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-notify_ptc_messages
- * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_payload_timely
- * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_payload_data_available
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-payload_timeliness
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-payload_data_availability
  *
- * <p>Teku stores the information as per-root PTC position sets because fork choice only needs the
- * resulting counts, while duplicate validators in the PTC must count once for each assigned
- * position.
+ * <p>Teku stores the information as per-root PTC position maps so fork choice can count positive
+ * votes while reference tests can inspect the full true/false/null vote state. Duplicate validators
+ * in the PTC must count once for each assigned position.
  */
 class PtcVoteTracker {
 
-  private record VotesPerPtcPosition(Set<Integer> payload, Set<Integer> data) {}
+  private record VotesPerPtcPosition(Map<Integer, Boolean> payload, Map<Integer, Boolean> data) {}
 
   private final Map<Bytes32, VotesPerPtcPosition> votesByRoot = new ConcurrentHashMap<>();
 
@@ -51,34 +52,51 @@ class PtcVoteTracker {
           final VotesPerPtcPosition updatedVotes =
               existingVotes != null
                   ? existingVotes
-                  : new VotesPerPtcPosition(
-                      ConcurrentHashMap.newKeySet(), ConcurrentHashMap.newKeySet());
+                  : new VotesPerPtcPosition(new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
           ptcPositions.forEach(
               (int ptcPosition) -> {
-                if (payloadPresent) {
-                  updatedVotes.payload.add(ptcPosition);
-                } else {
-                  updatedVotes.payload.remove(ptcPosition);
-                }
-
-                if (blobDataAvailable) {
-                  updatedVotes.data.add(ptcPosition);
-                } else {
-                  updatedVotes.data.remove(ptcPosition);
-                }
+                updatedVotes.payload.put(ptcPosition, payloadPresent);
+                updatedVotes.data.put(ptcPosition, blobDataAvailable);
               });
           return updatedVotes;
         });
   }
 
   int getPayloadPresentVoteCount(final Bytes32 blockRoot) {
-    final VotesPerPtcPosition votes = votesByRoot.get(blockRoot);
-    return votes != null ? votes.payload.size() : 0;
+    return getPayloadPresentVoteCount(blockRoot, true);
+  }
+
+  int getPayloadPresentVoteCount(final Bytes32 blockRoot, final boolean payloadPresent) {
+    return countVotes(votesByRoot.get(blockRoot), VotesPerPtcPosition::payload, payloadPresent);
   }
 
   int getDataAvailableVoteCount(final Bytes32 blockRoot) {
+    return getDataAvailableVoteCount(blockRoot, true);
+  }
+
+  int getDataAvailableVoteCount(final Bytes32 blockRoot, final boolean dataAvailable) {
+    return countVotes(votesByRoot.get(blockRoot), VotesPerPtcPosition::data, dataAvailable);
+  }
+
+  Optional<Boolean> getPayloadPresentVote(final Bytes32 blockRoot, final int ptcPosition) {
     final VotesPerPtcPosition votes = votesByRoot.get(blockRoot);
-    return votes != null ? votes.data.size() : 0;
+    return votes != null ? Optional.ofNullable(votes.payload.get(ptcPosition)) : Optional.empty();
+  }
+
+  Optional<Boolean> getDataAvailableVote(final Bytes32 blockRoot, final int ptcPosition) {
+    final VotesPerPtcPosition votes = votesByRoot.get(blockRoot);
+    return votes != null ? Optional.ofNullable(votes.data.get(ptcPosition)) : Optional.empty();
+  }
+
+  private int countVotes(
+      final VotesPerPtcPosition votes,
+      final Function<VotesPerPtcPosition, Map<Integer, Boolean>> voteSelector,
+      final boolean expectedVote) {
+    if (votes == null) {
+      return 0;
+    }
+    return (int)
+        voteSelector.apply(votes).values().stream().filter(vote -> vote == expectedVote).count();
   }
 
   void remove(final Bytes32 blockRoot) {

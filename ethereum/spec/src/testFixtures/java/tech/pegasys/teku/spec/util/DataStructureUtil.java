@@ -1996,6 +1996,7 @@ public final class DataStructureUtil {
         randomUInt64(),
         randomBytes32(),
         randomEth1Address(),
+        randomUInt64(),
         withValidatorRegistration
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),

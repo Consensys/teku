@@ -20,6 +20,8 @@ import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayload
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -43,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
@@ -53,6 +57,9 @@ import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochPr
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final WithdrawalsHelpersGloas withdrawalsHelpers;
   private final BlockProcessorGloas blockProcessor;
@@ -178,12 +185,59 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return false;
   }
 
+  @Override
+  public BlockImportResult checkOnBlockConditions(
+      final SignedBeaconBlock block, final BeaconState blockSlotState, final ReadOnlyStore store) {
+    final BlockImportResult result = super.checkOnBlockConditions(block, blockSlotState, store);
+    if (!result.isSuccessful()) {
+      return result;
+    }
+    if (isParentFullPayloadRequired(block, store)
+        && !isRequiredParentFullPayloadAvailable(block, store)) {
+      return BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD;
+    }
+    return result;
+  }
+
   /**
    * Return whether the execution payload envelope for the beacon block with root ``root`` has been
    * locally delivered and verified via ``on_execution_payload_envelope``.
    */
   public boolean isPayloadVerified(final ReadOnlyStore store, final Bytes32 root) {
     return store.getExecutionPayloadIfAvailable(root).isPresent();
+  }
+
+  private boolean isParentFullPayloadRequired(
+      final SignedBeaconBlock block, final ReadOnlyStore store) {
+    return getParentPayloadStatusIfAvailable(store, block.getMessage().getBlock())
+        .map(PAYLOAD_STATUS_FULL::equals)
+        .orElse(false);
+  }
+
+  private boolean isRequiredParentFullPayloadAvailable(
+      final SignedBeaconBlock block, final ReadOnlyStore store) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .flatMap(
+            beaconBlockBodyGloas -> {
+              final Bytes32 requiredParentBlockHash =
+                  beaconBlockBodyGloas
+                      .getSignedExecutionPayloadBid()
+                      .getMessage()
+                      .getParentBlockHash();
+              return store
+                  .getExecutionPayloadIfAvailable(block.getParentRoot())
+                  .map(
+                      executionPayload ->
+                          executionPayload
+                              .getMessage()
+                              .getPayload()
+                              .getBlockHash()
+                              .equals(requiredParentBlockHash));
+            })
+        .orElse(false);
   }
 
   @Override
@@ -374,8 +428,14 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
     final Optional<UInt64> maybeHeadSlot = forkChoiceStrategy.blockSlot(root);
     if (maybeHeadSlot.isPresent()) {
+      final long start = System.currentTimeMillis();
       final UInt64 equivocatingWeight =
           computeEquivocatingCommitteeWeight(maybeHeadSlot.get(), store, headState, justifiedState);
+      LOG.debug(
+          "Computed equivocating committee weight {} for head {}, took {} ms",
+          equivocatingWeight,
+          root,
+          System.currentTimeMillis() - start);
       headWeight = headWeight.plus(equivocatingWeight);
     }
 
@@ -431,6 +491,25 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     // Fail closed for late-reorg decisions: missing inputs mean "do not treat the parent as
     // strong".
     return false;
+  }
+
+  @Override
+  public ForkChoiceNode getProposerHead(
+      final ForkChoiceReorgContext context, final ForkChoiceNode headNode, final UInt64 slot) {
+    final ForkChoiceNode proposerHead = super.getProposerHead(context, headNode, slot);
+
+    if (proposerHead.payloadStatus() == PAYLOAD_STATUS_PENDING) {
+      // we reorged first GLOAS block, returning as is
+      return proposerHead;
+    }
+
+    if (context
+        .getStore()
+        .getForkChoiceStrategy()
+        .shouldBuildOnFull(context.getStore(), proposerHead)) {
+      return proposerHead.toFull();
+    }
+    return proposerHead.toEmpty();
   }
 
   /**
