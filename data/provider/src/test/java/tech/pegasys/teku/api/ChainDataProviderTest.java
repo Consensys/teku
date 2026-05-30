@@ -54,6 +54,7 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.fulu.ColumnCustodyAtSlot;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
+import tech.pegasys.teku.api.migrated.StateBuilderData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
@@ -69,6 +70,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -87,9 +89,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -723,6 +728,126 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         provider.getValidatorIdentitiesFromState(internalState, List.of("0"));
     assertThat(validatorIdentitiesFromState.size()).isEqualTo(1);
     assertThat(validatorIdentitiesFromState.get(0)).isEqualTo(identity);
+  }
+
+  @Test
+  public void getBuildersFromState_shouldReturnAllBuildersWithDerivedStatuses() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            gloasSpec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+
+    final Builder pendingBuilder =
+        gloasData
+            .builderBuilder()
+            .depositEpoch(UInt64.valueOf(5))
+            .withdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+            .build();
+    final Builder activeBuilder =
+        gloasData
+            .builderBuilder()
+            .depositEpoch(ONE)
+            .withdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+            .build();
+    final Builder exitedBuilder =
+        gloasData.builderBuilder().depositEpoch(ONE).withdrawableEpoch(UInt64.valueOf(6)).build();
+    final BeaconStateGloas state =
+        createGloasStateWithBuilders(
+            gloasData, UInt64.valueOf(3), pendingBuilder, activeBuilder, exitedBuilder);
+
+    final SszList<StateBuilderData> builders = provider.getBuildersFromState(state, List.of());
+
+    assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
+        .containsExactly(ZERO, ONE, UInt64.valueOf(2));
+    assertThat(builders.stream().map(StateBuilderData::getStatus).toList())
+        .containsExactly(
+            StateBuilderData.STATUS_PENDING,
+            StateBuilderData.STATUS_ACTIVE,
+            StateBuilderData.STATUS_EXITED);
+    assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
+        .containsExactly(pendingBuilder, activeBuilder, exitedBuilder);
+  }
+
+  @Test
+  public void getBuildersFromState_shouldFilterByBuilderIndexAndPubkey() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            gloasSpec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+    final Builder builder0 = gloasData.randomBuilder();
+    final Builder builder1 = gloasData.randomBuilder();
+    final Builder builder2 = gloasData.randomBuilder();
+    final BeaconStateGloas state =
+        createGloasStateWithBuilders(gloasData, UInt64.valueOf(3), builder0, builder1, builder2);
+
+    final SszList<StateBuilderData> builders =
+        provider.getBuildersFromState(
+            state, List.of("2", builder0.getPublicKey().toString(), "12345"));
+
+    assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
+        .containsExactly(UInt64.valueOf(2), ZERO);
+    assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
+        .containsExactly(builder2, builder0);
+  }
+
+  @Test
+  public void getBuildersFromState_shouldRejectInvalidBuilderId() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            gloasSpec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+    final BeaconStateGloas state =
+        createGloasStateWithBuilders(gloasData, UInt64.valueOf(3), gloasData.randomBuilder());
+
+    assertThatThrownBy(() -> provider.getBuildersFromState(state, List.of("not-a-builder")))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Invalid builder: not-a-builder");
+  }
+
+  @Test
+  public void getBuildersFromState_shouldRejectPreGloasState() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            spec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+
+    assertThatThrownBy(() -> provider.getBuildersFromState(data.randomBeaconState(), List.of()))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("prior to GLOAS");
+  }
+
+  private BeaconStateGloas createGloasStateWithBuilders(
+      final DataStructureUtil gloasData, final UInt64 finalizedEpoch, final Builder... builders) {
+    return gloasData
+        .stateBuilderGloas(0, 0, 0)
+        .builders(
+            BeaconStateSchemaGloas.required(gloasData.getBeaconStateSchema())
+                .getBuildersSchema()
+                .of(builders))
+        .setFinalizedCheckpointToEpoch(finalizedEpoch)
+        .build();
   }
 
   @Test
