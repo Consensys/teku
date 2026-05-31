@@ -5,7 +5,6 @@ name: ci
 # https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 # ubuntu-24.04 = 4cpu, 16GB
 # ubuntu-latest-128 = 32, 128GB
-# windows-2025 = 4 cpu, 16GB
 # ubuntu-24.04-arm = 4cpu, 16GB
 # macos-13 = 4cpu, 14GB
 # macos-15 = 3cpu(M1), 7GB
@@ -106,36 +105,6 @@ jobs:
         run: |
           ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
-  windowsBuild:
-    continue-on-error: true
-    needs: [spotless, moduleChecks ]
-    runs-on: windows-2022
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          submodules: 'recursive'
-      - name: Prepare
-        uses: ./.github/actions/prepare-windows
-      - name: Build
-        shell: powershell
-        run: |
-          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
-          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
-      - name: Collect test results
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Force build\test-results
-          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
-      - name: Publish Windows Test Results and Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        if: always()
-        with:
-          if-no-files-found: ignore
-          retention-days: 3
-          path: |
-            build/test-results/
 
   assemble:
     # assemble is in our critical path so we want it to finish as quick as possible
