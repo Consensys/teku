@@ -2126,6 +2126,31 @@
     +    return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
     </spec>
 
+- name: compute_weak_subjectivity_period#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/weaksubjectivity/WeakSubjectivityCalculatorGloas.java
+      search: public UInt64 computeWeakSubjectivityPeriod(
+  spec: |
+    <spec fn="compute_weak_subjectivity_period" fork="gloas" hash="8b1ddc92">
+    def compute_weak_subjectivity_period(state: BeaconState) -> uint64:
+        """
+        Returns the weak subjectivity period for the current ``state``.
+        This computation takes into account the effect of:
+            - exit churn (weighted 2/3)
+            - activation churn (weighted 1/3)
+            - consolidation churn (weighted 1)
+        """
+        t = get_total_active_balance(state)
+        # [Modified in Gloas:EIP8061]
+        delta = (
+            2 * get_exit_churn_limit(state) // 3
+            + get_activation_churn_limit(state) // 3
+            + get_consolidation_churn_limit(state)
+        )
+        epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
+        return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
+    </spec>
+
 - name: construct_vanishing_polynomial#fulu
   sources: []
   spec: |
@@ -5467,16 +5492,6 @@
     </spec>
 
 - name: get_payload_due_ms#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
-      search: public Optional<Integer> getPayloadDueMillis()
-  spec: |
-    <spec fn="get_payload_due_ms" fork="gloas" hash="6ccf7f5c">
-    def get_payload_due_ms() -> uint64:
-        return get_slot_component_duration_ms(PAYLOAD_DUE_BPS)
-    </spec>
-
-- name: get_payload_due_ms#gloas
   sources: []
   spec: |
     <spec fn="get_payload_due_ms" fork="gloas" hash="6ccf7f5c">
@@ -7269,28 +7284,6 @@
             and validator.withdrawable_epoch <= epoch
             and balance > 0
         )
-    </spec>
-
-- name: is_gas_limit_target_compatible#gloas
-  sources: []
-  spec: |
-    <spec fn="is_gas_limit_target_compatible" fork="gloas" hash="3fa22023">
-    def is_gas_limit_target_compatible(
-        parent_gas_limit: uint64, gas_limit: uint64, target_gas_limit: uint64
-    ) -> bool:
-        """
-        Check if ``gas_limit`` is compatible with ``target_gas_limit`` under the
-        EIP-1559 transition rule from ``parent_gas_limit``.
-        """
-        max_gas_limit_difference = max(parent_gas_limit // 1024, 1) - 1
-        min_gas_limit = parent_gas_limit - max_gas_limit_difference
-        max_gas_limit = parent_gas_limit + max_gas_limit_difference
-
-        if target_gas_limit >= min_gas_limit and target_gas_limit <= max_gas_limit:
-            return gas_limit == target_gas_limit
-        if target_gas_limit > max_gas_limit:
-            return gas_limit == max_gas_limit
-        return gas_limit == min_gas_limit
     </spec>
 
 - name: is_gas_limit_target_compatible#gloas
