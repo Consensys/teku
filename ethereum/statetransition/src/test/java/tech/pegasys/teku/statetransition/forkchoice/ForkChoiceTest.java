@@ -41,6 +41,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -106,6 +107,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -1474,6 +1476,122 @@ class ForkChoiceTest {
 
     assertThat(forkChoiceStrategy.getWeight(targetBlock.getRoot()).orElseThrow())
         .isGreaterThan(ZERO);
+  }
+
+  @Test
+  void onAttestation_gloasFullVoteShouldWaitForExecutionPayload() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalGloas(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final List<Bytes32> requiredFullPayloads = new ArrayList<>();
+    forkChoice.subscribeRequiredFullPayload(requiredFullPayloads::add);
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+
+    final UInt64 attestationSlot = targetBlock.getSlot().plus(1);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(attestationSlot.plus(1));
+    final ValidatableAttestation attestation =
+        createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
+
+    assertThat(forkChoice.onAttestation(attestation))
+        .isCompletedWithValue(AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD);
+    assertThat(requiredFullPayloads).containsExactly(targetBlock.getRoot());
+
+    assertFullPayloadVoteIsPending(targetBlock);
+    importPayloadAndAssertFullPayloadVoteApplied(targetBlock, attestationSlot);
+  }
+
+  @Test
+  void applyIndexedAttestations_gloasFullVoteShouldWaitForExecutionPayload() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalGloas(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final List<Bytes32> requiredFullPayloads = new ArrayList<>();
+    forkChoice.subscribeRequiredFullPayload(requiredFullPayloads::add);
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+
+    final UInt64 attestationSlot = targetBlock.getSlot().plus(1);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(attestationSlot.plus(1));
+    final ValidatableAttestation attestation =
+        createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
+
+    forkChoice.applyIndexedAttestations(List.of(attestation));
+    assertThat(requiredFullPayloads).containsExactly(targetBlock.getRoot());
+
+    assertFullPayloadVoteIsPending(targetBlock);
+    importPayloadAndAssertFullPayloadVoteApplied(targetBlock, attestationSlot);
+  }
+
+  private void assertFullPayloadVoteIsPending(final SignedBlockAndState targetBlock) {
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    assertThat(
+            forkChoiceStrategy.getBlockData(
+                targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL))
+        .isEmpty();
+    assertThat(
+            forkChoiceStrategy
+                .getBlockData(targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY)
+                .orElseThrow()
+                .getWeight())
+        .isEqualTo(ZERO);
+  }
+
+  private void importPayloadAndAssertFullPayloadVoteApplied(
+      final SignedBlockAndState targetBlock, final UInt64 attestationSlot) {
+    final SafeFuture<ExecutionPayloadImportResult> payloadImportResult =
+        forkChoice.onExecutionPayloadEnvelope(
+            chainBuilder.getExecutionPayloadAtSlot(targetBlock.getSlot()).orElseThrow(),
+            executionLayer);
+
+    assertThat(payloadImportResult)
+        .isCompletedWithValueMatching(ExecutionPayloadImportResult::isSuccessful);
+    processHead(attestationSlot.plus(1));
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    assertThat(
+            forkChoiceStrategy
+                .getBlockData(targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+                .orElseThrow()
+                .getWeight())
+        .isGreaterThan(ZERO);
+  }
+
+  private ValidatableAttestation createPrevalidatedFullPayloadAttestation(
+      final SignedBlockAndState targetBlock, final UInt64 attestationSlot) {
+    final UInt64 targetEpoch = spec.computeEpochAtSlot(attestationSlot);
+    final Bytes32 targetRoot =
+        recentChainData
+            .getForkChoiceStrategy()
+            .orElseThrow()
+            .getAncestor(targetBlock.getRoot(), spec.computeStartSlotAtEpoch(targetEpoch))
+            .orElse(targetBlock.getRoot());
+    final AttestationData data =
+        new AttestationData(
+            attestationSlot,
+            UInt64.ONE,
+            targetBlock.getRoot(),
+            recentChainData.getStore().getJustifiedCheckpoint(),
+            new Checkpoint(targetEpoch, targetRoot));
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(
+            spec,
+            attestationSchema.create(
+                attestationSchema.getAggregationBitsSchema().ofBits(16),
+                data,
+                BLSSignature.empty(),
+                () -> attestationSchema.createEmptyCommitteeBits().orElseThrow()));
+    validatableAttestation.setIndexedAttestation(
+        new IndexedAttestationLight(List.of(UInt64.ZERO), data, BLSSignature.empty()));
+    validatableAttestation.setValidIndexedAttestation();
+    return validatableAttestation;
   }
 
   private UInt64 applyAttestationFromValidator(

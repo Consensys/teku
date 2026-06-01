@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -50,7 +50,7 @@ public class AttestationManager extends Service
 
   private final ForkChoice attestationProcessor;
 
-  private final PendingPool<ValidatableAttestation> pendingAttestations;
+  private final PendingAttestationPool pendingAttestationPool;
   private final FutureItems<ValidatableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
@@ -67,7 +67,7 @@ public class AttestationManager extends Service
 
   AttestationManager(
       final ForkChoice attestationProcessor,
-      final PendingPool<ValidatableAttestation> pendingAttestations,
+      final PendingAttestationPool pendingAttestationPool,
       final FutureItems<ValidatableAttestation> futureAttestations,
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
@@ -75,7 +75,7 @@ public class AttestationManager extends Service
       final SignatureVerificationService signatureVerificationService,
       final ActiveValidatorChannel activeValidatorChannel) {
     this.attestationProcessor = attestationProcessor;
-    this.pendingAttestations = pendingAttestations;
+    this.pendingAttestationPool = pendingAttestationPool;
     this.futureAttestations = futureAttestations;
     this.aggregatingAttestationPool = aggregatingAttestationPool;
     this.attestationValidator = attestationValidator;
@@ -85,7 +85,7 @@ public class AttestationManager extends Service
   }
 
   public static AttestationManager create(
-      final PendingPool<ValidatableAttestation> pendingAttestations,
+      final PendingAttestationPool pendingAttestationPool,
       final FutureItems<ValidatableAttestation> futureAttestations,
       final ForkChoice attestationProcessor,
       final AggregatingAttestationPool aggregatingAttestationPool,
@@ -95,7 +95,7 @@ public class AttestationManager extends Service
       final ActiveValidatorChannel activeValidatorChannel) {
     return new AttestationManager(
         attestationProcessor,
-        pendingAttestations,
+        pendingAttestationPool,
         futureAttestations,
         aggregatingAttestationPool,
         attestationValidator,
@@ -185,7 +185,6 @@ public class AttestationManager extends Service
 
   @Override
   public void onSlot(final UInt64 slot) {
-    pendingAttestations.onSlot(slot);
     applyFutureAttestations(slot);
   }
 
@@ -215,11 +214,10 @@ public class AttestationManager extends Service
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     activeValidatorChannel.onBlockImported(block);
-    pendingAttestations
-        .getItemsDependingOn(blockRoot, false)
+    pendingAttestationPool
+        .removeAttestationsWaitingForBlock(blockRoot)
         .forEach(
             attestation -> {
-              pendingAttestations.remove(attestation);
               onAttestation(attestation)
                   .finish(
                       err ->
@@ -231,7 +229,7 @@ public class AttestationManager extends Service
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidatableAttestation attestation) {
-    if (pendingAttestations.contains(attestation)) {
+    if (pendingAttestationPool.contains(attestation)) {
       return ATTESTATION_SAVED_FOR_FUTURE_RESULT;
     }
 
@@ -251,8 +249,12 @@ public class AttestationManager extends Service
                   LOG.trace(
                       "Deferring attestation {} as required block is not yet present",
                       attestation::hashTreeRoot);
-                  pendingAttestations.add(attestation);
+                  pendingAttestationPool.addForMissingBlock(attestation);
                 }
+                case DEFERRED_FOR_EXECUTION_PAYLOAD ->
+                    LOG.trace(
+                        "Deferring attestation {} as required full payload is not yet present",
+                        attestation::hashTreeRoot);
                 case DEFER_FORK_CHOICE_PROCESSING -> {
                   LOG.trace(
                       "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);

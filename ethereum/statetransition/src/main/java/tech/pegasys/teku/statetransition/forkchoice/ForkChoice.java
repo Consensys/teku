@@ -23,15 +23,19 @@ import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.ConnectException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -63,12 +67,14 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -92,9 +98,13 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
+import tech.pegasys.teku.statetransition.attestation.VoteUpdates;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
+import tech.pegasys.teku.statetransition.util.PendingFullPayloadVote;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -119,6 +129,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
+  private final PendingAttestationPool pendingAttestationPool;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
@@ -147,6 +158,36 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem,
       final AsyncBLSSignatureVerifier signatureVerifier) {
+    this(
+        spec,
+        forkChoiceExecutor,
+        recentChainData,
+        forkChoiceNotifier,
+        forkChoiceStateProvider,
+        tickProcessor,
+        transitionBlockValidator,
+        forkChoiceLateBlockReorgEnabled,
+        lateBlockReorgPreparationHandler,
+        debugDataDumper,
+        metricsSystem,
+        signatureVerifier,
+        new PoolFactory(new NoOpMetricsSystem()).createPendingAttestationPool(spec));
+  }
+
+  public ForkChoice(
+      final Spec spec,
+      final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final ForkChoiceStateProvider forkChoiceStateProvider,
+      final TickProcessor tickProcessor,
+      final MergeTransitionBlockValidator transitionBlockValidator,
+      final boolean forkChoiceLateBlockReorgEnabled,
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
+      final DebugDataDumper debugDataDumper,
+      final MetricsSystem metricsSystem,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final PendingAttestationPool pendingAttestationPool) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
@@ -162,6 +203,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
     this.signatureVerifier = signatureVerifier;
+    this.pendingAttestationPool = pendingAttestationPool;
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -276,24 +318,44 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                           if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
                             final IndexedAttestationLight indexedAttestation =
                                 getIndexedAttestation(attestation);
-                            final boolean fullPayloadHint =
-                                spec.atSlot(attestation.getData().getSlot())
-                                    .getForkChoiceUtil()
-                                    .getFullPayloadVoteHint(attestation.getData().getIndex());
-                            deferredAttestations.addAttestation(
-                                indexedAttestation, fullPayloadHint);
+                            return onForkChoiceThread(
+                                () -> {
+                                  final boolean fullPayloadHint =
+                                      getFullPayloadVoteHint(attestation.getData());
+                                  final ForkChoiceStrategy forkChoiceStrategy =
+                                      getForkChoiceStrategy();
+                                  if (isFullPayloadVoteMissingTarget(
+                                      forkChoiceStrategy,
+                                      indexedAttestation.data().getBeaconBlockRoot(),
+                                      fullPayloadHint)) {
+                                    addPendingFullPayloadAttestation(indexedAttestation);
+                                    return AttestationProcessingResult
+                                        .DEFERRED_FOR_EXECUTION_PAYLOAD;
+                                  }
+                                  deferredAttestations.addAttestation(
+                                      indexedAttestation, fullPayloadHint);
+                                  return validationResult;
+                                });
                           }
                           return SafeFuture.completedFuture(validationResult);
                         }
                         return onForkChoiceThread(
-                                () -> {
-                                  final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                                  getForkChoiceStrategy()
-                                      .onAttestation(
-                                          transaction, getIndexedAttestation(attestation));
-                                  transaction.commit();
-                                })
-                            .thenApply(__ -> validationResult);
+                            () -> {
+                              final IndexedAttestationLight indexedAttestation =
+                                  getIndexedAttestation(attestation);
+                              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                              if (isFullPayloadVoteMissingTarget(
+                                  forkChoiceStrategy,
+                                  indexedAttestation.data().getBeaconBlockRoot(),
+                                  getFullPayloadVoteHint(indexedAttestation.data()))) {
+                                addPendingFullPayloadAttestation(indexedAttestation);
+                                return AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD;
+                              }
+                              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+                              forkChoiceStrategy.onAttestation(transaction, indexedAttestation);
+                              transaction.commit();
+                              return validationResult;
+                            });
                       });
             })
         .exceptionallyCompose(
@@ -315,7 +377,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               attestations.stream()
                   .map(this::getIndexedAttestation)
                   .forEach(
-                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
+                      attestation ->
+                          applyIndexedAttestation(forkChoiceStrategy, transaction, attestation));
               transaction.commit();
             })
         .finishStackTrace();
@@ -365,6 +428,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public void subscribeToOptimisticHeadChangesAndUpdate(final OptimisticHeadSubscriber subscriber) {
     optimisticSyncSubscribers.subscribe(subscriber);
     getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
+  }
+
+  public void subscribeRequiredFullPayload(final RequiredFullPayloadSubscriber subscriber) {
+    pendingAttestationPool.subscribeRequiredFullPayload(subscriber::onRequiredFullPayload);
   }
 
   public void onTick(
@@ -819,6 +886,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     forkChoiceStrategy.onExecutionPayloadResult(
         signedEnvelope.getBeaconBlockRoot(), payloadStatus, false);
 
+    applyPendingFullPayloadAttestations(signedEnvelope.getBeaconBlockRoot());
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
 
@@ -1147,7 +1215,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
             attestation -> validateBlockAttestation(forkChoiceStrategy, currentEpoch, attestation))
-        .forEach(attestation -> forkChoiceStrategy.onAttestation(voteUpdater, attestation));
+        .forEach(
+            attestation -> applyIndexedAttestation(forkChoiceStrategy, voteUpdater, attestation));
   }
 
   private boolean validateBlockAttestation(
@@ -1162,14 +1231,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private SafeFuture<Void> applyDeferredAttestations(
       final Collection<DeferredVotes> deferredVoteUpdates) {
-    return onForkChoiceThread(
-        () -> {
-          final VoteUpdater transaction = recentChainData.startVoteUpdate();
-          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-          deferredVoteUpdates.forEach(
-              update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
-          transaction.commit();
-        });
+    return onForkChoiceThread(() -> applyDeferredAttestationsToForkChoice(deferredVoteUpdates));
   }
 
   private void applyAttesterSlashingsFromBlock(
@@ -1378,6 +1440,101 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return applyDeferredAttestations(deferredVoteUpdates);
   }
 
+  private void applyIndexedAttestation(
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final VoteUpdater voteUpdater,
+      final IndexedAttestationLight attestation) {
+    if (isFullPayloadVoteMissingTarget(
+        forkChoiceStrategy,
+        attestation.data().getBeaconBlockRoot(),
+        getFullPayloadVoteHint(attestation.data()))) {
+      addPendingFullPayloadAttestation(attestation);
+      return;
+    }
+    forkChoiceStrategy.onAttestation(voteUpdater, attestation);
+  }
+
+  private void applyDeferredAttestationsToForkChoice(
+      final Collection<DeferredVotes> deferredVoteUpdates) {
+    final VoteUpdater transaction = recentChainData.startVoteUpdate();
+    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+    deferredVoteUpdates.forEach(
+        update -> {
+          final VoteUpdates votesReadyToApply = new VoteUpdates(update.getSlot());
+          update.forEachDeferredVote(
+              (blockRoot, validatorIndex, fullPayloadHint) -> {
+                if (isFullPayloadVoteMissingTarget(
+                    forkChoiceStrategy, blockRoot, fullPayloadHint)) {
+                  addPendingFullPayloadVote(update.getSlot(), blockRoot, validatorIndex);
+                  return;
+                }
+                votesReadyToApply.addVote(blockRoot, validatorIndex, fullPayloadHint);
+              });
+          if (!votesReadyToApply.isEmpty()) {
+            forkChoiceStrategy.applyDeferredAttestations(transaction, votesReadyToApply);
+          }
+        });
+    transaction.commit();
+  }
+
+  private void applyPendingFullPayloadAttestations(final Bytes32 blockRoot) {
+    final List<PendingFullPayloadVote> pendingVotes =
+        pendingAttestationPool.removeVotesWaitingForFullPayload(blockRoot);
+    if (pendingVotes.isEmpty()) {
+      return;
+    }
+    final Map<UInt64, VoteUpdates> pendingVoteUpdatesBySlot = new TreeMap<>();
+    pendingVotes.forEach(
+        vote ->
+            pendingVoteUpdatesBySlot
+                .computeIfAbsent(vote.slot(), VoteUpdates::new)
+                .addVote(vote.blockRoot(), vote.validatorIndex(), true));
+    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
+    final List<DeferredVotes> readyVotes = new ArrayList<>();
+    pendingVoteUpdatesBySlot
+        .values()
+        .forEach(
+            votes -> {
+              if (votes.getSlot().isLessThan(currentSlot)) {
+                readyVotes.add(votes);
+                return;
+              }
+              votes.forEachDeferredVote(
+                  (voteBlockRoot, validatorIndex, fullPayloadHint) ->
+                      deferredAttestations.addVote(
+                          votes.getSlot(), voteBlockRoot, validatorIndex, fullPayloadHint));
+            });
+    if (!readyVotes.isEmpty()) {
+      applyDeferredAttestationsToForkChoice(readyVotes);
+    }
+  }
+
+  private void addPendingFullPayloadAttestation(final IndexedAttestationLight attestation) {
+    pendingAttestationPool.addForMissingFullPayload(attestation);
+  }
+
+  private void addPendingFullPayloadVote(
+      final UInt64 slot, final Bytes32 blockRoot, final UInt64 validatorIndex) {
+    pendingAttestationPool.addVoteForMissingFullPayload(slot, blockRoot, validatorIndex);
+  }
+
+  private boolean isFullPayloadVoteMissingTarget(
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 blockRoot,
+      final boolean fullPayloadHint) {
+    return fullPayloadHint
+        && forkChoiceStrategy.contains(blockRoot)
+        && forkChoiceStrategy
+            .getBlockData(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+            .isEmpty();
+  }
+
+  private boolean getFullPayloadVoteHint(final AttestationData attestationData) {
+    return spec.atSlot(attestationData.getSlot())
+        .getForkChoiceUtil()
+        .getFullPayloadVoteHint(attestationData.getIndex());
+  }
+
   private ForkChoiceStrategy getForkChoiceStrategy() {
     forkChoiceExecutor.checkOnEventThread();
     return recentChainData
@@ -1415,5 +1572,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public interface OptimisticHeadSubscriber {
     void onOptimisticHeadChanged(boolean isHeadOptimistic);
+  }
+
+  public interface RequiredFullPayloadSubscriber {
+    void onRequiredFullPayload(Bytes32 blockRoot);
   }
 }

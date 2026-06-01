@@ -30,6 +30,8 @@ public class AttestationProcessingResult {
       new AttestationProcessingResult(Status.DEFER_FORK_CHOICE_PROCESSING, Optional.empty());
   public static final AttestationProcessingResult UNKNOWN_BLOCK =
       new AttestationProcessingResult(Status.UNKNOWN_BLOCK, Optional.empty());
+  public static final AttestationProcessingResult DEFERRED_FOR_EXECUTION_PAYLOAD =
+      new AttestationProcessingResult(Status.DEFERRED_FOR_EXECUTION_PAYLOAD, Optional.empty());
 
   private final Status status;
   private final Optional<String> invalidReason;
@@ -110,6 +112,7 @@ public class AttestationProcessingResult {
   public enum Status {
     SUCCESSFUL,
     UNKNOWN_BLOCK,
+    DEFERRED_FOR_EXECUTION_PAYLOAD,
     SAVED_FOR_FUTURE,
     DEFER_FORK_CHOICE_PROCESSING,
     INVALID
