@@ -219,15 +219,6 @@ specrefs:
       - upgrade_lc_store_to_gloas#gloas
       - upgrade_lc_update_to_gloas#gloas
 
-      # Still need to implement this for Electra
-      - compute_weak_subjectivity_period#electra
-
-      # Temporary exceptions: ignored until updated to alpha.8 spec
-      - apply_parent_execution_payload#gloas
-      - get_proposer_head#phase0
-      - prepare_execution_payload#bellatrix
-      - prepare_execution_payload#gloas
-
       # Not implemented: fast confirmation
       - adjust_committee_weight_estimate_to_ensure_safety#phase0
       - compute_adversarial_weight#phase0
@@ -299,7 +290,7 @@ specrefs:
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
 
-      # Not needed: gloas
+      # Not implemented: gloas
       - get_proposer_dependent_root#gloas
 
       # Will be fixed later: gloas
