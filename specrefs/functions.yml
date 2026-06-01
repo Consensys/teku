@@ -241,7 +241,9 @@
     </spec>
 
 - name: apply_parent_execution_payload#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
+      search: public void applyParentExecutionPayload(
   spec: |
     <spec fn="apply_parent_execution_payload" fork="gloas" hash="44874701">
     def apply_parent_execution_payload(
@@ -2086,7 +2088,9 @@
     </spec>
 
 - name: compute_weak_subjectivity_period#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/weaksubjectivity/WeakSubjectivityCalculatorElectra.java
+      search: public UInt64 computeWeakSubjectivityPeriod(
   spec: |
     <spec fn="compute_weak_subjectivity_period" fork="electra" style="diff" hash="8d95104c">
     --- phase0
@@ -2124,6 +2128,31 @@
     +    delta = get_balance_churn_limit(state)
     +    epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
     +    return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
+    </spec>
+
+- name: compute_weak_subjectivity_period#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/weaksubjectivity/WeakSubjectivityCalculatorGloas.java
+      search: public UInt64 computeWeakSubjectivityPeriod(
+  spec: |
+    <spec fn="compute_weak_subjectivity_period" fork="gloas" hash="8b1ddc92">
+    def compute_weak_subjectivity_period(state: BeaconState) -> uint64:
+        """
+        Returns the weak subjectivity period for the current ``state``.
+        This computation takes into account the effect of:
+            - exit churn (weighted 2/3)
+            - activation churn (weighted 1/3)
+            - consolidation churn (weighted 1)
+        """
+        t = get_total_active_balance(state)
+        # [Modified in Gloas:EIP8061]
+        delta = (
+            2 * get_exit_churn_limit(state) // 3
+            + get_activation_churn_limit(state) // 3
+            + get_consolidation_churn_limit(state)
+        )
+        epochs_for_validator_set_churn = SAFETY_DECAY * t // (2 * delta * 100)
+        return MIN_VALIDATOR_WITHDRAWABILITY_DELAY + epochs_for_validator_set_churn
     </spec>
 
 - name: construct_vanishing_polynomial#fulu
@@ -5634,7 +5663,9 @@
     </spec>
 
 - name: get_proposer_head#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public ForkChoiceNode getProposerHead(
   spec: |
     <spec fn="get_proposer_head" fork="phase0" hash="99e8fc05">
     def get_proposer_head(store: Store, head_root: Root, slot: Slot) -> Root:
@@ -7262,7 +7293,9 @@
     </spec>
 
 - name: is_gas_limit_target_compatible#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/ExecutionPayloadBidGossipValidator.java
+      search: static boolean isGasLimitTargetCompatible(
   spec: |
     <spec fn="is_gas_limit_target_compatible" fork="gloas" hash="3fa22023">
     def is_gas_limit_target_compatible(
@@ -8750,7 +8783,9 @@
     </spec>
 
 - name: payload_data_availability#gloas
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: private boolean payloadDataAvailability(
   spec: |
     <spec fn="payload_data_availability" fork="gloas" hash="9d298e0e">
     def payload_data_availability(store: Store, root: Root, available: bool) -> bool:
@@ -8772,7 +8807,9 @@
     </spec>
 
 - name: payload_timeliness#gloas
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: private boolean payloadTimeliness(
   spec: |
     <spec fn="payload_timeliness" fork="gloas" hash="4490a649">
     def payload_timeliness(store: Store, root: Root, timely: bool) -> bool:
@@ -8808,7 +8845,16 @@
     </spec>
 
 - name: prepare_execution_payload#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: final Optional<Bytes32> terminalBlockHash) {
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: public Optional<SafeFuture<ForkChoiceUpdatedResult>> send(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionLayerChannel.java
+      search: ^  SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated\(
+      regex: true
   spec: |
     <spec fn="prepare_execution_payload" fork="bellatrix" hash="6af4de76">
     def prepare_execution_payload(
@@ -8925,7 +8971,11 @@
     </spec>
 
 - name: prepare_execution_payload#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<ChainHead> resolveProposerHeadOverride(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
   spec: |
     <spec fn="prepare_execution_payload" fork="gloas" hash="193044fa">
     def prepare_execution_payload(
@@ -11926,7 +11976,9 @@
     </spec>
 
 - name: should_build_on_full#gloas
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: public boolean shouldBuildOnFull(
   spec: |
     <spec fn="should_build_on_full" fork="gloas" hash="229e3638">
     def should_build_on_full(store: Store, head: ForkChoiceNode) -> bool:
@@ -13470,7 +13522,9 @@
     </spec>
 
 - name: validate_beacon_aggregate_and_proof_gossip#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/AggregateAttestationValidator.java
+      search: validate(final ValidatableAttestation attestation)
   spec: |
     <spec fn="validate_beacon_aggregate_and_proof_gossip" fork="deneb" hash="ec1dcf12">
     def validate_beacon_aggregate_and_proof_gossip(
@@ -13601,7 +13655,9 @@
     </spec>
 
 - name: validate_beacon_aggregate_and_proof_gossip#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/AggregateAttestationValidator.java
+      search: validate(final ValidatableAttestation attestation)
   spec: |
     <spec fn="validate_beacon_aggregate_and_proof_gossip" fork="electra" hash="fd4d3e8f">
     def validate_beacon_aggregate_and_proof_gossip(
@@ -13835,7 +13891,9 @@
     </spec>
 
 - name: validate_beacon_attestation_gossip#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/AttestationValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_attestation_gossip" fork="deneb" hash="fc0076a8">
     def validate_beacon_attestation_gossip(
@@ -13942,7 +14000,9 @@
     </spec>
 
 - name: validate_beacon_attestation_gossip#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/AttestationValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_attestation_gossip" fork="electra" hash="02f0dc34">
     def validate_beacon_attestation_gossip(
@@ -14329,7 +14389,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="deneb" hash="4ab38790">
     def validate_beacon_block_gossip(
@@ -14428,7 +14490,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="electra" hash="8439df67">
     def validate_beacon_block_gossip(
@@ -14527,7 +14591,9 @@
     </spec>
 
 - name: validate_blob_sidecar_gossip#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlobSidecarGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(final BlobSidecar blobSidecar)
   spec: |
     <spec fn="validate_blob_sidecar_gossip" fork="deneb" hash="df80723a">
     def validate_blob_sidecar_gossip(
@@ -14622,7 +14688,9 @@
     </spec>
 
 - name: validate_blob_sidecar_gossip#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlobSidecarGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(final BlobSidecar blobSidecar)
   spec: |
     <spec fn="validate_blob_sidecar_gossip" fork="electra" hash="184a7f15">
     def validate_blob_sidecar_gossip(
@@ -15319,7 +15387,9 @@
     </spec>
 
 - name: validate_voluntary_exit_gossip#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/VoluntaryExitValidator.java
+      search: validateForGossip(final SignedVoluntaryExit exit)
   spec: |
     <spec fn="validate_voluntary_exit_gossip" fork="deneb" hash="59c64424">
     def validate_voluntary_exit_gossip(

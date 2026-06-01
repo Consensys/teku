@@ -219,31 +219,6 @@ specrefs:
       - upgrade_lc_store_to_gloas#gloas
       - upgrade_lc_update_to_gloas#gloas
 
-      # Still need to implement this for Electra
-      - compute_weak_subjectivity_period#electra
-
-      # Temporary exceptions: ignored until updated to alpha.8 spec
-      - apply_parent_execution_payload#gloas
-      - get_proposer_head#phase0
-      - prepare_execution_payload#bellatrix
-      - prepare_execution_payload#gloas
-
-      # Will be fixed later
-      - get_payload_due_ms#gloas
-      - is_gas_limit_target_compatible#gloas
-      - payload_data_availability#gloas
-      - payload_timeliness#gloas
-      - should_build_on_full#gloas
-      - validate_beacon_aggregate_and_proof_gossip#deneb
-      - validate_beacon_aggregate_and_proof_gossip#electra
-      - validate_beacon_attestation_gossip#deneb
-      - validate_beacon_attestation_gossip#electra
-      - validate_beacon_block_gossip#deneb
-      - validate_beacon_block_gossip#electra
-      - validate_blob_sidecar_gossip#deneb
-      - validate_blob_sidecar_gossip#electra
-      - validate_voluntary_exit_gossip#deneb
-
       # Not implemented: fast confirmation
       - adjust_committee_weight_estimate_to_ensure_safety#phase0
       - compute_adversarial_weight#phase0
@@ -315,11 +290,11 @@ specrefs:
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
 
-      # Not needed: gloas
+      # Not implemented: gloas
       - get_proposer_dependent_root#gloas
 
-      # Not implemented: gloas
-      - compute_weak_subjectivity_period#gloas
+      # Will be fixed later: gloas
+      - get_payload_due_ms#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze
