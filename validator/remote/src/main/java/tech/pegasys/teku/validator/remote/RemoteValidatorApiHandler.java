@@ -379,7 +379,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(
+        () -> typeDefClient.publishSignedExecutionPayloadBid(signedExecutionPayloadBid));
   }
 
   @Override

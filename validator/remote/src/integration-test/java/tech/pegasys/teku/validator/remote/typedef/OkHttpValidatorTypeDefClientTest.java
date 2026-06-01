@@ -41,6 +41,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -79,6 +80,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -220,6 +222,31 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final String actualRequest = recordedRequest.getBody().readUtf8();
 
+    assertJsonEquals(actualRequest, expectedRequest);
+  }
+
+  @TestTemplate
+  void publishesSignedExecutionPayloadBid() throws Exception {
+    assumeThat(specMilestone).isEqualTo(GLOAS);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    final SignedExecutionPayloadBid signedExecutionPayloadBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid();
+    final String expectedRequest =
+        serialize(
+            signedExecutionPayloadBid,
+            signedExecutionPayloadBid.getSchema().getJsonTypeDefinition());
+
+    typeDefClient.publishSignedExecutionPayloadBid(signedExecutionPayloadBid);
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getPath())
+        .contains(ValidatorApiMethod.PUBLISH_EXECUTION_PAYLOAD_BID.getPath(emptyMap()));
+    assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(GLOAS.name().toLowerCase(Locale.ROOT));
+
+    final String actualRequest = recordedRequest.getBody().readUtf8();
     assertJsonEquals(actualRequest, expectedRequest);
   }
 

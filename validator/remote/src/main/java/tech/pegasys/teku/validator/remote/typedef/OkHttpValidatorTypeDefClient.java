@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesReq
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PrepareBeaconProposersRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PublishExecutionPayloadBidRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendAggregateAndProofsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendContributionAndProofsRequest;
@@ -167,6 +169,13 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final RegisterValidatorsRequest registerValidatorsRequest =
         new RegisterValidatorsRequest(getBaseEndpoint(), getOkHttpClient(), false);
     registerValidatorsRequest.submit(validatorRegistrations);
+  }
+
+  public void publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    final PublishExecutionPayloadBidRequest publishExecutionPayloadBidRequest =
+        new PublishExecutionPayloadBidRequest(getBaseEndpoint(), getOkHttpClient());
+    publishExecutionPayloadBidRequest.submit(signedExecutionPayloadBid);
   }
 
   public Optional<AttestationData> createAttestationData(

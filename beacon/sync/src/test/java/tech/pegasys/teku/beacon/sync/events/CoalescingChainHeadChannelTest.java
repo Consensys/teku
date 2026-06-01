@@ -17,6 +17,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -175,6 +176,47 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            reorgContext);
+    verifyNoMoreInteractions(delegate);
+  }
+
+  @Test
+  void shouldPreservePayloadStatusWhenSyncingCompletes() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
+    final boolean epochTransition = true;
+    final boolean executionOptimistic = false;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Optional<ReorgContext> reorgContext = Optional.empty();
+
+    channel.onSyncingChange(true);
+
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        executionOptimistic,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        PAYLOAD_STATUS_FULL,
+        reorgContext);
+
+    verifyNoInteractions(delegate);
+
+    channel.onSyncingChange(false);
+    verify(delegate)
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            executionOptimistic,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            PAYLOAD_STATUS_FULL,
             reorgContext);
     verifyNoMoreInteractions(delegate);
   }

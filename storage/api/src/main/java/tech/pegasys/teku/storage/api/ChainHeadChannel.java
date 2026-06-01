@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 
 public interface ChainHeadChannel extends VoidReturningChannelInterface {
   /**
@@ -43,4 +44,39 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       Optional<ReorgContext> optionalReorgContext);
+
+  /**
+   * Called each time chain head is updated, including the fork-choice payload status for clients
+   * that need the full Gloas head identity.
+   *
+   * @param slot the slot of the new chain head
+   * @param stateRoot the state root of the state containing the new chain head
+   * @param bestBlockRoot the block root of the new chain head
+   * @param epochTransition if a new epoch has begun
+   * @param executionOptimistic if the block was optimistically imported
+   * @param previousDutyDependentRoot the duty dependent root from the previous epoch
+   * @param currentDutyDependentRoot the duty dependent root from the current epoch
+   * @param payloadStatus the fork-choice payload status of the new chain head
+   * @param optionalReorgContext Roots and common ancestor if a re-org occurred
+   */
+  default void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
+      final Bytes32 bestBlockRoot,
+      final boolean epochTransition,
+      final boolean executionOptimistic,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final ForkChoicePayloadStatus payloadStatus,
+      final Optional<ReorgContext> optionalReorgContext) {
+    chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        executionOptimistic,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        optionalReorgContext);
+  }
 }
