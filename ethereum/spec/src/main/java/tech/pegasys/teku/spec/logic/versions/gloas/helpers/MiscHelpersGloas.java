@@ -242,7 +242,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
   public boolean isPendingValidator(
-      final SszList<PendingDeposit> pendingDeposits, final BLSPublicKey pubkey) {
+      final List<PendingDeposit> pendingDeposits, final BLSPublicKey pubkey) {
     for (final PendingDeposit pendingDeposit : pendingDeposits) {
       if (!pendingDeposit.getPublicKey().equals(pubkey)) {
         continue;

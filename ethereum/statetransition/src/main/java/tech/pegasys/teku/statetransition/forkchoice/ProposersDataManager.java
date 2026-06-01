@@ -354,7 +354,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
         .getProposerPreferences(blockSlot)
         .filter(
             proposerPreferences -> proposerPreferences.getValidatorIndex().equals(proposerIndex))
-        .map(ProposerPreferences::getGasLimit)
+        .map(ProposerPreferences::getTargetGasLimit)
         .or(
             () ->
                 validatorRegistration.map(registration -> registration.getMessage().getGasLimit()))
