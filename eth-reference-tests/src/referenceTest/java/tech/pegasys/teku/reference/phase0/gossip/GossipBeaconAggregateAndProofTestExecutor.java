@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
@@ -129,10 +131,6 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     // spec distinction between "block not seen" (IGNORE) and "block failed validation" (REJECT).
     final Set<Bytes32> failedBlockRoots = new HashSet<>();
 
-    // When a custom finalized_checkpoint is set, its root will not be in the chain, so any block
-    // import attempt would fail. Skip all imports so that the validator's block-not-available path
-    // produces the expected IGNORE result.
-    final boolean hasCustomFinalizedCheckpoint = metaData.getFinalizedCheckpoint() != null;
     for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
       final GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry =
           blockEntryAndBlock.blockEntry();
@@ -141,7 +139,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         // Record the root of this invalid block so aggregates voting for it are rejected.
         // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
         failedBlockRoots.add(block.getRoot());
-      } else if (!hasCustomFinalizedCheckpoint && !block.getRoot().equals(anchorPoint.getRoot())) {
+      } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
         final BlockImportResult importResult =
             safeJoin(
                 forkChoice.onBlock(
@@ -152,11 +150,27 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       }
     }
 
+    Optional<Checkpoint> customFinalizedCheckpoint = Optional.empty();
+    if (metaData.getFinalizedCheckpoint() != null) {
+      final GossipBeaconAggregateAndProofMetaData.FinalizedCheckpoint finalizedCheckpoint =
+          metaData.getFinalizedCheckpoint();
+      if (finalizedCheckpoint.getBlock() != null) {
+        final Checkpoint checkpoint = finalizedCheckpoint.toCheckpoint(testDefinition, spec);
+        final UpdatableStore.StoreTransaction tx = recentChainData.startStoreTransaction();
+        tx.setFinalizedCheckpoint(checkpoint, false);
+        safeJoin(tx.commit());
+      } else {
+        customFinalizedCheckpoint =
+            Optional.of(finalizedCheckpoint.toCheckpoint(testDefinition, spec));
+      }
+    }
+
     final AttestationValidator attestationValidator =
         new AttestationValidator(
             spec,
             AsyncBLSSignatureVerifier.wrap(blsVerifier),
-            new GossipValidationHelper(spec, recentChainData, metricsSystem));
+            createGossipValidationHelper(
+                spec, recentChainData, metricsSystem, customFinalizedCheckpoint));
     final AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(
             spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(blsVerifier));
@@ -218,6 +232,29 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     }
   }
 
+  private static GossipValidationHelper createGossipValidationHelper(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final StubMetricsSystem metricsSystem,
+      final Optional<Checkpoint> finalizedCheckpointOverride) {
+    return finalizedCheckpointOverride
+        .<GossipValidationHelper>map(
+            finalizedCheckpoint ->
+                new GossipValidationHelper(spec, recentChainData, metricsSystem) {
+                  @Override
+                  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+                      final Bytes32 blockRoot) {
+                    return spec.getAncestor(
+                            getForkChoiceStrategy(),
+                            blockRoot,
+                            finalizedCheckpoint.getEpochStartSlot(spec))
+                        .map(ancestorRoot -> ancestorRoot.equals(finalizedCheckpoint.getRoot()))
+                        .orElse(false);
+                  }
+                })
+        .orElseGet(() -> new GossipValidationHelper(spec, recentChainData, metricsSystem));
+  }
+
   @SuppressWarnings("unused")
   @JsonIgnoreProperties(ignoreUnknown = true)
   private static class GossipBeaconAggregateAndProofMetaData {
@@ -238,7 +275,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     private int blsSetting;
 
     @JsonProperty(value = "finalized_checkpoint", required = false)
-    private Object finalizedCheckpoint;
+    private FinalizedCheckpoint finalizedCheckpoint;
 
     public List<BlockEntry> getBlocks() {
       return blocks;
@@ -256,7 +293,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       return BlsSetting.forCode(blsSetting);
     }
 
-    public Object getFinalizedCheckpoint() {
+    public FinalizedCheckpoint getFinalizedCheckpoint() {
       return finalizedCheckpoint;
     }
 
@@ -303,6 +340,38 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
       public String getExpected() {
         return expected;
+      }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class FinalizedCheckpoint {
+
+      @JsonProperty(value = "epoch", required = true)
+      private long epoch;
+
+      @JsonProperty(value = "root")
+      private String root;
+
+      @JsonProperty(value = "block")
+      private String block;
+
+      public String getBlock() {
+        return block;
+      }
+
+      public Checkpoint toCheckpoint(final TestDefinition testDefinition, final Spec spec) {
+        final Bytes32 checkpointRoot;
+        if (root != null) {
+          checkpointRoot = Bytes32.fromHexString(root);
+        } else if (block != null) {
+          final SignedBeaconBlock signedBlock =
+              loadSsz(testDefinition, block + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
+          checkpointRoot = signedBlock.getRoot();
+        } else {
+          throw new IllegalStateException(
+              "finalized_checkpoint must specify either 'root' or 'block'");
+        }
+        return new Checkpoint(UInt64.valueOf(epoch), checkpointRoot);
       }
     }
   }
