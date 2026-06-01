@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetExecutionPayloadBid extends RestApiEndpoint {
   public static final String ROUTE =
-      "/eth/v1/validator/execution_payload_bid/{slot}/{builder_index}";
+      "/eth/v1/validator/execution_payload_bids/{slot}/{builder_index}";
 
   @SuppressWarnings("unused")
   private final ValidatorDataProvider provider;
