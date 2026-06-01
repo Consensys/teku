@@ -45,7 +45,7 @@ class StoreBuilderTest {
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   @Test
-  void forkChoiceStoreBuilder_shouldUseAnchorStateSlotAndRootWhenAnchorBlockPrecedesState()
+  void forkChoiceStoreBuilder_shouldUseAnchorBlockSlotAndStateRootWhenAnchorBlockPrecedesState()
       throws Exception {
     chainBuilder.generateGenesis();
     final UInt64 anchorStateSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
@@ -61,7 +61,7 @@ class StoreBuilderTest {
         StoreBuilder.forkChoiceStoreBuilder(spec, anchor, UInt64.ZERO);
     final StoredBlockMetadata metadata = storeData.blockInformation().get(anchor.getRoot());
 
-    assertThat(metadata.getBlockSlot()).isEqualTo(anchorState.getSlot());
+    assertThat(metadata.getBlockSlot()).isEqualTo(anchorBlock.getSlot());
     assertThat(metadata.getStateRoot()).isEqualTo(anchorState.hashTreeRoot());
   }
 
