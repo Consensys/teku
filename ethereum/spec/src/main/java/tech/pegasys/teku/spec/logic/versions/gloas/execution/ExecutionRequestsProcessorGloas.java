@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorElectra {
+
   private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
@@ -82,17 +83,17 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       // this pubkey, apply the deposit to their balance
       final boolean isBuilder =
           beaconStateAccessorsGloas.getBuilderIndex(state, pubkey).isPresent();
-      final boolean isValidator = validatorsUtil.getValidatorIndex(state, pubkey).isPresent();
-      final boolean isPendingValidator =
-          verifiedPendingValidatorPubkeys.contains(pubkey)
-              || (miscHelpersGloas.isPendingValidator(stateElectra.getPendingDeposits(), pubkey)
-                  && verifiedPendingValidatorPubkeys.add(pubkey));
       final boolean isNewBuilderDeposit =
           !isBuilder
               && predicatesGloas.isBuilderWithdrawalCredential(
                   depositRequest.getWithdrawalCredentials())
-              && !isValidator
-              && !isPendingValidator;
+              // not is_validator
+              && validatorsUtil.getValidatorIndex(state, pubkey).isEmpty()
+              // not is_pending_validator
+              && !(verifiedPendingValidatorPubkeys.contains(pubkey)
+                  || (miscHelpersGloas.isPendingValidator(
+                          stateElectra.getPendingDeposits().asList(), pubkey)
+                      && verifiedPendingValidatorPubkeys.add(pubkey)));
 
       if (isNewBuilderDeposit) {
         // new builder deposits will be processed at the end so we can batch the signature

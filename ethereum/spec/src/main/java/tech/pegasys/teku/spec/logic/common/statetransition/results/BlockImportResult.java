@@ -24,6 +24,8 @@ public interface BlockImportResult {
       new FailedBlockImportResult(FailureReason.BUILDER_WITHHOLD, Optional.empty());
   BlockImportResult FAILED_UNKNOWN_PARENT =
       new FailedBlockImportResult(FailureReason.UNKNOWN_PARENT, Optional.empty());
+  BlockImportResult FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD =
+      new FailedBlockImportResult(FailureReason.UNKNOWN_PARENT_EXECUTION_PAYLOAD, Optional.empty());
   BlockImportResult FAILED_INVALID_ANCESTRY =
       new FailedBlockImportResult(
           FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED, Optional.empty());
@@ -79,6 +81,7 @@ public interface BlockImportResult {
 
   enum FailureReason {
     UNKNOWN_PARENT,
+    UNKNOWN_PARENT_EXECUTION_PAYLOAD,
     BLOCK_IS_FROM_FUTURE,
     BUILDER_WITHHOLD,
     DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,

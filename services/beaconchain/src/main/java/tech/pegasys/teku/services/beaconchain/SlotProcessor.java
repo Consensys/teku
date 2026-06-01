@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -354,7 +355,9 @@ public class SlotProcessor {
                 eventLog.slotPayloadEvent(
                     nodeSlot.getValue(),
                     head.getSlot(),
-                    head.getExecutionBlockHash(),
+                    head.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
+                        ? Optional.of(head.getExecutionBlockHash())
+                        : Optional.empty(),
                     p2pNetwork.getPeerCount()));
   }
 

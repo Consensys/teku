@@ -63,7 +63,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -1091,7 +1090,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void reportInvalidBlock(final SignedBeaconBlock block, final BlockImportResult result) {
-    if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+    if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE
+        || result.getFailureReason() == FailureReason.UNKNOWN_PARENT_EXECUTION_PAYLOAD) {
       return;
     }
     debugDataDumper.saveInvalidBlock(
@@ -1298,14 +1298,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         () -> {
           final Optional<ChainHead> overriddenHead =
               resolveProposerHeadOverride(canonicalHead, slot);
-          final ChainHead proposerHead = overriddenHead.orElse(canonicalHead);
+          final ChainHead forkChoiceProposerHead = overriddenHead.orElse(canonicalHead);
           final SafeFuture<Void> preparation;
           if (overriddenHead.isPresent()) {
             // Run preparation in parallel; await it before returning so block-body construction
             // sees the updated operation pools.
             preparation =
                 lateBlockReorgPreparationHandler
-                    .onLateBlockReorgPreparation(proposerHead.getSlot(), canonicalHead.getRoot())
+                    .onLateBlockReorgPreparation(
+                        forkChoiceProposerHead.getSlot(), canonicalHead.getRoot())
                     .thenPeek(__ -> performance.lateBlockReorgPreparationCompleted());
           } else {
             preparation = SafeFuture.COMPLETE;
@@ -1314,8 +1315,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           // the block-production fcU that pins payload attributes and asks the EL to start
           // building.
           notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-              Optional.of(slot), Optional.of(proposerHead));
-          return preparation.thenApply(__ -> proposerHead);
+              Optional.of(slot), Optional.of(forkChoiceProposerHead));
+          return preparation.thenApply(__ -> forkChoiceProposerHead);
         });
   }
 
@@ -1330,40 +1331,33 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return Optional.empty();
     }
     final Bytes32 canonicalRoot = canonicalHead.getRoot();
-    final Bytes32 proposerHeadRoot = recentChainData.getProposerHead(canonicalRoot, slot);
-    if (proposerHeadRoot.equals(canonicalRoot)) {
+    final ForkChoiceNode proposerHead =
+        recentChainData.getProposerHead(canonicalHead.getForkChoiceNode(), slot);
+    if (proposerHead.equals(canonicalHead.getForkChoiceNode())) {
       return Optional.empty();
     }
 
     LOG.debug(
         "prepareForBlockProduction overriding head {} with proposer head {} for slot {}",
         canonicalRoot,
-        proposerHeadRoot,
+        proposerHead,
         slot);
 
     final ForkChoiceStrategy strategy = getForkChoiceStrategy();
     final UpdatableStore store = recentChainData.getStore();
-    final ForkChoicePayloadStatus parentPayloadStatus =
-        strategy.shouldExtendPayload(store, proposerHeadRoot)
-            ? ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
-            : ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
-    // Phase0/non-Gloas blocks only have a base node; fall back if the variant lookup misses.
-    final Optional<ProtoNodeData> parentBlockData =
-        strategy
-            .getBlockData(proposerHeadRoot, parentPayloadStatus)
-            .or(() -> strategy.getBlockData(proposerHeadRoot));
+    final Optional<ProtoNodeData> parentBlockData = strategy.getNodeData(proposerHead);
 
     if (parentBlockData.isEmpty()) {
       LOG.warn(
           "Unable to resolve proposer head {} in fork choice; sticking with canonical head {}",
-          proposerHeadRoot,
+          proposerHead,
           canonicalRoot);
       return Optional.empty();
     }
 
     final SafeFuture<StateAndBlockSummary> parentStateAndBlock =
         store
-            .retrieveStateAndBlockSummary(proposerHeadRoot)
+            .retrieveStateAndBlockSummary(proposerHead.blockRoot())
             .thenApply(
                 maybe ->
                     maybe.orElseThrow(
@@ -1371,7 +1365,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             new IllegalStateException(
                                 String.format(
                                     "Unable to load proposer head state for %s while preparing block production at slot %s",
-                                    proposerHeadRoot, slot))));
+                                    proposerHead, slot))));
 
     return Optional.of(ChainHead.create(parentBlockData.get(), parentStateAndBlock));
   }

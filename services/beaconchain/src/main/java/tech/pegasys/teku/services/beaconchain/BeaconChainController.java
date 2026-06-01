@@ -235,6 +235,7 @@ import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
@@ -372,6 +373,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
+  protected volatile PendingBlockPool pendingBlockPool;
   protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
   protected volatile PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
@@ -520,6 +522,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .finish(
                     err ->
                         LOG.error("Failed to process recently fetched execution payload.", err)));
+    blockManager.subscribeRequiredParentExecutionPayload(
+        parentExecutionPayloadDependency ->
+            recentExecutionPayloadsFetcher.requestRecentExecutionPayload(
+                parentExecutionPayloadDependency.parentBeaconBlockRoot()));
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
 
@@ -675,10 +681,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void validateWeakSubjectivityPeriod(final RecentChainData client) {
     final AnchorPoint latestFinalizedAnchor = client.getStore().getLatestFinalized();
     final UInt64 currentSlot = getCurrentSlot(client.getGenesisTime());
-    final WeakSubjectivityCalculator wsCalculator =
-        WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity());
     wsInitializer.validateAnchorIsWithinWeakSubjectivityPeriod(
-        latestFinalizedAnchor, currentSlot, spec, wsCalculator);
+        latestFinalizedAnchor, currentSlot, spec, WeakSubjectivityCalculator.create(spec));
   }
 
   public void initAll() {
@@ -695,6 +699,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initDataColumnSidecarManager();
     initZkChain();
     initForkChoiceStateProvider();
+    initProposerPreferencesManager();
     initForkChoiceNotifier();
     initMergeMonitors();
     initSignatureVerificationService();
@@ -712,7 +717,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
-    initProposerPreferencesManager();
     initExecutionPayloadBidManager();
     initExecutionPayloadManager();
     initSyncCommitteePools();
@@ -1291,8 +1295,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockPoolsAndCaches() {
     LOG.debug("BeaconChainController.initBlockPoolsAndCaches()");
-    pendingBlocks = poolFactory.createPendingPoolForBlocks(spec);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+    pendingBlockPool = poolFactory.createPendingBlockPool(spec);
+    pendingBlocks = pendingBlockPool.getBlocksWaitingForParent();
+    eventChannels
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
+        .subscribe(SlotEventsChannel.class, pendingBlockPool);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
   }
 
@@ -2189,7 +2196,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -2204,7 +2211,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(ReceivedBlockEventsChannel.class, blockManager);
+        .subscribe(ReceivedBlockEventsChannel.class, blockManager)
+        .subscribe(ReceivedExecutionPayloadEventsChannel.class, blockManager);
   }
 
   protected SyncServiceFactory createSyncServiceFactory() {
@@ -2316,7 +2324,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayer,
             recentChainData,
             getProposerDefaultFeeRecipient(),
-            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes());
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes(),
+            proposerPreferencesManager);
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
@@ -2362,8 +2371,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (isAllowSyncOutsideWeakSubjectivityPeriod()) {
       maybeWsCalculator = Optional.empty();
     } else {
-      maybeWsCalculator =
-          Optional.of(WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity()));
+      maybeWsCalculator = Optional.of(WeakSubjectivityCalculator.create(spec));
     }
 
     // Validate

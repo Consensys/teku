@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Attes
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity.WeakSubjectivityCalculatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProposalUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -68,6 +69,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculatorElectra weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -89,6 +91,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -123,6 +126,10 @@ public class SpecLogicElectra extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculatorElectra weakSubjectivityCalculator =
+        new WeakSubjectivityCalculatorElectra(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -217,6 +224,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,

@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
@@ -63,6 +64,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculator weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -84,6 +86,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -116,6 +119,10 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculator weakSubjectivityCalculator =
+        new WeakSubjectivityCalculator(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -199,6 +206,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,

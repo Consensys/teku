@@ -74,6 +74,14 @@ interface ForkChoiceModel {
       StoredBlockMetadata block,
       boolean optimisticallyProcessed);
 
+  default void rebuildAnchorBlockNodesFromMetadata(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final StoredBlockMetadata block,
+      final boolean optimisticallyProcessed) {
+    rebuildBlockNodesFromMetadata(protoArray, blockNodeIndex, block, optimisticallyProcessed);
+  }
+
   /** Resolves a latest-message vote onto a concrete node identity. */
   Optional<ForkChoiceNode> resolveVoteNode(
       Bytes32 voteRoot,
@@ -101,11 +109,20 @@ interface ForkChoiceModel {
   Optional<ProtoNodeData> getBaseNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
+  Optional<ProtoNode> getParentBeaconBlockNode(
+      ProtoArray protoArray, ForkChoiceNode forkChoiceNode);
+
   boolean shouldExtendPayload(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
       ReadOnlyStore store,
       Bytes32 blockRoot);
+
+  boolean shouldBuildOnFull(
+      ProtoArray protoArray,
+      BlockNodeVariantsIndex blockNodeIndex,
+      ReadOnlyStore store,
+      ForkChoiceNode head);
 
   /**
    * Returns whether the supplied node is a valid head candidate for this fork-aware model.
@@ -144,6 +161,10 @@ interface ForkChoiceModel {
 
   void onPtcVote(
       Bytes32 blockRoot, IntSet ptcPositions, boolean payloadPresent, boolean blobDataAvailable);
+
+  Optional<Boolean> getPayloadTimelinessVote(Bytes32 blockRoot, int ptcPosition);
+
+  Optional<Boolean> getPayloadDataAvailabilityVote(Bytes32 blockRoot, int ptcPosition);
 
   void onRemovedBlockRoot(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
