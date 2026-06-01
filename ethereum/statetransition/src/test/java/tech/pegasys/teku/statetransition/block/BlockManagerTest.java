@@ -112,6 +112,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
+  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
+
   private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
@@ -185,7 +187,9 @@ public class BlockManagerTest {
             localRecentChainData,
             forkChoiceNotifier,
             transitionBlockValidator,
-            metricsSystem);
+            metricsSystem,
+            poolFactory.createPendingAttestationPool(
+                spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
     this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false));
     this.blockImporter =
         new BlockImporter(

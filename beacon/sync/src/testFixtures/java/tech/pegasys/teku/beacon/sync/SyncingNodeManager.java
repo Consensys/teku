@@ -125,6 +125,7 @@ public class SyncingNodeManager {
         new MergeTransitionBlockValidator(spec, recentChainData);
 
     final MetricsSystem metricsSystem = new StubMetricsSystem();
+    final PoolFactory poolFactory = new PoolFactory(metricsSystem);
 
     final ForkChoice forkChoice =
         new ForkChoice(
@@ -133,7 +134,8 @@ public class SyncingNodeManager {
             recentChainData,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            metricsSystem);
+            metricsSystem,
+            poolFactory.createPendingAttestationPool(spec, 10000));
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
@@ -146,7 +148,6 @@ public class SyncingNodeManager {
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
-    final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
     final PendingBlockPool pendingBlockPool = poolFactory.createPendingBlockPool(spec);
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         pendingBlockPool.getBlocksWaitingForParent();

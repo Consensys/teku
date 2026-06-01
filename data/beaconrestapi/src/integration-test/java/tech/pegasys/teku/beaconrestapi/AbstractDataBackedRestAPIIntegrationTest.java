@@ -91,6 +91,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -116,6 +117,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublish
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
+  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   protected Spec spec;
   protected SpecConfig specConfig;
@@ -250,7 +252,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 recentChainData,
                 new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(spec, recentChainData),
-                storageSystem.getMetricsSystem());
+                storageSystem.getMetricsSystem(),
+                new PoolFactory(storageSystem.getMetricsSystem())
+                    .createPendingAttestationPool(spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
     final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
 

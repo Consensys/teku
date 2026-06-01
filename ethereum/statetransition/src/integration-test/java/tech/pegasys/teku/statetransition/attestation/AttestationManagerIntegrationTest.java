@@ -82,6 +82,8 @@ class AttestationManagerIntegrationTest {
           AggregatingAttestationPoolProfiler.NOOP,
           Integer.MAX_VALUE,
           Integer.MAX_VALUE);
+  private final PendingAttestationPool pendingAttestationPool =
+      new PoolFactory(storageSystem.getMetricsSystem()).createPendingAttestationPool(spec, 10000);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);
   private final ForkChoice forkChoice =
@@ -91,10 +93,8 @@ class AttestationManagerIntegrationTest {
           recentChainData,
           new NoopForkChoiceNotifier(),
           transitionBlockValidator,
-          storageSystem.getMetricsSystem());
-
-  private final PendingAttestationPool pendingAttestationPool =
-      new PoolFactory(storageSystem.getMetricsSystem()).createPendingAttestationPool(spec, 10000);
+          storageSystem.getMetricsSystem(),
+          pendingAttestationPool);
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,

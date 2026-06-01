@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -68,6 +69,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
     },
     signatureVerifierNoop = true)
 public class BlockGossipValidatorTest {
+  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
+
   private Spec spec;
   private RecentChainData recentChainData;
   private StorageSystem storageSystem;
@@ -108,7 +111,9 @@ public class BlockGossipValidatorTest {
             LateBlockReorgPreparationHandler.NOOP,
             mock(DebugDataDumper.class),
             storageSystem.getMetricsSystem(),
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+            new PoolFactory(storageSystem.getMetricsSystem())
+                .createPendingAttestationPool(spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
     forkChoice.applyGenesisExecutionPayloadForGloas().join();
   }
 

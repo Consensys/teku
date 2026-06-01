@@ -35,7 +35,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -104,7 +103,6 @@ import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAt
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
 import tech.pegasys.teku.statetransition.util.PendingFullPayloadVote;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -157,35 +155,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem,
-      final AsyncBLSSignatureVerifier signatureVerifier) {
-    this(
-        spec,
-        forkChoiceExecutor,
-        recentChainData,
-        forkChoiceNotifier,
-        forkChoiceStateProvider,
-        tickProcessor,
-        transitionBlockValidator,
-        forkChoiceLateBlockReorgEnabled,
-        lateBlockReorgPreparationHandler,
-        debugDataDumper,
-        metricsSystem,
-        signatureVerifier,
-        new PoolFactory(new NoOpMetricsSystem()).createPendingAttestationPool(spec));
-  }
-
-  public ForkChoice(
-      final Spec spec,
-      final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData,
-      final ForkChoiceNotifier forkChoiceNotifier,
-      final ForkChoiceStateProvider forkChoiceStateProvider,
-      final TickProcessor tickProcessor,
-      final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean forkChoiceLateBlockReorgEnabled,
-      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
-      final DebugDataDumper debugDataDumper,
-      final MetricsSystem metricsSystem,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final PendingAttestationPool pendingAttestationPool) {
     this.spec = spec;
@@ -221,7 +190,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final PendingAttestationPool pendingAttestationPool) {
     this(
         spec,
         forkChoiceExecutor,
@@ -234,7 +204,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         LateBlockReorgPreparationHandler.NOOP,
         DebugDataDumper.NOOP,
         metricsSystem,
-        AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+        AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+        pendingAttestationPool);
   }
 
   @Override

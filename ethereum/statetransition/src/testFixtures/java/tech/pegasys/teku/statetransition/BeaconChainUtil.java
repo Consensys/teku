@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -58,6 +59,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
  */
 @Deprecated
 public class BeaconChainUtil {
+
+  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   private final Spec spec;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
@@ -96,18 +99,7 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final Spec spec, final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(
-        spec,
-        storageClient,
-        validatorKeys,
-        new ForkChoice(
-            spec,
-            new InlineEventThread(),
-            storageClient,
-            new NoopForkChoiceNotifier(),
-            new MergeTransitionBlockValidator(spec, storageClient),
-            new StubMetricsSystem()),
-        true);
+    return create(spec, storageClient, validatorKeys, createForkChoice(spec, storageClient), true);
   }
 
   public static BeaconChainUtil create(
@@ -116,17 +108,7 @@ public class BeaconChainUtil {
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
     return new BeaconChainUtil(
-        spec,
-        validatorKeys,
-        storageClient,
-        new ForkChoice(
-            spec,
-            new InlineEventThread(),
-            storageClient,
-            new NoopForkChoiceNotifier(),
-            new MergeTransitionBlockValidator(spec, storageClient),
-            new StubMetricsSystem()),
-        signDeposits);
+        spec, validatorKeys, storageClient, createForkChoice(spec, storageClient), signDeposits);
   }
 
   public static BeaconChainUtil create(
@@ -314,15 +296,7 @@ public class BeaconChainUtil {
     public BeaconChainUtil build() {
       validate();
       if (forkChoice == null) {
-        final InlineEventThread forkChoiceExecutor = new InlineEventThread();
-        forkChoice =
-            new ForkChoice(
-                spec,
-                forkChoiceExecutor,
-                recentChainData,
-                new NoopForkChoiceNotifier(),
-                new MergeTransitionBlockValidator(spec, recentChainData),
-                new StubMetricsSystem());
+        forkChoice = createForkChoice(spec, recentChainData);
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
@@ -369,5 +343,19 @@ public class BeaconChainUtil {
       this.validatorKeys = validatorKeys;
       return this;
     }
+  }
+
+  private static ForkChoice createForkChoice(
+      final Spec spec, final RecentChainData recentChainData) {
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+    return new ForkChoice(
+        spec,
+        new InlineEventThread(),
+        recentChainData,
+        new NoopForkChoiceNotifier(),
+        new MergeTransitionBlockValidator(spec, recentChainData),
+        metricsSystem,
+        new PoolFactory(metricsSystem)
+            .createPendingAttestationPool(spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
   }
 }

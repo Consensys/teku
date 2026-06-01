@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,6 +117,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSub
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
@@ -130,6 +133,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
+
+  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private Spec spec;
@@ -196,7 +201,8 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+            createPendingAttestationPool(spec));
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -478,7 +484,8 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+            createPendingAttestationPool(spec));
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -1040,7 +1047,8 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+            createPendingAttestationPool(spec));
     final Bytes32 blockRoot = Bytes32.random();
     final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
 
@@ -1082,7 +1090,8 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+            createPendingAttestationPool(spec));
     final Bytes32 blockRoot = Bytes32.random();
     final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
     final PayloadStatus invalidPayloadStatus =
@@ -1672,6 +1681,11 @@ class ForkChoiceTest {
 
   private void processHead(final UInt64 slot) {
     assertThat(forkChoice.processHead(slot)).isCompleted();
+  }
+
+  private PendingAttestationPool createPendingAttestationPool(final Spec spec) {
+    return new PoolFactory(new NoOpMetricsSystem())
+        .createPendingAttestationPool(spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE);
   }
 
   private IntSet ptcPositions(final int count) {
