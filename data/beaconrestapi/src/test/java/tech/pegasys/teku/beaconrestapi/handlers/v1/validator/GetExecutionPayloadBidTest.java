@@ -39,6 +39,12 @@ class GetExecutionPayloadBidTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
+  void metadata_shouldUsePluralExecutionPayloadBidsRoute() {
+    assertThat(handler.getMetadata().getPath())
+        .isEqualTo("/eth/v1/validator/execution_payload_bids/{slot}/{builder_index}");
+  }
+
+  @Test
   void shouldReturnNotImplemented() throws Exception {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_IMPLEMENTED);

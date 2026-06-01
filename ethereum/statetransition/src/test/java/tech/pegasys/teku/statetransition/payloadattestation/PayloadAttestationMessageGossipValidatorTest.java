@@ -81,6 +81,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
 
     when(gossipValidationHelper.isSlotCurrent(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(true);
+    when(gossipValidationHelper.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(slot));
     when(gossipValidationHelper.getStateAtSlotAndBlockRoot(new SlotAndBlockRoot(slot, blockRoot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     final SpecVersion specVersion = mock(SpecVersion.class);
@@ -184,6 +185,20 @@ public class PayloadAttestationMessageGossipValidatorTest {
             payloadAttestationMessageGossipValidator.validate(
                 validatablePayloadAttestationMessage()))
         .isCompletedWithValue(SAVE_FOR_FUTURE);
+  }
+
+  @TestTemplate
+  void shouldIgnore_whenBlockSlotDoesNotMatchAttestationSlot() {
+    final UInt64 blockSlot = slot.plus(1);
+    when(gossipValidationHelper.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
+
+    assertThatSafeFuture(
+            payloadAttestationMessageGossipValidator.validate(
+                validatablePayloadAttestationMessage()))
+        .isCompletedWithValue(
+            ignore(
+                "Payload attestations's block with root %s is at slot %s but attestation is for slot %s",
+                blockRoot, blockSlot, slot));
   }
 
   @TestTemplate
