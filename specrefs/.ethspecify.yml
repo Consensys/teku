@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.7
+version: v1.7.0-alpha.8
 style: full
 
 specrefs:
@@ -17,6 +17,9 @@ specrefs:
     configs:
       # Not implemented: phase0
       - CONFIRMATION_BYZANTINE_THRESHOLD#phase0
+
+      # Will be fixed later
+      - PAYLOAD_DUE_BPS#gloas
 
     constants:
       # Not defined as a constant, unnecessary
@@ -45,6 +48,9 @@ specrefs:
 
       # Not implemented: phase0
       - COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR#phase0
+
+      # Temporary exceptions: ignored until updated to alpha.8 spec
+      - SAFETY_DECAY#phase0
 
       # Not implemented: gloas
       - PTC_TIMELINESS_INDEX#gloas
@@ -91,11 +97,11 @@ specrefs:
       - Seen#phase0
       - FastConfirmationStore#phase0
 
-      # Not implemented: altair
+      # Not implemented
       - Seen#altair
-
-      # Not implemented: capella
       - Seen#capella
+      - Seen#deneb
+      - Seen#electra
 
       # Not implemented: heze
       - GetInclusionListResponse#heze
@@ -215,6 +221,28 @@ specrefs:
 
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
+
+      # Temporary exceptions: ignored until updated to alpha.8 spec
+      - apply_parent_execution_payload#gloas
+      - get_proposer_head#phase0
+      - prepare_execution_payload#bellatrix
+      - prepare_execution_payload#gloas
+
+      # Will be fixed later
+      - get_payload_due_ms#gloas
+      - is_gas_limit_target_compatible#gloas
+      - payload_data_availability#gloas
+      - payload_timeliness#gloas
+      - should_build_on_full#gloas
+      - validate_beacon_aggregate_and_proof_gossip#deneb
+      - validate_beacon_aggregate_and_proof_gossip#electra
+      - validate_beacon_attestation_gossip#deneb
+      - validate_beacon_attestation_gossip#electra
+      - validate_beacon_block_gossip#deneb
+      - validate_beacon_block_gossip#electra
+      - validate_blob_sidecar_gossip#deneb
+      - validate_blob_sidecar_gossip#electra
+      - validate_voluntary_exit_gossip#deneb
 
       # Not implemented: fast confirmation
       - adjust_committee_weight_estimate_to_ensure_safety#phase0

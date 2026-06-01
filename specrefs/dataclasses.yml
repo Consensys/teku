@@ -290,7 +290,7 @@
   sources:
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV4.java
   spec: |
-    <spec dataclass="PayloadAttributes" fork="gloas" hash="db78dd94">
+    <spec dataclass="PayloadAttributes" fork="gloas" hash="8e6c6fe5">
     class PayloadAttributes(object):
         timestamp: uint64
         prev_randao: Bytes32
@@ -299,6 +299,48 @@
         parent_beacon_block_root: Root
         # [New in Gloas:EIP7843]
         slot_number: uint64
+        # [New in Gloas]
+        target_gas_limit: uint64
+    </spec>
+
+- name: Seen#deneb
+  sources: []
+  spec: |
+    <spec dataclass="Seen" fork="deneb" hash="f4c42261">
+    class Seen(object):
+        proposer_slots: Set[Tuple[ValidatorIndex, Slot]]
+        aggregator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        aggregate_data_roots: Dict[Root, Set[Tuple[boolean, ...]]]
+        voluntary_exit_indices: Set[ValidatorIndex]
+        proposer_slashing_indices: Set[ValidatorIndex]
+        attester_slashing_indices: Set[ValidatorIndex]
+        attestation_validator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        sync_contribution_aggregator_slots: Set[Tuple[ValidatorIndex, Slot, uint64]]
+        sync_contribution_data: Dict[Tuple[Slot, Root, uint64], Set[Tuple[boolean, ...]]]
+        sync_message_validator_slots: Set[Tuple[Slot, ValidatorIndex, uint64]]
+        bls_to_execution_change_indices: Set[ValidatorIndex]
+        # [New in Deneb]
+        blob_sidecar_tuples: Set[Tuple[Slot, ValidatorIndex, BlobIndex]]
+    </spec>
+
+- name: Seen#electra
+  sources: []
+  spec: |
+    <spec dataclass="Seen" fork="electra" hash="c81f78e0">
+    class Seen(object):
+        proposer_slots: Set[Tuple[ValidatorIndex, Slot]]
+        aggregator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        # [Modified in Electra:EIP7549]
+        aggregate_data_roots: Dict[Tuple[Root, CommitteeIndex], Set[Tuple[boolean, ...]]]
+        voluntary_exit_indices: Set[ValidatorIndex]
+        proposer_slashing_indices: Set[ValidatorIndex]
+        attester_slashing_indices: Set[ValidatorIndex]
+        attestation_validator_epochs: Set[Tuple[ValidatorIndex, Epoch]]
+        sync_contribution_aggregator_slots: Set[Tuple[ValidatorIndex, Slot, uint64]]
+        sync_contribution_data: Dict[Tuple[Slot, Root, uint64], Set[Tuple[boolean, ...]]]
+        sync_message_validator_slots: Set[Tuple[Slot, ValidatorIndex, uint64]]
+        bls_to_execution_change_indices: Set[ValidatorIndex]
+        blob_sidecar_tuples: Set[Tuple[Slot, ValidatorIndex, BlobIndex]]
     </spec>
 
 - name: Store#phase0
@@ -325,25 +367,21 @@
 - name: Store#gloas
   sources: []
   spec: |
-    <spec dataclass="Store" fork="gloas" style="diff" hash="e7c1cf9d">
+    <spec dataclass="Store" fork="gloas" style="diff" hash="c3c521fb">
     --- phase0
     +++ gloas
-    @@ -9,7 +9,16 @@
+    @@ -9,7 +9,12 @@
          equivocating_indices: Set[ValidatorIndex]
          blocks: Dict[Root, BeaconBlock] = field(default_factory=dict)
          block_states: Dict[Root, BeaconState] = field(default_factory=dict)
     -    block_timeliness: Dict[Root, boolean] = field(default_factory=dict)
-    +    block_timeliness: Dict[Root, Vector[boolean, NUM_BLOCK_TIMELINESS_DEADLINES]] = field(
-    +        default_factory=dict
-    +    )
+    +    block_timeliness: Dict[Root, list[boolean]] = field(default_factory=dict)
          checkpoint_states: Dict[Checkpoint, BeaconState] = field(default_factory=dict)
          latest_messages: Dict[ValidatorIndex, LatestMessage] = field(default_factory=dict)
          unrealized_justifications: Dict[Root, Checkpoint] = field(default_factory=dict)
     +    payloads: Dict[Root, ExecutionPayloadEnvelope] = field(default_factory=dict)
-    +    payload_timeliness_vote: Dict[Root, Vector[Optional[boolean], PTC_SIZE]] = field(
-    +        default_factory=dict
-    +    )
-    +    payload_data_availability_vote: Dict[Root, Vector[Optional[boolean], PTC_SIZE]] = field(
+    +    payload_timeliness_vote: Dict[Root, list[Optional[boolean]]] = field(default_factory=dict)
+    +    payload_data_availability_vote: Dict[Root, list[Optional[boolean]]] = field(
     +        default_factory=dict
     +    )
     </spec>

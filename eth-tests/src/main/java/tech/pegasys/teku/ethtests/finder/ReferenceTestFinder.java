@@ -61,10 +61,6 @@ public class ReferenceTestFinder {
               if (!testsPath.toFile().exists()) {
                 return Stream.empty();
               }
-              // FIXME: remove with alpha.8 reference tests
-              if (fork.equals(TestFork.GLOAS)) {
-                return Stream.empty();
-              }
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),

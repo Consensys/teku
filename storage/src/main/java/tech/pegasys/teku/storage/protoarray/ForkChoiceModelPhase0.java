@@ -248,6 +248,18 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
+  public Optional<Boolean> getPayloadTimelinessVote(
+      final Bytes32 blockRoot, final int ptcPosition) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Boolean> getPayloadDataAvailabilityVote(
+      final Bytes32 blockRoot, final int ptcPosition) {
+    return Optional.empty();
+  }
+
+  @Override
   public void onRemovedBlockRoot(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,

@@ -162,6 +162,10 @@ interface ForkChoiceModel {
   void onPtcVote(
       Bytes32 blockRoot, IntSet ptcPositions, boolean payloadPresent, boolean blobDataAvailable);
 
+  Optional<Boolean> getPayloadTimelinessVote(Bytes32 blockRoot, int ptcPosition);
+
+  Optional<Boolean> getPayloadDataAvailabilityVote(Bytes32 blockRoot, int ptcPosition);
+
   void onRemovedBlockRoot(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 

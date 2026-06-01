@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -34,6 +35,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -131,5 +134,27 @@ public class TestDataUtils {
     final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
     final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
     return AnchorPoint.create(spec, checkpoint, state, Optional.empty());
+  }
+
+  /**
+   * Builds an {@link AnchorPoint} for gossip reference tests that load both an initial state and
+   * the fixture blocks that may have produced it.
+   *
+   * <p>When one of the supplied blocks has a {@code state_root} matching the supplied state, the
+   * anchor is created from that signed block and state. This keeps the store's anchor root and
+   * stored block aligned with the spec-test fixture, which matters for gossip validators that
+   * subsequently import or look up related blocks. If no matching block is available, the helper
+   * falls back to {@link #createAnchorFromState(Spec, BeaconState)}, which synthesizes an anchor
+   * from the state's {@code latest_block_header}.
+   */
+  public static AnchorPoint createAnchorFromStateAndMatchingBlock(
+      final Spec spec, final BeaconState state, final Collection<SignedBeaconBlock> blocks) {
+    return blocks.stream()
+        .filter(block -> block.getStateRoot().equals(state.hashTreeRoot()))
+        .findFirst()
+        .map(
+            block ->
+                AnchorPoint.fromInitialBlockAndState(spec, new SignedBlockAndState(block, state)))
+        .orElseGet(() -> createAnchorFromState(spec, state));
   }
 }
