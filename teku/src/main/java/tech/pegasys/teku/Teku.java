@@ -13,18 +13,10 @@
 
 package tech.pegasys.teku;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.NodeMode;
@@ -34,7 +26,6 @@ import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
-
 
   static {
     // Disable libsodium in tuweni Hash because the check for it's presence can be very slow.
