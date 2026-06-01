@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -145,7 +146,29 @@ public class EventSubscriptionManager
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
+    chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        executionOptimistic,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING,
+        optionalReorgContext);
+  }
 
+  @Override
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
+      final Bytes32 bestBlockRoot,
+      final boolean epochTransition,
+      final boolean executionOptimistic,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final ForkChoicePayloadStatus payloadStatus,
+      final Optional<ReorgContext> optionalReorgContext) {
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -171,6 +194,19 @@ public class EventSubscriptionManager
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
+
+    final HeadV2Event headV2Event =
+        HeadV2Event.create(
+            spec.atSlot(slot).getMilestone(),
+            slot,
+            bestBlockRoot,
+            stateRoot,
+            epochTransition,
+            executionOptimistic,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            payloadStatus);
+    notifySubscribersOfEvent(EventType.head_v2, headV2Event);
   }
 
   @Override
