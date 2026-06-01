@@ -32,14 +32,14 @@ public class ProposerPreferences
       final UInt64 proposalSlot,
       final UInt64 validatorIndex,
       final Eth1Address feeRecipient,
-      final UInt64 gasLimit) {
+      final UInt64 targetGasLimit) {
     super(
         schema,
         SszBytes32.of(dependentRoot),
         SszUInt64.of(proposalSlot),
         SszUInt64.of(validatorIndex),
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
-        SszUInt64.of(gasLimit));
+        SszUInt64.of(targetGasLimit));
   }
 
   protected ProposerPreferences(
@@ -63,7 +63,7 @@ public class ProposerPreferences
     return Eth1Address.fromBytes(getField3().getBytes());
   }
 
-  public UInt64 getGasLimit() {
+  public UInt64 getTargetGasLimit() {
     return getField4().get();
   }
 

@@ -15,7 +15,7 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromState;
+import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
@@ -38,8 +38,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
@@ -71,6 +73,17 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         signatureVerificationDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
     final Spec spec = testDefinition.getSpec(!signatureVerificationDisabled);
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
+    final List<BlockEntryAndBlock> blocks =
+        metaData.getBlocks().stream()
+            .map(
+                blockEntry ->
+                    new BlockEntryAndBlock(
+                        blockEntry,
+                        loadSsz(
+                            testDefinition,
+                            blockEntry.getBlock() + ".ssz_snappy",
+                            spec::deserializeSignedBeaconBlock)))
+            .toList();
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
     final StorageSystem storageSystem =
@@ -80,7 +93,15 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             .build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
 
-    recentChainData.initializeFromAnchorPoint(createAnchorFromState(spec, state), UInt64.ZERO);
+    final AnchorPoint anchorPoint =
+        createAnchorFromStateAndMatchingBlock(
+            spec,
+            state,
+            blocks.stream()
+                .filter(blockEntryAndBlock -> !blockEntryAndBlock.blockEntry().isFailed())
+                .map(BlockEntryAndBlock::block)
+                .toList());
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
 
     final InlineEventThread eventThread = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
@@ -112,23 +133,22 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     // import attempt would fail. Skip all imports so that the validator's block-not-available path
     // produces the expected IGNORE result.
     final boolean hasCustomFinalizedCheckpoint = metaData.getFinalizedCheckpoint() != null;
-    if (!hasCustomFinalizedCheckpoint) {
-      for (final GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry :
-          metaData.getBlocks()) {
-        final SignedBeaconBlock block =
-            loadSsz(
-                testDefinition,
-                blockEntry.getBlock() + ".ssz_snappy",
-                spec::deserializeSignedBeaconBlock);
-        if (blockEntry.isFailed()) {
-          // Record the root of this invalid block so aggregates voting for it are rejected.
-          // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
-          failedBlockRoots.add(block.getRoot());
-        } else {
-          safeJoin(
-              forkChoice.onBlock(
-                  block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
-        }
+    for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
+      final GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry =
+          blockEntryAndBlock.blockEntry();
+      final SignedBeaconBlock block = blockEntryAndBlock.block();
+      if (blockEntry.isFailed()) {
+        // Record the root of this invalid block so aggregates voting for it are rejected.
+        // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
+        failedBlockRoots.add(block.getRoot());
+      } else if (!hasCustomFinalizedCheckpoint && !block.getRoot().equals(anchorPoint.getRoot())) {
+        final BlockImportResult importResult =
+            safeJoin(
+                forkChoice.onBlock(
+                    block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+        assertThat(importResult.isSuccessful())
+            .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
+            .isTrue();
       }
     }
 
@@ -240,6 +260,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       return finalizedCheckpoint;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class BlockEntry {
 
       @JsonProperty(value = "block", required = true)
@@ -257,6 +278,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Message {
 
       @JsonProperty(value = "offset_ms", required = true)
@@ -284,4 +306,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       }
     }
   }
+
+  private record BlockEntryAndBlock(
+      GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry, SignedBeaconBlock block) {}
 }

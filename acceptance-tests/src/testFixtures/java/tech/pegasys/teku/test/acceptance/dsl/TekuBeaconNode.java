@@ -702,7 +702,7 @@ public class TekuBeaconNode extends TekuNode {
   private Optional<SignedExecutionPayloadEnvelope> fetchExecutionPayload(final String blockId)
       throws IOException {
     final String result =
-        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/execution_payload_envelope/" + blockId);
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/execution_payload_envelopes/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
     } else {

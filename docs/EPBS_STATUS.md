@@ -189,14 +189,14 @@ Branch: tracking branch `upstream/glamsterdam-devnet-2` at `3a21b91d4d` (24 comm
 
 | Item | Description | Status |
 |---|---|---|
-| `GET /eth/v1/validator/execution_payload_bid/{slot}/{builder_index}` | Bid retrieval | ✅ [#10463](https://github.com/Consensys/teku/pull/10463), [#10476](https://github.com/Consensys/teku/pull/10476) |
+| `GET /eth/v1/validator/execution_payload_bids/{slot}/{builder_index}` | Bid retrieval | ✅ [#10463](https://github.com/Consensys/teku/pull/10463), [#10476](https://github.com/Consensys/teku/pull/10476) |
 | `POST /eth/v1/beacon/blocks` v2 | Gloas variant (`PostBlockV2`) | ✅ |
 | `GET /eth/v1/beacon/pool/payload_attestations` | Pool read | ✅ [#10465](https://github.com/Consensys/teku/pull/10465) |
 | `POST /eth/v1/beacon/pool/payload_attestations` | Pool publish | ✅ [#10534](https://github.com/Consensys/teku/pull/10534) |
 | Gloas event-stream additions | + version field | ✅ [#10383](https://github.com/Consensys/teku/pull/10383), [#10481](https://github.com/Consensys/teku/pull/10481) |
 | `ExecutionPayloadBidEvent`, `PayloadAttestationMessageEvent` SSE | Events | ✅ |
 | `GloasRestApiBuilderAddon` | Routing | ✅ (issue [#9997](https://github.com/Consensys/teku/issues/9997)) |
-| `GET /eth/v1/beacon/execution_payload_envelope/{block_id}` + publish endpoint | Read + `block_validation` query param; handler improved in [#10615](https://github.com/Consensys/teku/pull/10615) | 🚧 [#10537](https://github.com/Consensys/teku/pull/10537) (issue [#10416](https://github.com/Consensys/teku/issues/10416)) - review @lucassaldanha |
+| `GET /eth/v1/beacon/execution_payload_envelopes/{block_id}` + publish endpoint | Read + `block_validation` query param; handler improved in [#10615](https://github.com/Consensys/teku/pull/10615) | 🚧 [#10537](https://github.com/Consensys/teku/pull/10537) (issue [#10416](https://github.com/Consensys/teku/issues/10416)) - review @lucassaldanha |
 | `GET /eth/v4/validator/blocks/{slot}` | Gloas proposer block endpoint (beacon-APIs PR [#580](https://github.com/ethereum/beacon-APIs/pull/580)) | ❌ [#10414](https://github.com/Consensys/teku/issues/10414), [#10092](https://github.com/Consensys/teku/issues/10092) |
 | `POST /eth/v1/validator/duties/ptc/{epoch}` | Integration test exists; main handler not located | ⚠️ verify |
 | Honest-builder REST endpoints | Publish envelope / register builder | ❌ |
@@ -264,7 +264,7 @@ Branch: tracking branch `upstream/glamsterdam-devnet-2` at `3a21b91d4d` (24 comm
 | State transition | Builder lifecycle (deposit / exit / settle), slashing surface |
 | Validator/VC | Block proposer bid threshold (`BUILDER_PAYMENT_THRESHOLD_*`) ([#10352](https://github.com/Consensys/teku/issues/10352)); PTC end-to-end signing; proposer-prefs ([#10596](https://github.com/Consensys/teku/pull/10596)); self-build timing ([#10018](https://github.com/Consensys/teku/issues/10018)); `BlockProductionPerformance` ([#10129](https://github.com/Consensys/teku/issues/10129)) |
 | Networking | `single_attestation` Gloas review; proposer-prefs subscribe/publish (blocked on [#10596](https://github.com/Consensys/teku/pull/10596)); Req/Resp integration tests ([#9974](https://github.com/Consensys/teku/issues/9974)) |
-| REST API | `GET execution_payload_envelope` ([#10537](https://github.com/Consensys/teku/pull/10537)); `GET /eth/v4/validator/blocks/{slot}` ([#10414](https://github.com/Consensys/teku/issues/10414)); validator PTC duties handler verification; honest-builder REST endpoints |
+| REST API | `GET execution_payload_envelopes` ([#10537](https://github.com/Consensys/teku/pull/10537)); `GET /eth/v4/validator/blocks/{slot}` ([#10414](https://github.com/Consensys/teku/issues/10414)); validator PTC duties handler verification; honest-builder REST endpoints |
 | Engine API | `engine_getBlobs` envelope variant |
 | Builder client | Open question: does Teku ship a honest-builder mode? |
 | Storage | Long-term envelope/attestation pruning policy; finalized payload-attestation persistence |
