@@ -31,7 +31,7 @@ public interface ProposerPreferencesUtil {
             final UInt64 slot,
             final UInt64 validatorIndex,
             final Eth1Address feeRecipient,
-            final UInt64 gasLimit) {
+            final UInt64 targetGasLimit) {
           return Optional.empty();
         }
 
@@ -47,7 +47,7 @@ public interface ProposerPreferencesUtil {
       UInt64 slot,
       UInt64 validatorIndex,
       Eth1Address feeRecipient,
-      UInt64 gasLimit);
+      UInt64 targetGasLimit);
 
   Optional<SignedProposerPreferences> createSignedProposerPreferences(
       ProposerPreferences preferences, BLSSignature signature);
