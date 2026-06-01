@@ -193,6 +193,18 @@ public class ExecutionPayloadBidGossipValidator {
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
+    /*
+     * [REJECT] The bid is for a higher slot than its parent block.
+     */
+    if (!bid.getSlot().isGreaterThan(parentBlockSlot)) {
+      LOG.trace(
+          "Bid slot {} is not greater than parent block slot {}", bid.getSlot(), parentBlockSlot);
+      return completedFuture(
+          reject(
+              "Bid slot %s is not greater than parent block slot %s",
+              bid.getSlot(), parentBlockSlot));
+    }
+
     return gossipValidationHelper
         .getParentStateInBlockEpoch(parentBlockSlot, bid.getParentBlockRoot(), bid.getSlot())
         .thenApply(

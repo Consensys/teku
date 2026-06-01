@@ -22,6 +22,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,6 +104,31 @@ public class PayloadAttestationMessageGossipValidator {
           "Payload attestations's block with root {} is not available. Saving for future processing",
           data.getBeaconBlockRoot());
       return completedFuture(SAVE_FOR_FUTURE);
+    }
+
+    /*
+     * [IGNORE] The block referenced by data.beacon_block_root is at slot data.slot,
+     * i.e. the block has block.slot == data.slot.
+     */
+    final Optional<UInt64> maybeBlockSlot =
+        gossipValidationHelper.getSlotForBlockRoot(data.getBeaconBlockRoot());
+    if (maybeBlockSlot.isEmpty()) {
+      LOG.trace(
+          "Payload attestations's block with root {} has no known slot. Saving for future processing",
+          data.getBeaconBlockRoot());
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+    final UInt64 blockSlot = maybeBlockSlot.get();
+    if (!blockSlot.equals(data.getSlot())) {
+      LOG.trace(
+          "Payload attestations's block with root {} is at slot {} but attestation is for slot {}",
+          data.getBeaconBlockRoot(),
+          blockSlot,
+          data.getSlot());
+      return completedFuture(
+          ignore(
+              "Payload attestations's block with root %s is at slot %s but attestation is for slot %s",
+              data.getBeaconBlockRoot(), blockSlot, data.getSlot()));
     }
 
     /*
