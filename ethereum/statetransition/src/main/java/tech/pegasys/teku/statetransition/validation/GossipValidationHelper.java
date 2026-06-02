@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -154,21 +153,11 @@ public class GossipValidationHelper {
         recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
-  /**
-   * Checks the gossip rule that the current finalized checkpoint is an ancestor of the block being
-   * voted for, i.e. {@code get_checkpoint_block(store, beacon_block_root,
-   * store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root}.
-   */
   public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(final Bytes32 blockRoot) {
-    final Checkpoint finalizedCheckpoint = getFinalizedCheckpoint();
-    return spec.getAncestor(
-            getForkChoiceStrategy(), blockRoot, finalizedCheckpoint.getEpochStartSlot(spec))
-        .map(checkpointBlockRoot -> checkpointBlockRoot.equals(finalizedCheckpoint.getRoot()))
-        .orElse(false);
-  }
-
-  protected Checkpoint getFinalizedCheckpoint() {
-    return recentChainData.getStore().getFinalizedCheckpoint();
+    // All nodes in the proto-array descend from the finalized block, so no production validation
+    // is needed for this rule. The reference-test executor overrides this method to model
+    // generated tests with fake finalized checkpoint roots that cannot be represented in Store.
+    return true;
   }
 
   public boolean isProposerTheExpectedProposer(

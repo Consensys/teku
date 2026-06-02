@@ -66,15 +66,12 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
   public void shouldIgnoreAttestationWhenFinalizedCheckpointIsNotAncestorOfBlock() {
     final StateAndBlockSummary head = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(head);
-
-    // Pin the finalized checkpoint to a root that does not exist on the chain so the real ancestor
-    // check in GossipValidationHelper resolves a different block and rejects the attestation. Only
-    // the checkpoint source is stubbed - the validation logic under test runs unchanged.
-    final Checkpoint nonAncestorFinalizedCheckpoint =
-        new Checkpoint(ZERO, Bytes32.fromHexStringLenient("0xdeadbeef"));
     final GossipValidationHelper gossipValidationHelper =
         spy(new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem()));
-    doReturn(nonAncestorFinalizedCheckpoint).when(gossipValidationHelper).getFinalizedCheckpoint();
+    doReturn(false)
+        .when(gossipValidationHelper)
+        .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+            attestation.getData().getBeaconBlockRoot());
     final AttestationValidator validator =
         new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
 

@@ -237,16 +237,19 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       final RecentChainData recentChainData,
       final StubMetricsSystem metricsSystem,
       final Optional<Checkpoint> finalizedCheckpointOverride) {
-    // Some generated tests pin the finalized checkpoint to a root that has no corresponding block
-    // in Store (so it cannot be committed via setFinalizedCheckpoint). For those we override only
-    // the checkpoint source, leaving the real ancestor validation in GossipValidationHelper intact.
     return finalizedCheckpointOverride
         .<GossipValidationHelper>map(
             finalizedCheckpoint ->
                 new GossipValidationHelper(spec, recentChainData, metricsSystem) {
                   @Override
-                  protected Checkpoint getFinalizedCheckpoint() {
-                    return finalizedCheckpoint;
+                  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+                      final Bytes32 blockRoot) {
+                    return spec.getAncestor(
+                            getForkChoiceStrategy(),
+                            blockRoot,
+                            finalizedCheckpoint.getEpochStartSlot(spec))
+                        .map(ancestorRoot -> ancestorRoot.equals(finalizedCheckpoint.getRoot()))
+                        .orElse(false);
                   }
                 })
         .orElseGet(() -> new GossipValidationHelper(spec, recentChainData, metricsSystem));
