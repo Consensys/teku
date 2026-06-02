@@ -10962,8 +10962,8 @@
 
 - name: process_pending_deposits#fulu
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/statetransition/epoch/EpochProcessorFulu.java
-      search: public boolean areEth1BridgeDepositsNotApplied(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/statetransition/epoch/EpochProcessorElectra.java
+      search: public void processPendingDeposits(
   spec: |
     <spec fn="process_pending_deposits" fork="fulu" hash="02e6116b">
     def process_pending_deposits(state: BeaconState) -> None:
