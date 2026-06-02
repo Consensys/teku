@@ -24,6 +24,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -200,6 +201,24 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                 .strategy()
                 .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createEmpty(blockRoot)))
         .isFalse();
+  }
+
+  @Test
+  void shouldBuildOnFull_shouldIgnorePtcVotesWhenHeadIsOlderThanPreviousSlot() {
+    final GloasPayloadDecisionFixture fixture =
+        createGloasPayloadDecisionFixture(true, true, UInt64.valueOf(3));
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final int threshold =
+        SpecConfigGloas.required(fixture.spec().atSlot(fixture.block().getSlot()).getConfig())
+            .getDataAvailabilityTimelyThreshold();
+
+    fixture.strategy().onPtcVote(blockRoot, ptcPositions(threshold + 1), true, false);
+
+    assertThat(
+            fixture
+                .strategy()
+                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
+        .isTrue();
   }
 
   @Test
@@ -1154,6 +1173,14 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
   private GloasPayloadDecisionFixture createGloasPayloadDecisionFixture(
       final boolean includeFullNode, final boolean fullyValidateFullNode) {
+    return createGloasPayloadDecisionFixture(
+        includeFullNode, fullyValidateFullNode, UInt64.valueOf(2));
+  }
+
+  private GloasPayloadDecisionFixture createGloasPayloadDecisionFixture(
+      final boolean includeFullNode,
+      final boolean fullyValidateFullNode,
+      final UInt64 currentSlot) {
     final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
     final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -1182,11 +1209,15 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
       }
     }
 
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    final int slotDurationMillis =
+        gloasSpec.atSlot(block.getSlot()).getConfig().getSlotDurationMillis();
+    when(store.getGenesisTimeMillis()).thenReturn(ZERO);
+    when(store.getTimeInMillis())
+        .thenReturn(UInt64.valueOf(currentSlot.longValue() * slotDurationMillis));
+
     return new GloasPayloadDecisionFixture(
-        gloasSpec,
-        ForkChoiceStrategy.initialize(gloasSpec, protoArray),
-        mock(ReadOnlyStore.class),
-        block);
+        gloasSpec, ForkChoiceStrategy.initialize(gloasSpec, protoArray), store, block);
   }
 
   private IntSet ptcPositions(final int count) {
