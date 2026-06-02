@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,7 @@ public class SyncingNodeManager {
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             metricsSystem,
-            poolFactory.createPendingAttestationPool(spec, 10000));
+            poolFactory.createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
@@ -152,7 +153,7 @@ public class SyncingNodeManager {
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         pendingBlockPool.getBlocksWaitingForParent();
     final PendingPool<ValidatableAttestation> pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(spec, 10000);
+        poolFactory.createPendingPoolForAttestations(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
     final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
         poolFactory.createPendingPoolForPayloadAttestations(spec, 100);
     final FutureItems<SignedBeaconBlock> futureBlocks =

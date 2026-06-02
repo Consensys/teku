@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -123,7 +125,9 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP),
+            new PoolFactory(metricsSystem)
+                .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     // Tick clock to current_time_ms before importing blocks

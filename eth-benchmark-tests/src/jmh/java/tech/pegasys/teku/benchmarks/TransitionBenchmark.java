@@ -14,6 +14,7 @@
 package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.Iterator;
 import java.util.List;
@@ -60,7 +61,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @State(Scope.Thread)
 @Threads(1)
 public abstract class TransitionBenchmark {
-  private static final int PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   Spec spec;
   WeakSubjectivityValidator wsValidator;
@@ -110,7 +110,7 @@ public abstract class TransitionBenchmark {
             transitionBlockValidator,
             metricsSystem,
             new PoolFactory(metricsSystem)
-                .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+                .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 

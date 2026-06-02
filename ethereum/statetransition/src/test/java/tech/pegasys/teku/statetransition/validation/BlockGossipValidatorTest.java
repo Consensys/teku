@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -69,7 +70,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
     },
     signatureVerifierNoop = true)
 public class BlockGossipValidatorTest {
-  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   private Spec spec;
   private RecentChainData recentChainData;
@@ -113,7 +113,7 @@ public class BlockGossipValidatorTest {
             storageSystem.getMetricsSystem(),
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
             new PoolFactory(storageSystem.getMetricsSystem())
-                .createPendingAttestationPool(spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+                .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     forkChoice.applyGenesisExecutionPayloadForGloas().join();
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.forkChoiceTests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -63,7 +64,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class ForkChoiceIntegrationTest {
   private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
   private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
-  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   public static Stream<Arguments> loadForkChoiceTests() {
     Path path = Paths.get("src/integration-test/resources/");
@@ -183,7 +183,7 @@ public class ForkChoiceIntegrationTest {
             transitionBlockValidator,
             metricsSystem,
             new PoolFactory(metricsSystem)
-                .createPendingAttestationPool(SPEC, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+                .createPendingAttestationPool(SPEC, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();

@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.reference.BlsSetting.IGNORED;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
@@ -95,6 +96,7 @@ import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -206,7 +208,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem(),
             AsyncBLSSignatureVerifier.wrap(
-                blsDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE));
+                blsDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE),
+            new PoolFactory(storageSystem.getMetricsSystem())
+                .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {

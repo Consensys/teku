@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -83,7 +84,8 @@ class AttestationManagerIntegrationTest {
           Integer.MAX_VALUE,
           Integer.MAX_VALUE);
   private final PendingAttestationPool pendingAttestationPool =
-      new PoolFactory(storageSystem.getMetricsSystem()).createPendingAttestationPool(spec, 10000);
+      new PoolFactory(storageSystem.getMetricsSystem())
+          .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);
   private final ForkChoice forkChoice =

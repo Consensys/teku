@@ -15,6 +15,7 @@ package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.Iterator;
 import java.util.List;
@@ -73,7 +74,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @Threads(1)
 @Fork(1)
 public class EpochTransitionBenchmark {
-  private static final int PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   AsyncRunner asyncRunner;
   Spec spec;
@@ -132,7 +132,7 @@ public class EpochTransitionBenchmark {
             transitionBlockValidator,
             metricsSystem,
             new PoolFactory(metricsSystem)
-                .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+                .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 

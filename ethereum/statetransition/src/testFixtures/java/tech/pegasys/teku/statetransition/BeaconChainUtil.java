@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,8 +60,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
  */
 @Deprecated
 public class BeaconChainUtil {
-
-  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   private final Spec spec;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
@@ -356,6 +355,6 @@ public class BeaconChainUtil {
         new MergeTransitionBlockValidator(spec, recentChainData),
         metricsSystem,
         new PoolFactory(metricsSystem)
-            .createPendingAttestationPool(spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+            .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
   }
 }

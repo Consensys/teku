@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.DEFER_FOR_FORK_CHOICE;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
@@ -78,7 +79,7 @@ class AttestationManagerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PoolFactory poolFactory = new PoolFactory(metricsSystem);
   private final PendingAttestationPool pendingAttestationPool =
-      poolFactory.createPendingAttestationPool(spec, 10000);
+      poolFactory.createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
   private final PendingPool<ValidatableAttestation> pendingAttestations =
       pendingAttestationPool.getAttestationsWaitingForBlock();
   private final FutureItems<ValidatableAttestation> futureAttestations =

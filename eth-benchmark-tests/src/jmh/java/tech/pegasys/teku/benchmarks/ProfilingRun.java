@@ -14,6 +14,7 @@
 package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -60,7 +61,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
-  private static final int PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   public static Consumer<Object> blackHole = o -> {};
   private Spec spec =
@@ -110,7 +110,7 @@ public class ProfilingRun {
               transitionBlockValidator,
               metricsSystem,
               new PoolFactory(metricsSystem)
-                  .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+                  .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
@@ -204,7 +204,7 @@ public class ProfilingRun {
               transitionBlockValidator,
               metricsSystem,
               new PoolFactory(metricsSystem)
-                  .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+                  .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
       BlockImporter blockImporter =
           new BlockImporter(
               asyncRunner,

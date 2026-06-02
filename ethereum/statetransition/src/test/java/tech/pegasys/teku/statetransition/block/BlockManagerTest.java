@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR;
@@ -112,7 +113,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
-  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
@@ -188,8 +188,7 @@ public class BlockManagerTest {
             forkChoiceNotifier,
             transitionBlockValidator,
             metricsSystem,
-            poolFactory.createPendingAttestationPool(
-                spec, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
+            poolFactory.createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false));
     this.blockImporter =
         new BlockImporter(
