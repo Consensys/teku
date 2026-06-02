@@ -294,6 +294,15 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldReject_whenBidSlotIsNotGreaterThanParentBlockSlot() {
+    when(gossipValidationHelper.getSlotForBlockRoot(parentBlockRoot)).thenReturn(Optional.of(slot));
+
+    assertThatSafeFuture(bidValidator.validate(signedBid))
+        .isCompletedWithValue(
+            reject("Bid slot %s is not greater than parent block slot %s", slot, slot));
+  }
+
+  @TestTemplate
   void shouldSaveForFuture_whenStateIsUnavailable() {
     when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));

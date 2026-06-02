@@ -9,6 +9,11 @@
 ### Breaking Changes
 
  * Teku now targets Java JDK 25 for builds and runtime.
+ * Updated draft Gloas execution payload REST endpoints to match ethereum/beacon-APIs#613:
+   `GET /eth/v1/beacon/execution_payload_envelope/{block_id}` is now
+   `GET /eth/v1/beacon/execution_payload_envelopes/{block_id}`, and
+   `GET /eth/v1/validator/execution_payload_bid/{slot}/{builder_index}` is now
+   `GET /eth/v1/validator/execution_payload_bids/{slot}/{builder_index}`.
 
 ### Additions and Improvements
 

@@ -15,7 +15,7 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromState;
+import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
@@ -35,12 +35,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -71,6 +76,17 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
         signatureVerificationDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
     final Spec spec = testDefinition.getSpec(!signatureVerificationDisabled);
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
+    final List<BlockEntryAndBlock> blocks =
+        metaData.getBlocks().stream()
+            .map(
+                blockEntry ->
+                    new BlockEntryAndBlock(
+                        blockEntry,
+                        loadSsz(
+                            testDefinition,
+                            blockEntry.getBlock() + ".ssz_snappy",
+                            spec::deserializeSignedBeaconBlock)))
+            .toList();
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
     // Set up chain storage
@@ -81,8 +97,15 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             .build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
 
-    // Initialize from state with time 0 (will be advanced via onTick)
-    recentChainData.initializeFromAnchorPoint(createAnchorFromState(spec, state), UInt64.ZERO);
+    final AnchorPoint anchorPoint =
+        createAnchorFromStateAndMatchingBlock(
+            spec,
+            state,
+            blocks.stream()
+                .filter(blockEntryAndBlock -> !blockEntryAndBlock.blockEntry().isFailed())
+                .map(BlockEntryAndBlock::block)
+                .toList());
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
 
     // Set up ForkChoice for block importing
     final InlineEventThread eventThread = new InlineEventThread();
@@ -116,22 +139,21 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
     // import attempt would fail. Skip all imports so that the attestation validator's
     // block-not-available path produces the expected IGNORE result.
     final boolean hasCustomFinalizedCheckpoint = metaData.getFinalizedCheckpoint() != null;
-    if (!hasCustomFinalizedCheckpoint) {
-      for (final GossipBeaconAttestationMetaData.BlockEntry blockEntry : metaData.getBlocks()) {
-        final SignedBeaconBlock block =
-            loadSsz(
-                testDefinition,
-                blockEntry.getBlock() + ".ssz_snappy",
-                spec::deserializeSignedBeaconBlock);
-        if (blockEntry.isFailed()) {
-          // Record the root of this invalid block so attestations voting for it are rejected.
-          // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
-          failedBlockRoots.add(block.getRoot());
-        } else {
-          safeJoin(
-              forkChoice.onBlock(
-                  block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
-        }
+    for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
+      final GossipBeaconAttestationMetaData.BlockEntry blockEntry = blockEntryAndBlock.blockEntry();
+      final SignedBeaconBlock block = blockEntryAndBlock.block();
+      if (blockEntry.isFailed()) {
+        // Record the root of this invalid block so attestations voting for it are rejected.
+        // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
+        failedBlockRoots.add(block.getRoot());
+      } else if (!hasCustomFinalizedCheckpoint && !block.getRoot().equals(anchorPoint.getRoot())) {
+        final BlockImportResult importResult =
+            safeJoin(
+                forkChoice.onBlock(
+                    block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+        assertThat(importResult.isSuccessful())
+            .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
+            .isTrue();
       }
     }
 
@@ -154,7 +176,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
           loadSsz(
               testDefinition,
               message.getMessage() + ".ssz_snappy",
-              spec.getGenesisSchemaDefinitions().getAttestationSchema());
+              getGossipAttestationSchema(spec));
       final Bytes32 attestationRoot = attestation.hashTreeRoot();
 
       // Already-seen check: same attestation from same validator seen before
@@ -213,6 +235,15 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
     }
   }
 
+  private static AttestationSchema<? extends Attestation> getGossipAttestationSchema(
+      final Spec spec) {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
+          .getSingleAttestationSchema();
+    }
+    return spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  }
+
   @SuppressWarnings("unused")
   @JsonIgnoreProperties(ignoreUnknown = true)
   private static class GossipBeaconAttestationMetaData {
@@ -255,6 +286,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       return finalizedCheckpoint;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class BlockEntry {
 
       @JsonProperty(value = "block", required = true)
@@ -272,6 +304,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Message {
 
       @JsonProperty(value = "subnet_id", required = true)
@@ -306,4 +339,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       }
     }
   }
+
+  private record BlockEntryAndBlock(
+      GossipBeaconAttestationMetaData.BlockEntry blockEntry, SignedBeaconBlock block) {}
 }
