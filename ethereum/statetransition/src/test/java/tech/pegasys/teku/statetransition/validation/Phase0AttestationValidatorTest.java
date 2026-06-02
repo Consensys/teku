@@ -70,7 +70,8 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
         spy(new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem()));
     doReturn(false)
         .when(gossipValidationHelper)
-        .currentFinalizedCheckpointIsAncestorOfAttestationBlock();
+        .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+            attestation.getData().getBeaconBlockRoot());
     final AttestationValidator validator =
         new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
 
