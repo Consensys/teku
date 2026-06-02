@@ -63,7 +63,7 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
 
   // modified to remove support for the former deposit mechanism
   @Override
-  public boolean areEth1BridgeDepositsNotApplied(
+  public boolean mustWaitForEth1BridgeDeposits(
       final PendingDeposit deposit, final BeaconStateElectra state) {
     return false;
   }

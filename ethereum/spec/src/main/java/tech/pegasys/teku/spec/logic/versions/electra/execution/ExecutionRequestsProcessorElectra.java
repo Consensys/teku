@@ -87,24 +87,22 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
+    final PendingDeposit.PendingDepositSchema pendingDepositSchema =
+        schemaDefinitions.getPendingDepositSchema();
     for (DepositRequest depositRequest : depositRequests) {
-      final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
       if (stateElectra
           .getDepositRequestsStartIndex()
           .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
         stateElectra.setDepositRequestsStartIndex(depositRequest.getIndex());
       }
-
-      final PendingDeposit deposit =
-          schemaDefinitions
-              .getPendingDepositSchema()
-              .create(
-                  new SszPublicKey(depositRequest.getPubkey()),
-                  SszBytes32.of(depositRequest.getWithdrawalCredentials()),
-                  SszUInt64.of(depositRequest.getAmount()),
-                  new SszSignature(depositRequest.getSignature()),
-                  SszUInt64.of(state.getSlot()));
-      pendingDeposits.append(deposit);
+      pendingDeposits.append(
+          pendingDepositSchema.create(
+              new SszPublicKey(depositRequest.getPubkey()),
+              SszBytes32.of(depositRequest.getWithdrawalCredentials()),
+              SszUInt64.of(depositRequest.getAmount()),
+              new SszSignature(depositRequest.getSignature()),
+              SszUInt64.of(state.getSlot())));
     }
   }
 

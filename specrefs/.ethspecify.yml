@@ -26,10 +26,7 @@ specrefs:
       - BASIS_POINTS#phase0
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
-
-      # Constant for max value, defined elsewhere
-      - UINT64_MAX_SQRT
-      - EMPTY_BLOCK_HASH#bellatrix
+      - EMPTY_BLOCK_HASH#bellatrix # tuweni library is used instead
 
       # No light client support
       - MAX_REQUEST_LIGHT_CLIENT_UPDATES
@@ -309,7 +306,7 @@ specrefs:
       # Will be fixed later: gloas
       - get_payload_due_ms#gloas
 
-      # Will be fixed later phase0 and gloas
+      # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
       - get_supported_node#phase0
       - get_supported_node#gloas
       - is_ancestor#phase0

@@ -673,7 +673,9 @@
     </spec>
 
 - name: UINT64_MAX_SQRT#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MathHelpers.java
+      search: UInt64 MAX_SQRT = UInt64.valueOf(4294967295L);
   spec: |
     <spec constant_var="UINT64_MAX_SQRT" fork="phase0" hash="28d7e92a">
     UINT64_MAX_SQRT: uint64 = 4294967295

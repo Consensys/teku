@@ -234,7 +234,8 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         miscHelpers.computeStartSlotAtEpoch(stateElectra.getFinalizedCheckpoint().getEpoch());
 
     for (final PendingDeposit deposit : stateElectra.getPendingDeposits()) {
-      if (areEth1BridgeDepositsNotApplied(deposit, stateElectra)) {
+      // Do not process deposit requests if Eth1 bridge deposits are not yet applied.
+      if (mustWaitForEth1BridgeDeposits(deposit, stateElectra)) {
         break;
       }
 
@@ -299,12 +300,12 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     }
   }
 
-  public boolean areEth1BridgeDepositsNotApplied(
+  public boolean mustWaitForEth1BridgeDeposits(
       final PendingDeposit deposit, final BeaconStateElectra state) {
-    final boolean isDepositRequest = deposit.getSlot().isGreaterThan(GENESIS_SLOT);
-    final boolean hasPendingEth1BridgeDeposits =
-        state.getEth1DepositIndex().isLessThan(state.getDepositRequestsStartIndex());
-    return isDepositRequest && hasPendingEth1BridgeDeposits;
+    // Is deposit request
+    return deposit.getSlot().isGreaterThan(GENESIS_SLOT)
+        // There are pending Eth1 bridge deposits
+        && state.getEth1DepositIndex().isLessThan(state.getDepositRequestsStartIndex());
   }
 
   /** process_pending_consolidations */
