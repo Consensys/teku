@@ -275,9 +275,11 @@ class AttestationManagerTest {
   }
 
   @Test
-  public void shouldNotAddAttestationsThatAreMissingFullPayloadDependenciesToBlockPendingPool() {
+  public void shouldAggregateAttestationsThatAreMissingFullPayloadDependencies() {
+    final ProcessedAttestationListener subscriber = mock(ProcessedAttestationListener.class);
+    attestationManager.subscribeToAttestationsToSend(subscriber);
     final ValidatableAttestation attestation =
-        ValidatableAttestation.from(spec, dataStructureUtil.randomAttestation());
+        ValidatableAttestation.fromValidator(spec, dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(DEFERRED_FOR_EXECUTION_PAYLOAD));
 
@@ -287,7 +289,9 @@ class AttestationManagerTest {
     verify(forkChoice).onAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    verifyNoInteractions(attestationPool);
+    verify(attestationPool).add(attestation);
+    verify(subscriber).accept(attestation);
+    assertThat(attestation.isGossiped()).isTrue();
   }
 
   @Test

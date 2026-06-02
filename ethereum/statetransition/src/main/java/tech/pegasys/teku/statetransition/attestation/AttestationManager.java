@@ -251,10 +251,13 @@ public class AttestationManager extends Service
                       attestation::hashTreeRoot);
                   pendingAttestationPool.addForMissingBlock(attestation);
                 }
-                case DEFERRED_FOR_EXECUTION_PAYLOAD ->
-                    LOG.trace(
-                        "Deferring attestation {} as required full payload is not yet present",
-                        attestation::hashTreeRoot);
+                case DEFERRED_FOR_EXECUTION_PAYLOAD -> {
+                  LOG.trace(
+                      "Deferring attestation {} as required full payload is not yet present",
+                      attestation::hashTreeRoot);
+                  sendToSubscribersIfProducedLocally(attestation);
+                  aggregatingAttestationPool.add(attestation);
+                }
                 case DEFER_FORK_CHOICE_PROCESSING -> {
                   LOG.trace(
                       "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);
