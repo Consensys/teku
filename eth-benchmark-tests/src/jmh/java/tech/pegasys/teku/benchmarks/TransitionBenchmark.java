@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -59,6 +60,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @State(Scope.Thread)
 @Threads(1)
 public abstract class TransitionBenchmark {
+  private static final int PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
+
   Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
@@ -97,6 +100,7 @@ public abstract class TransitionBenchmark {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -104,7 +108,9 @@ public abstract class TransitionBenchmark {
             recentChainData,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            new StubMetricsSystem());
+            metricsSystem,
+            new PoolFactory(metricsSystem)
+                .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 

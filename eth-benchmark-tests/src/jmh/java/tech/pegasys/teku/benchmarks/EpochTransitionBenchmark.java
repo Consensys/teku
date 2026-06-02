@@ -60,6 +60,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -72,6 +73,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @Threads(1)
 @Fork(1)
 public class EpochTransitionBenchmark {
+  private static final int PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
+
   AsyncRunner asyncRunner;
   Spec spec;
   WeakSubjectivityValidator wsValidator;
@@ -127,7 +130,9 @@ public class EpochTransitionBenchmark {
             recentChainData,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            metricsSystem);
+            metricsSystem,
+            new PoolFactory(metricsSystem)
+                .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 

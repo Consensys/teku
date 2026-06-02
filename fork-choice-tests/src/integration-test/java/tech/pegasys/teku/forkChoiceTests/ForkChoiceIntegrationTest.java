@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class ForkChoiceIntegrationTest {
   private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
   private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
+  private static final int TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
 
   public static Stream<Arguments> loadForkChoiceTests() {
     Path path = Paths.get("src/integration-test/resources/");
@@ -171,6 +173,7 @@ public class ForkChoiceIntegrationTest {
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(SPEC, storageClient);
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     ForkChoice forkChoice =
         new ForkChoice(
             SPEC,
@@ -178,7 +181,9 @@ public class ForkChoiceIntegrationTest {
             storageClient,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            new StubMetricsSystem());
+            metricsSystem,
+            new PoolFactory(metricsSystem)
+                .createPendingAttestationPool(SPEC, TEST_PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();

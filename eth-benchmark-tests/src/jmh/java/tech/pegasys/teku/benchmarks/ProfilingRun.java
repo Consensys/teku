@@ -52,6 +52,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -59,12 +60,13 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
+  private static final int PENDING_ATTESTATIONS_MAX_QUEUE_SIZE = 10_000;
+
   public static Consumer<Object> blackHole = o -> {};
   private Spec spec =
       TestSpecFactory.createMainnetPhase0(
           builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
 
-  private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
   @Disabled
@@ -98,6 +100,7 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
+      final MetricsSystem metricsSystem = new StubMetricsSystem();
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -105,7 +108,9 @@ public class ProfilingRun {
               recentChainData,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              metricsSystem);
+              metricsSystem,
+              new PoolFactory(metricsSystem)
+                  .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
@@ -189,6 +194,7 @@ public class ProfilingRun {
       initialState = null;
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
+      final MetricsSystem metricsSystem = new StubMetricsSystem();
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -196,7 +202,9 @@ public class ProfilingRun {
               recentChainData,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              metricsSystem);
+              metricsSystem,
+              new PoolFactory(metricsSystem)
+                  .createPendingAttestationPool(spec, PENDING_ATTESTATIONS_MAX_QUEUE_SIZE));
       BlockImporter blockImporter =
           new BlockImporter(
               asyncRunner,
