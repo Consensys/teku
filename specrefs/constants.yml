@@ -542,7 +542,9 @@
     </spec>
 
 - name: SAFETY_DECAY#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/weaksubjectivity/WeakSubjectivityCalculator.java
+      search: public static final UInt64 SAFETY_DECAY =
   spec: |
     <spec constant_var="SAFETY_DECAY" fork="phase0" hash="298e03fe">
     SAFETY_DECAY: uint64 = 10

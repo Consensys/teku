@@ -780,6 +780,11 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
+  // get_payload_due_ms
+  public Optional<Integer> getPayloadDueMillis() {
+    return Optional.empty();
+  }
+
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
     final BeaconBlockBody body = block.getMessage().getBody();

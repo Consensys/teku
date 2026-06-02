@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -50,13 +54,22 @@ public class DefaultExecutionPayloadManager
     implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int UNVALIDATED_EXECUTION_PAYLOADS_CACHE_MULTIPLIER = 2;
+  private static final int UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE =
+      RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE * UNVALIDATED_EXECUTION_PAYLOADS_CACHE_MULTIPLIER;
 
   private final Set<Bytes32> recentSeenExecutionPayloads =
-      LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+      LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+  private final Set<Bytes32> executionPayloadsSeenBeforePayloadDue =
+      LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+  private final Set<Bytes32> acceptedExecutionPayloadEnvelopeRoots =
+      LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+  private final Map<Bytes32, UInt64> executionPayloadArrivalTimestamps =
+      LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   // pending pool
-  private final Map<BlockRootAndBuilderIndex, SignedExecutionPayloadEnvelope>
-      pendingExecutionPayloads = LimitedMap.createSynchronizedLRU(32);
+  private final Map<BlockRootAndBuilderIndex, PendingExecutionPayloads> pendingExecutionPayloads =
+      LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
       Subscribers.create(true);
@@ -97,11 +110,22 @@ public class DefaultExecutionPayloadManager
     return recentSeenExecutionPayloads.contains(beaconBlockRoot);
   }
 
+  @Override
+  public boolean isExecutionPayloadAvailableForPayloadAttestation(final Bytes32 beaconBlockRoot) {
+    return executionPayloadsSeenBeforePayloadDue.contains(beaconBlockRoot);
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final Optional<UInt64> arrivalTimestamp) {
+    final UInt64 executionPayloadArrivalTimestamp =
+        arrivalTimestamp.orElseGet(this::getStoreTimeInMillis);
+    final UInt64 earliestExecutionPayloadArrivalTimestamp =
+        recordExecutionPayloadArrivalTimestamp(
+            signedExecutionPayload, executionPayloadArrivalTimestamp);
+    final Bytes32 executionPayloadEnvelopeRoot = signedExecutionPayload.hashTreeRoot();
     final SafeFuture<InternalValidationResult> validationResult =
         executionPayloadGossipValidator.validate(signedExecutionPayload);
     validationResult.thenAccept(
@@ -110,8 +134,11 @@ public class DefaultExecutionPayloadManager
             case ACCEPT -> {
               receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
                   signedExecutionPayload);
+              acceptedExecutionPayloadEnvelopeRoots.add(executionPayloadEnvelopeRoot);
               // cache the seen `beacon_block_root` when the gossip checks pass
               recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+              recordExecutionPayloadAvailability(
+                  signedExecutionPayload, earliestExecutionPayloadArrivalTimestamp);
               importExecutionPayload(signedExecutionPayload).finishError(LOG);
             }
             case SAVE_FOR_FUTURE -> {
@@ -120,17 +147,29 @@ public class DefaultExecutionPayloadManager
                 asyncRunner
                     .runAfterDelay(
                         () ->
-                            validateAndImportExecutionPayload(signedExecutionPayload)
+                            validateAndImportExecutionPayload(
+                                    signedExecutionPayload,
+                                    Optional.of(executionPayloadArrivalTimestamp))
                                 .thenCompose(r -> publishPayload(r, signedExecutionPayload)),
                         Duration.ofMillis(100))
                     .finishError(LOG);
               } else {
                 // import will be triggered when the corresponding block is imported
-                pendingExecutionPayloads.put(
-                    signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
+                pendingExecutionPayloads.merge(
+                    signedExecutionPayload.getBlockRootAndBuilderIndex(),
+                    PendingExecutionPayloads.create(
+                        new PendingExecutionPayload(
+                            signedExecutionPayload, earliestExecutionPayloadArrivalTimestamp)),
+                    PendingExecutionPayloads::merge);
               }
             }
-            case REJECT, IGNORE -> {}
+            case IGNORE -> {
+              if (acceptedExecutionPayloadEnvelopeRoots.contains(executionPayloadEnvelopeRoot)) {
+                recordExecutionPayloadAvailability(
+                    signedExecutionPayload, earliestExecutionPayloadArrivalTimestamp);
+              }
+            }
+            case REJECT -> {}
           }
         });
     return validationResult;
@@ -236,11 +275,49 @@ public class DefaultExecutionPayloadManager
             bid ->
                 new BlockRootAndBuilderIndex(block.getRoot(), bid.getMessage().getBuilderIndex()))
         .map(pendingExecutionPayloads::remove)
-        .ifPresent(
-            executionPayloadToProcess ->
-                validateAndImportExecutionPayload(executionPayloadToProcess)
-                    .thenCompose(result -> publishPayload(result, executionPayloadToProcess))
+        .ifPresent(this::validateAndImportPendingExecutionPayloads);
+  }
+
+  private UInt64 recordExecutionPayloadArrivalTimestamp(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload, final UInt64 arrivalTimestamp) {
+    return executionPayloadArrivalTimestamps.merge(
+        signedExecutionPayload.hashTreeRoot(), arrivalTimestamp, UInt64::min);
+  }
+
+  private void validateAndImportPendingExecutionPayloads(
+      final PendingExecutionPayloads pendingExecutionPayloads) {
+    pendingExecutionPayloads
+        .values()
+        .forEach(
+            pendingExecutionPayload ->
+                validateAndImportExecutionPayload(
+                        pendingExecutionPayload.executionPayload(),
+                        Optional.of(pendingExecutionPayload.arrivalTimestamp()))
+                    .thenCompose(
+                        result ->
+                            publishPayload(result, pendingExecutionPayload.executionPayload()))
                     .finishError(LOG));
+  }
+
+  private void recordExecutionPayloadAvailability(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload, final UInt64 arrivalTimestamp) {
+    final UInt64 slot = signedExecutionPayload.getSlot();
+    if (spec.isBeforeTimeInSlot(
+            slot,
+            recentChainData.getGenesisTimeMillis(),
+            arrivalTimestamp,
+            spec.getPayloadDueMillis(slot).orElseThrow())
+        && !executionPayloadsSeenBeforePayloadDue.contains(
+            signedExecutionPayload.getBeaconBlockRoot())) {
+      executionPayloadsSeenBeforePayloadDue.add(signedExecutionPayload.getBeaconBlockRoot());
+    }
+  }
+
+  private UInt64 getStoreTimeInMillis() {
+    final ReadOnlyStore store = recentChainData.getStore();
+    checkState(
+        store != null, "Store is unavailable while resolving execution payload arrival time");
+    return store.getTimeInMillis();
   }
 
   // publish payload in cases where initial validation wasn't accepted
@@ -251,5 +328,46 @@ public class DefaultExecutionPayloadManager
       return executionPayloadPublisher.apply(executionPayload);
     }
     return SafeFuture.COMPLETE;
+  }
+
+  private record PendingExecutionPayload(
+      SignedExecutionPayloadEnvelope executionPayload, UInt64 arrivalTimestamp) {
+    private Bytes32 envelopeRoot() {
+      return executionPayload.hashTreeRoot();
+    }
+
+    private PendingExecutionPayload earliest(final PendingExecutionPayload other) {
+      return arrivalTimestamp.isLessThanOrEqualTo(other.arrivalTimestamp) ? this : other;
+    }
+  }
+
+  private record PendingExecutionPayloads(Map<Bytes32, PendingExecutionPayload> payloads) {
+    private PendingExecutionPayloads(final Map<Bytes32, PendingExecutionPayload> payloads) {
+      final Map<Bytes32, PendingExecutionPayload> limitedPayloads =
+          LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
+      limitedPayloads.putAll(payloads);
+      this.payloads = Collections.unmodifiableMap(limitedPayloads);
+    }
+
+    private static PendingExecutionPayloads create(
+        final PendingExecutionPayload pendingExecutionPayload) {
+      return new PendingExecutionPayloads(
+          Map.of(pendingExecutionPayload.envelopeRoot(), pendingExecutionPayload));
+    }
+
+    private PendingExecutionPayloads merge(final PendingExecutionPayloads other) {
+      final Map<Bytes32, PendingExecutionPayload> mergedPayloads =
+          LimitedMap.createSynchronizedNatural(UNVALIDATED_EXECUTION_PAYLOADS_CACHE_SIZE);
+      mergedPayloads.putAll(payloads);
+      other.payloads.forEach(
+          (envelopeRoot, pendingExecutionPayload) ->
+              mergedPayloads.merge(
+                  envelopeRoot, pendingExecutionPayload, PendingExecutionPayload::earliest));
+      return new PendingExecutionPayloads(mergedPayloads);
+    }
+
+    private Collection<PendingExecutionPayload> values() {
+      return payloads.values();
+    }
   }
 }
