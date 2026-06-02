@@ -26,7 +26,7 @@ public class GossipTests {
               "networking/gossip_beacon_aggregate_and_proof",
               new GossipBeaconAggregateAndProofTestExecutor())
           .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
-          //TODO: https://github.com/Consensys/teku/issues/10578
+          // TODO: https://github.com/Consensys/teku/issues/10578
           .put("networking/gossip_blob_sidecar", TestExecutor.IGNORE_TESTS)
           .put(
               "networking/gossip_bls_to_execution_change",
