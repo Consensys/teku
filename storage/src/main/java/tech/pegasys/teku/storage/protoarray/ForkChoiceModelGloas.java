@@ -601,10 +601,12 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
    * <p>The proposer calls this after fork choice has selected a non-pending head, before choosing
    * whether block production should use the parent's FULL payload variant or reorg to its EMPTY
    * variant. Like `should_extend_payload(...)`, this is a payload-variant decision, but it only
-   * respects the PTC data-availability view for a head from the previous slot.
+   * respects the PTC data-availability and payload-timeliness view for a head from the previous
+   * slot.
    *
    * <p>The local FULL-node validation check models the spec's `is_payload_verified(...)` guard. A
-   * verified FULL head is used unless the PTC has crossed the data-unavailable threshold.
+   * verified FULL head is used unless the PTC has crossed the data-unavailable or payload-untimely
+   * threshold.
    */
   @Override
   public boolean shouldBuildOnFull(
@@ -629,7 +631,13 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (!headIsFromPreviousSlot(head, protoArray, currentSlot)) {
       return true;
     }
-    return !payloadDataAvailability(blockNodeIndex, head.blockRoot(), false);
+    if (payloadDataAvailability(blockNodeIndex, head.blockRoot(), false)) {
+      return false;
+    }
+    if (payloadTimeliness(blockNodeIndex, head.blockRoot(), false)) {
+      return false;
+    }
+    return true;
   }
 
   private boolean headIsFromPreviousSlot(

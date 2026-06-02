@@ -487,11 +487,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head) {
+  public boolean shouldBuildOnFull(
+      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
     protoArrayLock.readLock().lock();
     try {
-      final UInt64 currentSlot =
-          spec.getCurrentSlotFromTimeMillis(store.getTimeInMillis(), store.getGenesisTimeMillis());
       return getForkChoiceModelForPayloadDecision(store, head.blockRoot())
           .shouldBuildOnFull(protoArray, blockNodeIndex, currentSlot, head);
     } finally {

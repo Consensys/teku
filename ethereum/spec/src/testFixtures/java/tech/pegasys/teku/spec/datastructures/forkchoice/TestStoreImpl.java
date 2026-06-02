@@ -548,7 +548,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public boolean shouldBuildOnFull(final ReadOnlyStore store, final ForkChoiceNode head) {
+    public boolean shouldBuildOnFull(
+        final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
       return shouldExtendPayload(store, head.blockRoot());
     }
 
