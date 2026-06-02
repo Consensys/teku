@@ -131,21 +131,24 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
 
     forkChoice.onTick(UInt64.valueOf(metaData.getCurrentTimeMs()), Optional.empty());
 
-    // Blocks marked failed: true are recorded as invalid (by root) but not imported, so blob
-    // sidecars whose parent is one of these blocks are rejected.
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
 
     for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
       final GossipBlobSidecarMetaData.BlockEntry blockEntry = blockEntryAndBlock.blockEntry();
       final SignedBeaconBlock block = blockEntryAndBlock.block();
+      if (block.getRoot().equals(anchorPoint.getRoot())) {
+        continue;
+      }
+      final BlockImportResult importResult =
+          safeJoin(
+              forkChoice.onBlock(
+                  block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
       if (blockEntry.isFailed()) {
+        // The block has been seen (so it is "available" with a known slot), but is recorded as
+        // invalid so blob sidecars whose parent is this block are rejected rather than deferred.
         invalidBlockRoots.put(
             block.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
-      } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
-        final BlockImportResult importResult =
-            safeJoin(
-                forkChoice.onBlock(
-                    block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+      } else {
         assertThat(importResult.isSuccessful())
             .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
             .isTrue();
@@ -191,6 +194,19 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
 
       final BlobSidecar blobSidecar =
           loadSsz(testDefinition, message.getMessage() + ".ssz_snappy", blobSidecarSchema);
+
+      // [REJECT] The sidecar is for the correct subnet. In production this rule is enforced by the
+      // gossip manager (topic -> subnet mapping) rather than the validator, so it is checked here.
+      if (message.getSubnetId() != null
+          && !spec.computeSubnetForBlobSidecar(blobSidecar)
+              .equals(UInt64.valueOf(message.getSubnetId()))) {
+        assertThat(message.getExpected())
+            .describedAs(
+                "Expected reject for blob sidecar %s on wrong subnet %s",
+                message.getMessage(), message.getSubnetId())
+            .isEqualTo("reject");
+        continue;
+      }
 
       final InternalValidationResult result = blobSidecarValidator.validate(blobSidecar).join();
 
