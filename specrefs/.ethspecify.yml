@@ -248,7 +248,6 @@ specrefs:
       - get_pulled_up_head_state#phase0
       - get_slot_committee#phase0
       - get_support_discount#phase0
-      - is_ancestor#phase0
       - is_confirmed_chain_safe#phase0
       - is_full_validator_set_covered#phase0
       - is_one_confirmed#phase0
