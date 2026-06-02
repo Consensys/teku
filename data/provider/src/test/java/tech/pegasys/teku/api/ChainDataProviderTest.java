@@ -761,7 +761,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         createGloasStateWithBuilders(
             gloasData, UInt64.valueOf(3), pendingBuilder, activeBuilder, exitedBuilder);
 
-    final SszList<StateBuilderData> builders = provider.getBuildersFromState(state, List.of());
+    final SszList<StateBuilderData> builders =
+        provider.getBuildersFromState(state, List.of(), List.of());
 
     assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
         .containsExactly(ZERO, ONE, UInt64.valueOf(2));
@@ -772,6 +773,51 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             StateBuilderData.STATUS_EXITED);
     assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
         .containsExactly(pendingBuilder, activeBuilder, exitedBuilder);
+  }
+
+  @Test
+  public void getBuildersFromState_shouldFilterByBuilderStatus() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            gloasSpec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+
+    final Builder pendingBuilder =
+        gloasData
+            .builderBuilder()
+            .depositEpoch(UInt64.valueOf(5))
+            .withdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+            .build();
+    final Builder activeBuilder =
+        gloasData
+            .builderBuilder()
+            .depositEpoch(ONE)
+            .withdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+            .build();
+    final Builder exitedBuilder =
+        gloasData.builderBuilder().depositEpoch(ONE).withdrawableEpoch(UInt64.valueOf(6)).build();
+    final BeaconStateGloas state =
+        createGloasStateWithBuilders(
+            gloasData, UInt64.valueOf(3), pendingBuilder, activeBuilder, exitedBuilder);
+
+    final SszList<StateBuilderData> builders =
+        provider.getBuildersFromState(
+            state,
+            List.of(),
+            List.of(StateBuilderData.STATUS_ACTIVE, StateBuilderData.STATUS_EXITED));
+
+    assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
+        .containsExactly(ONE, UInt64.valueOf(2));
+    assertThat(builders.stream().map(StateBuilderData::getStatus).toList())
+        .containsExactly(StateBuilderData.STATUS_ACTIVE, StateBuilderData.STATUS_EXITED);
+    assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
+        .containsExactly(activeBuilder, exitedBuilder);
   }
 
   @Test
@@ -794,7 +840,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
     final SszList<StateBuilderData> builders =
         provider.getBuildersFromState(
-            state, List.of("2", builder0.getPublicKey().toString(), "12345"));
+            state, List.of("2", builder0.getPublicKey().toString(), "12345"), List.of());
 
     assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
         .containsExactly(UInt64.valueOf(2), ZERO);
@@ -817,9 +863,30 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final BeaconStateGloas state =
         createGloasStateWithBuilders(gloasData, UInt64.valueOf(3), gloasData.randomBuilder());
 
-    assertThatThrownBy(() -> provider.getBuildersFromState(state, List.of("not-a-builder")))
+    assertThatThrownBy(
+            () -> provider.getBuildersFromState(state, List.of("not-a-builder"), List.of()))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid builder: not-a-builder");
+  }
+
+  @Test
+  public void getBuildersFromState_shouldRejectInvalidBuilderStatus() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            gloasSpec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+    final BeaconStateGloas state =
+        createGloasStateWithBuilders(gloasData, UInt64.valueOf(3), gloasData.randomBuilder());
+
+    assertThatThrownBy(() -> provider.getBuildersFromState(state, List.of(), List.of(3)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Invalid builder status: 3");
   }
 
   @Test
@@ -833,7 +900,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             mockBlobSidecarReconstructionProvider,
             mockBlobReconstructionProvider);
 
-    assertThatThrownBy(() -> provider.getBuildersFromState(data.randomBeaconState(), List.of()))
+    assertThatThrownBy(
+            () -> provider.getBuildersFromState(data.randomBeaconState(), List.of(), List.of()))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("prior to GLOAS");
   }

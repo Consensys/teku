@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.json.types.beacon;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import java.util.List;
@@ -31,9 +32,15 @@ public class StateBuilderRequestBodyType {
                   DeserializableTypeDefinition.listOf(STRING_TYPE),
                   StateBuilderRequestBodyType::getMaybeIds,
                   StateBuilderRequestBodyType::setIds)
+              .withOptionalField(
+                  "statuses",
+                  DeserializableTypeDefinition.listOf(RAW_INTEGER_TYPE),
+                  StateBuilderRequestBodyType::getMaybeStatuses,
+                  StateBuilderRequestBodyType::setStatuses)
               .build();
 
   private List<String> ids = List.of();
+  private List<Integer> statuses = List.of();
 
   public StateBuilderRequestBodyType() {}
 
@@ -41,15 +48,32 @@ public class StateBuilderRequestBodyType {
     this.ids = ids;
   }
 
+  public StateBuilderRequestBodyType(final List<String> ids, final List<Integer> statuses) {
+    this.ids = ids;
+    this.statuses = statuses;
+  }
+
   public List<String> getIds() {
     return ids;
+  }
+
+  public List<Integer> getStatuses() {
+    return statuses;
   }
 
   public Optional<List<String>> getMaybeIds() {
     return ids.isEmpty() ? Optional.empty() : Optional.of(ids);
   }
 
+  public Optional<List<Integer>> getMaybeStatuses() {
+    return statuses.isEmpty() ? Optional.empty() : Optional.of(statuses);
+  }
+
   public void setIds(final Optional<List<String>> ids) {
     ids.ifPresent(i -> this.ids = i);
+  }
+
+  public void setStatuses(final Optional<List<Integer>> statuses) {
+    statuses.ifPresent(s -> this.statuses = s);
   }
 }
