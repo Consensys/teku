@@ -86,10 +86,10 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
   @Override
   public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
     final IntList indices =
-        IntArrayList.toList(
-            getActiveValidatorIndices(state, epoch)
-                .intStream()
-                .filter(index -> !state.getValidators().get(index).isSlashed()));
+        getActiveValidatorIndices(state, epoch)
+            .intStream()
+            .filter(index -> !state.getValidators().get(index).isSlashed())
+            .collect(IntArrayList::new, IntList::add, IntList::addAll);
     final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
     return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
   }
