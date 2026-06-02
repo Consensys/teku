@@ -1513,6 +1513,49 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onAttestation_gloasFullVoteShouldApplyAtNextSlotWhenPayloadArrivesInCurrentSlot() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalGloas(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+
+    final UInt64 attestationSlot = targetBlock.getSlot().plus(1);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(attestationSlot);
+    final ValidatableAttestation attestation =
+        createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
+
+    assertThat(forkChoice.onAttestation(attestation))
+        .isCompletedWithValue(AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD);
+
+    importPayload(targetBlock);
+
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    assertThat(
+            forkChoiceStrategy
+                .getBlockData(targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+                .orElseThrow()
+                .getWeight())
+        .isEqualTo(ZERO);
+
+    forkChoice.onTick(
+        spec.computeTimeMillisAtSlot(
+            attestationSlot.plus(1), recentChainData.getGenesisTimeMillis()),
+        Optional.empty());
+    processHead(attestationSlot.plus(1));
+
+    assertThat(
+            forkChoiceStrategy
+                .getBlockData(targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+                .orElseThrow()
+                .getWeight())
+        .isGreaterThan(ZERO);
+  }
+
+  @Test
   void applyIndexedAttestations_gloasFullVoteShouldWaitForExecutionPayload() {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
@@ -1554,13 +1597,7 @@ class ForkChoiceTest {
 
   private void importPayloadAndAssertFullPayloadVoteApplied(
       final SignedBlockAndState targetBlock, final UInt64 attestationSlot) {
-    final SafeFuture<ExecutionPayloadImportResult> payloadImportResult =
-        forkChoice.onExecutionPayloadEnvelope(
-            chainBuilder.getExecutionPayloadAtSlot(targetBlock.getSlot()).orElseThrow(),
-            executionLayer);
-
-    assertThat(payloadImportResult)
-        .isCompletedWithValueMatching(ExecutionPayloadImportResult::isSuccessful);
+    importPayload(targetBlock);
     processHead(attestationSlot.plus(1));
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
@@ -1570,6 +1607,16 @@ class ForkChoiceTest {
                 .orElseThrow()
                 .getWeight())
         .isGreaterThan(ZERO);
+  }
+
+  private void importPayload(final SignedBlockAndState targetBlock) {
+    final SafeFuture<ExecutionPayloadImportResult> payloadImportResult =
+        forkChoice.onExecutionPayloadEnvelope(
+            chainBuilder.getExecutionPayloadAtSlot(targetBlock.getSlot()).orElseThrow(),
+            executionLayer);
+
+    assertThat(payloadImportResult)
+        .isCompletedWithValueMatching(ExecutionPayloadImportResult::isSuccessful);
   }
 
   private ValidatableAttestation createPrevalidatedFullPayloadAttestation(
