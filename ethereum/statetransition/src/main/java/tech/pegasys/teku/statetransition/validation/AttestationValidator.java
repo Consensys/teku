@@ -227,7 +227,7 @@ public class AttestationValidator {
                         // aggregate.data.beacon_block_root
                         if (!gossipValidationHelper
                             .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
-                            )) {
+                                data.getBeaconBlockRoot())) {
                           return InternalValidationResultWithState.ignore(
                               "Finalized checkpoint is not an ancestor of block");
                         }

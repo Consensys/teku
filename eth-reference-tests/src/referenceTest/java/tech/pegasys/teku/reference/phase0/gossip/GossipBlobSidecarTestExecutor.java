@@ -22,36 +22,40 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.reference.BlsSetting;
+import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
-import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
-import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -63,18 +67,19 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
+public class GossipBlobSidecarTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
 
-    final GossipBeaconAggregateAndProofMetaData metaData =
-        loadYaml(testDefinition, "meta.yaml", GossipBeaconAggregateAndProofMetaData.class);
+    final GossipBlobSidecarMetaData metaData =
+        loadYaml(testDefinition, "meta.yaml", GossipBlobSidecarMetaData.class);
     final boolean signatureVerificationDisabled = metaData.getBlsSetting() == BlsSetting.IGNORED;
-    final BLSSignatureVerifier blsVerifier =
-        signatureVerificationDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
     final Spec spec = testDefinition.getSpec(!signatureVerificationDisabled);
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
+    final BlobSidecarSchema blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
+
     final List<BlockEntryAndBlock> blocks =
         metaData.getBlocks().stream()
             .map(
@@ -126,19 +131,16 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
     forkChoice.onTick(UInt64.valueOf(metaData.getCurrentTimeMs()), Optional.empty());
 
-    // Track block roots that explicitly failed validation (marked failed: true in meta.yaml).
-    // We load these blocks to obtain their hash tree root but do not import them, mirroring the
-    // spec distinction between "block not seen" (IGNORE) and "block failed validation" (REJECT).
-    final Set<Bytes32> failedBlockRoots = new HashSet<>();
+    // Blocks marked failed: true are recorded as invalid (by root) but not imported, so blob
+    // sidecars whose parent is one of these blocks are rejected.
+    final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
 
     for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
-      final GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry =
-          blockEntryAndBlock.blockEntry();
+      final GossipBlobSidecarMetaData.BlockEntry blockEntry = blockEntryAndBlock.blockEntry();
       final SignedBeaconBlock block = blockEntryAndBlock.block();
       if (blockEntry.isFailed()) {
-        // Record the root of this invalid block so aggregates voting for it are rejected.
-        // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
-        failedBlockRoots.add(block.getRoot());
+        invalidBlockRoots.put(
+            block.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
       } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
         final BlockImportResult importResult =
             safeJoin(
@@ -152,7 +154,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
     Optional<Checkpoint> customFinalizedCheckpoint = Optional.empty();
     if (metaData.getFinalizedCheckpoint() != null) {
-      final GossipBeaconAggregateAndProofMetaData.FinalizedCheckpoint finalizedCheckpoint =
+      final GossipBlobSidecarMetaData.FinalizedCheckpoint finalizedCheckpoint =
           metaData.getFinalizedCheckpoint();
       if (finalizedCheckpoint.getBlock() != null) {
         final Checkpoint checkpoint = finalizedCheckpoint.toCheckpoint(testDefinition, spec);
@@ -165,61 +167,50 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       }
     }
 
-    final AttestationValidator attestationValidator =
-        new AttestationValidator(
-            spec,
-            AsyncBLSSignatureVerifier.wrap(blsVerifier),
-            createGossipValidationHelper(
-                spec, recentChainData, metricsSystem, customFinalizedCheckpoint));
-    final AggregateAttestationValidator aggregateValidator =
-        new AggregateAttestationValidator(
-            spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(blsVerifier));
+    final GossipValidationHelper gossipValidationHelper =
+        createGossipValidationHelper(
+            spec, recentChainData, metricsSystem, customFinalizedCheckpoint);
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    // The test spec ships with a NoOpKZG that accepts every proof. Only the invalid-kzg-proof case
+    // needs the kzg proof rule actually exercised, so load a real trusted setup there. Other cases
+    // keep the NoOpKZG default since their blobs are not necessarily kzg-valid.
+    if (testDefinition.getTestName().contains("reject_invalid_kzg_proof")) {
+      final KZG kzg =
+          KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
+      miscHelpersDeneb.setKzg(kzg);
+    }
+    final BlobSidecarGossipValidator blobSidecarValidator =
+        BlobSidecarGossipValidator.create(
+            spec, invalidBlockRoots, gossipValidationHelper, miscHelpersDeneb);
 
-    for (final GossipBeaconAggregateAndProofMetaData.Message message : metaData.getMessages()) {
+    for (final GossipBlobSidecarMetaData.Message message : metaData.getMessages()) {
       final UInt64 messageTimeMs =
           UInt64.valueOf(metaData.getCurrentTimeMs()).plus(UInt64.valueOf(message.getOffsetMs()));
       forkChoice.onTick(messageTimeMs, Optional.empty());
 
-      final SignedAggregateAndProof signedAggregateAndProof =
-          loadSsz(
-              testDefinition,
-              message.getMessage() + ".ssz_snappy",
-              spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema());
+      final BlobSidecar blobSidecar =
+          loadSsz(testDefinition, message.getMessage() + ".ssz_snappy", blobSidecarSchema);
 
-      // Failed-block check: aggregate votes for a block that failed validation
-      final Bytes32 votedBlockRoot =
-          signedAggregateAndProof.getMessage().getAggregate().getData().getBeaconBlockRoot();
-      if (failedBlockRoots.contains(votedBlockRoot)) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected reject for aggregate %s voting for failed block %s",
-                message.getMessage(), votedBlockRoot)
-            .isEqualTo("reject");
-        continue;
-      }
-
-      final ValidatableAttestation validatableAttestation =
-          ValidatableAttestation.aggregateFromNetwork(spec, signedAggregateAndProof);
-      final InternalValidationResult result =
-          aggregateValidator.validate(validatableAttestation).join();
+      final InternalValidationResult result = blobSidecarValidator.validate(blobSidecar).join();
 
       switch (message.getExpected()) {
         case "valid" ->
             assertThat(result.code())
                 .describedAs(
-                    "Expected aggregate %s to be valid but got %s: %s",
+                    "Expected blob sidecar %s to be valid but got %s: %s",
                     message.getMessage(), result.code(), result.getDescription().orElse(""))
                 .isEqualTo(ValidationResultCode.ACCEPT);
         case "reject" ->
             assertThat(result.code())
                 .describedAs(
-                    "Expected aggregate %s to be rejected but got %s: %s",
+                    "Expected blob sidecar %s to be rejected but got %s: %s",
                     message.getMessage(), result.code(), result.getDescription().orElse(""))
                 .isEqualTo(ValidationResultCode.REJECT);
         case "ignore" ->
             assertThat(result.code())
                 .describedAs(
-                    "Expected aggregate %s to be ignored but got %s: %s",
+                    "Expected blob sidecar %s to be ignored but got %s: %s",
                     message.getMessage(), result.code(), result.getDescription().orElse(""))
                 .isIn(ValidationResultCode.IGNORE, ValidationResultCode.SAVE_FOR_FUTURE);
         default ->
@@ -242,11 +233,15 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             finalizedCheckpoint ->
                 new GossipValidationHelper(spec, recentChainData, metricsSystem) {
                   @Override
-                  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(
-                      final Bytes32 blockRoot) {
+                  public boolean currentFinalizedCheckpointIsAncestorOfBlock(
+                      final UInt64 blockSlot, final Bytes32 blockParentRoot) {
+                    if (blockSlot.isLessThanOrEqualTo(
+                        finalizedCheckpoint.getEpochStartSlot(spec))) {
+                      return false;
+                    }
                     return spec.getAncestor(
                             getForkChoiceStrategy(),
-                            blockRoot,
+                            blockParentRoot,
                             finalizedCheckpoint.getEpochStartSlot(spec))
                         .map(ancestorRoot -> ancestorRoot.equals(finalizedCheckpoint.getRoot()))
                         .orElse(false);
@@ -257,7 +252,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
   @SuppressWarnings("unused")
   @JsonIgnoreProperties(ignoreUnknown = true)
-  private static class GossipBeaconAggregateAndProofMetaData {
+  private static class GossipBlobSidecarMetaData {
 
     @JsonProperty(value = "topic", required = true)
     private String topic;
@@ -318,6 +313,9 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Message {
 
+      @JsonProperty(value = "subnet_id", required = false)
+      private Integer subnetId;
+
       @JsonProperty(value = "offset_ms", required = true)
       private long offsetMs;
 
@@ -329,6 +327,10 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
       @JsonProperty(value = "reason", required = false)
       private String reason;
+
+      public Integer getSubnetId() {
+        return subnetId;
+      }
 
       public long getOffsetMs() {
         return offsetMs;
@@ -377,5 +379,5 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
   }
 
   private record BlockEntryAndBlock(
-      GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry, SignedBeaconBlock block) {}
+      GossipBlobSidecarMetaData.BlockEntry blockEntry, SignedBeaconBlock block) {}
 }
