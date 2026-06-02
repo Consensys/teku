@@ -82,6 +82,7 @@ public class BlockProcessorFulu extends BlockProcessorElectra {
         .maxBlobsPerBlock();
   }
 
+  // modified to remove support for the former deposit mechanism.
   @Override
   protected void verifyOutstandingDepositsAreProcessed(
       final BeaconState state, final BeaconBlockBody body) {
@@ -92,6 +93,6 @@ public class BlockProcessorFulu extends BlockProcessorElectra {
 
   @Override
   public void processDeposits(final MutableBeaconState state, final SszList<Deposit> deposits) {
-    // NO-OP: modified to remove support for the former deposit mechanism.
+    // NOOP
   }
 }
