@@ -19,7 +19,9 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -57,6 +59,13 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
         timeProvider);
     this.stateAccessorsFulu = BeaconStateAccessorsFulu.required(beaconStateAccessors);
     this.schemaDefinitionsFulu = SchemaDefinitionsFulu.required(schemaDefinitions);
+  }
+
+  // modified to remove support for the former deposit mechanism
+  @Override
+  public boolean areEth1BridgeDepositsNotApplied(
+      final PendingDeposit deposit, final BeaconStateElectra state) {
+    return false;
   }
 
   /** process_proposer_lookahead */

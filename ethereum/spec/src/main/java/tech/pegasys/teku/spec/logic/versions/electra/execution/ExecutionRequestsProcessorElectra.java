@@ -105,7 +105,6 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
                   new SszSignature(depositRequest.getSignature()),
                   SszUInt64.of(state.getSlot()));
       pendingDeposits.append(deposit);
-      ;
     }
   }
 
