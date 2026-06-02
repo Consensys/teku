@@ -118,7 +118,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/on_merge_block", IGNORE_TESTS) // TTD Logic is deprecated
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
-          .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor())
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/get_parent_payload_status", new ForkChoiceTestExecutor())
@@ -643,21 +642,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             assertThat(proposerHead.blockRoot())
                 .describedAs("get_proposer_head")
                 .isEqualTo(expectedProposerHead);
-          }
-
-          case "should_override_forkchoice_update" -> {
-            final Map<String, Boolean> shouldOverrideForkChoiceUpdateCheck = get(checks, checkType);
-            final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
-            final boolean expectedValidatorIsConnected =
-                shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
-            final boolean shouldOverrideChainHead =
-                recentChainData.shouldOverrideForkChoiceUpdate(
-                    recentChainData.getBestBlockRoot().orElseThrow(),
-                    recentChainData.getHeadSlot());
-            assertThat(shouldOverrideChainHead).isEqualTo(expectedResult);
-            // We've currently only handled the validatorIsConnected 'true' case in reftests,
-            // lets validate we're dealing with that and don't have to extend tests further.
-            assertThat(expectedValidatorIsConnected).isTrue();
           }
 
           case "viable_for_head_roots_and_weights" -> {

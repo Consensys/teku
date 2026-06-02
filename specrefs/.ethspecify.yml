@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.8
+version: v1.7.0-alpha.9
 style: full
 
 specrefs:
@@ -29,6 +29,7 @@ specrefs:
 
       # Constant for max value, defined elsewhere
       - UINT64_MAX_SQRT
+      - EMPTY_BLOCK_HASH#bellatrix
 
       # No light client support
       - MAX_REQUEST_LIGHT_CLIENT_UPDATES
@@ -102,6 +103,8 @@ specrefs:
       - Seen#capella
       - Seen#deneb
       - Seen#electra
+      - Seen#fulu
+      - Seen#gloas
 
       # Not implemented: heze
       - GetInclusionListResponse#heze
@@ -254,6 +257,13 @@ specrefs:
       - update_fast_confirmation_variables#phase0
       - will_current_target_be_justified#phase0
       - will_no_conflicting_checkpoint_be_justified#phase0
+      - get_node_for_root#phase0
+      - get_node_for_root#gloas
+      - get_safe_execution_block_hash#bellatrix
+      - get_safe_execution_block_hash#gloas
+
+      # Not implemented: phase0
+      - get_dependent_root#phase0
 
       # Not implemented: capella
       - prepare_execution_payload#capella
@@ -289,12 +299,23 @@ specrefs:
       - recover_matrix#fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
+      - validate_beacon_block_gossip#fulu
+      - validate_data_column_sidecar_gossip#fulu
+      - validate_partial_data_column_sidecar_gossip#fulu
 
       # Not implemented: gloas
       - get_proposer_dependent_root#gloas
+      - get_dependent_root#gloas
 
       # Will be fixed later: gloas
       - get_payload_due_ms#gloas
+
+      # Will be fixed later phase0 and gloas
+      - get_supported_node#phase0
+      - get_supported_node#gloas
+      - is_ancestor#phase0
+      - is_ancestor#gloas
+      - is_previous_slot_payload_decision#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze
