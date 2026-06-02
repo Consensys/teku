@@ -42,7 +42,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_node_children
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_parent_payload_status
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_parent_node_full
-   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_previous_slot_payload_decision
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_previous_slot_payload_decision
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-should_build_on_full
  */
 class ForkChoiceModelGloas implements ForkChoiceModel {
