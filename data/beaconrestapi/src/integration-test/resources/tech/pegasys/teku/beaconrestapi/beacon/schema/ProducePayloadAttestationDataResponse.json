@@ -1,0 +1,15 @@
+{
+  "title" : "ProducePayloadAttestationDataResponse",
+  "type" : "object",
+  "required" : [ "version", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "example" : "gloas",
+      "enum" : [ "gloas" ]
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/PayloadAttestationData"
+    }
+  }
+}

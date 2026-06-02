@@ -1444,7 +1444,7 @@ class ValidatorApiHandlerTest {
     final UInt64 newSlot = UInt64.valueOf(25);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(newSlot);
 
-    when(chainDataClient.getBlockInEffectAtSlot(eq(newSlot)))
+    when(chainDataClient.getBlockAtSlotExact(eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot())).thenReturn(true);
 
@@ -1459,6 +1459,25 @@ class ValidatorApiHandlerTest {
               assertThat(payloadAttestationData.isPayloadPresent()).isTrue();
               assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
             });
+  }
+
+  @Test
+  public void createPayloadAttestationData_shouldReturnEmptyWhenNoBlockAtSlot() {
+    final UInt64 skippedSlot = UInt64.valueOf(25);
+    final SignedBeaconBlock previousBlock =
+        dataStructureUtil.randomSignedBeaconBlock(skippedSlot.minus(ONE));
+
+    when(chainDataClient.getBlockInEffectAtSlot(eq(skippedSlot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlock)));
+    when(chainDataClient.getBlockAtSlotExact(eq(skippedSlot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Optional<PayloadAttestationData> result =
+        SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(skippedSlot));
+
+    assertThat(result).isEmpty();
+    verify(executionPayloadManager, never())
+        .isExecutionPayloadRecentlySeen(previousBlock.getRoot());
   }
 
   @Test

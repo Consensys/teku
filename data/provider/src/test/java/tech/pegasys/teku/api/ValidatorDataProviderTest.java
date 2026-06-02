@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -254,6 +255,46 @@ public class ValidatorDataProviderTest {
     assertThat(data.getIndex()).isEqualTo(internalData.getIndex());
     assertThat(data.getSlot()).isEqualTo(internalData.getSlot());
     assertThat(data.getBeaconBlockRoot()).isEqualTo(internalData.getBeaconBlockRoot());
+  }
+
+  @TestTemplate
+  void createPayloadAttestationData_shouldThrowIfStoreNotFound() {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
+
+    final SafeFuture<Optional<PayloadAttestationData>> result =
+        provider.createPayloadAttestationData(ZERO);
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
+    verify(combinedChainDataClient).isStoreAvailable();
+  }
+
+  @TestTemplate
+  void createPayloadAttestationData_shouldReturnEmptyIfBlockNotFound() {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(validatorApiChannel.createPayloadAttestationData(ZERO))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    final SafeFuture<Optional<PayloadAttestationData>> result =
+        provider.createPayloadAttestationData(ZERO);
+
+    verify(validatorApiChannel).createPayloadAttestationData(ZERO);
+    assertThat(result).isCompletedWithValue(Optional.empty());
+  }
+
+  @TestTemplate
+  void createPayloadAttestationData_shouldReturnPayloadAttestationData() {
+    assumeThat(specMilestone).isEqualTo(SpecMilestone.GLOAS);
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    final PayloadAttestationData internalData = dataStructureUtil.randomPayloadAttestationData(ONE);
+    when(validatorApiChannel.createPayloadAttestationData(ONE))
+        .thenReturn(completedFuture(Optional.of(internalData)));
+
+    final SafeFuture<Optional<PayloadAttestationData>> result =
+        provider.createPayloadAttestationData(ONE);
+
+    assertThat(result).isCompleted();
+    assertThatSszData(safeJoin(result).orElseThrow()).isEqualByAllMeansTo(internalData);
   }
 
   @TestTemplate

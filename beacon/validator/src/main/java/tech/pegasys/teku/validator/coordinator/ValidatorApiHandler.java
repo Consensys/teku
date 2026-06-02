@@ -662,7 +662,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return NodeSyncingException.failedFuture();
     }
     return combinedChainDataClient
-        .getBlockInEffectAtSlot(slot)
+        .getBlockAtSlotExact(slot)
         .thenApply(
             maybeBlock -> {
               if (maybeBlock.isEmpty()) {
