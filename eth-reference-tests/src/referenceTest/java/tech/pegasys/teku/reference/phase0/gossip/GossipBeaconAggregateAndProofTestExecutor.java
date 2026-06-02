@@ -242,8 +242,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             finalizedCheckpoint ->
                 new GossipValidationHelper(spec, recentChainData, metricsSystem) {
                   @Override
-                  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(
-                      final Bytes32 blockRoot) {
+                  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock() {
                     return spec.getAncestor(
                             getForkChoiceStrategy(),
                             blockRoot,

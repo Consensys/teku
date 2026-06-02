@@ -71,7 +71,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
     doReturn(false)
         .when(gossipValidationHelper)
         .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
-            attestation.getData().getBeaconBlockRoot());
+        );
     final AttestationValidator validator =
         new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
 
