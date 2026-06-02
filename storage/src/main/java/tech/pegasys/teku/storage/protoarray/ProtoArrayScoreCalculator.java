@@ -133,6 +133,14 @@ class ProtoArrayScoreCalculator {
             vote.isNextFullPayloadHint(),
             protoArray,
             blockNodeIndex);
+    // Keep Gloas FULL payload votes pending until the FULL node exists so later deltas subtract
+    // from the same node that was credited.
+    if (!vote.isNextEquivocating()
+        && vote.isNextFullPayloadHint()
+        && nextNode.isEmpty()
+        && blockNodeIndex.containsBlock(vote.getNextRoot())) {
+      return;
+    }
 
     // A vote update matters if the validator moved roots, resolved to a different node variant,
     // or their effective balance changed.
