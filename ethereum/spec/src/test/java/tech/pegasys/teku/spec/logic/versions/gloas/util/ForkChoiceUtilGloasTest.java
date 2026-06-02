@@ -162,6 +162,14 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
+  void getPayloadDueMillis_shouldUsePayloadDueBps() {
+    assertThat(forkChoiceUtil.getPayloadDueMillis())
+        .hasValue(spec.getSlotDurationMillis(gloasSlot) * 3 / 4);
+    assertThat(forkChoiceUtil.getPayloadDueMillis())
+        .isEqualTo(forkChoiceUtil.getPayloadAttestationDueMillis());
+  }
+
+  @Test
   void
       computeBlockTimeliness_shouldMarkBlockLateForAttestationsAndPtcWhenBlockIsNotFromCurrentSlot() {
     assertThat(forkChoiceUtil.computeBlockTimeliness(gloasSlot, gloasSlot.plus(1), 0))
