@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.7
+version: v1.7.0-alpha.8
 style: full
 
 specrefs:
@@ -17,6 +17,9 @@ specrefs:
     configs:
       # Not implemented: phase0
       - CONFIRMATION_BYZANTINE_THRESHOLD#phase0
+
+      # Will be fixed later
+      - PAYLOAD_DUE_BPS#gloas
 
     constants:
       # Not defined as a constant, unnecessary
@@ -45,6 +48,9 @@ specrefs:
 
       # Not implemented: phase0
       - COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR#phase0
+
+      # Temporary exceptions: ignored until updated to alpha.8 spec
+      - SAFETY_DECAY#phase0
 
       # Not implemented: gloas
       - PTC_TIMELINESS_INDEX#gloas
@@ -91,11 +97,11 @@ specrefs:
       - Seen#phase0
       - FastConfirmationStore#phase0
 
-      # Not implemented: altair
+      # Not implemented
       - Seen#altair
-
-      # Not implemented: capella
       - Seen#capella
+      - Seen#deneb
+      - Seen#electra
 
       # Not implemented: heze
       - GetInclusionListResponse#heze
@@ -213,9 +219,6 @@ specrefs:
       - upgrade_lc_store_to_gloas#gloas
       - upgrade_lc_update_to_gloas#gloas
 
-      # Still need to implement this for Electra
-      - compute_weak_subjectivity_period#electra
-
       # Not implemented: fast confirmation
       - adjust_committee_weight_estimate_to_ensure_safety#phase0
       - compute_adversarial_weight#phase0
@@ -287,11 +290,11 @@ specrefs:
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
 
-      # Not needed: gloas
+      # Not implemented: gloas
       - get_proposer_dependent_root#gloas
 
-      # Not implemented: gloas
-      - compute_weak_subjectivity_period#gloas
+      # Will be fixed later: gloas
+      - get_payload_due_ms#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze

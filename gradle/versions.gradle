@@ -1,4 +1,7 @@
 dependencyManagement {
+	imports {
+		mavenBom 'io.netty:netty-bom:4.2.14.Final'
+	}
 	dependencies {
 		dependency 'com.fasterxml.jackson.core:jackson-databind:2.21.2'
 		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.21.2') {
@@ -56,11 +59,6 @@ dependencyManagement {
 		dependencySet(group: 'com.github.oshi', version: '6.12.0') {
 			entry 'oshi-core'
 			entry 'oshi-core-java11'
-		}
-
-		dependencySet(group: 'io.netty', version: '4.2.10.Final') {
-			entry 'netty-handler'
-			entry 'netty-codec-http'
 		}
 
 		dependency 'it.unimi.dsi:fastutil:8.5.18'
