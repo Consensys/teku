@@ -33,6 +33,8 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager.TopicSubnetIdAwareOperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -186,6 +188,13 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
     final BlobSidecarGossipValidator blobSidecarValidator =
         BlobSidecarGossipValidator.create(
             spec, invalidBlockRoots, gossipValidationHelper, miscHelpersDeneb);
+    // Adapt the validator to the gossip OperationProcessor SPI so the subnet rule can be exercised
+    // with the exact production component
+    // (BlobSidecarGossipManager.TopicSubnetIdAwareOperationProcessor),
+    // which rejects on a topic/subnet mismatch before delegating to the validator. The validator
+    // itself does not own the subnet rule (in production it is enforced per gossip topic).
+    final OperationProcessor<BlobSidecar> validatorProcessor =
+        (blobSidecar, arrivalTimestamp) -> blobSidecarValidator.validate(blobSidecar);
 
     for (final GossipBlobSidecarMetaData.Message message : metaData.getMessages()) {
       final UInt64 messageTimeMs =
@@ -195,20 +204,13 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
       final BlobSidecar blobSidecar =
           loadSsz(testDefinition, message.getMessage() + ".ssz_snappy", blobSidecarSchema);
 
-      // [REJECT] The sidecar is for the correct subnet. In production this rule is enforced by the
-      // gossip manager (topic -> subnet mapping) rather than the validator, so it is checked here.
-      if (message.getSubnetId() != null
-          && !spec.computeSubnetForBlobSidecar(blobSidecar)
-              .equals(UInt64.valueOf(message.getSubnetId()))) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected reject for blob sidecar %s on wrong subnet %s",
-                message.getMessage(), message.getSubnetId())
-            .isEqualTo("reject");
-        continue;
-      }
-
-      final InternalValidationResult result = blobSidecarValidator.validate(blobSidecar).join();
+      final OperationProcessor<BlobSidecar> processor =
+          message.getSubnetId() == null
+              ? validatorProcessor
+              : new TopicSubnetIdAwareOperationProcessor(
+                  spec, message.getSubnetId(), validatorProcessor);
+      final InternalValidationResult result =
+          safeJoin(processor.process(blobSidecar, Optional.empty()));
 
       switch (message.getExpected()) {
         case "valid" ->
