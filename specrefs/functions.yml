@@ -4293,7 +4293,15 @@
     </spec>
 
 - name: get_dependent_root#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<Bytes32> getDependentRoot\(\s*final SignedBeaconBlock block,
+      regex: true
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<Bytes32> getDependentRoot\(\s*final ForkChoiceNode node,
+      regex: true
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<UInt64> getDependentSlot(
   spec: |
     <spec fn="get_dependent_root" fork="phase0" hash="6c7301b5">
     def get_dependent_root(store: Store, root: Root) -> Root:
@@ -4308,7 +4316,15 @@
     </spec>
 
 - name: get_dependent_root#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<Bytes32> getDependentRoot\(\s*final SignedBeaconBlock block,
+      regex: true
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<Bytes32> getDependentRoot\(\s*final ForkChoiceNode node,
+      regex: true
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<UInt64> getDependentSlot(
   spec: |
     <spec fn="get_dependent_root" fork="gloas" hash="4e1d4042">
     def get_dependent_root(store: Store, root: Root) -> Root:
