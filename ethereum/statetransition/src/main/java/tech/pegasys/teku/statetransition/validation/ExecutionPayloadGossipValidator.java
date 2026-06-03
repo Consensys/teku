@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
@@ -49,7 +49,7 @@ public class ExecutionPayloadGossipValidator {
   private final SigningRootUtil signingRootUtil;
 
   private final Set<BlockRootAndBuilderIndex> seenPayloads =
-      LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+      LimitedSet.createSynchronized(SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
 
