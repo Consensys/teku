@@ -646,7 +646,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (payloadDataAvailability(headNodeVariants.get(), false)) {
       return false;
     }
-    if (payloadTimeliness(blockNodeIndex, head.blockRoot(), false)) {
+    if (payloadTimeliness(headNodeVariants.get(), false)) {
       return false;
     }
     return true;
