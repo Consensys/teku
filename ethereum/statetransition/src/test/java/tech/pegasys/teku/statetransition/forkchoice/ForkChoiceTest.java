@@ -641,6 +641,28 @@ class ForkChoiceTest {
   }
 
   @Test
+  void prepareForBlockProduction_shouldUseEmptyParentWhenPtcVotesPayloadUntimely() {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+
+    final UInt64 parentSlot = UInt64.ONE;
+    final UInt64 proposalSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState parentBlock = storageSystem.chainUpdater().advanceChain(parentSlot);
+    final ForkChoiceStrategy strategy = recentChainData.getStore().getForkChoiceStrategy();
+    final int threshold =
+        SpecConfigGloas.required(spec.atSlot(parentSlot).getConfig()).getPayloadTimelyThreshold();
+    strategy.onPtcVote(parentBlock.getRoot(), ptcPositions(threshold + 1), false, true);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(proposalSlot);
+
+    final ChainHead blockProductionHead =
+        safeJoin(
+            forkChoice.prepareForBlockProduction(proposalSlot, BlockProductionPerformance.NOOP));
+
+    assertThat(blockProductionHead.getRoot()).isEqualTo(parentBlock.getRoot());
+    assertThat(blockProductionHead.getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY);
+  }
+
+  @Test
   void onBlock_shouldUpdateVotesBasedOnAttesterSlashingEquivocationsInBlocks() {
     final ChainBuilder forkChain = chainBuilder.fork();
     final SignedBlockAndState forkBlock =

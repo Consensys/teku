@@ -176,30 +176,45 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         SpecConfigGloas.required(fixture.spec().atSlot(fixture.block().getSlot()).getConfig())
             .getDataAvailabilityTimelyThreshold();
 
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
-        .isTrue();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isTrue();
 
     fixture.strategy().onPtcVote(blockRoot, ptcPositions(threshold), true, false);
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
-        .isTrue();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isTrue();
 
     fixture.strategy().onPtcVote(blockRoot, IntSet.of(threshold), true, false);
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
-        .isFalse();
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createEmpty(blockRoot)))
-        .isFalse();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isFalse();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createEmpty(blockRoot))).isFalse();
+  }
+
+  @Test
+  void shouldBuildOnFull_shouldReturnFalseWhenPtcVotesPayloadUntimely() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final int threshold =
+        SpecConfigGloas.required(fixture.spec().atSlot(fixture.block().getSlot()).getConfig())
+            .getPayloadTimelyThreshold();
+
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isTrue();
+
+    fixture.strategy().onPtcVote(blockRoot, ptcPositions(threshold), false, true);
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isTrue();
+
+    fixture.strategy().onPtcVote(blockRoot, IntSet.of(threshold), false, true);
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isFalse();
+  }
+
+  @Test
+  void shouldBuildOnFull_shouldIgnorePtcVotesWhenHeadIsOlderThanPreviousSlot() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final int threshold =
+        SpecConfigGloas.required(fixture.spec().atSlot(fixture.block().getSlot()).getConfig())
+            .getDataAvailabilityTimelyThreshold();
+
+    fixture.strategy().onPtcVote(blockRoot, ptcPositions(threshold + 1), true, false);
+
+    assertThat(shouldBuildOnFull(fixture, UInt64.valueOf(3), ForkChoiceNode.createFull(blockRoot)))
+        .isTrue();
   }
 
   @Test
@@ -207,11 +222,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
     final Bytes32 blockRoot = fixture.block().getRoot();
 
-    assertThatThrownBy(
-            () ->
-                fixture
-                    .strategy()
-                    .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createBase(blockRoot)))
+    assertThatThrownBy(() -> shouldBuildOnFull(fixture, ForkChoiceNode.createBase(blockRoot)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("non-pending head");
   }
@@ -221,11 +232,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture(true, false);
     final Bytes32 blockRoot = fixture.block().getRoot();
 
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
-        .isFalse();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isFalse();
   }
 
   @Test
@@ -233,11 +240,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture(false, false);
     final Bytes32 blockRoot = fixture.block().getRoot();
 
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
-        .isFalse();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isFalse();
   }
 
   @Test
@@ -251,11 +254,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     fixture.strategy().onPtcVote(otherRoot, ptcPositions(threshold + 1), true, false);
 
-    assertThat(
-            fixture
-                .strategy()
-                .shouldBuildOnFull(fixture.store(), ForkChoiceNode.createFull(blockRoot)))
-        .isTrue();
+    assertThat(shouldBuildOnFull(fixture, ForkChoiceNode.createFull(blockRoot))).isTrue();
   }
 
   @Test
@@ -1182,11 +1181,22 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
       }
     }
 
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+
     return new GloasPayloadDecisionFixture(
-        gloasSpec,
-        ForkChoiceStrategy.initialize(gloasSpec, protoArray),
-        mock(ReadOnlyStore.class),
-        block);
+        gloasSpec, ForkChoiceStrategy.initialize(gloasSpec, protoArray), store, block);
+  }
+
+  private boolean shouldBuildOnFull(
+      final GloasPayloadDecisionFixture fixture, final ForkChoiceNode head) {
+    return shouldBuildOnFull(fixture, fixture.block().getSlot().plus(ONE), head);
+  }
+
+  private boolean shouldBuildOnFull(
+      final GloasPayloadDecisionFixture fixture,
+      final UInt64 currentSlot,
+      final ForkChoiceNode head) {
+    return fixture.strategy().shouldBuildOnFull(fixture.store(), currentSlot, head);
   }
 
   private IntSet ptcPositions(final int count) {
