@@ -710,7 +710,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         computeEarliestBlobSidecarsSlot(
             recentChainData.getStore(), dataAndValidationResult, block.getMessage());
 
-    final ForkChoiceNode preImportHead = findNewChainHead(forkChoiceStrategy).node();
+    final ForkChoiceNode preImportHead =
+        recentChainData.getChainHead().orElseThrow().getForkChoiceNode();
 
     forkChoiceUtil.applyBlockToStore(
         transaction,
