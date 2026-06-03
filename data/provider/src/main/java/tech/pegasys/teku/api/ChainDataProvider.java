@@ -373,21 +373,25 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SszList<StateBuilderData>>>> getStateBuilders(
-      final String stateIdParam, final List<String> builderIds) {
+      final String stateIdParam,
+      final List<String> builderIds,
+      final List<Integer> builderStatuses) {
     return stateSelectorFactory
         .createSelectorForStateId(stateIdParam)
         .getState()
-        .thenApply(maybeStateData -> getBuilders(maybeStateData, builderIds));
+        .thenApply(maybeStateData -> getBuilders(maybeStateData, builderIds, builderStatuses));
   }
 
   Optional<ObjectAndMetaData<SszList<StateBuilderData>>> getBuilders(
-      final Optional<StateAndMetaData> maybeStateAndMetadata, final List<String> builderIds) {
+      final Optional<StateAndMetaData> maybeStateAndMetadata,
+      final List<String> builderIds,
+      final List<Integer> builderStatuses) {
     checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.GLOAS, "builders");
 
     return maybeStateAndMetadata.map(
         stateAndMetaData ->
             new ObjectAndMetaData<>(
-                getBuildersFromState(stateAndMetaData.getData(), builderIds),
+                getBuildersFromState(stateAndMetaData.getData(), builderIds, builderStatuses),
                 stateAndMetaData.getMilestone(),
                 stateAndMetaData.isExecutionOptimistic(),
                 stateAndMetaData.isCanonical(),
@@ -396,7 +400,7 @@ public class ChainDataProvider {
 
   @VisibleForTesting
   SszList<StateBuilderData> getBuildersFromState(
-      final BeaconState state, final List<String> builderIds) {
+      final BeaconState state, final List<String> builderIds, final List<Integer> builderStatuses) {
     final BeaconStateGloas gloasState =
         state
             .toVersionGloas()
@@ -404,6 +408,8 @@ public class ChainDataProvider {
                 () ->
                     new BadRequestException(
                         "The state was successfully retrieved, but was prior to GLOAS and does not contain builders."));
+    final Set<Integer> builderStatusFilter = Set.copyOf(builderStatuses);
+    validateBuilderStatuses(builderStatusFilter);
 
     return StateBuilderData.SSZ_LIST_SCHEMA.createFromElements(
         getBuilderSelector(gloasState, builderIds)
@@ -413,6 +419,10 @@ public class ChainDataProvider {
                         UInt64.valueOf(index),
                         getBuilderStatus(gloasState, index),
                         gloasState.getBuilders().get(index)))
+            .filter(
+                builderData ->
+                    builderStatusFilter.isEmpty()
+                        || builderStatusFilter.contains(builderData.getStatus()))
             .toList());
   }
 
@@ -594,6 +604,22 @@ public class ChainDataProvider {
             .isActiveBuilder(state, UInt64.valueOf(builderIndex))
         ? StateBuilderData.STATUS_ACTIVE
         : StateBuilderData.STATUS_PENDING;
+  }
+
+  private void validateBuilderStatuses(final Set<Integer> builderStatuses) {
+    builderStatuses.stream()
+        .filter(status -> !isValidBuilderStatus(status))
+        .findFirst()
+        .ifPresent(
+            status -> {
+              throw new BadRequestException(String.format("Invalid builder status: %s", status));
+            });
+  }
+
+  private boolean isValidBuilderStatus(final int status) {
+    return status == StateBuilderData.STATUS_PENDING
+        || status == StateBuilderData.STATUS_ACTIVE
+        || status == StateBuilderData.STATUS_EXITED;
   }
 
   private IntStream getValidatorSelector(final BeaconState state, final List<String> validators) {
