@@ -5569,7 +5569,9 @@
     </spec>
 
 - name: get_payload_due_ms#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
+      search: public Optional<Integer> getPayloadDueMillis()
   spec: |
     <spec fn="get_payload_due_ms" fork="gloas" hash="6ccf7f5c">
     def get_payload_due_ms() -> uint64:
