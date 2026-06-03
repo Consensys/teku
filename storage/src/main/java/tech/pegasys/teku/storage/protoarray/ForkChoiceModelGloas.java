@@ -440,7 +440,8 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
 
   private boolean isPreviousSlotPayloadDecision(final ProtoNode node, final UInt64 currentSlot) {
     return node.getBlockSlot().plus(1).equals(currentSlot)
-        && node.getPayloadStatus() != ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
+        && (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY
+            || node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
   }
 
   private boolean shouldExtendPayload(
