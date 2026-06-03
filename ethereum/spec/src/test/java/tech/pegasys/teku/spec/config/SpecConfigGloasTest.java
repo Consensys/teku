@@ -35,6 +35,14 @@ public class SpecConfigGloasTest {
   }
 
   @Test
+  public void shouldLoadPayloadDueBps() {
+    final SpecConfigGloas config =
+        SpecConfigLoader.loadConfig("minimal").specConfig().toVersionGloas().orElseThrow();
+
+    assertThat(config.getPayloadDueBps()).isEqualTo(7500);
+  }
+
+  @Test
   public void equals_sameRandomValues() {
     final SpecConfigFulu specConfigFulu =
         SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionFulu().orElseThrow();
@@ -93,6 +101,7 @@ public class SpecConfigGloasTest {
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(512),
+        dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(65536),
         dataStructureUtil.randomPositiveInt(65536),
