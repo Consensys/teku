@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.8
+version: v1.7.0-alpha.9
 style: full
 
 specrefs:
@@ -23,9 +23,7 @@ specrefs:
       - BASIS_POINTS#phase0
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
-
-      # Constant for max value, defined elsewhere
-      - UINT64_MAX_SQRT
+      - EMPTY_BLOCK_HASH#bellatrix # tuweni library is used instead
 
       # No light client support
       - MAX_REQUEST_LIGHT_CLIENT_UPDATES
@@ -96,6 +94,8 @@ specrefs:
       - Seen#capella
       - Seen#deneb
       - Seen#electra
+      - Seen#fulu
+      - Seen#gloas
 
       # Not implemented: heze
       - GetInclusionListResponse#heze
@@ -239,7 +239,6 @@ specrefs:
       - get_pulled_up_head_state#phase0
       - get_slot_committee#phase0
       - get_support_discount#phase0
-      - is_ancestor#phase0
       - is_confirmed_chain_safe#phase0
       - is_full_validator_set_covered#phase0
       - is_one_confirmed#phase0
@@ -248,6 +247,10 @@ specrefs:
       - update_fast_confirmation_variables#phase0
       - will_current_target_be_justified#phase0
       - will_no_conflicting_checkpoint_be_justified#phase0
+      - get_node_for_root#phase0
+      - get_node_for_root#gloas
+      - get_safe_execution_block_hash#bellatrix
+      - get_safe_execution_block_hash#gloas
 
       # Not implemented: capella
       - prepare_execution_payload#capella
@@ -283,9 +286,18 @@ specrefs:
       - recover_matrix#fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
+      - validate_beacon_block_gossip#fulu
+      - validate_data_column_sidecar_gossip#fulu
+      - validate_partial_data_column_sidecar_gossip#fulu
 
       # Not implemented: gloas
       - get_proposer_dependent_root#gloas
+
+      # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
+      - get_supported_node#phase0
+      - get_supported_node#gloas
+      - is_ancestor#phase0
+      - is_ancestor#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze

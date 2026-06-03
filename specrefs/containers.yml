@@ -1145,16 +1145,6 @@
         epoch: Epoch
     </spec>
 
-- name: ForkChoiceNode#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/ForkChoiceNode.java
-  spec: |
-    <spec container="ForkChoiceNode" fork="gloas" hash="755a4b34">
-    class ForkChoiceNode(Container):
-        root: Root
-        payload_status: PayloadStatus  # One of PAYLOAD_STATUS_* values
-    </spec>
-
 - name: ForkData#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/ForkData.java
