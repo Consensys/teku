@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -195,7 +196,12 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzDeposit_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
+    // fuzzDeposit is not applicable for Fulu
+    final Spec spec = TestSpecFactory.createMinimalElectra();
+    final BeaconStateSchemaElectra beaconStateSchema =
+        BeaconStateSchemaElectra.required(
+            spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, SpecMilestone.ELECTRA, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/deposit/pyspec_tests/top_up__max_effective_balance");
