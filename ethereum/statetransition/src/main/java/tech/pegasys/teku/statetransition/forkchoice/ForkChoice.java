@@ -710,8 +710,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         computeEarliestBlobSidecarsSlot(
             recentChainData.getStore(), dataAndValidationResult, block.getMessage());
 
-    final ForkChoiceNode preImportHead =
-        recentChainData.getChainHead().orElseThrow().getForkChoiceNode();
+    final Optional<ForkChoiceNode> preImportHead =
+        recentChainData.getChainHead().map(ChainHead::getForkChoiceNode);
 
     forkChoiceUtil.applyBlockToStore(
         transaction,
@@ -722,7 +722,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         earliestBlobSidecarsSlot);
 
     final boolean shouldUpdateProposerBoostRoot =
-        shouldUpdateProposerBoostRoot(block, preImportHead, forkChoiceStrategy, transaction);
+        preImportHead
+            .filter(
+                forkChoiceNode ->
+                    shouldUpdateProposerBoostRoot(
+                        block, forkChoiceNode, forkChoiceStrategy, transaction))
+            .isPresent();
     if (shouldUpdateProposerBoostRoot) {
       transaction.setProposerBoostRoot(block.getRoot());
     }
