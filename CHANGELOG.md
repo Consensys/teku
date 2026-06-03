@@ -17,6 +17,8 @@
 
 ### Additions and Improvements
 
+ - Added the Gloas `POST /eth/v1/beacon/states/{state_id}/builders` Beacon API endpoint from ethereum/beacon-APIs#614, with JSON and SSZ response support.
+
 ### Bug Fixes
  - Fixed a scenario where keys added via validator-api that rely on external signer are not slashing protected locally until the node is restarted. 
    To work around this issue, users should either keep slashing protection enabled on the external signer or restart the node after calling the add api. 

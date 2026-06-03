@@ -32,6 +32,7 @@ public class GloasBuilder extends BaseForkBuilder
   private Integer maxRequestPayloads;
   private Integer minBuilderWithdrawabilityDelay;
   private Integer payloadAttestationDueBps;
+  private Integer payloadDueBps;
   private Integer syncMessageDueBpsGloas;
 
   // gloas preset
@@ -64,6 +65,7 @@ public class GloasBuilder extends BaseForkBuilder
             maxRequestPayloads,
             minBuilderWithdrawabilityDelay,
             payloadAttestationDueBps,
+            payloadDueBps,
             ptcSize,
             syncMessageDueBpsGloas,
             churnLimitQuotientGloas,
@@ -105,6 +107,12 @@ public class GloasBuilder extends BaseForkBuilder
   public GloasBuilder payloadAttestationDueBps(final Integer payloadAttestationDueBps) {
     checkNotNull(payloadAttestationDueBps);
     this.payloadAttestationDueBps = payloadAttestationDueBps;
+    return this;
+  }
+
+  public GloasBuilder payloadDueBps(final Integer payloadDueBps) {
+    checkNotNull(payloadDueBps);
+    this.payloadDueBps = payloadDueBps;
     return this;
   }
 
@@ -179,6 +187,7 @@ public class GloasBuilder extends BaseForkBuilder
     constants.put("maxRequestPayloads", maxRequestPayloads);
     constants.put("minBuilderWithdrawabilityDelay", minBuilderWithdrawabilityDelay);
     constants.put("payloadAttestationDueBps", payloadAttestationDueBps);
+    constants.put("payloadDueBps", payloadDueBps);
     constants.put("syncMessageDueBpsGloas", syncMessageDueBpsGloas);
 
     constants.put("builderRegistryLimit", builderRegistryLimit);
