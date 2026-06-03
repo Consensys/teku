@@ -115,6 +115,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
+  // modified to remove support for the former deposit mechanism
+  @Override
+  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
+    return true;
+  }
+
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
