@@ -76,8 +76,8 @@ public class ReferenceTestFinder {
                               "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes",
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_current_epoch",
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch",
-                              // TODO-GLOAS: the following tests will be fixed in future fork-choice
-                              // PRs
+                              // TODO-GLOAS: potentially requires the proposer boost changes
+                              // https://github.com/Consensys/teku/pull/10783
                               "altair - minimal - fork_choice/on_block - justified_update_always_if_better",
                               "altair - minimal - fork_choice/get_head - voting_source_beyond_two_epoch",
                               "altair - minimal - fork_choice/on_block - justified_update_not_realized_finality",
