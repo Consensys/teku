@@ -252,9 +252,6 @@ specrefs:
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 
-      # Not implemented: phase0
-      - get_dependent_root#phase0
-
       # Not implemented: capella
       - prepare_execution_payload#capella
       - process_execution_payload#capella
@@ -295,7 +292,6 @@ specrefs:
 
       # Not implemented: gloas
       - get_proposer_dependent_root#gloas
-      - get_dependent_root#gloas
 
       # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
       - get_supported_node#phase0
