@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -234,12 +235,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
     for (final PendingDeposit deposit : stateElectra.getPendingDeposits()) {
       // Do not process deposit requests if Eth1 bridge deposits are not yet applied.
-      final boolean isDepositRequest = deposit.getSlot().isGreaterThan(GENESIS_SLOT);
-      final boolean hasPendingEth1BridgeDeposits =
-          stateElectra
-              .getEth1DepositIndex()
-              .isLessThan(stateElectra.getDepositRequestsStartIndex());
-      if (isDepositRequest && hasPendingEth1BridgeDeposits) {
+      if (mustWaitForEth1BridgeDeposits(deposit, stateElectra)) {
         break;
       }
 
@@ -302,6 +298,14 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     } else {
       stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
     }
+  }
+
+  public boolean mustWaitForEth1BridgeDeposits(
+      final PendingDeposit deposit, final BeaconStateElectra state) {
+    // Is deposit request
+    return deposit.getSlot().isGreaterThan(GENESIS_SLOT)
+        // There are pending Eth1 bridge deposits
+        && state.getEth1DepositIndex().isLessThan(state.getDepositRequestsStartIndex());
   }
 
   /** process_pending_consolidations */
