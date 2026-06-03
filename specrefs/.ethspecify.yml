@@ -297,9 +297,6 @@ specrefs:
       - get_proposer_dependent_root#gloas
       - get_dependent_root#gloas
 
-      # Will be fixed later: gloas
-      - get_payload_due_ms#gloas
-
       # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
       - get_supported_node#phase0
       - get_supported_node#gloas

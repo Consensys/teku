@@ -77,7 +77,7 @@ public class ReferenceTestFinder {
                               // TODO: Will be fixed in the new consensus-specs release
                               // https://discordapp.com/channels/595666850260713488/1511390998456963304
                               "fulu - minimal - transition/core",
-                              "fulu- mainnet - transition/core")),
+                              "fulu - mainnet - transition/core")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });
