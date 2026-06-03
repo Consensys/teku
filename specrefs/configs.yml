@@ -613,7 +613,9 @@
     </spec>
 
 - name: PAYLOAD_DUE_BPS#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: "PAYLOAD_DUE_BPS:"
   spec: |
     <spec config_var="PAYLOAD_DUE_BPS" fork="gloas" hash="ee4d44de">
     PAYLOAD_DUE_BPS: uint64 = 7500

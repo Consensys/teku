@@ -1,0 +1,19 @@
+{
+  "title" : "PostStateBuildersRequestBody",
+  "type" : "object",
+  "required" : [ ],
+  "properties" : {
+    "ids" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "statuses" : {
+      "type" : "array",
+      "items" : {
+        "type" : "number"
+      }
+    }
+  }
+}

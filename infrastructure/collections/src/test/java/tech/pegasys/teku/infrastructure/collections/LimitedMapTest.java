@@ -51,8 +51,62 @@ public class LimitedMapTest {
 
     map.put(3, 3);
     assertThat(map.size()).isEqualTo(2);
-    // Element 2 should have been evicted
+    // Element 1 should have been evicted
     assertThat(map.containsKey(3)).isTrue();
     assertThat(map.containsKey(2)).isTrue();
+  }
+
+  @Test
+  public void createSynchronizedNatural_shouldRefreshNaturalOrderOnWrite() {
+    final Map<Integer, Integer> map = LimitedMap.createSynchronizedNatural(2);
+    map.put(1, 1);
+    assertThat(map.size()).isEqualTo(1);
+    map.put(2, 2);
+    assertThat(map.size()).isEqualTo(2);
+
+    // Update element 1 then add a new element that will put us over the limit
+    map.put(1, 1);
+
+    map.put(3, 3);
+    assertThat(map.size()).isEqualTo(2);
+    // Element 2 should have been evicted
+    assertThat(map.containsKey(3)).isTrue();
+    assertThat(map.containsKey(1)).isTrue();
+  }
+
+  @Test
+  public void createSynchronizedNatural_shouldRefreshNaturalOrderOnPutAll() {
+    final Map<Integer, Integer> map = LimitedMap.createSynchronizedNatural(2);
+    map.put(1, 1);
+    assertThat(map.size()).isEqualTo(1);
+    map.put(2, 2);
+    assertThat(map.size()).isEqualTo(2);
+
+    // Update element 1 then add a new element that will put us over the limit
+    map.putAll(Map.of(1, 10));
+
+    map.put(3, 3);
+    assertThat(map.size()).isEqualTo(2);
+    // Element 2 should have been evicted
+    assertThat(map).containsEntry(1, 10);
+    assertThat(map.containsKey(3)).isTrue();
+  }
+
+  @Test
+  public void createSynchronizedNatural_shouldRefreshNaturalOrderOnMerge() {
+    final Map<Integer, Integer> map = LimitedMap.createSynchronizedNatural(2);
+    map.put(1, 1);
+    assertThat(map.size()).isEqualTo(1);
+    map.put(2, 2);
+    assertThat(map.size()).isEqualTo(2);
+
+    // Merge element 1 then add a new element that will put us over the limit
+    map.merge(1, 10, Integer::sum);
+
+    map.put(3, 3);
+    assertThat(map.size()).isEqualTo(2);
+    // Element 2 should have been evicted
+    assertThat(map).containsEntry(1, 11);
+    assertThat(map.containsKey(3)).isTrue();
   }
 }
