@@ -7778,7 +7778,9 @@
     </spec>
 
 - name: is_previous_slot_payload_decision#gloas
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: private boolean isPreviousSlotPayloadDecision(
   spec: |
     <spec fn="is_previous_slot_payload_decision" fork="gloas" hash="fa0a2c02">
     def is_previous_slot_payload_decision(store: Store, node: ForkChoiceNode) -> bool:
