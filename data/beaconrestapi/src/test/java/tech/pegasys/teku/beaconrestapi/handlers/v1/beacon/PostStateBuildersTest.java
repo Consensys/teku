@@ -63,7 +63,29 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
     request.setRequestBody(requestBody);
     final ObjectAndMetaData<SszList<StateBuilderData>> expectedResponse =
         new ObjectAndMetaData<>(getBuildersList(), SpecMilestone.GLOAS, false, true, false);
-    when(chainDataProvider.getStateBuilders("head", List.of("0")))
+    when(chainDataProvider.getStateBuilders("head", List.of("0"), List.of()))
+        .thenReturn(completedFuture(Optional.of(expectedResponse)));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  void shouldGetBuildersFromStateWithIdsAndStatuses() throws Exception {
+    final StateBuilderRequestBodyType requestBody =
+        new StateBuilderRequestBodyType(List.of("0"), List.of(StateBuilderData.STATUS_ACTIVE));
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("state_id", "head")
+            .build();
+    request.setRequestBody(requestBody);
+    final ObjectAndMetaData<SszList<StateBuilderData>> expectedResponse =
+        new ObjectAndMetaData<>(getBuildersList(), SpecMilestone.GLOAS, false, true, false);
+    when(chainDataProvider.getStateBuilders(
+            "head", List.of("0"), List.of(StateBuilderData.STATUS_ACTIVE)))
         .thenReturn(completedFuture(Optional.of(expectedResponse)));
 
     handler.handleRequest(request);
@@ -81,7 +103,7 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
             .build();
     final ObjectAndMetaData<SszList<StateBuilderData>> expectedResponse =
         new ObjectAndMetaData<>(getBuildersList(), SpecMilestone.GLOAS, false, true, false);
-    when(chainDataProvider.getStateBuilders("head", List.of()))
+    when(chainDataProvider.getStateBuilders("head", List.of(), List.of()))
         .thenReturn(completedFuture(Optional.of(expectedResponse)));
 
     handler.handleRequest(request);

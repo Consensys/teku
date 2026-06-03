@@ -8,6 +8,12 @@
       "items" : {
         "type" : "string"
       }
+    },
+    "statuses" : {
+      "type" : "array",
+      "items" : {
+        "type" : "number"
+      }
     }
   }
 }

@@ -110,10 +110,12 @@ public class PostStateBuilders extends RestApiEndpoint {
 
     final List<String> builderIds =
         requestBody.map(StateBuilderRequestBodyType::getIds).orElse(List.of());
+    final List<Integer> builderStatuses =
+        requestBody.map(StateBuilderRequestBodyType::getStatuses).orElse(List.of());
 
     final SafeFuture<Optional<ObjectAndMetaData<SszList<StateBuilderData>>>> future =
         chainDataProvider.getStateBuilders(
-            request.getPathParameter(PARAMETER_STATE_ID), builderIds);
+            request.getPathParameter(PARAMETER_STATE_ID), builderIds, builderStatuses);
 
     request.respondAsync(
         future.thenApply(
