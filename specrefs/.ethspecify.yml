@@ -298,7 +298,6 @@ specrefs:
       - get_supported_node#gloas
       - is_ancestor#phase0
       - is_ancestor#gloas
-      - is_previous_slot_payload_decision#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze

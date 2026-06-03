@@ -42,6 +42,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_node_children
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_parent_payload_status
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_parent_node_full
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_previous_slot_payload_decision
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-should_build_on_full
  */
 class ForkChoiceModelGloas implements ForkChoiceModel {
@@ -414,11 +415,10 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   private UInt64 effectiveWeight(final ProtoNode node, final UInt64 currentSlot) {
-    if (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING
-        || !node.getBlockSlot().plus(1).equals(currentSlot)) {
-      return node.getWeight();
+    if (isPreviousSlotPayloadDecision(node, currentSlot)) {
+      return UInt64.ZERO;
     }
-    return UInt64.ZERO;
+    return node.getWeight();
   }
 
   private int computePayloadStatusTiebreaker(
@@ -427,8 +427,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final BlockNodeVariantsIndex blockNodeIndex,
       final UInt64 currentSlot,
       final Optional<Bytes32> proposerBoostRoot) {
-    if (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING
-        || !node.getBlockSlot().plus(1).equals(currentSlot)) {
+    if (!isPreviousSlotPayloadDecision(node, currentSlot)) {
       return node.getPayloadStatus().getValue();
     }
     if (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY) {
@@ -437,6 +436,12 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     return shouldExtendPayload(blockNodeIndex, node.getBlockRoot(), protoArray, proposerBoostRoot)
         ? 2
         : 0;
+  }
+
+  private boolean isPreviousSlotPayloadDecision(final ProtoNode node, final UInt64 currentSlot) {
+    return node.getBlockSlot().plus(1).equals(currentSlot)
+        && (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY
+            || node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
   }
 
   private boolean shouldExtendPayload(
