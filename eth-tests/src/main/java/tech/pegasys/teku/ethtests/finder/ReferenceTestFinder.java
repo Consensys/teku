@@ -71,9 +71,15 @@ public class ReferenceTestFinder {
                           List.of(),
                           List.of(
                               // TODO-GLOAS: the following tests require equivocation
-                              // see https://github.com/Consensys/teku/issues/10608)
+                              // see https://github.com/Consensys/teku/issues/10608
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_previous_epoch",
-                              "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes")),
+                              "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes",
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_current_epoch",
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch",
+                              // TODO: Will be fixed in a new consensus-specs release see
+                              // https://discordapp.com/channels/595666850260713488/1511390998456963304
+                              "fulu - minimal - transition/core",
+                              "fulu - mainnet - transition/core")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

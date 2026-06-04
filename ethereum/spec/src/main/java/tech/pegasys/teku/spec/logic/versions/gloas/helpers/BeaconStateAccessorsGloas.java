@@ -79,6 +79,22 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
   }
 
   /**
+   * EIP-8045: `get_beacon_proposer_indices` is modified to exclude slashed validators from the
+   * candidate pool before invoking `compute_proposer_indices`, so the `proposer_lookahead` only
+   * contains active and unslashed validators.
+   */
+  @Override
+  public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
+    final IntList indices =
+        getActiveValidatorIndices(state, epoch)
+            .intStream()
+            .filter(index -> !state.getValidators().get(index).isSlashed())
+            .collect(IntArrayList::new, IntList::add, IntList::addAll);
+    final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
+    return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
+  }
+
+  /**
    * EIP-8061: scaled balance churn limit using the supplied quotient. Returns
    * max(MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA, total_active_balance // quotient), rounded down to
    * EFFECTIVE_BALANCE_INCREMENT.
