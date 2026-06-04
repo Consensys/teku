@@ -166,9 +166,9 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   public boolean shouldBuildOnFull(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
-      final ReadOnlyStore store,
+      final UInt64 currentSlot,
       final ForkChoiceNode head) {
-    return shouldExtendPayload(protoArray, blockNodeIndex, store, head.blockRoot());
+    return false;
   }
 
   @Override

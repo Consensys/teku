@@ -29,6 +29,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int maxRequestPayloads;
   private final int minBuilderWithdrawabilityDelay;
   private final int payloadAttestationDueBps;
+  private final int payloadDueBps;
   private final int ptcSize;
   private final int syncMessageDueBps;
   private final int churnLimitQuotientGloas;
@@ -47,6 +48,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int maxRequestPayloads,
       final int minBuilderWithdrawabilityDelay,
       final int payloadAttestationDueBps,
+      final int payloadDueBps,
       final int ptcSize,
       final int syncMessageDueBps,
       final int churnLimitQuotientGloas,
@@ -64,6 +66,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.ptcSize = ptcSize;
     this.minBuilderWithdrawabilityDelay = minBuilderWithdrawabilityDelay;
     this.payloadAttestationDueBps = payloadAttestationDueBps;
+    this.payloadDueBps = payloadDueBps;
     this.syncMessageDueBps = syncMessageDueBps;
     this.churnLimitQuotientGloas = churnLimitQuotientGloas;
     this.consolidationChurnLimitQuotient = consolidationChurnLimitQuotient;
@@ -98,6 +101,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   @Override
   public int getPayloadAttestationDueBps() {
     return payloadAttestationDueBps;
+  }
+
+  @Override
+  public int getPayloadDueBps() {
+    return payloadDueBps;
   }
 
   @Override
@@ -171,6 +179,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && maxRequestPayloads == that.maxRequestPayloads
         && minBuilderWithdrawabilityDelay == that.minBuilderWithdrawabilityDelay
         && payloadAttestationDueBps == that.payloadAttestationDueBps
+        && payloadDueBps == that.payloadDueBps
         && ptcSize == that.ptcSize
         && syncMessageDueBps == that.syncMessageDueBps
         && builderRegistryLimit == that.builderRegistryLimit
@@ -196,6 +205,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         maxRequestPayloads,
         minBuilderWithdrawabilityDelay,
         payloadAttestationDueBps,
+        payloadDueBps,
         ptcSize,
         syncMessageDueBps,
         churnLimitQuotientGloas,

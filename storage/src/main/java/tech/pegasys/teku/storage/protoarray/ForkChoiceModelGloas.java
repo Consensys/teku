@@ -42,6 +42,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_node_children
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_parent_payload_status
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_parent_node_full
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_previous_slot_payload_decision
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-should_build_on_full
  */
 class ForkChoiceModelGloas implements ForkChoiceModel {
@@ -414,11 +415,10 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   private UInt64 effectiveWeight(final ProtoNode node, final UInt64 currentSlot) {
-    if (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING
-        || !node.getBlockSlot().plus(1).equals(currentSlot)) {
-      return node.getWeight();
+    if (isPreviousSlotPayloadDecision(node, currentSlot)) {
+      return UInt64.ZERO;
     }
-    return UInt64.ZERO;
+    return node.getWeight();
   }
 
   private int computePayloadStatusTiebreaker(
@@ -427,8 +427,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final BlockNodeVariantsIndex blockNodeIndex,
       final UInt64 currentSlot,
       final Optional<Bytes32> proposerBoostRoot) {
-    if (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING
-        || !node.getBlockSlot().plus(1).equals(currentSlot)) {
+    if (!isPreviousSlotPayloadDecision(node, currentSlot)) {
       return node.getPayloadStatus().getValue();
     }
     if (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY) {
@@ -439,17 +438,25 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         : 0;
   }
 
+  private boolean isPreviousSlotPayloadDecision(final ProtoNode node, final UInt64 currentSlot) {
+    return node.getBlockSlot().plus(1).equals(currentSlot)
+        && (node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY
+            || node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+  }
+
   private boolean shouldExtendPayload(
       final BlockNodeVariantsIndex blockNodeIndex,
       final Bytes32 blockRoot,
       final ProtoArray protoArray,
       final Optional<Bytes32> proposerBoostRoot) {
 
+    final Optional<BlockNodeVariants> blockNodeVariants = blockNodeIndex.getVariants(blockRoot);
+
     // in spec, would call is_payload_verified
     //    if not is_payload_verified(store, root):
     //        return False
     final Optional<ProtoNode> node =
-        blockNodeIndex.getFullNode(blockRoot).flatMap(protoArray::getNode);
+        blockNodeVariants.flatMap(BlockNodeVariants::fullNode).flatMap(protoArray::getNode);
     if (node.isEmpty() || !node.get().isFullyValidated()) {
       LOG.debug(
           "Node not found or the node is not fully validated, dont extend payload at blockroot {}",
@@ -457,8 +464,8 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       return false;
     }
 
-    final boolean payloadIsTimely = payloadTimeliness(blockNodeIndex, blockRoot, true);
-    final boolean payloadDataIsAvailable = payloadDataAvailability(blockNodeIndex, blockRoot, true);
+    final boolean payloadIsTimely = payloadTimeliness(blockNodeVariants.get(), true);
+    final boolean payloadDataIsAvailable = payloadDataAvailability(blockNodeVariants.get(), true);
     if (payloadIsTimely && payloadDataIsAvailable) {
       return true;
     }
@@ -473,8 +480,9 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (!proposerNode.get().getParentRoot().equals(blockRoot)) {
       return true;
     }
-    return blockNodeIndex
-        .getFullNode(blockRoot)
+    return blockNodeVariants
+        .get()
+        .fullNode()
         .flatMap(protoArray::getNode)
         .map(
             fullNode ->
@@ -483,27 +491,27 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   private boolean payloadTimeliness(
-      final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot, final boolean timely) {
-    if (!isPayloadVerified(blockNodeIndex, blockRoot)) {
+      final BlockNodeVariants blockNodeVariants, final boolean timely) {
+    if (!isPayloadVerified(blockNodeVariants)) {
       return !timely;
     }
-    return ptcVoteTracker.getPayloadPresentVoteCount(blockRoot, timely) > payloadTimelyThreshold;
+    return ptcVoteTracker.getPayloadPresentVoteCount(
+            blockNodeVariants.baseNode().blockRoot(), timely)
+        > payloadTimelyThreshold;
   }
 
   private boolean payloadDataAvailability(
-      final BlockNodeVariantsIndex blockNodeIndex,
-      final Bytes32 blockRoot,
-      final boolean available) {
-    if (!isPayloadVerified(blockNodeIndex, blockRoot)) {
+      final BlockNodeVariants blockNodeVariants, final boolean available) {
+    if (!isPayloadVerified(blockNodeVariants)) {
       return !available;
     }
-    return ptcVoteTracker.getDataAvailableVoteCount(blockRoot, available)
+    return ptcVoteTracker.getDataAvailableVoteCount(
+            blockNodeVariants.baseNode().blockRoot(), available)
         > dataAvailabilityTimelyThreshold;
   }
 
-  private boolean isPayloadVerified(
-      final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
-    return blockNodeIndex.getFullNode(blockRoot).isPresent();
+  private boolean isPayloadVerified(final BlockNodeVariants blockNodeVariants) {
+    return blockNodeVariants.fullNode().isPresent();
   }
 
   @Override
@@ -600,17 +608,19 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
    *
    * <p>The proposer calls this after fork choice has selected a non-pending head, before choosing
    * whether block production should use the parent's FULL payload variant or reorg to its EMPTY
-   * variant. Like `should_extend_payload(...)`, this is a payload-variant decision, but it also
-   * respects the PTC data-availability view.
+   * variant. Like `should_extend_payload(...)`, this is a payload-variant decision, but it only
+   * respects the PTC data-availability and payload-timeliness view for a head from the previous
+   * slot.
    *
    * <p>The local FULL-node validation check models the spec's `is_payload_verified(...)` guard. A
-   * verified FULL head is used unless the PTC has crossed the data-unavailable threshold.
+   * verified FULL head is used unless the PTC has crossed the data-unavailable or payload-untimely
+   * threshold.
    */
   @Override
   public boolean shouldBuildOnFull(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
-      final ReadOnlyStore store,
+      final UInt64 currentSlot,
       final ForkChoiceNode head) {
     checkArgument(
         head.payloadStatus() != ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING,
@@ -618,15 +628,37 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (head.payloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY) {
       return false;
     }
+
+    final Optional<BlockNodeVariants> headNodeVariants =
+        blockNodeIndex.getVariants(head.blockRoot());
+
     // Spec is_payload_verified maps to a FULL node that has completed EL validation in Teku.
-    if (blockNodeIndex
-        .getFullNode(head.blockRoot())
+    if (headNodeVariants
+        .flatMap(BlockNodeVariants::fullNode)
         .flatMap(protoArray::getNode)
         .map(fullNode -> !fullNode.isFullyValidated())
         .orElse(true)) {
       return false;
     }
-    return !payloadDataAvailability(blockNodeIndex, head.blockRoot(), false);
+    if (!headIsFromPreviousSlot(head, protoArray, currentSlot)) {
+      return true;
+    }
+    if (payloadDataAvailability(headNodeVariants.get(), false)) {
+      return false;
+    }
+    if (payloadTimeliness(headNodeVariants.get(), false)) {
+      return false;
+    }
+    return true;
+  }
+
+  private boolean headIsFromPreviousSlot(
+      final ForkChoiceNode head, final ProtoArray protoArray, final UInt64 currentSlot) {
+    return protoArray
+        .getNode(head)
+        .map(ProtoNode::getBlockSlot)
+        .map(blockSlot -> blockSlot.plus(1).equals(currentSlot))
+        .orElse(false);
   }
 
   @Override
