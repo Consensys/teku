@@ -73,6 +73,12 @@ class ForkChoiceUtilTest {
   private final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
 
   @Test
+  void isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope_shouldDefaultToFalse() {
+    assertThat(forkChoiceUtil.isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope())
+        .isFalse();
+  }
+
+  @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
     chainBuilder.generateBlocksUpToSlot(10);
 

@@ -35,5 +35,13 @@ public interface BlockEventsListener {
 
   void removeAllForBlock(SlotAndBlockRoot slotAndBlockRoot);
 
+  default void onBlockImported(final SignedBeaconBlock block) {
+    removeAllForBlock(block.getSlotAndBlockRoot());
+  }
+
+  default void onExecutionPayloadImported(final SlotAndBlockRoot slotAndBlockRoot) {
+    removeAllForBlock(slotAndBlockRoot);
+  }
+
   void enableBlockImportOnCompletion(SignedBeaconBlock block);
 }
