@@ -24,6 +24,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -87,6 +88,13 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
+  public void shouldDelegateIsExecutionPayloadRecentlySeenToTheGossipValidator() {
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    when(executionPayloadGossipValidator.isPayloadSeen(beaconBlockRoot)).thenReturn(true);
+    assertThat(executionPayloadManager.isExecutionPayloadRecentlySeen(beaconBlockRoot)).isTrue();
+  }
+
+  @Test
   public void shouldValidateAndImport() {
     givenValidationResult(signedExecutionPayload, ACCEPT);
     givenSuccessfulImport(signedExecutionPayload);
@@ -102,7 +110,6 @@ class DefaultExecutionPayloadManagerTest {
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     verify(receivedExecutionPayloadEventsChannelPublisher)
         .onExecutionPayloadImported(signedExecutionPayload, false);
-    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
     assertExecutionPayloadSeenBeforeDeadline(signedExecutionPayload);
   }
 
@@ -133,7 +140,6 @@ class DefaultExecutionPayloadManagerTest {
 
     verifyNoInteractions(forkChoice);
     assertThat(resultFuture).isCompletedWithValue(rejectedResult);
-    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
   }
 
   @Test
@@ -151,7 +157,6 @@ class DefaultExecutionPayloadManagerTest {
     }
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
   }
 
   @Test
@@ -215,22 +220,6 @@ class DefaultExecutionPayloadManagerTest {
   private SignedExecutionPayloadEnvelope signedExecutionPayloadForBlock(
       final SignedBeaconBlock block) {
     return dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
-  }
-
-  private void assertExecutionPayloadRecentlySeen(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    assertThat(
-            executionPayloadManager.isExecutionPayloadRecentlySeen(
-                executionPayload.getBeaconBlockRoot()))
-        .isTrue();
-  }
-
-  private void assertExecutionPayloadNotRecentlySeen(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    assertThat(
-            executionPayloadManager.isExecutionPayloadRecentlySeen(
-                executionPayload.getBeaconBlockRoot()))
-        .isFalse();
   }
 
   private void assertExecutionPayloadSeenBeforeDeadline(

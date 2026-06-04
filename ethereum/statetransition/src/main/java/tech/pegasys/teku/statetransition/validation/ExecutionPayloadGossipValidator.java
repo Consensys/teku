@@ -83,6 +83,13 @@ public class ExecutionPayloadGossipValidator {
                                 .thenApply(result -> markAsSeen(result, envelope))));
   }
 
+  public boolean isPayloadSeen(final Bytes32 beaconBlockRoot) {
+    return seenPayloads.stream()
+        .anyMatch(
+            blockRootAndBuilderIndex ->
+                blockRootAndBuilderIndex.blockRoot().equals(beaconBlockRoot));
+  }
+
   private SafeFuture<Optional<InternalValidationResult>> performWithBlockValidation(
       final ExecutionPayloadEnvelope envelope) {
     return gossipValidationHelper

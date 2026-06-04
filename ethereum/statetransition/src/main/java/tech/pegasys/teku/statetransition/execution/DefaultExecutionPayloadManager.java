@@ -54,8 +54,6 @@ public class DefaultExecutionPayloadManager
   private static final int PENDING_EXECUTION_PAYLOADS_CACHE_SIZE =
       SEEN_EXECUTION_PAYLOADS_CACHE_SIZE * 2;
 
-  private final Set<Bytes32> recentSeenExecutionPayloads =
-      LimitedSet.createSynchronizedNatural(SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
   private final Set<Bytes32> executionPayloadsSeenBeforePayloadDue =
       LimitedSet.createSynchronizedNatural(SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
@@ -99,7 +97,7 @@ public class DefaultExecutionPayloadManager
 
   @Override
   public boolean isExecutionPayloadRecentlySeen(final Bytes32 beaconBlockRoot) {
-    return recentSeenExecutionPayloads.contains(beaconBlockRoot);
+    return executionPayloadGossipValidator.isPayloadSeen(beaconBlockRoot);
   }
 
   @Override
@@ -122,7 +120,6 @@ public class DefaultExecutionPayloadManager
             case ACCEPT -> {
               receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
                   signedExecutionPayload);
-              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
               recordIfExecutionPayloadIsSeenBeforeDeadline(
                   signedExecutionPayload, arrivalTimestamp);
               importExecutionPayload(signedExecutionPayload).finishError(LOG);
@@ -140,6 +137,8 @@ public class DefaultExecutionPayloadManager
                     .finishError(LOG);
               } else {
                 // import will be triggered when the corresponding block is imported
+                // since no slashing is implemented in order to prevent DoS, we just keep the first
+                // payload that arrives at this step
                 pendingExecutionPayloads.putIfAbsent(
                     signedExecutionPayload.getBlockRootAndBuilderIndex(),
                     new PendingExecutionPayload(signedExecutionPayload, arrivalTimestamp));
