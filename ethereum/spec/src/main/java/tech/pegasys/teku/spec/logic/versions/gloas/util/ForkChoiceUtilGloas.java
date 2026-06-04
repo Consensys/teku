@@ -175,6 +175,11 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   @Override
+  public boolean isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope() {
+    return true;
+  }
+
+  @Override
   public int computeCommitteeIndexForAttestation(
       final UInt64 slot,
       final BeaconBlock block,

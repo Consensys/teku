@@ -879,6 +879,10 @@ public class ForkChoiceUtil {
     return AvailabilityChecker.NOOP;
   }
 
+  public boolean isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope() {
+    return false;
+  }
+
   // Used for computing committee indices when producing attestations.
   public int computeCommitteeIndexForAttestation(
       final UInt64 slot,

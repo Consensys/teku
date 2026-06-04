@@ -286,6 +286,16 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   @Override
+  public void onBlockImported(final SignedBeaconBlock block) {
+    if (spec.atSlot(block.getSlot())
+        .getForkChoiceUtil()
+        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
+      return;
+    }
+    removeAllForBlock(block.getSlotAndBlockRoot());
+  }
+
+  @Override
   public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
     final DataColumnSamplingTracker removed =
         recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
