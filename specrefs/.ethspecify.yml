@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.8
+version: v1.7.0-alpha.9
 style: full
 
 specrefs:
@@ -18,17 +18,12 @@ specrefs:
       # Not implemented: phase0
       - CONFIRMATION_BYZANTINE_THRESHOLD#phase0
 
-      # Will be fixed later
-      - PAYLOAD_DUE_BPS#gloas
-
     constants:
       # Not defined as a constant, unnecessary
       - BASIS_POINTS#phase0
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
-
-      # Constant for max value, defined elsewhere
-      - UINT64_MAX_SQRT
+      - EMPTY_BLOCK_HASH#bellatrix # tuweni library is used instead
 
       # No light client support
       - MAX_REQUEST_LIGHT_CLIENT_UPDATES
@@ -49,10 +44,7 @@ specrefs:
       # Not implemented: phase0
       - COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR#phase0
 
-      # Temporary exceptions: ignored until updated to alpha.8 spec
-      - SAFETY_DECAY#phase0
-
-      # Not implemented: gloas
+      # Not defined, implemented differently
       - PTC_TIMELINESS_INDEX#gloas
       - NUM_BLOCK_TIMELINESS_DEADLINES#gloas
       - ATTESTATION_TIMELINESS_INDEX#gloas
@@ -94,14 +86,16 @@ specrefs:
       - LightClientStore
 
       # Not implemented: phase0
-      - Seen#phase0
       - FastConfirmationStore#phase0
 
-      # Not implemented
+      # Not defined, implemented differently
+      - Seen#phase0
       - Seen#altair
       - Seen#capella
       - Seen#deneb
       - Seen#electra
+      - Seen#fulu
+      - Seen#gloas
 
       # Not implemented: heze
       - GetInclusionListResponse#heze
@@ -112,7 +106,7 @@ specrefs:
       # Unnecessary
       - xor#phase0
 
-      # Will not implement
+      # Will not implement: Deprecated
       - get_pow_block_at_terminal_total_difficulty#bellatrix
 
       # Functions implemented by KZG library for EIP-4844
@@ -245,7 +239,6 @@ specrefs:
       - get_pulled_up_head_state#phase0
       - get_slot_committee#phase0
       - get_support_discount#phase0
-      - is_ancestor#phase0
       - is_confirmed_chain_safe#phase0
       - is_full_validator_set_covered#phase0
       - is_one_confirmed#phase0
@@ -254,6 +247,10 @@ specrefs:
       - update_fast_confirmation_variables#phase0
       - will_current_target_be_justified#phase0
       - will_no_conflicting_checkpoint_be_justified#phase0
+      - get_node_for_root#phase0
+      - get_node_for_root#gloas
+      - get_safe_execution_block_hash#bellatrix
+      - get_safe_execution_block_hash#gloas
 
       # Not implemented: capella
       - prepare_execution_payload#capella
@@ -289,12 +286,18 @@ specrefs:
       - recover_matrix#fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
+      - validate_beacon_block_gossip#fulu
+      - validate_data_column_sidecar_gossip#fulu
+      - validate_partial_data_column_sidecar_gossip#fulu
 
       # Not implemented: gloas
       - get_proposer_dependent_root#gloas
 
-      # Will be fixed later: gloas
-      - get_payload_due_ms#gloas
+      # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
+      - get_supported_node#phase0
+      - get_supported_node#gloas
+      - is_ancestor#phase0
+      - is_ancestor#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze

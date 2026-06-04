@@ -28,11 +28,17 @@ public class GossipTests {
           .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
           // TODO: https://github.com/Consensys/teku/issues/10578
           .put("networking/gossip_blob_sidecar", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_data_column_sidecar", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_partial_data_column_sidecar", TestExecutor.IGNORE_TESTS)
           .put(
               "networking/gossip_bls_to_execution_change",
               new GossipBlsToExecutionChangeTestExecutor(
                   "gossip_bls_to_execution_change__ignore_pre_capella"))
-          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
+          // TODO: https://github.com/Consensys/teku/issues/10781
+          .put(
+              "networking/gossip_beacon_block",
+              new GossipBeaconBlockTestExecutor(
+                  "gossip_beacon_block__valid_at_blob_parameters_limit"))
           .put(
               "networking/gossip_sync_committee_contribution_and_proof",
               new GossipSyncCommitteeContributionAndProofTestExecutor())

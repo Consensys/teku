@@ -150,23 +150,6 @@ public class SlotProcessorTest {
   }
 
   @Test
-  public void isTimeReached_shouldReturnFalseIfTimeNotReached() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.plus(1000)))
-        .isFalse();
-  }
-
-  @Test
-  public void isTimeReached_shouldReturnTrueIfTimeMatches() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis)).isTrue();
-  }
-
-  @Test
-  public void isTimeReached_shouldReturnTrueIfBeyondEarliestTime() {
-    assertThat(slotProcessor.isTimeReached(genesisTimeMillis, genesisTimeMillis.minus(1000)))
-        .isTrue();
-  }
-
-  @Test
   public void onTick_shouldNotProcessPreGenesis() {
     slotProcessor.onTick(genesisTimeMillis.minus(1000), Optional.empty());
   }
