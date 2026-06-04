@@ -22,8 +22,10 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -132,10 +134,10 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
     // Tick clock to current_time_ms before importing blocks
     forkChoice.onTick(UInt64.valueOf(metaData.getCurrentTimeMs()), Optional.empty());
 
-    // Track block roots that explicitly failed validation (marked failed: true in meta.yaml).
-    // We load these blocks to obtain their hash tree root but do not import them, mirroring the
-    // spec distinction between "block not seen" (IGNORE) and "block failed validation" (REJECT).
-    final Set<Bytes32> failedBlockRoots = new HashSet<>();
+    // Blocks marked failed: true in meta.yaml are recorded as invalid (by root) and not imported,
+    // mirroring the invalidBlockRoots map maintained in production by BlockManager. The attestation
+    // validator rejects attestations voting for one of these roots.
+    final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
 
     for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
       final GossipBeaconAttestationMetaData.BlockEntry blockEntry = blockEntryAndBlock.blockEntry();
@@ -143,7 +145,8 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       if (blockEntry.isFailed()) {
         // Record the root of this invalid block so attestations voting for it are rejected.
         // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
-        failedBlockRoots.add(block.getRoot());
+        invalidBlockRoots.put(
+            block.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
       } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
         final BlockImportResult importResult =
             safeJoin(
@@ -175,7 +178,8 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             spec,
             AsyncBLSSignatureVerifier.wrap(blsVerifier),
             createGossipValidationHelper(
-                spec, recentChainData, metricsSystem, customFinalizedCheckpoint));
+                spec, recentChainData, metricsSystem, customFinalizedCheckpoint),
+            invalidBlockRoots);
 
     // Track seen attestations (by hash tree root) for "already seen" duplicate detection
     final Set<Bytes32> seenAttestationRoots = new HashSet<>();
@@ -201,17 +205,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
         continue;
       } else {
         seenAttestationRoots.add(attestationRoot);
-      }
-
-      // Failed-block check: attestation votes for a block that failed validation
-      final Bytes32 votedBlockRoot = attestation.getData().getBeaconBlockRoot();
-      if (failedBlockRoots.contains(votedBlockRoot)) {
-        assertThat(message.getExpected())
-            .describedAs(
-                "Expected reject for attestation %s voting for failed block %s",
-                message.getMessage(), votedBlockRoot)
-            .isEqualTo("reject");
-        continue;
       }
 
       final ValidatableAttestation validatableAttestation =
