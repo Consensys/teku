@@ -179,7 +179,7 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            DataAvailabilitySampler.NOOP,
+            () -> DataAvailabilitySampler.NOOP,
             pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,

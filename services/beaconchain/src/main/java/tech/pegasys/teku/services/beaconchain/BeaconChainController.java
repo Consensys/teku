@@ -2196,7 +2196,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            dataAvailabilitySampler,
+            () -> dataAvailabilitySampler,
             pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
