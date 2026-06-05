@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -482,6 +483,69 @@ public class BlockGossipValidatorTest {
         storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
     storageSystem.chainUpdater().setCurrentSlot(childSlot);
 
+    assertThat(blockGossipValidator.validate(childBlockAndState.getBlock(), true))
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+  }
+
+  @TestTemplate
+  void shouldSaveForFutureWhenParentFullPayloadHashAlsoMatchesLatestBlockHash(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(parentSlot);
+    final ExecutionPayloadBid parentBid =
+        parentBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    final SignedBlockAndState parentBlockAndStateWithOverlappingPayloadHashes =
+        new SignedBlockAndState(
+            parentBlockAndState.getBlock(),
+            parentBlockAndState
+                .getState()
+                .updated(
+                    state ->
+                        MutableBeaconStateGloas.required(state)
+                            .setLatestBlockHash(parentBid.getBlockHash())));
+    storageSystem.chainUpdater().saveBlock(parentBlockAndStateWithOverlappingPayloadHashes);
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    final ExecutionPayloadBid childBid =
+        childBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    final ExecutionRequests parentExecutionRequests =
+        childBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalParentExecutionRequests()
+            .orElseThrow();
+    final ExecutionRequests defaultParentExecutionRequests =
+        SchemaDefinitionsGloas.required(spec.atSlot(childSlot).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getDefault();
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(childBid.getParentBlockHash()).isEqualTo(parentBid.getBlockHash());
+    assertThat(
+            BeaconStateGloas.required(parentBlockAndStateWithOverlappingPayloadHashes.getState())
+                .getLatestBlockHash())
+        .isEqualTo(parentBid.getBlockHash());
+    assertThat(parentExecutionRequests.hashTreeRoot())
+        .isEqualTo(parentBid.getExecutionRequestsRoot());
+    assertThat(parentExecutionRequests).isNotEqualTo(defaultParentExecutionRequests);
     assertThat(blockGossipValidator.validate(childBlockAndState.getBlock(), true))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
   }

@@ -309,15 +309,9 @@ public class BlockGossipValidator {
     }
 
     final ExecutionRequests parentExecutionRequests = maybeParentExecutionRequests.get();
-    // Gloas process_parent_execution_payload treats a parent as EMPTY unless the child bid
-    // references the latest committed FULL parent bid. EMPTY parents have no payload to wait for.
-    if (miscHelpersGloas.isExecutionPayloadBidForEmptyParent(parentState, executionPayloadBid)) {
-      if (!miscHelpersGloas.isDefaultExecutionRequests(parentExecutionRequests)) {
-        return Optional.of(reject("No execution requests were expected for an EMPTY parent"));
-      }
-      return Optional.empty();
-    }
-
+    // Gloas process_parent_execution_payload treats a parent as FULL when the child bid references
+    // the latest committed FULL parent bid. Check this before EMPTY because the FULL bid hash can
+    // equal latest_block_hash at Gloas genesis or fork transition.
     if (miscHelpersGloas.isExecutionPayloadBidForFullParent(parentState, executionPayloadBid)) {
       if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
           parentState, parentExecutionRequests)) {
@@ -330,6 +324,13 @@ public class BlockGossipValidator {
               executionPayloadBid.getParentBlockHash(), block.getParentRoot());
       if (!parentExecutionPayloadKnown) {
         return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
+      }
+      return Optional.empty();
+    }
+
+    if (miscHelpersGloas.isExecutionPayloadBidForEmptyParent(parentState, executionPayloadBid)) {
+      if (!miscHelpersGloas.isDefaultExecutionRequests(parentExecutionRequests)) {
+        return Optional.of(reject("No execution requests were expected for an EMPTY parent"));
       }
       return Optional.empty();
     }
