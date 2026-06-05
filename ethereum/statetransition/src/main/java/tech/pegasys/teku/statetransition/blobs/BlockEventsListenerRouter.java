@@ -70,12 +70,6 @@ public class BlockEventsListenerRouter implements BlockEventsListener {
   }
 
   @Override
-  public void onExecutionPayloadImported(final SlotAndBlockRoot slotAndBlockRoot) {
-    lookupBlockEventsListener(slotAndBlockRoot.getSlot())
-        .onExecutionPayloadImported(slotAndBlockRoot);
-  }
-
-  @Override
   public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
     lookupBlockEventsListener(block.getSlot()).enableBlockImportOnCompletion(block);
   }
