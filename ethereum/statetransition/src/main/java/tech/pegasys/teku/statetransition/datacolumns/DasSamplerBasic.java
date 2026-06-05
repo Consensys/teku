@@ -255,8 +255,19 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .values()
         .removeIf(
             tracker -> {
-              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                  || recentChainData.containsBlock(tracker.blockRoot())) {
+              final boolean isCleanupDue;
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)) {
+                isCleanupDue = true;
+              } else {
+                final boolean blockImported = recentChainData.containsBlock(tracker.blockRoot());
+                final boolean isDataAvailabilityDeferred =
+                    spec.atSlot(tracker.slot())
+                        .getForkChoiceUtil()
+                        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope();
+                isCleanupDue = blockImported && !isDataAvailabilityDeferred;
+              }
+
+              if (isCleanupDue) {
                 // Outdated
                 if (!tracker.completionFuture().isDone()) {
                   // make sure the future releases any pending waiters

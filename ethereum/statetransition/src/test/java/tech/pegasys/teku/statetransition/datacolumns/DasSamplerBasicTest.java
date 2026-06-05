@@ -564,6 +564,36 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  void onSlot_shouldRetainGloasImportedBlockTrackerUntilExecutionPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
+    when(recentChainData.containsBlock(blockWithBlobs.getRoot())).thenReturn(true);
+
+    gloasSampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    final SafeFuture<List<UInt64>> completionFuture =
+        gloasSampler
+            .getRecentlySampledColumnsByRoot()
+            .get(blockWithBlobs.getRoot())
+            .completionFuture();
+
+    gloasSampler.onSlot(UInt64.valueOf(2));
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+    assertThat(completionFuture).isNotDone();
+
+    // Data availability is deferred to the payload, so the tracker is pruned now.
+    gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+    assertThat(completionFuture).isCancelled();
+  }
+
+  @Test
   void enableBlockImportOnCompletion_shouldImportOnlyOnceWhenCalledMultipleTimes() {
     final SignedBeaconBlock blockWithBlobs =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
