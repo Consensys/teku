@@ -217,14 +217,14 @@ public class AttestationManager extends Service
     pendingAttestationPool
         .removeAttestationsWaitingForBlock(blockRoot)
         .forEach(
-            attestation -> {
-              onAttestation(attestation)
-                  .finish(
-                      err ->
-                          LOG.error(
-                              "Failed to process pending attestation dependent on " + blockRoot,
-                              err));
-            });
+            attestation ->
+                onAttestation(attestation)
+                    .finish(
+                        err ->
+                            LOG.error(
+                                "Failed to process pending attestation dependent on {}",
+                                blockRoot,
+                                err)));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(

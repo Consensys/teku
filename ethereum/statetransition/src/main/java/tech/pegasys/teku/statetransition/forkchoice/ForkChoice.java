@@ -401,10 +401,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
   }
 
-  public void subscribeRequiredFullPayload(final RequiredFullPayloadSubscriber subscriber) {
-    pendingAttestationPool.subscribeRequiredFullPayload(subscriber::onRequiredFullPayload);
-  }
-
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
     final UpdatableStore store = recentChainData.getStore();
@@ -1543,9 +1539,5 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public interface OptimisticHeadSubscriber {
     void onOptimisticHeadChanged(boolean isHeadOptimistic);
-  }
-
-  public interface RequiredFullPayloadSubscriber {
-    void onRequiredFullPayload(Bytes32 blockRoot);
   }
 }

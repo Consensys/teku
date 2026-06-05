@@ -153,6 +153,7 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private ExecutionLayerChannelStub executionLayer;
+  private PendingAttestationPool pendingAttestationPool;
   private final BlockBroadcastValidator blockBroadcastValidator =
       mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
@@ -187,6 +188,7 @@ class ForkChoiceTest {
     this.genesis = chainBuilder.generateGenesis();
     this.recentChainData = storageSystem.recentChainData();
     this.executionLayer = new ExecutionLayerChannelStub(spec, false);
+    this.pendingAttestationPool = createPendingAttestationPool(spec);
     this.forkChoice =
         new ForkChoice(
             spec,
@@ -201,7 +203,7 @@ class ForkChoiceTest {
             debugDataDumper,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            createPendingAttestationPool(spec));
+            pendingAttestationPool);
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -1494,7 +1496,7 @@ class ForkChoiceTest {
     assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
 
     final List<Bytes32> requiredFullPayloads = new ArrayList<>();
-    forkChoice.subscribeRequiredFullPayload(requiredFullPayloads::add);
+    pendingAttestationPool.subscribeRequiredFullPayload(requiredFullPayloads::add);
 
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
     importBlock(targetBlock);
@@ -1563,7 +1565,7 @@ class ForkChoiceTest {
     assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
 
     final List<Bytes32> requiredFullPayloads = new ArrayList<>();
-    forkChoice.subscribeRequiredFullPayload(requiredFullPayloads::add);
+    pendingAttestationPool.subscribeRequiredFullPayload(requiredFullPayloads::add);
 
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
     importBlock(targetBlock);
