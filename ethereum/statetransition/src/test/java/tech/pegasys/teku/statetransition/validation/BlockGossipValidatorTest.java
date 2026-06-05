@@ -582,7 +582,7 @@ public class BlockGossipValidatorTest {
             result ->
                 result.equals(
                     InternalValidationResult.reject(
-                        "Parent execution requests must be empty when the Gloas bid does not build on the parent execution payload")));
+                        "No execution requests were expected for an EMPTY parent")));
   }
 
   @TestTemplate
