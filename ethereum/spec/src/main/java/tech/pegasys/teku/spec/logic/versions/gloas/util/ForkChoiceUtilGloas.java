@@ -128,6 +128,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return Optional.of(getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps()));
   }
 
+  @Override
+  public Optional<Integer> getPayloadDueMillis() {
+    final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
+    return Optional.of(getSlotComponentDurationMillis(configGloas.getPayloadDueBps()));
+  }
+
   /**
    * Computes dual block timeliness for Gloas: attestation deadline and PTC deadline.
    *
@@ -506,7 +512,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     if (context
         .getStore()
         .getForkChoiceStrategy()
-        .shouldBuildOnFull(context.getStore(), proposerHead)) {
+        .shouldBuildOnFull(context.getStore(), slot, proposerHead)) {
       return proposerHead.toFull();
     }
     return proposerHead.toEmpty();

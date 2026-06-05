@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,8 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxBlocksWaitingForParent,
-      final int maxBlocksWaitingForParentExecutionPayload) {
+      final int maxBlocksWaitingForParentExecutionPayload,
+      final long maxPendingBlockBytes) {
     this.blocksWaitingForParent =
         new PendingPool<>(
             pendingPoolsSizeGauge,
@@ -46,6 +48,8 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
             historicalBlockTolerance,
             futureBlockTolerance,
             maxBlocksWaitingForParent,
+            maxPendingBlockBytes,
+            PendingBlockPool::getSszSize,
             block -> block.getMessage().hashTreeRoot(),
             block -> Collections.singleton(block.getParentRoot()),
             SignedBeaconBlock::getSlot);
@@ -57,6 +61,8 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
             historicalBlockTolerance,
             futureBlockTolerance,
             maxBlocksWaitingForParentExecutionPayload,
+            maxPendingBlockBytes,
+            PendingParentExecutionPayloadBlock::getSszSize,
             PendingParentExecutionPayloadBlock::hashTreeRoot,
             pendingBlock ->
                 Collections.singleton(pendingBlock.dependency().parentBeaconBlockRoot()),
@@ -65,6 +71,11 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
 
   public PendingPool<SignedBeaconBlock> getBlocksWaitingForParent() {
     return blocksWaitingForParent;
+  }
+
+  @VisibleForTesting
+  PendingPool<?> getBlocksWaitingForParentExecutionPayload() {
+    return blocksWaitingForParentExecutionPayload;
   }
 
   public void addForMissingParent(final SignedBeaconBlock block) {
@@ -153,6 +164,10 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
             });
   }
 
+  private static long getSszSize(final SignedBeaconBlock block) {
+    return block.getSchema().getSszSize(block.getBackingNode());
+  }
+
   private record PendingParentExecutionPayloadBlock(
       SignedBeaconBlock block, ParentExecutionPayloadDependency dependency) {
 
@@ -162,6 +177,10 @@ public class PendingBlockPool implements SlotEventsChannel, FinalizedCheckpointC
 
     private UInt64 getSlot() {
       return block.getSlot();
+    }
+
+    private long getSszSize() {
+      return PendingBlockPool.getSszSize(block);
     }
   }
 }
