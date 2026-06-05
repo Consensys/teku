@@ -190,6 +190,30 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
       UInt64 startSlot, UInt64 endSlot);
 
+  /**
+   * Whether the underlying store can stream data column identifiers in reverse (newest slot first)
+   * order. When false, callers must fall back to {@link
+   * #getPreviousDataColumnSidecarSlotAtOrBefore(UInt64)} based lookups.
+   */
+  boolean isReverseStreamSupported();
+
+  /**
+   * Streams canonical data column identifiers in descending order (newest slot first) for slots in
+   * {@code [startSlot, endSlot]}. Only supported when {@link #isReverseStreamSupported()} is true.
+   */
+  @MustBeClosed
+  Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersReverse(
+      UInt64 startSlot, UInt64 endSlot);
+
+  /**
+   * Streams non-canonical data column identifiers in descending order (newest slot first) for slots
+   * in {@code [startSlot, endSlot]}. Only supported when {@link #isReverseStreamSupported()} is
+   * true.
+   */
+  @MustBeClosed
+  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiersReverse(
+      UInt64 startSlot, UInt64 endSlot);
+
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
   /**

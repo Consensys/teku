@@ -237,6 +237,28 @@ public class V4FinalizedKvStoreDao {
         new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
+  public boolean isReverseStreamSupported() {
+    return db.isReverseStreamSupported();
+  }
+
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersReverse(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeysReverse(
+        schema.getColumnSidecarByColumnSlotAndIdentifier(),
+        new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE),
+        new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO));
+  }
+
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiersReverse(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeysReverse(
+        schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+        new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE),
+        new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO));
+  }
+
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
       final SlotAndBlockRoot slotAndBlockRoot) {
     try (final Stream<DataColumnSlotAndIdentifier> identifierStream =

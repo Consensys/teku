@@ -203,6 +203,24 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public boolean isReverseStreamSupported() {
+    return true;
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> Stream<K> streamKeysReverse(
+      final KvStoreColumn<K, V> column, final K from, final K to) {
+    assertOpen();
+    return columnData
+        .get(column)
+        .subMap(keyToBytes(column, to), true, keyToBytes(column, from), true)
+        .descendingKeySet()
+        .stream()
+        .peek(value -> assertOpen())
+        .map(e -> columnKey(column, e));
+  }
+
+  @Override
   public KvStoreTransaction startTransaction() {
     assertOpen();
     return new MockKvStoreTransaction(this);

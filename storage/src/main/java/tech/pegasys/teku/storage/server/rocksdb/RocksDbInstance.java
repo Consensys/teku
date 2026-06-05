@@ -198,6 +198,26 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public boolean isReverseStreamSupported() {
+    return true;
+  }
+
+  @Override
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <K extends Comparable<K>, V> Stream<K> streamKeysReverse(
+      final KvStoreColumn<K, V> column, final K from, final K to) {
+    assertOpen();
+    final ColumnFamilyHandle handle = columnHandles.get(column);
+    final RocksIterator rocksDbIterator = db.newIterator(handle);
+    rocksDbIterator.seekForPrev(column.getKeySerializer().serialize(from));
+    return RocksDbKeyIterator.createReverse(
+            column, rocksDbIterator, key -> key.compareTo(to) >= 0, closed::get)
+        .toStream()
+        .map(entry -> column.getKeySerializer().deserialize(entry));
+  }
+
+  @Override
   @MustBeClosed
   public synchronized KvStoreTransaction startTransaction() {
     assertOpen();

@@ -373,6 +373,25 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public boolean isReverseStreamSupported() {
+    return finalizedDao.isReverseStreamSupported();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersReverse(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamDataColumnIdentifiersReverse(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiersReverse(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamNonCanonicalDataColumnIdentifiersReverse(startSlot, endSlot);
+  }
+
+  @Override
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.getDataColumnIdentifiers(slotAndBlockRoot);
