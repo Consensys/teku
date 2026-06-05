@@ -237,6 +237,10 @@ public class V4FinalizedKvStoreDao {
         new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
+  public void runWithPerfMetrics(final String label, final Runnable task) {
+    db.runWithPerfMetrics(label, task);
+  }
+
   public boolean isReverseStreamSupported() {
     return db.isReverseStreamSupported();
   }

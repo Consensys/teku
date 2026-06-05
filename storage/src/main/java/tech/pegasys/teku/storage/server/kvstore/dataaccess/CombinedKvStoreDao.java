@@ -713,6 +713,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public void runWithPerfMetrics(final String label, final Runnable task) {
+    db.runWithPerfMetrics(label, task);
+  }
+
+  @Override
   public boolean isReverseStreamSupported() {
     return db.isReverseStreamSupported();
   }

@@ -25,9 +25,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.PerfContext;
+import org.rocksdb.PerfLevel;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
@@ -38,6 +42,8 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class RocksDbInstance implements KvStoreAccessor {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final TransactionDB db;
   private final ColumnFamilyHandle defaultHandle;
@@ -287,6 +293,38 @@ public class RocksDbInstance implements KvStoreAccessor {
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
     return RocksDbKeyIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
+  }
+
+  @Override
+  public void runWithPerfMetrics(final String label, final Runnable task) {
+    // Perf context is per-thread; only enable it when diagnostics are requested to avoid the
+    // measurement overhead on the hot path.
+    if (!LOG.isDebugEnabled()) {
+      task.run();
+      return;
+    }
+    db.setPerfLevel(PerfLevel.ENABLE_TIME);
+    final PerfContext perfContext = db.getPerfContext();
+    perfContext.reset();
+    try {
+      task.run();
+    } finally {
+      LOG.debug(
+          "{} RocksDB perf context: internalKeySkipped={}, internalDeleteSkipped={}, "
+              + "rangeDelReseek={}, blockReadCount={}, blockReadBytes={}, blockReadTimeNanos={}, "
+              + "iterSeekCpuNanos={}, iterNextCpuNanos={}, iterPrevCpuNanos={}",
+          label,
+          perfContext.getInternalKeySkippedCount(),
+          perfContext.getInternalDeleteSkippedCount(),
+          perfContext.getInternalRangeDelReseekCount(),
+          perfContext.getBlockReadCount(),
+          perfContext.getBlockReadByte(),
+          perfContext.getBlockReadTime(),
+          perfContext.getIterSeekCpuNanos(),
+          perfContext.getIterNextCpuNanos(),
+          perfContext.getIterPrevCpuNanos());
+      db.setPerfLevel(PerfLevel.DISABLE);
+    }
   }
 
   @Override

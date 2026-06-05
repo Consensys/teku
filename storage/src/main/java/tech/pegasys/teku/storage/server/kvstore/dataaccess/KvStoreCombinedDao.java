@@ -191,6 +191,14 @@ public interface KvStoreCombinedDao extends AutoCloseable {
       UInt64 startSlot, UInt64 endSlot);
 
   /**
+   * Runs {@code task}, capturing low-level store performance counters around it and logging a
+   * summary tagged with {@code label}. Stores without performance counters simply run the task.
+   */
+  default void runWithPerfMetrics(final String label, final Runnable task) {
+    task.run();
+  }
+
+  /**
    * Whether the underlying store can stream data column identifiers in reverse (newest slot first)
    * order. When false, callers must fall back to {@link
    * #getPreviousDataColumnSidecarSlotAtOrBefore(UInt64)} based lookups.

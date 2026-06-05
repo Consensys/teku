@@ -373,6 +373,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public void runWithPerfMetrics(final String label, final Runnable task) {
+    finalizedDao.runWithPerfMetrics(label, task);
+  }
+
+  @Override
   public boolean isReverseStreamSupported() {
     return finalizedDao.isReverseStreamSupported();
   }
