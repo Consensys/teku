@@ -145,29 +145,7 @@ public class EventSubscriptionManager
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
-      final Optional<ReorgContext> optionalReorgContext) {
-    chainHeadUpdated(
-        slot,
-        stateRoot,
-        bestBlockRoot,
-        epochTransition,
-        executionOptimistic,
-        previousDutyDependentRoot,
-        currentDutyDependentRoot,
-        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING,
-        optionalReorgContext);
-  }
-
-  @Override
-  public void chainHeadUpdated(
-      final UInt64 slot,
-      final Bytes32 stateRoot,
-      final Bytes32 bestBlockRoot,
-      final boolean epochTransition,
-      final boolean executionOptimistic,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final ForkChoicePayloadStatus payloadStatus,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
     optionalReorgContext.ifPresent(
         context -> {
@@ -205,7 +183,7 @@ public class EventSubscriptionManager
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
-            payloadStatus);
+            payloadStatus.orElse(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
     notifySubscribersOfEvent(EventType.head_v2, headV2Event);
   }
 

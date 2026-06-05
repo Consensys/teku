@@ -609,6 +609,7 @@ public class EventSubscriptionManagerTest {
         false,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
+        Optional.empty(),
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.getData().getOldHeadBlock(),
@@ -628,6 +629,7 @@ public class EventSubscriptionManagerTest {
         true,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
+        Optional.empty(),
         Optional.empty());
     asyncRunner.executeQueuedActions();
   }
@@ -641,7 +643,7 @@ public class EventSubscriptionManagerTest {
         true,
         headV2Event.getData().data().currentEpochDependentRoot(),
         headV2Event.getData().data().nextEpochDependentRoot(),
-        ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL,
+        Optional.of(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL),
         Optional.empty());
     asyncRunner.executeQueuedActions();
   }

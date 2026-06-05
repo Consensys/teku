@@ -438,7 +438,7 @@ public abstract class RecentChainData
           beaconStateUtil
               .getCurrentDutyDependentRoot(forkChoiceStrategy, newChainHead)
               .orElseGet(this::getFinalizedBlockParentRoot),
-          newChainHead.getPayloadStatus(),
+          maybePayloadStatus,
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);

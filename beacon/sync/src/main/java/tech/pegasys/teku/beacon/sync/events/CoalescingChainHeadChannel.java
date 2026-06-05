@@ -45,50 +45,6 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
-      final Optional<ReorgContext> optionalReorgContext) {
-    chainHeadUpdated(
-        slot,
-        stateRoot,
-        bestBlockRoot,
-        epochTransition,
-        executionOptimistic,
-        previousDutyDependentRoot,
-        currentDutyDependentRoot,
-        Optional.empty(),
-        optionalReorgContext);
-  }
-
-  @Override
-  public synchronized void chainHeadUpdated(
-      final UInt64 slot,
-      final Bytes32 stateRoot,
-      final Bytes32 bestBlockRoot,
-      final boolean epochTransition,
-      final boolean executionOptimistic,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final ForkChoicePayloadStatus payloadStatus,
-      final Optional<ReorgContext> optionalReorgContext) {
-    chainHeadUpdated(
-        slot,
-        stateRoot,
-        bestBlockRoot,
-        epochTransition,
-        executionOptimistic,
-        previousDutyDependentRoot,
-        currentDutyDependentRoot,
-        Optional.of(payloadStatus),
-        optionalReorgContext);
-  }
-
-  private void chainHeadUpdated(
-      final UInt64 slot,
-      final Bytes32 stateRoot,
-      final Bytes32 bestBlockRoot,
-      final boolean epochTransition,
-      final boolean executionOptimistic,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
       final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
     if (!syncing) {
@@ -101,7 +57,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                   slot,
                   reorg.getCommonAncestorRoot(),
                   reorg.getCommonAncestorSlot()));
-      notifyDelegate(
+      delegate.chainHeadUpdated(
           slot,
           stateRoot,
           bestBlockRoot,
@@ -139,40 +95,6 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                               currentDutyDependentRoot,
                               payloadStatus,
                               optionalReorgContext)));
-    }
-  }
-
-  private void notifyDelegate(
-      final UInt64 slot,
-      final Bytes32 stateRoot,
-      final Bytes32 bestBlockRoot,
-      final boolean epochTransition,
-      final boolean executionOptimistic,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final Optional<ForkChoicePayloadStatus> payloadStatus,
-      final Optional<ReorgContext> optionalReorgContext) {
-    if (payloadStatus.isPresent()) {
-      delegate.chainHeadUpdated(
-          slot,
-          stateRoot,
-          bestBlockRoot,
-          epochTransition,
-          executionOptimistic,
-          previousDutyDependentRoot,
-          currentDutyDependentRoot,
-          payloadStatus.get(),
-          optionalReorgContext);
-    } else {
-      delegate.chainHeadUpdated(
-          slot,
-          stateRoot,
-          bestBlockRoot,
-          epochTransition,
-          executionOptimistic,
-          previousDutyDependentRoot,
-          currentDutyDependentRoot,
-          optionalReorgContext);
     }
   }
 
@@ -218,7 +140,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     }
 
     public void send() {
-      notifyDelegate(
+      delegate.chainHeadUpdated(
           slot,
           stateRoot,
           bestBlockRoot,
