@@ -52,9 +52,10 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
       SLOT_PARAMETER.withDescription(
           "The slot for which payload attestation data should be created.");
 
-  private static final EnumTypeDefinition<SpecMilestone> GLOAS_MILESTONE_TYPE =
+  private static final EnumTypeDefinition<SpecMilestone> GLOAS_OR_LATER_MILESTONE_TYPE =
       new EnumTypeDefinition.EnumTypeBuilder<>(SpecMilestone.class, SpecMilestone::lowerCaseName)
-          .excludedEnumerations(EnumSet.complementOf(EnumSet.of(SpecMilestone.GLOAS)))
+          .excludedEnumerations(
+              EnumSet.copyOf(SpecMilestone.getAllPriorMilestones(SpecMilestone.GLOAS)))
           .example("gloas")
           .build();
 
@@ -135,7 +136,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
 
     return SerializableTypeDefinition.<ObjectAndMetaData<PayloadAttestationData>>object()
         .name("ProducePayloadAttestationDataResponse")
-        .withField("version", GLOAS_MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
+        .withField("version", GLOAS_OR_LATER_MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(
             "data",
             payloadAttestationDataSchema.getJsonTypeDefinition(),

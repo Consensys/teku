@@ -6,7 +6,7 @@
     "version" : {
       "type" : "string",
       "example" : "gloas",
-      "enum" : [ "gloas" ]
+      "enum" : [ "gloas", "heze" ]
     },
     "data" : {
       "$ref" : "#/components/schemas/PayloadAttestationData"

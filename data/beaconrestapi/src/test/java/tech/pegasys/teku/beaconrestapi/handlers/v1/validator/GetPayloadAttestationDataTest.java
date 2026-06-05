@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
@@ -113,5 +115,16 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
             RestApiConstants.SLOT,
             "payload_present",
             "blob_data_available");
+  }
+
+  @Test
+  void metadata_shouldDocumentPayloadAttestationDataMilestonesFromGloas() throws Exception {
+    final String schema =
+        JsonUtil.serialize(
+            handler.getMetadata().getResponseType(SC_OK, JSON)::serializeOpenApiType);
+
+    assertThat(schema)
+        .contains("\"enum\":[\"gloas\",\"heze\"]")
+        .doesNotContain("\"phase0\"", "\"fulu\"");
   }
 }
