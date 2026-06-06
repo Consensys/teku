@@ -153,7 +153,8 @@ public class SimpleSidecarRetrieverTest {
                 .getResponseScore())
         .isEqualTo(10);
 
-    final SafeFuture<DataColumnSidecar> resp0 = simpleSidecarRetriever.retrieve(id0);
+    final SafeFuture<DataColumnSidecar> resp0 =
+        simpleSidecarRetriever.retrieve(id0, Optional.empty());
 
     advanceTimeGradually(retrieverRound.multipliedBy(2));
 
@@ -201,6 +202,26 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void shouldUpgradePendingRequestWithBlobKzgCommitmentsBeforeReqResp() {
+    final TestPeer custodyPeer = createCustodyPeer();
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnIndex);
+    testPeerManager.connectPeer(custodyPeer);
+
+    simpleSidecarRetriever
+        .retrieve(columnId, Optional.empty())
+        .finish(err -> LOG.error("Error retrieving sidecar", err));
+    simpleSidecarRetriever
+        .retrieve(columnId, Optional.of(blobKzgCommitments))
+        .finish(err -> LOG.error("Error retrieving sidecar", err));
+    advanceTimeGradually(retrieverRound);
+
+    assertThat(testPeerManager.getLastBlobKzgCommitments()).contains(blobKzgCommitments);
+  }
+
+  @Test
   void selectingBestPeerShouldRespectRequestLimits() {
     final TestPeer nonCustodyPeer = createNonCustodyPeer();
     final TestPeer overloadedCustodyPeer = createCustodyPeer(0);
@@ -212,7 +233,9 @@ public class SimpleSidecarRetrieverTest {
 
     final DataColumnSlotAndIdentifier id0 =
         new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnIndex);
-    simpleSidecarRetriever.retrieve(id0).finish(err -> LOG.error("Error retrieving sidecar", err));
+    simpleSidecarRetriever
+        .retrieve(id0, Optional.empty())
+        .finish(err -> LOG.error("Error retrieving sidecar", err));
 
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 0, 0, 1));
@@ -249,7 +272,7 @@ public class SimpleSidecarRetrieverTest {
     final DataColumnSidecar sidecar0 =
         createSidecarAndAddToAllPeers(0, peerWithEarliestSlotAvailableZero);
     simpleSidecarRetriever
-        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar0))
+        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar0), Optional.empty())
         .finish(err -> LOG.error("Error retrieving sidecar", err));
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 0, 0));
@@ -258,7 +281,7 @@ public class SimpleSidecarRetrieverTest {
         createSidecarAndAddToAllPeers(
             1, peerWithEarliestSlotAvailableZero, peerWithEarliestSlotAvailableOne);
     simpleSidecarRetriever
-        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1))
+        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1), Optional.empty())
         .finish(err -> LOG.error("Error retrieving sidecar", err));
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 0));
@@ -270,7 +293,7 @@ public class SimpleSidecarRetrieverTest {
             peerWithEarliestSlotAvailableOne,
             peerWithEarliestSlotAvailableTwo);
     simpleSidecarRetriever
-        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar2))
+        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar2), Optional.empty())
         .finish(err -> LOG.error("Error retrieving sidecar", err));
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 1));
@@ -296,7 +319,7 @@ public class SimpleSidecarRetrieverTest {
           createSidecarAndAddToAllPeers(
               i, goodScoreCustodyPeer, medianScoreCustodyPeer, badScoreCustodyPeer);
       simpleSidecarRetriever
-          .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar))
+          .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), Optional.empty())
           .finish(err -> LOG.error("Error retrieving sidecar", err));
     }
 
@@ -311,7 +334,7 @@ public class SimpleSidecarRetrieverTest {
 
     final DataColumnSlotAndIdentifier id0 =
         new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnIndex);
-    SafeFuture<DataColumnSidecar> resp0_0 = simpleSidecarRetriever.retrieve(id0);
+    SafeFuture<DataColumnSidecar> resp0_0 = simpleSidecarRetriever.retrieve(id0, Optional.empty());
 
     advanceTimeGradually(retrieverRound);
     assertThat(custodyPeer.getRequests()).hasSize(1);
@@ -352,7 +375,8 @@ public class SimpleSidecarRetrieverTest {
             .limit(20_000)
             .toList();
 
-    columnIds.forEach(columnId -> simpleSidecarRetriever.retrieve(columnId).finishDebug(LOG));
+    columnIds.forEach(
+        columnId -> simpleSidecarRetriever.retrieve(columnId, Optional.empty()).finishDebug(LOG));
 
     Assertions.assertTimeout(Duration.ofSeconds(10), () -> advanceTimeGradually(retrieverRound));
   }
@@ -373,7 +397,7 @@ public class SimpleSidecarRetrieverTest {
             .map(colIdx -> new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, colIdx))
             .toList();
 
-    colIds.forEach(simpleSidecarRetriever::retrieve);
+    colIds.forEach(columnId -> simpleSidecarRetriever.retrieve(columnId, Optional.empty()));
 
     final int peerCustodyCount = custodyCountSupplier.getCustodyGroupCountForPeer(peer.getNodeId());
 
