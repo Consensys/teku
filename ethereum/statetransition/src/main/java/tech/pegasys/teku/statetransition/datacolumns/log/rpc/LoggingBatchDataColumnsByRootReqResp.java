@@ -14,10 +14,14 @@
 package tech.pegasys.teku.statetransition.datacolumns.log.rpc;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 
 public class LoggingBatchDataColumnsByRootReqResp implements BatchDataColumnsByRootReqResp {
@@ -32,13 +36,15 @@ public class LoggingBatchDataColumnsByRootReqResp implements BatchDataColumnsByR
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      final UInt256 nodeId, final List<DataColumnsByRootIdentifier> columnIdentifiers) {
+      final UInt256 nodeId,
+      final List<DataColumnsByRootIdentifier> columnIdentifiers,
+      final Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot) {
     final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         logger
             .getDataColumnSidecarsByRootLogger()
             .onOutboundRequest(LoggingPeerId.fromNodeId(nodeId), columnIdentifiers);
     return delegate
-        .requestDataColumnSidecarsByRoot(nodeId, columnIdentifiers)
+        .requestDataColumnSidecarsByRoot(nodeId, columnIdentifiers, blobKzgCommitmentsByRoot)
         .peek(responseLogger.asAsyncStreamVisitor());
   }
 

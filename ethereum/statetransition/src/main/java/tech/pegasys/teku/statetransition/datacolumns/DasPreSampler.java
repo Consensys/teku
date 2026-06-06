@@ -24,8 +24,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
@@ -85,8 +88,7 @@ public class DasPreSampler {
                         sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.CUSTODY)))
         .always(
             () ->
-                sampler
-                    .checkDataAvailability(block.getSlot(), block.getRoot())
+                checkDataAvailability(block)
                     .finish(
                         succ ->
                             LOG.debug(
@@ -99,6 +101,22 @@ public class DasPreSampler {
                                 block.getSlot(),
                                 block.getRoot(),
                                 err)));
+  }
+
+  private SafeFuture<List<UInt64>> checkDataAvailability(final SignedBeaconBlock block) {
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments = getBlobKzgCommitments(block);
+    if (blobKzgCommitments.isPresent()) {
+      return sampler.checkDataAvailability(block.getSlot(), block.getRoot(), blobKzgCommitments);
+    }
+    return sampler.checkDataAvailability(block.getSlot(), block.getRoot());
+  }
+
+  private Optional<SszList<SszKZGCommitment>> getBlobKzgCommitments(final SignedBeaconBlock block) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .map(BeaconBlockBodyGloas::getBlobKzgCommitments);
   }
 
   private List<DataColumnSlotAndIdentifier> calculateSamplingColumnIds(

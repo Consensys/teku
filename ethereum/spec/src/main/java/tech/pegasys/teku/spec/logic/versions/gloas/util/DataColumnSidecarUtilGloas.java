@@ -265,6 +265,24 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
+      final DataColumnSidecar dataColumnSidecar,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments,
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
+    return blobKzgCommitments
+        .map(
+            commitments ->
+                SafeFuture.completedFuture(
+                    verifyDataColumnSidecar(dataColumnSidecar, commitments)
+                        .or(
+                            () ->
+                                verifyDataColumnSidecarKzgProofs(dataColumnSidecar, commitments))))
+        .orElseGet(
+            () ->
+                validateAndVerifyKzgProofsWithBlock(dataColumnSidecar, retrieveSignedBlockByRoot));
+  }
+
+  @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       final DataColumnSidecar dataColumnSidecar,
       final Spec spec,
@@ -297,6 +315,12 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     final SszList<SszKZGCommitment> bidKzgCommitments =
         BeaconBlockBodyGloas.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments();
+    return verifyDataColumnSidecar(dataColumnSidecar, bidKzgCommitments);
+  }
+
+  private Optional<DataColumnSidecarValidationError> verifyDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar,
+      final SszList<SszKZGCommitment> bidKzgCommitments) {
     final boolean validDataColumnSidecar =
         miscHelpersGloas.verifyDataColumnSidecarWithCommitments(
             dataColumnSidecar, bidKzgCommitments);
@@ -312,6 +336,12 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     final SszList<SszKZGCommitment> bidKzgCommitments =
         BeaconBlockBodyGloas.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments();
+    return verifyDataColumnSidecarKzgProofs(dataColumnSidecar, bidKzgCommitments);
+  }
+
+  private Optional<DataColumnSidecarValidationError> verifyDataColumnSidecarKzgProofs(
+      final DataColumnSidecar dataColumnSidecar,
+      final SszList<SszKZGCommitment> bidKzgCommitments) {
     final boolean validDataColumnSidecar =
         miscHelpersGloas.verifyDataColumnSidecarKzgProofs(dataColumnSidecar, bidKzgCommitments);
     if (!validDataColumnSidecar) {

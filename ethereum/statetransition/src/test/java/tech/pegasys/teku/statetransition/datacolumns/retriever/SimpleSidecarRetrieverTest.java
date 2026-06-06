@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -35,6 +36,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -48,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -178,6 +181,23 @@ public class SimpleSidecarRetrieverTest {
     assertThat(nonCustodyPeer.getRequests()).isEmpty();
     assertThat(custodyPeerHavingData.getRequests()).hasSize(1);
     assertThat(custodyPeerMissingData.getRequests()).hasSize(2);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldForwardBlobKzgCommitmentsToReqResp() {
+    final TestPeer custodyPeer = createCustodyPeer();
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnIndex);
+    testPeerManager.connectPeer(custodyPeer);
+
+    simpleSidecarRetriever
+        .retrieve(columnId, Optional.of(blobKzgCommitments))
+        .finish(err -> LOG.error("Error retrieving sidecar", err));
+    advanceTimeGradually(retrieverRound);
+
+    assertThat(testPeerManager.getLastBlobKzgCommitments()).contains(blobKzgCommitments);
   }
 
   @Test

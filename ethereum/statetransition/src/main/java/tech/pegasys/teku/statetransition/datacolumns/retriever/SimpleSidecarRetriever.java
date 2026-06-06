@@ -37,12 +37,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -97,8 +99,16 @@ public class SimpleSidecarRetriever
 
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+    return retrieve(columnId, Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<DataColumnSidecar> retrieve(
+      final DataColumnSlotAndIdentifier columnId,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final RetrieveRequest request =
-        pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
+        pendingRequests.computeIfAbsent(
+            columnId, __ -> new RetrieveRequest(columnId, blobKzgCommitments));
     startIfNecessary();
     return request.result;
   }
@@ -146,7 +156,8 @@ public class SimpleSidecarRetriever
     }
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
-        reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
+        reqResp.requestDataColumnSidecar(
+            match.peer.nodeId, match.request.columnId, match.request.blobKzgCommitments);
     match.peer.countSidecarRequest();
 
     final SafeFuture<Void> activeRpcRequest =
@@ -306,10 +317,14 @@ public class SimpleSidecarRetriever
     final DataColumnSlotAndIdentifier columnId;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments;
     volatile ActiveRequest activeRpcRequest = null;
 
-    private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
+    private RetrieveRequest(
+        final DataColumnSlotAndIdentifier columnId,
+        final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
       this.columnId = columnId;
+      this.blobKzgCommitments = blobKzgCommitments;
     }
   }
 

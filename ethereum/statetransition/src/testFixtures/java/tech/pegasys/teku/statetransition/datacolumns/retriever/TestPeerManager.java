@@ -15,9 +15,12 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp {
@@ -25,6 +28,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
       new DataColumnPeerManagerStub();
 
   private final Map<UInt256, TestPeer> connectedPeers = new HashMap<>();
+  private Optional<SszList<SszKZGCommitment>> lastBlobKzgCommitments = Optional.empty();
 
   public void connectPeer(final TestPeer peer) {
     dataColumnPeerManagerStub.addPeer(peer);
@@ -40,6 +44,19 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
     } else {
       return peer.requestSidecar(columnIdentifier.toDataColumnIdentifier());
     }
+  }
+
+  @Override
+  public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
+      final UInt256 nodeId,
+      final DataColumnSlotAndIdentifier columnIdentifier,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    lastBlobKzgCommitments = blobKzgCommitments;
+    return requestDataColumnSidecar(nodeId, columnIdentifier);
+  }
+
+  public Optional<SszList<SszKZGCommitment>> getLastBlobKzgCommitments() {
+    return lastBlobKzgCommitments;
   }
 
   @Override

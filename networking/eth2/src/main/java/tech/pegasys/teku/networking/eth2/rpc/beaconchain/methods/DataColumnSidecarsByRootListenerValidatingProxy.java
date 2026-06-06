@@ -14,8 +14,11 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
@@ -24,6 +27,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -41,6 +45,28 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
       final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers,
       final CombinedChainDataClient combinedChainDataClient) {
+    this(
+        peer,
+        spec,
+        listener,
+        metricsSystem,
+        timeProvider,
+        dataColumnSidecarSignatureValidator,
+        expectedByRootIdentifiers,
+        combinedChainDataClient,
+        Map.of());
+  }
+
+  public DataColumnSidecarsByRootListenerValidatingProxy(
+      final Peer peer,
+      final Spec spec,
+      final RpcResponseListener<DataColumnSidecar> listener,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
+      final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers,
+      final CombinedChainDataClient combinedChainDataClient,
+      final Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot) {
     super(
         peer,
         spec,
@@ -55,7 +81,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
                             column ->
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .toList(),
-        combinedChainDataClient);
+        combinedChainDataClient,
+        blobKzgCommitmentsByRoot);
     this.listener = listener;
   }
 

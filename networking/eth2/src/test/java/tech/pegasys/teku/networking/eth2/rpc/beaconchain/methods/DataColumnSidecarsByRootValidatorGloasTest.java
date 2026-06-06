@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -25,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -32,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSidecarSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -114,5 +119,65 @@ public class DataColumnSidecarsByRootValidatorGloasTest
                 .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
                 .describe())
         .hasMessageContaining("DataColumnSidecar's KZG proofs do not match the bid's KZG proofs");
+  }
+
+  @Test
+  void dataColumnSidecarUsesScopedBlobKzgCommitmentsWhenBlockIsUnknown() {
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
+    final DataColumnSidecar dataColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        BeaconBlockBodyGloas.required(block1.getMessage().getBody()).getBlobKzgCommitments();
+    final DataColumnIdentifier sidecarIdentifier1_0 =
+        DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
+    blocksByRoot.remove(block1.getRoot());
+
+    validator =
+        new DataColumnSidecarsByRootValidator(
+            peer,
+            spec,
+            metricsSystem,
+            timeProvider,
+            dataColumnSidecarSignatureValidator,
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient,
+            Map.of(block1.getRoot(), blobKzgCommitments));
+
+    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0)).isCompleted();
+    verify(combinedChainDataClient, never()).getBlockByBlockRoot(block1.getRoot());
+  }
+
+  @Test
+  void dataColumnSidecarFailsKzgVerificationWithScopedBlobKzgCommitments() {
+    when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(false);
+
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
+    final DataColumnSidecar dataColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        BeaconBlockBodyGloas.required(block1.getMessage().getBody()).getBlobKzgCommitments();
+    final DataColumnIdentifier sidecarIdentifier1_0 =
+        DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
+    blocksByRoot.remove(block1.getRoot());
+
+    validator =
+        new DataColumnSidecarsByRootValidator(
+            peer,
+            spec,
+            metricsSystem,
+            timeProvider,
+            dataColumnSidecarSignatureValidator,
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient,
+            Map.of(block1.getRoot(), blobKzgCommitments));
+
+    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0))
+        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
+        .hasMessageContaining(
+            DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
+                .describe())
+        .hasMessageContaining("DataColumnSidecar's KZG proofs do not match the bid's KZG proofs");
+    verify(combinedChainDataClient, never()).getBlockByBlockRoot(block1.getRoot());
   }
 }

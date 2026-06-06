@@ -17,10 +17,12 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -53,10 +55,16 @@ public abstract class AbstractDataColumnSidecarValidator {
 
   SafeFuture<Optional<DataColumnSidecarValidationError>> verifyKzgProofs(
       final DataColumnSidecar dataColumnSidecar) {
+    return verifyKzgProofs(dataColumnSidecar, Optional.empty());
+  }
+
+  SafeFuture<Optional<DataColumnSidecarValidationError>> verifyKzgProofs(
+      final DataColumnSidecar dataColumnSidecar,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
-    return dataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(
-        dataColumnSidecar, combinedChainDataClient::getBlockByBlockRoot);
+    return dataColumnSidecarUtil.validateAndVerifyKzgProofs(
+        dataColumnSidecar, blobKzgCommitments, combinedChainDataClient::getBlockByBlockRoot);
   }
 
   boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {

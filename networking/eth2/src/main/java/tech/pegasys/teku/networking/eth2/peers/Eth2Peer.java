@@ -14,12 +14,14 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public interface Eth2Peer extends Peer, SyncSource {
@@ -117,7 +120,8 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<Void> requestDataColumnSidecarsByRoot(
       List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
-      RpcResponseListener<DataColumnSidecar> listener);
+      RpcResponseListener<DataColumnSidecar> listener,
+      Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot);
 
   SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
       List<Bytes32> beaconBlockRoots, RpcResponseListener<SignedExecutionPayloadEnvelope> listener);

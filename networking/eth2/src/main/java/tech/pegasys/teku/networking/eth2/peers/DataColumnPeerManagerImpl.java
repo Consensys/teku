@@ -16,14 +16,17 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamPublisher;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerManager;
@@ -64,7 +67,9 @@ public class DataColumnPeerManagerImpl
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      final UInt256 nodeId, final List<DataColumnsByRootIdentifier> byRootIdentifiers) {
+      final UInt256 nodeId,
+      final List<DataColumnsByRootIdentifier> byRootIdentifiers,
+      final Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot) {
     final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
     final AsyncStreamPublisher<DataColumnSidecar> ret =
         AsyncStream.createPublisher(Integer.MAX_VALUE);
@@ -72,7 +77,7 @@ public class DataColumnPeerManagerImpl
       ret.onError(new DataColumnReqResp.DasPeerDisconnectedException());
     } else {
       eth2Peer
-          .requestDataColumnSidecarsByRoot(byRootIdentifiers, ret::onNext)
+          .requestDataColumnSidecarsByRoot(byRootIdentifiers, ret::onNext, blobKzgCommitmentsByRoot)
           .finish(__ -> ret.onComplete(), ret::onError);
     }
     return ret;
