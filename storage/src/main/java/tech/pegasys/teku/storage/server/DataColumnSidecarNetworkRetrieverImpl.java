@@ -17,25 +17,37 @@ import static java.util.Collections.emptyList;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 public class DataColumnSidecarNetworkRetrieverImpl implements DataColumnSidecarNetworkRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
-  final Function<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> retriever;
+  final BiFunction<
+          DataColumnSlotAndIdentifier,
+          Optional<SszList<SszKZGCommitment>>,
+          SafeFuture<DataColumnSidecar>>
+      retriever;
   final Runnable retrieverFlusher;
   final Function<DataColumnSidecar, SafeFuture<Void>> dbWriter;
   final Duration retrievalTimeout;
 
   public DataColumnSidecarNetworkRetrieverImpl(
-      final Function<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> retriever,
+      final BiFunction<
+              DataColumnSlotAndIdentifier,
+              Optional<SszList<SszKZGCommitment>>,
+              SafeFuture<DataColumnSidecar>>
+          retriever,
       final Runnable retrieverFlusher,
       final Function<DataColumnSidecar, SafeFuture<Void>> dbWriter,
       final Duration retrievalTimeout) {
@@ -53,7 +65,7 @@ public class DataColumnSidecarNetworkRetrieverImpl implements DataColumnSidecarN
         requiredIdentifiers.stream()
             .map(
                 columnId -> {
-                  var rpcRequest = retriever.apply(columnId);
+                  var rpcRequest = retriever.apply(columnId, Optional.empty());
                   rpcRequest
                       .thenCompose(dbWriter)
                       .finish(
