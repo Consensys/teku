@@ -98,17 +98,12 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
-    return retrieve(columnId, Optional.empty());
-  }
-
-  @Override
   public SafeFuture<DataColumnSidecar> retrieve(
       final DataColumnSlotAndIdentifier columnId,
       final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final RetrieveRequest request =
-        pendingRequests.computeIfAbsent(
-            columnId, __ -> new RetrieveRequest(columnId, blobKzgCommitments));
+        pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
+    request.updateBlobKzgCommitments(blobKzgCommitments);
     startIfNecessary();
     return request.result;
   }
@@ -157,7 +152,7 @@ public class SimpleSidecarRetriever
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(
-            match.peer.nodeId, match.request.columnId, match.request.blobKzgCommitments);
+            match.peer.nodeId, match.request.columnId, match.request.getBlobKzgCommitments());
     match.peer.countSidecarRequest();
 
     final SafeFuture<Void> activeRpcRequest =
@@ -317,14 +312,30 @@ public class SimpleSidecarRetriever
     final DataColumnSlotAndIdentifier columnId;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments;
+    private volatile Optional<SszList<SszKZGCommitment>> blobKzgCommitments = Optional.empty();
     volatile ActiveRequest activeRpcRequest = null;
 
-    private RetrieveRequest(
-        final DataColumnSlotAndIdentifier columnId,
-        final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
-      this.blobKzgCommitments = blobKzgCommitments;
+    }
+
+    private synchronized void updateBlobKzgCommitments(
+        final Optional<SszList<SszKZGCommitment>> maybeBlobKzgCommitments) {
+      maybeBlobKzgCommitments.ifPresent(
+          newBlobKzgCommitments -> {
+            blobKzgCommitments.ifPresent(
+                existingBlobKzgCommitments -> {
+                  if (!existingBlobKzgCommitments.equals(newBlobKzgCommitments)) {
+                    throw new IllegalArgumentException(
+                        "Conflicting blob KZG commitments for " + columnId);
+                  }
+                });
+            blobKzgCommitments = Optional.of(newBlobKzgCommitments);
+          });
+    }
+
+    private Optional<SszList<SszKZGCommitment>> getBlobKzgCommitments() {
+      return blobKzgCommitments;
     }
   }
 

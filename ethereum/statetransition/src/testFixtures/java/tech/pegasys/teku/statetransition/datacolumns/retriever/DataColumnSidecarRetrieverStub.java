@@ -17,10 +17,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
@@ -28,7 +31,9 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   private static final Logger LOG = LogManager.getLogger();
 
   public record RetrieveRequest(
-      DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> future) {}
+      DataColumnSlotAndIdentifier columnId,
+      Optional<SszList<SszKZGCommitment>> blobKzgCommitments,
+      SafeFuture<DataColumnSidecar> future) {}
 
   public List<RetrieveRequest> requests = new ArrayList<>();
   private final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> readySidecars = new HashMap<>();
@@ -40,20 +45,23 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
     LOG.debug("ADD sidecar {}", colId);
     readySidecars.put(colId, sidecar);
     requests.stream()
-        .filter(req -> req.columnId.equals(colId))
-        .forEach(req -> req.future.complete(sidecar));
+        .filter(req -> req.columnId().equals(colId))
+        .forEach(req -> req.future().complete(sidecar));
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
-    final RetrieveRequest request = new RetrieveRequest(columnId, new SafeFuture<>());
+  public SafeFuture<DataColumnSidecar> retrieve(
+      final DataColumnSlotAndIdentifier columnId,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    final RetrieveRequest request =
+        new RetrieveRequest(columnId, blobKzgCommitments, new SafeFuture<>());
     LOG.debug("RETRIEVE sidecar {}", columnId);
     requests.add(request);
     final DataColumnSidecar maybeSidecar = readySidecars.get(columnId);
     if (maybeSidecar != null) {
-      request.future.complete(maybeSidecar);
+      request.future().complete(maybeSidecar);
     }
-    return request.future;
+    return request.future();
   }
 
   @Override

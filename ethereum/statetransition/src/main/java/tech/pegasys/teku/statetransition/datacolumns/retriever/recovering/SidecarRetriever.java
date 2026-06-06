@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,10 +30,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
@@ -138,19 +141,27 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<DataColumnSidecar> retrieve(
+      final DataColumnSlotAndIdentifier columnId,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final PendingRecoveryRequest pendingRecoveryRequest =
-        requests.computeIfAbsent(
+        requests.compute(
             columnId,
-            __ ->
-                new PendingRecoveryRequest(
-                    columnId,
-                    delegate.retrieve(columnId),
-                    timeProvider.getTimeInMillis(),
-                    recoveryTimeout,
-                    downloadTimeout,
-                    sidecarRecoveryMetric,
-                    () -> requests.remove(columnId)));
+            (__, existingRequest) -> {
+              if (existingRequest != null) {
+                blobKzgCommitments.ifPresent(
+                    ignored -> delegate.retrieve(columnId, blobKzgCommitments));
+                return existingRequest;
+              }
+              return new PendingRecoveryRequest(
+                  columnId,
+                  delegate.retrieve(columnId, blobKzgCommitments),
+                  timeProvider.getTimeInMillis(),
+                  recoveryTimeout,
+                  downloadTimeout,
+                  sidecarRecoveryMetric,
+                  () -> requests.remove(columnId));
+            });
     pendingRecoveryRequest.start();
     return pendingRecoveryRequest.getFuture();
   }

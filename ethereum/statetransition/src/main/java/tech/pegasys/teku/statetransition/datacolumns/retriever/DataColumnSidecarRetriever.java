@@ -31,18 +31,13 @@ public interface DataColumnSidecarRetriever {
    * @return a future which may run indefinitely until finds a requested data or cancelled or may
    *     complete exceptionally when cancelled or with {@link NotOnCanonicalChainException}
    */
-  SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId);
-
-  default SafeFuture<DataColumnSidecar> retrieve(
-      final DataColumnSlotAndIdentifier columnId,
-      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
-    return retrieve(columnId);
-  }
+  SafeFuture<DataColumnSidecar> retrieve(
+      DataColumnSlotAndIdentifier columnId, Optional<SszList<SszKZGCommitment>> blobKzgCommitments);
 
   /**
-   * The {@link #retrieve(DataColumnSlotAndIdentifier)} method may buffer requests and delay
-   * processing them till the next occasion. This method forces all the queued requests to be
-   * processed. However, requests could still be queued in a downstream component if there is a
+   * The {@link #retrieve(DataColumnSlotAndIdentifier, Optional)} method may buffer requests and
+   * delay processing them till the next occasion. This method forces all the queued requests to be
+   * processed. However, requests could still be queued in a downstream component if there is
    * congestion.
    */
   void flush();

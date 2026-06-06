@@ -538,7 +538,7 @@ public class DasSamplerBasicTest {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .doesNotContainKey(blockWithoutBlobs.getRoot());
     assertThat(asyncRunner.countDelayedActions()).isZero();
-    verify(retriever, never()).retrieve(any());
+    verify(retriever, never()).retrieve(any(), any());
   }
 
   @Test
@@ -633,7 +633,7 @@ public class DasSamplerBasicTest {
     asyncRunner.executeDueActions();
 
     assertThat(asyncRunner.countDelayedActions()).isZero();
-    verify(retriever, never()).retrieve(any());
+    verify(retriever, never()).retrieve(any(), any());
   }
 
   @Test
