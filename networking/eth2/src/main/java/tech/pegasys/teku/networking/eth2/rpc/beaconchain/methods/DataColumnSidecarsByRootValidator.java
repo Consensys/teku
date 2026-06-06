@@ -90,13 +90,22 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
     final MetricsHistogram.Timer kzgVerificationTimer =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
     return verifyKzgProofs(dataColumnSidecar)
-        .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+        .alwaysRun(kzgVerificationTimer.closeUnchecked())
+        .exceptionallyCompose(
+            error ->
+                SafeFuture.failedFuture(
+                    new DataColumnSidecarsResponseInvalidResponseException(
+                        peer,
+                        InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED,
+                        error)))
         .thenCompose(
             maybeKzgProofsValidationResult -> {
               if (maybeKzgProofsValidationResult.isPresent()) {
                 return SafeFuture.failedFuture(
                     new DataColumnSidecarsResponseInvalidResponseException(
-                        peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED));
+                        peer,
+                        InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED,
+                        maybeKzgProofsValidationResult.get()));
               }
               return SafeFuture.COMPLETE;
             });
