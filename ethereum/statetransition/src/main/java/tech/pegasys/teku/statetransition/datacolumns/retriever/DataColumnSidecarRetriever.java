@@ -15,8 +15,10 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
@@ -30,6 +32,12 @@ public interface DataColumnSidecarRetriever {
    *     complete exceptionally when cancelled or with {@link NotOnCanonicalChainException}
    */
   SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId);
+
+  default SafeFuture<DataColumnSidecar> retrieve(
+      final DataColumnSlotAndIdentifier columnId,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    return retrieve(columnId);
+  }
 
   /**
    * The {@link #retrieve(DataColumnSlotAndIdentifier)} method may buffer requests and delay

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -323,7 +324,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
     final List<DataColumnSidecar> dataColumnSidecars = new ArrayList<>();
     waitFor(
         peer.requestDataColumnSidecarsByRoot(
-            dataColumnIdentifiers, RpcResponseListener.from(dataColumnSidecars::add)));
+            dataColumnIdentifiers, RpcResponseListener.from(dataColumnSidecars::add), Map.of()));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return dataColumnSidecars;
   }

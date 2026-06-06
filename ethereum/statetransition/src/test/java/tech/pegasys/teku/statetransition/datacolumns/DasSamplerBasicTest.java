@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -93,7 +95,7 @@ public class DasSamplerBasicTest {
     currentSlotProvider = mock(CurrentSlotProvider.class);
     blockImportChannel = mock(BlockImportChannel.class);
 
-    when(retriever.retrieve(any()))
+    when(retriever.retrieve(any(), any()))
         .thenReturn(SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
 
     when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
@@ -164,7 +166,7 @@ public class DasSamplerBasicTest {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(new SafeFuture<>());
 
     final SafeFuture<List<UInt64>> completionFuture =
         sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
@@ -209,7 +211,7 @@ public class DasSamplerBasicTest {
               return futureSidecarsByIndex.get(id.columnIndex());
             })
         .when(retriever)
-        .retrieve(any());
+        .retrieve(any(), eq(Optional.empty()));
 
     when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()))
         .thenReturn(Duration.ofSeconds(1));
@@ -247,12 +249,37 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  @SuppressWarnings({"FutureReturnValueIgnored", "unchecked"})
+  void checkDataAvailability_shouldForwardBlobKzgCommitmentsToRetriever() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
+    when(retriever.retrieve(any(), eq(Optional.of(blobKzgCommitments))))
+        .thenReturn(new SafeFuture<>());
+
+    sampler.checkDataAvailability(
+        slotAndBlockRoot.getSlot(),
+        slotAndBlockRoot.getBlockRoot(),
+        Optional.of(blobKzgCommitments));
+
+    for (final UInt64 missingColumn : SAMPLING_INDICES) {
+      verify(retriever)
+          .retrieve(
+              new DataColumnSlotAndIdentifier(
+                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), missingColumn),
+              Optional.of(blobKzgCommitments));
+    }
+  }
+
+  @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldSetRPCFetchedToFalseOnFailureAndRPCFetchesAgain() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    when(retriever.retrieve(any()))
+    when(retriever.retrieve(any(), eq(Optional.empty())))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
 
     final SafeFuture<List<UInt64>> completionFuture =
@@ -269,9 +296,9 @@ public class DasSamplerBasicTest {
         .isSameAs(completionFuture);
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), false);
 
-    verify(retriever, times(SAMPLING_INDICES.size())).retrieve(any());
+    verify(retriever, times(SAMPLING_INDICES.size())).retrieve(any(), eq(Optional.empty()));
 
-    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(new SafeFuture<>());
 
     final SafeFuture<List<UInt64>> secondCompletionFuture =
         sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
@@ -279,7 +306,7 @@ public class DasSamplerBasicTest {
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
 
-    verify(retriever, times(SAMPLING_INDICES.size() * 2)).retrieve(any());
+    verify(retriever, times(SAMPLING_INDICES.size() * 2)).retrieve(any(), eq(Optional.empty()));
 
     assertThat(secondCompletionFuture).isSameAs(completionFuture);
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
@@ -291,7 +318,7 @@ public class DasSamplerBasicTest {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(new SafeFuture<>());
 
     when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
 
@@ -710,7 +737,9 @@ public class DasSamplerBasicTest {
 
     // verify we call retrieve for all missing columns
     for (final UInt64 missingColumn : missingColumns) {
-      verify(retriever).retrieve(new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn));
+      verify(retriever)
+          .retrieve(
+              new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn), Optional.empty());
     }
   }
 
