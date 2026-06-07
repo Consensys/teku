@@ -274,6 +274,37 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  @SuppressWarnings({"FutureReturnValueIgnored", "unchecked"})
+  void checkDataAvailability_shouldForwardBlobKzgCommitmentsToDelayedRetriever() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()))
+        .thenReturn(Duration.ofSeconds(1));
+    when(retriever.retrieve(any(), eq(Optional.of(blobKzgCommitments))))
+        .thenReturn(new SafeFuture<>());
+
+    sampler.checkDataAvailability(
+        slotAndBlockRoot.getSlot(),
+        slotAndBlockRoot.getBlockRoot(),
+        Optional.of(blobKzgCommitments));
+
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
+
+    stubTimeProvider.advanceTimeByMillis(1_000);
+    asyncRunner.executeDueActions();
+
+    for (final UInt64 missingColumn : SAMPLING_INDICES) {
+      verify(retriever)
+          .retrieve(
+              new DataColumnSlotAndIdentifier(
+                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), missingColumn),
+              Optional.of(blobKzgCommitments));
+    }
+  }
+
+  @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldSetRPCFetchedToFalseOnFailureAndRPCFetchesAgain() {
     final SlotAndBlockRoot slotAndBlockRoot =

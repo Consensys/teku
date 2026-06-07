@@ -18,11 +18,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
@@ -35,6 +38,7 @@ record DataColumnSamplingTracker(
     SafeFuture<List<UInt64>> completionFuture,
     AtomicBoolean fullySampled,
     AtomicBoolean blockImportOnCompletionEnabled,
+    AtomicReference<Optional<SszList<SszKZGCommitment>>> blobKzgCommitments,
     Optional<Integer> earlyCompletionRequirementCount) {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -56,7 +60,30 @@ record DataColumnSamplingTracker(
         completionFuture,
         new AtomicBoolean(false),
         new AtomicBoolean(false),
+        new AtomicReference<>(Optional.empty()),
         completionColumnCount);
+  }
+
+  void updateBlobKzgCommitments(final Optional<SszList<SszKZGCommitment>> maybeBlobKzgCommitments) {
+    maybeBlobKzgCommitments.ifPresent(
+        newBlobKzgCommitments -> {
+          final Optional<SszList<SszKZGCommitment>> newValue = Optional.of(newBlobKzgCommitments);
+          blobKzgCommitments.updateAndGet(
+              currentValue -> {
+                if (currentValue.isEmpty()) {
+                  return newValue;
+                }
+                if (!currentValue.get().equals(newBlobKzgCommitments)) {
+                  throw new IllegalArgumentException(
+                      "Conflicting blob KZG commitments for " + blockRoot);
+                }
+                return currentValue;
+              });
+        });
+  }
+
+  Optional<SszList<SszKZGCommitment>> getBlobKzgCommitments() {
+    return blobKzgCommitments.get();
   }
 
   boolean enableBlockImportOnCompletion() {
