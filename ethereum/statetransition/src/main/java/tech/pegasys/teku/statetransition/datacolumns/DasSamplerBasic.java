@@ -120,6 +120,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final Bytes32 blockRoot,
       final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
+    tracker.updateBlobKzgCommitments(blobKzgCommitments);
 
     if (tracker.completionFuture().isDone()) {
       return tracker.completionFuture();
@@ -145,7 +146,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     tracker.rpcFetchInProgress().set(true);
     asyncRunner
         .getDelayedFuture(delay)
-        .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker, Optional.empty()));
+        .always(
+            () ->
+                fetchMissingColumnsViaRPC(
+                    slot, blockRoot, tracker, tracker.getBlobKzgCommitments()));
   }
 
   private void fetchMissingColumnsViaRPC(
