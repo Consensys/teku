@@ -616,6 +616,45 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
+  public UInt64 getPayloadAttesterCount(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return UInt64.valueOf(
+          getForkChoiceModelForRoot(blockRoot)
+              .map(forkChoiceModel -> forkChoiceModel.getPayloadAttesterCount(blockRoot))
+              .orElse(0));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public UInt64 getPayloadAvailabilityYesCount(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return UInt64.valueOf(
+          getForkChoiceModelForRoot(blockRoot)
+              .map(forkChoiceModel -> forkChoiceModel.getPayloadAvailabilityYesCount(blockRoot))
+              .orElse(0));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public UInt64 getPayloadDataAvailabilityYesCount(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return UInt64.valueOf(
+          getForkChoiceModelForRoot(blockRoot)
+              .map(forkChoiceModel -> forkChoiceModel.getPayloadDataAvailabilityYesCount(blockRoot))
+              .orElse(0));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   private Optional<ProtoNode> getAncestorProtoNode(final Bytes32 blockRoot, final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {

@@ -105,6 +105,27 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
   }
 
   @Test
+  public void getForkChoiceDataV2_shouldReturnFullPayloadStatusBeforeGloas() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            spec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+
+    final ForkChoiceDataV2 forkChoiceData = provider.getForkChoiceDataV2();
+
+    assertThat(forkChoiceData.getNodes()).isNotEmpty();
+    assertThat(forkChoiceData.getNodes())
+        .allSatisfy(
+            node ->
+                assertThat(node.getPayloadStatus())
+                    .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL));
+  }
+
+  @Test
   public void getGenesisTime_shouldThrowIfStoreNotAvailable() {
     final ChainDataProvider provider =
         new ChainDataProvider(
