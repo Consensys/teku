@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -78,6 +77,7 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
+import tech.pegasys.teku.storage.server.DataColumnSidecarPruneFrontier;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
@@ -122,14 +122,6 @@ public class KvStoreDatabase implements Database {
       return displayName;
     }
   }
-
-  // In-memory, oldest-first prune frontier per sidecar type: the next slot a prune run should start
-  // its forward scan from. Lets consecutive runs continue past already-pruned slots instead of
-  // re-crossing the deletion tombstones left below them. Not persisted; rebuilt from the first slot
-  // with data column sidecar support on the first run after a restart. Written only from the single
-  // pruner task; ConcurrentHashMap provides visibility across async-runner threads.
-  private final Map<DataColumnSidecarType, UInt64> dataColumnSidecarPruneFrontier =
-      new ConcurrentHashMap<>();
 
   KvStoreDatabase(
       final KvStoreCombinedDao dao,
@@ -1286,22 +1278,27 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
+  public DataColumnSidecarPruneFrontier pruneAllSidecars(
+      final UInt64 tillSlotInclusive,
+      final int pruneLimit,
+      final DataColumnSidecarPruneFrontier frontier) {
     final long startTime = System.currentTimeMillis();
     LOG.debug(
         "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL)) {
-      LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
-    }
-
-    if (pruneDataColumnSidecars(
-        pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL)) {
-      LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
-    }
+    final Optional<UInt64> canonicalFrontier =
+        pruneDataColumnSidecars(
+            pruneLimit, tillSlotInclusive, frontier.canonical(), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nonCanonicalFrontier =
+        pruneDataColumnSidecars(
+            pruneLimit,
+            tillSlotInclusive,
+            frontier.nonCanonical(),
+            DataColumnSidecarType.NON_CANONICAL);
 
     LOG.debug(
         "Data column sidecars pruning completed in {} ms", System.currentTimeMillis() - startTime);
+    return new DataColumnSidecarPruneFrontier(canonicalFrontier, nonCanonicalFrontier);
   }
 
   /**
@@ -1310,63 +1307,71 @@ public class KvStoreDatabase implements Database {
    * transaction. Pruning oldest-first keeps the earliest retained slot advancing and prevents a gap
    * from forming when sidecars are stored faster than they can be pruned.
    *
-   * <p>The forward scan starts from an in-memory frontier (the slot after the newest slot pruned
-   * for this sidecar type) rather than the fixed first slot with data column sidecar support, so in
-   * steady state the opening seek lands directly on live data instead of crossing the deletion
-   * tombstones left below it. The frontier is not persisted; after a restart the first run falls
-   * back to the first supported slot and rebuilds it. Gaps between populated slots are skipped, so
-   * the batch always spans {@code pruneSlotLimit} populated slots regardless of how far apart they
-   * are.
+   * <p>The forward scan starts from {@code currentFrontier} (the slot after the newest slot pruned
+   * for this sidecar type on the previous run) rather than the fixed first slot with data column
+   * sidecar support, so in steady state the opening seek lands directly on live data instead of
+   * crossing the deletion tombstones left below it. The frontier is owned by the caller; on a cold
+   * start ({@code currentFrontier} empty) the scan falls back to the first supported slot. Gaps
+   * between populated slots are skipped, so the batch always spans {@code pruneSlotLimit} populated
+   * slots regardless of how far apart they are.
+   *
+   * @return the advanced frontier (the slot after the newest slot pruned), or {@code
+   *     currentFrontier} unchanged when nothing was pruned.
    */
-  boolean pruneDataColumnSidecars(
+  Optional<UInt64> pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final UInt64 tillSlotInclusive,
+      final Optional<UInt64> currentFrontier,
       final DataColumnSidecarType sidecarType) {
 
     final long startTime = System.currentTimeMillis();
 
     if (pruneSlotLimit <= 0) {
-      return true;
+      return currentFrontier;
     }
 
     final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
-      return false;
+      return currentFrontier;
     }
 
-    final UInt64 fromSlot =
-        dataColumnSidecarPruneFrontier.getOrDefault(
-            sidecarType, maybeFirstDataColumnSidecarSlot.get());
+    final UInt64 fromSlot = currentFrontier.orElse(maybeFirstDataColumnSidecarSlot.get());
     if (fromSlot.isGreaterThan(tillSlotInclusive)) {
-      return false;
+      return currentFrontier;
     }
 
     final DataColumnSidecarsToPrune toPrune =
         collectOldestSidecarsToPrune(pruneSlotLimit, fromSlot, tillSlotInclusive, sidecarType);
 
-    if (!toPrune.keys().isEmpty()) {
-      try (final FinalizedUpdater updater = finalizedUpdater()) {
-        for (final DataColumnSlotAndIdentifier key : toPrune.keys()) {
-          removeDataColumnSidecar(sidecarType, updater, key);
-        }
-        updater.commit();
-      }
-      // Advance the frontier past the newest slot pruned in this batch (keys are slot-ascending).
-      dataColumnSidecarPruneFrontier.put(sidecarType, toPrune.keys().getLast().slot().plus(1));
-
-      LOG.debug(
-          "Pruned {} {} data column sidecars across {} slots ({},{}) in {} ms",
-          toPrune.keys().size(),
-          sidecarType.displayName(),
-          toPrune.distinctSlots(),
-          toPrune.keys.getFirst().slot(),
-          toPrune.keys.getLast().slot(),
-          System.currentTimeMillis() - startTime);
-    } else {
+    if (toPrune.keys().isEmpty()) {
       LOG.debug("No {} data column sidecars to prune", sidecarType.displayName());
+      return currentFrontier;
     }
 
-    return toPrune.distinctSlots() >= pruneSlotLimit;
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      for (final DataColumnSlotAndIdentifier key : toPrune.keys()) {
+        removeDataColumnSidecar(sidecarType, updater, key);
+      }
+      updater.commit();
+    }
+
+    if (toPrune.distinctSlots() >= pruneSlotLimit) {
+      LOG.debug(
+          "{} data column sidecars pruning reached the limit of {}",
+          sidecarType.displayName(),
+          pruneSlotLimit);
+    }
+    LOG.debug(
+        "Pruned {} {} data column sidecars across {} slots ({},{}) in {} ms",
+        toPrune.keys().size(),
+        sidecarType.displayName(),
+        toPrune.distinctSlots(),
+        toPrune.keys().getFirst().slot(),
+        toPrune.keys().getLast().slot(),
+        System.currentTimeMillis() - startTime);
+
+    // Advance the frontier past the newest slot pruned in this batch (keys are slot-ascending).
+    return Optional.of(toPrune.keys().getLast().slot().plus(1));
   }
 
   /**

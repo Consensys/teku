@@ -25,8 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
@@ -40,8 +38,6 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class RocksDbInstance implements KvStoreAccessor {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final TransactionDB db;
   private final ColumnFamilyHandle defaultHandle;

@@ -306,6 +306,9 @@ public interface Database extends AutoCloseable {
 
   void addNonCanonicalSidecar(DataColumnSidecar sidecar);
 
-  // prunes both canonical and non canonical sidecars
-  void pruneAllSidecars(UInt64 tillSlotInclusive, int pruneLimit);
+  // Prunes both canonical and non-canonical sidecars oldest-first, starting each forward scan from
+  // the supplied frontier and returning the advanced frontier for the next run. The caller owns the
+  // frontier so the database stays stateless across prune runs.
+  DataColumnSidecarPruneFrontier pruneAllSidecars(
+      UInt64 tillSlotInclusive, int pruneLimit, DataColumnSidecarPruneFrontier frontier);
 }

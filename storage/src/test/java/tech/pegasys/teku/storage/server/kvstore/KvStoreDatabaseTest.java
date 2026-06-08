@@ -54,25 +54,28 @@ class KvStoreDatabaseTest {
   void prunesOldestDistinctSlotsInASingleCommit() {
     final KvStoreDatabase database = database(UInt64.valueOf(10), 28, 29, 30);
 
-    final boolean limitReached =
-        database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nextFrontier =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots).containsExactly(UInt64.valueOf(28), UInt64.valueOf(29));
     assertThat(commits).hasValue(1);
-    assertThat(limitReached).isTrue();
+    // Frontier advances past the newest pruned slot (29).
+    assertThat(nextFrontier).contains(UInt64.valueOf(30));
   }
 
   @Test
   void prunesOnlyUpToTheLimitDistinctSlots() {
     final KvStoreDatabase database = database(UInt64.ZERO, 10, 11, 12, 13, 14);
 
-    final boolean limitReached =
-        database.pruneDataColumnSidecars(2, UInt64.valueOf(14), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nextFrontier =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(14), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
     // Only the oldest 2 slots (10 and 11) are pruned.
     assertThat(removedSlots).containsExactly(UInt64.valueOf(10), UInt64.valueOf(11));
     assertThat(commits).hasValue(1);
-    assertThat(limitReached).isTrue();
+    assertThat(nextFrontier).contains(UInt64.valueOf(12));
   }
 
   @Test
@@ -81,37 +84,38 @@ class KvStoreDatabaseTest {
     // are no slots in between them.
     final KvStoreDatabase database = database(UInt64.ZERO, 1, 100);
 
-    final boolean limitReached =
-        database.pruneDataColumnSidecars(2, UInt64.valueOf(100), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nextFrontier =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(100), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots).containsExactly(UInt64.ONE, UInt64.valueOf(100));
     assertThat(commits).hasValue(1);
-    assertThat(limitReached).isTrue();
+    assertThat(nextFrontier).contains(UInt64.valueOf(101));
   }
 
   @Test
   void stopsWhenFewerThanLimitDistinctSlotsAreAvailable() {
     final KvStoreDatabase database = database(UInt64.valueOf(10), 10, 11, 12);
 
-    final boolean limitReached =
-        database.pruneDataColumnSidecars(10, UInt64.valueOf(12), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nextFrontier =
+        database.pruneDataColumnSidecars(
+            10, UInt64.valueOf(12), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots)
         .containsExactly(UInt64.valueOf(10), UInt64.valueOf(11), UInt64.valueOf(12));
     assertThat(commits).hasValue(1);
-    // Fewer distinct slots than the limit were available, so the limit was not the reason we
-    // stopped.
-    assertThat(limitReached).isFalse();
+    assertThat(nextFrontier).contains(UInt64.valueOf(13));
   }
 
   @Test
   void coldStartScanBeginsAtFirstSupportedSlot() {
     final KvStoreDatabase database = database(UInt64.valueOf(10), 28, 29, 30);
 
-    database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(
+        2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
-    // With no frontier cached yet, the forward scan starts at the first slot with data column
-    // sidecar support.
+    // With an empty frontier, the forward scan starts at the first slot with data column sidecar
+    // support.
     assertThat(streamedRanges)
         .containsExactly(new SlotRange(UInt64.valueOf(10), UInt64.valueOf(30)));
   }
@@ -120,13 +124,19 @@ class KvStoreDatabaseTest {
   void frontierAdvancesSoConsecutiveRunsDoNotRescanPrunedSlots() {
     final KvStoreDatabase database = database(UInt64.ZERO, 10, 11, 12, 13, 14);
 
-    database.pruneDataColumnSidecars(2, UInt64.valueOf(14), DataColumnSidecarType.CANONICAL);
-    database.pruneDataColumnSidecars(2, UInt64.valueOf(14), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> afterFirstRun =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(14), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> afterSecondRun =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(14), afterFirstRun, DataColumnSidecarType.CANONICAL);
 
     // Run 1 prunes 10,11 then run 2 continues from 12 (the frontier), never re-scanning from 0.
     assertThat(removedSlots)
         .containsExactly(
             UInt64.valueOf(10), UInt64.valueOf(11), UInt64.valueOf(12), UInt64.valueOf(13));
+    assertThat(afterFirstRun).contains(UInt64.valueOf(12));
+    assertThat(afterSecondRun).contains(UInt64.valueOf(14));
     assertThat(streamedRanges)
         .containsExactly(
             new SlotRange(UInt64.ZERO, UInt64.valueOf(14)),
@@ -138,25 +148,27 @@ class KvStoreDatabaseTest {
   void doesNothingWhenNoSidecarsAtOrBeforeCutoff() {
     final KvStoreDatabase database = database(UInt64.valueOf(10));
 
-    final boolean limitReached =
-        database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nextFrontier =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots).isEmpty();
     assertThat(commits).hasValue(0);
-    assertThat(limitReached).isFalse();
+    assertThat(nextFrontier).isEmpty();
   }
 
   @Test
   void doesNothingWhenFirstSupportedSlotIsAfterCutoff() {
     final KvStoreDatabase database = database(UInt64.valueOf(40), 50);
 
-    final boolean limitReached =
-        database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
+    final Optional<UInt64> nextFrontier =
+        database.pruneDataColumnSidecars(
+            2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
 
     assertThat(streamedRanges).isEmpty();
     assertThat(removedSlots).isEmpty();
     assertThat(commits).hasValue(0);
-    assertThat(limitReached).isFalse();
+    assertThat(nextFrontier).isEmpty();
   }
 
   private KvStoreDatabase database(final UInt64 firstFuluSlot, final long... slots) {

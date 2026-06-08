@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.pruner;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.storage.server.DataColumnSidecarPruneFrontier;
 import tech.pegasys.teku.storage.server.Database;
 
 public class DataColumnSidecarPrunerTest {
@@ -69,6 +71,8 @@ public class DataColumnSidecarPrunerTest {
   @BeforeEach
   void setUp() {
     when(database.getGenesisTime()).thenReturn(Optional.of(genesisTime));
+    when(database.pruneAllSidecars(any(), anyInt(), any()))
+        .thenReturn(DataColumnSidecarPruneFrontier.INITIAL);
     assertThat(dataColumnSidecarPruner.start()).isCompleted();
   }
 
@@ -79,7 +83,7 @@ public class DataColumnSidecarPrunerTest {
     asyncRunner.executeDueActions();
 
     verify(database).getGenesisTime();
-    verify(database, never()).pruneAllSidecars(any(), anyInt());
+    verify(database, never()).pruneAllSidecars(any(), anyInt(), any());
   }
 
   @Test
@@ -102,6 +106,8 @@ public class DataColumnSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(database).pruneAllSidecars(earliestSlotToKeep, PRUNE_LIMIT);
+    verify(database)
+        .pruneAllSidecars(
+            eq(earliestSlotToKeep), eq(PRUNE_LIMIT), eq(DataColumnSidecarPruneFrontier.INITIAL));
   }
 }

@@ -48,6 +48,7 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
+import tech.pegasys.teku.storage.server.DataColumnSidecarPruneFrontier;
 import tech.pegasys.teku.storage.server.Database;
 
 public class NoOpDatabase implements Database {
@@ -442,7 +443,12 @@ public class NoOpDatabase implements Database {
   public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {}
 
   @Override
-  public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {}
+  public DataColumnSidecarPruneFrontier pruneAllSidecars(
+      final UInt64 tillSlotInclusive,
+      final int pruneLimit,
+      final DataColumnSidecarPruneFrontier frontier) {
+    return frontier;
+  }
 
   @Override
   public void close() {}
