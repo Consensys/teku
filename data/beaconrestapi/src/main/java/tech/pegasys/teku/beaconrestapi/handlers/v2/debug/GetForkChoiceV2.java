@@ -21,11 +21,11 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
 import io.javalin.http.Header;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -38,7 +38,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -101,9 +100,35 @@ public class GetForkChoiceV2 extends RestApiEndpoint {
                       "Number of PTC members that voted the payload's data as available."),
                   ForkChoiceNodeDataV2::getPayloadDataAvailabilityYesCount)
               .withField(
-                  "extra_data",
-                  NODE_EXTRA_DATA_TYPE,
-                  forkChoiceNode -> createNodeExtraData(forkChoiceNode.getNode()))
+                  "state_root",
+                  BYTES32_TYPE.withDescription("The signing merkle root of the `BeaconState`."),
+                  node -> node.getNode().getStateRoot())
+              .withField(
+                  "justified_root",
+                  BYTES32_TYPE.withDescription("The root of the justified checkpoint."),
+                  node -> node.getNode().getCheckpoints().getJustifiedCheckpoint().getRoot())
+              .withField(
+                  "unrealised_justified_epoch",
+                  UINT64_TYPE.withDescription("The epoch of the unrealized justified checkpoint."),
+                  node ->
+                      node.getNode().getCheckpoints().getUnrealizedJustifiedCheckpoint().getEpoch())
+              .withField(
+                  "unrealized_justified_root",
+                  BYTES32_TYPE.withDescription("The root of the unrealized justified checkpoint."),
+                  node ->
+                      node.getNode().getCheckpoints().getUnrealizedJustifiedCheckpoint().getRoot())
+              .withField(
+                  "unrealised_finalized_epoch",
+                  UINT64_TYPE.withDescription("The epoch of the unrealized finalized checkpoint."),
+                  node ->
+                      node.getNode().getCheckpoints().getUnrealizedFinalizedCheckpoint().getEpoch())
+              .withField(
+                  "unrealized_finalized_root",
+                  BYTES32_TYPE.withDescription("The root of the unrealized finalized checkpoint."),
+                  node ->
+                      node.getNode().getCheckpoints().getUnrealizedFinalizedCheckpoint().getRoot())
+              .withOptionalField(
+                  "extra_data", NODE_EXTRA_DATA_TYPE, __ -> Optional.of(Collections.emptyMap()))
               .build());
 
   private static final SerializableTypeDefinition<ForkChoiceDataV2> DATA_TYPE =
@@ -154,27 +179,6 @@ public class GetForkChoiceV2 extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     request.respondOk(chainDataProvider.getForkChoiceDataV2());
-  }
-
-  private static Map<String, String> createNodeExtraData(final ProtoNodeData node) {
-    return ImmutableMap.<String, String>builder()
-        .put("state_root", node.getStateRoot().toHexString())
-        .put(
-            "justified_root",
-            node.getCheckpoints().getJustifiedCheckpoint().getRoot().toHexString())
-        .put(
-            "unrealised_justified_epoch",
-            node.getCheckpoints().getUnrealizedJustifiedCheckpoint().getEpoch().toString())
-        .put(
-            "unrealized_justified_root",
-            node.getCheckpoints().getUnrealizedJustifiedCheckpoint().getRoot().toHexString())
-        .put(
-            "unrealised_finalized_epoch",
-            node.getCheckpoints().getUnrealizedFinalizedCheckpoint().getEpoch().toString())
-        .put(
-            "unrealized_finalized_root",
-            node.getCheckpoints().getUnrealizedFinalizedCheckpoint().getRoot().toHexString())
-        .build();
   }
 
   private static String payloadStatusToString(final ForkChoicePayloadStatus payloadStatus) {
