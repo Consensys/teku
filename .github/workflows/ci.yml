@@ -291,7 +291,7 @@ jobs:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Unit Tests
       stage_key: unit
-      gradle_task: test
+      gradle_task: "test -x jacocoTestReport"
       src_pattern: "*/src/test/java/*"
       src_root: "src/test/java"
       runner: "gha-runner-scale-set-ubuntu-24-amd64-large"
