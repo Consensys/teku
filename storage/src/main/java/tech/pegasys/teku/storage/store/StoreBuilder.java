@@ -73,14 +73,14 @@ public class StoreBuilder {
   public static OnDiskStoreData forkChoiceStoreBuilder(
       final Spec spec, final AnchorPoint anchor, final UInt64 currentTime) {
     final UInt64 genesisTime = anchor.getState().getGenesisTime();
-    final UInt64 slot = anchor.getState().getSlot();
-    final UInt64 time = spec.computeTimeAtSlot(slot, genesisTime).max(currentTime);
+    final UInt64 blockSlot = anchor.getBlockSlot();
+    final UInt64 blockTime = spec.computeTimeAtSlot(blockSlot, genesisTime).max(currentTime);
 
     Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
     blockInfo.put(
         anchor.getRoot(),
         new StoredBlockMetadata(
-            slot,
+            blockSlot,
             anchor.getRoot(),
             anchor.getParentRoot(),
             anchor.getState().hashTreeRoot(),
@@ -90,7 +90,7 @@ public class StoreBuilder {
             StoredBlockMetadata.extractGloasForkChoiceRebuildData(anchor)));
 
     return new OnDiskStoreData(
-        time,
+        blockTime,
         Optional.of(anchor.getCheckpoint()),
         genesisTime,
         anchor,

@@ -80,6 +80,15 @@ public class AggregateAttestationValidator {
     final UInt64 aggregateSlot = aggregate.getData().getSlot();
     final SpecVersion specVersion = spec.atSlot(aggregateSlot);
 
+    if (aggregate.requiresCommitteeBits()) {
+      // [REJECT] len(committee_indices) == 1, where committee_indices =
+      // get_committee_indices(aggregate)
+      if (aggregate.getCommitteeBitsRequired().getBitCount() != 1) {
+        return completedFuture(
+            reject("Rejecting attestation because committee bits count is not 1"));
+      }
+    }
+
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
             aggregateAndProof.getIndex(), spec.computeEpochAtSlot(aggregateSlot));

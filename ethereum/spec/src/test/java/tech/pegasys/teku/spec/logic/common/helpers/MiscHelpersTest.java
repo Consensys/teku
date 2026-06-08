@@ -43,6 +43,11 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersTest {
+  private static final SpecConfig MINIMAL_SPEC_CONFIG =
+      TestSpecFactory.createMinimalPhase0().getGenesisSpecConfig();
+  private static final int SECONDS_PER_SLOT = MINIMAL_SPEC_CONFIG.getSecondsPerSlot();
+  private static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY =
+      MINIMAL_SPEC_CONFIG.getMaximumGossipClockDisparity();
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
   private static final UInt64 GENESIS_TIME_MILLIS = GENESIS_TIME.times(1000L);
 
@@ -288,6 +293,21 @@ class MiscHelpersTest {
         .isEqualTo(slot50TimeMillis);
   }
 
+  @ParameterizedTest
+  @MethodSource("provideCurrentTimeWithinInclusiveSlotRangeArguments")
+  void isCurrentTimeWithinInclusiveSlotRange_shouldApplyClockDisparityToBothBoundaries(
+      final UInt64 currentTimeMillis, final boolean expectedResult) {
+    // set genesisTime as 0 for simplification
+    final UInt64 genesisTimeSeconds = UInt64.ZERO;
+    final UInt64 startSlot = UInt64.valueOf(8);
+    final UInt64 inclusiveEndSlotOffset = UInt64.valueOf(7);
+
+    assertThat(
+            miscHelpers.isCurrentTimeWithinInclusiveSlotRange(
+                startSlot, inclusiveEndSlotOffset, genesisTimeSeconds, currentTimeMillis))
+        .isEqualTo(expectedResult);
+  }
+
   @Test
   public void getCurrentSlot_shouldGetZeroAtGenesis() {
     assertThat(miscHelpers.computeSlotAtTime(GENESIS_TIME, GENESIS_TIME)).isEqualTo(UInt64.ZERO);
@@ -341,6 +361,21 @@ class MiscHelpersTest {
         Arguments.of(UInt64.valueOf(4), 6 * 4),
         Arguments.of(UInt64.ZERO, 0),
         Arguments.of(UInt64.valueOf(10042), 60252));
+  }
+
+  private static Stream<Arguments> provideCurrentTimeWithinInclusiveSlotRangeArguments() {
+    return Stream.of(
+        // start of [8, 15], with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance
+        Arguments.of(getTimeForSlotInMillis(8).minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY + 1), false),
+        Arguments.of(getTimeForSlotInMillis(8).minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY), true),
+        Arguments.of(getTimeForSlotInMillis(12), true),
+        // end of [8, 15] is start of slot 16, with MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance
+        Arguments.of(getTimeForSlotInMillis(16).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY), true),
+        Arguments.of(getTimeForSlotInMillis(16).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY + 1), false));
+  }
+
+  private static UInt64 getTimeForSlotInMillis(final int slot) {
+    return secondsToMillis(UInt64.valueOf(slot).times(SECONDS_PER_SLOT));
   }
 
   public static Stream<Arguments> getNValues() {
