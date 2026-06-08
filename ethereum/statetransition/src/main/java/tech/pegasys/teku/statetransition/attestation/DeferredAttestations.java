@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
@@ -48,16 +47,6 @@ public class DeferredAttestations {
     deferredVoteUpdatesBySlot
         .computeIfAbsent(attestation.data().getSlot(), VoteUpdates::new)
         .addAttestation(attestation, fullPayloadHint);
-  }
-
-  public void addVote(
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final UInt64 validatorIndex,
-      final boolean fullPayloadHint) {
-    deferredVoteUpdatesBySlot
-        .computeIfAbsent(slot, VoteUpdates::new)
-        .addVote(blockRoot, validatorIndex, fullPayloadHint);
   }
 
   public Collection<DeferredVotes> prune(final UInt64 currentSlot) {

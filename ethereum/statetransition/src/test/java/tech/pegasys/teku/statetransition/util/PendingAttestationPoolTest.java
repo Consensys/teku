@@ -15,17 +15,27 @@ package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.tuweni.bytes.Bytes;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PendingAttestationPoolTest {
-  private final Spec spec = TestSpecFactory.createDefault();
+  private final Spec spec = TestSpecFactory.createMinimalGloas();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationSchema<?> attestationSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final PendingAttestationPool pendingAttestationPool =
       new PoolFactory(new StubMetricsSystem()).createPendingAttestationPool(spec, 10);
   private final UInt64 currentSlot = UInt64.valueOf(10);
@@ -36,20 +46,57 @@ public class PendingAttestationPoolTest {
   }
 
   @Test
-  public void fullPayloadVotes_shouldNotCollideWhenBlockRootsSharePrefix() {
-    final Bytes sharedPrefix = Bytes.repeat((byte) 1, 16);
-    final Bytes32 blockRoot1 =
-        Bytes32.wrap(Bytes.concatenate(sharedPrefix, Bytes.repeat((byte) 2, 16)));
-    final Bytes32 blockRoot2 =
-        Bytes32.wrap(Bytes.concatenate(sharedPrefix, Bytes.repeat((byte) 3, 16)));
-    final UInt64 validatorIndex = UInt64.valueOf(42);
+  public void containsChecksBothPools() {
+    final ValidatableAttestation waitingForBlock = validatableAttestation(currentSlot);
+    final ValidatableAttestation waitingForPayload = validatableAttestation(currentSlot);
 
-    pendingAttestationPool.addVoteForMissingFullPayload(currentSlot, blockRoot1, validatorIndex);
-    pendingAttestationPool.addVoteForMissingFullPayload(currentSlot, blockRoot2, validatorIndex);
+    assertThat(pendingAttestationPool.contains(waitingForBlock)).isFalse();
+    assertThat(pendingAttestationPool.contains(waitingForPayload)).isFalse();
 
-    assertThat(pendingAttestationPool.removeVotesWaitingForFullPayload(blockRoot1))
-        .containsExactly(new PendingFullPayloadVote(currentSlot, blockRoot1, validatorIndex));
-    assertThat(pendingAttestationPool.removeVotesWaitingForFullPayload(blockRoot2))
-        .containsExactly(new PendingFullPayloadVote(currentSlot, blockRoot2, validatorIndex));
+    pendingAttestationPool.addForMissingBlock(waitingForBlock);
+    pendingAttestationPool.addForMissingFullPayload(waitingForPayload);
+
+    assertThat(pendingAttestationPool.contains(waitingForBlock)).isTrue();
+    assertThat(pendingAttestationPool.contains(waitingForPayload)).isTrue();
+  }
+
+  @Test
+  public void removeAttestationsWaitingForFullPayloadReturnsByBeaconBlockRoot() {
+    final ValidatableAttestation attestation = validatableAttestation(currentSlot);
+    pendingAttestationPool.addForMissingFullPayload(attestation);
+
+    final Bytes32 blockRoot = attestation.getData().getBeaconBlockRoot();
+    assertThat(pendingAttestationPool.removeAttestationsWaitingForFullPayload(blockRoot))
+        .containsExactly(attestation);
+    assertThat(pendingAttestationPool.removeAttestationsWaitingForFullPayload(blockRoot)).isEmpty();
+    assertThat(pendingAttestationPool.contains(attestation)).isFalse();
+  }
+
+  @Test
+  public void requiredFullPayloadSubscriberFiresForBeaconBlockRoot() {
+    final List<Bytes32> required = new ArrayList<>();
+    pendingAttestationPool.subscribeRequiredFullPayload(required::add);
+    final ValidatableAttestation attestation = validatableAttestation(currentSlot);
+
+    pendingAttestationPool.addForMissingFullPayload(attestation);
+
+    assertThat(required).containsExactly(attestation.getData().getBeaconBlockRoot());
+  }
+
+  private ValidatableAttestation validatableAttestation(final UInt64 slot) {
+    final AttestationData data =
+        new AttestationData(
+            slot,
+            UInt64.ZERO,
+            dataStructureUtil.randomBytes32(),
+            new Checkpoint(UInt64.ZERO, Bytes32.ZERO),
+            new Checkpoint(spec.computeEpochAtSlot(slot), Bytes32.ZERO));
+    return ValidatableAttestation.from(
+        spec,
+        attestationSchema.create(
+            attestationSchema.getAggregationBitsSchema().ofBits(1, 0),
+            data,
+            BLSSignature.empty(),
+            () -> attestationSchema.createEmptyCommitteeBits().orElseThrow()));
   }
 }

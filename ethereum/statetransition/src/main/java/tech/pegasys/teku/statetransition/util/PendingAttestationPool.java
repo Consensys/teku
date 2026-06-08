@@ -13,21 +13,20 @@
 
 package tech.pegasys.teku.statetransition.util;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class PendingAttestationPool implements SlotEventsChannel, FinalizedCheckpointChannel {
   private final PendingPool<ValidatableAttestation> attestationsWaitingForBlock;
-  private final PendingPool<PendingFullPayloadVote> votesWaitingForFullPayload;
+  private final PendingPool<ValidatableAttestation> attestationsWaitingForFullPayload;
 
   PendingAttestationPool(
       final SettableLabelledGauge pendingPoolsSizeGauge,
@@ -35,7 +34,7 @@ public class PendingAttestationPool implements SlotEventsChannel, FinalizedCheck
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxAttestationsWaitingForBlock,
-      final int maxVotesWaitingForFullPayload) {
+      final int maxAttestationsWaitingForFullPayload) {
     attestationsWaitingForBlock =
         new PendingPool<>(
             pendingPoolsSizeGauge,
@@ -47,17 +46,17 @@ public class PendingAttestationPool implements SlotEventsChannel, FinalizedCheck
             ValidatableAttestation::hashTreeRoot,
             ValidatableAttestation::getDependentBlockRoots,
             ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
-    votesWaitingForFullPayload =
+    attestationsWaitingForFullPayload =
         new PendingPool<>(
             pendingPoolsSizeGauge,
-            "full_payload_votes",
+            "full_payload_attestations",
             spec,
             historicalSlotTolerance,
             futureSlotTolerance,
-            maxVotesWaitingForFullPayload,
-            PendingFullPayloadVote::hashTreeRoot,
-            vote -> Collections.singleton(vote.blockRoot()),
-            PendingFullPayloadVote::slot);
+            maxAttestationsWaitingForFullPayload,
+            ValidatableAttestation::hashTreeRoot,
+            attestation -> Set.of(attestation.getData().getBeaconBlockRoot()),
+            ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
   public PendingPool<ValidatableAttestation> getAttestationsWaitingForBlock() {
@@ -68,54 +67,48 @@ public class PendingAttestationPool implements SlotEventsChannel, FinalizedCheck
     attestationsWaitingForBlock.add(attestation);
   }
 
+  public void addForMissingFullPayload(final ValidatableAttestation attestation) {
+    attestationsWaitingForFullPayload.add(attestation);
+  }
+
   public boolean contains(final ValidatableAttestation attestation) {
-    return attestationsWaitingForBlock.contains(attestation);
+    return attestationsWaitingForBlock.contains(attestation)
+        || attestationsWaitingForFullPayload.contains(attestation);
   }
 
   public List<ValidatableAttestation> removeAttestationsWaitingForBlock(
       final Bytes32 beaconBlockRoot) {
-    final List<ValidatableAttestation> attestations =
-        attestationsWaitingForBlock.getItemsDependingOn(beaconBlockRoot, false);
-    attestations.forEach(attestationsWaitingForBlock::remove);
-    return attestations;
+    return removeDependents(attestationsWaitingForBlock, beaconBlockRoot);
   }
 
-  public void addForMissingFullPayload(final IndexedAttestationLight attestation) {
-    final Bytes32 blockRoot = attestation.data().getBeaconBlockRoot();
-    final UInt64 slot = attestation.data().getSlot();
-    attestation
-        .attestingIndices()
-        .forEach(validatorIndex -> addVoteForMissingFullPayload(slot, blockRoot, validatorIndex));
-  }
-
-  public void addVoteForMissingFullPayload(
-      final UInt64 slot, final Bytes32 blockRoot, final UInt64 validatorIndex) {
-    votesWaitingForFullPayload.add(new PendingFullPayloadVote(slot, blockRoot, validatorIndex));
-  }
-
-  public List<PendingFullPayloadVote> removeVotesWaitingForFullPayload(
+  public List<ValidatableAttestation> removeAttestationsWaitingForFullPayload(
       final Bytes32 beaconBlockRoot) {
-    final List<PendingFullPayloadVote> votes =
-        votesWaitingForFullPayload.getItemsDependingOn(beaconBlockRoot, false);
-    votes.forEach(votesWaitingForFullPayload::remove);
-    return votes;
+    return removeDependents(attestationsWaitingForFullPayload, beaconBlockRoot);
   }
 
   public void subscribeRequiredFullPayload(final RequiredFullPayloadSubscriber subscriber) {
-    votesWaitingForFullPayload.subscribeRequiredBlockRoot(subscriber::onRequiredFullPayload);
+    attestationsWaitingForFullPayload.subscribeRequiredBlockRoot(subscriber::onRequiredFullPayload);
+  }
+
+  private static List<ValidatableAttestation> removeDependents(
+      final PendingPool<ValidatableAttestation> pool, final Bytes32 beaconBlockRoot) {
+    final List<ValidatableAttestation> attestations =
+        pool.getItemsDependingOn(beaconBlockRoot, false);
+    attestations.forEach(pool::remove);
+    return attestations;
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
     attestationsWaitingForBlock.onSlot(slot);
-    votesWaitingForFullPayload.onSlot(slot);
+    attestationsWaitingForFullPayload.onSlot(slot);
   }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     attestationsWaitingForBlock.onNewFinalizedCheckpoint(checkpoint, fromOptimisticBlock);
-    votesWaitingForFullPayload.onNewFinalizedCheckpoint(checkpoint, fromOptimisticBlock);
+    attestationsWaitingForFullPayload.onNewFinalizedCheckpoint(checkpoint, fromOptimisticBlock);
   }
 
   public interface RequiredFullPayloadSubscriber {

@@ -95,8 +95,7 @@ class AttestationManagerIntegrationTest {
           recentChainData,
           new NoopForkChoiceNotifier(),
           transitionBlockValidator,
-          storageSystem.getMetricsSystem(),
-          pendingAttestationPool);
+          storageSystem.getMetricsSystem());
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,

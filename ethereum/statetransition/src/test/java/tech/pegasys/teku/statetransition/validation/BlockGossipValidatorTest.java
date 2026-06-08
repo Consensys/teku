@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,7 +50,6 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -111,9 +109,7 @@ public class BlockGossipValidatorTest {
             LateBlockReorgPreparationHandler.NOOP,
             mock(DebugDataDumper.class),
             storageSystem.getMetricsSystem(),
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            new PoolFactory(storageSystem.getMetricsSystem())
-                .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
     forkChoice.applyGenesisExecutionPayloadForGloas().join();
   }
 

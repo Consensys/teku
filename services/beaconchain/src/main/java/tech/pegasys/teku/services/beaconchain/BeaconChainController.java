@@ -1596,8 +1596,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
             debugDataDumper,
             metricsSystem,
-            signatureVerificationService,
-            pendingAttestationPool);
+            signatureVerificationService);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,
@@ -1927,7 +1926,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner));
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
-        .subscribe(ReceivedBlockEventsChannel.class, attestationManager);
+        .subscribe(ReceivedBlockEventsChannel.class, attestationManager)
+        .subscribe(ReceivedExecutionPayloadEventsChannel.class, attestationManager);
   }
 
   protected void initSyncCommitteePools() {

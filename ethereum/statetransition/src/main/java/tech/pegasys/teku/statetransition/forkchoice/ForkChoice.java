@@ -23,12 +23,9 @@ import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.ConnectException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -101,8 +98,6 @@ import tech.pegasys.teku.statetransition.attestation.VoteUpdates;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
-import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
-import tech.pegasys.teku.statetransition.util.PendingFullPayloadVote;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -127,7 +122,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
-  private final PendingAttestationPool pendingAttestationPool;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
@@ -155,8 +149,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem,
-      final AsyncBLSSignatureVerifier signatureVerifier,
-      final PendingAttestationPool pendingAttestationPool) {
+      final AsyncBLSSignatureVerifier signatureVerifier) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
@@ -172,7 +165,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
     this.signatureVerifier = signatureVerifier;
-    this.pendingAttestationPool = pendingAttestationPool;
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -190,8 +182,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final MetricsSystem metricsSystem,
-      final PendingAttestationPool pendingAttestationPool) {
+      final MetricsSystem metricsSystem) {
     this(
         spec,
         forkChoiceExecutor,
@@ -204,8 +195,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         LateBlockReorgPreparationHandler.NOOP,
         DebugDataDumper.NOOP,
         metricsSystem,
-        AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-        pendingAttestationPool);
+        AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
   }
 
   @Override
@@ -299,9 +289,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                       forkChoiceStrategy,
                                       indexedAttestation.data().getBeaconBlockRoot(),
                                       fullPayloadHint)) {
-                                    addPendingFullPayloadAttestation(indexedAttestation);
-                                    return AttestationProcessingResult
-                                        .DEFERRED_FOR_EXECUTION_PAYLOAD;
+                                    return AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD;
                                   }
                                   deferredAttestations.addAttestation(
                                       indexedAttestation, fullPayloadHint);
@@ -319,8 +307,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                   forkChoiceStrategy,
                                   indexedAttestation.data().getBeaconBlockRoot(),
                                   getFullPayloadVoteHint(indexedAttestation.data()))) {
-                                addPendingFullPayloadAttestation(indexedAttestation);
-                                return AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD;
+                                return AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD;
                               }
                               final VoteUpdater transaction = recentChainData.startVoteUpdate();
                               forkChoiceStrategy.onAttestation(transaction, indexedAttestation);
@@ -853,7 +840,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     forkChoiceStrategy.onExecutionPayloadResult(
         signedEnvelope.getBeaconBlockRoot(), payloadStatus, false);
 
-    applyPendingFullPayloadAttestations(signedEnvelope.getBeaconBlockRoot());
     updateForkChoiceForImportedExecutionPayload(forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty());
 
@@ -1415,7 +1401,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceStrategy,
         attestation.data().getBeaconBlockRoot(),
         getFullPayloadVoteHint(attestation.data()))) {
-      addPendingFullPayloadAttestation(attestation);
       return;
     }
     forkChoiceStrategy.onAttestation(voteUpdater, attestation);
@@ -1432,7 +1417,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               (blockRoot, validatorIndex, fullPayloadHint) -> {
                 if (isFullPayloadVoteMissingTarget(
                     forkChoiceStrategy, blockRoot, fullPayloadHint)) {
-                  addPendingFullPayloadVote(update.getSlot(), blockRoot, validatorIndex);
                   return;
                 }
                 votesReadyToApply.addVote(blockRoot, validatorIndex, fullPayloadHint);
@@ -1442,47 +1426,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           }
         });
     transaction.commit();
-  }
-
-  private void applyPendingFullPayloadAttestations(final Bytes32 blockRoot) {
-    final List<PendingFullPayloadVote> pendingVotes =
-        pendingAttestationPool.removeVotesWaitingForFullPayload(blockRoot);
-    if (pendingVotes.isEmpty()) {
-      return;
-    }
-    final Map<UInt64, VoteUpdates> pendingVoteUpdatesBySlot = new TreeMap<>();
-    pendingVotes.forEach(
-        vote ->
-            pendingVoteUpdatesBySlot
-                .computeIfAbsent(vote.slot(), VoteUpdates::new)
-                .addVote(vote.blockRoot(), vote.validatorIndex(), true));
-    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
-    final List<DeferredVotes> readyVotes = new ArrayList<>();
-    pendingVoteUpdatesBySlot
-        .values()
-        .forEach(
-            votes -> {
-              if (votes.getSlot().isLessThan(currentSlot)) {
-                readyVotes.add(votes);
-                return;
-              }
-              votes.forEachDeferredVote(
-                  (voteBlockRoot, validatorIndex, fullPayloadHint) ->
-                      deferredAttestations.addVote(
-                          votes.getSlot(), voteBlockRoot, validatorIndex, fullPayloadHint));
-            });
-    if (!readyVotes.isEmpty()) {
-      applyDeferredAttestationsToForkChoice(readyVotes);
-    }
-  }
-
-  private void addPendingFullPayloadAttestation(final IndexedAttestationLight attestation) {
-    pendingAttestationPool.addForMissingFullPayload(attestation);
-  }
-
-  private void addPendingFullPayloadVote(
-      final UInt64 slot, final Bytes32 blockRoot, final UInt64 validatorIndex) {
-    pendingAttestationPool.addVoteForMissingFullPayload(slot, blockRoot, validatorIndex);
   }
 
   private boolean isFullPayloadVoteMissingTarget(

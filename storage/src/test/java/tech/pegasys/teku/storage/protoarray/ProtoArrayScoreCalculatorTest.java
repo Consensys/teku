@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -681,108 +680,6 @@ public class ProtoArrayScoreCalculatorTest {
             gloasModel);
 
     assertThat(deltas).containsExactly(0L, 0L, balance.longValue());
-  }
-
-  @Test
-  void computeDeltas_payloadPresentVoteBeforeFullNodeArrivesDoesNotUnderflowWhenVoteMovesAway() {
-    final UInt64 balance = UInt64.valueOf(42);
-    final UInt64 blockSlot = UInt64.ONE;
-    final UInt64 voteSlot = UInt64.valueOf(2);
-    final Bytes32 votedRoot = getHash(1);
-    final Bytes32 nextRoot = getHash(2);
-    final ProtoArray protoArray = createProtoArray();
-    final BlockNodeVariantsIndex blockNodeIndex =
-        createBlockNodeVariantsIndex(protoArray, votedRoot, true, false, blockSlot);
-    addBlockNodeVariants(protoArray, blockNodeIndex, nextRoot, true, false, blockSlot);
-    oldBalances = List.of(balance);
-    newBalances = List.of(balance);
-
-    store.putVote(
-        ZERO, new VoteTracker(Bytes32.ZERO, votedRoot, false, false, voteSlot, true, ZERO, false));
-
-    final LongList initialDeltas =
-        computeDeltas(
-            store,
-            protoArray.getTotalTrackedNodeCount(),
-            protoArray::getNodeIndex,
-            Optional.empty(),
-            Optional.empty(),
-            oldBalances,
-            newBalances,
-            oldProposerBoostAmount,
-            newProposerBoostAmount,
-            protoArray,
-            blockNodeIndex,
-            gloasModel);
-    assertThat(initialDeltas.size()).isEqualTo(4);
-    assertThat(initialDeltas.getLong(0)).isZero();
-    assertThat(initialDeltas.getLong(1)).isZero();
-    assertThat(initialDeltas.getLong(2)).isZero();
-    assertThat(initialDeltas.getLong(3)).isZero();
-    protoArray.applyScoreChanges(
-        initialDeltas,
-        ZERO,
-        GENESIS_CHECKPOINT,
-        GENESIS_CHECKPOINT,
-        new HeadSelectionContext(gloasModel, blockNodeIndex, ZERO, Optional.empty()));
-
-    gloasModel.onExecutionPayload(protoArray, blockNodeIndex, votedRoot, ZERO, getHash(999), false);
-    final LongList fullPayloadDeltas =
-        computeDeltas(
-            store,
-            protoArray.getTotalTrackedNodeCount(),
-            protoArray::getNodeIndex,
-            Optional.empty(),
-            Optional.empty(),
-            oldBalances,
-            newBalances,
-            oldProposerBoostAmount,
-            newProposerBoostAmount,
-            protoArray,
-            blockNodeIndex,
-            gloasModel);
-    final int fullNodeIndex =
-        protoArray.getNodeIndex(ForkChoiceNode.createFull(votedRoot)).orElseThrow();
-    assertThat(fullPayloadDeltas.getLong(fullNodeIndex)).isEqualTo(balance.longValue());
-    protoArray.applyScoreChanges(
-        fullPayloadDeltas,
-        ZERO,
-        GENESIS_CHECKPOINT,
-        GENESIS_CHECKPOINT,
-        new HeadSelectionContext(gloasModel, blockNodeIndex, ZERO, Optional.empty()));
-
-    store.putVote(
-        ZERO, new VoteTracker(votedRoot, nextRoot, false, false, voteSlot, false, voteSlot, true));
-
-    try (LogCaptor logCaptor = LogCaptor.forClass(ProtoNode.class)) {
-      final LongList moveDeltas =
-          computeDeltas(
-              store,
-              protoArray.getTotalTrackedNodeCount(),
-              protoArray::getNodeIndex,
-              Optional.empty(),
-              Optional.empty(),
-              oldBalances,
-              newBalances,
-              oldProposerBoostAmount,
-              newProposerBoostAmount,
-              protoArray,
-              blockNodeIndex,
-              gloasModel);
-      final int nextEmptyNodeIndex =
-          protoArray.getNodeIndex(ForkChoiceNode.createEmpty(nextRoot)).orElseThrow();
-      assertThat(moveDeltas.getLong(fullNodeIndex)).isEqualTo(-balance.longValue());
-      assertThat(moveDeltas.getLong(nextEmptyNodeIndex)).isEqualTo(balance.longValue());
-
-      protoArray.applyScoreChanges(
-          moveDeltas,
-          ZERO,
-          GENESIS_CHECKPOINT,
-          GENESIS_CHECKPOINT,
-          new HeadSelectionContext(gloasModel, blockNodeIndex, ZERO, Optional.empty()));
-
-      assertThat(logCaptor.getErrorLogs()).isEmpty();
-    }
   }
 
   @Test

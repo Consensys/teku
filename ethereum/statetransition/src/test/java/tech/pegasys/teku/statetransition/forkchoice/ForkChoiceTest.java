@@ -35,14 +35,12 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,8 +115,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSub
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
-import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
@@ -153,7 +148,6 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private ExecutionLayerChannelStub executionLayer;
-  private PendingAttestationPool pendingAttestationPool;
   private final BlockBroadcastValidator blockBroadcastValidator =
       mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
@@ -188,7 +182,6 @@ class ForkChoiceTest {
     this.genesis = chainBuilder.generateGenesis();
     this.recentChainData = storageSystem.recentChainData();
     this.executionLayer = new ExecutionLayerChannelStub(spec, false);
-    this.pendingAttestationPool = createPendingAttestationPool(spec);
     this.forkChoice =
         new ForkChoice(
             spec,
@@ -202,8 +195,7 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            pendingAttestationPool);
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -485,8 +477,7 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            createPendingAttestationPool(spec));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -1048,8 +1039,7 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            createPendingAttestationPool(spec));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
     final Bytes32 blockRoot = Bytes32.random();
     final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
 
@@ -1091,8 +1081,7 @@ class ForkChoiceTest {
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
             metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            createPendingAttestationPool(spec));
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
     final Bytes32 blockRoot = Bytes32.random();
     final ForkChoiceNode emptyNode = ForkChoiceNode.createEmpty(blockRoot);
     final PayloadStatus invalidPayloadStatus =
@@ -1495,9 +1484,6 @@ class ForkChoiceTest {
             builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
     assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
 
-    final List<Bytes32> requiredFullPayloads = new ArrayList<>();
-    pendingAttestationPool.subscribeRequiredFullPayload(requiredFullPayloads::add);
-
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
     importBlock(targetBlock);
 
@@ -1507,15 +1493,13 @@ class ForkChoiceTest {
         createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
 
     assertThat(forkChoice.onAttestation(attestation))
-        .isCompletedWithValue(AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD);
-    assertThat(requiredFullPayloads).containsExactly(targetBlock.getRoot());
+        .isCompletedWithValue(AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD);
 
     assertFullPayloadVoteIsPending(targetBlock);
-    importPayloadAndAssertFullPayloadVoteApplied(targetBlock, attestationSlot);
   }
 
   @Test
-  void onAttestation_gloasFullVoteShouldApplyAtNextSlotWhenPayloadArrivesInCurrentSlot() {
+  void onAttestation_gloasFullVoteShouldRequireReprocessingWhenPayloadArrives() {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
             builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
@@ -1530,7 +1514,7 @@ class ForkChoiceTest {
         createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
 
     assertThat(forkChoice.onAttestation(attestation))
-        .isCompletedWithValue(AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD);
+        .isCompletedWithValue(AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD);
 
     importPayload(targetBlock);
 
@@ -1542,30 +1526,14 @@ class ForkChoiceTest {
                 .orElseThrow()
                 .getWeight())
         .isEqualTo(ZERO);
-
-    forkChoice.onTick(
-        spec.computeTimeMillisAtSlot(
-            attestationSlot.plus(1), recentChainData.getGenesisTimeMillis()),
-        Optional.empty());
-    processHead(attestationSlot.plus(1));
-
-    assertThat(
-            forkChoiceStrategy
-                .getBlockData(targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
-                .orElseThrow()
-                .getWeight())
-        .isGreaterThan(ZERO);
   }
 
   @Test
-  void applyIndexedAttestations_gloasFullVoteShouldWaitForExecutionPayload() {
+  void applyIndexedAttestations_gloasFullVoteShouldNotApplyWhenExecutionPayloadMissing() {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
             builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
     assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
-
-    final List<Bytes32> requiredFullPayloads = new ArrayList<>();
-    pendingAttestationPool.subscribeRequiredFullPayload(requiredFullPayloads::add);
 
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
     importBlock(targetBlock);
@@ -1576,10 +1544,8 @@ class ForkChoiceTest {
         createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
 
     forkChoice.applyIndexedAttestations(List.of(attestation));
-    assertThat(requiredFullPayloads).containsExactly(targetBlock.getRoot());
 
     assertFullPayloadVoteIsPending(targetBlock);
-    importPayloadAndAssertFullPayloadVoteApplied(targetBlock, attestationSlot);
   }
 
   private void assertFullPayloadVoteIsPending(final SignedBlockAndState targetBlock) {
@@ -1595,20 +1561,6 @@ class ForkChoiceTest {
                 .orElseThrow()
                 .getWeight())
         .isEqualTo(ZERO);
-  }
-
-  private void importPayloadAndAssertFullPayloadVoteApplied(
-      final SignedBlockAndState targetBlock, final UInt64 attestationSlot) {
-    importPayload(targetBlock);
-    processHead(attestationSlot.plus(1));
-    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
-        recentChainData.getForkChoiceStrategy().orElseThrow();
-    assertThat(
-            forkChoiceStrategy
-                .getBlockData(targetBlock.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
-                .orElseThrow()
-                .getWeight())
-        .isGreaterThan(ZERO);
   }
 
   private void importPayload(final SignedBlockAndState targetBlock) {
@@ -1729,11 +1681,6 @@ class ForkChoiceTest {
 
   private void processHead(final UInt64 slot) {
     assertThat(forkChoice.processHead(slot)).isCompleted();
-  }
-
-  private PendingAttestationPool createPendingAttestationPool(final Spec spec) {
-    return new PoolFactory(new NoOpMetricsSystem())
-        .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
   }
 
   private IntSet ptcPositions(final int count) {

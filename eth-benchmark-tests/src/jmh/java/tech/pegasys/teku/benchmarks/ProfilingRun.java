@@ -14,7 +14,6 @@
 package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -108,9 +106,7 @@ public class ProfilingRun {
               recentChainData,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              metricsSystem,
-              new PoolFactory(metricsSystem)
-                  .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
+              metricsSystem);
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
@@ -202,9 +198,7 @@ public class ProfilingRun {
               recentChainData,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              metricsSystem,
-              new PoolFactory(metricsSystem)
-                  .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
+              metricsSystem);
       BlockImporter blockImporter =
           new BlockImporter(
               asyncRunner,

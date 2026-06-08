@@ -28,8 +28,10 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
@@ -41,7 +43,9 @@ import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerifica
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 
 public class AttestationManager extends Service
-    implements SlotEventsChannel, ReceivedBlockEventsChannel {
+    implements SlotEventsChannel,
+        ReceivedBlockEventsChannel,
+        ReceivedExecutionPayloadEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ActiveValidatorChannel activeValidatorChannel;
@@ -227,6 +231,26 @@ public class AttestationManager extends Service
                                 err)));
   }
 
+  @Override
+  public void onExecutionPayloadValidated(final SignedExecutionPayloadEnvelope executionPayload) {}
+
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    final Bytes32 blockRoot = executionPayload.getBeaconBlockRoot();
+    pendingAttestationPool
+        .removeAttestationsWaitingForFullPayload(blockRoot)
+        .forEach(
+            attestation ->
+                onAttestation(attestation)
+                    .finish(
+                        err ->
+                            LOG.error(
+                                "Failed to process pending attestation dependent on full payload {}",
+                                blockRoot,
+                                err)));
+  }
+
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidatableAttestation attestation) {
     if (pendingAttestationPool.contains(attestation)) {
@@ -251,12 +275,11 @@ public class AttestationManager extends Service
                       attestation::hashTreeRoot);
                   pendingAttestationPool.addForMissingBlock(attestation);
                 }
-                case DEFERRED_FOR_EXECUTION_PAYLOAD -> {
+                case UNKNOWN_EXECUTION_PAYLOAD -> {
                   LOG.trace(
                       "Deferring attestation {} as required full payload is not yet present",
                       attestation::hashTreeRoot);
-                  sendToSubscribersIfProducedLocally(attestation);
-                  aggregatingAttestationPool.add(attestation);
+                  pendingAttestationPool.addForMissingFullPayload(attestation);
                 }
                 case DEFER_FORK_CHOICE_PROCESSING -> {
                   LOG.trace(

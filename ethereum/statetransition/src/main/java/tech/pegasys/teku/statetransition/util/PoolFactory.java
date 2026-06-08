@@ -158,14 +158,14 @@ public class PoolFactory {
   public PendingAttestationPool createPendingAttestationPool(
       final Spec spec,
       final int maxAttestationsWaitingForBlock,
-      final int maxVotesWaitingForFullPayload) {
+      final int maxAttestationsWaitingForFullPayload) {
     return new PendingAttestationPool(
         pendingPoolsSizeGauge,
         spec,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         maxAttestationsWaitingForBlock,
-        maxVotesWaitingForFullPayload);
+        maxAttestationsWaitingForFullPayload);
   }
 
   public PendingPool<ValidatableAttestation> createPendingPoolForAttestations(

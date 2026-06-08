@@ -24,11 +24,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
-import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.DEFERRED_FOR_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.DEFER_FOR_FORK_CHOICE;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
+import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
 import java.util.List;
@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -276,20 +277,34 @@ class AttestationManagerTest {
   }
 
   @Test
-  public void shouldAggregateAttestationsThatAreMissingFullPayloadDependencies() {
+  public void shouldParkAttestationsThatAreMissingFullPayloadDependencies() {
     final ProcessedAttestationListener subscriber = mock(ProcessedAttestationListener.class);
     attestationManager.subscribeToAttestationsToSend(subscriber);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        mock(SignedExecutionPayloadEnvelope.class);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final ValidatableAttestation attestation =
-        ValidatableAttestation.fromValidator(spec, dataStructureUtil.randomAttestation());
+        ValidatableAttestation.fromValidator(spec, fullPayloadAttestationFromSlot(12, blockRoot));
+    when(executionPayload.getBeaconBlockRoot()).thenReturn(blockRoot);
     when(forkChoice.onAttestation(any()))
-        .thenReturn(completedFuture(DEFERRED_FOR_EXECUTION_PAYLOAD));
+        .thenReturn(completedFuture(UNKNOWN_EXECUTION_PAYLOAD))
+        .thenReturn(completedFuture(SUCCESSFUL));
+    onSlot(UInt64.valueOf(12));
 
     assertThat(attestationManager.onAttestation(attestation))
-        .isCompletedWithValue(DEFERRED_FOR_EXECUTION_PAYLOAD);
+        .isCompletedWithValue(UNKNOWN_EXECUTION_PAYLOAD);
 
     verify(forkChoice).onAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
+    assertThat(pendingAttestationPool.contains(attestation)).isTrue();
+    verifyNoInteractions(attestationPool);
+    verify(subscriber, never()).accept(attestation);
+    assertThat(attestation.isGossiped()).isFalse();
+
+    attestationManager.onExecutionPayloadImported(executionPayload, false);
+
+    verify(forkChoice, times(2)).onAttestation(attestation);
     verify(attestationPool).add(attestation);
     verify(subscriber).accept(attestation);
     assertThat(attestation.isGossiped()).isTrue();
@@ -362,6 +377,18 @@ class AttestationManagerTest {
             Bytes32.ZERO,
             new Checkpoint(UInt64.ZERO, Bytes32.ZERO),
             new Checkpoint(UInt64.ZERO, targetRoot)),
+        BLSSignature.empty());
+  }
+
+  private Attestation fullPayloadAttestationFromSlot(final long slot, final Bytes32 blockRoot) {
+    return attestationSchema.create(
+        attestationSchema.getAggregationBitsSchema().ofBits(1, 0),
+        new AttestationData(
+            UInt64.valueOf(slot),
+            UInt64.ONE,
+            blockRoot,
+            new Checkpoint(UInt64.ZERO, Bytes32.ZERO),
+            new Checkpoint(UInt64.ZERO, Bytes32.ZERO)),
         BLSSignature.empty());
   }
 
