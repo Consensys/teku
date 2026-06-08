@@ -30,8 +30,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
-import org.rocksdb.PerfContext;
-import org.rocksdb.PerfLevel;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
