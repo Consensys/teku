@@ -1359,14 +1359,22 @@ public class KvStoreDatabase implements Database {
       }
       // Advance the frontier past the newest slot pruned in this batch (keys are slot-ascending).
       dataColumnSidecarPruneFrontier.put(sidecarType, toPrune.keys().getLast().slot().plus(1));
+
+      LOG.debug(
+              "Pruned {} {} data column sidecars across {} slots ({},{}) in {} ms",
+              toPrune.keys().size(),
+              sidecarType.displayName(),
+              toPrune.distinctSlots(),
+              toPrune.keys.getFirst().slot(),
+              toPrune.keys.getLast().slot(),
+              System.currentTimeMillis() - startTime);
+    }
+    else{
+      LOG.debug("No {} data column sidecars to prune", sidecarType.displayName());
     }
 
-    LOG.debug(
-        "Pruned {} {} data column sidecars across {} slots in {} ms",
-        toPrune.keys().size(),
-        sidecarType.displayName(),
-        toPrune.distinctSlots(),
-        System.currentTimeMillis() - startTime);
+
+
     return toPrune.distinctSlots() >= pruneSlotLimit;
   }
 
