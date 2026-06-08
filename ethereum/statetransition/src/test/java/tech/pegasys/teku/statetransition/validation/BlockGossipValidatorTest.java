@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -467,6 +468,57 @@ public class BlockGossipValidatorTest {
                     InternalValidationResult.reject(
                         "The parent block hash %s from the bid is not present or hasn't been passed validation",
                         notValidatedParentBlockHash)));
+  }
+
+  @TestTemplate
+  void shouldAcceptFirstGloasBlockWithPreGloasParent(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final Spec forkTransitionSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(ONE);
+    final StorageSystem forkTransitionStorageSystem =
+        InMemoryStorageSystemBuilder.buildDefault(forkTransitionSpec);
+    forkTransitionStorageSystem.chainUpdater().initializeGenesis();
+    final ReceivedBlockEventsChannel forkTransitionReceivedBlockEventsChannelPublisher =
+        mock(ReceivedBlockEventsChannel.class);
+    final GossipValidationHelper forkTransitionGossipValidationHelper =
+        new GossipValidationHelper(
+            forkTransitionSpec,
+            forkTransitionStorageSystem.recentChainData(),
+            forkTransitionStorageSystem.getMetricsSystem());
+    final BlockGossipValidator forkTransitionBlockGossipValidator =
+        new BlockGossipValidator(
+            forkTransitionSpec,
+            forkTransitionGossipValidationHelper,
+            forkTransitionReceivedBlockEventsChannelPublisher);
+
+    final UInt64 firstGloasSlot = forkTransitionSpec.computeStartSlotAtEpoch(ONE);
+    final UInt64 preGloasParentSlot = firstGloasSlot.minus(ONE);
+    final SignedBlockAndState preGloasParentBlockAndState =
+        forkTransitionStorageSystem.chainUpdater().advanceChain(preGloasParentSlot);
+    final SignedBlockAndState firstGloasBlockAndState =
+        forkTransitionStorageSystem.chainBuilder().generateBlockAtSlot(firstGloasSlot);
+    final SignedBeaconBlock firstGloasBlock = firstGloasBlockAndState.getBlock();
+    forkTransitionStorageSystem.chainUpdater().setCurrentSlot(firstGloasSlot);
+
+    assertThat(
+            forkTransitionSpec
+                .atSlot(preGloasParentBlockAndState.getSlot())
+                .getMilestone()
+                .isLessThan(SpecMilestone.GLOAS))
+        .isTrue();
+    assertThat(forkTransitionSpec.atSlot(firstGloasBlock.getSlot()).getMilestone())
+        .isEqualTo(SpecMilestone.GLOAS);
+    assertThat(
+            forkTransitionGossipValidationHelper
+                .getParentStateInBlockEpoch(
+                    preGloasParentSlot, firstGloasBlock.getParentRoot(), firstGloasSlot)
+                .join()
+                .orElseThrow()
+                .toVersionGloas())
+        .isPresent();
+    assertThat(forkTransitionBlockGossipValidator.validate(firstGloasBlock, true))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(forkTransitionReceivedBlockEventsChannelPublisher).onBlockValidated(firstGloasBlock);
   }
 
   @TestTemplate
