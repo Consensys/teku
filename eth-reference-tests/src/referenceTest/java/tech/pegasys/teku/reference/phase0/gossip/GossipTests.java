@@ -32,13 +32,12 @@ public class GossipTests {
           .put("networking/gossip_partial_data_column_sidecar", TestExecutor.IGNORE_TESTS)
           .put(
               "networking/gossip_bls_to_execution_change",
-              new GossipBlsToExecutionChangeTestExecutor(
-                  "gossip_bls_to_execution_change__ignore_pre_capella"))
-          // TODO: https://github.com/Consensys/teku/issues/10781
+              new GossipBlsToExecutionChangeTestExecutor())
+          // TODO: this test should be fixed in the next consensus-specs release
           .put(
               "networking/gossip_beacon_block",
               new GossipBeaconBlockTestExecutor(
-                  "gossip_beacon_block__valid_at_blob_parameters_limit"))
+                  "gossip_bls_to_execution_change__ignore_pre_capella"))
           .put(
               "networking/gossip_sync_committee_contribution_and_proof",
               new GossipSyncCommitteeContributionAndProofTestExecutor())
