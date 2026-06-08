@@ -109,28 +109,6 @@ public interface KvStoreAccessor extends AutoCloseable {
   <K extends Comparable<K>, V> Stream<K> streamKeys(KvStoreColumn<K, V> column, K from, K to);
 
   /**
-   * Whether this store supports streaming keys in reverse (descending) order via {@link
-   * #streamKeysReverse(KvStoreColumn, Comparable, Comparable)}.
-   */
-  boolean isReverseStreamSupported();
-
-  /**
-   * Stream keys from a column in descending order, starting at the greatest key less than or equal
-   * to {@code from} and continuing down to and including {@code to}. Only supported when {@link
-   * #isReverseStreamSupported()} returns true.
-   *
-   * @param column the column to stream keys from
-   * @param from the inclusive upper bound to start streaming from (the greatest key returned)
-   * @param to the inclusive lower bound to stop streaming at (the smallest key returned)
-   * @param <K> the key type of the column
-   * @param <V> the value type of the column
-   * @return a Stream of keys between from and to (fully inclusive) in descending order
-   */
-  @MustBeClosed
-  <K extends Comparable<K>, V> Stream<K> streamKeysReverse(
-      KvStoreColumn<K, V> column, K from, K to);
-
-  /**
    * Runs {@code task} on the calling thread, capturing low-level store performance counters around
    * it and logging a summary tagged with {@code label}. Stores that do not support performance
    * counters simply run the task. Intended for diagnostics; implementations should avoid any

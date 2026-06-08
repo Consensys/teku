@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -121,6 +122,14 @@ public class KvStoreDatabase implements Database {
       return displayName;
     }
   }
+
+  // In-memory, oldest-first prune frontier per sidecar type: the next slot a prune run should start
+  // its forward scan from. Lets consecutive runs continue past already-pruned slots instead of
+  // re-crossing the deletion tombstones left below them. Not persisted; rebuilt from the first slot
+  // with data column sidecar support on the first run after a restart. Written only from the single
+  // pruner task; ConcurrentHashMap provides visibility across async-runner threads.
+  private final Map<DataColumnSidecarType, UInt64> dataColumnSidecarPruneFrontier =
+      new ConcurrentHashMap<>();
 
   KvStoreDatabase(
       final KvStoreCombinedDao dao,
@@ -1302,16 +1311,18 @@ public class KvStoreDatabase implements Database {
   }
 
   /**
-   * Prunes data column sidecars in a single batch. The batch covers the newest (up to) {@code
-   * pruneSlotLimit} distinct populated slots at or before the cutoff. Gaps between populated slots
-   * are skipped, so the batch always spans {@code pruneSlotLimit} populated slots regardless of how
-   * far apart they are. All keys across those slots are removed in a single committed transaction,
-   * avoiding the per-slot stream/commit overhead that does not scale as deletion tombstones
-   * accumulate.
+   * Prunes data column sidecars oldest-first: each run removes the oldest (up to) {@code
+   * pruneSlotLimit} distinct populated slots at or before the cutoff, in a single committed
+   * transaction. Pruning oldest-first keeps the earliest retained slot advancing and prevents a gap
+   * from forming when sidecars are stored faster than they can be pruned.
    *
-   * <p>When the backing store supports reverse iteration, the batch is collected in a single
-   * backward scan ({@code seekForPrev} then {@code prev()}). Otherwise it falls back to a sequence
-   * of floor lookups to locate the slot window and a single forward range scan to read the keys.
+   * <p>The forward scan starts from an in-memory frontier (the slot after the newest slot pruned
+   * for this sidecar type) rather than the fixed first slot with data column sidecar support, so in
+   * steady state the opening seek lands directly on live data instead of crossing the deletion
+   * tombstones left below it. The frontier is not persisted; after a restart the first run falls
+   * back to the first supported slot and rebuilds it. Gaps between populated slots are skipped, so
+   * the batch always spans {@code pruneSlotLimit} populated slots regardless of how far apart they
+   * are.
    */
   boolean pruneDataColumnSidecars(
       final int pruneSlotLimit,
@@ -1325,18 +1336,19 @@ public class KvStoreDatabase implements Database {
     }
 
     final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
-    if (maybeFirstDataColumnSidecarSlot.isEmpty()
-        || maybeFirstDataColumnSidecarSlot.get().isGreaterThan(tillSlotInclusive)) {
+    if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
       return false;
     }
-    final UInt64 firstDataColumnSidecarSlot = maybeFirstDataColumnSidecarSlot.get();
+
+    final UInt64 fromSlot =
+        dataColumnSidecarPruneFrontier.getOrDefault(
+            sidecarType, maybeFirstDataColumnSidecarSlot.get());
+    if (fromSlot.isGreaterThan(tillSlotInclusive)) {
+      return false;
+    }
 
     final DataColumnSidecarsToPrune toPrune =
-        dao.isReverseStreamSupported()
-            ? collectSidecarsToPruneByReverseScan(
-                pruneSlotLimit, firstDataColumnSidecarSlot, tillSlotInclusive, sidecarType)
-            : collectSidecarsToPruneByFloorLookups(
-                pruneSlotLimit, firstDataColumnSidecarSlot, tillSlotInclusive, sidecarType);
+        collectOldestSidecarsToPrune(pruneSlotLimit, fromSlot, tillSlotInclusive, sidecarType);
 
     if (!toPrune.keys().isEmpty()) {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
@@ -1345,6 +1357,8 @@ public class KvStoreDatabase implements Database {
         }
         updater.commit();
       }
+      // Advance the frontier past the newest slot pruned in this batch (keys are slot-ascending).
+      dataColumnSidecarPruneFrontier.put(sidecarType, toPrune.keys().getLast().slot().plus(1));
     }
 
     LOG.debug(
@@ -1357,21 +1371,21 @@ public class KvStoreDatabase implements Database {
   }
 
   /**
-   * Collects the keys for the newest (up to) {@code pruneSlotLimit} distinct populated slots in a
-   * single backward scan, stopping as soon as the limit is reached. The reverse stream is consumed
-   * lazily, so the iterator only advances as far as the slots being pruned.
+   * Collects the keys for the oldest (up to) {@code pruneSlotLimit} distinct populated slots in
+   * {@code [fromSlot, tillSlotInclusive]} in a single forward scan, stopping as soon as the limit
+   * is reached. The stream is consumed lazily, so the iterator only advances as far as the slots
+   * being pruned.
    */
-  private DataColumnSidecarsToPrune collectSidecarsToPruneByReverseScan(
+  private DataColumnSidecarsToPrune collectOldestSidecarsToPrune(
       final int pruneSlotLimit,
-      final UInt64 firstDataColumnSidecarSlot,
+      final UInt64 fromSlot,
       final UInt64 tillSlotInclusive,
       final DataColumnSidecarType sidecarType) {
     final List<DataColumnSlotAndIdentifier> keys = new ArrayList<>();
     int distinctSlots = 0;
-    try (final Stream<DataColumnSlotAndIdentifier> reverseStream =
-        streamDataColumnIdentifiersReverse(
-            sidecarType, firstDataColumnSidecarSlot, tillSlotInclusive)) {
-      final Iterator<DataColumnSlotAndIdentifier> iterator = reverseStream.iterator();
+    try (final Stream<DataColumnSlotAndIdentifier> forwardStream =
+        streamDataColumnIdentifiersForward(sidecarType, fromSlot, tillSlotInclusive)) {
+      final Iterator<DataColumnSlotAndIdentifier> iterator = forwardStream.iterator();
       UInt64 currentSlot = null;
       while (iterator.hasNext()) {
         final DataColumnSlotAndIdentifier key = iterator.next();
@@ -1388,75 +1402,17 @@ public class KvStoreDatabase implements Database {
     return new DataColumnSidecarsToPrune(keys, distinctSlots);
   }
 
-  /**
-   * Collects the keys for the newest (up to) {@code pruneSlotLimit} distinct populated slots using
-   * repeated floor lookups to locate the slot window, then a single forward range scan to read the
-   * keys. Used when the backing store does not support reverse iteration.
-   */
-  private DataColumnSidecarsToPrune collectSidecarsToPruneByFloorLookups(
-      final int pruneSlotLimit,
-      final UInt64 firstDataColumnSidecarSlot,
-      final UInt64 tillSlotInclusive,
-      final DataColumnSidecarType sidecarType) {
-    final Optional<UInt64> maybeNewestSlot =
-        findPreviousDataColumnSidecarSlot(
-            tillSlotInclusive, firstDataColumnSidecarSlot, sidecarType);
-    if (maybeNewestSlot.isEmpty()) {
-      return DataColumnSidecarsToPrune.EMPTY;
+  @MustBeClosed
+  private Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersForward(
+      final DataColumnSidecarType sidecarType, final UInt64 fromSlot, final UInt64 toSlot) {
+    if (sidecarType == DataColumnSidecarType.CANONICAL) {
+      return streamDataColumnIdentifiers(fromSlot, toSlot);
     }
-
-    // Walk back over distinct populated slots to find the oldest slot of the batch. Each lookup
-    // jumps straight to the previous populated slot, so gaps are skipped without scanning them.
-    final UInt64 newestSlot = maybeNewestSlot.get();
-    UInt64 oldestSlot = newestSlot;
-    int distinctSlots = 1;
-    while (distinctSlots < pruneSlotLimit && oldestSlot.isGreaterThan(firstDataColumnSidecarSlot)) {
-      final Optional<UInt64> previousSlot =
-          findPreviousDataColumnSidecarSlot(
-              oldestSlot.minus(1), firstDataColumnSidecarSlot, sidecarType);
-      if (previousSlot.isEmpty()) {
-        break;
-      }
-      oldestSlot = previousSlot.get();
-      ++distinctSlots;
-    }
-
-    return new DataColumnSidecarsToPrune(
-        getDataColumnIdentifiersForSlotRange(sidecarType, oldestSlot, newestSlot), distinctSlots);
+    return streamNonCanonicalDataColumnIdentifiers(fromSlot, toSlot);
   }
 
   private record DataColumnSidecarsToPrune(
-      List<DataColumnSlotAndIdentifier> keys, int distinctSlots) {
-    private static final DataColumnSidecarsToPrune EMPTY =
-        new DataColumnSidecarsToPrune(List.of(), 0);
-  }
-
-  @MustBeClosed
-  private Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersReverse(
-      final DataColumnSidecarType sidecarType, final UInt64 fromSlot, final UInt64 toSlot) {
-    if (sidecarType == DataColumnSidecarType.CANONICAL) {
-      return dao.streamDataColumnIdentifiersReverse(fromSlot, toSlot);
-    }
-    return dao.streamNonCanonicalDataColumnIdentifiersReverse(fromSlot, toSlot);
-  }
-
-  private List<DataColumnSlotAndIdentifier> getDataColumnIdentifiersForSlotRange(
-      final DataColumnSidecarType sidecarType, final UInt64 fromSlot, final UInt64 toSlot) {
-    return switch (sidecarType) {
-      case CANONICAL -> {
-        try (final Stream<DataColumnSlotAndIdentifier> identifiers =
-            streamDataColumnIdentifiers(fromSlot, toSlot)) {
-          yield identifiers.toList();
-        }
-      }
-      case NON_CANONICAL -> {
-        try (final Stream<DataColumnSlotAndIdentifier> identifiers =
-            streamNonCanonicalDataColumnIdentifiers(fromSlot, toSlot)) {
-          yield identifiers.toList();
-        }
-      }
-    };
-  }
+      List<DataColumnSlotAndIdentifier> keys, int distinctSlots) {}
 
   private void removeDataColumnSidecar(
       final DataColumnSidecarType sidecarType,
@@ -1466,19 +1422,6 @@ public class KvStoreDatabase implements Database {
       case CANONICAL -> updater.removeSidecar(key);
       case NON_CANONICAL -> updater.removeNonCanonicalSidecar(key);
     }
-  }
-
-  private Optional<UInt64> findPreviousDataColumnSidecarSlot(
-      final UInt64 latestSlot,
-      final UInt64 firstDataColumnSidecarSlot,
-      final DataColumnSidecarType sidecarType) {
-    final Optional<UInt64> maybeSlot =
-        switch (sidecarType) {
-          case CANONICAL -> dao.getPreviousDataColumnSidecarSlotAtOrBefore(latestSlot);
-          case NON_CANONICAL ->
-              dao.getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(latestSlot);
-        };
-    return maybeSlot.filter(slot -> slot.isGreaterThanOrEqualTo(firstDataColumnSidecarSlot));
   }
 
   private Optional<UInt64> getFirstDataColumnSidecarSlot() {

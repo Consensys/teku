@@ -718,31 +718,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public boolean isReverseStreamSupported() {
-    return db.isReverseStreamSupported();
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersReverse(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return db.streamKeysReverse(
-        schema.getColumnSidecarByColumnSlotAndIdentifier(),
-        new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE),
-        new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO));
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiersReverse(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return db.streamKeysReverse(
-        schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
-        new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE),
-        new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO));
-  }
-
-  @Override
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
       final SlotAndBlockRoot slotAndBlockRoot) {
     try (final Stream<DataColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
@@ -754,25 +729,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE)); ) {
       return columnSlotAndIdentifierStream.toList();
     }
-  }
-
-  @Override
-  public Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(final UInt64 slot) {
-    return db.getFloorEntry(
-            schema.getColumnSidecarByColumnSlotAndIdentifier(),
-            new DataColumnSlotAndIdentifier(slot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE))
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
-  @Override
-  public Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(
-      final UInt64 slot) {
-    return db.getFloorEntry(
-            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
-            new DataColumnSlotAndIdentifier(slot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE))
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
   }
 
   @Override

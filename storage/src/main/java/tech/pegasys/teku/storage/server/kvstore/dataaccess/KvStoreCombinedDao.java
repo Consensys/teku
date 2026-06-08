@@ -198,44 +198,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     task.run();
   }
 
-  /**
-   * Whether the underlying store can stream data column identifiers in reverse (newest slot first)
-   * order. When false, callers must fall back to {@link
-   * #getPreviousDataColumnSidecarSlotAtOrBefore(UInt64)} based lookups.
-   */
-  boolean isReverseStreamSupported();
-
-  /**
-   * Streams canonical data column identifiers in descending order (newest slot first) for slots in
-   * {@code [startSlot, endSlot]}. Only supported when {@link #isReverseStreamSupported()} is true.
-   */
-  @MustBeClosed
-  Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersReverse(
-      UInt64 startSlot, UInt64 endSlot);
-
-  /**
-   * Streams non-canonical data column identifiers in descending order (newest slot first) for slots
-   * in {@code [startSlot, endSlot]}. Only supported when {@link #isReverseStreamSupported()} is
-   * true.
-   */
-  @MustBeClosed
-  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiersReverse(
-      UInt64 startSlot, UInt64 endSlot);
-
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
-
-  /**
-   * Returns the greatest data column sidecar slot less than or equal to {@code slot}. The lookup
-   * uses a floor key for {@code slot}, so it seeks directly to the newest eligible sidecar entry.
-   */
-  Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(UInt64 slot);
-
-  /**
-   * Returns the greatest non-canonical data column sidecar slot less than or equal to {@code slot}.
-   * The lookup uses a floor key for {@code slot}, so it seeks directly to the newest eligible
-   * sidecar entry.
-   */
-  Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(UInt64 slot);
 
   Optional<UInt64> getEarliestAvailableDataColumnSlot();
 

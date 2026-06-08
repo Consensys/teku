@@ -38,19 +38,16 @@ class RocksDbKeyIterator<TKey, TValue> implements Iterator<byte[]>, AutoCloseabl
   private final AtomicBoolean closed = new AtomicBoolean(false);
   private final Predicate<TKey> continueTest;
   private final Supplier<Boolean> isDatabaseClosed;
-  private final boolean reverse;
 
   private RocksDbKeyIterator(
       final KvStoreColumn<TKey, TValue> column,
       final RocksIterator rocksIterator,
       final Predicate<TKey> continueTest,
-      final Supplier<Boolean> isDatabaseClosed,
-      final boolean reverse) {
+      final Supplier<Boolean> isDatabaseClosed) {
     this.column = column;
     this.rocksIterator = rocksIterator;
     this.continueTest = continueTest;
     this.isDatabaseClosed = isDatabaseClosed;
-    this.reverse = reverse;
   }
 
   @MustBeClosed
@@ -59,16 +56,7 @@ class RocksDbKeyIterator<TKey, TValue> implements Iterator<byte[]>, AutoCloseabl
       final RocksIterator rocksIt,
       final Predicate<K> continueTest,
       final Supplier<Boolean> isDatabaseClosed) {
-    return new RocksDbKeyIterator<>(column, rocksIt, continueTest, isDatabaseClosed, false);
-  }
-
-  @MustBeClosed
-  public static <K, V> RocksDbKeyIterator<K, V> createReverse(
-      final KvStoreColumn<K, V> column,
-      final RocksIterator rocksIt,
-      final Predicate<K> continueTest,
-      final Supplier<Boolean> isDatabaseClosed) {
-    return new RocksDbKeyIterator<>(column, rocksIt, continueTest, isDatabaseClosed, true);
+    return new RocksDbKeyIterator<>(column, rocksIt, continueTest, isDatabaseClosed);
   }
 
   @Override
@@ -90,25 +78,21 @@ class RocksDbKeyIterator<TKey, TValue> implements Iterator<byte[]>, AutoCloseabl
       throw new NoSuchElementException();
     }
     final byte[] entry = rocksIterator.key();
-    if (reverse) {
-      rocksIterator.prev();
-    } else {
-      rocksIterator.next();
-    }
+    rocksIterator.next();
     return entry;
   }
 
   @MustBeClosed
   public Stream<byte[]> toStream() {
     assertOpen();
-    // A reverse iterator yields keys in descending order, so it must not claim to be SORTED (which
-    // implies natural ascending order).
-    int characteristics =
-        Spliterator.IMMUTABLE | Spliterator.DISTINCT | Spliterator.NONNULL | Spliterator.ORDERED;
-    if (!reverse) {
-      characteristics |= Spliterator.SORTED;
-    }
-    final Spliterator<byte[]> split = Spliterators.spliteratorUnknownSize(this, characteristics);
+    final Spliterator<byte[]> split =
+        Spliterators.spliteratorUnknownSize(
+            this,
+            Spliterator.IMMUTABLE
+                | Spliterator.DISTINCT
+                | Spliterator.NONNULL
+                | Spliterator.ORDERED
+                | Spliterator.SORTED);
 
     return StreamSupport.stream(split, false).onClose(this::close);
   }

@@ -274,18 +274,6 @@ public class LevelDbInstance implements KvStoreAccessor {
     return streamKeys(column, fromBytes, toBytes);
   }
 
-  @Override
-  public boolean isReverseStreamSupported() {
-    return false;
-  }
-
-  @Override
-  @MustBeClosed
-  public <K extends Comparable<K>, V> Stream<K> streamKeysReverse(
-      final KvStoreColumn<K, V> column, final K from, final K to) {
-    throw new UnsupportedOperationException("Reverse key streaming is not supported by LevelDB");
-  }
-
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {

@@ -2843,15 +2843,14 @@ public class DatabaseTest {
               block1Column0, block1Column1, block1Column2, block2Column0, block3Column0);
     }
 
-    // prune sidecars passing 2 as the limit should prune sidecars from the newest 2 slots at or
+    // prune sidecars passing 2 as the limit should prune sidecars from the oldest 2 slots at or
     // before the cutoff,
-    // leaving the sidecars from block header 1
+    // leaving the sidecars from block header 3
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
-      assertThat(dataColumnIdentifiersStream.toList())
-          .containsExactly(block1Column0, block1Column1, block1Column2);
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
@@ -2918,9 +2917,9 @@ public class DatabaseTest {
           .containsExactly(block2Column0, block3Column0);
     }
 
-    // prune sidecars passing 1 as the limit should prune the newest eligible canonical slot and
+    // prune sidecars passing 1 as the limit should prune the oldest eligible canonical slot and
     // non-canonical slot. The limit is applied separately to canonical and non-canonical sidecars.
-    // So leaving only the non-canonical sidecar from block header 2
+    // So leaving only the non-canonical sidecar from block header 3
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
@@ -2929,7 +2928,7 @@ public class DatabaseTest {
     }
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
-      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
