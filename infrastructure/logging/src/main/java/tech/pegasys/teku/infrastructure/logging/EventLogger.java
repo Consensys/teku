@@ -282,9 +282,9 @@ public class EventLogger {
     }
     final String slotPayloadEventLog =
         String.format(
-            "Slot Payload Event  *** Slot: %s, Execution Block: %s, Peers: %d",
+            "PTC Event   *** Slot: %s, Execution Block: %s, Peers: %d",
             nodeSlot, executionBlockHash, numPeers);
-    info(slotPayloadEventLog, Color.WHITE);
+    info(slotPayloadEventLog, Color.GRAY);
   }
 
   public void reorgEvent(

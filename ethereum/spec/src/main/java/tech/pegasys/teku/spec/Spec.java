@@ -608,6 +608,20 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeTimeMillisAtSlot(genesisTimeMillis, slot);
   }
 
+  public boolean isTimeReached(final UInt64 currentTimeMillis, final UInt64 earliestTimeMillis) {
+    return currentTimeMillis.isGreaterThanOrEqualTo(earliestTimeMillis);
+  }
+
+  public boolean isBeforeTimeInSlot(
+      final UInt64 slot,
+      final UInt64 genesisTimeMillis,
+      final UInt64 currentTimeMillis,
+      final int timeInSlotMillisExclusive) {
+    return !isTimeReached(
+        currentTimeMillis,
+        computeTimeMillisAtSlot(slot, genesisTimeMillis).plus(timeInSlotMillisExclusive));
+  }
+
   public Bytes computeSigningRoot(final BeaconBlock block, final Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
@@ -725,6 +739,10 @@ public class Spec {
 
   public Optional<Integer> getPayloadAttestationDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
+  }
+
+  public Optional<Integer> getPayloadDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getPayloadDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {

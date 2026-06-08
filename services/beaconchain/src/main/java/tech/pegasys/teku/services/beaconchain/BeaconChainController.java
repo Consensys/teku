@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -77,6 +78,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
@@ -380,6 +382,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile DataColumnSidecarELManager dataColumnSidecarELManager;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
+  protected volatile Set<Bytes32> invalidExecutionPayloadRoots;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
@@ -983,6 +986,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionLayer,
               receivedExecutionPayloadEventsChannelPublisher,
               recentChainData,
+              invalidExecutionPayloadRoots,
               executionPayloadGossipChannel::publishExecutionPayload);
       final FailedExecutionPayloadPool failedExecutionPayloadPool =
           new FailedExecutionPayloadPool(executionPayloadManager, beaconAsyncRunner);
@@ -1309,6 +1313,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestationPool)
         .subscribe(SlotEventsChannel.class, pendingAttestationPool);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
+    invalidExecutionPayloadRoots = LimitedSet.createSynchronized(500);
   }
 
   protected void initBlockBlobSidecarsTrackersPool() {
@@ -1905,7 +1910,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             futureItemsMetric,
             "attestations");
     AttestationValidator attestationValidator =
-        new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
+        new AttestationValidator(
+            spec,
+            signatureVerificationService,
+            gossipValidationHelper,
+            invalidBlockRoots,
+            invalidExecutionPayloadRoots,
+            blockRoot ->
+                executionPayloadManager != null
+                    && executionPayloadManager.isExecutionPayloadAvailableForPayloadAttestation(
+                        blockRoot));
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
