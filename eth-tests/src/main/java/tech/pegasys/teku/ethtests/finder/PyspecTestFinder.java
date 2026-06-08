@@ -81,15 +81,15 @@ public class PyspecTestFinder implements TestFinder {
                   final String testName = pyspecDir.relativize(testDir).toString();
                   // some reference tests ship a partial config.yaml overriding a handful of
                   // constants on top of the builtin config
-                  final Path customConfig = testDir.resolve("config.yaml");
+                  final Path configOverridesYaml = testDir.resolve("config.yaml");
                   return new TestDefinition(
                       fork,
                       config,
                       testType,
                       testName,
                       testRoot.relativize(testDir),
-                      Files.exists(customConfig)
-                          ? Optional.of(readCustomConfig(customConfig))
+                      Files.exists(configOverridesYaml)
+                          ? Optional.of(readConfigOverrides(configOverridesYaml))
                           : Optional.empty());
                 }))
         .filter(
@@ -104,8 +104,9 @@ public class PyspecTestFinder implements TestFinder {
                     .noneMatch(testFilter -> testDefinition.getDisplayName().contains(testFilter)));
   }
 
-  private Map<String, Object> readCustomConfig(final Path configFile) throws IOException {
-    try (final InputStream in = Files.newInputStream(configFile)) {
+  private Map<String, Object> readConfigOverrides(final Path configOverridesYaml)
+      throws IOException {
+    try (final InputStream in = Files.newInputStream(configOverridesYaml)) {
       return yamlConfigReader.readValues(in);
     }
   }
