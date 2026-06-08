@@ -245,7 +245,10 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   public boolean isExecutionPayloadBidForEmptyParent(
       final BeaconState state, final ExecutionPayloadBid bid) {
-    return bid.getParentBlockHash().equals(BeaconStateGloas.required(state).getLatestBlockHash());
+    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
+    return bid.getParentBlockHash().equals(stateGloas.getLatestBlockHash())
+        && !bid.getParentBlockHash()
+            .equals(stateGloas.getLatestExecutionPayloadBid().getBlockHash());
   }
 
   public boolean isExecutionPayloadBidForFullParent(

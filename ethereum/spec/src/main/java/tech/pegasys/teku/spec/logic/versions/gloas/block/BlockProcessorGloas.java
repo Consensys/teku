@@ -140,12 +140,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(beaconBlock.getBody());
     final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
-    final ExecutionPayloadBid parentBid = stateGloas.getLatestExecutionPayloadBid();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    if (!bid.getParentBlockHash().equals(parentBid.getBlockHash())) {
+    if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(state, bid)) {
       // Parent was EMPTY -- no execution requests expected
-      if (!requests.equals(schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault())) {
+      if (!miscHelpersGloas.isDefaultExecutionRequests(requests)) {
         throw new BlockProcessingException(
             "No execution requests were expected for an EMPTY parent");
       }
@@ -153,7 +152,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Parent was FULL -- verify the bid commitment and apply the payload
-    if (!requests.hashTreeRoot().equals(parentBid.getExecutionRequestsRoot())) {
+    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
+        state, requests)) {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }

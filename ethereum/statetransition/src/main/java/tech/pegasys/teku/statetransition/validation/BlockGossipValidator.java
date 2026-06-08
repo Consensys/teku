@@ -248,6 +248,12 @@ public class BlockGossipValidator {
             executionPayloadBid.getParentBlockRoot(), block.getParentRoot());
       }
 
+      /*
+       * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes
+       * validation.
+       * Gloas distinguishes EMPTY parents from FULL parents whose payload may arrive
+       * later, so this may also SAVE_FOR_FUTURE while waiting for the parent execution payload.
+       */
       final Optional<InternalValidationResult> maybeParentExecutionPayloadValidationResult =
           validateExecutionPayloadBidParent(block, parentState, executionPayloadBid);
       if (maybeParentExecutionPayloadValidationResult.isPresent()) {
@@ -287,14 +293,11 @@ public class BlockGossipValidator {
       final SignedBeaconBlock block,
       final BeaconState parentState,
       final ExecutionPayloadBid executionPayloadBid) {
-    return spec.atSlot(parentState.getSlot())
-        .miscHelpers()
-        .toVersionGloas()
-        .map(
-            miscHelpersGloas ->
-                validateGloasExecutionPayloadBidParent(
-                    block, parentState, executionPayloadBid, miscHelpersGloas))
-        .orElseGet(() -> validateKnownParentBlockHash(executionPayloadBid, block.getParentRoot()));
+    return validateGloasExecutionPayloadBidParent(
+        block,
+        parentState,
+        executionPayloadBid,
+        MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers()));
   }
 
   private Optional<InternalValidationResult> validateGloasExecutionPayloadBidParent(
@@ -335,22 +338,6 @@ public class BlockGossipValidator {
       return Optional.empty();
     }
 
-    return Optional.of(
-        reject(
-            "The parent block hash %s from the bid is not present or hasn't been passed validation",
-            executionPayloadBid.getParentBlockHash()));
-  }
-
-  private Optional<InternalValidationResult> validateKnownParentBlockHash(
-      final ExecutionPayloadBid executionPayloadBid, final Bytes32 parentBlockRoot) {
-    /*
-     * If execution_payload verification of block's execution payload parent by an execution node is complete:
-     * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
-     */
-    if (gossipValidationHelper.isBlockHashKnown(
-        executionPayloadBid.getParentBlockHash(), parentBlockRoot)) {
-      return Optional.empty();
-    }
     return Optional.of(
         reject(
             "The parent block hash %s from the bid is not present or hasn't been passed validation",
