@@ -293,18 +293,8 @@ public class BlockGossipValidator {
       final SignedBeaconBlock block,
       final BeaconState parentState,
       final ExecutionPayloadBid executionPayloadBid) {
-    return validateExecutionPayloadBidParent(
-        block,
-        parentState,
-        executionPayloadBid,
-        MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers()));
-  }
-
-  private Optional<InternalValidationResult> validateExecutionPayloadBidParent(
-      final SignedBeaconBlock block,
-      final BeaconState parentState,
-      final ExecutionPayloadBid executionPayloadBid,
-      final MiscHelpersGloas miscHelpersGloas) {
+    final MiscHelpersGloas miscHelpersGloas =
+        MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers());
     final Optional<ExecutionRequests> maybeParentExecutionRequests =
         block.getMessage().getBody().getOptionalParentExecutionRequests();
     if (maybeParentExecutionRequests.isEmpty()) {
