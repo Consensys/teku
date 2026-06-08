@@ -257,7 +257,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         .equals(BeaconStateGloas.required(state).getLatestExecutionPayloadBid().getBlockHash());
   }
 
-  public boolean isDefaultExecutionRequests(final ExecutionRequests executionRequests) {
+  public boolean isEmptyExecutionRequests(final ExecutionRequests executionRequests) {
     return executionRequests.equals(
         schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault());
   }

@@ -293,14 +293,14 @@ public class BlockGossipValidator {
       final SignedBeaconBlock block,
       final BeaconState parentState,
       final ExecutionPayloadBid executionPayloadBid) {
-    return validateGloasExecutionPayloadBidParent(
+    return validateExecutionPayloadBidParent(
         block,
         parentState,
         executionPayloadBid,
         MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers()));
   }
 
-  private Optional<InternalValidationResult> validateGloasExecutionPayloadBidParent(
+  private Optional<InternalValidationResult> validateExecutionPayloadBidParent(
       final SignedBeaconBlock block,
       final BeaconState parentState,
       final ExecutionPayloadBid executionPayloadBid,
@@ -332,7 +332,7 @@ public class BlockGossipValidator {
     }
 
     if (miscHelpersGloas.isExecutionPayloadBidForEmptyParent(parentState, executionPayloadBid)) {
-      if (!miscHelpersGloas.isDefaultExecutionRequests(parentExecutionRequests)) {
+      if (!miscHelpersGloas.isEmptyExecutionRequests(parentExecutionRequests)) {
         return Optional.of(reject("No execution requests were expected for an EMPTY parent"));
       }
       return Optional.empty();

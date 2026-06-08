@@ -144,7 +144,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
     if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(state, bid)) {
       // Parent was EMPTY -- no execution requests expected
-      if (!miscHelpersGloas.isDefaultExecutionRequests(requests)) {
+      if (!miscHelpersGloas.isEmptyExecutionRequests(requests)) {
         throw new BlockProcessingException(
             "No execution requests were expected for an EMPTY parent");
       }
