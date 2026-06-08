@@ -40,23 +40,23 @@ public class AttestationUtilDenebTest {
   public void testAttestationSlotIsAfterCurrentTime(
       final int attestationSlot, final UInt64 currentTimeMillis, final boolean expectedResult) {
     // set genesisTime as 0 for simplification
-    final UInt64 genesisTime = UInt64.ZERO;
+    final UInt64 genesisTimeSeconds = UInt64.ZERO;
     final boolean actualResult =
         attestationUtilDeneb.isAttestationSlotAfterCurrentTime(
-            UInt64.valueOf(attestationSlot), genesisTime, currentTimeMillis);
+            UInt64.valueOf(attestationSlot), genesisTimeSeconds, currentTimeMillis);
     assertThat(actualResult).isEqualTo(expectedResult);
   }
 
   @ParameterizedTest
   @MethodSource("provideAttestationSlotInCurrentOrPreviousEpochArguments")
   public void testAttestationSlotInCurrentOrPreviousEpoch(
-      final int attestationSlot, final UInt64 currentTime, final boolean expectedResult) {
-    final UInt64 currentTimeMillis = secondsToMillis(currentTime);
+      final int attestationSlot, final UInt64 currentTimeSeconds, final boolean expectedResult) {
+    final UInt64 currentTimeMillis = secondsToMillis(currentTimeSeconds);
     // set genesisTime as 0 for simplification
-    final UInt64 genesisTime = UInt64.ZERO;
+    final UInt64 genesisTimeSeconds = UInt64.ZERO;
     final boolean actualResult =
         attestationUtilDeneb.isAttestationSlotInCurrentOrPreviousEpoch(
-            UInt64.valueOf(attestationSlot), genesisTime, currentTimeMillis);
+            UInt64.valueOf(attestationSlot), genesisTimeSeconds, currentTimeMillis);
     assertThat(actualResult).isEqualTo(expectedResult);
   }
 
@@ -69,22 +69,21 @@ public class AttestationUtilDenebTest {
         Arguments.of(2, getTimeForSlotInMillis(2).minus(501), true));
   }
 
-  // minimal is 6 seconds per slot, 8 slots per epoch, MAXIMUM_GOSSIP_CLOCK_DISPARITY is 500 ms (1
-  // slot disparity)
+  // minimal is 6 seconds per slot, 8 slots per epoch, MAXIMUM_GOSSIP_CLOCK_DISPARITY is 500 ms
   private static Stream<Arguments> provideAttestationSlotInCurrentOrPreviousEpochArguments() {
     return Stream.of(
         // lower_bound pass
-        Arguments.of(7, getTimeForSlot(17), true),
         Arguments.of(8, getTimeForSlot(17), true),
         Arguments.of(15, getTimeForSlot(17), true),
         Arguments.of(16, getTimeForSlot(17), true),
         // lower_bound fail
+        Arguments.of(7, getTimeForSlot(17), false),
         Arguments.of(6, getTimeForSlot(17), false),
         // upper_bound pass
         Arguments.of(23, getTimeForSlot(17), true),
-        Arguments.of(24, getTimeForSlot(17), true),
         Arguments.of(22, getTimeForSlot(17), true),
         // upper_bound fail
+        Arguments.of(24, getTimeForSlot(17), false),
         Arguments.of(25, getTimeForSlot(17), false),
         // edge case
         Arguments.of(0, getTimeForSlot(0), true));
