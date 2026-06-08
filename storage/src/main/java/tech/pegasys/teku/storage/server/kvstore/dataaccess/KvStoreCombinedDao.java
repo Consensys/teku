@@ -190,14 +190,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
       UInt64 startSlot, UInt64 endSlot);
 
-  /**
-   * Runs {@code task}, capturing low-level store performance counters around it and logging a
-   * summary tagged with {@code label}. Stores without performance counters simply run the task.
-   */
-  default void runWithPerfMetrics(final String label, final Runnable task) {
-    task.run();
-  }
-
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<UInt64> getEarliestAvailableDataColumnSlot();

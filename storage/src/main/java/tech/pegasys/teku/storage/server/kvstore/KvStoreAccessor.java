@@ -108,16 +108,6 @@ public interface KvStoreAccessor extends AutoCloseable {
   @MustBeClosed
   <K extends Comparable<K>, V> Stream<K> streamKeys(KvStoreColumn<K, V> column, K from, K to);
 
-  /**
-   * Runs {@code task} on the calling thread, capturing low-level store performance counters around
-   * it and logging a summary tagged with {@code label}. Stores that do not support performance
-   * counters simply run the task. Intended for diagnostics; implementations should avoid any
-   * overhead unless diagnostics are enabled.
-   */
-  default void runWithPerfMetrics(final String label, final Runnable task) {
-    task.run();
-  }
-
   KvStoreTransaction startTransaction();
 
   interface KvStoreTransaction extends AutoCloseable {

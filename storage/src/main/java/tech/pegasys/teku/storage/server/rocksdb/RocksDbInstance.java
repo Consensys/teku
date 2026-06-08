@@ -276,38 +276,6 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public void runWithPerfMetrics(final String label, final Runnable task) {
-    // Perf context is per-thread; only enable it when diagnostics are requested to avoid the
-    // measurement overhead on the hot path.
-    if (!LOG.isDebugEnabled()) {
-      task.run();
-      return;
-    }
-    db.setPerfLevel(PerfLevel.ENABLE_TIME);
-    final PerfContext perfContext = db.getPerfContext();
-    perfContext.reset();
-    try {
-      task.run();
-    } finally {
-      LOG.debug(
-          "{} RocksDB perf context: internalKeySkipped={}, internalDeleteSkipped={}, "
-              + "rangeDelReseek={}, blockReadCount={}, blockReadBytes={}, blockReadTimeNanos={}, "
-              + "iterSeekCpuNanos={}, iterNextCpuNanos={}, iterPrevCpuNanos={}",
-          label,
-          perfContext.getInternalKeySkippedCount(),
-          perfContext.getInternalDeleteSkippedCount(),
-          perfContext.getInternalRangeDelReseekCount(),
-          perfContext.getBlockReadCount(),
-          perfContext.getBlockReadByte(),
-          perfContext.getBlockReadTime(),
-          perfContext.getIterSeekCpuNanos(),
-          perfContext.getIterNextCpuNanos(),
-          perfContext.getIterPrevCpuNanos());
-      db.setPerfLevel(PerfLevel.DISABLE);
-    }
-  }
-
-  @Override
   public synchronized void close() throws Exception {
     if (closed.compareAndSet(false, true)) {
       for (RocksDbTransaction openTransaction : openTransactions) {

@@ -1291,20 +1291,16 @@ public class KvStoreDatabase implements Database {
     LOG.debug(
         "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-    dao.runWithPerfMetrics(
-        "pruneAllSidecars",
-        () -> {
-          if (pruneDataColumnSidecars(
-              pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL)) {
-            LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
-          }
+    if (pruneDataColumnSidecars(
+        pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL)) {
+      LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
+    }
 
-          if (pruneDataColumnSidecars(
-              pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL)) {
-            LOG.debug(
-                "Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
-          }
-        });
+    if (pruneDataColumnSidecars(
+        pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL)) {
+      LOG.debug(
+          "Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
+    }
 
     LOG.debug(
         "Data column sidecars pruning completed in {} ms", System.currentTimeMillis() - startTime);

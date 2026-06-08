@@ -373,11 +373,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public void runWithPerfMetrics(final String label, final Runnable task) {
-    finalizedDao.runWithPerfMetrics(label, task);
-  }
-
-  @Override
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.getDataColumnIdentifiers(slotAndBlockRoot);

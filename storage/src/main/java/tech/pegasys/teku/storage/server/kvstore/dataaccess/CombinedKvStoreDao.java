@@ -713,11 +713,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public void runWithPerfMetrics(final String label, final Runnable task) {
-    db.runWithPerfMetrics(label, task);
-  }
-
-  @Override
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
       final SlotAndBlockRoot slotAndBlockRoot) {
     try (final Stream<DataColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
