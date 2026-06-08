@@ -20,6 +20,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
@@ -40,16 +42,31 @@ public class AttestationValidator {
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
+  private final Set<Bytes32> invalidExecutionPayloadRoots;
+  private final Predicate<Bytes32> executionPayloadAvailableForPayloadAttestation;
 
   public AttestationValidator(
       final Spec spec,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
+    this(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of(), __ -> true);
+  }
+
+  public AttestationValidator(
+      final Spec spec,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final GossipValidationHelper gossipValidationHelper,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Set<Bytes32> invalidExecutionPayloadRoots,
+      final Predicate<Bytes32> executionPayloadAvailableForPayloadAttestation) {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
+    this.invalidExecutionPayloadRoots = invalidExecutionPayloadRoots;
+    this.executionPayloadAvailableForPayloadAttestation =
+        executionPayloadAvailableForPayloadAttestation;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -163,6 +180,20 @@ public class AttestationValidator {
     // If it's not in the store, it may not have been processed yet so save for future.
     if (!gossipValidationHelper.isBlockAvailable(data.getBeaconBlockRoot())) {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
+    }
+
+    final Bytes32 blockRoot = data.getBeaconBlockRoot();
+    if (spec.atSlot(data.getSlot()).getForkChoiceUtil().getFullPayloadVoteHint(data.getIndex())) {
+      // [REJECT] If index == 1, the execution payload for block passes validation.
+      if (invalidExecutionPayloadRoots.contains(blockRoot)) {
+        return completedFuture(
+            InternalValidationResultWithState.reject(
+                "Execution payload for full payload attestation is invalid"));
+      }
+      // [IGNORE] If index == 1, the execution payload for block has been seen.
+      if (!executionPayloadAvailableForPayloadAttestation.test(blockRoot)) {
+        return completedFuture(InternalValidationResultWithState.saveForFuture());
+      }
     }
 
     return gossipValidationHelper

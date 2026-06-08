@@ -28,9 +28,12 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -67,6 +70,7 @@ class DefaultExecutionPayloadManagerTest {
           mock(ReceivedExecutionPayloadEventsChannel.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
+  private final Set<Bytes32> invalidExecutionPayloadRoots = new HashSet<>();
   private Optional<SignedExecutionPayloadEnvelope> publishedExecutionPayload = Optional.empty();
 
   private final DefaultExecutionPayloadManager executionPayloadManager =
@@ -78,6 +82,7 @@ class DefaultExecutionPayloadManagerTest {
           executionLayer,
           receivedExecutionPayloadEventsChannelPublisher,
           recentChainData,
+          invalidExecutionPayloadRoots,
           executionPayload -> {
             publishedExecutionPayload = Optional.of(executionPayload);
             return SafeFuture.COMPLETE;
@@ -210,6 +215,22 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldCacheInvalidExecutionPayloadWhenImportFailsExecution() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedExecution(new RuntimeException("invalid"));
+    givenValidationResult(signedExecutionPayload, ACCEPT);
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult));
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        validateAndImport(signedExecutionPayload);
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
+    assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
   }
 
   @Test

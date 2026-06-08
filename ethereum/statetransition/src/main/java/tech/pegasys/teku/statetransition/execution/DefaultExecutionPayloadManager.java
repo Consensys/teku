@@ -82,6 +82,7 @@ public class DefaultExecutionPayloadManager
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher;
   private final RecentChainData recentChainData;
+  private final Set<Bytes32> invalidExecutionPayloadRoots;
   private final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>>
       executionPayloadPublisher;
 
@@ -93,6 +94,7 @@ public class DefaultExecutionPayloadManager
       final ExecutionLayerChannel executionLayer,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
       final RecentChainData recentChainData,
+      final Set<Bytes32> invalidExecutionPayloadRoots,
       final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>> executionPayloadPublisher) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -102,6 +104,7 @@ public class DefaultExecutionPayloadManager
     this.receivedExecutionPayloadEventsChannelPublisher =
         receivedExecutionPayloadEventsChannelPublisher;
     this.recentChainData = recentChainData;
+    this.invalidExecutionPayloadRoots = invalidExecutionPayloadRoots;
     this.executionPayloadPublisher = executionPayloadPublisher;
   }
 
@@ -190,6 +193,9 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {
+                if (isInvalidExecutionPayload(result)) {
+                  invalidExecutionPayloadRoots.add(signedExecutionPayload.getBeaconBlockRoot());
+                }
                 switch (result.getFailureReason()) {
                   case FAILED_EXECUTION -> {
                     LOG.error(
@@ -219,6 +225,16 @@ public class DefaultExecutionPayloadManager
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
+  }
+
+  private boolean isInvalidExecutionPayload(final ExecutionPayloadImportResult result) {
+    return switch (result.getFailureReason()) {
+      case FAILED_EXECUTION, FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> true;
+      case UNKNOWN_BEACON_BLOCK_ROOT,
+          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
+          INTERNAL_ERROR ->
+          false;
+    };
   }
 
   private void logFailedExecutionPayloadImport(
