@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.ethtests.finder;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +27,7 @@ import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.YamlConfigReader;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifierImpl;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -44,7 +49,13 @@ public class TestDefinition {
       final String testType,
       final String testName,
       final Path pathFromPhaseTestDir) {
-    this(fork, configName, testType, testName, pathFromPhaseTestDir, Optional.empty());
+    this(
+        fork,
+        configName,
+        testType,
+        testName,
+        pathFromPhaseTestDir,
+        readConfigOverrides(configName, fork, pathFromPhaseTestDir));
   }
 
   public TestDefinition(
@@ -142,5 +153,22 @@ public class TestDefinition {
     return ReferenceTestFinder.findReferenceTestRootDirectory()
         .resolve(Path.of(configName, fork))
         .resolve(pathFromPhaseTestDir);
+  }
+
+  private static Optional<Map<String, Object>> readConfigOverrides(
+      final String configName, final String fork, final Path pathFromPhaseTestDir) {
+    final Path configOverridesYaml =
+        ReferenceTestFinder.findReferenceTestRootDirectory()
+            .resolve(Path.of(configName, fork))
+            .resolve(pathFromPhaseTestDir)
+            .resolve("config.yaml");
+    if (!Files.exists(configOverridesYaml)) {
+      return Optional.empty();
+    }
+    try (final InputStream in = Files.newInputStream(configOverridesYaml)) {
+      return Optional.of(new YamlConfigReader().readValues(in));
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }
