@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.base.Preconditions;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.NoOpKZG;
@@ -373,6 +375,14 @@ public class TestSpecFactory {
       final SpecMilestone specMilestone,
       final Eth2Network network,
       final Consumer<SpecConfigBuilder> configModifier) {
+    return create(specMilestone, network, configModifier, Collections.emptyMap());
+  }
+
+  public static Spec create(
+      final SpecMilestone specMilestone,
+      final Eth2Network network,
+      final Consumer<SpecConfigBuilder> configModifier,
+      final Map<String, Object> configOverrides) {
 
     Consumer<SpecConfigBuilder> defaultModifier = __ -> {};
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
@@ -401,7 +411,8 @@ public class TestSpecFactory {
     }
 
     return create(
-        SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),
+        SpecConfigLoader.loadConfig(
+            network.configName(), defaultModifier.andThen(configModifier), configOverrides),
         specMilestone);
   }
 
