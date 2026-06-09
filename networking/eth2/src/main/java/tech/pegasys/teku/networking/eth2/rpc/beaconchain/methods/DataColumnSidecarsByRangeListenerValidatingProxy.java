@@ -110,12 +110,21 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
           final MetricsHistogram.Timer kzgVerificationTimer =
               dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
           return verifyKzgProofs(dataColumnSidecar)
-              .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+              .alwaysRun(kzgVerificationTimer.closeUnchecked())
+              .exceptionallyCompose(
+                  error ->
+                      SafeFuture.failedFuture(
+                          new DataColumnSidecarsResponseInvalidResponseException(
+                              peer,
+                              InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED,
+                              error)))
               .thenCompose(
                   maybeKzgProofsVerificationResult -> {
                     if (maybeKzgProofsVerificationResult.isPresent()) {
                       throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                          peer,
+                          InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED,
+                          maybeKzgProofsVerificationResult.get());
                     }
                     return verifySignature(dataColumnSidecar);
                   })
