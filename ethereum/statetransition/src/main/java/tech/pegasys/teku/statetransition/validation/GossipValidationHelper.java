@@ -153,6 +153,14 @@ public class GossipValidationHelper {
         recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
+  @SuppressWarnings("unused")
+  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(final Bytes32 blockRoot) {
+    // All nodes in the proto-array descend from the finalized block, so no production validation
+    // is needed for this rule. The reference-test executor overrides this method to model
+    // generated tests with fake finalized checkpoint roots that cannot be represented in Store.
+    return true;
+  }
+
   public boolean isProposerTheExpectedProposer(
       final UInt64 proposerIndex, final UInt64 slot, final BeaconState postState) {
     final int expectedProposerIndex = spec.getBeaconProposerIndex(postState, slot);

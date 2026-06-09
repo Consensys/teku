@@ -189,6 +189,39 @@ class AggregateAttestationValidatorTest {
   }
 
   @TestTemplate
+  public void shouldRejectElectraAggregateWithNoCommitteeBitsBeforeSeenAggregateChecks(
+      final SpecContext specContext) {
+    specContext.assumeIsOneOf(ELECTRA);
+
+    final SignedAggregateAndProof validSignedAggregate =
+        generator.validAggregateAndProof(storageSystem.getChainHead());
+    final AggregateAndProof validAggregateAndProof = validSignedAggregate.getMessage();
+    final Attestation validAggregate = validAggregateAndProof.getAggregate();
+    final Attestation aggregateWithNoCommitteeBits =
+        aggregateAndProofSchema
+            .getAttestationSchema()
+            .create(
+                validAggregate.getAggregationBits(),
+                validAggregate.getData(),
+                validAggregate.getAggregateSignature(),
+                () -> validAggregate.getSchema().getCommitteeBitsSchema().orElseThrow().ofBits());
+    final SignedAggregateAndProof signedAggregate =
+        signedAggregateAndProofSchema.create(
+            aggregateAndProofSchema.create(
+                validAggregateAndProof.getIndex(),
+                aggregateWithNoCommitteeBits,
+                validAggregateAndProof.getSelectionProof()),
+            validSignedAggregate.getSignature());
+
+    assertThat(aggregateWithNoCommitteeBits.getCommitteeBitsRequired().getBitCount()).isZero();
+    assertThat(
+            validator.validate(
+                ValidatableAttestation.aggregateFromValidator(spec, signedAggregate)))
+        .isCompletedWithValue(
+            reject("Rejecting attestation because committee bits count is not 1"));
+  }
+
+  @TestTemplate
   public void shouldIgnoreWhenAttestationValidatorIgnores() {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(storageSystem.getChainHead());

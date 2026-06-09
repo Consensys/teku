@@ -45,24 +45,65 @@ class StoreBuilderTest {
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   @Test
-  void forkChoiceStoreBuilder_shouldUseAnchorStateSlotAndRootWhenAnchorBlockPrecedesState()
+  void forkChoiceStoreBuilder_shouldUseAnchorBlockSlotAndStateRootForNonTransitionedState()
       throws Exception {
     chainBuilder.generateGenesis();
-    final UInt64 anchorStateSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(6));
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(spec, anchorBlockAndState);
+
+    assertThat(anchor.getState().getSlot()).isEqualTo(anchor.getBlockSlot());
+
+    assertStoreRebuiltFromOnDiskStoreDataUsesBlockSlot(anchor);
+  }
+
+  @Test
+  void forkChoiceStoreBuilder_shouldUseAnchorBlockSlotAndStateRootForTransitionedState()
+      throws Exception {
+    chainBuilder.generateGenesis();
+    final UInt64 checkpointStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final UInt64 blockSlotBeforeCheckpointBoundary = checkpointStartSlot.minus(2);
     final SignedBlockAndState anchorBlock =
-        chainBuilder.generateBlockAtSlot(anchorStateSlot.minus(1));
-    final BeaconState anchorState = spec.processSlots(anchorBlock.getState(), anchorStateSlot);
+        chainBuilder.generateBlockAtSlot(blockSlotBeforeCheckpointBoundary);
+    final BeaconState anchorState = spec.processSlots(anchorBlock.getState(), checkpointStartSlot);
     final Checkpoint checkpoint =
-        new Checkpoint(spec.computeEpochAtSlot(anchorStateSlot), anchorBlock.getRoot());
+        new Checkpoint(spec.computeNextEpochBoundary(anchorState.getSlot()), anchorBlock.getRoot());
     final AnchorPoint anchor =
         AnchorPoint.create(spec, checkpoint, anchorState, Optional.of(anchorBlock.getBlock()));
 
+    assertThat(anchorBlock.getSlot()).isLessThan(checkpointStartSlot.minus(1));
+    assertThat(anchorState.getSlot()).isEqualTo(checkpointStartSlot);
+    assertThat(anchorState.getSlot()).isNotEqualTo(anchorBlock.getSlot());
+
+    assertStoreRebuiltFromOnDiskStoreDataUsesBlockSlot(anchor);
+  }
+
+  private void assertStoreRebuiltFromOnDiskStoreDataUsesBlockSlot(final AnchorPoint anchor) {
+    final UInt64 expectedBlockTime =
+        spec.computeTimeAtSlot(anchor.getBlockSlot(), anchor.getState().getGenesisTime());
     final OnDiskStoreData storeData =
         StoreBuilder.forkChoiceStoreBuilder(spec, anchor, UInt64.ZERO);
-    final StoredBlockMetadata metadata = storeData.blockInformation().get(anchor.getRoot());
+    final UpdatableStore store =
+        StoreBuilder.create()
+            .onDiskStoreData(storeData)
+            .asyncRunner(SYNC_RUNNER)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(BlockProvider.NOOP)
+            .stateProvider(StateAndBlockSummaryProvider.NOOP)
+            .earliestBlobSidecarSlotProvider(EarliestBlobSidecarSlotProvider.NOOP)
+            .build();
 
-    assertThat(metadata.getBlockSlot()).isEqualTo(anchorState.getSlot());
-    assertThat(metadata.getStateRoot()).isEqualTo(anchorState.hashTreeRoot());
+    assertThat(store.getTimeSeconds()).isEqualTo(expectedBlockTime);
+    assertThat(store.getForkChoiceStrategy().blockSlot(anchor.getRoot()))
+        .contains(anchor.getBlockSlot());
+    assertThat(store.getForkChoiceStrategy().getAncestor(anchor.getRoot(), anchor.getBlockSlot()))
+        .contains(anchor.getRoot());
+    assertThat(
+            store
+                .getForkChoiceStrategy()
+                .getAncestor(anchor.getRoot(), anchor.getState().getSlot()))
+        .contains(anchor.getRoot());
   }
 
   @Test

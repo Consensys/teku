@@ -19,6 +19,7 @@ import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestati
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,7 +107,8 @@ class AttestationManagerIntegrationTest {
   private final GossipValidationHelper gossipValidationHelper =
       new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   private final AttestationValidator attestationValidator =
-      new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
+      new AttestationValidator(
+          spec, signatureVerificationService, gossipValidationHelper, new ConcurrentHashMap<>());
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =
