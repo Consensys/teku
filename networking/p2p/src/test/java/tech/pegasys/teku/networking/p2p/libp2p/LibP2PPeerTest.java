@@ -23,8 +23,11 @@ import static org.mockito.Mockito.when;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.security.SecureChannel.Session;
+import io.libp2p.crypto.keys.EcdsaKt;
+import io.libp2p.crypto.keys.Secp256k1Kt;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,6 +76,27 @@ public class LibP2PPeerTest {
     when(secureSession.getRemoteId()).thenReturn(PeerId.fromBase58(PEER_ID));
     libP2PPeer =
         new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, peer -> 0.0);
+  }
+
+  @Test
+  public void getPubKey_recoversIdentityKeyFromPeerIdWhenSecureSessionExposesDifferentKey() {
+    // Simulates a QUIC connection: the libp2p-TLS secure session reports the ephemeral
+    // certificate key (ECDSA) as the remote public key, while the verified peer identity (and
+    // hence the peer id) is derived from the node's secp256k1 identity key. The discovery node id
+    // must be derived from the secp256k1 identity key, so getPubKey() must return that key rather
+    // than the certificate key.
+    final PubKey identityKey = Secp256k1Kt.generateSecp256k1KeyPair().getSecond();
+    final PubKey certificateKey = EcdsaKt.generateEcdsaKeyPair().getSecond();
+
+    final Session secureSession = mock(Session.class);
+    when(connection.secureSession()).thenReturn(secureSession);
+    when(secureSession.getRemoteId()).thenReturn(PeerId.fromPubKey(identityKey));
+    when(secureSession.getRemotePubKey()).thenReturn(certificateKey);
+
+    final LibP2PPeer peer =
+        new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, p -> 0.0);
+
+    assertThat(peer.getPubKey().raw()).isEqualTo(identityKey.raw());
   }
 
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored", "rawtypes"})
