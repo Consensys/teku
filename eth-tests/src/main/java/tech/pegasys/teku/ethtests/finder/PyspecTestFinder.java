@@ -17,20 +17,14 @@ import static tech.pegasys.teku.ethtests.finder.ReferenceTestFinder.unchecked;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
-import tech.pegasys.teku.spec.config.YamlConfigReader;
 
 @SuppressWarnings("MustBeClosedChecker")
 public class PyspecTestFinder implements TestFinder {
-
-  private final YamlConfigReader yamlConfigReader = new YamlConfigReader();
 
   public static final String PYSPEC_TEST_DIRECTORY_NAME = "pyspec_tests";
 
@@ -76,22 +70,11 @@ public class PyspecTestFinder implements TestFinder {
     return Files.list(pyspecDir)
         .filter(testDir -> !testDir.getFileName().toString().equals(".DS_Store"))
         .map(
-            unchecked(
-                testDir -> {
-                  final String testName = pyspecDir.relativize(testDir).toString();
-                  // some reference tests ship a partial config.yaml overriding a handful of
-                  // constants on top of the builtin config
-                  final Path configOverridesYaml = testDir.resolve("config.yaml");
-                  return new TestDefinition(
-                      fork,
-                      config,
-                      testType,
-                      testName,
-                      testRoot.relativize(testDir),
-                      Files.exists(configOverridesYaml)
-                          ? Optional.of(readConfigOverrides(configOverridesYaml))
-                          : Optional.empty());
-                }))
+            testDir -> {
+              final String testName = pyspecDir.relativize(testDir).toString();
+              return new TestDefinition(
+                  fork, config, testType, testName, testRoot.relativize(testDir));
+            })
         .filter(
             testDefinition ->
                 onlyTestsToRun.isEmpty()
@@ -102,12 +85,5 @@ public class PyspecTestFinder implements TestFinder {
             testDefinition ->
                 testsToIgnore.stream()
                     .noneMatch(testFilter -> testDefinition.getDisplayName().contains(testFilter)));
-  }
-
-  private Map<String, Object> readConfigOverrides(final Path configOverridesYaml)
-      throws IOException {
-    try (final InputStream in = Files.newInputStream(configOverridesYaml)) {
-      return yamlConfigReader.readValues(in);
-    }
   }
 }
