@@ -118,6 +118,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyGloasTest
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
-                .describe());
+                .describe())
+        .hasMessageContaining("DataColumnSidecar's KZG proofs do not match the bid's KZG proofs");
   }
 }
