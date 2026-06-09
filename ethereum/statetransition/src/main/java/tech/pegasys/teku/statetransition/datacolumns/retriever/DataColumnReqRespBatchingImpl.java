@@ -34,6 +34,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
@@ -69,6 +71,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private record RequestEntry(
       UInt256 nodeId,
       DataColumnSlotAndIdentifier columnIdentifier,
+      Optional<SszList<SszKZGCommitment>> blobKzgCommitments,
       SafeFuture<DataColumnSidecar> promise) {}
 
   private final ConcurrentLinkedQueue<RequestEntry> bufferedRequests =
@@ -77,7 +80,16 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
       final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
-    final RequestEntry entry = new RequestEntry(nodeId, columnIdentifier, new SafeFuture<>());
+    return requestDataColumnSidecar(nodeId, columnIdentifier, Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
+      final UInt256 nodeId,
+      final DataColumnSlotAndIdentifier columnIdentifier,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    final RequestEntry entry =
+        new RequestEntry(nodeId, columnIdentifier, blobKzgCommitments, new SafeFuture<>());
     bufferedRequests.add(entry);
     return entry.promise();
   }
@@ -94,7 +106,8 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     }
   }
 
-  private record ByRootRequest(Bytes32 root, Set<UInt64> columns) {}
+  private record ByRootRequest(
+      Bytes32 root, Set<UInt64> columns, Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {}
 
   private void flushForNode(final UInt256 nodeId, final List<RequestEntry> nodeRequests) {
     LOG.debug("Flushing requests for node {}: {} total", nodeId, nodeRequests.size());
@@ -102,7 +115,13 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
       return;
     }
 
-    final List<ByRootRequest> byRootRequests = groupByRootRequests(nodeRequests);
+    final List<ByRootRequest> byRootRequests;
+    try {
+      byRootRequests = groupByRootRequests(nodeRequests);
+    } catch (final RuntimeException error) {
+      nodeRequests.forEach(nodeRequest -> nodeRequest.promise().completeExceptionally(error));
+      return;
+    }
     LOG.trace("Processing prepared requests for node {}: byRoot({})", nodeId, byRootRequests);
 
     final List<DataColumnsByRootIdentifier> byRootIdentifiers =
@@ -122,7 +141,13 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
     final AsyncStream<DataColumnSidecar> byRootStream =
         AsyncStream.createUnsafe(byRootBatches.iterator())
-            .flatMap(byRootBatch -> byRootRpc.requestDataColumnSidecarsByRoot(nodeId, byRootBatch));
+            .flatMap(
+                byRootBatch -> {
+                  final Map<Bytes32, SszList<SszKZGCommitment>> batchCommitmentsByRoot =
+                      getBlobKzgCommitmentsByRoot(byRootBatch, byRootRequests);
+                  return byRootRpc.requestDataColumnSidecarsByRoot(
+                      nodeId, byRootBatch, batchCommitmentsByRoot);
+                });
 
     byRootStream.consume(createResponseHandler(nodeRequests));
   }
@@ -171,11 +196,18 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   private List<ByRootRequest> groupByRootRequests(final List<RequestEntry> nodeRequests) {
     final NavigableMap<SlotAndBlockRoot, Set<UInt64>> bySlotAndBlockRootMap = new TreeMap<>();
+    final Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot = new HashMap<>();
     nodeRequests.forEach(
         nodeRequest -> {
           final UInt64 column = nodeRequest.columnIdentifier.columnIndex();
           final SlotAndBlockRoot key = nodeRequest.columnIdentifier().getSlotAndBlockRoot();
           bySlotAndBlockRootMap.computeIfAbsent(key, k -> new HashSet<>()).add(column);
+          nodeRequest
+              .blobKzgCommitments()
+              .ifPresent(
+                  blobKzgCommitments ->
+                      addBlobKzgCommitments(
+                          blobKzgCommitmentsByRoot, key.getBlockRoot(), blobKzgCommitments));
         });
 
     if (bySlotAndBlockRootMap.isEmpty()) {
@@ -186,10 +218,42 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     while (!bySlotAndBlockRootMap.isEmpty()) {
       final Map.Entry<SlotAndBlockRoot, Set<UInt64>> current =
           bySlotAndBlockRootMap.pollFirstEntry();
-      byRootRequests.add(new ByRootRequest(current.getKey().getBlockRoot(), current.getValue()));
+      final Bytes32 blockRoot = current.getKey().getBlockRoot();
+      byRootRequests.add(
+          new ByRootRequest(
+              blockRoot,
+              current.getValue(),
+              Optional.ofNullable(blobKzgCommitmentsByRoot.get(blockRoot))));
     }
 
     return Collections.unmodifiableList(byRootRequests);
+  }
+
+  private void addBlobKzgCommitments(
+      final Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot,
+      final Bytes32 root,
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
+    final SszList<SszKZGCommitment> previous =
+        blobKzgCommitmentsByRoot.putIfAbsent(root, blobKzgCommitments);
+    if (previous != null && !previous.equals(blobKzgCommitments)) {
+      throw new IllegalArgumentException("Conflicting blob KZG commitments for " + root);
+    }
+  }
+
+  private Map<Bytes32, SszList<SszKZGCommitment>> getBlobKzgCommitmentsByRoot(
+      final List<DataColumnsByRootIdentifier> byRootBatch,
+      final List<ByRootRequest> byRootRequests) {
+    final Set<Bytes32> rootsInBatch =
+        byRootBatch.stream()
+            .map(DataColumnsByRootIdentifier::getBlockRoot)
+            .collect(Collectors.toUnmodifiableSet());
+    return byRootRequests.stream()
+        .filter(request -> rootsInBatch.contains(request.root()))
+        .flatMap(
+            request ->
+                request.blobKzgCommitments().stream()
+                    .map(blobKzgCommitments -> Map.entry(request.root(), blobKzgCommitments)))
+        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private AsyncStreamHandler<DataColumnSidecar> createResponseHandler(

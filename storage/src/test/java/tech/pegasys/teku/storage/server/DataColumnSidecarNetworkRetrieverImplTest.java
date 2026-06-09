@@ -23,19 +23,26 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 public class DataColumnSidecarNetworkRetrieverImplTest {
 
   @SuppressWarnings("unchecked")
-  final Function<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> retriever =
-      mock(Function.class);
+  final BiFunction<
+          DataColumnSlotAndIdentifier,
+          Optional<SszList<SszKZGCommitment>>,
+          SafeFuture<DataColumnSidecar>>
+      retriever = mock(BiFunction.class);
 
   final Runnable retrieverFlusher = mock(Runnable.class);
 
@@ -56,8 +63,8 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
   @Test
   void shouldReturnSidecarsWhenSuccessful() {
     var pendingSidecar2 = new SafeFuture<DataColumnSidecar>();
-    when(retriever.apply(id1)).thenReturn(SafeFuture.completedFuture(sidecar1));
-    when(retriever.apply(id2)).thenReturn(pendingSidecar2);
+    when(retriever.apply(id1, Optional.empty())).thenReturn(SafeFuture.completedFuture(sidecar1));
+    when(retriever.apply(id2, Optional.empty())).thenReturn(pendingSidecar2);
 
     final SafeFuture<List<DataColumnSidecar>> result =
         networkRetriever.retrieveDataColumnSidecars(List.of(id1, id2));
@@ -77,7 +84,7 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
 
   @Test
   void shouldNotFailIfDbWriteFails() {
-    when(retriever.apply(id1)).thenReturn(SafeFuture.completedFuture(sidecar1));
+    when(retriever.apply(id1, Optional.empty())).thenReturn(SafeFuture.completedFuture(sidecar1));
     when(dbWriter.apply(sidecar1)).thenReturn(SafeFuture.failedFuture(new RuntimeException()));
 
     final SafeFuture<List<DataColumnSidecar>> result =
@@ -97,15 +104,15 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
     assertThat(result).isCompleted();
     assertThat(result.join()).isEmpty();
 
-    verify(retriever, never()).apply(any());
+    verify(retriever, never()).apply(any(), any());
     verify(retrieverFlusher, never()).run();
   }
 
   @Test
   void shouldReturnEmptyListWhenOneRequestFails() {
     // One succeeds, one fails
-    when(retriever.apply(id1)).thenReturn(SafeFuture.completedFuture(sidecar1));
-    when(retriever.apply(id2))
+    when(retriever.apply(id1, Optional.empty())).thenReturn(SafeFuture.completedFuture(sidecar1));
+    when(retriever.apply(id2, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Network Error")));
 
     final SafeFuture<List<DataColumnSidecar>> result =
@@ -128,7 +135,7 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
             retriever, retrieverFlusher, dbWriter, shortTimeout);
 
     final SafeFuture<DataColumnSidecar> pendingFuture = new SafeFuture<>();
-    when(retriever.apply(id1)).thenReturn(pendingFuture);
+    when(retriever.apply(id1, Optional.empty())).thenReturn(pendingFuture);
 
     final SafeFuture<List<DataColumnSidecar>> result =
         timeoutRetriever.retrieveDataColumnSidecars(List.of(id1));

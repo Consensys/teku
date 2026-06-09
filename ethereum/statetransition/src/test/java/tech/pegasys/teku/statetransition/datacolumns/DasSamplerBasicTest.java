@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -48,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -58,6 +61,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.Sam
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
@@ -75,6 +79,7 @@ public class DasSamplerBasicTest {
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
+  private CustodyGroupCountManager custodyGroupCountManager;
   private BlockImportChannel blockImportChannel;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
@@ -82,7 +87,7 @@ public class DasSamplerBasicTest {
 
   @BeforeEach
   public void setUp() {
-    final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+    custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
     recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
@@ -90,7 +95,7 @@ public class DasSamplerBasicTest {
     currentSlotProvider = mock(CurrentSlotProvider.class);
     blockImportChannel = mock(BlockImportChannel.class);
 
-    when(retriever.retrieve(any()))
+    when(retriever.retrieve(any(), any()))
         .thenReturn(SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
 
     when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
@@ -161,7 +166,7 @@ public class DasSamplerBasicTest {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(new SafeFuture<>());
 
     final SafeFuture<List<UInt64>> completionFuture =
         sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
@@ -206,7 +211,7 @@ public class DasSamplerBasicTest {
               return futureSidecarsByIndex.get(id.columnIndex());
             })
         .when(retriever)
-        .retrieve(any());
+        .retrieve(any(), eq(Optional.empty()));
 
     when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()))
         .thenReturn(Duration.ofSeconds(1));
@@ -244,12 +249,68 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  @SuppressWarnings({"FutureReturnValueIgnored", "unchecked"})
+  void checkDataAvailability_shouldForwardBlobKzgCommitmentsToRetriever() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
+    when(retriever.retrieve(any(), eq(Optional.of(blobKzgCommitments))))
+        .thenReturn(new SafeFuture<>());
+
+    sampler.checkDataAvailability(
+        slotAndBlockRoot.getSlot(),
+        slotAndBlockRoot.getBlockRoot(),
+        Optional.of(blobKzgCommitments));
+
+    for (final UInt64 missingColumn : SAMPLING_INDICES) {
+      verify(retriever)
+          .retrieve(
+              new DataColumnSlotAndIdentifier(
+                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), missingColumn),
+              Optional.of(blobKzgCommitments));
+    }
+  }
+
+  @Test
+  @SuppressWarnings({"FutureReturnValueIgnored", "unchecked"})
+  void checkDataAvailability_shouldForwardBlobKzgCommitmentsToDelayedRetriever() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()))
+        .thenReturn(Duration.ofSeconds(1));
+    when(retriever.retrieve(any(), eq(Optional.of(blobKzgCommitments))))
+        .thenReturn(new SafeFuture<>());
+
+    sampler.checkDataAvailability(
+        slotAndBlockRoot.getSlot(),
+        slotAndBlockRoot.getBlockRoot(),
+        Optional.of(blobKzgCommitments));
+
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
+
+    stubTimeProvider.advanceTimeByMillis(1_000);
+    asyncRunner.executeDueActions();
+
+    for (final UInt64 missingColumn : SAMPLING_INDICES) {
+      verify(retriever)
+          .retrieve(
+              new DataColumnSlotAndIdentifier(
+                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), missingColumn),
+              Optional.of(blobKzgCommitments));
+    }
+  }
+
+  @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldSetRPCFetchedToFalseOnFailureAndRPCFetchesAgain() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    when(retriever.retrieve(any()))
+    when(retriever.retrieve(any(), eq(Optional.empty())))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
 
     final SafeFuture<List<UInt64>> completionFuture =
@@ -266,9 +327,9 @@ public class DasSamplerBasicTest {
         .isSameAs(completionFuture);
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), false);
 
-    verify(retriever, times(SAMPLING_INDICES.size())).retrieve(any());
+    verify(retriever, times(SAMPLING_INDICES.size())).retrieve(any(), eq(Optional.empty()));
 
-    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(new SafeFuture<>());
 
     final SafeFuture<List<UInt64>> secondCompletionFuture =
         sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
@@ -276,7 +337,7 @@ public class DasSamplerBasicTest {
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
 
-    verify(retriever, times(SAMPLING_INDICES.size() * 2)).retrieve(any());
+    verify(retriever, times(SAMPLING_INDICES.size() * 2)).retrieve(any(), eq(Optional.empty()));
 
     assertThat(secondCompletionFuture).isSameAs(completionFuture);
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
@@ -288,7 +349,7 @@ public class DasSamplerBasicTest {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(new SafeFuture<>());
 
     when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
 
@@ -508,7 +569,7 @@ public class DasSamplerBasicTest {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .doesNotContainKey(blockWithoutBlobs.getRoot());
     assertThat(asyncRunner.countDelayedActions()).isZero();
-    verify(retriever, never()).retrieve(any());
+    verify(retriever, never()).retrieve(any(), any());
   }
 
   @Test
@@ -520,6 +581,45 @@ public class DasSamplerBasicTest {
 
     assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(blockWithBlobs.getRoot());
     assertSamplerTracker(blockWithBlobs.getRoot(), blockWithBlobs.getSlot(), SAMPLING_INDICES);
+  }
+
+  @Test
+  void onBlockImported_shouldRemoveTrackerWhenDataAvailabilityCheckedOnBlock() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(blockWithBlobs.getRoot());
+
+    sampler.onBlockImported(blockWithBlobs);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+  }
+
+  @Test
+  void onBlockImported_shouldRetainTrackerWhenDataAvailabilityDeferredToExecutionPayload() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+
+    gloasSampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+
+    gloasSampler.onBlockImported(blockWithBlobs);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+
+    gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
   }
 
   @Test
@@ -548,6 +648,70 @@ public class DasSamplerBasicTest {
                 RemoteOrigin.GOSSIP));
 
     verify(blockImportChannel, times(1)).importBlock(blockWithBlobs);
+  }
+
+  @Test
+  void delayedRpcFetch_shouldSkipRemovedTracker() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot()))
+        .thenReturn(Duration.ofMillis(10));
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    sampler.removeAllForBlock(blockWithBlobs.getSlotAndBlockRoot());
+
+    stubTimeProvider.advanceTimeByMillis(10);
+    asyncRunner.executeDueActions();
+
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+    verify(retriever, never()).retrieve(any(), any());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreWhenPreGloasBlockAlreadyImported() {
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+
+    sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).doesNotContainKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldTrackGloasBlockUntilPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot())).thenReturn(Optional.empty());
+    when(rpcFetchDelayProvider.calculate(columnId.slot())).thenReturn(Duration.ZERO);
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot()).containsKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreGloasBlockAfterPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot()))
+        .thenReturn(Optional.of(mock(SignedExecutionPayloadEnvelope.class)));
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(columnId.blockRoot());
   }
 
   private void assertSamplerTracker(
@@ -604,7 +768,23 @@ public class DasSamplerBasicTest {
 
     // verify we call retrieve for all missing columns
     for (final UInt64 missingColumn : missingColumns) {
-      verify(retriever).retrieve(new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn));
+      verify(retriever)
+          .retrieve(
+              new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn), Optional.empty());
     }
+  }
+
+  private DasSamplerBasic createGloasSampler() {
+    return new DasSamplerBasic(
+        TestSpecFactory.createMinimalGloas(),
+        asyncRunner,
+        currentSlotProvider,
+        rpcFetchDelayProvider,
+        custody,
+        retriever,
+        custodyGroupCountManager,
+        recentChainData,
+        true,
+        blockImportChannel);
   }
 }

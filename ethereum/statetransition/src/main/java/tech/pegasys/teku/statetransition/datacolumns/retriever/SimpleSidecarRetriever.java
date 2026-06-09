@@ -37,12 +37,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -96,9 +98,12 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<DataColumnSidecar> retrieve(
+      final DataColumnSlotAndIdentifier columnId,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final RetrieveRequest request =
         pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
+    request.updateBlobKzgCommitments(blobKzgCommitments);
     startIfNecessary();
     return request.result;
   }
@@ -146,7 +151,8 @@ public class SimpleSidecarRetriever
     }
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
-        reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
+        reqResp.requestDataColumnSidecar(
+            match.peer.nodeId, match.request.columnId, match.request.getBlobKzgCommitments());
     match.peer.countSidecarRequest();
 
     final SafeFuture<Void> activeRpcRequest =
@@ -306,10 +312,30 @@ public class SimpleSidecarRetriever
     final DataColumnSlotAndIdentifier columnId;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
+    private volatile Optional<SszList<SszKZGCommitment>> blobKzgCommitments = Optional.empty();
     volatile ActiveRequest activeRpcRequest = null;
 
     private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
+    }
+
+    private synchronized void updateBlobKzgCommitments(
+        final Optional<SszList<SszKZGCommitment>> maybeBlobKzgCommitments) {
+      maybeBlobKzgCommitments.ifPresent(
+          newBlobKzgCommitments -> {
+            blobKzgCommitments.ifPresent(
+                existingBlobKzgCommitments -> {
+                  if (!existingBlobKzgCommitments.equals(newBlobKzgCommitments)) {
+                    throw new IllegalArgumentException(
+                        "Conflicting blob KZG commitments for " + columnId);
+                  }
+                });
+            blobKzgCommitments = Optional.of(newBlobKzgCommitments);
+          });
+    }
+
+    private Optional<SszList<SszKZGCommitment>> getBlobKzgCommitments() {
+      return blobKzgCommitments;
     }
   }
 

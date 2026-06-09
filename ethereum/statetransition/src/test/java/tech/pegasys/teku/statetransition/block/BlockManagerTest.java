@@ -59,6 +59,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
@@ -259,7 +260,27 @@ public class BlockManagerTest {
 
     safeJoinBlockImport(nextBlock);
     verify(receivedBlockEventsChannelPublisher).onBlockImported(nextBlock, false);
-    verify(blockEventsListenerRouter).removeAllForBlock(nextBlock.getSlotAndBlockRoot());
+    verify(blockEventsListenerRouter).onBlockImported(nextBlock);
+  }
+
+  @Test
+  public void shouldNotifyBlockEventsListenerOnBlockAndExecutionPayloadImport() {
+    final UInt64 slot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock block = localChain.chainBuilder().generateBlockAtSlot(slot).getBlock();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        mock(SignedExecutionPayloadEnvelope.class, Answers.RETURNS_DEEP_STUBS);
+    when(executionPayload.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
+    when(executionPayload.getBeaconBlockRoot()).thenReturn(block.getRoot());
+    when(executionPayload.getMessage().getPayload().getBlockHash())
+        .thenReturn(dataStructureUtil.randomBytes32());
+
+    reset(blockEventsListenerRouter);
+
+    blockManager.onBlockImported(block, false);
+    verify(blockEventsListenerRouter).onBlockImported(block);
+
+    blockManager.onExecutionPayloadImported(executionPayload, false);
+    verify(blockEventsListenerRouter).onExecutionPayloadImported(block.getSlotAndBlockRoot());
   }
 
   @Test
@@ -501,7 +522,7 @@ public class BlockManagerTest {
     // pool should get notified for new block and then should be notified to drop content due to
     // block import completion
     verify(blockEventsListenerRouter).onNewBlock(nextBlock, Optional.empty());
-    verify(blockEventsListenerRouter).removeAllForBlock(nextBlock.getSlotAndBlockRoot());
+    verify(blockEventsListenerRouter).onBlockImported(nextBlock);
   }
 
   @Test

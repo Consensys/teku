@@ -206,7 +206,7 @@ public class BlockManager extends Service
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
+    blockEventsListener.onBlockImported(block);
     pendingBlockPool.remove(block);
     // Check if any pending blocks can now be imported
     final List<SignedBeaconBlock> children =
@@ -222,6 +222,7 @@ public class BlockManager extends Service
   @Override
   public void onExecutionPayloadImported(
       final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    blockEventsListener.onExecutionPayloadImported(executionPayload.getSlotAndBlockRoot());
     final ParentExecutionPayloadDependency parentExecutionPayloadDependency =
         new ParentExecutionPayloadDependency(
             executionPayload.getBeaconBlockRoot(),

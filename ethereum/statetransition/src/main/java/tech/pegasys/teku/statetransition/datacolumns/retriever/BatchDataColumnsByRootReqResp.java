@@ -14,15 +14,21 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BatchDataColumnsByRootReqResp {
 
   AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      UInt256 nodeId, List<DataColumnsByRootIdentifier> byRootIdentifiers);
+      UInt256 nodeId,
+      List<DataColumnsByRootIdentifier> byRootIdentifiers,
+      Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot);
 
   int getCurrentRequestLimit(UInt256 nodeId);
 }

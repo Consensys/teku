@@ -534,11 +534,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .getAvailabilityCheckResult()
             .thenPeek(
                 result -> {
-                  LOG.debug(
-                      "Data availability check for slot: {}, block_root: {} result: {}",
-                      block.getSlot(),
-                      block.getRoot(),
-                      result.toLogString());
+                  if (!forkChoiceUtil.isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
+                    LOG.debug(
+                        "Data availability check for slot: {}, block_root: {} result: {}",
+                        block.getSlot(),
+                        block.getRoot(),
+                        result.toLogString());
+                  }
                   blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {

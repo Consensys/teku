@@ -209,7 +209,28 @@ class DefaultExecutionPayloadManagerTest {
     }
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
+    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldOnlyMarkExecutionPayloadRecentlySeenWhileFailedImportIsInProgress() {
+    givenValidationResult(signedExecutionPayload, ACCEPT);
+    final SafeFuture<ExecutionPayloadImportResult> importResult = new SafeFuture<>();
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(importResult);
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        validateAndImport(signedExecutionPayload);
+
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+
+    importResult.complete(
+        ExecutionPayloadImportResult.failedDataAvailabilityCheckNotAvailable(Optional.empty()));
+
+    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
   }
 
   @Test

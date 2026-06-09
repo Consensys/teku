@@ -212,7 +212,8 @@ class DasCustodyBackfillerTest {
     when(recentChainData.retrieveSignedBlockByRoot(block2.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
 
-    when(retriever.retrieve(any())).thenReturn(completedFuture(mock(DataColumnSidecar.class)));
+    when(retriever.retrieve(any(), eq(Optional.empty())))
+        .thenReturn(completedFuture(mock(DataColumnSidecar.class)));
     when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
 
@@ -226,7 +227,7 @@ class DasCustodyBackfillerTest {
         .getDataColumnIdentifiers(eq(UInt64.valueOf(193)), eq(UInt64.valueOf(202)), any());
 
     // we expect 4 columns to be retrieved and stored
-    verify(retriever, times(4)).retrieve(any());
+    verify(retriever, times(4)).retrieve(any(), eq(Optional.empty()));
     verify(dataColumnSidecarCustody, times(4)).onNewValidatedDataColumnSidecar(any(), any());
 
     // no change in earliest available slot
@@ -318,7 +319,7 @@ class DasCustodyBackfillerTest {
 
     // Mock retrieval
     SafeFuture<DataColumnSidecar> retrievalFuture = completedFuture(mock(DataColumnSidecar.class));
-    when(retriever.retrieve(any())).thenReturn(retrievalFuture);
+    when(retriever.retrieve(any(), eq(Optional.empty()))).thenReturn(retrievalFuture);
     when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
 
@@ -336,10 +337,10 @@ class DasCustodyBackfillerTest {
     DataColumnSlotAndIdentifier expectedHot2Missing2 =
         new DataColumnSlotAndIdentifier(hotBlocksSlot, hotBlock2Root, UInt64.ONE);
 
-    verify(retriever).retrieve(expectedFinalizedMissing);
-    verify(retriever).retrieve(expectedHot1Missing);
-    verify(retriever).retrieve(expectedHot2Missing1);
-    verify(retriever).retrieve(expectedHot2Missing2);
+    verify(retriever).retrieve(expectedFinalizedMissing, Optional.empty());
+    verify(retriever).retrieve(expectedHot1Missing, Optional.empty());
+    verify(retriever).retrieve(expectedHot2Missing1, Optional.empty());
+    verify(retriever).retrieve(expectedHot2Missing2, Optional.empty());
     verify(dataColumnSidecarCustody, times(4))
         .onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RPC));
 
@@ -366,7 +367,7 @@ class DasCustodyBackfillerTest {
     asyncRunner.executeQueuedActions();
 
     // Verify NO retrieval attempted because block has no blobs
-    verify(retriever, never()).retrieve(any());
+    verify(retriever, never()).retrieve(any(), any());
 
     // Cursor should move past the block (to 95)
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(blockSlot);
@@ -450,9 +451,11 @@ class DasCustodyBackfillerTest {
     final SafeFuture<DataColumnSidecar> pendingFutureFork = new SafeFuture<>();
 
     // argThatMatch ignores column index, so this stub applies to any column request for that block
-    when(retriever.retrieve(columnIdArgThatMatch(blockSlot, canonicalBlock.getRoot())))
+    when(retriever.retrieve(
+            columnIdArgThatMatch(blockSlot, canonicalBlock.getRoot()), eq(Optional.empty())))
         .thenReturn(pendingFutureCanonical);
-    when(retriever.retrieve(columnIdArgThatMatch(blockSlot, forkBlock.getRoot())))
+    when(retriever.retrieve(
+            columnIdArgThatMatch(blockSlot, forkBlock.getRoot()), eq(Optional.empty())))
         .thenReturn(pendingFutureFork);
 
     // Start backfill
@@ -460,8 +463,10 @@ class DasCustodyBackfillerTest {
     asyncRunner.executeQueuedActions();
 
     // Verify both were requested (Now strictly 1 time each because we restricted custody to [0])
-    verify(retriever).retrieve(columnIdArgThatMatch(blockSlot, canonicalBlock.getRoot()));
-    verify(retriever).retrieve(columnIdArgThatMatch(blockSlot, forkBlock.getRoot()));
+    verify(retriever)
+        .retrieve(columnIdArgThatMatch(blockSlot, canonicalBlock.getRoot()), eq(Optional.empty()));
+    verify(retriever)
+        .retrieve(columnIdArgThatMatch(blockSlot, forkBlock.getRoot()), eq(Optional.empty()));
 
     // 2. Setup Finalization triggers
 
@@ -501,7 +506,8 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getFinalizedBlockAtSlotExact(minCustodySlot))
         .thenReturn(completedFuture(Optional.of(block)));
 
-    when(retriever.retrieve(any())).thenReturn(completedFuture(mock(DataColumnSidecar.class)));
+    when(retriever.retrieve(any(), eq(Optional.empty())))
+        .thenReturn(completedFuture(mock(DataColumnSidecar.class)));
     when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
 
