@@ -2797,6 +2797,46 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void getEarliestDataColumnSidecarSlot_tracksPruneWatermark(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSidecar block1Sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+
+    // no data column sidecars have been stored yet
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block2Sidecar0);
+
+    // before any pruning the earliest slot is the first stored slot
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block1Sidecar0.getSlot());
+
+    // pruning the oldest slot advances the watermark; the earliest slot follows it
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10, DataColumnSidecarPruneFrontier.INITIAL);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
+
+    // the watermark is persisted, so a fresh pruner start (INITIAL frontier) still resumes above
+    // the
+    // pruned slots rather than rescanning from the first supported slot
+    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10, DataColumnSidecarPruneFrontier.INITIAL);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+  }
+
+  @TestTemplate
   public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);

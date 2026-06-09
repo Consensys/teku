@@ -1224,8 +1224,16 @@ public class KvStoreDatabase implements Database {
     if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
       return Optional.empty();
     }
+    // Start the scan just above the last pruned slot rather than at the first slot with data column
+    // sidecar support. Everything up to and including the watermark has been deleted, so seeking to
+    // watermark + 1 lands directly on live data instead of crossing the band of deletion tombstones
+    // left below it - a forward scan over those tombstones can take minutes on a backlogged node.
+    final UInt64 fromSlot =
+        dao.getLastDataColumnSidecarPrunedSlot()
+            .map(lastPruned -> lastPruned.plus(1))
+            .orElse(maybeFirstDataColumnSidecarSlot.get());
     try (final Stream<DataColumnSlotAndIdentifier> identifiers =
-        streamDataColumnIdentifiers(maybeFirstDataColumnSidecarSlot.get(), UInt64.MAX_VALUE)) {
+        streamDataColumnIdentifiers(fromSlot, UInt64.MAX_VALUE)) {
       return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
     }
   }
@@ -1335,7 +1343,19 @@ public class KvStoreDatabase implements Database {
       return currentFrontier;
     }
 
-    final UInt64 fromSlot = currentFrontier.orElse(maybeFirstDataColumnSidecarSlot.get());
+    // On a cold start the in-memory frontier is empty. For canonical sidecars resume from the
+    // persisted prune watermark rather than the first supported slot, so the opening seek lands on
+    // live data instead of re-crossing the tombstones deleted by previous runs. The watermark is
+    // only read when the frontier is absent, so steady-state runs avoid the extra lookup.
+    final UInt64 firstSupportedSlot = maybeFirstDataColumnSidecarSlot.get();
+    final UInt64 fromSlot =
+        currentFrontier.orElseGet(
+            () ->
+                sidecarType == DataColumnSidecarType.CANONICAL
+                    ? dao.getLastDataColumnSidecarPrunedSlot()
+                        .map(lastPruned -> lastPruned.plus(1))
+                        .orElse(firstSupportedSlot)
+                    : firstSupportedSlot);
     if (fromSlot.isGreaterThan(tillSlotInclusive)) {
       return currentFrontier;
     }
@@ -1351,6 +1371,12 @@ public class KvStoreDatabase implements Database {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       for (final DataColumnSlotAndIdentifier key : toPrune.keys()) {
         removeDataColumnSidecar(sidecarType, updater, key);
+      }
+      // Persist the canonical prune watermark atomically with the deletions so a restart can resume
+      // above the tombstones. Non-canonical sidecars are sparse, so they keep scanning from the
+      // first supported slot.
+      if (sidecarType == DataColumnSidecarType.CANONICAL) {
+        updater.setLastDataColumnSidecarPrunedSlot(toPrune.keys().getLast().slot());
       }
       updater.commit();
     }

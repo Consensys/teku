@@ -254,6 +254,10 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
   }
 
+  public Optional<UInt64> getLastDataColumnSidecarPrunedSlot() {
+    return db.get(schema.getVariableLastDataColumnSidecarPrunedSlot());
+  }
+
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
     return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
   }
@@ -511,6 +515,11 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+    }
+
+    @Override
+    public void setLastDataColumnSidecarPrunedSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableLastDataColumnSidecarPrunedSlot(), slot);
     }
 
     @Override
