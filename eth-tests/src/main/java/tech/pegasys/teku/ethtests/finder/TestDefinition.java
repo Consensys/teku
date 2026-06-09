@@ -136,6 +136,8 @@ public class TestDefinition {
         .resolve(pathFromPhaseTestDir);
   }
 
+  /// some reference tests ship a partial `config.yaml` overriding a handful of constants on top of
+  /// the builtin config
   private Map<String, Object> readConfigOverrides() {
     final Path configOverridesYaml = getTestDirectory().resolve("config.yaml");
     if (!Files.exists(configOverridesYaml)) {
