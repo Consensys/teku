@@ -19,7 +19,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.TestFork;
@@ -39,7 +38,6 @@ public class TestDefinition {
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
-  private final Optional<Map<String, Object>> configOverrides;
 
   private Spec spec;
 
@@ -49,28 +47,11 @@ public class TestDefinition {
       final String testType,
       final String testName,
       final Path pathFromPhaseTestDir) {
-    this(
-        fork,
-        configName,
-        testType,
-        testName,
-        pathFromPhaseTestDir,
-        readConfigOverrides(configName, fork, pathFromPhaseTestDir));
-  }
-
-  public TestDefinition(
-      final String fork,
-      final String configName,
-      final String testType,
-      final String testName,
-      final Path pathFromPhaseTestDir,
-      final Optional<Map<String, Object>> configOverrides) {
     this.configName = configName;
     this.fork = fork;
     this.testType = testType.replace("\\", "/");
     this.testName = testName.replace("\\", "/");
     this.pathFromPhaseTestDir = pathFromPhaseTestDir;
-    this.configOverrides = configOverrides;
   }
 
   public String getConfigName() {
@@ -125,7 +106,7 @@ public class TestDefinition {
                 builder
                     .blsSignatureVerifier(blsSignatureVerifier)
                     .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier),
-            configOverrides.orElseGet(Map::of));
+            readConfigOverrides());
   }
 
   public String getTestType() {
@@ -155,18 +136,13 @@ public class TestDefinition {
         .resolve(pathFromPhaseTestDir);
   }
 
-  private static Optional<Map<String, Object>> readConfigOverrides(
-      final String configName, final String fork, final Path pathFromPhaseTestDir) {
-    final Path configOverridesYaml =
-        ReferenceTestFinder.findReferenceTestRootDirectory()
-            .resolve(Path.of(configName, fork))
-            .resolve(pathFromPhaseTestDir)
-            .resolve("config.yaml");
+  private Map<String, Object> readConfigOverrides() {
+    final Path configOverridesYaml = getTestDirectory().resolve("config.yaml");
     if (!Files.exists(configOverridesYaml)) {
-      return Optional.empty();
+      return Map.of();
     }
     try (final InputStream in = Files.newInputStream(configOverridesYaml)) {
-      return Optional.of(new YamlConfigReader().readValues(in));
+      return new YamlConfigReader().readValues(in);
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }
