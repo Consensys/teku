@@ -274,6 +274,34 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
+  public void shouldClearInvalidExecutionPayloadWhenLaterImportSucceeds() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedExecution(new RuntimeException("invalid"));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult))
+        .thenReturn(
+            completedFuture(ExecutionPayloadImportResult.successful(signedExecutionPayload)));
+
+    final SafeFuture<ExecutionPayloadImportResult> failedResult =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
+    asyncRunner.executeDueActions();
+
+    assertThat(failedResult).isCompletedWithValue(failedImportResult);
+    assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+
+    final SafeFuture<ExecutionPayloadImportResult> successfulResult =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
+    asyncRunner.executeDueActions();
+
+    assertThat(successfulResult)
+        .isCompletedWithValueMatching(ExecutionPayloadImportResult::isSuccessful);
+    assertThat(invalidExecutionPayloadRoots)
+        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
   public void shouldProcessExecutionPayloadWhichHasBeenReceivedBeforeTheBlock() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
