@@ -41,41 +41,41 @@ class KvStoreDatabaseTest {
 
   // Data column sidecar pruning is forward (oldest-first): each run removes the oldest up-to-limit
   // distinct populated slots at or before the cutoff, so the earliest retained slot keeps advancing
-  // and no gap can form when sidecars are stored faster than they can be pruned. An in-memory
-  // frontier lets consecutive runs continue from where the previous run stopped instead of
-  // re-scanning already-pruned slots.
+  // and no gap can form when sidecars are stored faster than they can be pruned. For canonical
+  // sidecars the scan resumes from the persisted prune watermark so consecutive runs - and runs
+  // after a restart - continue from where the previous run stopped instead of re-scanning
+  // already-pruned slots.
 
   private final NavigableSet<UInt64> populatedSlots = new TreeSet<>();
   private final List<SlotRange> streamedRanges = new ArrayList<>();
   private final List<UInt64> removedSlots = new ArrayList<>();
   private final AtomicInteger commits = new AtomicInteger();
 
+  // Stands in for the persisted LAST_SLOT_DATA_COLUMN_PRUNED variable.
+  private Optional<UInt64> prunedWatermark = Optional.empty();
+
   @Test
   void prunesOldestDistinctSlotsInASingleCommit() {
     final KvStoreDatabase database = database(UInt64.valueOf(10), 28, 29, 30);
 
-    final Optional<UInt64> nextFrontier =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots).containsExactly(UInt64.valueOf(28), UInt64.valueOf(29));
     assertThat(commits).hasValue(1);
-    // Frontier advances past the newest pruned slot (29).
-    assertThat(nextFrontier).contains(UInt64.valueOf(30));
+    // The watermark records the newest pruned slot (29).
+    assertThat(prunedWatermark).contains(UInt64.valueOf(29));
   }
 
   @Test
   void prunesOnlyUpToTheLimitDistinctSlots() {
     final KvStoreDatabase database = database(UInt64.ZERO, 10, 11, 12, 13, 14);
 
-    final Optional<UInt64> nextFrontier =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(14), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(14), DataColumnSidecarType.CANONICAL);
 
     // Only the oldest 2 slots (10 and 11) are pruned.
     assertThat(removedSlots).containsExactly(UInt64.valueOf(10), UInt64.valueOf(11));
     assertThat(commits).hasValue(1);
-    assertThat(nextFrontier).contains(UInt64.valueOf(12));
+    assertThat(prunedWatermark).contains(UInt64.valueOf(11));
   }
 
   @Test
@@ -84,59 +84,49 @@ class KvStoreDatabaseTest {
     // are no slots in between them.
     final KvStoreDatabase database = database(UInt64.ZERO, 1, 100);
 
-    final Optional<UInt64> nextFrontier =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(100), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(100), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots).containsExactly(UInt64.ONE, UInt64.valueOf(100));
     assertThat(commits).hasValue(1);
-    assertThat(nextFrontier).contains(UInt64.valueOf(101));
+    assertThat(prunedWatermark).contains(UInt64.valueOf(100));
   }
 
   @Test
   void stopsWhenFewerThanLimitDistinctSlotsAreAvailable() {
     final KvStoreDatabase database = database(UInt64.valueOf(10), 10, 11, 12);
 
-    final Optional<UInt64> nextFrontier =
-        database.pruneDataColumnSidecars(
-            10, UInt64.valueOf(12), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(10, UInt64.valueOf(12), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots)
         .containsExactly(UInt64.valueOf(10), UInt64.valueOf(11), UInt64.valueOf(12));
     assertThat(commits).hasValue(1);
-    assertThat(nextFrontier).contains(UInt64.valueOf(13));
+    assertThat(prunedWatermark).contains(UInt64.valueOf(12));
   }
 
   @Test
   void coldStartScanBeginsAtFirstSupportedSlot() {
     final KvStoreDatabase database = database(UInt64.valueOf(10), 28, 29, 30);
 
-    database.pruneDataColumnSidecars(
-        2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
 
-    // With an empty frontier, the forward scan starts at the first slot with data column sidecar
-    // support.
+    // With no persisted watermark, the forward scan starts at the first slot with data column
+    // sidecar support.
     assertThat(streamedRanges)
         .containsExactly(new SlotRange(UInt64.valueOf(10), UInt64.valueOf(30)));
   }
 
   @Test
-  void frontierAdvancesSoConsecutiveRunsDoNotRescanPrunedSlots() {
+  void watermarkAdvancesSoConsecutiveRunsDoNotRescanPrunedSlots() {
     final KvStoreDatabase database = database(UInt64.ZERO, 10, 11, 12, 13, 14);
 
-    final Optional<UInt64> afterFirstRun =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(14), Optional.empty(), DataColumnSidecarType.CANONICAL);
-    final Optional<UInt64> afterSecondRun =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(14), afterFirstRun, DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(14), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(14), DataColumnSidecarType.CANONICAL);
 
-    // Run 1 prunes 10,11 then run 2 continues from 12 (the frontier), never re-scanning from 0.
+    // Run 1 prunes 10,11 (watermark -> 11) then run 2 resumes from 12, never re-scanning from 0.
     assertThat(removedSlots)
         .containsExactly(
             UInt64.valueOf(10), UInt64.valueOf(11), UInt64.valueOf(12), UInt64.valueOf(13));
-    assertThat(afterFirstRun).contains(UInt64.valueOf(12));
-    assertThat(afterSecondRun).contains(UInt64.valueOf(14));
+    assertThat(prunedWatermark).contains(UInt64.valueOf(13));
     assertThat(streamedRanges)
         .containsExactly(
             new SlotRange(UInt64.ZERO, UInt64.valueOf(14)),
@@ -145,30 +135,42 @@ class KvStoreDatabaseTest {
   }
 
   @Test
+  void nonCanonicalScanIgnoresCanonicalWatermark() {
+    final KvStoreDatabase database = database(UInt64.valueOf(10), 28, 29, 30);
+    // A canonical watermark must not influence the non-canonical scan, which always starts at the
+    // first supported slot.
+    prunedWatermark = Optional.of(UInt64.valueOf(29));
+
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.NON_CANONICAL);
+
+    assertThat(streamedRanges)
+        .containsExactly(new SlotRange(UInt64.valueOf(10), UInt64.valueOf(30)));
+    assertThat(removedSlots).containsExactly(UInt64.valueOf(28), UInt64.valueOf(29));
+    // Non-canonical pruning leaves the canonical watermark untouched.
+    assertThat(prunedWatermark).contains(UInt64.valueOf(29));
+  }
+
+  @Test
   void doesNothingWhenNoSidecarsAtOrBeforeCutoff() {
     final KvStoreDatabase database = database(UInt64.valueOf(10));
 
-    final Optional<UInt64> nextFrontier =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
 
     assertThat(removedSlots).isEmpty();
     assertThat(commits).hasValue(0);
-    assertThat(nextFrontier).isEmpty();
+    assertThat(prunedWatermark).isEmpty();
   }
 
   @Test
   void doesNothingWhenFirstSupportedSlotIsAfterCutoff() {
     final KvStoreDatabase database = database(UInt64.valueOf(40), 50);
 
-    final Optional<UInt64> nextFrontier =
-        database.pruneDataColumnSidecars(
-            2, UInt64.valueOf(30), Optional.empty(), DataColumnSidecarType.CANONICAL);
+    database.pruneDataColumnSidecars(2, UInt64.valueOf(30), DataColumnSidecarType.CANONICAL);
 
     assertThat(streamedRanges).isEmpty();
     assertThat(removedSlots).isEmpty();
     assertThat(commits).hasValue(0);
-    assertThat(nextFrontier).isEmpty();
+    assertThat(prunedWatermark).isEmpty();
   }
 
   private KvStoreDatabase database(final UInt64 firstFuluSlot, final long... slots) {
@@ -179,6 +181,7 @@ class KvStoreDatabaseTest {
     when(spec.computeFirstSlotWithDataColumnSidecarSupport())
         .thenReturn(Optional.of(firstFuluSlot));
     final KvStoreCombinedDao dao = mock(KvStoreCombinedDao.class);
+    when(dao.getLastDataColumnSidecarPrunedSlot()).thenAnswer(__ -> prunedWatermark);
     return new KvStoreDatabase(dao, StateStorageMode.PRUNE, false, spec) {
 
       @Override
@@ -189,24 +192,35 @@ class KvStoreDatabaseTest {
       @Override
       public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
           final UInt64 firstSlot, final UInt64 lastSlot) {
-        streamedRanges.add(new SlotRange(firstSlot, lastSlot));
-        return populatedSlots.subSet(firstSlot, true, lastSlot, true).stream()
-            .map(slot -> identifier(slot.longValue(), 0));
+        return streamPopulated(firstSlot, lastSlot);
+      }
+
+      @Override
+      public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+          final UInt64 firstSlot, final UInt64 lastSlot) {
+        return streamPopulated(firstSlot, lastSlot);
       }
     };
   }
 
+  private Stream<DataColumnSlotAndIdentifier> streamPopulated(
+      final UInt64 firstSlot, final UInt64 lastSlot) {
+    streamedRanges.add(new SlotRange(firstSlot, lastSlot));
+    return populatedSlots.subSet(firstSlot, true, lastSlot, true).stream()
+        .map(slot -> identifier(slot.longValue(), 0));
+  }
+
   private FinalizedUpdater countingUpdater() {
     final FinalizedUpdater updater = mock(FinalizedUpdater.class);
+    doAnswer(this::recordRemovedSlot).when(updater).removeSidecar(any());
+    doAnswer(this::recordRemovedSlot).when(updater).removeNonCanonicalSidecar(any());
     doAnswer(
             (final InvocationOnMock invocation) -> {
-              final DataColumnSlotAndIdentifier key = invocation.getArgument(0);
-              removedSlots.add(key.slot());
-              populatedSlots.remove(key.slot());
+              prunedWatermark = Optional.of(invocation.getArgument(0));
               return null;
             })
         .when(updater)
-        .removeSidecar(any());
+        .setLastDataColumnSidecarPrunedSlot(any());
     doAnswer(
             (final InvocationOnMock __) -> {
               commits.incrementAndGet();
@@ -215,6 +229,13 @@ class KvStoreDatabaseTest {
         .when(updater)
         .commit();
     return updater;
+  }
+
+  private Void recordRemovedSlot(final InvocationOnMock invocation) {
+    final DataColumnSlotAndIdentifier key = invocation.getArgument(0);
+    removedSlots.add(key.slot());
+    populatedSlots.remove(key.slot());
+    return null;
   }
 
   private static DataColumnSlotAndIdentifier identifier(final long slot, final long columnIndex) {

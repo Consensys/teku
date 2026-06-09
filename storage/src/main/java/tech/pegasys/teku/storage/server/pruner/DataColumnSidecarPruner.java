@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.storage.server.DataColumnSidecarPruneFrontier;
 import tech.pegasys.teku.storage.server.Database;
 
 public class DataColumnSidecarPruner extends Service {
@@ -51,12 +50,6 @@ public class DataColumnSidecarPruner extends Service {
   private final AtomicLong dataColumnSize = new AtomicLong(0);
   private final AtomicLong earliestDataColumnSidecarSlot = new AtomicLong(-1);
   private Optional<UInt64> genesisTime = Optional.empty();
-
-  // Oldest-first prune frontier, owned here and threaded through the database so it stays stateless
-  // across runs. Volatile for visibility because successive prune runs may execute on different
-  // async-runner threads; writes are serialized by the single recurring prune task.
-  private volatile DataColumnSidecarPruneFrontier pruneFrontier =
-      DataColumnSidecarPruneFrontier.INITIAL;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
 
@@ -129,8 +122,7 @@ public class DataColumnSidecarPruner extends Service {
     final long start = System.currentTimeMillis();
     final UInt64 minCustodySlot = calculatePruneSlot();
     LOG.debug("Pruning data column sidecars before slot {}", minCustodySlot);
-    pruneFrontier =
-        database.pruneAllSidecars(minCustodySlot.minusMinZero(1), pruneLimit, pruneFrontier);
+    database.pruneAllSidecars(minCustodySlot.minusMinZero(1), pruneLimit);
 
     pruningTimingsLabelledGauge.set(System.currentTimeMillis() - start, pruningMetricsType);
     pruningActiveLabelledGauge.set(0, pruningMetricsType);

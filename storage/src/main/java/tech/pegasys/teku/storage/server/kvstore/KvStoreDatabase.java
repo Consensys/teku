@@ -77,7 +77,6 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
-import tech.pegasys.teku.storage.server.DataColumnSidecarPruneFrontier;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
@@ -1286,27 +1285,16 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public DataColumnSidecarPruneFrontier pruneAllSidecars(
-      final UInt64 tillSlotInclusive,
-      final int pruneLimit,
-      final DataColumnSidecarPruneFrontier frontier) {
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
     final long startTime = System.currentTimeMillis();
     LOG.debug(
         "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-    final Optional<UInt64> canonicalFrontier =
-        pruneDataColumnSidecars(
-            pruneLimit, tillSlotInclusive, frontier.canonical(), DataColumnSidecarType.CANONICAL);
-    final Optional<UInt64> nonCanonicalFrontier =
-        pruneDataColumnSidecars(
-            pruneLimit,
-            tillSlotInclusive,
-            frontier.nonCanonical(),
-            DataColumnSidecarType.NON_CANONICAL);
+    pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL);
+    pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL);
 
     LOG.debug(
         "Data column sidecars pruning completed in {} ms", System.currentTimeMillis() - startTime);
-    return new DataColumnSidecarPruneFrontier(canonicalFrontier, nonCanonicalFrontier);
   }
 
   /**
@@ -1315,49 +1303,39 @@ public class KvStoreDatabase implements Database {
    * transaction. Pruning oldest-first keeps the earliest retained slot advancing and prevents a gap
    * from forming when sidecars are stored faster than they can be pruned.
    *
-   * <p>The forward scan starts from {@code currentFrontier} (the slot after the newest slot pruned
-   * for this sidecar type on the previous run) rather than the fixed first slot with data column
-   * sidecar support, so in steady state the opening seek lands directly on live data instead of
-   * crossing the deletion tombstones left below it. The frontier is owned by the caller; on a cold
-   * start ({@code currentFrontier} empty) the scan falls back to the first supported slot. Gaps
-   * between populated slots are skipped, so the batch always spans {@code pruneSlotLimit} populated
-   * slots regardless of how far apart they are.
-   *
-   * @return the advanced frontier (the slot after the newest slot pruned), or {@code
-   *     currentFrontier} unchanged when nothing was pruned.
+   * <p>For canonical sidecars the forward scan resumes from the persisted prune watermark ({@link
+   * KvStoreCombinedDao#getLastDataColumnSidecarPrunedSlot()}) rather than the fixed first slot with
+   * data column sidecar support, so the opening seek lands directly on live data instead of
+   * crossing the deletion tombstones left below it - including across restarts. The watermark is
+   * advanced atomically with the deletions. Non-canonical sidecars are sparse, so they always scan
+   * from the first supported slot. Gaps between populated slots are skipped, so the batch always
+   * spans {@code pruneSlotLimit} populated slots regardless of how far apart they are.
    */
-  Optional<UInt64> pruneDataColumnSidecars(
+  void pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final UInt64 tillSlotInclusive,
-      final Optional<UInt64> currentFrontier,
       final DataColumnSidecarType sidecarType) {
 
     final long startTime = System.currentTimeMillis();
 
     if (pruneSlotLimit <= 0) {
-      return currentFrontier;
+      return;
     }
 
     final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
     if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
-      return currentFrontier;
+      return;
     }
 
-    // On a cold start the in-memory frontier is empty. For canonical sidecars resume from the
-    // persisted prune watermark rather than the first supported slot, so the opening seek lands on
-    // live data instead of re-crossing the tombstones deleted by previous runs. The watermark is
-    // only read when the frontier is absent, so steady-state runs avoid the extra lookup.
     final UInt64 firstSupportedSlot = maybeFirstDataColumnSidecarSlot.get();
     final UInt64 fromSlot =
-        currentFrontier.orElseGet(
-            () ->
-                sidecarType == DataColumnSidecarType.CANONICAL
-                    ? dao.getLastDataColumnSidecarPrunedSlot()
-                        .map(lastPruned -> lastPruned.plus(1))
-                        .orElse(firstSupportedSlot)
-                    : firstSupportedSlot);
+        sidecarType == DataColumnSidecarType.CANONICAL
+            ? dao.getLastDataColumnSidecarPrunedSlot()
+                .map(lastPruned -> lastPruned.plus(1))
+                .orElse(firstSupportedSlot)
+            : firstSupportedSlot;
     if (fromSlot.isGreaterThan(tillSlotInclusive)) {
-      return currentFrontier;
+      return;
     }
 
     final DataColumnSidecarsToPrune toPrune =
@@ -1365,16 +1343,17 @@ public class KvStoreDatabase implements Database {
 
     if (toPrune.keys().isEmpty()) {
       LOG.debug("No {} data column sidecars to prune", sidecarType.displayName());
-      return currentFrontier;
+      return;
     }
 
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       for (final DataColumnSlotAndIdentifier key : toPrune.keys()) {
         removeDataColumnSidecar(sidecarType, updater, key);
       }
-      // Persist the canonical prune watermark atomically with the deletions so a restart can resume
-      // above the tombstones. Non-canonical sidecars are sparse, so they keep scanning from the
-      // first supported slot.
+      // Persist the canonical prune watermark atomically with the deletions so the next run (and
+      // any
+      // run after a restart) can resume above the tombstones rather than rescanning from the first
+      // supported slot.
       if (sidecarType == DataColumnSidecarType.CANONICAL) {
         updater.setLastDataColumnSidecarPrunedSlot(toPrune.keys().getLast().slot());
       }
@@ -1395,9 +1374,6 @@ public class KvStoreDatabase implements Database {
         toPrune.keys().getFirst().slot(),
         toPrune.keys().getLast().slot(),
         System.currentTimeMillis() - startTime);
-
-    // Advance the frontier past the newest slot pruned in this batch (keys are slot-ascending).
-    return Optional.of(toPrune.keys().getLast().slot().plus(1));
   }
 
   /**

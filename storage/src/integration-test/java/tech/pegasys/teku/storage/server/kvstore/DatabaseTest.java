@@ -104,7 +104,6 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.server.DataColumnSidecarPruneFrontier;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -2775,21 +2774,20 @@ public class DatabaseTest {
     database.addSidecar(block1Sidecar1);
     database.addSidecar(block2Sidecar0);
 
-    DataColumnSidecarPruneFrontier frontier =
-        database.pruneAllSidecars(ZERO, 10, DataColumnSidecarPruneFrontier.INITIAL);
+    database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
           .containsExactly(block1Column0, block1Column1, block2Column0);
     }
 
-    frontier = database.pruneAllSidecars(ONE, 10, frontier);
+    database.pruneAllSidecars(ONE, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
     }
 
-    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10, frontier);
+    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
@@ -2826,13 +2824,12 @@ public class DatabaseTest {
     assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block1Sidecar0.getSlot());
 
     // pruning the oldest slot advances the watermark; the earliest slot follows it
-    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10, DataColumnSidecarPruneFrontier.INITIAL);
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10);
     assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
 
-    // the watermark is persisted, so a fresh pruner start (INITIAL frontier) still resumes above
-    // the
-    // pruned slots rather than rescanning from the first supported slot
-    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10, DataColumnSidecarPruneFrontier.INITIAL);
+    // the watermark is persisted, so the next run resumes above the pruned slots rather than
+    // rescanning from the first supported slot
+    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10);
     assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
   }
 
@@ -2888,16 +2885,14 @@ public class DatabaseTest {
     // prune sidecars passing 2 as the limit should prune sidecars from the oldest 2 slots at or
     // before the cutoff,
     // leaving the sidecars from block header 3
-    final DataColumnSidecarPruneFrontier frontier =
-        database.pruneAllSidecars(
-            block3Sidecar0.getSlot(), 2, DataColumnSidecarPruneFrontier.INITIAL);
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
-    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2, frontier);
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
@@ -2964,9 +2959,7 @@ public class DatabaseTest {
     // prune sidecars passing 1 as the limit should prune the oldest eligible canonical slot and
     // non-canonical slot. The limit is applied separately to canonical and non-canonical sidecars.
     // So leaving only the non-canonical sidecar from block header 3
-    final DataColumnSidecarPruneFrontier frontier =
-        database.pruneAllSidecars(
-            block3Sidecar0.getSlot(), 1, DataColumnSidecarPruneFrontier.INITIAL);
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
@@ -2977,7 +2970,7 @@ public class DatabaseTest {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
-    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2, frontier);
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
