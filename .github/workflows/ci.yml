@@ -583,7 +583,8 @@ jobs:
           CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
             | sed "s@.*/$SRC_ROOT/@@" \
             | sed 's@/@.@g' \
-            | sed 's/.\{5\}$//')
+            | sed 's/.\{5\}$//' \
+            | sort)
           # 2) Modulo split
           CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
             | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
