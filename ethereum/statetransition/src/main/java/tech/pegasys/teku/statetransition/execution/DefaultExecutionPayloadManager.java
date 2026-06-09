@@ -60,6 +60,8 @@ public class DefaultExecutionPayloadManager
 
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+  private final Set<Bytes32> successfullyImportedExecutionPayloads =
+      LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
   private final Set<Bytes32> executionPayloadsSeenBeforePayloadDue =
       LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
   private final Set<Bytes32> acceptedExecutionPayloadEnvelopeRoots =
@@ -116,6 +118,14 @@ public class DefaultExecutionPayloadManager
   @Override
   public boolean isExecutionPayloadAvailableForPayloadAttestation(final Bytes32 beaconBlockRoot) {
     return executionPayloadsSeenBeforePayloadDue.contains(beaconBlockRoot);
+  }
+
+  @Override
+  public boolean isExecutionPayloadSeenForFullPayloadAttestation(final Bytes32 beaconBlockRoot) {
+    if (successfullyImportedExecutionPayloads.contains(beaconBlockRoot)) {
+      return true;
+    }
+    return recentChainData.containsExecutionPayload(beaconBlockRoot);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -190,6 +200,8 @@ public class DefaultExecutionPayloadManager
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
+                successfullyImportedExecutionPayloads.add(
+                    signedExecutionPayload.getBeaconBlockRoot());
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {

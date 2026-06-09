@@ -130,6 +130,7 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadNotAvailableForPayloadAttestation(signedExecutionPayload);
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -197,6 +198,43 @@ class DefaultExecutionPayloadManagerTest {
     verifyNoInteractions(forkChoice);
     assertThat(resultFuture).isCompletedWithValue(rejectedResult);
     assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldReportExecutionPayloadSeenForFullPayloadAttestationWhenPresentInStore() {
+    when(recentChainData.containsExecutionPayload(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(true);
+
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
+    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotAvailableForPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldNotReportExecutionPayloadSeenForFullPayloadAttestationWhenStoreUnavailable() {
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldNotReportExecutionPayloadSeenForFullPayloadAttestationUntilImportCompletes() {
+    final SafeFuture<ExecutionPayloadImportResult> importResult = new SafeFuture<>();
+    givenValidationResult(signedExecutionPayload, ACCEPT);
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(importResult);
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        validateAndImport(signedExecutionPayload);
+
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
+    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+
+    importResult.complete(ExecutionPayloadImportResult.successful(signedExecutionPayload));
+
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -215,6 +253,7 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -231,6 +270,7 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -394,6 +434,22 @@ class DefaultExecutionPayloadManagerTest {
       final SignedExecutionPayloadEnvelope executionPayload) {
     assertThat(
             executionPayloadManager.isExecutionPayloadAvailableForPayloadAttestation(
+                executionPayload.getBeaconBlockRoot()))
+        .isFalse();
+  }
+
+  private void assertExecutionPayloadSeenForFullPayloadAttestation(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    assertThat(
+            executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
+                executionPayload.getBeaconBlockRoot()))
+        .isTrue();
+  }
+
+  private void assertExecutionPayloadNotSeenForFullPayloadAttestation(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    assertThat(
+            executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
                 executionPayload.getBeaconBlockRoot()))
         .isFalse();
   }

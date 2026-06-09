@@ -43,7 +43,7 @@ public class AttestationValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Set<Bytes32> invalidExecutionPayloadRoots;
-  private final Predicate<Bytes32> executionPayloadAvailableForPayloadAttestation;
+  private final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation;
 
   public AttestationValidator(
       final Spec spec,
@@ -59,14 +59,14 @@ public class AttestationValidator {
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final Set<Bytes32> invalidExecutionPayloadRoots,
-      final Predicate<Bytes32> executionPayloadAvailableForPayloadAttestation) {
+      final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation) {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
     this.invalidExecutionPayloadRoots = invalidExecutionPayloadRoots;
-    this.executionPayloadAvailableForPayloadAttestation =
-        executionPayloadAvailableForPayloadAttestation;
+    this.executionPayloadSeenForFullPayloadAttestation =
+        executionPayloadSeenForFullPayloadAttestation;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -191,7 +191,7 @@ public class AttestationValidator {
                 "Execution payload for full payload attestation is invalid"));
       }
       // [IGNORE] If index == 1, the execution payload for block has been seen.
-      if (!executionPayloadAvailableForPayloadAttestation.test(blockRoot)) {
+      if (!executionPayloadSeenForFullPayloadAttestation.test(blockRoot)) {
         return completedFuture(InternalValidationResultWithState.saveForFuture());
       }
     }
