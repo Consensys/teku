@@ -130,6 +130,7 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadNotAvailableForPayloadAttestation(signedExecutionPayload);
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -197,6 +198,32 @@ class DefaultExecutionPayloadManagerTest {
     verifyNoInteractions(forkChoice);
     assertThat(resultFuture).isCompletedWithValue(rejectedResult);
     assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldReportExecutionPayloadSeenForFullPayloadAttestationWhenPresentInStore() {
+    when(recentChainData.containsExecutionPayload(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(true);
+
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
+    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotAvailableForPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldThrowWhenStoreUnavailableForFullPayloadAttestationCheck() {
+    when(recentChainData.containsExecutionPayload(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenThrow(
+            new IllegalStateException(
+                "Store is unavailable while checking execution payload availability"));
+
+    assertThatThrownBy(
+            () ->
+                executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
+                    signedExecutionPayload.getBeaconBlockRoot()))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Store is unavailable while checking execution payload availability");
   }
 
   @Test
@@ -394,6 +421,22 @@ class DefaultExecutionPayloadManagerTest {
       final SignedExecutionPayloadEnvelope executionPayload) {
     assertThat(
             executionPayloadManager.isExecutionPayloadAvailableForPayloadAttestation(
+                executionPayload.getBeaconBlockRoot()))
+        .isFalse();
+  }
+
+  private void assertExecutionPayloadSeenForFullPayloadAttestation(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    assertThat(
+            executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
+                executionPayload.getBeaconBlockRoot()))
+        .isTrue();
+  }
+
+  private void assertExecutionPayloadNotSeenForFullPayloadAttestation(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    assertThat(
+            executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
                 executionPayload.getBeaconBlockRoot()))
         .isFalse();
   }

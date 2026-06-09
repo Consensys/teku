@@ -39,6 +39,12 @@ public interface ExecutionPayloadManager {
         }
 
         @Override
+        public boolean isExecutionPayloadSeenForFullPayloadAttestation(
+            final Bytes32 beaconBlockRoot) {
+          return false;
+        }
+
+        @Override
         public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload,
             final Optional<UInt64> arrivalTimestamp) {
@@ -76,6 +82,12 @@ public interface ExecutionPayloadManager {
    * method is used for the `payload_present` vote.
    */
   boolean isExecutionPayloadAvailableForPayloadAttestation(Bytes32 beaconBlockRoot);
+
+  /**
+   * {@link SignedExecutionPayloadEnvelope} has been seen or already imported for the block. This
+   * method is used for full-payload beacon attestation gossip validation.
+   */
+  boolean isExecutionPayloadSeenForFullPayloadAttestation(Bytes32 beaconBlockRoot);
 
   /**
    * Performs gossip validation on the {@code signedExecutionPayload} and imports it async if

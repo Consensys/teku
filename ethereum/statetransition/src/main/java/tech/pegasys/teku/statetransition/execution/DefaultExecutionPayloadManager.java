@@ -118,6 +118,14 @@ public class DefaultExecutionPayloadManager
     return executionPayloadsSeenBeforePayloadDue.contains(beaconBlockRoot);
   }
 
+  @Override
+  public boolean isExecutionPayloadSeenForFullPayloadAttestation(final Bytes32 beaconBlockRoot) {
+    if (recentSeenExecutionPayloads.contains(beaconBlockRoot)) {
+      return true;
+    }
+    return recentChainData.containsExecutionPayload(beaconBlockRoot);
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
