@@ -23,7 +23,7 @@ import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.WAL_
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -42,6 +42,8 @@ import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.Statistics;
 import org.rocksdb.TransactionDB;
@@ -94,9 +96,19 @@ public class RocksDbInstanceFactory {
         new ArrayList<>(
             List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
-    List<ColumnFamilyDescriptor> columnDescriptors =
+    final ColumnFamilyDescriptors columnFamilyDescriptors =
         createColumnFamilyDescriptors(
             configuration, columns, deletedColumns, columnFamilyOptions, resources);
+    final List<ColumnFamilyDescriptor> columnDescriptors =
+        getExistingColumnIds(configuration).stream()
+            .map(
+                id ->
+                    columnFamilyDescriptors
+                        .byId()
+                        .getOrDefault(
+                            id,
+                            new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions)))
+            .collect(Collectors.toCollection(ArrayList::new));
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
@@ -129,7 +141,12 @@ public class RocksDbInstanceFactory {
 
       rocksDbStats.registerMetrics(db);
 
-      return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
+      return new RocksDbInstance(
+          db,
+          defaultHandle,
+          new HashMap<>(columnHandlesMap),
+          columnFamilyDescriptors.byColumn(),
+          resources);
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException(
           "Failed to open database at path: " + configuration.getDatabaseDir(), e);
@@ -160,7 +177,6 @@ public class RocksDbInstanceFactory {
             .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
             .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
-            .setCreateMissingColumnFamilies(true)
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
@@ -185,7 +201,7 @@ public class RocksDbInstanceFactory {
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
-  private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
+  private static ColumnFamilyDescriptors createColumnFamilyDescriptors(
       final KvStoreConfiguration configuration,
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
@@ -195,42 +211,53 @@ public class RocksDbInstanceFactory {
     final ColumnFamilyOptions columnFamilyOptionsWithBlobDb =
         new ColumnFamilyOptions(columnFamilyOptions);
     resources.add(columnFamilyOptionsWithBlobDb);
-    final List<ColumnFamilyDescriptor> columnDescriptors;
-
     if (configuration.blobDbEnabled()) {
-
-      columnDescriptors =
-          columns.stream()
-              .filter(KvStoreColumn::containsStaticData)
-              .map(
-                  column ->
-                      new ColumnFamilyDescriptor(
-                          column.getId().toArrayUnsafe(),
-                          columnFamilyOptionsWithBlobDb
-                              .setEnableBlobFiles(true)
-                              .setMinBlobSize(100)
-                              .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)
-                              .setEnableBlobGarbageCollection(true)))
-              .collect(Collectors.toCollection(ArrayList::new));
-
-      columnDescriptors.addAll(
-          Stream.concat(
-                  columns.stream()
-                      .filter(column -> !column.containsStaticData())
-                      .map(KvStoreColumn::getId),
-                  deletedColumns.stream())
-              .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-              .collect(Collectors.toCollection(ArrayList::new)));
-
-    } else {
-      columnDescriptors =
-          Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
-              .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-              .collect(Collectors.toCollection(ArrayList::new));
+      columnFamilyOptionsWithBlobDb
+          .setEnableBlobFiles(true)
+          .setMinBlobSize(100)
+          .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)
+          .setEnableBlobGarbageCollection(true);
     }
-    columnDescriptors.add(
+
+    final Map<Bytes, ColumnFamilyDescriptor> descriptorsById = new HashMap<>();
+    final Map<KvStoreColumn<?, ?>, ColumnFamilyDescriptor> descriptorsByColumn = new HashMap<>();
+    for (KvStoreColumn<?, ?> column : columns) {
+      final ColumnFamilyDescriptor descriptor =
+          new ColumnFamilyDescriptor(
+              column.getId().toArrayUnsafe(),
+              configuration.blobDbEnabled() && column.containsStaticData()
+                  ? columnFamilyOptionsWithBlobDb
+                  : columnFamilyOptions);
+      descriptorsById.put(column.getId(), descriptor);
+      descriptorsByColumn.put(column, descriptor);
+    }
+    for (Bytes deletedColumn : deletedColumns) {
+      descriptorsById.put(
+          deletedColumn,
+          new ColumnFamilyDescriptor(deletedColumn.toArrayUnsafe(), columnFamilyOptions));
+    }
+    descriptorsById.put(
+        Schema.DEFAULT_COLUMN_ID,
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
-    return Collections.unmodifiableList(columnDescriptors);
+    return new ColumnFamilyDescriptors(
+        ImmutableMap.copyOf(descriptorsById), ImmutableMap.copyOf(descriptorsByColumn));
+  }
+
+  private static List<Bytes> getExistingColumnIds(final KvStoreConfiguration configuration) {
+    if (!configuration.getDatabaseDir().resolve("CURRENT").toFile().exists()) {
+      return List.of(Schema.DEFAULT_COLUMN_ID);
+    }
+
+    try (final Options options = new Options()) {
+      final List<Bytes> existingColumnIds =
+          RocksDB.listColumnFamilies(options, configuration.getDatabaseDir().toString()).stream()
+              .map(Bytes::wrap)
+              .collect(Collectors.toCollection(ArrayList::new));
+      return existingColumnIds.isEmpty() ? List.of(Schema.DEFAULT_COLUMN_ID) : existingColumnIds;
+    } catch (RocksDBException e) {
+      throw RocksDbExceptionUtil.wrapException(
+          "Failed to list column families at path: " + configuration.getDatabaseDir(), e);
+    }
   }
 
   private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
@@ -242,4 +269,8 @@ public class RocksDbInstanceFactory {
         .setCacheIndexAndFilterBlocks(false)
         .setBlockSize(ROCKSDB_BLOCK_SIZE);
   }
+
+  private record ColumnFamilyDescriptors(
+      ImmutableMap<Bytes, ColumnFamilyDescriptor> byId,
+      ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyDescriptor> byColumn) {}
 }

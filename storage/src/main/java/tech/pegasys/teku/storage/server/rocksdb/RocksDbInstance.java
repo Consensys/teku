@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.HashSet;
 import java.util.List;
@@ -27,10 +26,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
+import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -41,7 +42,8 @@ public class RocksDbInstance implements KvStoreAccessor {
 
   private final TransactionDB db;
   private final ColumnFamilyHandle defaultHandle;
-  private final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles;
+  private final Map<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles;
+  private final Map<KvStoreColumn<?, ?>, ColumnFamilyDescriptor> columnDescriptors;
   private final List<AutoCloseable> resources;
   private final Set<RocksDbTransaction> openTransactions = new HashSet<>();
 
@@ -50,11 +52,13 @@ public class RocksDbInstance implements KvStoreAccessor {
   RocksDbInstance(
       final TransactionDB db,
       final ColumnFamilyHandle defaultHandle,
-      final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+      final Map<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+      final Map<KvStoreColumn<?, ?>, ColumnFamilyDescriptor> columnDescriptors,
       final List<AutoCloseable> resources) {
     this.db = db;
     this.defaultHandle = defaultHandle;
     this.columnHandles = columnHandles;
+    this.columnDescriptors = columnDescriptors;
     this.resources = resources;
   }
 
@@ -77,10 +81,13 @@ public class RocksDbInstance implements KvStoreAccessor {
   @Override
   public <K, V> Optional<V> get(final KvStoreColumn<K, V> column, final K key) {
     assertOpen();
-    final ColumnFamilyHandle handle = columnHandles.get(column);
+    final Optional<ColumnFamilyHandle> maybeHandle = getColumnHandle(column);
+    if (maybeHandle.isEmpty()) {
+      return Optional.empty();
+    }
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     try {
-      return Optional.ofNullable(db.get(handle, keyBytes))
+      return Optional.ofNullable(db.get(maybeHandle.get(), keyBytes))
           .map(data -> column.getValueSerializer().deserialize(data));
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
@@ -126,8 +133,11 @@ public class RocksDbInstance implements KvStoreAccessor {
   @Override
   public <K, V> Optional<K> getLastKey(final KvStoreColumn<K, V> column) {
     assertOpen();
-    final ColumnFamilyHandle handle = columnHandles.get(column);
-    try (final RocksIterator rocksDbIterator = db.newIterator(handle)) {
+    final Optional<ColumnFamilyHandle> maybeHandle = getColumnHandle(column);
+    if (maybeHandle.isEmpty()) {
+      return Optional.empty();
+    }
+    try (final RocksIterator rocksDbIterator = db.newIterator(maybeHandle.get())) {
       rocksDbIterator.seekToLast();
       return rocksDbIterator.isValid()
           ? Optional.of(column.getKeySerializer().deserialize(rocksDbIterator.key()))
@@ -166,10 +176,13 @@ public class RocksDbInstance implements KvStoreAccessor {
   @Override
   public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> column, final K key) {
     assertOpen();
-    final ColumnFamilyHandle handle = columnHandles.get(column);
+    final Optional<ColumnFamilyHandle> maybeHandle = getColumnHandle(column);
+    if (maybeHandle.isEmpty()) {
+      return Optional.empty();
+    }
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     try {
-      return Optional.ofNullable(db.get(handle, keyBytes)).map(Bytes::wrap);
+      return Optional.ofNullable(db.get(maybeHandle.get(), keyBytes)).map(Bytes::wrap);
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
     }
@@ -202,7 +215,12 @@ public class RocksDbInstance implements KvStoreAccessor {
   public synchronized KvStoreTransaction startTransaction() {
     assertOpen();
     final RocksDbTransaction tx =
-        new RocksDbTransaction(db, defaultHandle, columnHandles, openTransactions::remove);
+        new RocksDbTransaction(
+            db,
+            defaultHandle,
+            this::getColumnHandleForWrite,
+            this::getColumnHandle,
+            openTransactions::remove);
     openTransactions.add(tx);
     return tx;
   }
@@ -250,8 +268,11 @@ public class RocksDbInstance implements KvStoreAccessor {
       final Consumer<RocksIterator> setupIterator,
       final Predicate<K> continueTest) {
     assertOpen();
-    final ColumnFamilyHandle handle = columnHandles.get(column);
-    final RocksIterator rocksDbIterator = db.newIterator(handle);
+    final Optional<ColumnFamilyHandle> maybeHandle = getColumnHandle(column);
+    if (maybeHandle.isEmpty()) {
+      return Stream.empty();
+    }
+    final RocksIterator rocksDbIterator = db.newIterator(maybeHandle.get());
     setupIterator.accept(rocksDbIterator);
     return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
   }
@@ -263,8 +284,11 @@ public class RocksDbInstance implements KvStoreAccessor {
       final Consumer<RocksIterator> setupIterator,
       final Predicate<K> continueTest) {
     assertOpen();
-    final ColumnFamilyHandle handle = columnHandles.get(column);
-    final RocksIterator rocksDbIterator = db.newIterator(handle);
+    final Optional<ColumnFamilyHandle> maybeHandle = getColumnHandle(column);
+    if (maybeHandle.isEmpty()) {
+      return Stream.empty();
+    }
+    final RocksIterator rocksDbIterator = db.newIterator(maybeHandle.get());
     setupIterator.accept(rocksDbIterator);
     return RocksDbKeyIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
   }
@@ -285,6 +309,34 @@ public class RocksDbInstance implements KvStoreAccessor {
   private void assertOpen() {
     if (closed.get()) {
       throw new ShuttingDownException();
+    }
+  }
+
+  private synchronized Optional<ColumnFamilyHandle> getColumnHandle(
+      final KvStoreColumn<?, ?> column) {
+    return Optional.ofNullable(columnHandles.get(column));
+  }
+
+  private synchronized ColumnFamilyHandle getColumnHandleForWrite(
+      final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    final ColumnFamilyHandle existingHandle = columnHandles.get(column);
+    if (existingHandle != null) {
+      return existingHandle;
+    }
+
+    final ColumnFamilyDescriptor descriptor = columnDescriptors.get(column);
+    if (descriptor == null) {
+      throw DatabaseStorageException.unrecoverable("Column is not defined in the RocksDB schema");
+    }
+
+    try {
+      final ColumnFamilyHandle columnHandle = db.createColumnFamily(descriptor);
+      columnHandles.put(column, columnHandle);
+      resources.add(Math.max(0, resources.size() - 1), columnHandle);
+      return columnHandle;
+    } catch (RocksDBException e) {
+      throw RocksDbExceptionUtil.wrapException("Failed to create column family", e);
     }
   }
 }
