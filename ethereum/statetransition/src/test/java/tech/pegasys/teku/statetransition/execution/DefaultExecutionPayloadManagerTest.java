@@ -257,48 +257,53 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
-  public void shouldCacheInvalidExecutionPayloadWhenImportFailsExecution() {
+  public void shouldNotCacheInvalidExecutionPayloadWhenImportFailsExecution() {
     final ExecutionPayloadImportResult failedImportResult =
-        ExecutionPayloadImportResult.failedExecution(new RuntimeException("invalid"));
-    givenValidationResult(signedExecutionPayload, ACCEPT);
+        ExecutionPayloadImportResult.failedExecution(new RuntimeException("execution failed"));
     when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
         .thenReturn(completedFuture(failedImportResult));
 
-    final SafeFuture<InternalValidationResult> resultFuture =
-        validateAndImport(signedExecutionPayload);
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
     asyncRunner.executeDueActions();
 
-    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
+    assertThat(invalidExecutionPayloadRoots)
+        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldCacheInvalidExecutionPayloadWhenImportFailsVerification() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedVerification(new RuntimeException("invalid"));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult));
+
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
     assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
     assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
-  public void shouldClearInvalidExecutionPayloadWhenLaterImportSucceeds() {
+  public void shouldCacheInvalidExecutionPayloadWhenDataAvailabilityCheckIsInvalid() {
     final ExecutionPayloadImportResult failedImportResult =
-        ExecutionPayloadImportResult.failedExecution(new RuntimeException("invalid"));
+        ExecutionPayloadImportResult.failedDataAvailabilityCheckInvalid(
+            Optional.of(new RuntimeException("invalid")));
     when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(completedFuture(failedImportResult))
-        .thenReturn(
-            completedFuture(ExecutionPayloadImportResult.successful(signedExecutionPayload)));
+        .thenReturn(completedFuture(failedImportResult));
 
-    final SafeFuture<ExecutionPayloadImportResult> failedResult =
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
         executionPayloadManager.importExecutionPayload(signedExecutionPayload);
     asyncRunner.executeDueActions();
 
-    assertThat(failedResult).isCompletedWithValue(failedImportResult);
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
     assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
     assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
-
-    final SafeFuture<ExecutionPayloadImportResult> successfulResult =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
-    asyncRunner.executeDueActions();
-
-    assertThat(successfulResult)
-        .isCompletedWithValueMatching(ExecutionPayloadImportResult::isSuccessful);
-    assertThat(invalidExecutionPayloadRoots)
-        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
-    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test

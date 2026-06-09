@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +46,8 @@ public class AttestationValidator {
   private final Set<Bytes32> invalidExecutionPayloadRoots;
   private final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation;
 
-  public AttestationValidator(
+  @VisibleForTesting
+  AttestationValidator(
       final Spec spec,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final GossipValidationHelper gossipValidationHelper,

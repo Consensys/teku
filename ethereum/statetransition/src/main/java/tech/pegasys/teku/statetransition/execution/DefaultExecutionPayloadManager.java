@@ -202,7 +202,6 @@ public class DefaultExecutionPayloadManager
                     signedExecutionPayload::toLogString);
                 successfullyImportedExecutionPayloads.add(
                     signedExecutionPayload.getBeaconBlockRoot());
-                invalidExecutionPayloadRoots.remove(signedExecutionPayload.getBeaconBlockRoot());
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {
@@ -242,8 +241,9 @@ public class DefaultExecutionPayloadManager
 
   private boolean isInvalidExecutionPayload(final ExecutionPayloadImportResult result) {
     return switch (result.getFailureReason()) {
-      case FAILED_EXECUTION, FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> true;
+      case FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> true;
       case UNKNOWN_BEACON_BLOCK_ROOT,
+          FAILED_EXECUTION,
           FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
           INTERNAL_ERROR ->
           false;
