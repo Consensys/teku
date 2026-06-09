@@ -142,11 +142,7 @@ public class RocksDbInstanceFactory {
       rocksDbStats.registerMetrics(db);
 
       return new RocksDbInstance(
-          db,
-          defaultHandle,
-          new HashMap<>(columnHandlesMap),
-          columnFamilyDescriptors.byColumn(),
-          resources);
+          db, defaultHandle, columnHandlesMap, columnFamilyDescriptors.byColumn(), resources);
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException(
           "Failed to open database at path: " + configuration.getDatabaseDir(), e);

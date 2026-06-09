@@ -19,9 +19,12 @@ import static tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn.asCo
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -67,6 +70,20 @@ class RocksDbInstanceFactoryTest {
 
     try (final KvStoreAccessor db = createDatabase(List.of(firstColumn))) {
       assertThat(db.get(firstColumn, UInt64.ONE)).isEmpty();
+    }
+  }
+
+  @Test
+  void shouldReadWithoutAcquiringDatabaseMonitor() throws Exception {
+    try (final KvStoreAccessor db = createDatabase(List.of(firstColumn))) {
+      synchronized (db) {
+        final CompletableFuture<Optional<UInt64>> readFuture =
+            CompletableFuture.supplyAsync(() -> db.get(firstColumn, UInt64.ONE));
+
+        assertThat(readFuture)
+            .succeedsWithin(Duration.ofSeconds(1))
+            .satisfies(result -> assertThat(result).isEmpty());
+      }
     }
   }
 

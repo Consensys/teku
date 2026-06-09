@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 public class RocksDbTransaction implements KvStoreTransaction {
   private final ColumnFamilyHandle defaultHandle;
   private final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandleForWrite;
-  private final Function<KvStoreColumn<?, ?>, Optional<ColumnFamilyHandle>> columnHandle;
+  private final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandle;
   private final Transaction rocksDbTx;
   private final WriteOptions writeOptions;
 
@@ -46,7 +45,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
       final TransactionDB db,
       final ColumnFamilyHandle defaultHandle,
       final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandleForWrite,
-      final Function<KvStoreColumn<?, ?>, Optional<ColumnFamilyHandle>> columnHandle,
+      final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandle,
       final Consumer<RocksDbTransaction> onClosed) {
     this.defaultHandle = defaultHandle;
     this.columnHandleForWrite = columnHandleForWrite;
@@ -119,12 +118,12 @@ public class RocksDbTransaction implements KvStoreTransaction {
   public <K, V> void delete(final KvStoreColumn<K, V> column, final K key) {
     applyUpdate(
         () -> {
-          final Optional<ColumnFamilyHandle> maybeHandle = columnHandle.apply(column);
-          if (maybeHandle.isEmpty()) {
+          final ColumnFamilyHandle handle = columnHandle.apply(column);
+          if (handle == null) {
             return;
           }
           try {
-            rocksDbTx.delete(maybeHandle.get(), column.getKeySerializer().serialize(key));
+            rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));
           } catch (RocksDBException e) {
             throw RocksDbExceptionUtil.wrapException("Failed to delete key", e);
           }
