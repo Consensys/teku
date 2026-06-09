@@ -202,6 +202,7 @@ public class DefaultExecutionPayloadManager
                     signedExecutionPayload::toLogString);
                 successfullyImportedExecutionPayloads.add(
                     signedExecutionPayload.getBeaconBlockRoot());
+                invalidExecutionPayloadRoots.remove(signedExecutionPayload.getBeaconBlockRoot());
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {
