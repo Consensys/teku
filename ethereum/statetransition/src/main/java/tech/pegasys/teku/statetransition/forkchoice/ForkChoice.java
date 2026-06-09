@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.ConnectException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -325,19 +326,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              attestations.stream()
-                  .map(this::getIndexedAttestation)
-                  .forEach(
-                      attestation ->
-                          applyIndexedAttestation(forkChoiceStrategy, transaction, attestation));
-              transaction.commit();
-            })
-        .finishStackTrace();
+  public SafeFuture<List<ValidatableAttestation>> applyIndexedAttestations(
+      final List<ValidatableAttestation> attestations) {
+    return onForkChoiceThread(
+        () -> {
+          final VoteUpdater transaction = recentChainData.startVoteUpdate();
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          final List<ValidatableAttestation> attestationsWaitingForFullPayload = new ArrayList<>();
+          attestations.forEach(
+              attestation -> {
+                final IndexedAttestationLight indexedAttestation =
+                    getIndexedAttestation(attestation);
+                if (!applyIndexedAttestation(forkChoiceStrategy, transaction, indexedAttestation)) {
+                  attestationsWaitingForFullPayload.add(attestation);
+                }
+              });
+          transaction.commit();
+          return attestationsWaitingForFullPayload;
+        });
   }
 
   public void onAttesterSlashing(
@@ -1421,7 +1427,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return applyDeferredAttestations(deferredVoteUpdates);
   }
 
-  private void applyIndexedAttestation(
+  private boolean applyIndexedAttestation(
       final ForkChoiceStrategy forkChoiceStrategy,
       final VoteUpdater voteUpdater,
       final IndexedAttestationLight attestation) {
@@ -1429,9 +1435,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceStrategy,
         attestation.data().getBeaconBlockRoot(),
         getFullPayloadVoteHint(attestation.data()))) {
-      return;
+      return false;
     }
     forkChoiceStrategy.onAttestation(voteUpdater, attestation);
+    return true;
   }
 
   private void applyDeferredAttestationsToForkChoice(

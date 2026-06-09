@@ -198,15 +198,23 @@ public class AttestationManager extends Service
     if (attestations.isEmpty()) {
       return;
     }
-    attestationProcessor.applyIndexedAttestations(attestations);
-    attestations.stream()
-        .filter(ValidatableAttestation::isProducedLocally)
-        .filter(a -> !a.isGossiped())
-        .forEach(
-            a -> {
-              validateForGossipAndNotifySendSubscribers(a);
-              notifyAllValidAttestationsSubscribers(a);
-            });
+    attestationProcessor
+        .applyIndexedAttestations(attestations)
+        .finish(
+            attestationsWaitingForFullPayload -> {
+              attestationsWaitingForFullPayload.forEach(
+                  pendingAttestationPool::addForMissingFullPayload);
+              attestations.stream()
+                  .filter(a -> !attestationsWaitingForFullPayload.contains(a))
+                  .filter(ValidatableAttestation::isProducedLocally)
+                  .filter(a -> !a.isGossiped())
+                  .forEach(
+                      a -> {
+                        validateForGossipAndNotifySendSubscribers(a);
+                        notifyAllValidAttestationsSubscribers(a);
+                      });
+            },
+            error -> LOG.error("Failed to process future attestations.", error));
   }
 
   @Override

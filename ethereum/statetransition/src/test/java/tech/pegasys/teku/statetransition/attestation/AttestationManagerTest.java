@@ -110,6 +110,7 @@ class AttestationManagerTest {
   public void setup() {
     when(signatureVerificationService.start()).thenReturn(SafeFuture.completedFuture(null));
     when(signatureVerificationService.stop()).thenReturn(SafeFuture.completedFuture(null));
+    when(forkChoice.applyIndexedAttestations(any())).thenReturn(completedFuture(List.of()));
     assertThat(attestationManager.start()).isCompleted();
   }
 
@@ -218,6 +219,39 @@ class AttestationManagerTest {
 
     // But should not send to gossip because it was ignored
     verify(subscriber, never()).accept(attestation);
+  }
+
+  @Test
+  public void shouldParkFutureFullPayloadAttestationWhenPayloadIsStillMissing() {
+    final ProcessedAttestationListener subscriber = mock(ProcessedAttestationListener.class);
+    attestationManager.subscribeToAttestationsToSend(subscriber);
+    final int futureSlot = 100;
+    final UInt64 currentSlot = UInt64.valueOf(futureSlot).minus(1);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    onSlot(currentSlot);
+
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromValidator(
+            spec, fullPayloadAttestationFromSlot(futureSlot, blockRoot));
+    final IndexedAttestationLight randomIndexedAttestation =
+        IndexedAttestationLight.fromSsz(
+            dataStructureUtil.randomIndexedAttestation(
+                UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+    when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
+    when(forkChoice.applyIndexedAttestations(List.of(attestation)))
+        .thenReturn(completedFuture(List.of(attestation)));
+
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
+    attestation.setIndexedAttestation(randomIndexedAttestation);
+
+    onSlot(UInt64.valueOf(101));
+
+    verify(forkChoice).applyIndexedAttestations(List.of(attestation));
+    assertThat(futureAttestations.size()).isZero();
+    assertThat(pendingAttestations.size()).isZero();
+    assertThat(pendingAttestationPool.contains(attestation)).isTrue();
+    verify(subscriber, never()).accept(attestation);
+    assertThat(attestation.isGossiped()).isFalse();
   }
 
   @Test

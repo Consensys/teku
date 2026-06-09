@@ -1628,7 +1628,8 @@ class ForkChoiceTest {
     final ValidatableAttestation attestation =
         createPrevalidatedFullPayloadAttestation(targetBlock, attestationSlot);
 
-    forkChoice.applyIndexedAttestations(List.of(attestation));
+    assertThat(forkChoice.applyIndexedAttestations(List.of(attestation)))
+        .isCompletedWithValue(List.of(attestation));
 
     assertFullPayloadVoteIsPending(targetBlock);
   }
@@ -1712,7 +1713,8 @@ class ForkChoiceTest {
             updatedVote.getData(),
             updatedVote.getAttestation().getAggregateSignature()));
 
-    forkChoice.applyIndexedAttestations(List.of(updatedVote));
+    assertThat(forkChoice.applyIndexedAttestations(List.of(updatedVote)))
+        .isCompletedWithValue(List.of());
     return updatedAttestationSlot;
   }
 
