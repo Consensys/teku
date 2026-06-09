@@ -73,6 +73,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
 import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -135,8 +136,7 @@ public class SyncingNodeManager {
             recentChainData,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            metricsSystem,
-            poolFactory.createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
+            metricsSystem);
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
@@ -152,8 +152,10 @@ public class SyncingNodeManager {
     final PendingBlockPool pendingBlockPool = poolFactory.createPendingBlockPool(spec);
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         pendingBlockPool.getBlocksWaitingForParent();
+    final PendingAttestationPool pendingAttestationPool =
+        poolFactory.createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
     final PendingPool<ValidatableAttestation> pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
+        pendingAttestationPool.getAttestationsWaitingForBlock();
     final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
         poolFactory.createPendingPoolForPayloadAttestations(spec, 100);
     final FutureItems<SignedBeaconBlock> futureBlocks =
@@ -195,7 +197,9 @@ public class SyncingNodeManager {
         .subscribe(ReceivedBlockEventsChannel.class, blockManager)
         .subscribe(ReceivedExecutionPayloadEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
-        .subscribe(SlotEventsChannel.class, pendingBlockPool);
+        .subscribe(SlotEventsChannel.class, pendingBlockPool)
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestationPool)
+        .subscribe(SlotEventsChannel.class, pendingAttestationPool);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
