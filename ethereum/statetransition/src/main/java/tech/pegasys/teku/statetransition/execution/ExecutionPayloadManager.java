@@ -84,8 +84,8 @@ public interface ExecutionPayloadManager {
   boolean isExecutionPayloadAvailableForPayloadAttestation(Bytes32 beaconBlockRoot);
 
   /**
-   * {@link SignedExecutionPayloadEnvelope} has been seen or already imported for the block. This
-   * method is used for full-payload beacon attestation gossip validation.
+   * {@link SignedExecutionPayloadEnvelope} has been successfully imported or is already available
+   * for the block. This method is used for full-payload beacon attestation gossip validation.
    */
   boolean isExecutionPayloadSeenForFullPayloadAttestation(Bytes32 beaconBlockRoot);
 

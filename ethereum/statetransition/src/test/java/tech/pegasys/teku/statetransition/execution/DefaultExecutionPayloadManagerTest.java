@@ -212,18 +212,29 @@ class DefaultExecutionPayloadManagerTest {
   }
 
   @Test
-  public void shouldThrowWhenStoreUnavailableForFullPayloadAttestationCheck() {
-    when(recentChainData.containsExecutionPayload(signedExecutionPayload.getBeaconBlockRoot()))
-        .thenThrow(
-            new IllegalStateException(
-                "Store is unavailable while checking execution payload availability"));
+  public void shouldNotReportExecutionPayloadSeenForFullPayloadAttestationWhenStoreUnavailable() {
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
 
-    assertThatThrownBy(
-            () ->
-                executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
-                    signedExecutionPayload.getBeaconBlockRoot()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Store is unavailable while checking execution payload availability");
+  @Test
+  public void shouldNotReportExecutionPayloadSeenForFullPayloadAttestationUntilImportCompletes() {
+    final SafeFuture<ExecutionPayloadImportResult> importResult = new SafeFuture<>();
+    givenValidationResult(signedExecutionPayload, ACCEPT);
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(importResult);
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        validateAndImport(signedExecutionPayload);
+
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
+    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+
+    importResult.complete(ExecutionPayloadImportResult.successful(signedExecutionPayload));
+
+    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -242,6 +253,7 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -258,6 +270,7 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
