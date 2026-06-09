@@ -33,12 +33,9 @@ public class GossipTests {
           .put(
               "networking/gossip_bls_to_execution_change",
               new GossipBlsToExecutionChangeTestExecutor(
+                  // TODO: this test should be fixed in the next consensus-specs release
                   "gossip_bls_to_execution_change__ignore_pre_capella"))
-          // TODO: https://github.com/Consensys/teku/issues/10781
-          .put(
-              "networking/gossip_beacon_block",
-              new GossipBeaconBlockTestExecutor(
-                  "gossip_beacon_block__valid_at_blob_parameters_limit"))
+          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
           .put(
               "networking/gossip_sync_committee_contribution_and_proof",
               new GossipSyncCommitteeContributionAndProofTestExecutor())

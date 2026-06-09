@@ -14,6 +14,8 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.TestFork;
@@ -32,6 +34,8 @@ public class TestDefinition {
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
+  private final Optional<Map<String, Object>> configOverrides;
+
   private Spec spec;
 
   public TestDefinition(
@@ -40,11 +44,22 @@ public class TestDefinition {
       final String testType,
       final String testName,
       final Path pathFromPhaseTestDir) {
+    this(fork, configName, testType, testName, pathFromPhaseTestDir, Optional.empty());
+  }
+
+  public TestDefinition(
+      final String fork,
+      final String configName,
+      final String testType,
+      final String testName,
+      final Path pathFromPhaseTestDir,
+      final Optional<Map<String, Object>> configOverrides) {
     this.configName = configName;
     this.fork = fork;
     this.testType = testType.replace("\\", "/");
     this.testName = testName.replace("\\", "/");
     this.pathFromPhaseTestDir = pathFromPhaseTestDir;
+    this.configOverrides = configOverrides;
   }
 
   public String getConfigName() {
@@ -98,7 +113,8 @@ public class TestDefinition {
             builder ->
                 builder
                     .blsSignatureVerifier(blsSignatureVerifier)
-                    .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier));
+                    .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier),
+            configOverrides.orElseGet(Map::of));
   }
 
   public String getTestType() {
