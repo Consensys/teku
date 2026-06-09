@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
@@ -69,6 +71,27 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(payloadAttestationDataResponse);
+  }
+
+  @Test
+  void shouldUseMilestoneFromRequestedSlot() throws Exception {
+    setSpec(TestSpecFactory.createMinimalWithHezeForkEpoch(ONE));
+    setHandler(new GetPayloadAttestationData(validatorDataProvider, schemaDefinitionCache));
+    final UInt64 hezeSlot = spec.computeStartSlotAtEpoch(ONE);
+    request.setPathParameter(RestApiConstants.SLOT, hezeSlot.toString());
+    final PayloadAttestationData hezePayloadAttestationData =
+        dataStructureUtil.randomPayloadAttestationData(hezeSlot);
+    when(validatorDataProvider.createPayloadAttestationData(hezeSlot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(hezePayloadAttestationData)));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody())
+        .isEqualTo(
+            new ObjectAndMetaData<>(
+                hezePayloadAttestationData, SpecMilestone.HEZE, false, true, false));
+    assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION)).isEqualTo("heze");
   }
 
   @Test
@@ -118,13 +141,13 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldDocumentPayloadAttestationDataMilestonesFromGloas() throws Exception {
+  void metadata_shouldDocumentMilestoneVersion() throws Exception {
     final String schema =
         JsonUtil.serialize(
             handler.getMetadata().getResponseType(SC_OK, JSON)::serializeOpenApiType);
 
     assertThat(schema)
-        .contains("\"enum\":[\"gloas\",\"heze\"]")
-        .doesNotContain("\"phase0\"", "\"fulu\"");
+        .contains(
+            "\"enum\":[\"phase0\",\"altair\",\"bellatrix\",\"capella\",\"deneb\",\"electra\",\"fulu\",\"gloas\",\"heze\"]");
   }
 }

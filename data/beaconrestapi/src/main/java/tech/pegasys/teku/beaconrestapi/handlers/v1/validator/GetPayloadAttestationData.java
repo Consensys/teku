@@ -15,20 +15,20 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.EnumSet;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -47,17 +47,11 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/payload_attestation_data/{slot}";
 
   private final ValidatorDataProvider provider;
+  private final SchemaDefinitionCache schemaDefinitionCache;
 
   private static final ParameterMetadata<UInt64> SLOT_PARAM =
       SLOT_PARAMETER.withDescription(
           "The slot for which payload attestation data should be created.");
-
-  private static final EnumTypeDefinition<SpecMilestone> GLOAS_OR_LATER_MILESTONE_TYPE =
-      new EnumTypeDefinition.EnumTypeBuilder<>(SpecMilestone.class, SpecMilestone::lowerCaseName)
-          .excludedEnumerations(
-              EnumSet.copyOf(SpecMilestone.getAllPriorMilestones(SpecMilestone.GLOAS)))
-          .example("gloas")
-          .build();
 
   public GetPayloadAttestationData(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
@@ -99,6 +93,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
             .withChainDataResponses()
             .build());
     this.provider = validatorDataProvider;
+    this.schemaDefinitionCache = schemaDefinitionCache;
   }
 
   @Override
@@ -112,14 +107,14 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
             maybePayloadAttestationData ->
                 maybePayloadAttestationData
                     .map(
-                        payloadAttestationData ->
-                            AsyncApiResponse.respondOk(
-                                new ObjectAndMetaData<>(
-                                    payloadAttestationData,
-                                    SpecMilestone.GLOAS,
-                                    false,
-                                    true,
-                                    false)))
+                        payloadAttestationData -> {
+                          final SpecMilestone milestone =
+                              schemaDefinitionCache.milestoneAtSlot(slot);
+                          request.header(HEADER_CONSENSUS_VERSION, milestone.lowerCaseName());
+                          return AsyncApiResponse.respondOk(
+                              new ObjectAndMetaData<>(
+                                  payloadAttestationData, milestone, false, true, false));
+                        })
                     .orElseGet(
                         () ->
                             AsyncApiResponse.respondWithError(
@@ -136,7 +131,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
 
     return SerializableTypeDefinition.<ObjectAndMetaData<PayloadAttestationData>>object()
         .name("ProducePayloadAttestationDataResponse")
-        .withField("version", GLOAS_OR_LATER_MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
+        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(
             "data",
             payloadAttestationDataSchema.getJsonTypeDefinition(),

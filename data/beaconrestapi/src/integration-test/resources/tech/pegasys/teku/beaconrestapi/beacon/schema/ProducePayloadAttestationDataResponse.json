@@ -5,8 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "example" : "gloas",
-      "enum" : [ "gloas", "heze" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
     },
     "data" : {
       "$ref" : "#/components/schemas/PayloadAttestationData"
