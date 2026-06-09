@@ -66,6 +66,10 @@ public class V4FinalizedKvStoreDao {
     db.close();
   }
 
+  public void compact() {
+    db.compact();
+  }
+
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
 
     return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);

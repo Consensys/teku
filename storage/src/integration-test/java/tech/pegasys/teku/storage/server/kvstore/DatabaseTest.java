@@ -2834,6 +2834,41 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void compactStorage_isOperativeAndPreservesData(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block2Sidecar0);
+
+    // prune the oldest slot so there are tombstones for compaction to reclaim
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10);
+
+    // compaction must run without error and leave the surviving data intact
+    database.compactStorage();
+
+    assertThat(database.getSidecar(block1Column0)).isEmpty();
+    assertThat(database.getSidecar(block2Column0)).contains(block2Sidecar0);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
+  }
+
+  @TestTemplate
   public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);

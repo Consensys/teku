@@ -200,6 +200,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
 
+  /** Triggers a full, blocking compaction of the underlying storage to reclaim freed space. */
+  void compact();
+
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
   interface HotUpdater extends AutoCloseable {

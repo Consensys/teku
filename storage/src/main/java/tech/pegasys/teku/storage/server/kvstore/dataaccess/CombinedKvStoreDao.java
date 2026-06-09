@@ -314,6 +314,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public void compact() {
+    db.compact();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     try (final OperationTimer.TimingContext ignored =
         getFinalizedBlockTimer.labels().startTimer()) {

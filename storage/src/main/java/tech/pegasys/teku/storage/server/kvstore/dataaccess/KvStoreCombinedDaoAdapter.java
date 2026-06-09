@@ -428,6 +428,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public void compact() {
+    hotDao.compact();
+    finalizedDao.compact();
+  }
+
+  @Override
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
   public CombinedUpdater combinedUpdater() {

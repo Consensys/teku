@@ -110,6 +110,14 @@ public interface KvStoreAccessor extends AutoCloseable {
 
   KvStoreTransaction startTransaction();
 
+  /**
+   * Triggers a full compaction of every column family, rewriting all levels and physically dropping
+   * deleted keys and their tombstones. This reclaims disk space left behind by pruning that
+   * automatic background compaction has not yet reclaimed. It is an expensive, blocking, I/O-heavy
+   * operation and is intended to be run offline (e.g. from the debug CLI), not on a running node.
+   */
+  void compact();
+
   interface KvStoreTransaction extends AutoCloseable {
 
     <T> void put(KvStoreVariable<T> variable, T value);

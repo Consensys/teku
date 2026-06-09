@@ -310,4 +310,8 @@ public interface Database extends AutoCloseable {
   // the persisted prune watermark (advanced atomically with each batch) so successive runs - and
   // runs after a restart - never rescan the deletion tombstones below already-pruned slots.
   void pruneAllSidecars(UInt64 tillSlotInclusive, int pruneLimit);
+
+  // Triggers a full, blocking compaction of the underlying storage to physically reclaim the disk
+  // space left behind by pruning. Expensive and I/O-heavy; intended for offline/CLI use.
+  void compactStorage();
 }

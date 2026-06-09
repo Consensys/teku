@@ -1435,6 +1435,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public void compactStorage() {
+    dao.compact();
+  }
+
+  @Override
   public void close() throws Exception {
     dao.close();
   }
