@@ -512,7 +512,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     if (context
         .getStore()
         .getForkChoiceStrategy()
-        .shouldBuildOnFull(context.getStore(), proposerHead)) {
+        .shouldBuildOnFull(context.getStore(), slot, proposerHead)) {
       return proposerHead.toFull();
     }
     return proposerHead.toEmpty();

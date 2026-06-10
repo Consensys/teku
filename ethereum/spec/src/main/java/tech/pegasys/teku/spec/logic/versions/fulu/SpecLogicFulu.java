@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity.WeakSubjectivityCalculatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.execution.ExecutionRequestsProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -186,8 +187,8 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     final WithdrawalsHelpersElectra withdrawalsHelpers =
         new WithdrawalsHelpersElectra(
             schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
-    final ExecutionRequestsProcessorElectra executionRequestsProcessor =
-        new ExecutionRequestsProcessorElectra(
+    final ExecutionRequestsProcessorFulu executionRequestsProcessor =
+        new ExecutionRequestsProcessorFulu(
             schemaDefinitions,
             miscHelpers,
             config,

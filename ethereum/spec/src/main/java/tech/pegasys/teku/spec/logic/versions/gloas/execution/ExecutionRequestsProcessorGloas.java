@@ -31,15 +31,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.execution.ExecutionRequestsProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorElectra {
+public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorFulu {
 
   private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
@@ -51,7 +51,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       final MiscHelpersGloas miscHelpers,
       final SpecConfigGloas specConfig,
       final PredicatesGloas predicates,
-      final ValidatorsUtil validatorsUtil,
+      final ValidatorsUtilGloas validatorsUtil,
       final BeaconStateMutatorsGloas beaconStateMutators,
       final BeaconStateAccessorsGloas beaconStateAccessors) {
     super(

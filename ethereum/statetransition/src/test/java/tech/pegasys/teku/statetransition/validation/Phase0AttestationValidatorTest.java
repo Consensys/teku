@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public class Phase0AttestationValidatorTest extends AbstractAttestationValidatorTest {
@@ -63,6 +64,16 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
   }
 
   @Test
+  public void shouldRejectAttestationWhenBlockBeingVotedForHasFailedValidation() {
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+    invalidBlockRoots.put(
+        attestation.getData().getBeaconBlockRoot(),
+        BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
+    assertThat(validate(attestation).code()).isEqualTo(REJECT);
+  }
+
+  @Test
   public void shouldIgnoreAttestationWhenFinalizedCheckpointIsNotAncestorOfBlock() {
     final StateAndBlockSummary head = storageSystem.getChainHead();
     final Attestation attestation = attestationGenerator.validAttestation(head);
@@ -73,7 +84,8 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
         .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
             attestation.getData().getBeaconBlockRoot());
     final AttestationValidator validator =
-        new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
 
     assertThat(
             validator.validate(
@@ -322,7 +334,8 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
     final AttestationValidator validator =
-        new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
     final AttestationData data = attestation.getData();
     final Checkpoint checkpoint =
         new Checkpoint(
