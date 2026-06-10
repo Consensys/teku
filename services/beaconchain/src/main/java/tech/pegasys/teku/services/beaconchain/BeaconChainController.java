@@ -1305,7 +1305,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
         .subscribe(SlotEventsChannel.class, pendingBlockPool);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
-    invalidExecutionPayloadRoots = LimitedSet.createSynchronized(500);
+    invalidExecutionPayloadRoots = LimitedSet.createSynchronizedLRU(500);
   }
 
   protected void initBlockBlobSidecarsTrackersPool() {
