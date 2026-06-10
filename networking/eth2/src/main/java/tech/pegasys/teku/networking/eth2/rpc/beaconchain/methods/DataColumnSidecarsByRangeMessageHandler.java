@@ -209,21 +209,40 @@ public class DataColumnSidecarsByRangeMessageHandler
   }
 
   private SafeFuture<RequestState> sendDataColumnSidecars(final RequestState requestState) {
+    SafeFuture<Boolean> dataColumnSidecarFuture = processNextDataColumnSidecar(requestState);
+    // Avoid risk of StackOverflowException by iterating when the sidecar future is already
+    // complete. Using thenCompose on the completed future would execute immediately and recurse
+    // back into this method to send the next sidecar. When not already complete, thenCompose is
+    // executed on a separate thread so doesn't recurse on the same stack.
+    while (dataColumnSidecarFuture.isDone()
+        && !dataColumnSidecarFuture.isCompletedExceptionally()) {
+      if (dataColumnSidecarFuture.join()) {
+        return SafeFuture.completedFuture(requestState);
+      }
+      dataColumnSidecarFuture = processNextDataColumnSidecar(requestState);
+    }
+    return dataColumnSidecarFuture.thenCompose(
+        complete ->
+            complete
+                ? SafeFuture.completedFuture(requestState)
+                : sendDataColumnSidecars(requestState));
+  }
+
+  private SafeFuture<Boolean> processNextDataColumnSidecar(final RequestState requestState) {
     return requestState
         .loadNextDataColumnSidecar()
         .thenCompose(
             maybeDataColumnSidecar ->
-                maybeDataColumnSidecar
-                    .map(requestState::sendDataColumnSidecar)
-                    .orElse(SafeFuture.COMPLETE))
-        .thenCompose(
-            __ -> {
-              if (requestState.isComplete()) {
-                return SafeFuture.completedFuture(requestState);
-              } else {
-                return sendDataColumnSidecars(requestState);
-              }
-            });
+                handleLoadedDataColumnSidecar(requestState, maybeDataColumnSidecar));
+  }
+
+  /** Sends the data column sidecar and returns true if the request is now complete. */
+  private SafeFuture<Boolean> handleLoadedDataColumnSidecar(
+      final RequestState requestState, final Optional<DataColumnSidecar> maybeDataColumnSidecar) {
+    return maybeDataColumnSidecar
+        .map(requestState::sendDataColumnSidecar)
+        .orElse(SafeFuture.COMPLETE)
+        .thenApply(__ -> requestState.isComplete());
   }
 
   @VisibleForTesting
