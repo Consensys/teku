@@ -49,7 +49,7 @@ public class ExecutionPayloadGossipValidator {
   private final SigningRootUtil signingRootUtil;
 
   private final Set<BlockRootAndBuilderIndex> seenPayloads =
-      LimitedSet.createSynchronized(SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+      LimitedSet.createSynchronizedLRU(SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
 

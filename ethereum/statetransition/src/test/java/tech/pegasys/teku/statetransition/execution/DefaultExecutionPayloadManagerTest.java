@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -23,7 +24,9 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,8 +63,9 @@ class DefaultExecutionPayloadManagerTest {
       receivedExecutionPayloadEventsChannelPublisher =
           mock(ReceivedExecutionPayloadEventsChannel.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final UpdatableStore store = mock(UpdatableStore.class);
   private final Set<Bytes32> blockRootsWithInvalidExecutionPayload = new HashSet<>();
+  private final UpdatableStore store = mock(UpdatableStore.class);
+
   private Optional<SignedExecutionPayloadEnvelope> publishedExecutionPayload = Optional.empty();
 
   private final DefaultExecutionPayloadManager executionPayloadManager =
@@ -128,60 +132,6 @@ class DefaultExecutionPayloadManagerTest {
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
     assertExecutionPayloadNotSeenBeforeDeadline(signedExecutionPayload);
-    assertExecutionPayloadNotAvailableForPayloadAttestation(signedExecutionPayload);
-    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldThrowWhenStoreIsUnavailableForArrivalTimestampFallback() {
-    when(recentChainData.getStore()).thenReturn(null);
-
-    assertThatThrownBy(
-            () -> executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Store is unavailable while resolving execution payload arrival time");
-    verifyNoInteractions(executionPayloadGossipValidator);
-  }
-
-  @Test
-  public void shouldKeepExecutionPayloadAvailableWhenDuplicateArrivesAfterPayloadDueDeadline() {
-    givenValidationResult(signedExecutionPayload, ACCEPT);
-    givenSuccessfulImport(signedExecutionPayload);
-
-    final SafeFuture<InternalValidationResult> earlyResult =
-        validateAndImport(signedExecutionPayload, UInt64.ZERO);
-    final SafeFuture<InternalValidationResult> lateResult =
-        validateAndImport(signedExecutionPayload, payloadDueDeadlineMillis(signedExecutionPayload));
-
-    asyncRunner.executeDueActions();
-
-    assertThat(earlyResult).isCompletedWithValue(ACCEPT);
-    assertThat(lateResult).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadAvailableForPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldKeepExecutionPayloadAvailableWhenLaterDuplicateValidatesFirst() {
-    final SafeFuture<InternalValidationResult> earlyValidation = new SafeFuture<>();
-    final SafeFuture<InternalValidationResult> lateValidation = new SafeFuture<>();
-    givenValidationResults(signedExecutionPayload, earlyValidation, lateValidation);
-    givenSuccessfulImport(signedExecutionPayload);
-
-    final SafeFuture<InternalValidationResult> earlyResult =
-        validateAndImport(signedExecutionPayload, UInt64.ZERO);
-    final SafeFuture<InternalValidationResult> lateResult =
-        validateAndImport(signedExecutionPayload, payloadDueDeadlineMillis(signedExecutionPayload));
-
-    lateValidation.complete(ACCEPT);
-    asyncRunner.executeDueActions();
-
-    assertThat(lateResult).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadAvailableForPayloadAttestation(signedExecutionPayload);
-
-    earlyValidation.complete(IGNORE);
-
-    assertThat(earlyResult).isCompletedWithValue(IGNORE);
-    assertExecutionPayloadAvailableForPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -196,44 +146,6 @@ class DefaultExecutionPayloadManagerTest {
 
     verifyNoInteractions(forkChoice);
     assertThat(resultFuture).isCompletedWithValue(rejectedResult);
-    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldReportExecutionPayloadSeenForFullPayloadAttestationWhenPresentInStore() {
-    when(recentChainData.containsExecutionPayload(signedExecutionPayload.getBeaconBlockRoot()))
-        .thenReturn(true);
-
-    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
-    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
-    assertExecutionPayloadNotAvailableForPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldNotReportExecutionPayloadSeenForFullPayloadAttestationWhenStoreUnavailable() {
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldNotReportExecutionPayloadSeenForFullPayloadAttestationUntilImportCompletes() {
-    final SafeFuture<ExecutionPayloadImportResult> importResult = new SafeFuture<>();
-    givenValidationResult(signedExecutionPayload, ACCEPT);
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(importResult);
-
-    final SafeFuture<InternalValidationResult> resultFuture =
-        validateAndImport(signedExecutionPayload);
-
-    asyncRunner.executeDueActions();
-
-    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
-
-    importResult.complete(ExecutionPayloadImportResult.successful(signedExecutionPayload));
-
-    assertExecutionPayloadSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
@@ -251,100 +163,90 @@ class DefaultExecutionPayloadManagerTest {
     }
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
   @Test
-  public void shouldOnlyMarkExecutionPayloadRecentlySeenWhileFailedImportIsInProgress() {
-    givenValidationResult(signedExecutionPayload, ACCEPT);
-    final SafeFuture<ExecutionPayloadImportResult> importResult = new SafeFuture<>();
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(importResult);
+  public void shouldPreferPendingExecutionPayloadReceivedBeforeDeadlineOverEarlierLatePayload() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+    final SignedExecutionPayloadEnvelope lateExecutionPayload =
+        signedExecutionPayloadForBlock(block);
+    final SignedExecutionPayloadEnvelope earlyExecutionPayload =
+        signedExecutionPayloadForBlock(block);
+    givenValidationResult(lateExecutionPayload, SAVE_FOR_FUTURE);
+    givenValidationResult(earlyExecutionPayload, SAVE_FOR_FUTURE);
 
-    final SafeFuture<InternalValidationResult> resultFuture =
-        validateAndImport(signedExecutionPayload);
+    validateAndImportAndJoin(
+        lateExecutionPayload, payloadDueDeadlineMillis(lateExecutionPayload).plus(1));
+    validateAndImportAndJoin(earlyExecutionPayload, UInt64.ZERO);
+
+    givenValidationResult(earlyExecutionPayload, ACCEPT);
+    givenSuccessfulImport(earlyExecutionPayload);
+    executionPayloadManager.onBlockImported(block, false);
 
     asyncRunner.executeDueActions();
 
-    assertThat(resultFuture).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
-
-    importResult.complete(
-        ExecutionPayloadImportResult.failedDataAvailabilityCheckNotAvailable(Optional.empty()));
-
-    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadImported(earlyExecutionPayload, false);
+    verify(forkChoice).onExecutionPayloadEnvelope(earlyExecutionPayload, executionLayer);
+    verify(forkChoice, never()).onExecutionPayloadEnvelope(lateExecutionPayload, executionLayer);
+    assertThat(publishedExecutionPayload).hasValue(earlyExecutionPayload);
+    assertExecutionPayloadSeenBeforeDeadline(earlyExecutionPayload);
   }
 
   @Test
-  public void shouldNotCacheInvalidExecutionPayloadWhenImportFailsExecution() {
-    final ExecutionPayloadImportResult failedImportResult =
-        ExecutionPayloadImportResult.failedExecution(new RuntimeException("execution failed"));
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(completedFuture(failedImportResult));
+  public void shouldNotReplacePendingExecutionPayloadReceivedBeforeDeadlineWithLatePayload() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+    final SignedExecutionPayloadEnvelope earlyExecutionPayload =
+        signedExecutionPayloadForBlock(block);
+    final SignedExecutionPayloadEnvelope lateExecutionPayload =
+        signedExecutionPayloadForBlock(block);
+    givenValidationResult(earlyExecutionPayload, SAVE_FOR_FUTURE);
+    givenValidationResult(lateExecutionPayload, SAVE_FOR_FUTURE);
 
-    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
+    validateAndImportAndJoin(earlyExecutionPayload, UInt64.ZERO);
+    validateAndImportAndJoin(
+        lateExecutionPayload, payloadDueDeadlineMillis(lateExecutionPayload).plus(1));
+
+    givenValidationResult(earlyExecutionPayload, ACCEPT);
+    givenSuccessfulImport(earlyExecutionPayload);
+    executionPayloadManager.onBlockImported(block, false);
+
     asyncRunner.executeDueActions();
 
-    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(blockRootsWithInvalidExecutionPayload)
-        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadImported(earlyExecutionPayload, false);
+    verify(forkChoice).onExecutionPayloadEnvelope(earlyExecutionPayload, executionLayer);
+    verify(forkChoice, never()).onExecutionPayloadEnvelope(lateExecutionPayload, executionLayer);
+    assertThat(publishedExecutionPayload).hasValue(earlyExecutionPayload);
+    assertExecutionPayloadSeenBeforeDeadline(earlyExecutionPayload);
   }
 
   @Test
-  public void shouldCacheInvalidExecutionPayloadWhenImportFailsVerification() {
-    final ExecutionPayloadImportResult failedImportResult =
-        ExecutionPayloadImportResult.failedVerification(new RuntimeException("invalid"));
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(completedFuture(failedImportResult));
+  public void shouldReplacePendingExecutionPayloadReceivedBeforeDeadlineWithLaterBeforeDeadline() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+    final SignedExecutionPayloadEnvelope firstExecutionPayload =
+        signedExecutionPayloadForBlock(block);
+    final SignedExecutionPayloadEnvelope secondExecutionPayload =
+        signedExecutionPayloadForBlock(block);
+    givenValidationResult(firstExecutionPayload, SAVE_FOR_FUTURE);
+    givenValidationResult(secondExecutionPayload, SAVE_FOR_FUTURE);
 
-    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
+    validateAndImportAndJoin(firstExecutionPayload, UInt64.ZERO);
+    validateAndImportAndJoin(secondExecutionPayload, UInt64.ONE);
+
+    givenValidationResult(firstExecutionPayload, reject("unexpected"));
+    givenValidationResult(secondExecutionPayload, ACCEPT);
+    givenSuccessfulImport(secondExecutionPayload);
+    executionPayloadManager.onBlockImported(block, false);
+
     asyncRunner.executeDueActions();
 
-    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(blockRootsWithInvalidExecutionPayload)
-        .contains(signedExecutionPayload.getBeaconBlockRoot());
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldCacheInvalidExecutionPayloadWhenDataAvailabilityCheckIsInvalid() {
-    final ExecutionPayloadImportResult failedImportResult =
-        ExecutionPayloadImportResult.failedDataAvailabilityCheckInvalid(
-            Optional.of(new RuntimeException("invalid")));
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(completedFuture(failedImportResult));
-
-    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
-    asyncRunner.executeDueActions();
-
-    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(blockRootsWithInvalidExecutionPayload)
-        .contains(signedExecutionPayload.getBeaconBlockRoot());
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
-  }
-
-  @Test
-  public void shouldNotCacheInvalidExecutionPayloadWhenCommitmentNotVerified() {
-    final ExecutionPayloadImportResult failedImportResult =
-        ExecutionPayloadImportResult.failedVerification(new RuntimeException("invalid"));
-    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
-        .thenReturn(completedFuture(failedImportResult));
-
-    // Imports that did not verify the payload commitment (e.g. sync or RPC-by-root) must not poison
-    // the invalid-payload cache, even when the import fails verification.
-    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload, false);
-    asyncRunner.executeDueActions();
-
-    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(blockRootsWithInvalidExecutionPayload)
-        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
-    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadImported(secondExecutionPayload, false);
+    verify(forkChoice).onExecutionPayloadEnvelope(secondExecutionPayload, executionLayer);
+    verify(forkChoice, never()).onExecutionPayloadEnvelope(firstExecutionPayload, executionLayer);
+    assertThat(publishedExecutionPayload).hasValue(secondExecutionPayload);
+    assertExecutionPayloadSeenBeforeDeadline(secondExecutionPayload);
   }
 
   @Test
@@ -369,6 +271,57 @@ class DefaultExecutionPayloadManagerTest {
         .onExecutionPayloadImported(signedExecutionPayload, false);
     assertThat(publishedExecutionPayload).hasValue(signedExecutionPayload);
     assertExecutionPayloadSeenBeforeDeadline(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldCacheInvalidExecutionPayloadWhenImportFailsVerification() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedVerification(new RuntimeException("invalid"));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult));
+
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
+    assertThat(blockRootsWithInvalidExecutionPayload)
+        .contains(signedExecutionPayload.getBeaconBlockRoot());
+  }
+
+  @Test
+  public void shouldCacheInvalidExecutionPayloadWhenDataAvailabilityCheckIsInvalid() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedDataAvailabilityCheckInvalid(
+            Optional.of(new RuntimeException("invalid")));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult));
+
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
+    assertThat(blockRootsWithInvalidExecutionPayload)
+        .contains(signedExecutionPayload.getBeaconBlockRoot());
+  }
+
+  @Test
+  public void shouldNotCacheInvalidExecutionPayloadWhenCommitmentNotVerified() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedVerification(new RuntimeException("invalid"));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult));
+
+    // Imports that did not verify the payload commitment (e.g. sync or RPC-by-root) must not poison
+    // the invalid-payload cache, even when the import fails verification.
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, false);
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
+    assertThat(blockRootsWithInvalidExecutionPayload)
+        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
   }
 
   private void givenValidationResult(
@@ -422,22 +375,6 @@ class DefaultExecutionPayloadManagerTest {
       final SignedExecutionPayloadEnvelope executionPayload) {
     assertThat(
             executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(
-                executionPayload.getBeaconBlockRoot()))
-        .isFalse();
-  }
-
-  private void assertExecutionPayloadSeenForFullPayloadAttestation(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    assertThat(
-            executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
-                executionPayload.getBeaconBlockRoot()))
-        .isTrue();
-  }
-
-  private void assertExecutionPayloadNotSeenForFullPayloadAttestation(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    assertThat(
-            executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
                 executionPayload.getBeaconBlockRoot()))
         .isFalse();
   }

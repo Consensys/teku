@@ -108,14 +108,6 @@ public class DefaultExecutionPayloadManager
     return executionPayloadsSeenBeforePayloadDue.contains(beaconBlockRoot);
   }
 
-  @Override
-  public boolean isExecutionPayloadSeenForFullPayloadAttestation(final Bytes32 beaconBlockRoot) {
-    if (successfullyImportedExecutionPayloads.contains(beaconBlockRoot)) {
-      return true;
-    }
-    return recentChainData.containsExecutionPayload(beaconBlockRoot);
-  }
-
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
@@ -133,7 +125,7 @@ public class DefaultExecutionPayloadManager
                   signedExecutionPayload);
               recordIfExecutionPayloadIsSeenBeforeDeadline(
                   signedExecutionPayload, arrivalTimestamp);
-              importExecutionPayload(signedExecutionPayload).finishError(LOG);
+              importExecutionPayload(signedExecutionPayload, true).finishError(LOG);
             }
             case SAVE_FOR_FUTURE -> {
               if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
@@ -147,12 +139,13 @@ public class DefaultExecutionPayloadManager
                         Duration.ofMillis(100))
                     .finishError(LOG);
               } else {
-                // import will be triggered when the corresponding block is imported
-                // since no slashing is implemented in order to prevent DoS, we just keep the first
-                // payload that arrives at this step
-                pendingExecutionPayloads.putIfAbsent(
+                // since no slashing is implemented in order to prevent DoS, we keep one pending
+                // payload: the latest candidate received before payload due, or the first candidate
+                // if none arrived before payload due
+                pendingExecutionPayloads.merge(
                     signedExecutionPayload.getBlockRootAndBuilderIndex(),
-                    new PendingExecutionPayload(signedExecutionPayload, arrivalTimestamp));
+                    new PendingExecutionPayload(signedExecutionPayload, arrivalTimestamp),
+                    this::selectPendingExecutionPayload);
               }
             }
             case IGNORE, REJECT -> {}
@@ -174,38 +167,35 @@ public class DefaultExecutionPayloadManager
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
-                successfullyImportedExecutionPayloads.add(
-                    signedExecutionPayload.getBeaconBlockRoot());
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
-              } else {
-                recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
-                if (payloadCommitmentVerified && isInvalidExecutionPayload(result)) {
-                  blockRootsWithInvalidExecutionPayload.add(
-                      signedExecutionPayload.getBeaconBlockRoot());
+                return;
+              }
+              switch (result.getFailureReason()) {
+                case FAILED_EXECUTION -> {
+                  LOG.error(
+                      "Unable to import execution payload {}. Execution Client returned an error: {}",
+                      signedExecutionPayload::toLogString,
+                      () -> result.getFailureCause().map(Throwable::getMessage).orElse(""));
+                  failedPayloadExecutionSubscribers.deliver(
+                      FailedPayloadExecutionSubscriber::onPayloadExecutionFailed,
+                      signedExecutionPayload);
                 }
-                switch (result.getFailureReason()) {
-                  case FAILED_EXECUTION -> {
-                    LOG.error(
-                        "Unable to import execution payload {}. Execution Client returned an error: {}",
-                        signedExecutionPayload::toLogString,
-                        () -> result.getFailureCause().map(Throwable::getMessage).orElse(""));
-                    failedPayloadExecutionSubscribers.deliver(
-                        FailedPayloadExecutionSubscriber::onPayloadExecutionFailed,
-                        signedExecutionPayload);
+                case FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> {
+                  if (payloadCommitmentVerified) {
+                    blockRootsWithInvalidExecutionPayload.add(
+                        signedExecutionPayload.getBeaconBlockRoot());
                   }
-                  case INTERNAL_ERROR,
-                      UNKNOWN_BEACON_BLOCK_ROOT,
-                      FAILED_VERIFICATION,
-                      FAILED_DATA_AVAILABILITY_CHECK_INVALID,
-                      FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
-                      logFailedExecutionPayloadImport(signedExecutionPayload, result);
+                  logFailedExecutionPayloadImport(signedExecutionPayload, result);
                 }
+                case INTERNAL_ERROR,
+                    UNKNOWN_BEACON_BLOCK_ROOT,
+                    FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE ->
+                    logFailedExecutionPayloadImport(signedExecutionPayload, result);
               }
             })
         .exceptionally(
             ex -> {
-              recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
               final String internalErrorMessage =
                   String.format(
                       "Internal error while importing execution payload: %s. Execution payload content: %s",
@@ -214,17 +204,6 @@ public class DefaultExecutionPayloadManager
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
-  }
-
-  private boolean isInvalidExecutionPayload(final ExecutionPayloadImportResult result) {
-    return switch (result.getFailureReason()) {
-      case FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> true;
-      case UNKNOWN_BEACON_BLOCK_ROOT,
-          FAILED_EXECUTION,
-          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
-          INTERNAL_ERROR ->
-          false;
-    };
   }
 
   private void logFailedExecutionPayloadImport(
@@ -292,14 +271,27 @@ public class DefaultExecutionPayloadManager
 
   private void recordIfExecutionPayloadIsSeenBeforeDeadline(
       final SignedExecutionPayloadEnvelope signedExecutionPayload, final UInt64 arrivalTimestamp) {
+    if (isBeforePayloadDue(signedExecutionPayload, arrivalTimestamp)) {
+      executionPayloadsSeenBeforePayloadDue.add(signedExecutionPayload.getBeaconBlockRoot());
+    }
+  }
+
+  private PendingExecutionPayload selectPendingExecutionPayload(
+      final PendingExecutionPayload existing, final PendingExecutionPayload candidate) {
+    if (isBeforePayloadDue(candidate.executionPayload(), candidate.arrivalTimestamp())) {
+      return candidate;
+    }
+    return existing;
+  }
+
+  private boolean isBeforePayloadDue(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload, final UInt64 arrivalTimestamp) {
     final UInt64 slot = signedExecutionPayload.getSlot();
-    if (spec.isBeforeTimeInSlot(
+    return spec.isBeforeTimeInSlot(
         slot,
         recentChainData.getGenesisTimeMillis(),
         arrivalTimestamp,
-        spec.getPayloadDueMillis(slot).orElseThrow())) {
-      executionPayloadsSeenBeforePayloadDue.add(signedExecutionPayload.getBeaconBlockRoot());
-    }
+        spec.getPayloadDueMillis(slot).orElseThrow());
   }
 
   // publish payload in cases where initial validation wasn't accepted
