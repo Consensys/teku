@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -172,7 +173,8 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             AsyncBLSSignatureVerifier.wrap(blsVerifier),
             createGossipValidationHelper(
                 spec, recentChainData, metricsSystem, customFinalizedCheckpoint),
-            invalidBlockRoots);
+            invalidBlockRoots,
+            Set.of());
     final AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(
             spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(blsVerifier));
