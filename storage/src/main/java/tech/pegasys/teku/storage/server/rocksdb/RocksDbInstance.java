@@ -274,6 +274,9 @@ public class RocksDbInstance implements KvStoreAccessor {
     return RocksDbKeyIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
   }
 
+  // Compaction is a costly operation, so we run it sequentially for each column family
+  // to avoid impacting read performance by blocking all access to the database while compaction is running.
+  // compaction is handled by rocksdb in general this is a method used for debug tools ONLY
   @Override
   public void compact() {
     assertOpen();
