@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -144,7 +143,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
     // Delayed fetch callbacks can outlive the tracker they were scheduled for.
     // Only the currently installed tracker may issue RPC requests.
-    if (!Objects.equals(recentlySampledColumnsByRoot.get(blockRoot), tracker)) {
+    if (!isCurrentTracker(blockRoot, tracker)) {
       tracker.rpcFetchInProgress().set(false);
       LOG.debug(
           "checkDataAvailability(): skipping stale RPC fetch for slot {} root {}", slot, blockRoot);
@@ -195,6 +194,12 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                 LOG.error("data availability check failed", throwable);
               }
             });
+  }
+
+  @SuppressWarnings({"ReferenceComparison", "ReferenceEquality"})
+  private boolean isCurrentTracker(
+      final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
+    return recentlySampledColumnsByRoot.get(blockRoot) == tracker;
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
