@@ -138,6 +138,7 @@ public class DefaultExecutionPayloadManager
     final UInt64 earliestExecutionPayloadArrivalTimestamp =
         recordExecutionPayloadArrivalTimestamp(
             signedExecutionPayload, executionPayloadArrivalTimestamp);
+    final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
     final Bytes32 executionPayloadEnvelopeRoot = signedExecutionPayload.hashTreeRoot();
     final SafeFuture<InternalValidationResult> validationResult =
         executionPayloadGossipValidator.validate(signedExecutionPayload);
@@ -148,8 +149,7 @@ public class DefaultExecutionPayloadManager
               receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
                   signedExecutionPayload);
               acceptedExecutionPayloadEnvelopeRoots.add(executionPayloadEnvelopeRoot);
-              // cache the seen `beacon_block_root` when the gossip checks pass
-              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+              recentSeenExecutionPayloads.add(beaconBlockRoot);
               recordExecutionPayloadAvailability(
                   signedExecutionPayload, earliestExecutionPayloadArrivalTimestamp);
               importExecutionPayload(signedExecutionPayload, true).finishError(LOG);
@@ -206,6 +206,7 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {
+                recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
                 if (payloadCommitmentVerified && isInvalidExecutionPayload(result)) {
                   blockRootsWithInvalidExecutionPayload.add(
                       signedExecutionPayload.getBeaconBlockRoot());
@@ -231,6 +232,7 @@ public class DefaultExecutionPayloadManager
             })
         .exceptionally(
             ex -> {
+              recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
               final String internalErrorMessage =
                   String.format(
                       "Internal error while importing execution payload: %s. Execution payload content: %s",

@@ -875,8 +875,12 @@ public class ForkChoiceUtil {
   }
 
   public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope signedEnvelope) {
     return AvailabilityChecker.NOOP;
+  }
+
+  public boolean isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope() {
+    return false;
   }
 
   // Used for computing committee indices when producing attestations.
