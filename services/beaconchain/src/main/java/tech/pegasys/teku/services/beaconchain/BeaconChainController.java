@@ -63,6 +63,7 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.UnblindingExecutionPayloadProvider;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -174,6 +175,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImp
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyBackfiller;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
@@ -403,6 +405,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> simpleSidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
+  protected volatile DasSamplerBasic dasSamplerBasic = DasSamplerBasic.NOOP;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
@@ -614,6 +617,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadProvider executionPayloadProvider =
         createExecutionPayloadProvider(blindedExecutionPayloadProvider);
 
+    // Used to optimize the case where we receive a block and are still importing its blobs/data
+    // columns,
+    // in the meantime we can serve the block if we receive an RPC request
+    final SingleBlockProvider singleBlockProviderResolver =
+        new SingleBlockProviderResolver(
+            (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+            (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
+
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
@@ -622,7 +633,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     metricsSystem,
                     storeConfig,
                     beaconAsyncRunner,
-                    (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+                    singleBlockProviderResolver,
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
                     executionPayloadProvider,
@@ -1129,8 +1140,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final BlockImportChannel dasBlockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
-    final DasSamplerBasic dasSampler =
-        new DasSamplerBasic(
+
+    final DasSamplerBasicImpl dasSampler =
+        new DasSamplerBasicImpl(
             spec,
             beaconAsyncRunner,
             currentSlotProvider,
@@ -1140,12 +1152,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManager,
             recentChainData,
             beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled(),
+            metricsSystem,
+            beaconConfig.syncConfig().getMaxRecentlySampledBlocks(),
             dasBlockImportChannel);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
     eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
 
+    this.dasSamplerBasic = dasSampler;
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
@@ -2238,6 +2253,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         pendingAttestations,
         pendingPayloadAttestations,
         blockBlobSidecarsTrackersPool,
+        dasSamplerBasic,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
