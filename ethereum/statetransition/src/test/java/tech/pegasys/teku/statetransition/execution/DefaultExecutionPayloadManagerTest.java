@@ -252,7 +252,7 @@ class DefaultExecutionPayloadManagerTest {
     }
 
     assertThat(resultFuture).isCompletedWithValue(ACCEPT);
-    assertExecutionPayloadRecentlySeen(signedExecutionPayload);
+    assertExecutionPayloadNotRecentlySeen(signedExecutionPayload);
     assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
