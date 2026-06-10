@@ -232,6 +232,39 @@ class RecentChainDataTest {
   }
 
   @Test
+  void initializeFromAnchorPoint_withTransitionedStateShouldRebuildForkChoiceAtBlockSlot()
+      throws Exception {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    chainBuilder.generateGenesis();
+    final UInt64 checkpointStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final SignedBlockAndState anchorBlock =
+        chainBuilder.generateBlockAtSlot(checkpointStartSlot.minus(2));
+    final BeaconState anchorState = spec.processSlots(anchorBlock.getState(), checkpointStartSlot);
+    final Checkpoint checkpoint =
+        new Checkpoint(spec.computeNextEpochBoundary(anchorState.getSlot()), anchorBlock.getRoot());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.create(spec, checkpoint, anchorState, Optional.of(anchorBlock.getBlock()));
+
+    assertThat(anchorBlock.getSlot()).isLessThan(checkpointStartSlot.minus(1));
+    assertThat(anchorState.getSlot()).isEqualTo(checkpointStartSlot);
+    assertThat(anchorState.getSlot()).isNotEqualTo(anchorBlock.getSlot());
+
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+
+    assertThat(recentChainData.getSlotForBlockRoot(anchorBlock.getRoot()))
+        .contains(anchorBlock.getSlot());
+    assertThat(
+            recentChainData.getBlockRootInEffectBySlot(
+                anchorBlock.getSlot(), anchorBlock.getRoot()))
+        .contains(anchorBlock.getRoot());
+    assertThat(
+            recentChainData.getBlockRootInEffectBySlot(
+                anchorState.getSlot(), anchorBlock.getRoot()))
+        .contains(anchorBlock.getRoot());
+  }
+
+  @Test
   void getGenesisData_shouldBeEmptyPreGenesis() {
     initPreGenesis();
     assertThat(recentChainData.getGenesisData()).isEmpty();

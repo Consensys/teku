@@ -164,14 +164,14 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   @Override
   public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope signedEnvelope) {
     final AvailabilityCheckerFactory<UInt64> factory =
         this.dataColumnSidecarAvailabilityCheckerFactory;
     if (factory == null) {
       throw new IllegalStateException(
           "DataColumnSidecarAvailabilityCheckerFactory not initialized");
     }
-    return factory.createAvailabilityChecker(block);
+    return factory.createAvailabilityChecker(block, signedEnvelope);
   }
 
   @Override

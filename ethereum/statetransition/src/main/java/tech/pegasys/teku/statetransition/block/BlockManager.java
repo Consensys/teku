@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlockEventsListener;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadEventsListener;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingBlockPool;
@@ -56,6 +58,7 @@ public class BlockManager extends Service
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final BlockEventsListener blockEventsListener;
+  private final Supplier<ExecutionPayloadEventsListener> executionPayloadEventsListenerSupplier;
   private final PendingBlockPool pendingBlockPool;
   private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
@@ -79,6 +82,7 @@ public class BlockManager extends Service
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final BlockEventsListener blockEventsListener,
+      final Supplier<ExecutionPayloadEventsListener> executionPayloadEventsListenerSupplier,
       final PendingBlockPool pendingBlockPool,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -89,6 +93,7 @@ public class BlockManager extends Service
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.blockEventsListener = blockEventsListener;
+    this.executionPayloadEventsListenerSupplier = executionPayloadEventsListenerSupplier;
     this.pendingBlockPool = pendingBlockPool;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
@@ -222,7 +227,9 @@ public class BlockManager extends Service
   @Override
   public void onExecutionPayloadImported(
       final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
-    blockEventsListener.onExecutionPayloadImported(executionPayload.getSlotAndBlockRoot());
+    executionPayloadEventsListenerSupplier
+        .get()
+        .onExecutionPayloadImported(executionPayload.getSlotAndBlockRoot());
     final ParentExecutionPayloadDependency parentExecutionPayloadDependency =
         new ParentExecutionPayloadDependency(
             executionPayload.getBeaconBlockRoot(),

@@ -1900,7 +1900,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             futureItemsMetric,
             "attestations");
     AttestationValidator attestationValidator =
-        new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
+        new AttestationValidator(
+            spec, signatureVerificationService, gossipValidationHelper, invalidBlockRoots);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -2196,6 +2197,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
+            () -> dataAvailabilitySampler,
             pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
