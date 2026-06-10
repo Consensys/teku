@@ -464,7 +464,7 @@ public class PeerSync {
               }
               final SignedExecutionPayloadEnvelope executionPayload = maybeExecutionPayload.get();
               return executionPayloadManager
-                  .importExecutionPayload(executionPayload)
+                  .importExecutionPayload(executionPayload, false)
                   .thenAccept(
                       executionPayloadImportResult -> {
                         LOG.trace(

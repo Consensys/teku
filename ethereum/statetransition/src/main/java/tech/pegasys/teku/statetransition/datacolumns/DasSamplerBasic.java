@@ -100,6 +100,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
     LOG.debug("Sampler received data column {} - origin: {}", columnId, remoteOrigin);
 
+    if (isDataAvailabilityAlreadySatisfied(columnId.slot(), columnId.blockRoot())) {
+      return;
+    }
+
     getOrCreateTracker(columnId.slot(), columnId.blockRoot()).add(columnId, remoteOrigin);
   }
 
@@ -137,6 +141,15 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private void fetchMissingColumnsViaRPC(
       final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
+    // Delayed fetch callbacks can outlive the tracker they were scheduled for.
+    // Only the currently installed tracker may issue RPC requests.
+    if (isStaledTracker(blockRoot, tracker)) {
+      tracker.rpcFetchInProgress().set(false);
+      LOG.debug(
+          "checkDataAvailability(): skipping stale RPC fetch for slot {} root {}", slot, blockRoot);
+      return;
+    }
+
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
     LOG.debug(
         "checkDataAvailability(): missing columns for slot {} root {}: {}",
@@ -183,6 +196,12 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
             });
   }
 
+  @SuppressWarnings({"ReferenceComparison", "ReferenceEquality"})
+  private boolean isStaledTracker(
+      final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
+    return recentlySampledColumnsByRoot.get(blockRoot) != tracker;
+  }
+
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     return recentlySampledColumnsByRoot.computeIfAbsent(
         blockRoot,
@@ -226,6 +245,21 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     return !block.getBody().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(true);
   }
 
+  private boolean isDataAvailabilityAlreadySatisfied(final UInt64 slot, final Bytes32 blockRoot) {
+    if (!recentChainData.containsBlock(blockRoot)) {
+      return false;
+    }
+
+    if (spec.atSlot(slot)
+        .getForkChoiceUtil()
+        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
+      return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot).isPresent();
+    }
+
+    // For non-deferred forks, block import already required data availability to be satisfied.
+    return true;
+  }
+
   private boolean isInCustodyPeriod(final BeaconBlock block) {
     final MiscHelpersFulu miscHelpersFulu =
         MiscHelpersFulu.required(spec.atSlot(block.getSlot()).miscHelpers());
@@ -255,8 +289,19 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .values()
         .removeIf(
             tracker -> {
-              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                  || recentChainData.containsBlock(tracker.blockRoot())) {
+              final boolean isCleanupDue;
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)) {
+                isCleanupDue = true;
+              } else {
+                final boolean blockImported = recentChainData.containsBlock(tracker.blockRoot());
+                final boolean isDataAvailabilityDeferred =
+                    spec.atSlot(tracker.slot())
+                        .getForkChoiceUtil()
+                        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope();
+                isCleanupDue = blockImported && !isDataAvailabilityDeferred;
+              }
+
+              if (isCleanupDue) {
                 // Outdated
                 if (!tracker.completionFuture().isDone()) {
                   // make sure the future releases any pending waiters
@@ -283,6 +328,16 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     if (hasBlobs(block.getMessage())) {
       getOrCreateTracker(block.getSlot(), block.getRoot());
     }
+  }
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block) {
+    if (spec.atSlot(block.getSlot())
+        .getForkChoiceUtil()
+        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
+      return;
+    }
+    removeAllForBlock(block.getSlotAndBlockRoot());
   }
 
   @Override

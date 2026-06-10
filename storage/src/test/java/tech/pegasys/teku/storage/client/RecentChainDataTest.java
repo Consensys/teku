@@ -232,6 +232,39 @@ class RecentChainDataTest {
   }
 
   @Test
+  void initializeFromAnchorPoint_withTransitionedStateShouldRebuildForkChoiceAtBlockSlot()
+      throws Exception {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    chainBuilder.generateGenesis();
+    final UInt64 checkpointStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final SignedBlockAndState anchorBlock =
+        chainBuilder.generateBlockAtSlot(checkpointStartSlot.minus(2));
+    final BeaconState anchorState = spec.processSlots(anchorBlock.getState(), checkpointStartSlot);
+    final Checkpoint checkpoint =
+        new Checkpoint(spec.computeNextEpochBoundary(anchorState.getSlot()), anchorBlock.getRoot());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.create(spec, checkpoint, anchorState, Optional.of(anchorBlock.getBlock()));
+
+    assertThat(anchorBlock.getSlot()).isLessThan(checkpointStartSlot.minus(1));
+    assertThat(anchorState.getSlot()).isEqualTo(checkpointStartSlot);
+    assertThat(anchorState.getSlot()).isNotEqualTo(anchorBlock.getSlot());
+
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+
+    assertThat(recentChainData.getSlotForBlockRoot(anchorBlock.getRoot()))
+        .contains(anchorBlock.getSlot());
+    assertThat(
+            recentChainData.getBlockRootInEffectBySlot(
+                anchorBlock.getSlot(), anchorBlock.getRoot()))
+        .contains(anchorBlock.getRoot());
+    assertThat(
+            recentChainData.getBlockRootInEffectBySlot(
+                anchorState.getSlot(), anchorBlock.getRoot()))
+        .contains(anchorBlock.getRoot());
+  }
+
+  @Test
   void getGenesisData_shouldBeEmptyPreGenesis() {
     initPreGenesis();
     assertThat(recentChainData.getGenesisData()).isEmpty();
@@ -545,6 +578,49 @@ class RecentChainDataTest {
     final ChainHead newHead = gloasRecentChainData.getChainHead().orElseThrow();
     assertThat(newHead.getPayloadStatus()).isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
     assertThat(newHead.getExecutionBlockHash()).isNotEqualTo(emptyExecutionHash);
+  }
+
+  @Test
+  public void containsExecutionPayload_shouldReturnFalseWhenStoreUnavailable() {
+    initPreGenesis();
+
+    assertThat(recentChainData.containsExecutionPayload(Bytes32.ZERO)).isFalse();
+  }
+
+  @Test
+  public void containsExecutionPayload_shouldReturnFalseWhenPayloadUnavailable() {
+    initPostGenesis();
+
+    assertThat(recentChainData.containsExecutionPayload(dataStructureUtil.randomBytes32()))
+        .isFalse();
+  }
+
+  @Test
+  public void containsExecutionPayload_shouldReturnTrueWhenPayloadAvailable() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final StorageSystem gloasStorage =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(gloasSpec)
+            .storageMode(StateStorageMode.PRUNE)
+            .storeConfig(StoreConfig.builder().build())
+            .build();
+    final ChainBuilder gloasChainBuilder = gloasStorage.chainBuilder();
+    final RecentChainData gloasRecentChainData = gloasStorage.recentChainData();
+    final SignedBlockAndState gloasGenesis = gloasChainBuilder.generateGenesis();
+    gloasRecentChainData.initializeFromGenesis(gloasGenesis.getState(), UInt64.ZERO);
+
+    final SignedBlockAndState block = gloasChainBuilder.generateBlockAtSlot(1);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        gloasChainBuilder.getExecutionPayloadAtSlot(block.getSlot()).orElseThrow();
+
+    assertThat(gloasRecentChainData.containsExecutionPayload(block.getRoot())).isFalse();
+
+    final StoreTransaction transaction = gloasRecentChainData.startStoreTransaction();
+    transaction.putBlockAndState(block, gloasSpec.calculateBlockCheckpoints(block.getState()));
+    transaction.putExecutionPayload(executionPayload, false);
+    transaction.commit().join();
+
+    assertThat(gloasRecentChainData.containsExecutionPayload(block.getRoot())).isTrue();
   }
 
   @Test

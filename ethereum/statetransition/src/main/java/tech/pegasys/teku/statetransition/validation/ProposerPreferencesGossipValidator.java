@@ -48,7 +48,7 @@ public class ProposerPreferencesGossipValidator {
   private final RecentChainData recentChainData;
 
   private final Set<DedupKey> seenProposerPreferences =
-      LimitedSet.createSynchronized(RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE);
+      LimitedSet.createSynchronizedLRU(RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE);
 
   public ProposerPreferencesGossipValidator(
       final Spec spec,

@@ -16,9 +16,14 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.function.Predicate;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -26,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.StateTooOldException;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil.SlotInclusionGossipValidationResult;
@@ -36,14 +42,33 @@ public class AttestationValidator {
   private final Spec spec;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final GossipValidationHelper gossipValidationHelper;
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
+  private final Set<Bytes32> blockRootsWithInvalidExecutionPayload;
+  private final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation;
+
+  @VisibleForTesting
+  AttestationValidator(
+      final Spec spec,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final GossipValidationHelper gossipValidationHelper,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
+    this(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of(), __ -> true);
+  }
 
   public AttestationValidator(
       final Spec spec,
       final AsyncBLSSignatureVerifier signatureVerifier,
-      final GossipValidationHelper gossipValidationHelper) {
+      final GossipValidationHelper gossipValidationHelper,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload,
+      final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation) {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.gossipValidationHelper = gossipValidationHelper;
+    this.invalidBlockRoots = invalidBlockRoots;
+    this.blockRootsWithInvalidExecutionPayload = blockRootsWithInvalidExecutionPayload;
+    this.executionPayloadSeenForFullPayloadAttestation =
+        executionPayloadSeenForFullPayloadAttestation;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -143,11 +168,34 @@ public class AttestationValidator {
       };
     }
 
-    // The block being voted for (attestation.data.beacon_block_root) passes validation.
-    // It must pass validation to be in the store.
+    // [REJECT] The block being voted for (attestation.data.beacon_block_root) passes validation.
+    // If we have already seen and rejected the block (or one of its ancestors), reject the
+    // attestation rather than saving it for future processing.
+    if (invalidBlockRoots.containsKey(data.getBeaconBlockRoot())) {
+      return completedFuture(
+          InternalValidationResultWithState.reject(
+              "Attestation votes for a block that failed validation: %s",
+              data.getBeaconBlockRoot()));
+    }
+
+    // The block being voted for must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
     if (!gossipValidationHelper.isBlockAvailable(data.getBeaconBlockRoot())) {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
+    }
+
+    final Bytes32 blockRoot = data.getBeaconBlockRoot();
+    if (spec.atSlot(data.getSlot()).getForkChoiceUtil().getFullPayloadVoteHint(data.getIndex())) {
+      // [REJECT] If index == 1, the execution payload for block passes validation.
+      if (blockRootsWithInvalidExecutionPayload.contains(blockRoot)) {
+        return completedFuture(
+            InternalValidationResultWithState.reject(
+                "Execution payload for full payload attestation is invalid"));
+      }
+      // [IGNORE] If index == 1, the execution payload for block has been seen.
+      if (!executionPayloadSeenForFullPayloadAttestation.test(blockRoot)) {
+        return completedFuture(InternalValidationResultWithState.saveForFuture());
+      }
     }
 
     return gossipValidationHelper
@@ -225,8 +273,12 @@ public class AttestationValidator {
 
                         // The current finalized_checkpoint is an ancestor of the block defined by
                         // aggregate.data.beacon_block_root
-                        // Because all nodes in the proto-array descend from the finalized block,
-                        // no further validation is needed to satisfy this rule.
+                        if (!gossipValidationHelper
+                            .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+                                data.getBeaconBlockRoot())) {
+                          return InternalValidationResultWithState.ignore(
+                              "Finalized checkpoint is not an ancestor of block");
+                        }
 
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
