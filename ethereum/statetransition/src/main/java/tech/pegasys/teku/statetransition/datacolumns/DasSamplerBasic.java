@@ -251,6 +251,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot).isPresent();
     }
 
+    // For non-deferred forks, block import already required data availability to be satisfied.
     return true;
   }
 
