@@ -70,7 +70,7 @@ class DefaultExecutionPayloadManagerTest {
           mock(ReceivedExecutionPayloadEventsChannel.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
-  private final Set<Bytes32> invalidExecutionPayloadRoots = new HashSet<>();
+  private final Set<Bytes32> blockRootsWithInvalidExecutionPayload = new HashSet<>();
   private Optional<SignedExecutionPayloadEnvelope> publishedExecutionPayload = Optional.empty();
 
   private final DefaultExecutionPayloadManager executionPayloadManager =
@@ -82,7 +82,7 @@ class DefaultExecutionPayloadManagerTest {
           executionLayer,
           receivedExecutionPayloadEventsChannelPublisher,
           recentChainData,
-          invalidExecutionPayloadRoots,
+          blockRootsWithInvalidExecutionPayload,
           executionPayload -> {
             publishedExecutionPayload = Optional.of(executionPayload);
             return SafeFuture.COMPLETE;
@@ -264,11 +264,11 @@ class DefaultExecutionPayloadManagerTest {
         .thenReturn(completedFuture(failedImportResult));
 
     final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
     asyncRunner.executeDueActions();
 
     assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(invalidExecutionPayloadRoots)
+    assertThat(blockRootsWithInvalidExecutionPayload)
         .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
     assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
@@ -281,11 +281,12 @@ class DefaultExecutionPayloadManagerTest {
         .thenReturn(completedFuture(failedImportResult));
 
     final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
     asyncRunner.executeDueActions();
 
     assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
+    assertThat(blockRootsWithInvalidExecutionPayload)
+        .contains(signedExecutionPayload.getBeaconBlockRoot());
     assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 
@@ -298,11 +299,31 @@ class DefaultExecutionPayloadManagerTest {
         .thenReturn(completedFuture(failedImportResult));
 
     final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, true);
     asyncRunner.executeDueActions();
 
     assertThat(resultFuture).isCompletedWithValue(failedImportResult);
-    assertThat(invalidExecutionPayloadRoots).contains(signedExecutionPayload.getBeaconBlockRoot());
+    assertThat(blockRootsWithInvalidExecutionPayload)
+        .contains(signedExecutionPayload.getBeaconBlockRoot());
+    assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
+  }
+
+  @Test
+  public void shouldNotCacheInvalidExecutionPayloadWhenCommitmentNotVerified() {
+    final ExecutionPayloadImportResult failedImportResult =
+        ExecutionPayloadImportResult.failedVerification(new RuntimeException("invalid"));
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
+        .thenReturn(completedFuture(failedImportResult));
+
+    // Imports that did not verify the payload commitment (e.g. sync or RPC-by-root) must not poison
+    // the invalid-payload cache, even when the import fails verification.
+    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
+        executionPayloadManager.importExecutionPayload(signedExecutionPayload, false);
+    asyncRunner.executeDueActions();
+
+    assertThat(resultFuture).isCompletedWithValue(failedImportResult);
+    assertThat(blockRootsWithInvalidExecutionPayload)
+        .doesNotContain(signedExecutionPayload.getBeaconBlockRoot());
     assertExecutionPayloadNotSeenForFullPayloadAttestation(signedExecutionPayload);
   }
 

@@ -183,8 +183,8 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
     final Attestation attestation = fullPayloadAttestationForPastBlock(blockRoot);
     final GossipValidationHelper gossipValidationHelper =
         mockGossipValidationForFullPayloadRule(attestation, blockRoot);
-    final Set<Bytes32> invalidExecutionPayloadRoots = new HashSet<>();
-    invalidExecutionPayloadRoots.add(blockRoot);
+    final Set<Bytes32> blockRootsWithInvalidExecutionPayload = new HashSet<>();
+    blockRootsWithInvalidExecutionPayload.add(blockRoot);
 
     final AttestationValidator validator =
         new AttestationValidator(
@@ -192,7 +192,7 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
             signatureVerifier,
             gossipValidationHelper,
             invalidBlockRoots,
-            invalidExecutionPayloadRoots,
+            blockRootsWithInvalidExecutionPayload,
             __ -> true);
 
     assertThat(validator.validate(ValidatableAttestation.fromNetwork(spec, attestation, 0)))
