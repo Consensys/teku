@@ -51,7 +51,7 @@ public class PayloadAttestationMessageGossipValidator {
   private final SigningRootUtil signingRootUtil;
 
   private final Set<ValidatorIndexAndSlot> seenPayloadAttestations =
-      LimitedSet.createSynchronized(VALID_PAYLOAD_ATTESTATION_SET_SIZE);
+      LimitedSet.createSynchronizedLRU(VALID_PAYLOAD_ATTESTATION_SET_SIZE);
 
   public PayloadAttestationMessageGossipValidator(
       final Spec spec,
