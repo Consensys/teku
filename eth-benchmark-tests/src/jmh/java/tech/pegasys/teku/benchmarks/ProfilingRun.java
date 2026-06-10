@@ -59,12 +59,12 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
-
   public static Consumer<Object> blackHole = o -> {};
   private Spec spec =
       TestSpecFactory.createMainnetPhase0(
           builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
 
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
   @Disabled
@@ -98,7 +98,6 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
-      final MetricsSystem metricsSystem = new StubMetricsSystem();
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -190,7 +189,6 @@ public class ProfilingRun {
       initialState = null;
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
-      final MetricsSystem metricsSystem = new StubMetricsSystem();
       ForkChoice forkChoice =
           new ForkChoice(
               spec,

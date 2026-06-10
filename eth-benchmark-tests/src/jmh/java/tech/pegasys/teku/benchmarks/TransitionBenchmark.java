@@ -59,7 +59,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @State(Scope.Thread)
 @Threads(1)
 public abstract class TransitionBenchmark {
-
   Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
@@ -98,7 +97,6 @@ public abstract class TransitionBenchmark {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -106,7 +104,7 @@ public abstract class TransitionBenchmark {
             recentChainData,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            metricsSystem);
+            new StubMetricsSystem());
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 

@@ -171,7 +171,6 @@ public class ForkChoiceIntegrationTest {
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(SPEC, storageClient);
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     ForkChoice forkChoice =
         new ForkChoice(
             SPEC,
@@ -179,7 +178,7 @@ public class ForkChoiceIntegrationTest {
             storageClient,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            metricsSystem);
+            new StubMetricsSystem());
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();

@@ -72,7 +72,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @Threads(1)
 @Fork(1)
 public class EpochTransitionBenchmark {
-
   AsyncRunner asyncRunner;
   Spec spec;
   WeakSubjectivityValidator wsValidator;

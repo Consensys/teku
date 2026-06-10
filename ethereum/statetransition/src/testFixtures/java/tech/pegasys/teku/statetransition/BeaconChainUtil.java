@@ -96,7 +96,18 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final Spec spec, final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(spec, storageClient, validatorKeys, createForkChoice(spec, storageClient), true);
+    return create(
+        spec,
+        storageClient,
+        validatorKeys,
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            storageClient,
+            new NoopForkChoiceNotifier(),
+            new MergeTransitionBlockValidator(spec, storageClient),
+            new StubMetricsSystem()),
+        true);
   }
 
   public static BeaconChainUtil create(
@@ -105,7 +116,17 @@ public class BeaconChainUtil {
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
     return new BeaconChainUtil(
-        spec, validatorKeys, storageClient, createForkChoice(spec, storageClient), signDeposits);
+        spec,
+        validatorKeys,
+        storageClient,
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            storageClient,
+            new NoopForkChoiceNotifier(),
+            new MergeTransitionBlockValidator(spec, storageClient),
+            new StubMetricsSystem()),
+        signDeposits);
   }
 
   public static BeaconChainUtil create(
@@ -293,7 +314,15 @@ public class BeaconChainUtil {
     public BeaconChainUtil build() {
       validate();
       if (forkChoice == null) {
-        forkChoice = createForkChoice(spec, recentChainData);
+        final InlineEventThread forkChoiceExecutor = new InlineEventThread();
+        forkChoice =
+            new ForkChoice(
+                spec,
+                forkChoiceExecutor,
+                recentChainData,
+                new NoopForkChoiceNotifier(),
+                new MergeTransitionBlockValidator(spec, recentChainData),
+                new StubMetricsSystem());
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
@@ -340,17 +369,5 @@ public class BeaconChainUtil {
       this.validatorKeys = validatorKeys;
       return this;
     }
-  }
-
-  private static ForkChoice createForkChoice(
-      final Spec spec, final RecentChainData recentChainData) {
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-    return new ForkChoice(
-        spec,
-        new InlineEventThread(),
-        recentChainData,
-        new NoopForkChoiceNotifier(),
-        new MergeTransitionBlockValidator(spec, recentChainData),
-        metricsSystem);
   }
 }

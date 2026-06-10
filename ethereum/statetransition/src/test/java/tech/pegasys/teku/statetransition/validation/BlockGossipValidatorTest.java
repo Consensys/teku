@@ -73,7 +73,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
     },
     signatureVerifierNoop = true)
 public class BlockGossipValidatorTest {
-
   private Spec spec;
   private RecentChainData recentChainData;
   private StorageSystem storageSystem;

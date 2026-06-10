@@ -868,18 +868,6 @@ public class ProtoArrayScoreCalculatorTest {
       final boolean includeFullNode,
       final UInt64 blockSlot) {
     final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
-    addBlockNodeVariants(
-        protoArray, blockNodeIndex, blockRoot, includeEmptyNode, includeFullNode, blockSlot);
-    return blockNodeIndex;
-  }
-
-  private void addBlockNodeVariants(
-      final ProtoArray protoArray,
-      final BlockNodeVariantsIndex blockNodeIndex,
-      final Bytes32 blockRoot,
-      final boolean includeEmptyNode,
-      final boolean includeFullNode,
-      final UInt64 blockSlot) {
     final ForkChoiceNode baseNode = ForkChoiceNode.createBase(blockRoot);
     protoArray.addNode(
         baseNode,
@@ -922,6 +910,8 @@ public class ProtoArrayScoreCalculatorTest {
           false);
       blockNodeIndex.attachFullNode(blockRoot, fullNode);
     }
+
+    return blockNodeIndex;
   }
 
   private void votesShouldBeUpdated(final VoteUpdater store) {
