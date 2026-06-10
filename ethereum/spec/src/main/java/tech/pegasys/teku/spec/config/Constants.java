@@ -25,8 +25,8 @@ public class Constants {
   // Target holding 2 slots worth of payload attestations
   public static final int VALID_PAYLOAD_ATTESTATION_SET_SIZE = 512 * 2;
   // The cache is used for the `payload_present` voting, gossip and RPC fetch de-duplication, so no
-  // need for a long term caching
-  public static final int SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
+  // need for a long term caching (1 epoch)
+  public static final int VALID_EXECUTION_PAYLOADS_SET_SIZE = 32;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
   // Tracking 10 slots worth of bids

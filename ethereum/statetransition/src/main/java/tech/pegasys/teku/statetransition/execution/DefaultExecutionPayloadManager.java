@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
-import static tech.pegasys.teku.spec.config.Constants.SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.VALID_EXECUTION_PAYLOADS_SET_SIZE;
 
 import java.time.Duration;
 import java.util.Map;
@@ -52,10 +52,10 @@ public class DefaultExecutionPayloadManager
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int PENDING_EXECUTION_PAYLOADS_CACHE_SIZE =
-      SEEN_EXECUTION_PAYLOADS_CACHE_SIZE * 2;
+      VALID_EXECUTION_PAYLOADS_SET_SIZE * 2;
 
   private final Set<Bytes32> executionPayloadsSeenBeforePayloadDue =
-      LimitedSet.createSynchronizedNatural(SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+      LimitedSet.createSynchronizedNatural(VALID_EXECUTION_PAYLOADS_SET_SIZE);
 
   // pending pool
   private final Map<BlockRootAndBuilderIndex, PendingExecutionPayload> pendingExecutionPayloads =
