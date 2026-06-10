@@ -1000,6 +1000,35 @@ public class DebugDbCommand implements Runnable {
     return 0;
   }
 
+  @Command(
+      name = "compact-db",
+      description =
+          "Trigger a full compaction of the database to reclaim disk space left behind by pruning. "
+              + "This is an expensive, I/O-heavy operation and must only be run while the node is "
+              + "stopped.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int compactDb(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    final long startTime = System.currentTimeMillis();
+    System.out.println("Compacting database. This may take a long time...");
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      database.compactStorage();
+    }
+    System.out.printf(
+        "Database compaction completed in %d ms%n", System.currentTimeMillis() - startTime);
+    return 0;
+  }
+
   private boolean canParseBlock(final Spec spec, final Bytes blockData) {
     try {
       spec.deserializeSignedBeaconBlock(blockData);
