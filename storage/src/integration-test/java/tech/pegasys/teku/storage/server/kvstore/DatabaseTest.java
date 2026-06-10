@@ -2795,6 +2795,80 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void getEarliestDataColumnSidecarSlot_tracksPruneWatermark(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSidecar block1Sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+
+    // no data column sidecars have been stored yet
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block2Sidecar0);
+
+    // before any pruning the earliest slot is the first stored slot
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block1Sidecar0.getSlot());
+
+    // pruning the oldest slot advances the watermark; the earliest slot follows it
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
+
+    // the watermark is persisted, so the next run resumes above the pruned slots rather than
+    // rescanning from the first supported slot
+    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+  }
+
+  @TestTemplate
+  public void compactStorage_isOperativeAndPreservesData(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block2Sidecar0);
+
+    // prune the oldest slot so there are tombstones for compaction to reclaim
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10);
+
+    // compaction must run without error and leave the surviving data intact
+    database.compactStorage();
+
+    assertThat(database.getSidecar(block1Column0)).isEmpty();
+    assertThat(database.getSidecar(block2Column0)).contains(block2Sidecar0);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
+  }
+
+  @TestTemplate
   public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
@@ -2843,15 +2917,14 @@ public class DatabaseTest {
               block1Column0, block1Column1, block1Column2, block2Column0, block3Column0);
     }
 
-    // prune sidecars passing 2 as the limit should prune sidecars from the newest 2 slots at or
+    // prune sidecars passing 2 as the limit should prune sidecars from the oldest 2 slots at or
     // before the cutoff,
-    // leaving the sidecars from block header 1
+    // leaving the sidecars from block header 3
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
-      assertThat(dataColumnIdentifiersStream.toList())
-          .containsExactly(block1Column0, block1Column1, block1Column2);
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
@@ -2918,9 +2991,9 @@ public class DatabaseTest {
           .containsExactly(block2Column0, block3Column0);
     }
 
-    // prune sidecars passing 1 as the limit should prune the newest eligible canonical slot and
+    // prune sidecars passing 1 as the limit should prune the oldest eligible canonical slot and
     // non-canonical slot. The limit is applied separately to canonical and non-canonical sidecars.
-    // So leaving only the non-canonical sidecar from block header 2
+    // So leaving only the non-canonical sidecar from block header 3
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
@@ -2929,7 +3002,7 @@ public class DatabaseTest {
     }
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
-      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);

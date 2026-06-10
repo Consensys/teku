@@ -168,6 +168,10 @@ public class V4HotKvStoreDao {
     db.close();
   }
 
+  public void compact() {
+    db.compact();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return schema.getColumnMap();
   }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -40,6 +43,8 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class RocksDbInstance implements KvStoreAccessor {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final TransactionDB db;
   private final ColumnFamilyHandle defaultHandle;
@@ -292,6 +297,31 @@ public class RocksDbInstance implements KvStoreAccessor {
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
     return RocksDbKeyIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
+  }
+
+  // Compaction is a costly operation, so we run it sequentially for each column family
+  // to avoid impacting read performance by blocking all access to the database while compaction is
+  // running. Compaction is handled by rocksdb in general this is a method used for debug tools ONLY
+  @Override
+  public void compact() {
+    assertOpen();
+    final List<ColumnFamilyHandle> handles = new ArrayList<>(columnHandles.values());
+    handles.add(defaultHandle);
+    LOG.info("Compacting {} RocksDB column families", handles.size());
+    int compacted = 0;
+    for (final ColumnFamilyHandle handle : handles) {
+      try {
+        final long startTime = System.currentTimeMillis();
+        db.compactRange(handle);
+        LOG.info(
+            "Compacted column family {} of {} in {} ms",
+            ++compacted,
+            handles.size(),
+            System.currentTimeMillis() - startTime);
+      } catch (final RocksDBException e) {
+        throw RocksDbExceptionUtil.wrapException("Failed to compact RocksDB column family", e);
+      }
+    }
   }
 
   @Override
