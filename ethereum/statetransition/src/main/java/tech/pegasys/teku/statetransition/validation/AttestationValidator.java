@@ -43,7 +43,7 @@ public class AttestationValidator {
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
-  private final Set<Bytes32> invalidExecutionPayloadRoots;
+  private final Set<Bytes32> blockRootsWithInvalidExecutionPayload;
   private final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation;
 
   @VisibleForTesting
@@ -60,13 +60,13 @@ public class AttestationValidator {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      final Set<Bytes32> invalidExecutionPayloadRoots,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload,
       final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation) {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
-    this.invalidExecutionPayloadRoots = invalidExecutionPayloadRoots;
+    this.blockRootsWithInvalidExecutionPayload = blockRootsWithInvalidExecutionPayload;
     this.executionPayloadSeenForFullPayloadAttestation =
         executionPayloadSeenForFullPayloadAttestation;
   }
@@ -187,7 +187,7 @@ public class AttestationValidator {
     final Bytes32 blockRoot = data.getBeaconBlockRoot();
     if (spec.atSlot(data.getSlot()).getForkChoiceUtil().getFullPayloadVoteHint(data.getIndex())) {
       // [REJECT] If index == 1, the execution payload for block passes validation.
-      if (invalidExecutionPayloadRoots.contains(blockRoot)) {
+      if (blockRootsWithInvalidExecutionPayload.contains(blockRoot)) {
         return completedFuture(
             InternalValidationResultWithState.reject(
                 "Execution payload for full payload attestation is invalid"));

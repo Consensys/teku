@@ -218,9 +218,7 @@ class ForkChoiceTest {
     // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
-      when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-          .thenReturn(
-              SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
+      setBlobSidecarsAvailabilityResult(DataAndValidationResult.validResult(blobSidecars));
     }
   }
 
@@ -248,7 +246,7 @@ class ForkChoiceTest {
     importBlock(blockAndState);
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
   }
 
   @Test
@@ -257,14 +255,13 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notAvailable()));
+    setBlobSidecarsAvailabilityResult(DataAndValidationResult.notAvailable());
 
     importBlockAndAssertFailure(
         blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
   }
 
   @Test
@@ -303,8 +300,7 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notAvailable()));
+    setBlobSidecarsAvailabilityResult(DataAndValidationResult.notAvailable());
 
     importBlockAndAssertFailure(
         blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
@@ -312,7 +308,7 @@ class ForkChoiceTest {
     verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
   }
 
   @Test
@@ -329,7 +325,7 @@ class ForkChoiceTest {
     verify(blockBroadcastValidator).onConsensusValidationSucceeded();
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
   }
 
   @Test
@@ -405,13 +401,12 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notRequired()));
+    setBlobSidecarsAvailabilityResult(DataAndValidationResult.notRequired());
 
     importBlock(blockAndState);
 
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
   }
 
   @Test
@@ -1726,6 +1721,16 @@ class ForkChoiceTest {
     assertThat(result.isImportedOptimistically())
         .describedAs(result.toString())
         .isEqualTo(optimistically);
+  }
+
+  private void setBlobSidecarsAvailabilityResult(
+      final DataAndValidationResult<BlobSidecar> result) {
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> resultFuture =
+        SafeFuture.completedFuture(result);
+    doReturn(resultFuture).when(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    doReturn(resultFuture)
+        .when(blobSidecarsAvailabilityChecker)
+        .getAndLogAvailabilityCheckResult(any());
   }
 
   private SafeFuture<BlockImportResult> importBlockNoResultCheck(final SignedBlockAndState block) {

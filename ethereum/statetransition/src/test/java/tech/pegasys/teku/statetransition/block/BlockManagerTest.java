@@ -59,6 +59,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadEventsListener;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -125,6 +127,8 @@ public class BlockManagerTest {
   private final int maxPendingBlocks = 10;
   private final BlockEventsListenerRouter blockEventsListenerRouter =
       mock(BlockEventsListenerRouter.class);
+  private final ExecutionPayloadEventsListener executionPayloadEventsListener =
+      mock(ExecutionPayloadEventsListener.class);
   private PendingPool<SignedBeaconBlock> pendingBlocks;
   private PendingBlockPool pendingBlockPool;
   private final FutureItems<SignedBeaconBlock> futureBlocks =
@@ -202,6 +206,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockEventsListenerRouter,
+            () -> executionPayloadEventsListener,
             pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
@@ -260,7 +265,28 @@ public class BlockManagerTest {
 
     safeJoinBlockImport(nextBlock);
     verify(receivedBlockEventsChannelPublisher).onBlockImported(nextBlock, false);
-    verify(blockEventsListenerRouter).removeAllForBlock(nextBlock.getSlotAndBlockRoot());
+    verify(blockEventsListenerRouter).onBlockImported(nextBlock);
+  }
+
+  @Test
+  public void
+      shouldNotifyBlockEventsListenerOnBlockImportAndExecutionPayloadListenerOnPayloadImport() {
+    final UInt64 slot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock block = localChain.chainBuilder().generateBlockAtSlot(slot).getBlock();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        mock(SignedExecutionPayloadEnvelope.class, Answers.RETURNS_DEEP_STUBS);
+    when(executionPayload.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
+    when(executionPayload.getBeaconBlockRoot()).thenReturn(block.getRoot());
+    when(executionPayload.getMessage().getPayload().getBlockHash())
+        .thenReturn(dataStructureUtil.randomBytes32());
+
+    reset(blockEventsListenerRouter);
+
+    blockManager.onBlockImported(block, false);
+    verify(blockEventsListenerRouter).onBlockImported(block);
+
+    blockManager.onExecutionPayloadImported(executionPayload, false);
+    verify(executionPayloadEventsListener).onExecutionPayloadImported(block.getSlotAndBlockRoot());
   }
 
   @Test
@@ -343,6 +369,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockEventsListenerRouter,
+            () -> executionPayloadEventsListener,
             pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
@@ -502,7 +529,7 @@ public class BlockManagerTest {
     // pool should get notified for new block and then should be notified to drop content due to
     // block import completion
     verify(blockEventsListenerRouter).onNewBlock(nextBlock, Optional.empty());
-    verify(blockEventsListenerRouter).removeAllForBlock(nextBlock.getSlotAndBlockRoot());
+    verify(blockEventsListenerRouter).onBlockImported(nextBlock);
   }
 
   @Test
@@ -905,7 +932,7 @@ public class BlockManagerTest {
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker1).getAndLogAvailabilityCheckResult(any());
     assertThatStored(block1.getMessage(), blobSidecars1);
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
@@ -927,7 +954,7 @@ public class BlockManagerTest {
         createAvailabilityCheckerWithValidBlobSidecars(block2, blobSidecars2);
 
     assertThatBlockImport(block2).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker2).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker2).getAndLogAvailabilityCheckResult(any());
     assertThatStored(block2.getMessage(), blobSidecars2);
     // Have not changed
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
@@ -950,7 +977,7 @@ public class BlockManagerTest {
         createAvailabilityCheckerWithValidBlobSidecars(block3, blobSidecars3);
 
     assertThatBlockImport(block3).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker3).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker3).getAndLogAvailabilityCheckResult(any());
     // Have not changed
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
@@ -976,7 +1003,7 @@ public class BlockManagerTest {
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker1).getAndLogAvailabilityCheckResult(any());
     assertThatStored(block1.getMessage(), blobSidecars1);
     // Should be 0, if Genesis is Deneb
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
@@ -1008,7 +1035,7 @@ public class BlockManagerTest {
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker1).getAndLogAvailabilityCheckResult(any());
     assertThatStored(block1.getMessage(), blobSidecars1);
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(slotsPerEpoch));
@@ -1039,7 +1066,7 @@ public class BlockManagerTest {
         createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker1).getAndLogAvailabilityCheckResult(any());
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
         .isCompletedWithValue(Optional.of(block1.getMessage()));
     assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
@@ -1074,7 +1101,7 @@ public class BlockManagerTest {
     assertThatBlockImport(block1)
         .isCompletedWithValueMatching(
             cause -> cause.getFailureReason().equals(FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE));
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    verify(blobSidecarsAvailabilityChecker1).getAndLogAvailabilityCheckResult(any());
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
         .isCompletedWithValue(Optional.empty());
     assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
@@ -1091,8 +1118,10 @@ public class BlockManagerTest {
         mock(AvailabilityChecker.class);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> result =
+        SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars));
+    doReturn(result).when(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    doReturn(result).when(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
     return blobSidecarsAvailabilityChecker;
   }
 
@@ -1104,8 +1133,10 @@ public class BlockManagerTest {
         mock(AvailabilityChecker.class);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(DataAndValidationResult.notRequiredResultFuture());
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> result =
+        DataAndValidationResult.notRequiredResultFuture();
+    doReturn(result).when(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    doReturn(result).when(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
     return blobSidecarsAvailabilityChecker;
   }
 
@@ -1117,8 +1148,10 @@ public class BlockManagerTest {
         mock(AvailabilityChecker.class);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notAvailable()));
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> result =
+        SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
+    doReturn(result).when(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    doReturn(result).when(blobSidecarsAvailabilityChecker).getAndLogAvailabilityCheckResult(any());
     return blobSidecarsAvailabilityChecker;
   }
 
@@ -1181,6 +1214,7 @@ public class BlockManagerTest {
         localRecentChainData,
         blockImporter,
         blockEventsListenerRouter,
+        () -> executionPayloadEventsListener,
         pendingBlockPool,
         futureBlocks,
         invalidBlockRoots,

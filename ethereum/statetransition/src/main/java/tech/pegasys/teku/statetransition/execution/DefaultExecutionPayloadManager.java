@@ -84,7 +84,7 @@ public class DefaultExecutionPayloadManager
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher;
   private final RecentChainData recentChainData;
-  private final Set<Bytes32> invalidExecutionPayloadRoots;
+  private final Set<Bytes32> blockRootsWithInvalidExecutionPayload;
   private final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>>
       executionPayloadPublisher;
 
@@ -96,7 +96,7 @@ public class DefaultExecutionPayloadManager
       final ExecutionLayerChannel executionLayer,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
       final RecentChainData recentChainData,
-      final Set<Bytes32> invalidExecutionPayloadRoots,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload,
       final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>> executionPayloadPublisher) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -106,7 +106,7 @@ public class DefaultExecutionPayloadManager
     this.receivedExecutionPayloadEventsChannelPublisher =
         receivedExecutionPayloadEventsChannelPublisher;
     this.recentChainData = recentChainData;
-    this.invalidExecutionPayloadRoots = invalidExecutionPayloadRoots;
+    this.blockRootsWithInvalidExecutionPayload = blockRootsWithInvalidExecutionPayload;
     this.executionPayloadPublisher = executionPayloadPublisher;
   }
 
@@ -138,6 +138,7 @@ public class DefaultExecutionPayloadManager
     final UInt64 earliestExecutionPayloadArrivalTimestamp =
         recordExecutionPayloadArrivalTimestamp(
             signedExecutionPayload, executionPayloadArrivalTimestamp);
+    final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
     final Bytes32 executionPayloadEnvelopeRoot = signedExecutionPayload.hashTreeRoot();
     final SafeFuture<InternalValidationResult> validationResult =
         executionPayloadGossipValidator.validate(signedExecutionPayload);
@@ -148,11 +149,10 @@ public class DefaultExecutionPayloadManager
               receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
                   signedExecutionPayload);
               acceptedExecutionPayloadEnvelopeRoots.add(executionPayloadEnvelopeRoot);
-              // cache the seen `beacon_block_root` when the gossip checks pass
-              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+              recentSeenExecutionPayloads.add(beaconBlockRoot);
               recordExecutionPayloadAvailability(
                   signedExecutionPayload, earliestExecutionPayloadArrivalTimestamp);
-              importExecutionPayload(signedExecutionPayload).finishError(LOG);
+              importExecutionPayload(signedExecutionPayload, true).finishError(LOG);
             }
             case SAVE_FOR_FUTURE -> {
               if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
@@ -190,7 +190,8 @@ public class DefaultExecutionPayloadManager
 
   @Override
   public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final boolean payloadCommitmentVerified) {
     return asyncRunner
         .runAsync(
             () -> forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
@@ -205,8 +206,10 @@ public class DefaultExecutionPayloadManager
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {
-                if (isInvalidExecutionPayload(result)) {
-                  invalidExecutionPayloadRoots.add(signedExecutionPayload.getBeaconBlockRoot());
+                recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
+                if (payloadCommitmentVerified && isInvalidExecutionPayload(result)) {
+                  blockRootsWithInvalidExecutionPayload.add(
+                      signedExecutionPayload.getBeaconBlockRoot());
                 }
                 switch (result.getFailureReason()) {
                   case FAILED_EXECUTION -> {
@@ -229,6 +232,7 @@ public class DefaultExecutionPayloadManager
             })
         .exceptionally(
             ex -> {
+              recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
               final String internalErrorMessage =
                   String.format(
                       "Internal error while importing execution payload: %s. Execution payload content: %s",

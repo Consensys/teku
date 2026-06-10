@@ -382,7 +382,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile DataColumnSidecarELManager dataColumnSidecarELManager;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
-  protected volatile Set<Bytes32> invalidExecutionPayloadRoots;
+  protected volatile Set<Bytes32> blockRootsWithInvalidExecutionPayload;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
@@ -522,7 +522,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentExecutionPayloadsFetcher.subscribeExecutionPayloadFetched(
         executionPayload ->
             executionPayloadManager
-                .importExecutionPayload(executionPayload)
+                .importExecutionPayload(executionPayload, false)
                 .finish(
                     err ->
                         LOG.error("Failed to process recently fetched execution payload.", err)));
@@ -986,7 +986,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionLayer,
               receivedExecutionPayloadEventsChannelPublisher,
               recentChainData,
-              invalidExecutionPayloadRoots,
+              blockRootsWithInvalidExecutionPayload,
               executionPayloadGossipChannel::publishExecutionPayload);
       final FailedExecutionPayloadPool failedExecutionPayloadPool =
           new FailedExecutionPayloadPool(executionPayloadManager, beaconAsyncRunner);
@@ -1313,7 +1313,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestationPool)
         .subscribe(SlotEventsChannel.class, pendingAttestationPool);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
-    invalidExecutionPayloadRoots = LimitedSet.createSynchronized(500);
+    blockRootsWithInvalidExecutionPayload = LimitedSet.createSynchronizedLRU(500);
   }
 
   protected void initBlockBlobSidecarsTrackersPool() {
@@ -1915,7 +1915,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             signatureVerificationService,
             gossipValidationHelper,
             invalidBlockRoots,
-            invalidExecutionPayloadRoots,
+            blockRootsWithInvalidExecutionPayload,
             blockRoot ->
                 executionPayloadManager != null
                     && executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
@@ -2215,6 +2215,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
+            () -> dataAvailabilitySampler,
             pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
