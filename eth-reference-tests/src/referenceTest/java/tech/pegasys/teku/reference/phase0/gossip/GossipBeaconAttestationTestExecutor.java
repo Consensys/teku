@@ -179,7 +179,9 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             AsyncBLSSignatureVerifier.wrap(blsVerifier),
             createGossipValidationHelper(
                 spec, recentChainData, metricsSystem, customFinalizedCheckpoint),
-            invalidBlockRoots);
+            invalidBlockRoots,
+            Set.of(),
+            __ -> true);
 
     // Track seen attestations (by hash tree root) for "already seen" duplicate detection
     final Set<Bytes32> seenAttestationRoots = new HashSet<>();
