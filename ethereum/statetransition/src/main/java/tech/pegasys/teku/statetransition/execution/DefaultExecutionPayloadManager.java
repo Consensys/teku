@@ -60,6 +60,8 @@ public class DefaultExecutionPayloadManager
 
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+  private final Set<Bytes32> successfullyImportedExecutionPayloads =
+      LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
   private final Set<Bytes32> executionPayloadsSeenBeforePayloadDue =
       LimitedSet.createSynchronizedNatural(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
   private final Set<Bytes32> acceptedExecutionPayloadEnvelopeRoots =
@@ -82,6 +84,7 @@ public class DefaultExecutionPayloadManager
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher;
   private final RecentChainData recentChainData;
+  private final Set<Bytes32> blockRootsWithInvalidExecutionPayload;
   private final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>>
       executionPayloadPublisher;
 
@@ -93,6 +96,7 @@ public class DefaultExecutionPayloadManager
       final ExecutionLayerChannel executionLayer,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
       final RecentChainData recentChainData,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload,
       final Function<SignedExecutionPayloadEnvelope, SafeFuture<Void>> executionPayloadPublisher) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -102,6 +106,7 @@ public class DefaultExecutionPayloadManager
     this.receivedExecutionPayloadEventsChannelPublisher =
         receivedExecutionPayloadEventsChannelPublisher;
     this.recentChainData = recentChainData;
+    this.blockRootsWithInvalidExecutionPayload = blockRootsWithInvalidExecutionPayload;
     this.executionPayloadPublisher = executionPayloadPublisher;
   }
 
@@ -113,6 +118,14 @@ public class DefaultExecutionPayloadManager
   @Override
   public boolean isExecutionPayloadAvailableForPayloadAttestation(final Bytes32 beaconBlockRoot) {
     return executionPayloadsSeenBeforePayloadDue.contains(beaconBlockRoot);
+  }
+
+  @Override
+  public boolean isExecutionPayloadSeenForFullPayloadAttestation(final Bytes32 beaconBlockRoot) {
+    if (successfullyImportedExecutionPayloads.contains(beaconBlockRoot)) {
+      return true;
+    }
+    return recentChainData.containsExecutionPayload(beaconBlockRoot);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -139,7 +152,7 @@ public class DefaultExecutionPayloadManager
               recentSeenExecutionPayloads.add(beaconBlockRoot);
               recordExecutionPayloadAvailability(
                   signedExecutionPayload, earliestExecutionPayloadArrivalTimestamp);
-              importExecutionPayload(signedExecutionPayload).finishError(LOG);
+              importExecutionPayload(signedExecutionPayload, true).finishError(LOG);
             }
             case SAVE_FOR_FUTURE -> {
               if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
@@ -177,7 +190,8 @@ public class DefaultExecutionPayloadManager
 
   @Override
   public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final boolean payloadCommitmentVerified) {
     return asyncRunner
         .runAsync(
             () -> forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
@@ -187,10 +201,16 @@ public class DefaultExecutionPayloadManager
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
+                successfullyImportedExecutionPayloads.add(
+                    signedExecutionPayload.getBeaconBlockRoot());
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     signedExecutionPayload, result.isImportedOptimistically());
               } else {
                 recentSeenExecutionPayloads.remove(signedExecutionPayload.getBeaconBlockRoot());
+                if (payloadCommitmentVerified && isInvalidExecutionPayload(result)) {
+                  blockRootsWithInvalidExecutionPayload.add(
+                      signedExecutionPayload.getBeaconBlockRoot());
+                }
                 switch (result.getFailureReason()) {
                   case FAILED_EXECUTION -> {
                     LOG.error(
@@ -221,6 +241,17 @@ public class DefaultExecutionPayloadManager
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
+  }
+
+  private boolean isInvalidExecutionPayload(final ExecutionPayloadImportResult result) {
+    return switch (result.getFailureReason()) {
+      case FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> true;
+      case UNKNOWN_BEACON_BLOCK_ROOT,
+          FAILED_EXECUTION,
+          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
+          INTERNAL_ERROR ->
+          false;
+    };
   }
 
   private void logFailedExecutionPayloadImport(

@@ -39,6 +39,12 @@ public interface ExecutionPayloadManager {
         }
 
         @Override
+        public boolean isExecutionPayloadSeenForFullPayloadAttestation(
+            final Bytes32 beaconBlockRoot) {
+          return false;
+        }
+
+        @Override
         public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload,
             final Optional<UInt64> arrivalTimestamp) {
@@ -47,7 +53,8 @@ public interface ExecutionPayloadManager {
 
         @Override
         public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-            final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+            final SignedExecutionPayloadEnvelope signedExecutionPayload,
+            final boolean payloadCommitmentVerified) {
           return SafeFuture.completedFuture(
               ExecutionPayloadImportResult.successful(signedExecutionPayload));
         }
@@ -78,6 +85,12 @@ public interface ExecutionPayloadManager {
   boolean isExecutionPayloadAvailableForPayloadAttestation(Bytes32 beaconBlockRoot);
 
   /**
+   * {@link SignedExecutionPayloadEnvelope} has been successfully imported or is already available
+   * for the block. This method is used for full-payload beacon attestation gossip validation.
+   */
+  boolean isExecutionPayloadSeenForFullPayloadAttestation(Bytes32 beaconBlockRoot);
+
+  /**
    * Performs gossip validation on the {@code signedExecutionPayload} and imports it async if
    * accepted
    *
@@ -89,10 +102,18 @@ public interface ExecutionPayloadManager {
   /**
    * Imports execution payload via fork choice `on_execution_payload`
    *
+   * @param payloadCommitmentVerified whether the envelope has been proven to be the block's
+   *     committed payload, i.e. its bid consistency (builder index, payload block hash, execution
+   *     requests root) and builder signature were verified (as done by gossip validation). Only
+   *     when {@code true} may an invalid import result be cached against the beacon block root, so
+   *     that full-payload attestation gossip validation can reject votes for it. Callers that have
+   *     not verified the commitment (e.g. sync or RPC-by-root imports) MUST pass {@code false}, as
+   *     a forged/mismatched envelope for an honest block would otherwise poison the invalid-payload
+   *     cache and cause legitimate attestations to be rejected.
    * @return the execution payload import result
    */
   SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-      SignedExecutionPayloadEnvelope signedExecutionPayload);
+      SignedExecutionPayloadEnvelope signedExecutionPayload, boolean payloadCommitmentVerified);
 
   /** Retrieves parent execution requests (used in block production) */
   SafeFuture<ExecutionRequests> getParentExecutionRequestsForBlock(
