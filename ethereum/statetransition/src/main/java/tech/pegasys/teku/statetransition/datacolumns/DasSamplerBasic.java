@@ -143,7 +143,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
     // Delayed fetch callbacks can outlive the tracker they were scheduled for.
     // Only the currently installed tracker may issue RPC requests.
-    if (!isCurrentTracker(blockRoot, tracker)) {
+    if (isStaledTracker(blockRoot, tracker)) {
       tracker.rpcFetchInProgress().set(false);
       LOG.debug(
           "checkDataAvailability(): skipping stale RPC fetch for slot {} root {}", slot, blockRoot);
@@ -197,9 +197,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   @SuppressWarnings({"ReferenceComparison", "ReferenceEquality"})
-  private boolean isCurrentTracker(
+  private boolean isStaledTracker(
       final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
-    return recentlySampledColumnsByRoot.get(blockRoot) == tracker;
+    return recentlySampledColumnsByRoot.get(blockRoot) != tracker;
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
