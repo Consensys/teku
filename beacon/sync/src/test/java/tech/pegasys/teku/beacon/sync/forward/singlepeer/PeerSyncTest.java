@@ -119,7 +119,7 @@ public class PeerSyncTest extends AbstractSyncTest {
                 SafeFuture.completedFuture(
                     BlockImportResult.successful(invocationOnMock.getArgument(0))));
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
-    when(executionPayloadManager.importExecutionPayload(any()))
+    when(executionPayloadManager.importExecutionPayload(any(), anyBoolean()))
         .thenAnswer(
             invocationOnMock ->
                 SafeFuture.completedFuture(
@@ -687,7 +687,7 @@ public class PeerSyncTest extends AbstractSyncTest {
         .values()
         .forEach(
             executionPayload ->
-                verify(executionPayloadManager).importExecutionPayload(executionPayload));
+                verify(executionPayloadManager).importExecutionPayload(executionPayload, false));
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();

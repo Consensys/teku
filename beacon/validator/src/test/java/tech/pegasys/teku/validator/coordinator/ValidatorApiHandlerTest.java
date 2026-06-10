@@ -1446,7 +1446,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBlockInEffectAtSlot(eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(executionPayloadManager.isExecutionPayloadAvailableForPayloadAttestation(block.getRoot()))
+    when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
         .thenReturn(true);
 
     final Optional<PayloadAttestationData> result =
@@ -1469,7 +1469,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBlockInEffectAtSlot(eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(executionPayloadManager.isExecutionPayloadAvailableForPayloadAttestation(block.getRoot()))
+    when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
         .thenReturn(false);
 
     final Optional<PayloadAttestationData> result =

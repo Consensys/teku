@@ -128,6 +128,14 @@ public abstract class TekuNode extends Node {
     return dbTar;
   }
 
+  public File stopAndGetDataDirectoryFromContainer() throws Exception {
+    assertThat(started).isTrue();
+    container.getDockerClient().stopContainerCmd(container.getContainerId()).exec();
+    final File dataDirectory = getDataDirectoryFromContainer();
+    stop();
+    return dataDirectory;
+  }
+
   public void waitForOwnedValidatorCount(final int expectedValidatorCount) {
     LOG.debug("Waiting for validator count to be {}", expectedValidatorCount);
     waitFor(
