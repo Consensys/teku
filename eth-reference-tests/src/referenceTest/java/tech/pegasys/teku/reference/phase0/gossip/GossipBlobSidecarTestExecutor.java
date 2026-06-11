@@ -167,6 +167,10 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
         tx.setFinalizedCheckpoint(checkpoint, false);
         safeJoin(tx.commit());
       } else {
+        // Some generated gossip tests specify a finalized checkpoint as a raw root that is not
+        // backed by a block in the store. StoreTransaction.commit() requires the checkpoint block
+        // to be present, so keep the checkpoint aside and model the validator's ancestry check in a
+        // test-only GossipValidationHelper below.
         customFinalizedCheckpoint =
             Optional.of(finalizedCheckpoint.toCheckpoint(testDefinition, spec));
       }
@@ -253,6 +257,9 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
                   @Override
                   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
                       final UInt64 blockSlot, final Bytes32 blockParentRoot) {
+                    // The production helper reads the finalized checkpoint from Store, but raw-root
+                    // reference-test checkpoints cannot be committed there. Preserve the production
+                    // ancestry rule while substituting the fixture's checkpoint root.
                     if (blockSlot.isLessThanOrEqualTo(
                         finalizedCheckpoint.getEpochStartSlot(spec))) {
                       return false;
