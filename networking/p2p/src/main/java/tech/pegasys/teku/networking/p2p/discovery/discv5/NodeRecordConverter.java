@@ -50,20 +50,25 @@ public class NodeRecordConverter {
       final boolean supportsIpv6,
       final SchemaDefinitions schemaDefinitions) {
     final Optional<InetSocketAddress> tcpAddress;
+    final Optional<InetSocketAddress> quicAddress;
     if (supportsIpv6) {
       // prefer IPv6 address
       tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
+      quicAddress = nodeRecord.getQuic6Address().or(nodeRecord::getQuicAddress);
     } else {
       tcpAddress = nodeRecord.getTcpAddress();
+      quicAddress = nodeRecord.getQuicAddress();
     }
     return tcpAddress.map(
-        address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
+        address ->
+            socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address, quicAddress));
   }
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
       final SchemaDefinitions schemaDefinitions,
       final NodeRecord nodeRecord,
-      final InetSocketAddress address) {
+      final InetSocketAddress address,
+      final Optional<InetSocketAddress> quicAddress) {
 
     final Optional<EnrForkId> enrForkId =
         parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.SSZ_SCHEMA::sszDeserialize);
@@ -95,6 +100,7 @@ public class NodeRecordConverter {
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
         nodeRecord.getNodeId(),
         address,
+        quicAddress,
         enrForkId,
         persistentAttestationSubnets,
         syncCommitteeSubnets,

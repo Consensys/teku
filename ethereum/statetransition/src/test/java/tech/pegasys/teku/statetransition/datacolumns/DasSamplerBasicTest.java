@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -622,6 +623,35 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  void delayedRpcFetch_shouldSkipRemovedTracker() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot()))
+        .thenReturn(Duration.ofMillis(10));
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    sampler.removeAllForBlock(blockWithBlobs.getSlotAndBlockRoot());
+
+    stubTimeProvider.advanceTimeByMillis(10);
+    asyncRunner.executeDueActions();
+
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+    verify(retriever, never()).retrieve(any());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreWhenPreGloasBlockAlreadyImported() {
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+
+    sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).doesNotContainKey(columnId.blockRoot());
+  }
+
+  @Test
   void onNewValidatedDataColumnSidecar_shouldTrackGloasBlockUntilPayloadImported() {
     final DasSamplerBasic gloasSampler = createGloasSampler();
     final DataColumnSlotAndIdentifier columnId =
@@ -636,6 +666,24 @@ public class DasSamplerBasicTest {
     gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
 
     assertThat(gloasSampler.getRecentlySampledColumnsByRoot()).containsKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreGloasBlockAfterPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot()))
+        .thenReturn(Optional.of(mock(SignedExecutionPayloadEnvelope.class)));
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(columnId.blockRoot());
   }
 
   private void assertSamplerTracker(

@@ -128,7 +128,12 @@ public class DiscV5Service extends Service implements DiscoveryService {
         "The configured advertised IPs must be either 1 or 2");
     if (advertisedIps.size() == 1) {
       nodeRecordBuilder.address(
-          advertisedIps.get(0), discoConfig.getAdvertisedUdpPort(), p2pConfig.getAdvertisedPort());
+          advertisedIps.get(0),
+          discoConfig.getAdvertisedUdpPort(),
+          p2pConfig.getAdvertisedPort(),
+          p2pConfig.isQuicEnabled()
+              ? Optional.of(p2pConfig.getAdvertisedQuicPort())
+              : Optional.empty());
     } else {
       // IPv4 and IPv6 (dual-stack)
       advertisedIps.forEach(
@@ -144,7 +149,16 @@ public class DiscV5Service extends Service implements DiscoveryService {
                   case IP_V4 -> p2pConfig.getAdvertisedPort();
                   case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
                 };
-            nodeRecordBuilder.address(advertisedIp, advertisedUdpPort, advertisedTcpPort);
+            final Optional<Integer> advertisedQuicPort =
+                p2pConfig.isQuicEnabled()
+                    ? Optional.of(
+                        switch (ipVersion) {
+                          case IP_V4 -> p2pConfig.getAdvertisedQuicPort();
+                          case IP_V6 -> p2pConfig.getAdvertisedQuicPortIpv6();
+                        })
+                    : Optional.empty();
+            nodeRecordBuilder.address(
+                advertisedIp, advertisedUdpPort, advertisedTcpPort, advertisedQuicPort);
           });
     }
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
@@ -174,8 +188,12 @@ public class DiscV5Service extends Service implements DiscoveryService {
     } else {
       return (oldRecord, newAddress) -> {
         final int newTcpPort;
+        Optional<Integer> newQuicPort = Optional.empty();
         if (p2pConfig.getNetworkInterfaces().size() == 1) {
           newTcpPort = p2pConfig.getAdvertisedPort();
+          if (p2pConfig.isQuicEnabled()) {
+            newQuicPort = Optional.of(p2pConfig.getAdvertisedQuicPort());
+          }
         } else {
           // IPv4 and IPv6 (dual-stack)
           newTcpPort =
@@ -183,10 +201,19 @@ public class DiscV5Service extends Service implements DiscoveryService {
                 case IP_V4 -> p2pConfig.getAdvertisedPort();
                 case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
               };
+          if (p2pConfig.isQuicEnabled()) {
+            newQuicPort =
+                Optional.of(
+                    switch (IPVersionResolver.resolve(newAddress)) {
+                      case IP_V4 -> p2pConfig.getAdvertisedQuicPort();
+                      case IP_V6 -> p2pConfig.getAdvertisedQuicPortIpv6();
+                    });
+          }
         }
+        final Optional<Integer> advertisedTcpPort =
+            p2pConfig.isTcpEnabled() ? Optional.of(newTcpPort) : Optional.empty();
         return Optional.of(
-            oldRecord.withNewAddress(
-                newAddress, Optional.of(newTcpPort), Optional.empty(), localNodeSigner));
+            oldRecord.withNewAddress(newAddress, advertisedTcpPort, newQuicPort, localNodeSigner));
       };
     }
   }
@@ -286,6 +313,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
                           (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
                           nodeRecord.getNodeId(),
                           updAddress,
+                          Optional.empty(),
                           Optional.empty(),
                           currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
                           currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault(),

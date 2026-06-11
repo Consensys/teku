@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
@@ -44,7 +43,6 @@ public class AttestationValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Set<Bytes32> blockRootsWithInvalidExecutionPayload;
-  private final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation;
 
   @VisibleForTesting
   AttestationValidator(
@@ -52,7 +50,7 @@ public class AttestationValidator {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
-    this(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of(), __ -> true);
+    this(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of());
   }
 
   public AttestationValidator(
@@ -60,15 +58,12 @@ public class AttestationValidator {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      final Set<Bytes32> blockRootsWithInvalidExecutionPayload,
-      final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation) {
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload) {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
     this.blockRootsWithInvalidExecutionPayload = blockRootsWithInvalidExecutionPayload;
-    this.executionPayloadSeenForFullPayloadAttestation =
-        executionPayloadSeenForFullPayloadAttestation;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -193,7 +188,7 @@ public class AttestationValidator {
                 "Execution payload for full payload attestation is invalid"));
       }
       // [IGNORE] If index == 1, the execution payload for block has been seen.
-      if (!executionPayloadSeenForFullPayloadAttestation.test(blockRoot)) {
+      if (gossipValidationHelper.getRecentlyImportedExecutionPayload(blockRoot).isEmpty()) {
         return completedFuture(InternalValidationResultWithState.saveForFuture());
       }
     }
