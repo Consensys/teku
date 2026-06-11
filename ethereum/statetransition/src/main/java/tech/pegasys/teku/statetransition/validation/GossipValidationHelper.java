@@ -220,6 +220,10 @@ public class GossipValidationHelper {
     return recentChainData.containsBlock(blockRoot);
   }
 
+  public boolean containsExecutionPayload(final Bytes32 blockRoot) {
+    return recentChainData.containsExecutionPayload(blockRoot);
+  }
+
   int getMaxOffsetTimeInMillis() {
     return maxOffsetTimeInMillis;
   }

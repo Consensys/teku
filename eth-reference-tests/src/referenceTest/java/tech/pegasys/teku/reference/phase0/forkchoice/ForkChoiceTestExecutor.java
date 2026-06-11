@@ -228,8 +228,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                     signatureVerifier,
                     gossipValidationHelper,
                     invalidBlockRoots,
-                    blockRootsWithInvalidExecutionPayload,
-                    recentChainData::containsExecutionPayload))
+                    blockRootsWithInvalidExecutionPayload))
             : Optional.empty();
 
     try {

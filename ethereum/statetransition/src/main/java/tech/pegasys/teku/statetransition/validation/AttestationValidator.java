@@ -52,7 +52,22 @@ public class AttestationValidator {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
-    this(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of(), __ -> true);
+    this(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of());
+  }
+
+  public AttestationValidator(
+      final Spec spec,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final GossipValidationHelper gossipValidationHelper,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload) {
+    this(
+        spec,
+        signatureVerifier,
+        gossipValidationHelper,
+        invalidBlockRoots,
+        blockRootsWithInvalidExecutionPayload,
+        gossipValidationHelper::containsExecutionPayload);
   }
 
   public AttestationValidator(
