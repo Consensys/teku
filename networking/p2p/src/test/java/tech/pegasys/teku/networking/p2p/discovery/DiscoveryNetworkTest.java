@@ -366,6 +366,7 @@ class DiscoveryNetworkTest {
         BLSPublicKey.empty().toSSZBytes(),
         Bytes32.ZERO,
         InetSocketAddress.createUnresolved("yo", 9999),
+        Optional.empty(),
         maybeForkId,
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),

@@ -82,6 +82,7 @@ class NodeRecordConverterTest {
             nodeId,
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             Optional.empty(),
+            Optional.empty(),
             ATTNETS,
             SYNCNETS,
             Optional.empty(),
@@ -125,6 +126,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 30303),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -161,6 +163,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("129.24.31.22", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -191,6 +194,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -213,6 +217,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("127.0.0.1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -236,6 +241,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 persistentSubnets,
                 SYNCNETS,
@@ -259,6 +265,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATT_SUBNET_SCHEMA.getDefault(),
                 SYNCNETS,
@@ -282,6 +289,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 syncnets,
@@ -307,6 +315,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -330,6 +339,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 Optional.of(enrForkId),
                 ATTNETS,
                 SYNCNETS,
@@ -353,6 +363,7 @@ class NodeRecordConverterTest {
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
                 Optional.empty(),
+                Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
                 Optional.empty(),
@@ -373,6 +384,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("127.0.0.1", 1234),
+                Optional.empty(),
                 Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
@@ -395,10 +407,47 @@ class NodeRecordConverterTest {
                 NODE_ID,
                 new InetSocketAddress("127.0.0.1", 1234),
                 Optional.empty(),
+                Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
                 Optional.empty(),
                 Optional.of(nfd)));
+  }
+
+  @Test
+  public void shouldExtractQuicAddressFromEnr() {
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            false,
+            new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+            new EnrField(EnrField.TCP, 9000),
+            new EnrField(EnrField.QUIC, 9100));
+    assertThat(result).isPresent();
+    assertThat(result.get().getQuicAddress()).contains(new InetSocketAddress("127.0.0.1", 9100));
+    assertThat(result.get().getNodeAddress()).isEqualTo(new InetSocketAddress("127.0.0.1", 9000));
+  }
+
+  @Test
+  public void shouldExtractQuicV6AddressFromEnrWhenIpv6Supported() {
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            true,
+            new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
+            new EnrField(EnrField.TCP_V6, 9000),
+            new EnrField(EnrField.QUIC_V6, 9100));
+    assertThat(result).isPresent();
+    assertThat(result.get().getQuicAddress()).contains(new InetSocketAddress("::1", 9100));
+  }
+
+  @Test
+  public void shouldHaveEmptyQuicAddressWhenNotAdvertised() {
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            false,
+            new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+            new EnrField(EnrField.TCP, 9000));
+    assertThat(result).isPresent();
+    assertThat(result.get().getQuicAddress()).isEmpty();
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(
