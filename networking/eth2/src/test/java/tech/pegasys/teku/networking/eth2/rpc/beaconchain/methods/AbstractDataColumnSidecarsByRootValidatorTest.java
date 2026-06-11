@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 @SuppressWarnings("JavaCase")
 public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
@@ -54,8 +55,8 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
   protected final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   protected final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
-  protected final CombinedChainDataClient combinedChainDataClient =
-      mock(CombinedChainDataClient.class);
+  protected final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider =
+      mock(BlobKzgCommitmentsProvider.class);
 
   protected abstract Spec createSpec();
 
@@ -76,6 +77,8 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
         kzg);
     when(dataColumnSidecarSignatureValidator.validateSignature(any()))
         .thenReturn(SafeFuture.completedFuture(true));
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
   }
 
@@ -94,7 +97,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertDoesNotThrow(() -> validator.validate(dataColumnSidecar1_0));
   }
@@ -116,7 +119,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertThatSafeFuture(validator.validate(dataColumnSidecar2_0))
         .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
@@ -142,7 +145,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertThatSafeFuture(validator.validate(dataColumnSidecar1_0))
         .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
@@ -170,7 +173,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertThatSafeFuture(validator.validate(dataColumnSidecar1_0))
         .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
@@ -196,7 +199,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertDoesNotThrow(() -> validator.validate(dataColumnSidecar1_0).join());
     assertThatSafeFuture(validator.validate(dataColumnSidecar1_0))
@@ -224,7 +227,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     // verifySignature is separate from validate
     assertThat(validator.verifySignature(dataColumnSidecar1_0)).isCompletedWithValue(false);
@@ -247,7 +250,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertThatSafeFuture(validator.validate(dataColumnSidecar1_0_modified))
         .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)

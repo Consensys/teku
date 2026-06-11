@@ -276,8 +276,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
                         "DataColumnSidecar's beacon_block_root %s does not correspond to a known block",
                         beaconBlockRoot));
               }
-              final SszList<SszKZGCommitment> blobKzgCommitments =
-                  maybeBlobKzgCommitments.get();
+              final SszList<SszKZGCommitment> blobKzgCommitments = maybeBlobKzgCommitments.get();
               final Optional<DataColumnSidecarValidationError> maybeVerifyDataColumnSidecarResult =
                   verifyDataColumnSidecar(dataColumnSidecar, blobKzgCommitments);
               return maybeVerifyDataColumnSidecarResult.or(

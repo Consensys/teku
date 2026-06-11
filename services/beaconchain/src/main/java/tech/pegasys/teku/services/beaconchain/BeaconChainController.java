@@ -53,6 +53,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
@@ -169,6 +170,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
@@ -362,6 +364,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
   protected volatile OperationsReOrgManager operationsReOrgManager;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
@@ -709,6 +712,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
+    initBlobKzgCommitmentsProvider();
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -1160,7 +1164,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DasPreSampler(
               this.dataAvailabilitySampler,
               this.dataColumnSidecarCustodyRef.get(),
-              custodyGroupCountManager);
+              custodyGroupCountManager,
+              blobKzgCommitmentsProvider);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }
@@ -1565,6 +1570,20 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
         new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+  }
+
+  protected void initBlobKzgCommitmentsProvider() {
+    LOG.debug("BeaconChainController.initBlobKzgCommitmentsProvider()");
+    final SyncConfig syncConfig = beaconConfig.syncConfig();
+    final int maxCacheSize =
+        Math.max(
+            128,
+            syncConfig.getForwardSyncBatchSize() * syncConfig.getForwardSyncMaxPendingBatches());
+    blobKzgCommitmentsProvider =
+        new BlobKzgCommitmentsProvider(spec, combinedChainDataClient, maxCacheSize);
+    eventChannels
+        .subscribe(ReceivedBlockEventsChannel.class, blobKzgCommitmentsProvider)
+        .subscribe(FinalizedCheckpointChannel.class, blobKzgCommitmentsProvider);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -2006,6 +2025,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
+            .blobKzgCommitmentsProvider(blobKzgCommitmentsProvider)
             .custodyGroupCountManagerSupplier(() -> custodyGroupCountManager)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)

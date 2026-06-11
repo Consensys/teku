@@ -82,6 +82,7 @@ public class BlobKzgCommitmentsProvider
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    onNewBlock(block);
     commitmentsByRoot.remove(block.getParentRoot());
   }
 
@@ -96,6 +97,5 @@ public class BlobKzgCommitmentsProvider
     }
   }
 
-  private record BlobKzgCommitmentsEntry(
-      UInt64 slot, SszList<SszKZGCommitment> commitments) {}
+  private record BlobKzgCommitmentsEntry(UInt64 slot, SszList<SszKZGCommitment> commitments) {}
 }

@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -108,17 +109,22 @@ class BlobKzgCommitmentsProviderTest {
   }
 
   @Test
-  void evictsParentRootWhenChildIsImported() {
+  void storesImportedBlockAndEvictsParentRoot() {
     final SignedBeaconBlock parent =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
-    final SignedBeaconBlock importedChild = mock(SignedBeaconBlock.class);
-    when(importedChild.getParentRoot()).thenReturn(parent.getRoot());
+    final SignedBeaconBlock importedChild =
+        createBlockWithParentRoot(UInt64.valueOf(2), parent.getRoot(), 2);
+    final SszList<SszKZGCommitment> childCommitments =
+        importedChild.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
     provider.onNewBlock(parent);
     provider.onBlockImported(importedChild, false);
 
     assertThat(provider.getBlobKzgCommitments(parent.getRoot()).join()).isEmpty();
+    assertThat(provider.getBlobKzgCommitments(importedChild.getRoot()).join())
+        .contains(childCommitments);
     verify(combinedChainDataClient).getBlockByBlockRoot(parent.getRoot());
+    verify(combinedChainDataClient, never()).getBlockByBlockRoot(importedChild.getRoot());
   }
 
   @Test
@@ -168,5 +174,21 @@ class BlobKzgCommitmentsProviderTest {
     assertThat(provider.getBlobKzgCommitments(second.getRoot()).join()).isPresent();
     assertThat(provider.getBlobKzgCommitments(third.getRoot()).join()).isPresent();
     verify(combinedChainDataClient).getBlockByBlockRoot(first.getRoot());
+  }
+
+  private SignedBeaconBlock createBlockWithParentRoot(
+      final UInt64 slot, final Bytes32 parentRoot, final int commitmentCount) {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, commitmentCount);
+    final BeaconBlock message = block.getMessage();
+    final BeaconBlock messageWithParentRoot =
+        new BeaconBlock(
+            message.getSchema(),
+            message.getSlot(),
+            message.getProposerIndex(),
+            parentRoot,
+            message.getStateRoot(),
+            message.getBody());
+    return SignedBeaconBlock.create(spec, messageWithParentRoot, block.getSignature());
   }
 }

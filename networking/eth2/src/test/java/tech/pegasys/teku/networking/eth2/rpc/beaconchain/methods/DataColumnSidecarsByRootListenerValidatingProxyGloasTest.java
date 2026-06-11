@@ -21,14 +21,11 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -39,27 +36,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSide
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
     extends AbstractDataColumnSidecarsByRootListenerValidatingProxyTest {
-
-  private final Map<Bytes32, SignedBeaconBlock> blocksByRoot = new HashMap<>();
-
-  @BeforeEach
-  @Override
-  void setUp() {
-    super.setUp();
-    blocksByRoot.clear();
-    // For Gloas, set up mock to retrieve blocks by root
-    when(combinedChainDataClient.getBlockByBlockRoot(any()))
-        .thenAnswer(
-            invocation -> {
-              final Bytes32 root = invocation.getArgument(0);
-              return SafeFuture.completedFuture(Optional.ofNullable(blocksByRoot.get(root)));
-            });
-  }
 
   @Override
   protected Spec createSpec() {
@@ -70,7 +52,10 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
   protected SignedBeaconBlock createBlock(final UInt64 slot) {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, 3);
-    blocksByRoot.put(block.getRoot(), block);
+    final SszList<SszKZGCommitment> commitments =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(commitments)));
     return block;
   }
 
@@ -125,7 +110,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
             timeProvider,
             signatureValidator,
             dataColumnIdentifiers,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);

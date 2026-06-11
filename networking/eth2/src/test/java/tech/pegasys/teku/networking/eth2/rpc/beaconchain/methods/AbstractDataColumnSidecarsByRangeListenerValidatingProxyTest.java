@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 @SuppressWarnings("JavaCase")
 public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTest {
@@ -60,8 +61,8 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
 
   protected final DataColumnSidecarSignatureValidator signatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
-  protected final CombinedChainDataClient combinedChainDataClient =
-      mock(CombinedChainDataClient.class);
+  protected final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider =
+      mock(BlobKzgCommitmentsProvider.class);
 
   protected abstract Spec createSpec();
 
@@ -82,6 +83,8 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
         kzg);
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(signatureValidator.validateSignature(any())).thenReturn(SafeFuture.completedFuture(true));
   }
 
@@ -105,7 +108,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(4),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
@@ -143,7 +146,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(2),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
@@ -183,7 +186,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(2),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
@@ -222,7 +225,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(1),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
@@ -257,7 +260,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(1),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
@@ -292,7 +295,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(1),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
@@ -326,7 +329,7 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
             ONE,
             UInt64.valueOf(1),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
