@@ -33,7 +33,7 @@ public final class LimitedSet {
    * @param <T> The type of object held in the set.
    * @return A set that will evict elements when the max size is exceeded.
    */
-  public static <T> Set<T> createSynchronized(final int maxSize) {
+  public static <T> Set<T> createSynchronizedLRU(final int maxSize) {
     return Collections.newSetFromMap(LimitedMap.createSynchronizedLRU(maxSize));
   }
 
