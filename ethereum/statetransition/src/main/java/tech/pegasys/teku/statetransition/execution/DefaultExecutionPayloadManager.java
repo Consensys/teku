@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
-import static tech.pegasys.teku.spec.config.Constants.VALID_EXECUTION_PAYLOADS_SET_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.VALID_EXECUTION_PAYLOAD_SET_SIZE;
 
 import java.time.Duration;
 import java.util.Map;
@@ -51,11 +51,13 @@ public class DefaultExecutionPayloadManager
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int PENDING_EXECUTION_PAYLOADS_CACHE_SIZE =
-      VALID_EXECUTION_PAYLOADS_SET_SIZE * 2;
+  // A payload is kept pending while its beacon block is still missing. Payloads from before the
+  // finalized slot are never queued, so the cache only needs to span the non-finalized window.
+  // Under healthy finality that window is ~2 epochs (2 * SLOTS_PER_EPOCH = 64 slots on mainnet)
+  private static final int PENDING_EXECUTION_PAYLOADS_CACHE_SIZE = 64;
 
   private final Set<Bytes32> executionPayloadsSeenBeforePayloadDue =
-      LimitedSet.createSynchronizedNatural(VALID_EXECUTION_PAYLOADS_SET_SIZE);
+      LimitedSet.createSynchronizedNatural(VALID_EXECUTION_PAYLOAD_SET_SIZE);
 
   // pending pool
   private final Map<BlockRootAndBuilderIndex, PendingExecutionPayload> pendingExecutionPayloads =
