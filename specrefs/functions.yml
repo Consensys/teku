@@ -15401,6 +15401,8 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public AttestationProcessingResult validateOnAttestation(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/GossipValidationHelper.java
+      search: public InternalValidationResult validatePayloadStatus(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
       search: public AttestationValidationResult validateCommitteeIndexValue(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
