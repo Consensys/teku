@@ -253,10 +253,13 @@ public class GossipValidationHelper {
     return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());
   }
 
+  public Optional<SignedExecutionPayloadEnvelope> getRecentlyImportedExecutionPayload(
+      final Bytes32 blockRoot) {
+    return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot);
+  }
+
   public Optional<UInt64> getGasLimitForExecutionPayload(final Bytes32 blockRoot) {
-    return recentChainData
-        .getStore()
-        .getExecutionPayloadIfAvailable(blockRoot)
+    return getRecentlyImportedExecutionPayload(blockRoot)
         .map(SignedExecutionPayloadEnvelope::getMessage)
         .map(envelope -> envelope.getPayload().getGasLimit());
   }

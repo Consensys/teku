@@ -270,7 +270,43 @@ public abstract class AbstractDataColumnSidecarsByRangeListenerValidatingProxyTe
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
-                .describe());
+                .describe())
+        .hasMessageContaining("Invalid DataColumnSidecar KZG Proofs");
+  }
+
+  @Test
+  void dataColumnSidecarKzgVerificationExceptionIsWrapped() {
+    when(kzg.verifyCellProofBatch(any(), any(), any()))
+        .thenThrow(new IllegalStateException("KZG verification exception"));
+    final SignedBeaconBlock block1 = createBlock(ONE);
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
+    listenerWrapper =
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
+            spec,
+            peer,
+            listener,
+            metricsSystem,
+            timeProvider,
+            signatureValidator,
+            ONE,
+            UInt64.valueOf(1),
+            columns,
+            combinedChainDataClient);
+
+    final DataColumnSidecar dataColumnSidecar =
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
+
+    final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
+                .describe())
+        .hasRootCauseMessage("KZG verification exception");
   }
 
   @Test

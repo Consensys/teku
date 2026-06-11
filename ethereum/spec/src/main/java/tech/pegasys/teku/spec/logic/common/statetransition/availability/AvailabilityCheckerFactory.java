@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 @FunctionalInterface
 public interface AvailabilityCheckerFactory<T> {
@@ -25,4 +26,9 @@ public interface AvailabilityCheckerFactory<T> {
       block -> AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
 
   AvailabilityChecker<T> createAvailabilityChecker(SignedBeaconBlock block);
+
+  default AvailabilityChecker<T> createAvailabilityChecker(
+      final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope signedEnvelope) {
+    return createAvailabilityChecker(block);
+  }
 }

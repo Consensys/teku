@@ -14,18 +14,27 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTest {
 
@@ -149,6 +158,44 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
   }
 
   @Test
+  public void shouldSaveFullPayloadAttestationForFutureWhenPayloadHasNotBeenSeen() {
+    final Bytes32 blockRoot = Bytes32.random();
+    final Attestation attestation = fullPayloadAttestationForPastBlock(blockRoot);
+    final GossipValidationHelper gossipValidationHelper =
+        mockGossipValidationForFullPayloadRule(attestation, blockRoot);
+
+    final AttestationValidator validator =
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of());
+
+    assertThat(validator.validate(ValidatableAttestation.fromNetwork(spec, attestation, 0)))
+        .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
+  }
+
+  @Test
+  public void shouldRejectFullPayloadAttestationWhenPayloadIsKnownInvalid() {
+    final Bytes32 blockRoot = Bytes32.random();
+    final Attestation attestation = fullPayloadAttestationForPastBlock(blockRoot);
+    final GossipValidationHelper gossipValidationHelper =
+        mockGossipValidationForFullPayloadRule(attestation, blockRoot);
+    final Set<Bytes32> blockRootsWithInvalidExecutionPayload = new HashSet<>();
+    blockRootsWithInvalidExecutionPayload.add(blockRoot);
+
+    final AttestationValidator validator =
+        new AttestationValidator(
+            spec,
+            signatureVerifier,
+            gossipValidationHelper,
+            invalidBlockRoots,
+            blockRootsWithInvalidExecutionPayload);
+
+    assertThat(validator.validate(ValidatableAttestation.fromNetwork(spec, attestation, 0)))
+        .matches(
+            rejected("Execution payload for full payload attestation is invalid"),
+            "Rejected invalid execution payload");
+  }
+
+  @Test
   public void shouldRejectAggregateAttestationWithIncorrectPayloadStatus() {
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
@@ -179,5 +226,31 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
         .isEqualTo(
             InternalValidationResult.reject(
                 "Payload status must be 0, but was %s.", wrongAttestation.getData().getIndex()));
+  }
+
+  private GossipValidationHelper mockGossipValidationForFullPayloadRule(
+      final Attestation attestation, final Bytes32 blockRoot) {
+    final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
+    when(gossipValidationHelper.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(ZERO));
+    when(gossipValidationHelper.getGenesisTime()).thenReturn(ZERO);
+    when(gossipValidationHelper.getCurrentTimeMillis())
+        .thenReturn(spec.computeTimeMillisAtSlot(attestation.getData().getSlot(), ZERO));
+    when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(true);
+    return gossipValidationHelper;
+  }
+
+  private Attestation fullPayloadAttestationForPastBlock(final Bytes32 blockRoot) {
+    final AttestationData data =
+        new AttestationData(
+            ONE,
+            ONE,
+            blockRoot,
+            new Checkpoint(ZERO, Bytes32.ZERO),
+            new Checkpoint(spec.computeEpochAtSlot(ONE), Bytes32.ZERO));
+    return attestationSchema.create(
+        attestationSchema.getAggregationBitsSchema().ofBits(1, 0),
+        data,
+        BLSSignature.empty(),
+        () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(1));
   }
 }

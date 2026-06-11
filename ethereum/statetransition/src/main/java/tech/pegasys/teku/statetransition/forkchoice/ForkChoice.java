@@ -531,14 +531,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =
         availabilityChecker
-            .getAvailabilityCheckResult()
+            .getAndLogAvailabilityCheckResult(LOG)
             .thenPeek(
                 result -> {
-                  LOG.debug(
-                      "Data availability check for slot: {}, block_root: {} result: {}",
-                      block.getSlot(),
-                      block.getRoot(),
-                      result.toLogString());
                   blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
@@ -598,7 +593,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
     final AvailabilityChecker<?> availabilityChecker =
-        forkChoiceUtil.createAvailabilityCheckerOnExecutionPayloadEnvelope(block);
+        forkChoiceUtil.createAvailabilityCheckerOnExecutionPayloadEnvelope(block, signedEnvelope);
     availabilityChecker.initiateDataAvailabilityCheck();
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
@@ -616,16 +611,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultFuture =
-        availabilityChecker
-            .getAvailabilityCheckResult()
-            .thenPeek(
-                result ->
-                    LOG.debug(
-                        "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
-                        signedEnvelope.getSlot(),
-                        signedEnvelope.getMessage().getBuilderIndex(),
-                        signedEnvelope.getBeaconBlockRoot(),
-                        result.toLogString()));
+        availabilityChecker.getAndLogAvailabilityCheckResult(LOG);
 
     return payloadExecutor
         .getExecutionResult()

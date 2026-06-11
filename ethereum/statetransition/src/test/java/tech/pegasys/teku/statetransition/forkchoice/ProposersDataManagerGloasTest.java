@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
@@ -152,6 +153,12 @@ class ProposersDataManagerGloasTest {
                       .getBuildersSchema()
                       .createFromElements(
                           List.of(data.builderBuilder().balance(parentPayloadValue).build())));
+              stateGloas.setPayloadExpectedWithdrawals(
+                  schemaDefinitions
+                      .getExecutionPayloadSchema()
+                      .getWithdrawalsSchemaRequired()
+                      .createFromElements(
+                          List.of(data.randomWithdrawal(UInt64.valueOf(7), UInt64.valueOf(11)))));
             });
   }
 
@@ -175,11 +182,19 @@ class ProposersDataManagerGloasTest {
   }
 
   @TestTemplate
-  void calculatePayloadBuildingAttributes_shouldNotFetchParentExecutionRequestsForEmptyParent() {
+  void calculatePayloadBuildingAttributes_shouldUsePayloadExpectedWithdrawalsForEmptyParent() {
     final UInt64 blockSlot = UInt64.valueOf(16);
     final Bytes32 parentRoot = data.randomBytes32();
     final ForkChoiceNode parent = ForkChoiceNode.createEmpty(parentRoot);
-    final BeaconState state = data.randomBeaconState(blockSlot);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(blockSlot).getSchemaDefinitions());
+    final ExecutionRequests parentExecutionRequests =
+        schemaDefinitions.getExecutionRequestsSchema().getDefault();
+    final BeaconState state =
+        createStateWithFullParentBid(blockSlot, schemaDefinitions, parentExecutionRequests);
+    final Optional<List<Withdrawal>> payloadExpectedWithdrawals =
+        Optional.of(BeaconStateGloas.required(state).getPayloadExpectedWithdrawals().asList());
+    assertThat(payloadExpectedWithdrawals).isNotEqualTo(spec.getExpectedWithdrawals(state));
     final ForkChoiceUpdateData forkChoiceUpdateData = forkChoiceUpdateData(parent, blockSlot);
     prepareLocalProposer(state, blockSlot);
     when(recentChainData.retrieveBlockState(new SlotAndBlockRoot(blockSlot, parentRoot)))
@@ -188,7 +203,7 @@ class ProposersDataManagerGloasTest {
     final PayloadBuildingAttributes attributes =
         safeJoin(calculate(blockSlot, forkChoiceUpdateData)).orElseThrow();
 
-    assertThat(attributes.withdrawals()).isEqualTo(spec.getExpectedWithdrawals(state));
+    assertThat(attributes.withdrawals()).isEqualTo(payloadExpectedWithdrawals);
     verify(recentChainData, never()).retrieveSignedBlindedExecutionPayloadByBlockRoot(any());
   }
 

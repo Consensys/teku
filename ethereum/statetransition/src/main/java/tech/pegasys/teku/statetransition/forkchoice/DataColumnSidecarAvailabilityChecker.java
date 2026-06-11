@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
@@ -38,6 +40,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
   final Spec spec;
   private final RecentChainData recentChainData;
   private final SignedBeaconBlock block;
+  private final Optional<SignedExecutionPayloadEnvelope> signedEnvelope;
   private final Duration waitForSamplerCompletionTimeout;
 
   public DataColumnSidecarAvailabilityChecker(
@@ -45,10 +48,29 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
       final Spec spec,
       final RecentChainData recentChainData,
       final SignedBeaconBlock block) {
+    this(dataAvailabilitySampler, spec, recentChainData, block, Optional.empty());
+  }
+
+  public DataColumnSidecarAvailabilityChecker(
+      final DataAvailabilitySampler dataAvailabilitySampler,
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SignedBeaconBlock block,
+      final SignedExecutionPayloadEnvelope signedEnvelope) {
+    this(dataAvailabilitySampler, spec, recentChainData, block, Optional.of(signedEnvelope));
+  }
+
+  private DataColumnSidecarAvailabilityChecker(
+      final DataAvailabilitySampler dataAvailabilitySampler,
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SignedBeaconBlock block,
+      final Optional<SignedExecutionPayloadEnvelope> signedEnvelope) {
     this.dataAvailabilitySampler = dataAvailabilitySampler;
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.block = block;
+    this.signedEnvelope = signedEnvelope;
     this.waitForSamplerCompletionTimeout = calculateCompletionTimeout(spec, block.getSlot());
   }
 
@@ -63,6 +85,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.block = block;
+    this.signedEnvelope = Optional.empty();
     this.waitForSamplerCompletionTimeout = waitForSamplerCompletionTimeout;
   }
 
@@ -125,6 +148,25 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
   @Override
   public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
     return validationResult;
+  }
+
+  @Override
+  public void logAvailabilityCheckResult(
+      final Logger log, final DataAndValidationResult<UInt64> result) {
+    signedEnvelope.ifPresentOrElse(
+        envelope ->
+            log.debug(
+                "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
+                envelope.getSlot(),
+                envelope.getMessage().getBuilderIndex(),
+                envelope.getBeaconBlockRoot(),
+                result.toLogString()),
+        () ->
+            log.debug(
+                "Data availability check for slot: {}, block_root: {} result: {}",
+                block.getSlot(),
+                block.getRoot(),
+                result.toLogString()));
   }
 
   private boolean isBlockOutsideDataAvailabilityWindow() {

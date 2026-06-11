@@ -145,9 +145,9 @@ public class DataColumnSidecarGossipValidator {
         gossipValidationHelper,
         metricsSystem,
         timeProvider,
-        LimitedSet.createSynchronized(validInfoSize),
-        LimitedSet.createSynchronized(validSignedBlockHeadersSize),
-        LimitedSet.createSynchronized(validSignedBlockHeadersSize));
+        LimitedSet.createSynchronizedLRU(validInfoSize),
+        LimitedSet.createSynchronizedLRU(validSignedBlockHeadersSize),
+        LimitedSet.createSynchronizedLRU(validSignedBlockHeadersSize));
   }
 
   @VisibleForTesting
