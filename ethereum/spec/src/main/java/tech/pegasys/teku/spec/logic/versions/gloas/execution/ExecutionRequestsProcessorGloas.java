@@ -47,7 +47,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
   // a single bad signature forces a fallback to verify every signature in the batch one by one.
   // Capping the batch at this size bounds that cost: a bad signature only triggers individual
   // re-verification within its own sub-batch rather than across all new builder deposits.
-  private static final int NEW_BUILDER_DEPOSIT_SIGNATURE_VALIDATION_BATCH_SIZE = 256;
+  private static final int NEW_BUILDER_DEPOSIT_SIGNATURE_VERIFICATION_BATCH_SIZE = 256;
 
   private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
@@ -125,7 +125,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
       }
     }
 
-    Lists.partition(newBuilderDeposits, NEW_BUILDER_DEPOSIT_SIGNATURE_VALIDATION_BATCH_SIZE)
+    Lists.partition(newBuilderDeposits, NEW_BUILDER_DEPOSIT_SIGNATURE_VERIFICATION_BATCH_SIZE)
         .forEach(
             newBuilderDepositsBatch -> {
               final boolean newBuilderDepositSignaturesAreAllGood =
