@@ -126,7 +126,8 @@ public class LibP2PNetworkBuilder {
         peerManager,
         advertisedAddresses,
         gossipNetwork,
-        listenPorts);
+        listenPorts,
+        config.isQuicEnabled());
   }
 
   /**

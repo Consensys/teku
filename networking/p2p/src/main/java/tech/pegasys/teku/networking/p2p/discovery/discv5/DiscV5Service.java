@@ -210,9 +210,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
                     });
           }
         }
+        final Optional<Integer> advertisedTcpPort =
+            p2pConfig.isTcpEnabled() ? Optional.of(newTcpPort) : Optional.empty();
         return Optional.of(
-            oldRecord.withNewAddress(
-                newAddress, Optional.of(newTcpPort), newQuicPort, localNodeSigner));
+            oldRecord.withNewAddress(newAddress, advertisedTcpPort, newQuicPort, localNodeSigner));
       };
     }
   }

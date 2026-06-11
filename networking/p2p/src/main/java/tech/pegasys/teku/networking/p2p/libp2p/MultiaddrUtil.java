@@ -26,11 +26,17 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class MultiaddrUtil {
 
-  public static Multiaddr fromDiscoveryPeer(final DiscoveryPeer peer) {
+  public static Multiaddr fromDiscoveryPeer(
+      final DiscoveryPeer peer, final boolean localNodeQuicEnabled) {
     final NodeId nodeId = getNodeId(peer);
-    return peer.getQuicAddress()
-        .map(quicAddr -> fromInetSocketAddressAsQuic(quicAddr, nodeId))
-        .orElseGet(() -> fromInetSocketAddress(peer.getNodeAddress(), nodeId));
+    // Only dial a peer over QUIC if this node has the QUIC transport enabled, otherwise we have no
+    // QuicTransport to perform the dial and would fail even though the peer also advertises TCP.
+    if (localNodeQuicEnabled) {
+      return peer.getQuicAddress()
+          .map(quicAddr -> fromInetSocketAddressAsQuic(quicAddr, nodeId))
+          .orElseGet(() -> fromInetSocketAddress(peer.getNodeAddress(), nodeId));
+    }
+    return fromInetSocketAddress(peer.getNodeAddress(), nodeId);
   }
 
   public static Multiaddr fromDiscoveryPeerAsUdp(final DiscoveryPeer peer) {
