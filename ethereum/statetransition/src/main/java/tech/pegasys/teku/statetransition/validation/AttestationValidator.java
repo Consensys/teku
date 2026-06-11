@@ -82,6 +82,15 @@ public class AttestationValidator {
       return completedFuture(internalValidationResult);
     }
 
+    return validateSingleOrAggregateAttestation(validatableAttestation);
+  }
+
+  /** Runs checks shared by unaggregated and aggregate attestations, excluding envelope checks. */
+  public SafeFuture<InternalValidationResult> validateSingleOrAggregateAttestation(
+      final ValidatableAttestation validatableAttestation) {
+    if (validatableAttestation.isAcceptedAsGossip()) {
+      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+    }
     return singleOrAggregateAttestationChecks(
             signatureVerifier, validatableAttestation, validatableAttestation.getReceivedSubnetId())
         .thenApply(InternalValidationResultWithState::getResult)
