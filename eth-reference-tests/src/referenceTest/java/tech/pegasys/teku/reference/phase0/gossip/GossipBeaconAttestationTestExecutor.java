@@ -180,8 +180,7 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             createGossipValidationHelper(
                 spec, recentChainData, metricsSystem, customFinalizedCheckpoint),
             invalidBlockRoots,
-            Set.of(),
-            __ -> true);
+            Set.of());
 
     // Track seen attestations (by hash tree root) for "already seen" duplicate detection
     final Set<Bytes32> seenAttestationRoots = new HashSet<>();

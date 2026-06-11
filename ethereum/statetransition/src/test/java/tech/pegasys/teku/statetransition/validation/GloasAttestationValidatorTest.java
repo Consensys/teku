@@ -167,12 +167,7 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
 
     final AttestationValidator validator =
         new AttestationValidator(
-            spec,
-            signatureVerifier,
-            gossipValidationHelper,
-            invalidBlockRoots,
-            Set.of(),
-            __ -> false);
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots, Set.of());
 
     assertThat(validator.validate(ValidatableAttestation.fromNetwork(spec, attestation, 0)))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
@@ -193,8 +188,7 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
             signatureVerifier,
             gossipValidationHelper,
             invalidBlockRoots,
-            blockRootsWithInvalidExecutionPayload,
-            __ -> true);
+            blockRootsWithInvalidExecutionPayload);
 
     assertThat(validator.validate(ValidatableAttestation.fromNetwork(spec, attestation, 0)))
         .matches(

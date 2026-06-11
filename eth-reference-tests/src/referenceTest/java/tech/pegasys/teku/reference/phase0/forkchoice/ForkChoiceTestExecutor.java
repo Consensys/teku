@@ -432,10 +432,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             spec.atSlot(attestation.getData().getSlot()).getAttestationUtil();
         final InternalValidationResult payloadStatusValidationResult =
             gossipValidationHelper.validatePayloadStatus(
-                attestationUtil,
-                attestation.getData(),
-                blockRootsWithInvalidExecutionPayload,
-                recentChainData::containsExecutionPayload);
+                attestationUtil, attestation.getData(), blockRootsWithInvalidExecutionPayload);
         // A payload-status failure means the fixture's attestation is invalid before fork choice.
         if (!payloadStatusValidationResult.isAccept()) {
           assertThat(valid)

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -186,8 +185,7 @@ public class GossipValidationHelper {
   public InternalValidationResult validatePayloadStatus(
       final AttestationUtil attestationUtil,
       final AttestationData attestationData,
-      final Set<Bytes32> blockRootsWithInvalidExecutionPayload,
-      final Predicate<Bytes32> executionPayloadSeenForFullPayloadAttestation) {
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload) {
     final AttestationValidationResult payloadStatusValidationResult =
         attestationUtil.validatePayloadStatus(
             attestationData, getSlotForBlockRoot(attestationData.getBeaconBlockRoot()));
@@ -208,7 +206,7 @@ public class GossipValidationHelper {
       }
       // [IGNORE] When attestation.data.index == 1 (payload present for a past block), the execution
       // payload for block has been seen.
-      if (!executionPayloadSeenForFullPayloadAttestation.test(blockRoot)) {
+      if (getRecentlyImportedExecutionPayload(blockRoot).isEmpty()) {
         return InternalValidationResult.SAVE_FOR_FUTURE;
       }
     }
@@ -218,10 +216,6 @@ public class GossipValidationHelper {
 
   public boolean isBlockAvailable(final Bytes32 blockRoot) {
     return recentChainData.containsBlock(blockRoot);
-  }
-
-  public boolean containsExecutionPayload(final Bytes32 blockRoot) {
-    return recentChainData.containsExecutionPayload(blockRoot);
   }
 
   int getMaxOffsetTimeInMillis() {
@@ -294,10 +288,13 @@ public class GossipValidationHelper {
     return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());
   }
 
+  public Optional<SignedExecutionPayloadEnvelope> getRecentlyImportedExecutionPayload(
+      final Bytes32 blockRoot) {
+    return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot);
+  }
+
   public Optional<UInt64> getGasLimitForExecutionPayload(final Bytes32 blockRoot) {
-    return recentChainData
-        .getStore()
-        .getExecutionPayloadIfAvailable(blockRoot)
+    return getRecentlyImportedExecutionPayload(blockRoot)
         .map(SignedExecutionPayloadEnvelope::getMessage)
         .map(envelope -> envelope.getPayload().getGasLimit());
   }

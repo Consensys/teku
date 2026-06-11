@@ -1910,11 +1910,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             signatureVerificationService,
             gossipValidationHelper,
             invalidBlockRoots,
-            blockRootsWithInvalidExecutionPayload,
-            blockRoot ->
-                executionPayloadManager != null
-                    && executionPayloadManager.isExecutionPayloadSeenForFullPayloadAttestation(
-                        blockRoot));
+            blockRootsWithInvalidExecutionPayload);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
