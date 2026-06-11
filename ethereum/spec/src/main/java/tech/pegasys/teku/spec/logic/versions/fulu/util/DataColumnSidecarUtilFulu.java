@@ -354,6 +354,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     }
   }
 
+  @Override
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
+      final DataColumnSidecar dataColumnSidecar,
+      final Function<Bytes32, SafeFuture<Optional<SszList<SszKZGCommitment>>>>
+          retrieveBlobKzgCommitments) {
+    return validateAndVerifyKzgProofsWithBlock(
+        dataColumnSidecar, blockRoot -> SafeFuture.completedFuture(Optional.empty()));
+  }
+
   /**
    * Perform state-dependent validation for Fulu data column sidecars. Validates proposer
    * correctness and header signature by retrieving the parent block's post state. Implements the

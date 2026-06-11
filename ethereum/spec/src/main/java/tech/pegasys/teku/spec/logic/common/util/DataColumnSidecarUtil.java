@@ -77,6 +77,11 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
+  SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
+      DataColumnSidecar dataColumnSidecar,
+      Function<Bytes32, SafeFuture<Optional<SszList<SszKZGCommitment>>>>
+          retrieveBlobKzgCommitments);
+
   SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       DataColumnSidecar dataColumnSidecar,
       Spec spec,
