@@ -316,7 +316,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else if (step.containsKey("attestation")) {
         applyAttestation(
             testDefinition,
-            recentChainData,
             forkChoice,
             step,
             maybeAttestationValidator,
@@ -393,7 +392,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   private void applyAttestation(
       final TestDefinition testDefinition,
-      final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
       final Optional<AttestationValidator> maybeAttestationValidator,
