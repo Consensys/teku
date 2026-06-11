@@ -126,7 +126,10 @@ public class ProposerPreferencesGossipValidatorTest {
 
   @TestTemplate
   void shouldReject_whenDependentRootBlockIsNotBeforeCheckpointBoundary() {
-    final UInt64 checkpointBoundarySlot = getCheckpointBoundarySlot();
+    final UInt64 checkpointBoundarySlot =
+        spec.computeStartSlotAtEpoch(
+            spec.computeEpochAtSlot(proposalSlot)
+                .minusMinZero(spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead()));
     when(recentChainData.getSlotForBlockRoot(dependentRoot))
         .thenReturn(Optional.of(checkpointBoundarySlot));
 
@@ -259,11 +262,5 @@ public class ProposerPreferencesGossipValidatorTest {
 
     return signedProposerPreferencesSchema.create(
         proposerPreferences, dataStructureUtil.randomSignature());
-  }
-
-  private UInt64 getCheckpointBoundarySlot() {
-    return spec.computeStartSlotAtEpoch(
-        spec.computeEpochAtSlot(proposalSlot)
-            .minusMinZero(spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead()));
   }
 }
