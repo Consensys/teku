@@ -24,7 +24,7 @@ public class SignedRequestAuthSchema
 
   public SignedRequestAuthSchema(final RequestAuthSchema requestAuthSchema) {
     super(
-        "SignedRequestAuth",
+        "SignedRequestAuthV1",
         namedSchema("message", requestAuthSchema),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }

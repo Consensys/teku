@@ -23,7 +23,7 @@ public class BuilderPreferencesRequestSchema
       final BuilderPreferencesSchema builderPreferencesSchema,
       final SignedRequestAuthSchema signedRequestAuthSchema) {
     super(
-        "BuilderPreferencesRequest",
+        "BuilderPreferencesRequestV1",
         namedSchema("preferences", builderPreferencesSchema),
         namedSchema("auth", signedRequestAuthSchema));
   }

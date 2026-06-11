@@ -26,7 +26,7 @@ public class RequestAuthSchema extends ContainerSchema2<RequestAuth, SszByteList
 
   public RequestAuthSchema(final long maxDataSize) {
     super(
-        "RequestAuth",
+        "RequestAuthV1",
         namedSchema("data", SszByteListSchema.create(maxDataSize)),
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
