@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistrationsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequestSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuthSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuthSchema;
 
 public class ApiSchemas {
 
@@ -30,4 +35,17 @@ public class ApiSchemas {
   public static final SignedValidatorRegistrationsSchema SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA =
       new SignedValidatorRegistrationsSchema(
           SIGNED_VALIDATOR_REGISTRATION_SCHEMA, MAX_VALIDATOR_REGISTRATIONS_SIZE);
+
+  // https://github.com/ethereum/builder-specs/blob/main/specs/gloas/validator.md#new-containers
+  public static final RequestAuthSchema REQUEST_AUTH_SCHEMA =
+      new RequestAuthSchema(SpecConfigGloas.MAX_DATA_SIZE);
+
+  public static final SignedRequestAuthSchema SIGNED_REQUEST_AUTH_SCHEMA =
+      new SignedRequestAuthSchema(REQUEST_AUTH_SCHEMA);
+
+  public static final BuilderPreferencesSchema BUILDER_PREFERENCES_SCHEMA =
+      new BuilderPreferencesSchema();
+
+  public static final BuilderPreferencesRequestSchema BUILDER_PREFERENCES_REQUEST_SCHEMA =
+      new BuilderPreferencesRequestSchema(BUILDER_PREFERENCES_SCHEMA, SIGNED_REQUEST_AUTH_SCHEMA);
 }
