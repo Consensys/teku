@@ -121,6 +121,12 @@ public class ProposerPreferencesGossipValidator {
     final int minSeedLookahead = spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead();
     final UInt64 checkpointEpoch =
         spec.computeEpochAtSlot(proposalSlot).minusMinZero(minSeedLookahead);
+
+    /*
+     * Pre-flight the checkpoint-state precondition for the [REJECT] is_valid_proposal_slot rule below.
+     * A dependent root at or after the checkpoint boundary cannot be the root of the checkpoint state
+     * required by that rule.
+     */
     final UInt64 checkpointBoundarySlot = spec.computeStartSlotAtEpoch(checkpointEpoch);
     final Optional<UInt64> maybeDependentRootSlot =
         recentChainData.getSlotForBlockRoot(dependentRoot);
