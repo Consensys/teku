@@ -128,14 +128,16 @@ class BlobKzgCommitmentsProviderTest {
   }
 
   @Test
-  void ignoresValidatedBlockEvent() {
+  void storesGossipValidatedBlockBeforeImport() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    final SszList<SszKZGCommitment> commitments =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
     provider.onBlockValidated(block);
 
-    assertThat(provider.getBlobKzgCommitments(block.getRoot()).join()).isEmpty();
-    verify(combinedChainDataClient).getBlockByBlockRoot(block.getRoot());
+    assertThat(provider.getBlobKzgCommitments(block.getRoot()).join()).contains(commitments);
+    verify(combinedChainDataClient, never()).getBlockByBlockRoot(block.getRoot());
   }
 
   @Test

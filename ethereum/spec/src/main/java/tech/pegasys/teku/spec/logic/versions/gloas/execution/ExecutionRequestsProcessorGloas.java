@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +41,13 @@ import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorFulu {
+
+  // New builder deposit signatures are checked with BLS batch verification, which only returns a
+  // single pass/fail for the whole batch. A failure does not reveal which signature is invalid, so
+  // a single bad signature forces a fallback to verify every signature in the batch one by one.
+  // Capping the batch at this size bounds that cost: a bad signature only triggers individual
+  // re-verification within its own sub-batch rather than across all new builder deposits.
+  private static final int NEW_BUILDER_DEPOSIT_SIGNATURE_VERIFICATION_BATCH_SIZE = 256;
 
   private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
@@ -117,12 +125,16 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
       }
     }
 
-    final boolean newBuilderDepositSignaturesAreAllGood =
-        batchVerifyNewBuilderDepositSignatures(newBuilderDeposits);
-
-    for (final DepositRequest newBuilderDeposit : newBuilderDeposits) {
-      applyDepositForBuilder(state, newBuilderDeposit, newBuilderDepositSignaturesAreAllGood);
-    }
+    Lists.partition(newBuilderDeposits, NEW_BUILDER_DEPOSIT_SIGNATURE_VERIFICATION_BATCH_SIZE)
+        .forEach(
+            newBuilderDepositsBatch -> {
+              final boolean newBuilderDepositSignaturesAreAllGood =
+                  batchVerifyNewBuilderDepositSignatures(newBuilderDepositsBatch);
+              for (final DepositRequest newBuilderDeposit : newBuilderDepositsBatch) {
+                applyDepositForBuilder(
+                    state, newBuilderDeposit, newBuilderDepositSignaturesAreAllGood);
+              }
+            });
   }
 
   // Apply builder deposits immediately

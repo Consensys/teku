@@ -77,11 +77,14 @@ public class BlobKzgCommitmentsProvider
 
   @Override
   public void onBlockValidated(final SignedBeaconBlock block) {
-    // Gossip validation does not guarantee that the block will become useful for DAS requests.
+    // Cache gossip blocks before import so sidecar validation can use them while import is in
+    // flight.
+    onNewBlock(block);
   }
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    // Imported blocks may arrive from RPC or API outside DAS pre-sampling.
     onNewBlock(block);
     commitmentsByRoot.remove(block.getParentRoot());
   }
