@@ -37,14 +37,17 @@ public class DasPreSampler {
   private final DataAvailabilitySampler sampler;
   private final DataColumnSidecarCustody custody;
   private final CustodyGroupCountManager custodyGroupCountManager;
+  private final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
 
   public DasPreSampler(
       final DataAvailabilitySampler sampler,
       final DataColumnSidecarCustody custody,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
     this.sampler = sampler;
     this.custody = custody;
     this.custodyGroupCountManager = custodyGroupCountManager;
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
   }
 
   private boolean isSamplingRequired(final SignedBeaconBlock block) {
@@ -56,6 +59,8 @@ public class DasPreSampler {
   }
 
   public void onNewPreImportBlocks(final Collection<SignedBeaconBlock> blocks) {
+    blocks.stream().filter(block -> block != null).forEach(blobKzgCommitmentsProvider::onNewBlock);
+
     final List<SignedBeaconBlock> blocksToSample =
         blocks.stream().filter(this::isSamplingRequired).toList();
 
