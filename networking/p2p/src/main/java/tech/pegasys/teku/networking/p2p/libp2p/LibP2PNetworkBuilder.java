@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_OPEN_STREAMS_RATE_LIMIT;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -36,9 +37,8 @@ import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.io.IPVersionResolver;
@@ -109,69 +109,15 @@ public class LibP2PNetworkBuilder {
     final PrivKey privKey = privateKeyProvider.get();
     final NodeId nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
-    final List<Multiaddr> advertisedAddresses;
-    final List<String> advertisedIps = config.getAdvertisedIps();
     Preconditions.checkState(
-        advertisedIps.size() == 1 || advertisedIps.size() == 2,
-        "The configured advertised IPs must be either 1 or 2");
-    if (advertisedIps.size() == 1) {
-      final Multiaddr advertisedAddr =
-          MultiaddrUtil.fromInetSocketAddress(
-              new InetSocketAddress(advertisedIps.get(0), config.getAdvertisedPort()), nodeId);
-      if (config.isQuicEnabled()) {
-        final Multiaddr advertisedQuicAddr =
-            MultiaddrUtil.fromInetSocketAddressAsQuic(
-                new InetSocketAddress(advertisedIps.get(0), config.getAdvertisedQuicPort()),
-                nodeId);
-        advertisedAddresses = List.of(advertisedAddr, advertisedQuicAddr);
-      } else {
-        advertisedAddresses = Collections.singletonList(advertisedAddr);
-      }
-    } else {
-      // IPv4 and IPv6 (dual-stack)
-      advertisedAddresses =
-          advertisedIps.stream()
-              .flatMap(
-                  advertisedIp -> {
-                    final int advertisedPort =
-                        switch (IPVersionResolver.resolve(advertisedIp)) {
-                          case IP_V4 -> config.getAdvertisedPort();
-                          case IP_V6 -> config.getAdvertisedPortIpv6();
-                        };
-                    final Multiaddr advertisedAddr =
-                        MultiaddrUtil.fromInetSocketAddress(
-                            new InetSocketAddress(advertisedIp, advertisedPort), nodeId);
-                    if (config.isQuicEnabled()) {
-                      final int advertisedQuicPort =
-                          switch (IPVersionResolver.resolve(advertisedIp)) {
-                            case IP_V4 -> config.getAdvertisedQuicPort();
-                            case IP_V6 -> config.getAdvertisedQuicPortIpv6();
-                          };
-                      final Multiaddr advertisedQuicAddr =
-                          MultiaddrUtil.fromInetSocketAddressAsQuic(
-                              new InetSocketAddress(advertisedIp, advertisedQuicPort), nodeId);
-                      return Stream.of(advertisedAddr, advertisedQuicAddr);
-                    } else {
-                      return Stream.of(advertisedAddr);
-                    }
-                  })
-              .toList();
-    }
+        config.isTcpEnabled() || config.isQuicEnabled(),
+        "At least one of the TCP or QUIC transports must be enabled");
+
+    final List<Multiaddr> advertisedAddresses = buildAdvertisedAddresses(config, nodeId);
 
     host = createHost(privKey, advertisedAddresses);
 
-    final List<Integer> listenPorts =
-        advertisedAddresses.size() == 2
-            ? config.isQuicEnabled()
-                ? List.of(
-                    config.getListenPort(),
-                    config.getListenPortIpv6(),
-                    config.getListenQuicPort(),
-                    config.getListenQuicPortIpv6())
-                : List.of(config.getListenPort(), config.getListenPortIpv6())
-            : config.isQuicEnabled()
-                ? List.of(config.getListenPort(), config.getListenQuicPort())
-                : List.of(config.getListenPort());
+    final List<Integer> listenPorts = buildListenPorts(config);
 
     return new LibP2PNetwork(
         host.getPrivKey(),
@@ -181,6 +127,143 @@ public class LibP2PNetworkBuilder {
         advertisedAddresses,
         gossipNetwork,
         listenPorts);
+  }
+
+  /**
+   * Builds the multiaddrs advertised to peers (e.g. via the discovery ENR). Only enabled transports
+   * are advertised, so peers are never told to dial a transport the node is not serving.
+   */
+  @VisibleForTesting
+  static List<Multiaddr> buildAdvertisedAddresses(final NetworkConfig config, final NodeId nodeId) {
+    final List<String> advertisedIps = config.getAdvertisedIps();
+    Preconditions.checkState(
+        advertisedIps.size() == 1 || advertisedIps.size() == 2,
+        "The configured advertised IPs must be either 1 or 2");
+    final boolean singleStack = advertisedIps.size() == 1;
+    return advertisedIps.stream()
+        .flatMap(
+            advertisedIp -> {
+              final List<Multiaddr> addresses = new ArrayList<>();
+              if (config.isTcpEnabled()) {
+                addresses.add(
+                    MultiaddrUtil.fromInetSocketAddress(
+                        new InetSocketAddress(
+                            advertisedIp, advertisedTcpPort(config, advertisedIp, singleStack)),
+                        nodeId));
+              }
+              if (config.isQuicEnabled()) {
+                addresses.add(
+                    MultiaddrUtil.fromInetSocketAddressAsQuic(
+                        new InetSocketAddress(
+                            advertisedIp, advertisedQuicPort(config, advertisedIp, singleStack)),
+                        nodeId));
+              }
+              return addresses.stream();
+            })
+        .toList();
+  }
+
+  /** Builds the listen multiaddrs for the host, including only enabled transports. */
+  @VisibleForTesting
+  static String[] buildListenAddresses(final NetworkConfig config) {
+    final List<String> networkInterfaces = config.getNetworkInterfaces();
+    Preconditions.checkState(
+        networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
+        "The configured network interfaces must be either 1 or 2");
+    final boolean singleStack = networkInterfaces.size() == 1;
+    return networkInterfaces.stream()
+        .flatMap(
+            networkInterface -> {
+              final List<String> addresses = new ArrayList<>();
+              if (config.isTcpEnabled()) {
+                addresses.add(
+                    MultiaddrUtil.fromInetSocketAddress(
+                            new InetSocketAddress(
+                                networkInterface,
+                                listenTcpPort(config, networkInterface, singleStack)))
+                        .toString());
+              }
+              if (config.isQuicEnabled()) {
+                addresses.add(
+                    MultiaddrUtil.fromInetSocketAddressAsQuic(
+                            new InetSocketAddress(
+                                networkInterface,
+                                listenQuicPort(config, networkInterface, singleStack)))
+                        .toString());
+              }
+              return addresses.stream();
+            })
+        .toArray(String[]::new);
+  }
+
+  /**
+   * Builds the list of ports the node listens on, including only enabled transports. Used for
+   * diagnostics (e.g. reporting which ports failed to bind).
+   */
+  @VisibleForTesting
+  static List<Integer> buildListenPorts(final NetworkConfig config) {
+    final List<String> networkInterfaces = config.getNetworkInterfaces();
+    Preconditions.checkState(
+        networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
+        "The configured network interfaces must be either 1 or 2");
+    final boolean singleStack = networkInterfaces.size() == 1;
+    return networkInterfaces.stream()
+        .flatMap(
+            networkInterface -> {
+              final List<Integer> ports = new ArrayList<>();
+              if (config.isTcpEnabled()) {
+                ports.add(listenTcpPort(config, networkInterface, singleStack));
+              }
+              if (config.isQuicEnabled()) {
+                ports.add(listenQuicPort(config, networkInterface, singleStack));
+              }
+              return ports.stream();
+            })
+        .toList();
+  }
+
+  private static int advertisedTcpPort(
+      final NetworkConfig config, final String advertisedIp, final boolean singleStack) {
+    if (singleStack) {
+      return config.getAdvertisedPort();
+    }
+    return switch (IPVersionResolver.resolve(advertisedIp)) {
+      case IP_V4 -> config.getAdvertisedPort();
+      case IP_V6 -> config.getAdvertisedPortIpv6();
+    };
+  }
+
+  private static int advertisedQuicPort(
+      final NetworkConfig config, final String advertisedIp, final boolean singleStack) {
+    if (singleStack) {
+      return config.getAdvertisedQuicPort();
+    }
+    return switch (IPVersionResolver.resolve(advertisedIp)) {
+      case IP_V4 -> config.getAdvertisedQuicPort();
+      case IP_V6 -> config.getAdvertisedQuicPortIpv6();
+    };
+  }
+
+  private static int listenTcpPort(
+      final NetworkConfig config, final String networkInterface, final boolean singleStack) {
+    if (singleStack) {
+      return config.getListenPort();
+    }
+    return switch (IPVersionResolver.resolve(networkInterface)) {
+      case IP_V4 -> config.getListenPort();
+      case IP_V6 -> config.getListenPortIpv6();
+    };
+  }
+
+  private static int listenQuicPort(
+      final NetworkConfig config, final String networkInterface, final boolean singleStack) {
+    if (singleStack) {
+      return config.getListenQuicPort();
+    }
+    return switch (IPVersionResolver.resolve(networkInterface)) {
+      case IP_V4 -> config.getListenQuicPort();
+      case IP_V6 -> config.getListenQuicPortIpv6();
+    };
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
@@ -211,53 +294,7 @@ public class LibP2PNetworkBuilder {
 
   @SuppressWarnings("AddressSelection")
   protected Host createHost(final PrivKey privKey, final List<Multiaddr> advertisedAddresses) {
-    final String[] listenAddrs;
-    final List<String> networkInterfaces = config.getNetworkInterfaces();
-    Preconditions.checkState(
-        networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
-        "The configured network interfaces must be either 1 or 2");
-    if (networkInterfaces.size() == 1) {
-      final Multiaddr addr =
-          MultiaddrUtil.fromInetSocketAddress(
-              new InetSocketAddress(networkInterfaces.get(0), config.getListenPort()));
-      if (config.isQuicEnabled()) {
-        final Multiaddr quicAddr =
-            MultiaddrUtil.fromInetSocketAddressAsQuic(
-                new InetSocketAddress(networkInterfaces.get(0), config.getListenQuicPort()));
-        listenAddrs = new String[] {addr.toString(), quicAddr.toString()};
-      } else {
-        listenAddrs = new String[] {addr.toString()};
-      }
-    } else {
-      // IPv4 and IPv6 (dual-stack)
-      listenAddrs =
-          networkInterfaces.stream()
-              .flatMap(
-                  networkInterface -> {
-                    final int listenPort =
-                        switch (IPVersionResolver.resolve(networkInterface)) {
-                          case IP_V4 -> config.getListenPort();
-                          case IP_V6 -> config.getListenPortIpv6();
-                        };
-                    final Multiaddr addr =
-                        MultiaddrUtil.fromInetSocketAddress(
-                            new InetSocketAddress(networkInterface, listenPort));
-                    if (config.isQuicEnabled()) {
-                      final int listenQuicPort =
-                          switch (IPVersionResolver.resolve(networkInterface)) {
-                            case IP_V4 -> config.getListenQuicPort();
-                            case IP_V6 -> config.getListenQuicPortIpv6();
-                          };
-                      final Multiaddr quicAddr =
-                          MultiaddrUtil.fromInetSocketAddressAsQuic(
-                              new InetSocketAddress(networkInterface, listenQuicPort));
-                      return Stream.of(addr.toString(), quicAddr.toString());
-                    } else {
-                      return Stream.of(addr.toString());
-                    }
-                  })
-              .toArray(String[]::new);
-    }
+    final String[] listenAddrs = buildListenAddresses(config);
 
     return BuilderJKt.hostJ(
         hostBuilderDefaults,
