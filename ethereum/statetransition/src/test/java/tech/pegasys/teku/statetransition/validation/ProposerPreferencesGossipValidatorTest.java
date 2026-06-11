@@ -125,6 +125,45 @@ public class ProposerPreferencesGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldReject_whenDependentRootBlockIsNotBeforeCheckpointBoundary() {
+    final UInt64 checkpointBoundarySlot = getCheckpointBoundarySlot();
+    when(recentChainData.getSlotForBlockRoot(dependentRoot))
+        .thenReturn(Optional.of(checkpointBoundarySlot));
+
+    assertThatSafeFuture(validator.validate(signedProposerPreferences))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .filter(
+                            description ->
+                                description.contains("but must be before checkpoint boundary slot"))
+                        .isPresent());
+    verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
+  }
+
+  @TestTemplate
+  void shouldReject_whenCheckpointStateRetrievalFails() {
+    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("checkpoint state failed")));
+
+    assertThatSafeFuture(validator.validate(signedProposerPreferences))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .filter(
+                            description ->
+                                description.contains(
+                                    "Unable to generate proposer preferences checkpoint state"))
+                        .isPresent());
+    verify(gossipValidationHelper, never())
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+  }
+
+  @TestTemplate
   void shouldIgnore_whenAlreadySeen() {
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValue(ACCEPT);
@@ -220,5 +259,11 @@ public class ProposerPreferencesGossipValidatorTest {
 
     return signedProposerPreferencesSchema.create(
         proposerPreferences, dataStructureUtil.randomSignature());
+  }
+
+  private UInt64 getCheckpointBoundarySlot() {
+    return spec.computeStartSlotAtEpoch(
+        spec.computeEpochAtSlot(proposalSlot)
+            .minusMinZero(spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead()));
   }
 }
