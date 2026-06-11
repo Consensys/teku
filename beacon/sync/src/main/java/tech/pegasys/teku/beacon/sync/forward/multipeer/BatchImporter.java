@@ -174,7 +174,7 @@ public class BatchImporter {
                   block.getSlot(),
                   block.getRoot());
               return executionPayloadManager
-                  .importExecutionPayload(executionPayload.get())
+                  .importExecutionPayload(executionPayload.get(), false)
                   .thenApply(
                       executionPayloadImportResult ->
                           new SingleImportResult(

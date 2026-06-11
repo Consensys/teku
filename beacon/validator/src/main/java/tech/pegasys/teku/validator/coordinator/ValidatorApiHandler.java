@@ -670,8 +670,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               }
               final SignedBeaconBlock block = maybeBlock.get();
               final boolean payloadPresent =
-                  executionPayloadManager.isExecutionPayloadAvailableForPayloadAttestation(
-                      block.getRoot());
+                  executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot());
               // if execution payload is in the store, blob data is available
               final boolean blobDataAvailable =
                   combinedChainDataClient

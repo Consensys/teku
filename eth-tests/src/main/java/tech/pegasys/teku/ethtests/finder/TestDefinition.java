@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.ethtests.finder;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.TestFork;
@@ -21,6 +26,7 @@ import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.YamlConfigReader;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifierImpl;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -32,6 +38,7 @@ public class TestDefinition {
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
+
   private Spec spec;
 
   public TestDefinition(
@@ -98,7 +105,8 @@ public class TestDefinition {
             builder ->
                 builder
                     .blsSignatureVerifier(blsSignatureVerifier)
-                    .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier));
+                    .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier),
+            readConfigOverrides());
   }
 
   public String getTestType() {
@@ -126,5 +134,19 @@ public class TestDefinition {
     return ReferenceTestFinder.findReferenceTestRootDirectory()
         .resolve(Path.of(configName, fork))
         .resolve(pathFromPhaseTestDir);
+  }
+
+  /// some reference tests ship a partial `config.yaml` overriding a handful of constants on top of
+  /// the builtin config
+  private Map<String, Object> readConfigOverrides() {
+    final Path configOverridesYaml = getTestDirectory().resolve("config.yaml");
+    if (!Files.exists(configOverridesYaml)) {
+      return Map.of();
+    }
+    try (final InputStream in = Files.newInputStream(configOverridesYaml)) {
+      return new YamlConfigReader().readValues(in);
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }

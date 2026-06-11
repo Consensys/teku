@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.xerial.snappy.Snappy;
 import org.yaml.snakeyaml.LoaderOptions;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -149,12 +150,28 @@ public class TestDataUtils {
    */
   public static AnchorPoint createAnchorFromStateAndMatchingBlock(
       final Spec spec, final BeaconState state, final Collection<SignedBeaconBlock> blocks) {
+    final Optional<AnchorPoint> anchorFromMatchingStateRoot =
+        blocks.stream()
+            .filter(block -> block.getStateRoot().equals(state.hashTreeRoot()))
+            .findFirst()
+            .map(
+                block ->
+                    AnchorPoint.fromInitialBlockAndState(
+                        spec, new SignedBlockAndState(block, state)));
+    if (anchorFromMatchingStateRoot.isPresent()) {
+      return anchorFromMatchingStateRoot.get();
+    }
+
+    final Bytes32 stateBlockRoot = BeaconBlockHeader.fromState(state).hashTreeRoot();
     return blocks.stream()
-        .filter(block -> block.getStateRoot().equals(state.hashTreeRoot()))
+        .filter(block -> block.getRoot().equals(stateBlockRoot))
         .findFirst()
         .map(
-            block ->
-                AnchorPoint.fromInitialBlockAndState(spec, new SignedBlockAndState(block, state)))
+            block -> {
+              final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
+              final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
+              return AnchorPoint.create(spec, checkpoint, state, Optional.of(block));
+            })
         .orElseGet(() -> createAnchorFromState(spec, state));
   }
 }

@@ -290,9 +290,9 @@ class BatchImporterTest {
 
     when(blockImporter.importBlock(block1)).thenReturn(blockImportResult1);
     when(blockImporter.importBlock(block2)).thenReturn(blockImportResult2);
-    when(executionPayloadManager.importExecutionPayload(executionPayload1))
+    when(executionPayloadManager.importExecutionPayload(executionPayload1, false))
         .thenReturn(executionPayloadImportResult1);
-    when(executionPayloadManager.importExecutionPayload(executionPayload2))
+    when(executionPayloadManager.importExecutionPayload(executionPayload2, false))
         .thenReturn(executionPayloadImportResult2);
 
     final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
@@ -338,7 +338,7 @@ class BatchImporterTest {
   private void executionPayloadImportedSuccessfully(
       final SignedExecutionPayloadEnvelope executionPayload,
       final SafeFuture<ExecutionPayloadImportResult> importResult) {
-    ignoreFuture(verify(executionPayloadManager).importExecutionPayload(executionPayload));
+    ignoreFuture(verify(executionPayloadManager).importExecutionPayload(executionPayload, false));
     verifyNoMoreInteractions(executionPayloadManager);
     importResult.complete(ExecutionPayloadImportResult.successful(executionPayload));
   }

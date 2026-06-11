@@ -661,6 +661,12 @@ public abstract class RecentChainData
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
 
+  public boolean containsExecutionPayload(final Bytes32 blockRoot) {
+    return Optional.ofNullable(store)
+        .map(s -> s.getExecutionPayloadIfAvailable(blockRoot).isPresent())
+        .orElse(false);
+  }
+
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 root) {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
   }
