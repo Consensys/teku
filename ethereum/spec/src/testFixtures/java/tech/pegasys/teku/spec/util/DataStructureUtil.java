@@ -20,6 +20,10 @@ import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRA
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_PREFERENCES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.REQUEST_AUTH_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_REQUEST_AUTH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
@@ -136,6 +140,10 @@ import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBun
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferences;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
@@ -2045,6 +2053,24 @@ public final class DataStructureUtil {
   public SszList<SignedValidatorRegistration> randomSignedValidatorRegistrations(final int size) {
     return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
         IntStream.range(0, size).mapToObj(__ -> randomSignedValidatorRegistration()).toList());
+  }
+
+  public RequestAuth randomRequestAuth() {
+    return REQUEST_AUTH_SCHEMA.create(
+        randomBytes(randomPositiveInt((int) SpecConfigGloas.MAX_DATA_SIZE)), randomSlot());
+  }
+
+  public SignedRequestAuth randomSignedRequestAuth() {
+    return SIGNED_REQUEST_AUTH_SCHEMA.create(randomRequestAuth(), randomSignature());
+  }
+
+  public BuilderPreferences randomBuilderPreferences() {
+    return BUILDER_PREFERENCES_SCHEMA.create(randomUInt64());
+  }
+
+  public BuilderPreferencesRequest randomBuilderPreferencesRequest() {
+    return BUILDER_PREFERENCES_REQUEST_SCHEMA.create(
+        randomBuilderPreferences(), randomSignedRequestAuth());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {
