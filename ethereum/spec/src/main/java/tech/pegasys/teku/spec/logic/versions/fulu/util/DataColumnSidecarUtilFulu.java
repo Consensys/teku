@@ -354,6 +354,12 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     }
   }
 
+  /**
+   * Fulu sidecars include the commitments and proofs required for KZG verification, so the external
+   * block-root commitments source is intentionally unused. This mirrors {@link
+   * #validateAndVerifyKzgProofsWithBlock(DataColumnSidecar, Function)}, where block retrieval is
+   * also unnecessary for Fulu KZG validation.
+   */
   @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
       final DataColumnSidecar dataColumnSidecar,

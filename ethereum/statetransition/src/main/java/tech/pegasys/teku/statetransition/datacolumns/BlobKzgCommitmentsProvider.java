@@ -30,6 +30,17 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
+/**
+ * Root-keyed source of blob KZG commitments for data column sidecar validation.
+ *
+ * <p>A beacon block root commits to the block body, and the body contains the {@code
+ * blob_kzg_commitments}; consequently a root to commitments entry is immutable and can be populated
+ * before full block import without conflict risk.
+ *
+ * <p>The cache is fed from DAS pre-sampling for forward sync batches, gossip block validation
+ * before import, RPC-fetched recent blocks before import, and successful block import for
+ * non-gossip/non-pre-sampled paths. Store lookup is retained as a fallback for cache misses.
+ */
 public class BlobKzgCommitmentsProvider
     implements ReceivedBlockEventsChannel, FinalizedCheckpointChannel {
 

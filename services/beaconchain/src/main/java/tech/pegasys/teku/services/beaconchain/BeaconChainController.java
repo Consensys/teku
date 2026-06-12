@@ -501,11 +501,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
-        block ->
-            blockManager
-                .importBlock(block, RemoteOrigin.RPC)
-                .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
-                .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
+        block -> {
+          // Make RPC-fetched block commitments visible before import can trigger sidecar
+          // validation.
+          blobKzgCommitmentsProvider.onNewBlock(block);
+          blockManager
+              .importBlock(block, RemoteOrigin.RPC)
+              .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
+              .finish(err -> LOG.error("Failed to process recently fetched block.", err));
+        });
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();

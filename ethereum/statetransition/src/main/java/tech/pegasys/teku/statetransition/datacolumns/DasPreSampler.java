@@ -18,6 +18,7 @@ import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySamp
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -51,25 +52,26 @@ public class DasPreSampler {
   }
 
   private boolean isSamplingRequired(final SignedBeaconBlock block) {
-    if (block == null) {
-      LOG.debug("SignedBeaconBlock was unexpectedly null");
-      return false;
-    }
     return sampler.checkSamplingEligibility(block.getMessage()) == REQUIRED;
   }
 
   public void onNewPreImportBlocks(final Collection<SignedBeaconBlock> blocks) {
-    blocks.stream().filter(block -> block != null).forEach(blobKzgCommitmentsProvider::onNewBlock);
+    final List<SignedBeaconBlock> nonNullBlocks = blocks.stream().filter(Objects::nonNull).toList();
+
+    // feed commitments provider first, including 0 blobs so that we can still check unexpected data
+    // columns for a 0 commitments block
+    nonNullBlocks.forEach(blobKzgCommitmentsProvider::onNewBlock);
 
     final List<SignedBeaconBlock> blocksToSample =
-        blocks.stream().filter(this::isSamplingRequired).toList();
+        nonNullBlocks.stream().filter(this::isSamplingRequired).toList();
 
     LOG.debug(
         "DasPreSampler: requesting pre-sample for {} (of {} received) blocks: {}",
-        blocksToSample.size(),
-        blocks.size(),
-        StringifyUtil.toIntRangeStringWithSize(
-            blocksToSample.stream().map(block -> block.getSlot().intValue()).toList()));
+        blocksToSample::size,
+        nonNullBlocks::size,
+        () ->
+            StringifyUtil.toIntRangeStringWithSize(
+                blocksToSample.stream().map(block -> block.getSlot().intValue()).toList()));
 
     blocksToSample.forEach(this::onNewPreImportBlock);
     sampler.flush();
