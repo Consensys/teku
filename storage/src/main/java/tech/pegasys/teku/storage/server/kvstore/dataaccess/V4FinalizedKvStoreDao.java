@@ -66,6 +66,10 @@ public class V4FinalizedKvStoreDao {
     db.close();
   }
 
+  public void compact() {
+    db.compact();
+  }
+
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
 
     return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
@@ -250,25 +254,12 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  public Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(final UInt64 slot) {
-    return db.getFloorEntry(
-            schema.getColumnSidecarByColumnSlotAndIdentifier(),
-            new DataColumnSlotAndIdentifier(slot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE))
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
-  public Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(
-      final UInt64 slot) {
-    return db.getFloorEntry(
-            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
-            new DataColumnSlotAndIdentifier(slot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE))
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
     return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
+  }
+
+  public Optional<UInt64> getLastDataColumnSidecarPrunedSlot() {
+    return db.get(schema.getVariableLastDataColumnSidecarPrunedSlot());
   }
 
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
@@ -528,6 +519,11 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+    }
+
+    @Override
+    public void setLastDataColumnSidecarPrunedSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableLastDataColumnSidecarPrunedSlot(), slot);
     }
 
     @Override

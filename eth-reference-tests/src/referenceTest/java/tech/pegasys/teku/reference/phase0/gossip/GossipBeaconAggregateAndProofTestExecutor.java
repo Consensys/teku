@@ -174,8 +174,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             createGossipValidationHelper(
                 spec, recentChainData, metricsSystem, customFinalizedCheckpoint),
             invalidBlockRoots,
-            Set.of(),
-            __ -> true);
+            Set.of());
     final AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(
             spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(blsVerifier));

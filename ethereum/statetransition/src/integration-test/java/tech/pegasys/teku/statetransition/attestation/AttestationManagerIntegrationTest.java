@@ -113,8 +113,7 @@ class AttestationManagerIntegrationTest {
           signatureVerificationService,
           gossipValidationHelper,
           new ConcurrentHashMap<>(),
-          Set.of(),
-          __ -> true);
+          Set.of());
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =
