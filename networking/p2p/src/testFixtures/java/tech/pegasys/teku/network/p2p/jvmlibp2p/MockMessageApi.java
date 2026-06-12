@@ -14,6 +14,7 @@
 package tech.pegasys.teku.network.p2p.jvmlibp2p;
 
 import com.google.protobuf.ByteString;
+import io.libp2p.core.PeerId;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.pubsub.PubsubMessage;
@@ -33,7 +34,7 @@ import tech.pegasys.teku.networking.p2p.libp2p.gossip.PreparedPubsubMessage;
 public class MockMessageApi implements MessageApi {
 
   private final ByteBuf data;
-  private final byte[] from = new byte[] {0x1, 0x2};
+  private final byte[] from = PeerId.random().getBytes();
   private final List<Topic> topics;
 
   public MockMessageApi(final ByteBuf data, final Topic topic) {
