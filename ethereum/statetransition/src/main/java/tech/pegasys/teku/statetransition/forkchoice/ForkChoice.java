@@ -1048,7 +1048,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
             // Gloas, EMPTY and FULL nodes can share a block root, so keep node identity instead of
             // collapsing to block root.
-            getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, false);
+            getForkChoiceStrategy()
+                .onForkChoiceUpdatedResult(
+                    new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
+                    resultStatus,
+                    false);
           } else {
             // invalidTransitionBlockRoot is only populated when merge-transition validation found a
             // specific Bellatrix transition block to invalidate. Otherwise the EL verdict applies
@@ -1057,7 +1061,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 invalidTransitionBlockRoot ->
                     getForkChoiceStrategy()
                         .onExecutionPayloadResult(invalidTransitionBlockRoot, resultStatus, true),
-                () -> getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, true));
+                () ->
+                    getForkChoiceStrategy()
+                        .onForkChoiceUpdatedResult(
+                            new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
+                            resultStatus,
+                            true));
           }
 
           if (resultStatus.hasInvalidStatus()) {

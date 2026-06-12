@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -1137,7 +1138,9 @@ class ForkChoiceTest {
             SafeFuture.completedFuture(
                 new ForkChoiceUpdatedResult(PayloadStatus.VALID, Optional.empty()))));
 
-    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, PayloadStatus.VALID, false);
+    verify(forkChoiceStrategy)
+        .onForkChoiceUpdatedResult(
+            new SlotAndForkChoiceNode(ONE, emptyNode), PayloadStatus.VALID, false);
     verify(transitionBlockValidator).verifyAncestorTransitionBlock(blockRoot);
     verify(forkChoiceStrategy, never())
         .onExecutionPayloadResult(eq(blockRoot), eq(PayloadStatus.VALID), anyBoolean());
@@ -1179,7 +1182,9 @@ class ForkChoiceTest {
             SafeFuture.completedFuture(
                 new ForkChoiceUpdatedResult(invalidPayloadStatus, Optional.empty()))));
 
-    verify(forkChoiceStrategy).onForkChoiceUpdatedResult(emptyNode, invalidPayloadStatus, true);
+    verify(forkChoiceStrategy)
+        .onForkChoiceUpdatedResult(
+            new SlotAndForkChoiceNode(ONE, emptyNode), invalidPayloadStatus, true);
     verify(forkChoiceStrategy, never())
         .onExecutionPayloadResult(eq(blockRoot), eq(invalidPayloadStatus), anyBoolean());
   }

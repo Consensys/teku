@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -165,7 +166,26 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
 
     // if pre-gloas returns true, the gloas transition breaks, so instead we return false pre-gloas
-    assertThat(forkChoiceStrategy.shouldExtendPayload(store, genesisBlock.getRoot())).isFalse();
+    assertThat(
+            forkChoiceStrategy.shouldExtendPayload(
+                store, new SlotAndBlockRoot(genesisBlock.getSlot(), genesisBlock.getRoot())))
+        .isFalse();
+  }
+
+  @Test
+  void shouldExtendPayload_shouldNotLookUpBlockByRootToSelectForkChoiceModel() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
+    final ForkChoiceStrategy forkChoiceStrategy =
+        ForkChoiceStrategy.initialize(
+            gloasSpec, createProtoArray(gloasSpec, chainBuilder.generateGenesis().getState()));
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+
+    assertThat(forkChoiceStrategy.shouldExtendPayload(store, new SlotAndBlockRoot(ONE, blockRoot)))
+        .isFalse();
+
+    verify(store, never()).getBlockIfAvailable(blockRoot);
   }
 
   @Test
