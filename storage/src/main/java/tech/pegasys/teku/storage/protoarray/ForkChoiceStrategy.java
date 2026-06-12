@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -87,18 +86,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   private Optional<ForkChoiceModel> getForkChoiceModelForRoot(final Bytes32 blockRoot) {
     return blockNodeIndex.getSlot(blockRoot).map(this::getForkChoiceModel);
-  }
-
-  private ForkChoiceModel getForkChoiceModelForPayloadDecision(
-      final ReadOnlyStore store, final Bytes32 blockRoot) {
-    return getForkChoiceModelForRoot(blockRoot)
-        .or(
-            () ->
-                store
-                    .getBlockIfAvailable(blockRoot)
-                    .map(SignedBeaconBlock::getSlot)
-                    .map(this::getForkChoiceModel))
-        .orElse(ForkChoiceModelPhase0.INSTANCE);
   }
 
   public static ForkChoiceStrategy initialize(final Spec spec, final ProtoArray protoArray) {
@@ -476,11 +463,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 blockRoot) {
+  public boolean shouldExtendPayload(final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getForkChoiceModelForPayloadDecision(store, blockRoot)
-          .shouldExtendPayload(protoArray, blockNodeIndex, store, blockRoot);
+      return getForkChoiceModel(slotAndBlockRoot.getSlot())
+          .shouldExtendPayload(protoArray, blockNodeIndex, store, slotAndBlockRoot.getBlockRoot());
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -491,7 +478,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
     protoArrayLock.readLock().lock();
     try {
-      return getForkChoiceModelForPayloadDecision(store, head.blockRoot())
+      return getForkChoiceModel(currentSlot)
           .shouldBuildOnFull(protoArray, blockNodeIndex, currentSlot, head);
     } finally {
       protoArrayLock.readLock().unlock();
@@ -982,13 +969,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   public void onForkChoiceUpdatedResult(
-      final ForkChoiceNode node,
+      final SlotAndForkChoiceNode slotAndForkChoiceNode,
       final PayloadStatus result,
       final boolean verifiedInvalidTransition) {
     if (result.hasFailedExecution()) {
       LOG.warn(
-          "Unable to execute Payload for node {}, Execution Engine is offline",
-          node,
+          "Unable to execute Payload for slotAndForkChoiceNode {}, Execution Engine is offline",
+          slotAndForkChoiceNode,
           result.getFailureCause().orElseThrow());
       return;
     }
@@ -998,24 +985,21 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
     protoArrayLock.writeLock().lock();
     try {
-      getForkChoiceModelForRoot(node.blockRoot())
-          .ifPresent(
-              forkChoiceModel -> {
-                if (status.isInvalid()) {
-                  LOG.warn(
-                      "Payload for {} node {} marked as invalid by Execution Client",
-                      verifiedInvalidTransition ? "" : "child of",
-                      node);
-                }
-                forkChoiceModel.onForkChoiceUpdatedResult(
-                    protoArray,
-                    blockNodeIndex,
-                    node,
-                    status,
-                    result.getLatestValidHash(),
-                    verifiedInvalidTransition,
-                    headSelectionContext);
-              });
+      final ForkChoiceModel forkChoiceModel = getForkChoiceModel(slotAndForkChoiceNode.slot());
+      if (status.isInvalid()) {
+        LOG.warn(
+            "Payload for {} slotAndForkChoiceNode {} marked as invalid by Execution Client",
+            verifiedInvalidTransition ? "" : "child of",
+            slotAndForkChoiceNode.node());
+      }
+      forkChoiceModel.onForkChoiceUpdatedResult(
+          protoArray,
+          blockNodeIndex,
+          slotAndForkChoiceNode.node(),
+          status,
+          result.getLatestValidHash(),
+          verifiedInvalidTransition,
+          headSelectionContext);
       if (status.isInvalid()) {
         blockNodeIndex.removeIf(
             root -> blockNodeIndex.getBaseNode(root).flatMap(protoArray::getNode).isEmpty());

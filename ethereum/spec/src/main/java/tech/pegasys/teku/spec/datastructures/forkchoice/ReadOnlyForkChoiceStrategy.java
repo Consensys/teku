@@ -102,14 +102,15 @@ public interface ReadOnlyForkChoiceStrategy {
    *
    * <p>This is a forkchoice-owned decision. Pre-Gloas follows the current master behavior based on
    * local payload availability, while Gloas can override it with the model-specific EMPTY/FULL
-   * selection rules.
+   * selection rules. The slotAndBlockRoot slot is supplied with the root so implementations can select
+   * fork-aware logic without resolving the slot from the root.
    */
-  boolean shouldExtendPayload(ReadOnlyStore store, Bytes32 blockRoot);
+  boolean shouldExtendPayload(ReadOnlyStore store, SlotAndBlockRoot slotAndBlockRoot);
 
   /**
    * Returns whether block production should build on the FULL variant of {@code head}.
    *
-   * <p>Pre-Gloas follows the existing {@link #shouldExtendPayload(ReadOnlyStore, Bytes32)}
+   * <p>Pre-Gloas follows the existing {@link #shouldExtendPayload(ReadOnlyStore, SlotAndBlockRoot)}
    * decision. Gloas overrides this to account for PTC votes that signal data unavailability or an
    * untimely payload.
    */
