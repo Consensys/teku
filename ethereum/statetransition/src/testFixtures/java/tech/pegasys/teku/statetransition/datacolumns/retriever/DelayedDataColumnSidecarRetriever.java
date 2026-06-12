@@ -14,10 +14,13 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.util.CancelableFuture;
@@ -46,8 +49,10 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
-    return delay(() -> delegate.retrieve(columnId));
+  public SafeFuture<DataColumnSidecar> retrieve(
+      final DataColumnSlotAndIdentifier columnId,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    return delay(() -> delegate.retrieve(columnId, blobKzgCommitments));
   }
 
   @Override

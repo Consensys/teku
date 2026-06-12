@@ -27,14 +27,18 @@ import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySamp
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -123,6 +127,29 @@ public class DasPreSamplerTest {
     verify(sampler, never())
         .onNewValidatedDataColumnSidecar(any(DataColumnSlotAndIdentifier.class), any());
     verify(sampler).checkDataAvailability(block.getSlot(), block.getRoot());
+    verify(sampler).flush();
+  }
+
+  @Test
+  void shouldPreSampleGloasBlockWithBlobKzgCommitments() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
+    final SignedBeaconBlock block =
+        gloasDataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        BeaconBlockBodyGloas.required(block.getMessage().getBody()).getBlobKzgCommitments();
+
+    when(sampler.checkSamplingEligibility(block.getMessage())).thenReturn(REQUIRED);
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(Set.of());
+    when(sampler.checkDataAvailability(
+            block.getSlot(), block.getRoot(), Optional.of(blobKzgCommitments)))
+        .thenReturn(SafeFuture.completedFuture(null));
+
+    dasPreSampler.onNewPreImportBlocks(List.of(block));
+
+    verify(sampler)
+        .checkDataAvailability(block.getSlot(), block.getRoot(), Optional.of(blobKzgCommitments));
+    verify(sampler, never()).checkDataAvailability(block.getSlot(), block.getRoot());
     verify(sampler).flush();
   }
 

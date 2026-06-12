@@ -17,11 +17,13 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlockEventsListener;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -75,6 +77,13 @@ public interface DataAvailabilitySampler
    * the {@link #flush()} method
    */
   SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot);
+
+  default SafeFuture<List<UInt64>> checkDataAvailability(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    return checkDataAvailability(slot, blockRoot);
+  }
 
   /**
    * Immediately initiates sampling. When doing batch sampling it would be more effective to invoke

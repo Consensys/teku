@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.CANCELLED;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOADED;
@@ -23,6 +25,7 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -39,6 +43,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -48,6 +53,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 
 public class SidecarRetrieverTest {
@@ -117,7 +123,7 @@ public class SidecarRetrieverTest {
     when(custodyManager.getCustodyGroupCount()).thenReturn(8);
     final BeaconBlock block = blockResolver.addBlock(10, 10);
     final DataColumnSlotAndIdentifier id = createId(block, 0);
-    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id, Optional.empty());
     timeProvider.advanceTimeBy(RECOVERY_TIMEOUT.dividedBy(2));
     stubAsyncRunner.executeQueuedActions();
     assertThat(response.isDone()).isTrue();
@@ -128,7 +134,7 @@ public class SidecarRetrieverTest {
     when(custodyManager.getCustodyGroupCount()).thenReturn(128);
     final BeaconBlock block = blockResolver.addBlock(10, 10);
     final DataColumnSlotAndIdentifier id = createId(block, 0);
-    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id, Optional.empty());
     timeProvider.advanceTimeBy(RECOVERY_TIMEOUT.dividedBy(2));
     stubAsyncRunner.executeQueuedActions();
     assertThat(response.isDone()).isFalse();
@@ -158,6 +164,47 @@ public class SidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void shouldForwardBlobKzgCommitmentsToDelegateRetriever() {
+    final DataColumnSidecarRetriever delegateRetriever = mock(DataColumnSidecarRetriever.class);
+    final SidecarRetriever retriever = createRetriever(delegateRetriever);
+    final BeaconBlock block = blockResolver.addBlock(10, 1);
+    final DataColumnSlotAndIdentifier id = createId(block, 0);
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+    when(delegateRetriever.retrieve(id, Optional.of(blobKzgCommitments)))
+        .thenReturn(new SafeFuture<>());
+
+    final SafeFuture<DataColumnSidecar> response =
+        retriever.retrieve(id, Optional.of(blobKzgCommitments));
+
+    assertThat(response).isNotDone();
+    verify(delegateRetriever).retrieve(id, Optional.of(blobKzgCommitments));
+    verify(delegateRetriever, never()).retrieve(id, Optional.empty());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldForwardBlobKzgCommitmentsToDelegateForExistingRequest() {
+    final DataColumnSidecarRetriever delegateRetriever = mock(DataColumnSidecarRetriever.class);
+    final SidecarRetriever retriever = createRetriever(delegateRetriever);
+    final BeaconBlock block = blockResolver.addBlock(10, 1);
+    final DataColumnSlotAndIdentifier id = createId(block, 0);
+    final SszList<SszKZGCommitment> blobKzgCommitments = mock(SszList.class);
+    final SafeFuture<DataColumnSidecar> delegateResponse = new SafeFuture<>();
+    when(delegateRetriever.retrieve(id, Optional.empty())).thenReturn(delegateResponse);
+    when(delegateRetriever.retrieve(id, Optional.of(blobKzgCommitments)))
+        .thenReturn(delegateResponse);
+
+    final SafeFuture<DataColumnSidecar> firstResponse = retriever.retrieve(id, Optional.empty());
+    final SafeFuture<DataColumnSidecar> secondResponse =
+        retriever.retrieve(id, Optional.of(blobKzgCommitments));
+
+    assertThat(secondResponse).isSameAs(firstResponse);
+    verify(delegateRetriever).retrieve(id, Optional.empty());
+    verify(delegateRetriever).retrieve(id, Optional.of(blobKzgCommitments));
+  }
+
+  @Test
   void successfulRetrievalShouldRemoveFromPendingRequests() {
     final int blobCount = 1;
     final int columnsInDbCount = 1;
@@ -169,7 +216,8 @@ public class SidecarRetrieverTest {
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
-    final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
+    final SafeFuture<DataColumnSidecar> res0 =
+        retriever.retrieve(createId(block, 0), Optional.empty());
 
     // this will add the file to the delegate, which will finish the download task
     delegateRetriever.addReadyColumnSidecar(sidecars.get(0));
@@ -182,7 +230,8 @@ public class SidecarRetrieverTest {
   @Test
   void cancelledRetrievalShouldRemoveFromPendingRequests() {
     final BeaconBlock block = blockResolver.addBlock(10, 1);
-    final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
+    final SafeFuture<DataColumnSidecar> res0 =
+        retriever.retrieve(createId(block, 0), Optional.empty());
     res0.completeExceptionally(new RuntimeException("ERR"));
     assertThat(retriever.pendingRequestCount()).isZero();
     stubAsyncRunner.executeQueuedActions();
@@ -193,7 +242,7 @@ public class SidecarRetrieverTest {
   void stopClearsPendingRequests() {
     final BeaconBlock block = blockResolver.addBlock(10, 10);
     final DataColumnSlotAndIdentifier id = createId(block, 0);
-    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id, Optional.empty());
     retriever.stop();
     assertThat(retriever.getPendingRequestsChecker()).isNull();
     assertThat(retriever.getPendingRequests()).isEmpty();
@@ -205,7 +254,7 @@ public class SidecarRetrieverTest {
   void shouldCheckPendingRequestsOnTimer() {
     final BeaconBlock block = blockResolver.addBlock(10, 10);
     final DataColumnSlotAndIdentifier id = createId(block, 0);
-    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id, Optional.empty());
     timeProvider.advanceTimeBy(CHECK_INTERVAL);
     stubAsyncRunner.executeQueuedActions();
     assertThat(retriever.pendingRequestCount()).isEqualTo(1);
@@ -221,7 +270,7 @@ public class SidecarRetrieverTest {
   void createDoesNotIncrementMetrics() {
     final BeaconBlock block = blockResolver.addBlock(10, 10);
     final DataColumnSlotAndIdentifier id = createId(block, 0);
-    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id, Optional.empty());
     assertThat(response).isNotDone();
     verifyMetrics(0, 0, 0);
   }
@@ -230,7 +279,7 @@ public class SidecarRetrieverTest {
   void shouldTimeoutAfterExpiryTime() {
     final BeaconBlock block = blockResolver.addBlock(10, 10);
     final DataColumnSlotAndIdentifier id = createId(block, 0);
-    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id, Optional.empty());
 
     for (int i = 0; i < 10; i++) {
       timeProvider.advanceTimeBy(CHECK_INTERVAL);
@@ -243,6 +292,24 @@ public class SidecarRetrieverTest {
   static DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
     return new DataColumnSlotAndIdentifier(
         block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
+  }
+
+  private SidecarRetriever createRetriever(final DataColumnSidecarRetriever delegateRetriever) {
+    final SidecarRetriever retriever =
+        new SidecarRetriever(
+            delegateRetriever,
+            spec,
+            dbAccessor,
+            stubAsyncRunner,
+            RECOVERY_TIMEOUT,
+            RECOVERY_TIMEOUT.dividedBy(2),
+            CHECK_INTERVAL,
+            timeProvider,
+            columnCount,
+            custodyManager,
+            metricsSystem);
+    retriever.start();
+    return retriever;
   }
 
   private void verifyMetrics(

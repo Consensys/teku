@@ -482,7 +482,7 @@ public class DasCustodyBackfiller extends Service
 
     LOG.debug("DasCustodyBackfiller: Retrieving missing column {} to custody", colId);
 
-    final SafeFuture<DataColumnSidecar> req = retriever.retrieve(colId);
+    final SafeFuture<DataColumnSidecar> req = retriever.retrieve(colId, Optional.empty());
     pendingRequests.put(colId, req);
 
     return req.thenPeek(

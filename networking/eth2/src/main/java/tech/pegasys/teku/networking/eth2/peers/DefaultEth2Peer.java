@@ -22,6 +22,7 @@ import com.google.common.base.Suppliers;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,6 +34,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -85,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -349,7 +352,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public SafeFuture<Void> requestDataColumnSidecarsByRoot(
       final List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
-      final RpcResponseListener<DataColumnSidecar> listener) {
+      final RpcResponseListener<DataColumnSidecar> listener,
+      final Map<Bytes32, SszList<SszKZGCommitment>> blobKzgCommitmentsByRoot) {
     return rpcMethods
         .dataColumnSidecarsByRoot()
         .map(
@@ -366,7 +370,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         timeProvider,
                         dataColumnSidecarSignatureValidator,
                         dataColumnIdentifiers,
-                        combinedChainDataClient)))
+                        combinedChainDataClient,
+                        blobKzgCommitmentsByRoot)))
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 

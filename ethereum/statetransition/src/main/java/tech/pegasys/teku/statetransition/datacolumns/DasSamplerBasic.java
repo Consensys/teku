@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -110,14 +111,23 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
       final UInt64 slot, final Bytes32 blockRoot) {
+    return checkDataAvailability(slot, blockRoot, Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<List<UInt64>> checkDataAvailability(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
+    tracker.updateBlobKzgCommitments(blobKzgCommitments);
 
     if (tracker.completionFuture().isDone()) {
       return tracker.completionFuture();
     }
 
     if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
-      fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
+      fetchMissingColumnsViaRPC(slot, blockRoot, tracker, blobKzgCommitments);
     }
 
     return tracker.completionFuture();
@@ -136,11 +146,17 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     tracker.rpcFetchInProgress().set(true);
     asyncRunner
         .getDelayedFuture(delay)
-        .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker));
+        .always(
+            () ->
+                fetchMissingColumnsViaRPC(
+                    slot, blockRoot, tracker, tracker.getBlobKzgCommitments()));
   }
 
   private void fetchMissingColumnsViaRPC(
-      final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final DataColumnSamplingTracker tracker,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     // Delayed fetch callbacks can outlive the tracker they were scheduled for.
     // Only the currently installed tracker may issue RPC requests.
     if (isStaledTracker(blockRoot, tracker)) {
@@ -158,7 +174,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         missingColumns.size());
 
     SafeFuture.collectAll(
-            missingColumns.stream().map(id -> retrieveColumnWithSamplingAndCustody(id, tracker)))
+            missingColumns.stream()
+                .map(id -> retrieveColumnWithSamplingAndCustody(id, tracker, blobKzgCommitments)))
         .thenAccept(
             retrievedColumns -> {
               if (retrievedColumns.size() == missingColumns.size()) {
@@ -223,9 +240,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
-      final DataColumnSlotAndIdentifier id, final DataColumnSamplingTracker tracker) {
+      final DataColumnSlotAndIdentifier id,
+      final DataColumnSamplingTracker tracker,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
     return retriever
-        .retrieve(id)
+        .retrieve(id, blobKzgCommitments)
         .thenPeek(
             sidecar -> {
               if (tracker.add(id, RemoteOrigin.RPC)) {
