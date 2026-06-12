@@ -937,7 +937,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               spec,
               invalidBlockRoots,
               gossipValidationHelper,
-              blobKzgCommitmentsProvider,
+              () -> blobKzgCommitmentsProvider,
               metricsSystem,
               timeProvider);
       dataColumnSidecarManager =

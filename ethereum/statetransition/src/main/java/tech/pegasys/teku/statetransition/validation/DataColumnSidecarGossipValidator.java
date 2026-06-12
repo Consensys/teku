@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -119,7 +120,7 @@ public class DataColumnSidecarGossipValidator {
   private final Set<InclusionProofInfo> validInclusionProofInfoSet;
   private final Set<Bytes32> validSignedBlockHeaders;
   private final GossipValidationHelper gossipValidationHelper;
-  private final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
+  private final Supplier<BlobKzgCommitmentsProvider> blobKzgCommitmentsProviderSupplier;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
@@ -134,6 +135,22 @@ public class DataColumnSidecarGossipValidator {
       final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
+    return create(
+        spec,
+        invalidBlockRoots,
+        gossipValidationHelper,
+        () -> blobKzgCommitmentsProvider,
+        metricsSystem,
+        timeProvider);
+  }
+
+  public static DataColumnSidecarGossipValidator create(
+      final Spec spec,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final GossipValidationHelper gossipValidationHelper,
+      final Supplier<BlobKzgCommitmentsProvider> blobKzgCommitmentsProviderSupplier,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
 
     final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
 
@@ -146,7 +163,7 @@ public class DataColumnSidecarGossipValidator {
         spec,
         invalidBlockRoots,
         gossipValidationHelper,
-        blobKzgCommitmentsProvider,
+        blobKzgCommitmentsProviderSupplier,
         metricsSystem,
         timeProvider,
         LimitedSet.createSynchronizedLRU(validInfoSize),
@@ -163,7 +180,7 @@ public class DataColumnSidecarGossipValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
-      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider,
+      final Supplier<BlobKzgCommitmentsProvider> blobKzgCommitmentsProviderSupplier,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
@@ -172,7 +189,7 @@ public class DataColumnSidecarGossipValidator {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
-    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
+    this.blobKzgCommitmentsProviderSupplier = blobKzgCommitmentsProviderSupplier;
     this.receivedValidDataColumnSidecarInfoSet = receivedValidDataColumnSidecarInfoSet;
     this.totalDataColumnSidecarsProcessingRequestsCounter =
         metricsSystem.createCounter(
@@ -328,7 +345,7 @@ public class DataColumnSidecarGossipValidator {
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
     return dataColumnSidecarUtil
         .validateAndVerifyKzgProofs(
-            dataColumnSidecar, blobKzgCommitmentsProvider::getBlobKzgCommitments)
+            dataColumnSidecar, blobKzgCommitmentsProviderSupplier.get()::getBlobKzgCommitments)
         .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
         .thenCompose(
             maybeKzgProofValidationResult -> {

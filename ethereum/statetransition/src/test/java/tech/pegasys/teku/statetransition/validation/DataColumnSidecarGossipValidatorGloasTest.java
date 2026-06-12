@@ -23,6 +23,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -39,11 +41,13 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 public class DataColumnSidecarGossipValidatorGloasTest
     extends AbstractDataColumnSidecarGossipValidatorTest {
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
 
+  private Spec spec;
   private Bytes32 beaconBlockRoot;
 
   @Override
@@ -53,8 +57,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @BeforeEach
   void setup() {
-    final Spec spec =
-        createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
+    spec = createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
     this.dataStructureUtil = new DataStructureUtil(spec);
 
     this.dataColumnSidecarGossipValidator =
@@ -107,6 +110,25 @@ public class DataColumnSidecarGossipValidatorGloasTest
   void shouldAcceptValidGloasDataColumnSidecar() {
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+  }
+
+  @Test
+  void shouldResolveBlobKzgCommitmentsProviderFromSupplierAtValidationTime() {
+    final AtomicReference<BlobKzgCommitmentsProvider> blobKzgCommitmentsProviderRef =
+        new AtomicReference<>();
+    final DataColumnSidecarGossipValidator validator =
+        DataColumnSidecarGossipValidator.create(
+            spec,
+            invalidBlocks,
+            gossipValidationHelper,
+            blobKzgCommitmentsProviderRef::get,
+            new StubMetricsSystem(),
+            stubTimeProvider);
+
+    blobKzgCommitmentsProviderRef.set(blobKzgCommitmentsProvider);
+
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 
