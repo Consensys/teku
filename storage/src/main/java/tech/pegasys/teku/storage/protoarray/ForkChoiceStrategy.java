@@ -975,7 +975,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final boolean verifiedInvalidTransition) {
     if (result.hasFailedExecution()) {
       LOG.warn(
-          "Unable to execute Payload for slotAndForkChoiceNode {}, Execution Engine is offline",
+          "Unable to execute Payload for {}, Execution Engine is offline",
           slotAndForkChoiceNode,
           result.getFailureCause().orElseThrow());
       return;
@@ -989,7 +989,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final ForkChoiceModel forkChoiceModel = getForkChoiceModel(slotAndForkChoiceNode.slot());
       if (status.isInvalid()) {
         LOG.warn(
-            "Payload for {} slotAndForkChoiceNode {} marked as invalid by Execution Client",
+            "Payload for {} {} marked as invalid by Execution Client",
             verifiedInvalidTransition ? "" : "child of",
             slotAndForkChoiceNode.node());
       }
