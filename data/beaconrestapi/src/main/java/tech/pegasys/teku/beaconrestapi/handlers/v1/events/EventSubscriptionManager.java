@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -144,8 +145,8 @@ public class EventSubscriptionManager
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
-
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -171,6 +172,19 @@ public class EventSubscriptionManager
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
+
+    final HeadV2Event headV2Event =
+        HeadV2Event.create(
+            spec.atSlot(slot).getMilestone(),
+            slot,
+            bestBlockRoot,
+            stateRoot,
+            epochTransition,
+            executionOptimistic,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            payloadStatus.orElse(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
+    notifySubscribersOfEvent(EventType.head_v2, headV2Event);
   }
 
   @Override
