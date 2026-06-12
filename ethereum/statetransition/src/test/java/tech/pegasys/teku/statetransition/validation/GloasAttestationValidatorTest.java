@@ -14,8 +14,8 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -230,12 +231,14 @@ public class GloasAttestationValidatorTest extends ElectraAttestationValidatorTe
 
   private GossipValidationHelper mockGossipValidationForFullPayloadRule(
       final Attestation attestation, final Bytes32 blockRoot) {
-    final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
-    when(gossipValidationHelper.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(ZERO));
-    when(gossipValidationHelper.getGenesisTime()).thenReturn(ZERO);
-    when(gossipValidationHelper.getCurrentTimeMillis())
-        .thenReturn(spec.computeTimeMillisAtSlot(attestation.getData().getSlot(), ZERO));
-    when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(true);
+    final GossipValidationHelper gossipValidationHelper =
+        spy(new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem()));
+    doReturn(Optional.of(ZERO)).when(gossipValidationHelper).getSlotForBlockRoot(blockRoot);
+    doReturn(ZERO).when(gossipValidationHelper).getGenesisTime();
+    doReturn(spec.computeTimeMillisAtSlot(attestation.getData().getSlot(), ZERO))
+        .when(gossipValidationHelper)
+        .getCurrentTimeMillis();
+    doReturn(true).when(gossipValidationHelper).isBlockAvailable(blockRoot);
     return gossipValidationHelper;
   }
 

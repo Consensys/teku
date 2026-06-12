@@ -77,6 +77,15 @@ public class AttestationValidator {
       return completedFuture(internalValidationResult);
     }
 
+    return validateSingleOrAggregateAttestation(validatableAttestation);
+  }
+
+  /** Runs checks shared by unaggregated and aggregate attestations, excluding envelope checks. */
+  public SafeFuture<InternalValidationResult> validateSingleOrAggregateAttestation(
+      final ValidatableAttestation validatableAttestation) {
+    if (validatableAttestation.isAcceptedAsGossip()) {
+      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+    }
     return singleOrAggregateAttestationChecks(
             signatureVerifier, validatableAttestation, validatableAttestation.getReceivedSubnetId())
         .thenApply(InternalValidationResultWithState::getResult)
@@ -129,7 +138,6 @@ public class AttestationValidator {
     }
 
     final AttestationUtil attestationUtil = spec.atSlot(data.getSlot()).getAttestationUtil();
-
     final AttestationValidationResult attestationIndexValidationResult =
         attestationUtil.validateCommitteeIndexValue(attestation.getData().getIndex());
     if (!attestationIndexValidationResult.isValid()) {
@@ -138,23 +146,23 @@ public class AttestationValidator {
               attestationIndexValidationResult.getReason().orElse("Invalid attestation data")));
     }
 
-    final AttestationValidationResult payloadStatusValidationResult =
-        attestationUtil.validatePayloadStatus(
-            attestation.getData(),
-            gossipValidationHelper.getSlotForBlockRoot(attestation.getData().getBeaconBlockRoot()));
-    if (!payloadStatusValidationResult.isValid()) {
+    final InternalValidationResult payloadStatusValidationResult =
+        gossipValidationHelper.validatePayloadStatus(
+            attestationUtil, attestation.getData(), blockRootsWithInvalidExecutionPayload);
+    if (payloadStatusValidationResult.isReject()) {
       return SafeFuture.completedFuture(
           InternalValidationResultWithState.reject(
-              payloadStatusValidationResult.getReason().orElse("Invalid payload status")));
+              payloadStatusValidationResult.getDescription().orElse("Invalid payload status")));
+    }
+    if (payloadStatusValidationResult.isSaveForFuture()) {
+      return completedFuture(InternalValidationResultWithState.saveForFuture());
     }
 
     final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
-        spec.atSlot(data.getSlot())
-            .getAttestationUtil()
-            .performSlotInclusionGossipValidation(
-                attestation,
-                gossipValidationHelper.getGenesisTime(),
-                gossipValidationHelper.getCurrentTimeMillis());
+        attestationUtil.performSlotInclusionGossipValidation(
+            attestation,
+            gossipValidationHelper.getGenesisTime(),
+            gossipValidationHelper.getCurrentTimeMillis());
 
     if (slotInclusionGossipValidationResult.isPresent()) {
       return switch (slotInclusionGossipValidationResult.get()) {
@@ -177,20 +185,6 @@ public class AttestationValidator {
     // If it's not in the store, it may not have been processed yet so save for future.
     if (!gossipValidationHelper.isBlockAvailable(data.getBeaconBlockRoot())) {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
-    }
-
-    final Bytes32 blockRoot = data.getBeaconBlockRoot();
-    if (spec.atSlot(data.getSlot()).getForkChoiceUtil().getFullPayloadVoteHint(data.getIndex())) {
-      // [REJECT] If index == 1, the execution payload for block passes validation.
-      if (blockRootsWithInvalidExecutionPayload.contains(blockRoot)) {
-        return completedFuture(
-            InternalValidationResultWithState.reject(
-                "Execution payload for full payload attestation is invalid"));
-      }
-      // [IGNORE] If index == 1, the execution payload for block has been seen.
-      if (gossipValidationHelper.getRecentlyImportedExecutionPayload(blockRoot).isEmpty()) {
-        return completedFuture(InternalValidationResultWithState.saveForFuture());
-      }
     }
 
     return gossipValidationHelper
