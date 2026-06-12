@@ -16,7 +16,6 @@ dependencies {
 	implementation project(':infrastructure:async')
 	implementation project(':infrastructure:bls')
 	implementation project(':infrastructure:collections')
-	implementation project(':infrastructure:crypto')
 	implementation project(':infrastructure:exceptions')
 	implementation project(':infrastructure:logging')
 	implementation project(':infrastructure:metrics')

@@ -278,20 +278,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                           if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
                             final IndexedAttestationLight indexedAttestation =
                                 getIndexedAttestation(attestation);
+                            final boolean fullPayloadHint =
+                                getFullPayloadVoteHint(attestation.getData());
+                            if (!fullPayloadHint) {
+                              deferredAttestations.addAttestation(indexedAttestation, false);
+                              return SafeFuture.completedFuture(validationResult);
+                            }
                             return onForkChoiceThread(
                                 () -> {
-                                  final boolean fullPayloadHint =
-                                      getFullPayloadVoteHint(attestation.getData());
-                                  final ForkChoiceStrategy forkChoiceStrategy =
-                                      getForkChoiceStrategy();
                                   if (isFullPayloadVoteMissingTarget(
-                                      forkChoiceStrategy,
+                                      getForkChoiceStrategy(),
                                       indexedAttestation.data().getBeaconBlockRoot(),
-                                      fullPayloadHint)) {
+                                      true)) {
                                     return AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD;
                                   }
-                                  deferredAttestations.addAttestation(
-                                      indexedAttestation, fullPayloadHint);
+                                  deferredAttestations.addAttestation(indexedAttestation, true);
                                   return validationResult;
                                 });
                           }
