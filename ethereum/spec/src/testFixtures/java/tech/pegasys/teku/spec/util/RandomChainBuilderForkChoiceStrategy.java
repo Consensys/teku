@@ -158,7 +158,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public boolean shouldExtendPayload(final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
+  public boolean shouldExtendPayload(
+      final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
     return store.getExecutionPayloadIfAvailable(slotAndBlockRoot.getBlockRoot()).isPresent();
   }
 

@@ -463,7 +463,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public boolean shouldExtendPayload(final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
+  public boolean shouldExtendPayload(
+      final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return getForkChoiceModel(slotAndBlockRoot.getSlot())
