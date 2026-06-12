@@ -159,6 +159,24 @@ public class PoolFactory {
         * DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER;
   }
 
+  public PendingAttestationPool createPendingAttestationPool(
+      final Spec spec, final int maxQueueSize) {
+    return createPendingAttestationPool(spec, maxQueueSize, maxQueueSize);
+  }
+
+  public PendingAttestationPool createPendingAttestationPool(
+      final Spec spec,
+      final int maxAttestationsWaitingForBlock,
+      final int maxAttestationsWaitingForFullPayload) {
+    return new PendingAttestationPool(
+        pendingPoolsSizeGauge,
+        spec,
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        maxAttestationsWaitingForBlock,
+        maxAttestationsWaitingForFullPayload);
+  }
+
   public PendingPool<ValidatableAttestation> createPendingPoolForAttestations(
       final Spec spec, final int maxQueueSize) {
 
