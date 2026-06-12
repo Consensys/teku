@@ -420,6 +420,7 @@ public class Eth2P2PNetworkFactory {
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
                                 config.getTargetSubnetSubscriberCount(),
+                                config.isSubnetAwarePeerSelectionActive(),
                                 subnetPeerCountGauge),
                         reputationManager,
                         Collections::shuffle))

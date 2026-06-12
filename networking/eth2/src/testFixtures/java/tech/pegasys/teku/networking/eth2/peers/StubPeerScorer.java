@@ -15,10 +15,12 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class StubPeerScorer implements PeerScorer {
 
@@ -27,11 +29,11 @@ public class StubPeerScorer implements PeerScorer {
       SszBitvector syncCommitteeSubnetSubscriptions,
       SszBitvector dataColumnSidecarSubnetSubscriptions) {}
 
-  private final Object2IntMap<NodeId> peerScores = new Object2IntOpenHashMap<>();
+  private final Object2IntMap<PeerId> peerScores = new Object2IntOpenHashMap<>();
   private final Object2IntMap<SubnetSubscriptionsKey> candidateScores =
       new Object2IntOpenHashMap<>();
 
-  public void setScore(final NodeId peerId, final int score) {
+  public void setScore(final PeerId peerId, final int score) {
     peerScores.put(peerId, score);
   }
 
@@ -48,23 +50,28 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreExistingPeer(final NodeId peerId) {
+  public int scoreExistingPeer(final PeerId peerId) {
     return peerScores.getOrDefault(peerId, 0);
   }
 
   @Override
-  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
-    return scoreCandidatePeer(
-        candidate.getPersistentAttestationSubnets(), candidate.getSyncCommitteeSubnets());
+  public List<DiscoveryPeer> selectCandidatePeers(
+      final List<DiscoveryPeer> candidates, final int maxToSelect) {
+    return candidates.stream()
+        .sorted(
+            Comparator.comparing(
+                    (DiscoveryPeer candidate) -> scoreCandidatePeer(candidate, Map.of()))
+                .reversed())
+        .limit(maxToSelect)
+        .toList();
   }
 
   public int scoreCandidatePeer(
-      final SszBitvector attestationSubscriptions,
-      final SszBitvector syncCommitteeSubnetSubscriptions) {
+      final DiscoveryPeer candidate, final Map<Integer, Integer> selectedDataColumnSidecarSubnets) {
     return candidateScores.getOrDefault(
-        new SubnetSubscriptionsKey(
-            attestationSubscriptions,
-            syncCommitteeSubnetSubscriptions,
+        new StubPeerScorer.SubnetSubscriptionsKey(
+            candidate.getPersistentAttestationSubnets(),
+            candidate.getSyncCommitteeSubnets(),
             SszBitvectorSchema.create(128).getDefault()),
         0);
   }
