@@ -161,6 +161,7 @@ public class Eth2P2PNetworkBuilder {
   private DasReqRespLogger dasReqRespLogger;
   private Supplier<Boolean> isSuperNodeSupplier;
   private DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
+  private ReputationManager builtReputationManager;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -237,7 +238,8 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        config.isAllTopicsFilterEnabled());
+        config.isAllTopicsFilterEnabled(),
+        builtReputationManager);
   }
 
   private GossipForkManager buildGossipForkManager(
@@ -518,6 +520,7 @@ public class Eth2P2PNetworkBuilder {
     final ReputationManager reputationManager =
         new DefaultReputationManager(
             metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
+    this.builtReputationManager = reputationManager;
     PreparedGossipMessageFactory defaultMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);

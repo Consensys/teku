@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -455,6 +456,7 @@ public class ActiveEth2P2PNetworkTest {
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,
-        true);
+        true,
+        ReputationManager.NOOP);
   }
 }

@@ -58,6 +58,11 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
+  public Optional<String> getAgentVersion() {
+    return peer.getAgentVersion();
+  }
+
+  @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
           TRequest extends RpcRequest,

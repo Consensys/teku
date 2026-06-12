@@ -16,8 +16,10 @@ package tech.pegasys.teku.networking.p2p.reputation;
 import com.google.common.base.MoreObjects;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -124,6 +126,19 @@ public class DefaultReputationManager implements ReputationManager {
     return peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC);
   }
 
+  @Override
+  public OptionalInt getReputationScore(final NodeId nodeId) {
+    return peerReputations
+        .getCached(nodeId)
+        .map(reputation -> OptionalInt.of(reputation.getScore()))
+        .orElseGet(OptionalInt::empty);
+  }
+
+  @Override
+  public Optional<LastAdjustment> getLastAdjustment(final NodeId nodeId) {
+    return peerReputations.getCached(nodeId).flatMap(Reputation::getLastAdjustment);
+  }
+
   private static class Reputation {
     private static final int DEFAULT_SCORE = 0;
     private static final EnumSet<DisconnectReason> BAN_REASONS =
@@ -134,6 +149,19 @@ public class DefaultReputationManager implements ReputationManager {
 
     private volatile Optional<UInt64> suitableAfter = Optional.empty();
     private final AtomicInteger score = new AtomicInteger(DEFAULT_SCORE);
+    private final AtomicReference<LastAdjustment> lastAdjustment = new AtomicReference<>();
+
+    public int getScore() {
+      return score.get();
+    }
+
+    public Optional<LastAdjustment> getLastAdjustment() {
+      return Optional.ofNullable(lastAdjustment.get());
+    }
+
+    protected void recordLastAdjustment(final String reason, final double delta) {
+      lastAdjustment.set(new LastAdjustment(reason, delta, System.currentTimeMillis()));
+    }
 
     public void reportInitiatedConnectionFailed(final UInt64 failureTime) {
       suitableAfter = Optional.of(failureTime.plus(COOLDOWN_PERIOD));
@@ -155,6 +183,7 @@ public class DefaultReputationManager implements ReputationManager {
         final UInt64 disconnectTime,
         final Optional<DisconnectReason> reason,
         final boolean locallyInitiated) {
+      reason.ifPresent(r -> recordLastAdjustment(r.name(), 0.0));
       if (isLocallyConsideredUnsuitable(reason, locallyInitiated)
           || reason.map(DisconnectReason::isPermanent).orElse(false)) {
         suitableAfter = Optional.of(disconnectTime.plus(BAN_PERIOD));
@@ -170,6 +199,7 @@ public class DefaultReputationManager implements ReputationManager {
     }
 
     public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
+      recordLastAdjustment(effect.name(), effect.getScoreChange());
       // No extra penalizing if already not suitable
       if (!isSuitableAt(currentTime)) {
         return score.get() <= DISCONNECT_THRESHOLD;

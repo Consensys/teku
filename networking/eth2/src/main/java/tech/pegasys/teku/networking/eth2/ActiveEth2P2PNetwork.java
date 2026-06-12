@@ -44,6 +44,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
@@ -79,6 +80,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final SubnetSubscriptionService executionProofSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
+  private final ReputationManager reputationManager;
 
   private final GossipForkManager gossipForkManager;
 
@@ -105,7 +107,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
-      final boolean allTopicsFilterEnabled) {
+      final boolean allTopicsFilterEnabled,
+      final ReputationManager reputationManager) {
     super(discoveryNetwork);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -122,6 +125,12 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.executionProofSubnetService = executionProofSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
+    this.reputationManager = reputationManager;
+  }
+
+  @Override
+  public ReputationManager getReputationManager() {
+    return reputationManager;
   }
 
   @Override

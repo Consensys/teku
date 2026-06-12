@@ -29,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
@@ -127,6 +128,10 @@ public class NetworkDataProvider {
 
   public List<Eth2Peer> getPeerScores() {
     return network.streamPeers().toList();
+  }
+
+  public ReputationManager getReputationManager() {
+    return network.getReputationManager();
   }
 
   public Optional<Eth2PeerWithEnr> getEth2PeerById(final String peerId) {
