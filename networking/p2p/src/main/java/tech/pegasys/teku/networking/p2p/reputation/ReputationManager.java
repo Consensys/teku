@@ -29,6 +29,12 @@ public interface ReputationManager {
         }
 
         @Override
+        public Optional<DisconnectReason> getInboundConnectionRejectionReason(
+            final PeerAddress peerAddress) {
+          return Optional.empty();
+        }
+
+        @Override
         public void reportInitiatedConnectionSuccessful(PeerAddress peerAddress) {}
 
         @Override
@@ -44,6 +50,12 @@ public interface ReputationManager {
   void reportInitiatedConnectionFailed(final PeerAddress peerAddress);
 
   boolean isConnectionInitiationAllowed(final PeerAddress peerAddress);
+
+  /**
+   * Returns the reason to use when rejecting an inbound connection from this peer, or empty when
+   * the peer should not be rejected. This excludes temporary outbound dial cooldowns.
+   */
+  Optional<DisconnectReason> getInboundConnectionRejectionReason(final PeerAddress peerAddress);
 
   void reportInitiatedConnectionSuccessful(final PeerAddress peerAddress);
 
