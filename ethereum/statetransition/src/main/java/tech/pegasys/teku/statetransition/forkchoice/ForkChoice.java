@@ -281,6 +281,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             final boolean fullPayloadHint =
                                 getFullPayloadVoteHint(attestation.getData());
                             if (!fullPayloadHint) {
+                              // No full payload target to check, so avoid the fork choice thread
                               deferredAttestations.addAttestation(indexedAttestation, false);
                               return SafeFuture.completedFuture(validationResult);
                             }
