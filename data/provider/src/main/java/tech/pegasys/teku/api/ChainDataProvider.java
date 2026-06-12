@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -295,6 +296,39 @@ public class ChainDataProvider {
             .getForkChoiceStrategy()
             .map(ReadOnlyForkChoiceStrategy::getBlockData)
             .orElse(emptyList()));
+  }
+
+  public ForkChoiceDataV2 getForkChoiceDataV2() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return new ForkChoiceDataV2(
+        recentChainData.getJustifiedCheckpoint().orElseThrow(),
+        recentChainData.getFinalizedCheckpoint().orElseThrow(),
+        recentChainData
+            .getForkChoiceStrategy()
+            .map(this::getForkChoiceNodeDataV2)
+            .orElse(emptyList()));
+  }
+
+  private List<ForkChoiceNodeDataV2> getForkChoiceNodeDataV2(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
+    return forkChoiceStrategy.getBlockData().stream()
+        .map(
+            node ->
+                new ForkChoiceNodeDataV2(
+                    getForkChoicePayloadStatusV2(node),
+                    node,
+                    forkChoiceStrategy.getPayloadAttesterCount(node.getRoot()),
+                    forkChoiceStrategy.getPayloadAvailabilityYesCount(node.getRoot()),
+                    forkChoiceStrategy.getPayloadDataAvailabilityYesCount(node.getRoot())))
+        .toList();
+  }
+
+  private ForkChoicePayloadStatus getForkChoicePayloadStatusV2(final ProtoNodeData node) {
+    return spec.atSlot(node.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+        ? node.getPayloadStatus()
+        : ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
   }
 
   private Optional<Integer> validatorParameterToIndex(

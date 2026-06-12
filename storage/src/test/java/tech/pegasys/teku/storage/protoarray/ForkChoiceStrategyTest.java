@@ -258,6 +258,23 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void getPtcVoteCounts_shouldReturnAggregateCountsForBlockRoot() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+
+    fixture.strategy().onPtcVote(blockRoot, IntSet.of(0, 1), true, true);
+    fixture.strategy().onPtcVote(blockRoot, IntSet.of(2), true, false);
+    fixture.strategy().onPtcVote(blockRoot, IntSet.of(3), false, true);
+    fixture.strategy().onPtcVote(blockRoot, IntSet.of(1), false, false);
+
+    assertThat(fixture.strategy().getPayloadAttesterCount(blockRoot)).isEqualTo(UInt64.valueOf(4));
+    assertThat(fixture.strategy().getPayloadAvailabilityYesCount(blockRoot))
+        .isEqualTo(UInt64.valueOf(2));
+    assertThat(fixture.strategy().getPayloadDataAvailabilityYesCount(blockRoot))
+        .isEqualTo(UInt64.valueOf(2));
+  }
+
+  @Test
   void getParentBeaconBlockNode_phase0_returnsParentBlockBaseNode() {
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
