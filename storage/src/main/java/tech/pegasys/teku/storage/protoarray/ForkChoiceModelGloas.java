@@ -381,7 +381,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (payloadPresent) {
       return blockNodeIndex.getFullNode(voteRoot);
     }
-    return blockNodeIndex.getEmptyNode(voteRoot).or(() -> maybeBaseNode);
+    return blockNodeIndex.getEmptyNode(voteRoot);
   }
 
   @Override
