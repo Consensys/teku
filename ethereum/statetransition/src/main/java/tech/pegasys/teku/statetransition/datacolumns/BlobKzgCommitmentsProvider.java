@@ -15,14 +15,17 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -37,24 +40,32 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
  * blob_kzg_commitments}; consequently a root to commitments entry is immutable and can be populated
  * before full block import without conflict risk.
  *
- * <p>The cache is fed from DAS pre-sampling for forward sync batches, gossip block validation
- * before import, RPC-fetched recent blocks before import, and successful block import for
- * non-gossip/non-pre-sampled paths. Store lookup is retained as a fallback for cache misses.
+ * <p>When a data column sidecar already carries commitments, as in Fulu, those commitments are
+ * returned directly without caching. The cache is only a temporary pre-import source for forks
+ * where the sidecar omits commitments, as in Gloas. Store lookup is retained as a lazy fallback for
+ * cache misses.
  */
 public class BlobKzgCommitmentsProvider
     implements ReceivedBlockEventsChannel, FinalizedCheckpointChannel {
 
   private final Spec spec;
-  private final CombinedChainDataClient combinedChainDataClient;
+  private final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveBlockByRoot;
   private final Map<Bytes32, BlobKzgCommitmentsEntry> commitmentsByRoot;
 
   public BlobKzgCommitmentsProvider(
       final Spec spec,
       final CombinedChainDataClient combinedChainDataClient,
       final int maxCacheSize) {
+    this(spec, combinedChainDataClient::getBlockByBlockRoot, maxCacheSize);
+  }
+
+  public BlobKzgCommitmentsProvider(
+      final Spec spec,
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveBlockByRoot,
+      final int maxCacheSize) {
     checkArgument(maxCacheSize > 0, "maxCacheSize must be positive");
     this.spec = spec;
-    this.combinedChainDataClient = combinedChainDataClient;
+    this.retrieveBlockByRoot = retrieveBlockByRoot;
     this.commitmentsByRoot = LimitedMap.createSynchronizedLRU(maxCacheSize);
   }
 
@@ -70,14 +81,23 @@ public class BlobKzgCommitmentsProvider
   }
 
   public SafeFuture<Optional<SszList<SszKZGCommitment>>> getBlobKzgCommitments(
+      final DataColumnSidecar dataColumnSidecar) {
+    return dataColumnSidecar
+        .getMaybeKzgCommitments()
+        .map(commitments -> SafeFuture.completedFuture(Optional.of(commitments)))
+        .orElseGet(() -> getBlobKzgCommitments(dataColumnSidecar.getBeaconBlockRoot()));
+  }
+
+  @VisibleForTesting
+  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getBlobKzgCommitments(
       final Bytes32 blockRoot) {
     final BlobKzgCommitmentsEntry cachedEntry = commitmentsByRoot.get(blockRoot);
     if (cachedEntry != null) {
       return SafeFuture.completedFuture(Optional.of(cachedEntry.commitments()));
     }
 
-    return combinedChainDataClient
-        .getBlockByBlockRoot(blockRoot)
+    return retrieveBlockByRoot
+        .apply(blockRoot)
         .thenApply(
             maybeBlock -> {
               maybeBlock.ifPresent(this::onNewBlock);

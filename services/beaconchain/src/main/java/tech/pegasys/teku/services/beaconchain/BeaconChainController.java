@@ -931,7 +931,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
-              spec, invalidBlockRoots, gossipValidationHelper, metricsSystem, timeProvider);
+              spec,
+              invalidBlockRoots,
+              gossipValidationHelper,
+              blobKzgCommitmentsProvider,
+              metricsSystem,
+              timeProvider);
       dataColumnSidecarManager =
           new DataColumnSidecarManagerImpl(
               dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);

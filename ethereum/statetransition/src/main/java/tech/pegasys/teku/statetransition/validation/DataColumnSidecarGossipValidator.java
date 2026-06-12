@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil.InclusionProofInfo;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 /**
  * Gossip validator for Data Column Sidecars supporting both Fulu and Gloas forks.
@@ -118,6 +119,7 @@ public class DataColumnSidecarGossipValidator {
   private final Set<InclusionProofInfo> validInclusionProofInfoSet;
   private final Set<Bytes32> validSignedBlockHeaders;
   private final GossipValidationHelper gossipValidationHelper;
+  private final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
@@ -129,6 +131,7 @@ public class DataColumnSidecarGossipValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
 
@@ -143,6 +146,7 @@ public class DataColumnSidecarGossipValidator {
         spec,
         invalidBlockRoots,
         gossipValidationHelper,
+        blobKzgCommitmentsProvider,
         metricsSystem,
         timeProvider,
         LimitedSet.createSynchronizedLRU(validInfoSize),
@@ -159,6 +163,7 @@ public class DataColumnSidecarGossipValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
@@ -167,6 +172,7 @@ public class DataColumnSidecarGossipValidator {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
     this.receivedValidDataColumnSidecarInfoSet = receivedValidDataColumnSidecarInfoSet;
     this.totalDataColumnSidecarsProcessingRequestsCounter =
         metricsSystem.createCounter(
@@ -321,8 +327,8 @@ public class DataColumnSidecarGossipValidator {
     final MetricsHistogram.Timer kzgVerificationTimer =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
     return dataColumnSidecarUtil
-        .validateAndVerifyKzgProofsWithBlock(
-            dataColumnSidecar, gossipValidationHelper::retrieveSignedBlockByRoot)
+        .validateAndVerifyKzgProofs(
+            dataColumnSidecar, blobKzgCommitmentsProvider::getBlobKzgCommitments)
         .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
         .thenCompose(
             maybeKzgProofValidationResult -> {

@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,8 +86,12 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
         kzg);
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
-    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(any(DataColumnSidecar.class)))
+        .thenAnswer(
+            invocation -> {
+              final DataColumnSidecar sidecar = invocation.getArgument(0);
+              return SafeFuture.completedFuture(sidecar.getMaybeKzgCommitments());
+            });
     when(signatureValidator.validateSignature(any())).thenReturn(SafeFuture.completedFuture(true));
   }
 

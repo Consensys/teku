@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -78,6 +79,23 @@ class BlobKzgCommitmentsProviderTest {
     assertThat(result).isPresent();
     assertThat(result.orElseThrow()).isEmpty();
     verify(combinedChainDataClient, never()).getBlockByBlockRoot(block.getRoot());
+  }
+
+  @Test
+  void returnsSidecarCommitmentsWithoutStoringThem() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil fuluDataStructureUtil = new DataStructureUtil(fuluSpec);
+    final SignedBeaconBlock block =
+        fuluDataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 2);
+    final DataColumnSidecar dataColumnSidecar =
+        fuluDataStructureUtil.randomDataColumnSidecar(block, UInt64.ZERO);
+    final SszList<SszKZGCommitment> commitments =
+        dataColumnSidecar.getMaybeKzgCommitments().orElseThrow();
+
+    assertThat(provider.getBlobKzgCommitments(dataColumnSidecar).join()).contains(commitments);
+    assertThat(provider.getBlobKzgCommitments(dataColumnSidecar.getBeaconBlockRoot()).join())
+        .isEmpty();
+    verify(combinedChainDataClient).getBlockByBlockRoot(dataColumnSidecar.getBeaconBlockRoot());
   }
 
   @Test

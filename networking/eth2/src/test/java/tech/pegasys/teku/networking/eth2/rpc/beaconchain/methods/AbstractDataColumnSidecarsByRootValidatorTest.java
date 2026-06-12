@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
-import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,8 +76,12 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
         kzg);
     when(dataColumnSidecarSignatureValidator.validateSignature(any()))
         .thenReturn(SafeFuture.completedFuture(true));
-    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(any(DataColumnSidecar.class)))
+        .thenAnswer(
+            invocation -> {
+              final DataColumnSidecar sidecar = invocation.getArgument(0);
+              return SafeFuture.completedFuture(sidecar.getMaybeKzgCommitments());
+            });
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
   }
 

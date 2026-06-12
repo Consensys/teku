@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -48,7 +49,10 @@ public class DataColumnSidecarsByRootValidatorGloasTest
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, 3);
     final SszList<SszKZGCommitment> commitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
-    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(block.getRoot()))
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(
+            argThat(
+                (DataColumnSidecar sidecar) ->
+                    sidecar != null && sidecar.getBeaconBlockRoot().equals(block.getRoot()))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(commitments)));
     return block;
   }

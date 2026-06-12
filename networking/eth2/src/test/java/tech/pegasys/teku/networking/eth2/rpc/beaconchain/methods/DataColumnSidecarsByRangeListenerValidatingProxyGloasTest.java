@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -49,7 +50,10 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyGloasTest
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, 3);
     final SszList<SszKZGCommitment> commitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
-    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(block.getRoot()))
+    when(blobKzgCommitmentsProvider.getBlobKzgCommitments(
+            argThat(
+                (DataColumnSidecar sidecar) ->
+                    sidecar != null && sidecar.getBeaconBlockRoot().equals(block.getRoot()))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(commitments)));
     return block;
   }

@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -221,53 +220,16 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return Optional.empty();
   }
 
-  /**
-   * Perform async kzg commitments root validation for Gloas.
-   *
-   * <p>Gossip rules:
-   *
-   * <ul>
-   *   <li>[REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar,
-   *       bid.blob_kzg_commitments).
-   *   <li>[REJECT] The sidecar's column data is valid as verified by
-   *       verify_data_column_sidecar_kzg_proofs(sidecar, bid.blob_kzg_commitments).
-   * </ul>
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param retrieveSignedBlockByRoot function to retrieve full block by root (potentially
-   *     expensive)
-   * @return SafeFuture with optional validation result. Empty means validation passed, Present
-   *     means validation found an issue (invalid/save for future).
-   */
-  @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
-      final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
-    return validateAndVerifyKzgProofs(
-        dataColumnSidecar,
-        blockRoot ->
-            retrieveSignedBlockByRoot
-                .apply(blockRoot)
-                .thenApply(
-                    maybeSignedBeaconBlock ->
-                        maybeSignedBeaconBlock.flatMap(
-                            signedBeaconBlock ->
-                                signedBeaconBlock
-                                    .getMessage()
-                                    .getBody()
-                                    .getOptionalBlobKzgCommitments())));
-  }
-
   @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<SszList<SszKZGCommitment>>>>
+      final Function<DataColumnSidecar, SafeFuture<Optional<SszList<SszKZGCommitment>>>>
           retrieveBlobKzgCommitments) {
 
     final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
 
     return retrieveBlobKzgCommitments
-        .apply(beaconBlockRoot)
+        .apply(dataColumnSidecar)
         .thenApply(
             maybeBlobKzgCommitments -> {
               if (maybeBlobKzgCommitments.isEmpty()) {
