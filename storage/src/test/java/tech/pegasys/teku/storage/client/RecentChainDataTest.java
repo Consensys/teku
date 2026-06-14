@@ -581,6 +581,49 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void containsExecutionPayload_shouldReturnFalseWhenStoreUnavailable() {
+    initPreGenesis();
+
+    assertThat(recentChainData.containsExecutionPayload(Bytes32.ZERO)).isFalse();
+  }
+
+  @Test
+  public void containsExecutionPayload_shouldReturnFalseWhenPayloadUnavailable() {
+    initPostGenesis();
+
+    assertThat(recentChainData.containsExecutionPayload(dataStructureUtil.randomBytes32()))
+        .isFalse();
+  }
+
+  @Test
+  public void containsExecutionPayload_shouldReturnTrueWhenPayloadAvailable() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final StorageSystem gloasStorage =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(gloasSpec)
+            .storageMode(StateStorageMode.PRUNE)
+            .storeConfig(StoreConfig.builder().build())
+            .build();
+    final ChainBuilder gloasChainBuilder = gloasStorage.chainBuilder();
+    final RecentChainData gloasRecentChainData = gloasStorage.recentChainData();
+    final SignedBlockAndState gloasGenesis = gloasChainBuilder.generateGenesis();
+    gloasRecentChainData.initializeFromGenesis(gloasGenesis.getState(), UInt64.ZERO);
+
+    final SignedBlockAndState block = gloasChainBuilder.generateBlockAtSlot(1);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        gloasChainBuilder.getExecutionPayloadAtSlot(block.getSlot()).orElseThrow();
+
+    assertThat(gloasRecentChainData.containsExecutionPayload(block.getRoot())).isFalse();
+
+    final StoreTransaction transaction = gloasRecentChainData.startStoreTransaction();
+    transaction.putBlockAndState(block, gloasSpec.calculateBlockCheckpoints(block.getState()));
+    transaction.putExecutionPayload(executionPayload, false);
+    transaction.commit().join();
+
+    assertThat(gloasRecentChainData.containsExecutionPayload(block.getRoot())).isTrue();
+  }
+
+  @Test
   public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() {
     initPreGenesis();
     final ChainBuilder chainBuilder =

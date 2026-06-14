@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
@@ -21,6 +23,8 @@ import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class LibP2PDiscoveryNodeIdExtractor implements DiscoveryNodeIdExtractor {
+  private static final Logger LOG = LogManager.getLogger();
+
   @Override
   public Optional<UInt256> calculateDiscoveryNodeId(final Peer peer) {
     if (peer instanceof LibP2PPeer libP2PPeer) {
@@ -30,7 +34,8 @@ public class LibP2PDiscoveryNodeIdExtractor implements DiscoveryNodeIdExtractor 
             DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER.convertPublicKeyToNodeId(
                 libP2PPeerPublicKey);
         return Optional.of(UInt256.fromBytes(discoveryNodeIdBytes));
-      } catch (final Exception ignored) {
+      } catch (final Exception e) {
+        LOG.debug("Failed to calculate discovery node id for peer {}", peer.getId(), e);
         return Optional.empty();
       }
     }

@@ -17,12 +17,14 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
@@ -126,6 +128,17 @@ public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<Blob
   @Override
   public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
     return validationResult;
+  }
+
+  @Override
+  public void logAvailabilityCheckResult(
+      final Logger log, final DataAndValidationResult<BlobSidecar> result) {
+    final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
+    log.debug(
+        "Data availability check for slot: {}, block_root: {} result: {}",
+        slotAndBlockRoot.getSlot(),
+        slotAndBlockRoot.getBlockRoot(),
+        result.toLogString());
   }
 
   private boolean isBlockOutsideDataAvailabilityWindow() {

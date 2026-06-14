@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -71,6 +72,12 @@ class ForkChoiceUtilTest {
   private final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
 
   private final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
+
+  @Test
+  void isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope_shouldDefaultToFalse() {
+    assertThat(forkChoiceUtil.isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope())
+        .isFalse();
+  }
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
@@ -332,6 +339,8 @@ class ForkChoiceUtilTest {
         mock(AvailabilityCheckerFactory.class);
 
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
+    final SignedExecutionPayloadEnvelope signedEnvelope =
+        mock(SignedExecutionPayloadEnvelope.class);
 
     spec.reinitializeForTesting(
         blobSidecarAvailabilityCheckerFactory,
@@ -339,13 +348,14 @@ class ForkChoiceUtilTest {
         KZG.DISABLED);
 
     final AvailabilityChecker<?> availabilityChecker =
-        util.createAvailabilityCheckerOnExecutionPayloadEnvelope(block);
+        util.createAvailabilityCheckerOnExecutionPayloadEnvelope(block, signedEnvelope);
 
     switch (milestone) {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
       case GLOAS, HEZE ->
-          verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
+          verify(dataColumnSidecarAvailabilityCheckerFactory)
+              .createAvailabilityChecker(block, signedEnvelope);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
   }

@@ -71,6 +71,11 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
+  void isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope_shouldReturnTrue() {
+    assertThat(forkChoiceUtil.isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()).isTrue();
+  }
+
+  @Test
   void getPayloadAttributeWithdrawalsUsesEffectiveState() {
     final UInt64 stateSlot = gloasSlot.plus(spec.getSlotsPerEpoch(gloasSlot));
     final SchemaDefinitionsGloas schemaDefinitions =
