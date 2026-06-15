@@ -71,6 +71,7 @@ public class DasSamplerBasicTest {
   private static final UInt64 SAMPLING_INDEX_5 = UInt64.valueOf(5);
   private static final Set<UInt64> SAMPLING_INDICES =
       Set.of(SAMPLING_INDEX_0, SAMPLING_INDEX_2, SAMPLING_INDEX_5);
+  private static final int MAX_RECENTLY_SAMPLED_BLOCKS = 64;
 
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
@@ -104,11 +105,7 @@ public class DasSamplerBasicTest {
     when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
-    sampler = createSampler(64);
-  }
-
-  private DasSamplerBasicImpl createSampler(final int maxRecentlySampledBlocks) {
-    return createSampler(maxRecentlySampledBlocks, metricsSystem);
+    sampler = createSampler(MAX_RECENTLY_SAMPLED_BLOCKS,metricsSystem);
   }
 
   private DasSamplerBasicImpl createSampler(
@@ -247,7 +244,7 @@ public class DasSamplerBasicTest {
     // verify RPC fetch schedule is reset
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), false);
 
-    // verify we never called custody for the late arrived sidecar
+    // verify we never called custody for the late sidecar arrival
     verify(custody, never()).onNewValidatedDataColumnSidecar(eq(lateArrivedSidecar), any());
 
     // verify we call custody for all the retrieved sidecars
@@ -318,7 +315,7 @@ public class DasSamplerBasicTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
-  void shouldHandleMultipleTrackersFromMultipleEntrypoints() {
+  void shouldHandleMultipleTrackersFromMultipleEntryPoints() {
     final DataColumnSlotAndIdentifier source1 =
         new DataColumnSlotAndIdentifier(
             dataStructureUtil.randomSlot(),
@@ -558,7 +555,7 @@ public class DasSamplerBasicTest {
 
   @Test
   void onBlockImported_shouldRetainTrackerWhenDataAvailabilityDeferredToExecutionPayload() {
-    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
     final SignedBeaconBlock blockWithBlobs =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
     when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
@@ -581,7 +578,7 @@ public class DasSamplerBasicTest {
 
   @Test
   void onSlot_shouldRetainGloasImportedBlockTrackerUntilExecutionPayloadImported() {
-    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
     final SignedBeaconBlock blockWithBlobs =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
     when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
@@ -844,7 +841,7 @@ public class DasSamplerBasicTest {
 
   @Test
   void onNewValidatedDataColumnSidecar_shouldTrackGloasBlockUntilPayloadImported() {
-    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
     final DataColumnSlotAndIdentifier columnId =
         new DataColumnSlotAndIdentifier(
             UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
@@ -861,7 +858,7 @@ public class DasSamplerBasicTest {
 
   @Test
   void onNewValidatedDataColumnSidecar_shouldIgnoreGloasBlockAfterPayloadImported() {
-    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
     final DataColumnSlotAndIdentifier columnId =
         new DataColumnSlotAndIdentifier(
             UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
@@ -918,7 +915,7 @@ public class DasSamplerBasicTest {
       asyncRunner.executeDueActions();
       assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
 
-      // than advance to the due
+      // then advance to the due
       stubTimeProvider.advanceTimeByMillis(1);
 
       // due time arrived
@@ -935,8 +932,8 @@ public class DasSamplerBasicTest {
     }
   }
 
-  private DasSamplerBasic createGloasSampler() {
-    return new DasSamplerBasic(
+  private DasSamplerBasicImpl createGloasSampler() {
+    return new DasSamplerBasicImpl(
         TestSpecFactory.createMinimalGloas(),
         asyncRunner,
         currentSlotProvider,
@@ -946,6 +943,8 @@ public class DasSamplerBasicTest {
         custodyGroupCountManager,
         recentChainData,
         true,
+        metricsSystem,
+            MAX_RECENTLY_SAMPLED_BLOCKS,
         blockImportChannel);
   }
 }
