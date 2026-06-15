@@ -257,9 +257,11 @@ public class GossipBlobSidecarTestExecutor implements TestExecutor {
                   @Override
                   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
                       final UInt64 blockSlot, final Bytes32 blockParentRoot) {
-                    // The production helper reads the finalized checkpoint from Store, but raw-root
-                    // reference-test checkpoints cannot be committed there. Preserve the production
-                    // ancestry rule while substituting the fixture's checkpoint root.
+                    // The production helper reads the finalized checkpoint from Store, but ref-test
+                    // gives a fake checkpoint that cannot be committed there given that it doesn't
+                    // ahve a block root.
+                    // We preserve the production ancestry rule while substituting the fixture's
+                    // checkpoint root.
                     if (blockSlot.isLessThanOrEqualTo(
                         finalizedCheckpoint.getEpochStartSlot(spec))) {
                       return false;
