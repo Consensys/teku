@@ -943,7 +943,7 @@ public class DasSamplerBasicTest {
         custodyGroupCountManager,
         recentChainData,
         true,
-        metricsSystem,
+        new StubMetricsSystem(),
         MAX_RECENTLY_SAMPLED_BLOCKS,
         blockImportChannel);
   }
