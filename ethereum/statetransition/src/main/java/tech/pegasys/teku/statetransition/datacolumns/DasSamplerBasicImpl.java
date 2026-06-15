@@ -220,12 +220,13 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
             });
   }
 
-  @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
+
   private boolean isStaledTracker(
       final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
     return recentlySampledColumnsByRoot.get(blockRoot) != tracker;
   }
 
+  @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker existing = recentlySampledColumnsByRoot.get(blockRoot);
     if (existing != null) {
