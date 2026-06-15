@@ -1446,7 +1446,8 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBlockInEffectAtSlot(eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot())).thenReturn(true);
+    when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
+        .thenReturn(true);
 
     final Optional<PayloadAttestationData> result =
         SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
@@ -1457,6 +1458,29 @@ class ValidatorApiHandlerTest {
               assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
               assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
               assertThat(payloadAttestationData.isPayloadPresent()).isTrue();
+              assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
+            });
+  }
+
+  @Test
+  public void createPayloadAttestationData_shouldSetPayloadPresentFalseWhenPayloadWasNotEarly() {
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(newSlot);
+
+    when(chainDataClient.getBlockInEffectAtSlot(eq(newSlot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
+        .thenReturn(false);
+
+    final Optional<PayloadAttestationData> result =
+        SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
+
+    assertThat(result)
+        .hasValueSatisfying(
+            payloadAttestationData -> {
+              assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
+              assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
+              assertThat(payloadAttestationData.isPayloadPresent()).isFalse();
               assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
             });
   }

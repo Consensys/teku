@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.Sam
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
@@ -539,6 +541,75 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  void onBlockImported_shouldRemoveTrackerWhenDataAvailabilityCheckedOnBlock() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(blockWithBlobs.getRoot());
+
+    sampler.onBlockImported(blockWithBlobs);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+  }
+
+  @Test
+  void onBlockImported_shouldRetainTrackerWhenDataAvailabilityDeferredToExecutionPayload() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+
+    gloasSampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+
+    gloasSampler.onBlockImported(blockWithBlobs);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+
+    gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+  }
+
+  @Test
+  void onSlot_shouldRetainGloasImportedBlockTrackerUntilExecutionPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
+    when(recentChainData.containsBlock(blockWithBlobs.getRoot())).thenReturn(true);
+
+    gloasSampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    final SafeFuture<List<UInt64>> completionFuture =
+        gloasSampler
+            .getRecentlySampledColumnsByRoot()
+            .get(blockWithBlobs.getRoot())
+            .completionFuture();
+
+    gloasSampler.onSlot(UInt64.valueOf(2));
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+    assertThat(completionFuture).isNotDone();
+
+    // Data availability is deferred to the payload, so the tracker is pruned now.
+    gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+    assertThat(completionFuture).isCancelled();
+  }
+
+  @Test
   void enableBlockImportOnCompletion_shouldImportOnlyOnceWhenCalledMultipleTimes() {
     final SignedBeaconBlock blockWithBlobs =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
@@ -742,6 +813,70 @@ public class DasSamplerBasicTest {
     return tracker;
   }
 
+  @Test
+  void delayedRpcFetch_shouldSkipRemovedTracker() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot()))
+        .thenReturn(Duration.ofMillis(10));
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    sampler.removeAllForBlock(blockWithBlobs.getSlotAndBlockRoot());
+
+    stubTimeProvider.advanceTimeByMillis(10);
+    asyncRunner.executeDueActions();
+
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+    verify(retriever, never()).retrieve(any());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreWhenPreGloasBlockAlreadyImported() {
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+
+    sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).doesNotContainKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldTrackGloasBlockUntilPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot())).thenReturn(Optional.empty());
+    when(rpcFetchDelayProvider.calculate(columnId.slot())).thenReturn(Duration.ZERO);
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot()).containsKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreGloasBlockAfterPayloadImported() {
+    final DasSamplerBasic gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot()))
+        .thenReturn(Optional.of(mock(SignedExecutionPayloadEnvelope.class)));
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(columnId.blockRoot());
+  }
+
   private void assertSamplerTracker(
       final Bytes32 blockRoot, final UInt64 slot, final Set<UInt64> missingColumns) {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
@@ -798,5 +933,19 @@ public class DasSamplerBasicTest {
     for (final UInt64 missingColumn : missingColumns) {
       verify(retriever).retrieve(new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn));
     }
+  }
+
+  private DasSamplerBasic createGloasSampler() {
+    return new DasSamplerBasic(
+        TestSpecFactory.createMinimalGloas(),
+        asyncRunner,
+        currentSlotProvider,
+        rpcFetchDelayProvider,
+        custody,
+        retriever,
+        custodyGroupCountManager,
+        recentChainData,
+        true,
+        blockImportChannel);
   }
 }

@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -75,10 +76,9 @@ class ForkChoiceUtilReorgTest {
     setup.withHeadBlock();
     setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), true);
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -89,10 +89,9 @@ class ForkChoiceUtilReorgTest {
     when(setup.store.getProposerBoostRoot())
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -101,10 +100,9 @@ class ForkChoiceUtilReorgTest {
     setup.withHeadBlock();
     setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(8)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(8)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -112,10 +110,9 @@ class ForkChoiceUtilReorgTest {
     final ReorgTestSetup setup = new ReorgTestSetup();
     setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -124,10 +121,9 @@ class ForkChoiceUtilReorgTest {
     setup.withHeadBlock();
     setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(25)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(25)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -139,10 +135,9 @@ class ForkChoiceUtilReorgTest {
     setup.withFfgNotCompetitive();
     setup.withParentSlot(Optional.of(UInt64.ZERO));
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -153,10 +148,9 @@ class ForkChoiceUtilReorgTest {
     setup.withCurrentSlot(UInt64.ONE);
     setup.withFfgCompetitive();
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -168,10 +162,9 @@ class ForkChoiceUtilReorgTest {
     setup.withFfgCompetitive();
     setup.withParentSlot(Optional.of(UInt64.ZERO));
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(3)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(3)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -185,10 +178,13 @@ class ForkChoiceUtilReorgTest {
     setup.harness.headWeak = true;
     setup.harness.parentStrong = true;
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getParentRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode parent =
+        ForkChoiceNode.createBase(setup.signedBlockAndState.getParentRoot());
+    when(setup.forkChoiceStrategy.getParentBeaconBlockNode(head)).thenReturn(Optional.of(parent));
+
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(parent);
   }
 
   @Test
@@ -201,10 +197,9 @@ class ForkChoiceUtilReorgTest {
     setup.withParentSlot(Optional.of(UInt64.ZERO));
     setup.harness.parentStrong = true;
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test
@@ -217,10 +212,9 @@ class ForkChoiceUtilReorgTest {
     setup.withParentSlot(Optional.of(UInt64.ZERO));
     setup.harness.headWeak = true;
 
-    assertThat(
-            setup.harness.getProposerHead(
-                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
-        .isEqualTo(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
   }
 
   @Test

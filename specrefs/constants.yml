@@ -294,6 +294,13 @@
     DOMAIN_VOLUNTARY_EXIT: DomainType = '0x04000000'
     </spec>
 
+- name: EMPTY_BLOCK_HASH#bellatrix
+  sources: []
+  spec: |
+    <spec constant_var="EMPTY_BLOCK_HASH" fork="bellatrix" hash="23cdf402">
+    EMPTY_BLOCK_HASH: Hash32 =
+    </spec>
+
 - name: ENDIANNESS#phase0
   sources: []
   spec: |
@@ -543,8 +550,8 @@
 
 - name: SAFETY_DECAY#phase0
   sources:
-    - file: ethereum/weaksubjectivity/src/main/java/tech/pegasys/teku/weaksubjectivity/config/WeakSubjectivityConfig.java
-      search: SAFETY_DECAY =
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/weaksubjectivity/WeakSubjectivityCalculator.java
+      search: public static final UInt64 SAFETY_DECAY =
   spec: |
     <spec constant_var="SAFETY_DECAY" fork="phase0" hash="298e03fe">
     SAFETY_DECAY: uint64 = 10
@@ -650,21 +657,27 @@
     </spec>
 
 - name: UINT256_MAX#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: UInt256.MAX_VALUE
   spec: |
     <spec constant_var="UINT256_MAX" fork="fulu" hash="57a47f45">
     UINT256_MAX: uint256 = 2**256 - 1
     </spec>
 
 - name: UINT64_MAX#phase0
-  sources: []
+  sources:
+    - file: infrastructure/unsigned/src/main/java/tech/pegasys/teku/infrastructure/unsigned/UInt64.java
+      search: MAX_VALUE = new UInt64(-1L)
   spec: |
     <spec constant_var="UINT64_MAX" fork="phase0" hash="0efe6bd6">
     UINT64_MAX: uint64 = 2**64 - 1
     </spec>
 
 - name: UINT64_MAX_SQRT#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MathHelpers.java
+      search: UInt64 MAX_SQRT = UInt64.valueOf(4294967295L);
   spec: |
     <spec constant_var="UINT64_MAX_SQRT" fork="phase0" hash="28d7e92a">
     UINT64_MAX_SQRT: uint64 = 4294967295

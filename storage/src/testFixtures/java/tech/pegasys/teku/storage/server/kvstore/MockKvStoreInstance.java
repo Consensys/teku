@@ -238,6 +238,11 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public void compact() {
+    // No-op for the in-memory mock instance.
+  }
+
+  @Override
   public void close() {
     closed.set(true);
   }

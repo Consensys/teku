@@ -99,6 +99,8 @@ public interface SchemaCombined extends Schema {
 
   KvStoreVariable<UInt64> getVariableEarliestAvailableDataColumnSlot();
 
+  KvStoreVariable<UInt64> getVariableLastDataColumnSidecarPrunedSlot();
+
   KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot();
 
   KvStoreVariable<UInt64> getVariableCustodyGroupCount();

@@ -56,6 +56,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final List<Multiaddr> advertisedAddresses;
   private final GossipNetwork gossipNetwork;
   private final List<Integer> listenPorts;
+  private final boolean quicEnabled;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
@@ -66,7 +67,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final PeerManager peerManager,
       final List<Multiaddr> advertisedAddresses,
       final GossipNetwork gossipNetwork,
-      final List<Integer> listenPorts) {
+      final List<Integer> listenPorts,
+      final boolean quicEnabled) {
     this.privKey = privKey;
     this.nodeId = nodeId;
     this.host = host;
@@ -74,6 +76,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.advertisedAddresses = advertisedAddresses;
     this.gossipNetwork = gossipNetwork;
     this.listenPorts = listenPorts;
+    this.quicEnabled = quicEnabled;
   }
 
   @Override
@@ -113,7 +116,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   @Override
   public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
-    return MultiaddrPeerAddress.fromDiscoveryPeer(discoveryPeer);
+    return MultiaddrPeerAddress.fromDiscoveryPeer(discoveryPeer, quicEnabled);
   }
 
   @Override

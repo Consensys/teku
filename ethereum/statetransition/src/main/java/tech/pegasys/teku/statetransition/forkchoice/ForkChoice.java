@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.ConnectException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -83,8 +85,6 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerificationException;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -93,6 +93,7 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
+import tech.pegasys.teku.statetransition.attestation.VoteUpdates;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -278,23 +279,42 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             final IndexedAttestationLight indexedAttestation =
                                 getIndexedAttestation(attestation);
                             final boolean fullPayloadHint =
-                                spec.atSlot(attestation.getData().getSlot())
-                                    .getForkChoiceUtil()
-                                    .getFullPayloadVoteHint(attestation.getData().getIndex());
-                            deferredAttestations.addAttestation(
-                                indexedAttestation, fullPayloadHint);
+                                getFullPayloadVoteHint(attestation.getData());
+                            if (!fullPayloadHint) {
+                              // No full payload target to check, so avoid the fork choice thread
+                              deferredAttestations.addAttestation(indexedAttestation, false);
+                              return SafeFuture.completedFuture(validationResult);
+                            }
+                            return onForkChoiceThread(
+                                () -> {
+                                  if (isFullPayloadVoteMissingTarget(
+                                      getForkChoiceStrategy(),
+                                      indexedAttestation.data().getBeaconBlockRoot(),
+                                      true)) {
+                                    return AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD;
+                                  }
+                                  deferredAttestations.addAttestation(indexedAttestation, true);
+                                  return validationResult;
+                                });
                           }
                           return SafeFuture.completedFuture(validationResult);
                         }
                         return onForkChoiceThread(
-                                () -> {
-                                  final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                                  getForkChoiceStrategy()
-                                      .onAttestation(
-                                          transaction, getIndexedAttestation(attestation));
-                                  transaction.commit();
-                                })
-                            .thenApply(__ -> validationResult);
+                            () -> {
+                              final IndexedAttestationLight indexedAttestation =
+                                  getIndexedAttestation(attestation);
+                              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                              if (isFullPayloadVoteMissingTarget(
+                                  forkChoiceStrategy,
+                                  indexedAttestation.data().getBeaconBlockRoot(),
+                                  getFullPayloadVoteHint(indexedAttestation.data()))) {
+                                return AttestationProcessingResult.UNKNOWN_EXECUTION_PAYLOAD;
+                              }
+                              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+                              forkChoiceStrategy.onAttestation(transaction, indexedAttestation);
+                              transaction.commit();
+                              return validationResult;
+                            });
                       });
             })
         .exceptionallyCompose(
@@ -308,18 +328,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              attestations.stream()
-                  .map(this::getIndexedAttestation)
-                  .forEach(
-                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
-              transaction.commit();
-            })
-        .finishStackTrace();
+  public SafeFuture<List<ValidatableAttestation>> applyIndexedAttestations(
+      final List<ValidatableAttestation> attestations) {
+    return onForkChoiceThread(
+        () -> {
+          final VoteUpdater transaction = recentChainData.startVoteUpdate();
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          final List<ValidatableAttestation> attestationsWaitingForFullPayload = new ArrayList<>();
+          attestations.forEach(
+              attestation -> {
+                final IndexedAttestationLight indexedAttestation =
+                    getIndexedAttestation(attestation);
+                if (!applyIndexedAttestation(forkChoiceStrategy, transaction, indexedAttestation)) {
+                  attestationsWaitingForFullPayload.add(attestation);
+                }
+              });
+          transaction.commit();
+          return attestationsWaitingForFullPayload;
+        });
   }
 
   public void onAttesterSlashing(
@@ -534,14 +560,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =
         availabilityChecker
-            .getAvailabilityCheckResult()
+            .getAndLogAvailabilityCheckResult(LOG)
             .thenPeek(
                 result -> {
-                  LOG.debug(
-                      "Data availability check for slot: {}, block_root: {} result: {}",
-                      block.getSlot(),
-                      block.getRoot(),
-                      result.toLogString());
                   blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
@@ -601,7 +622,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
     final AvailabilityChecker<?> availabilityChecker =
-        forkChoiceUtil.createAvailabilityCheckerOnExecutionPayloadEnvelope(block);
+        forkChoiceUtil.createAvailabilityCheckerOnExecutionPayloadEnvelope(block, signedEnvelope);
     availabilityChecker.initiateDataAvailabilityCheck();
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
@@ -619,16 +640,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultFuture =
-        availabilityChecker
-            .getAvailabilityCheckResult()
-            .thenPeek(
-                result ->
-                    LOG.debug(
-                        "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
-                        signedEnvelope.getSlot(),
-                        signedEnvelope.getMessage().getBuilderIndex(),
-                        signedEnvelope.getBeaconBlockRoot(),
-                        result.toLogString()));
+        availabilityChecker.getAndLogAvailabilityCheckResult(LOG);
 
     return payloadExecutor
         .getExecutionResult()
@@ -713,6 +725,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         computeEarliestBlobSidecarsSlot(
             recentChainData.getStore(), dataAndValidationResult, block.getMessage());
 
+    final Optional<ForkChoiceNode> preImportHead =
+        recentChainData.getChainHead().map(ChainHead::getForkChoiceNode);
+
     forkChoiceUtil.applyBlockToStore(
         transaction,
         block,
@@ -721,7 +736,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    final boolean shouldUpdateProposerBoostRoot = shouldUpdateProposerBoostRoot(block, transaction);
+    final boolean shouldUpdateProposerBoostRoot =
+        preImportHead
+            .filter(
+                forkChoiceNode ->
+                    shouldUpdateProposerBoostRoot(
+                        block, forkChoiceNode, forkChoiceStrategy, transaction))
+            .isPresent();
     if (shouldUpdateProposerBoostRoot) {
       transaction.setProposerBoostRoot(block.getRoot());
     }
@@ -898,7 +919,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   // from consensus-specs/fork-choice:
   private boolean shouldUpdateProposerBoostRoot(
-      final SignedBeaconBlock block, final StoreTransaction transaction) {
+      final SignedBeaconBlock block,
+      final ForkChoiceNode preImportHead,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final StoreTransaction transaction) {
     // is_first_block
     if (transaction.getProposerBoostRoot().isPresent()) {
       return false;
@@ -908,31 +932,49 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
 
-    // in the edge cases when the chain head is not present or the head state future is not
-    // immediately available, the proposer boost root will be set to maintain backwards
-    // compatibility (see: https://github.com/ethereum/consensus-specs/pull/4807/)
-    return recentChainData
-        .getChainHead()
-        .map(
-            chainHead -> {
-              final SafeFuture<BeaconState> headStateFuture = chainHead.getState();
-              if (!headStateFuture.isCompletedNormally()) {
-                return true;
-              }
-              final BeaconState headState = headStateFuture.join();
-              final UInt64 currentSlot = spec.getCurrentSlot(transaction);
-              try {
-                return block.getProposerIndex().intValue()
-                    == spec.getProposerIndexAtSlot(headState, currentSlot);
-              } catch (final SlotProcessingException | EpochProcessingException ex) {
-                throw new RuntimeException(
-                    String.format(
-                        "Can't progress head state from slot %s to slot %s",
-                        headState.getSlot(), currentSlot),
-                    ex);
-              }
-            })
-        .orElse(true);
+    final Optional<Bytes32> maybeBlockDependentRoot =
+        getDependentRoot(block, forkChoiceStrategy, transaction);
+    final Optional<Bytes32> maybeHeadDependentRoot =
+        getDependentRoot(preImportHead, forkChoiceStrategy, transaction);
+    return maybeBlockDependentRoot.isPresent()
+        && maybeBlockDependentRoot.equals(maybeHeadDependentRoot);
+  }
+
+  private Optional<Bytes32> getDependentRoot(
+      final SignedBeaconBlock block,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final StoreTransaction transaction) {
+    final Optional<UInt64> maybeDependentSlot = getDependentSlot(transaction);
+    if (maybeDependentSlot.isEmpty()) {
+      return Optional.of(Bytes32.ZERO);
+    }
+    final UInt64 dependentSlot = maybeDependentSlot.get();
+    if (!block.getSlot().isGreaterThan(dependentSlot)) {
+      return Optional.of(block.getRoot());
+    }
+    return forkChoiceStrategy.getAncestor(block.getParentRoot(), dependentSlot);
+  }
+
+  private Optional<Bytes32> getDependentRoot(
+      final ForkChoiceNode node,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final StoreTransaction transaction) {
+    final Optional<UInt64> maybeDependentSlot = getDependentSlot(transaction);
+    if (maybeDependentSlot.isEmpty()) {
+      return Optional.of(Bytes32.ZERO);
+    }
+    return forkChoiceStrategy
+        .getAncestorNode(node.blockRoot(), maybeDependentSlot.get())
+        .map(ForkChoiceNode::blockRoot);
+  }
+
+  private Optional<UInt64> getDependentSlot(final StoreTransaction transaction) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
+    final int minSeedLookahead = spec.getSpecConfig(currentEpoch).getMinSeedLookahead();
+    if (currentEpoch.isLessThanOrEqualTo(UInt64.valueOf(minSeedLookahead))) {
+      return Optional.empty();
+    }
+    return Optional.of(spec.computeStartSlotAtEpoch(currentEpoch.minus(minSeedLookahead)).minus(1));
   }
 
   private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(
@@ -1006,7 +1048,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
             // Gloas, EMPTY and FULL nodes can share a block root, so keep node identity instead of
             // collapsing to block root.
-            getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, false);
+            getForkChoiceStrategy()
+                .onForkChoiceUpdatedResult(
+                    new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
+                    resultStatus,
+                    false);
           } else {
             // invalidTransitionBlockRoot is only populated when merge-transition validation found a
             // specific Bellatrix transition block to invalidate. Otherwise the EL verdict applies
@@ -1015,7 +1061,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 invalidTransitionBlockRoot ->
                     getForkChoiceStrategy()
                         .onExecutionPayloadResult(invalidTransitionBlockRoot, resultStatus, true),
-                () -> getForkChoiceStrategy().onForkChoiceUpdatedResult(node, resultStatus, true));
+                () ->
+                    getForkChoiceStrategy()
+                        .onForkChoiceUpdatedResult(
+                            new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
+                            resultStatus,
+                            true));
           }
 
           if (resultStatus.hasInvalidStatus()) {
@@ -1091,7 +1142,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void reportInvalidBlock(final SignedBeaconBlock block, final BlockImportResult result) {
-    if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+    if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE
+        || result.getFailureReason() == FailureReason.UNKNOWN_PARENT_EXECUTION_PAYLOAD) {
       return;
     }
     debugDataDumper.saveInvalidBlock(
@@ -1147,7 +1199,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
             attestation -> validateBlockAttestation(forkChoiceStrategy, currentEpoch, attestation))
-        .forEach(attestation -> forkChoiceStrategy.onAttestation(voteUpdater, attestation));
+        .forEach(
+            attestation -> applyIndexedAttestation(forkChoiceStrategy, voteUpdater, attestation));
   }
 
   private boolean validateBlockAttestation(
@@ -1162,14 +1215,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private SafeFuture<Void> applyDeferredAttestations(
       final Collection<DeferredVotes> deferredVoteUpdates) {
-    return onForkChoiceThread(
-        () -> {
-          final VoteUpdater transaction = recentChainData.startVoteUpdate();
-          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-          deferredVoteUpdates.forEach(
-              update -> forkChoiceStrategy.applyDeferredAttestations(transaction, update));
-          transaction.commit();
-        });
+    return onForkChoiceThread(() -> applyDeferredAttestationsToForkChoice(deferredVoteUpdates));
   }
 
   private void applyAttesterSlashingsFromBlock(
@@ -1298,14 +1344,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         () -> {
           final Optional<ChainHead> overriddenHead =
               resolveProposerHeadOverride(canonicalHead, slot);
-          final ChainHead proposerHead = overriddenHead.orElse(canonicalHead);
+          final ChainHead forkChoiceProposerHead = overriddenHead.orElse(canonicalHead);
           final SafeFuture<Void> preparation;
           if (overriddenHead.isPresent()) {
             // Run preparation in parallel; await it before returning so block-body construction
             // sees the updated operation pools.
             preparation =
                 lateBlockReorgPreparationHandler
-                    .onLateBlockReorgPreparation(proposerHead.getSlot(), canonicalHead.getRoot())
+                    .onLateBlockReorgPreparation(
+                        forkChoiceProposerHead.getSlot(), canonicalHead.getRoot())
                     .thenPeek(__ -> performance.lateBlockReorgPreparationCompleted());
           } else {
             preparation = SafeFuture.COMPLETE;
@@ -1314,8 +1361,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           // the block-production fcU that pins payload attributes and asks the EL to start
           // building.
           notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-              Optional.of(slot), Optional.of(proposerHead));
-          return preparation.thenApply(__ -> proposerHead);
+              Optional.of(slot), Optional.of(forkChoiceProposerHead));
+          return preparation.thenApply(__ -> forkChoiceProposerHead);
         });
   }
 
@@ -1330,40 +1377,33 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return Optional.empty();
     }
     final Bytes32 canonicalRoot = canonicalHead.getRoot();
-    final Bytes32 proposerHeadRoot = recentChainData.getProposerHead(canonicalRoot, slot);
-    if (proposerHeadRoot.equals(canonicalRoot)) {
+    final ForkChoiceNode proposerHead =
+        recentChainData.getProposerHead(canonicalHead.getForkChoiceNode(), slot);
+    if (proposerHead.equals(canonicalHead.getForkChoiceNode())) {
       return Optional.empty();
     }
 
     LOG.debug(
         "prepareForBlockProduction overriding head {} with proposer head {} for slot {}",
         canonicalRoot,
-        proposerHeadRoot,
+        proposerHead,
         slot);
 
     final ForkChoiceStrategy strategy = getForkChoiceStrategy();
     final UpdatableStore store = recentChainData.getStore();
-    final ForkChoicePayloadStatus parentPayloadStatus =
-        strategy.shouldExtendPayload(store, proposerHeadRoot)
-            ? ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL
-            : ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
-    // Phase0/non-Gloas blocks only have a base node; fall back if the variant lookup misses.
-    final Optional<ProtoNodeData> parentBlockData =
-        strategy
-            .getBlockData(proposerHeadRoot, parentPayloadStatus)
-            .or(() -> strategy.getBlockData(proposerHeadRoot));
+    final Optional<ProtoNodeData> parentBlockData = strategy.getNodeData(proposerHead);
 
     if (parentBlockData.isEmpty()) {
       LOG.warn(
           "Unable to resolve proposer head {} in fork choice; sticking with canonical head {}",
-          proposerHeadRoot,
+          proposerHead,
           canonicalRoot);
       return Optional.empty();
     }
 
     final SafeFuture<StateAndBlockSummary> parentStateAndBlock =
         store
-            .retrieveStateAndBlockSummary(proposerHeadRoot)
+            .retrieveStateAndBlockSummary(proposerHead.blockRoot())
             .thenApply(
                 maybe ->
                     maybe.orElseThrow(
@@ -1371,7 +1411,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             new IllegalStateException(
                                 String.format(
                                     "Unable to load proposer head state for %s while preparing block production at slot %s",
-                                    proposerHeadRoot, slot))));
+                                    proposerHead, slot))));
 
     return Optional.of(ChainHead.create(parentBlockData.get(), parentStateAndBlock));
   }
@@ -1382,6 +1422,59 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return SafeFuture.COMPLETE;
     }
     return applyDeferredAttestations(deferredVoteUpdates);
+  }
+
+  private boolean applyIndexedAttestation(
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final VoteUpdater voteUpdater,
+      final IndexedAttestationLight attestation) {
+    if (isFullPayloadVoteMissingTarget(
+        forkChoiceStrategy,
+        attestation.data().getBeaconBlockRoot(),
+        getFullPayloadVoteHint(attestation.data()))) {
+      return false;
+    }
+    forkChoiceStrategy.onAttestation(voteUpdater, attestation);
+    return true;
+  }
+
+  private void applyDeferredAttestationsToForkChoice(
+      final Collection<DeferredVotes> deferredVoteUpdates) {
+    final VoteUpdater transaction = recentChainData.startVoteUpdate();
+    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+    deferredVoteUpdates.forEach(
+        update -> {
+          final VoteUpdates votesReadyToApply = new VoteUpdates(update.getSlot());
+          update.forEachDeferredVote(
+              (blockRoot, validatorIndex, fullPayloadHint) -> {
+                if (isFullPayloadVoteMissingTarget(
+                    forkChoiceStrategy, blockRoot, fullPayloadHint)) {
+                  return;
+                }
+                votesReadyToApply.addVote(blockRoot, validatorIndex, fullPayloadHint);
+              });
+          if (!votesReadyToApply.isEmpty()) {
+            forkChoiceStrategy.applyDeferredAttestations(transaction, votesReadyToApply);
+          }
+        });
+    transaction.commit();
+  }
+
+  private boolean isFullPayloadVoteMissingTarget(
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 blockRoot,
+      final boolean fullPayloadHint) {
+    return fullPayloadHint
+        && forkChoiceStrategy.contains(blockRoot)
+        && forkChoiceStrategy
+            .getBlockData(blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)
+            .isEmpty();
+  }
+
+  private boolean getFullPayloadVoteHint(final AttestationData attestationData) {
+    return spec.atSlot(attestationData.getSlot())
+        .getForkChoiceUtil()
+        .getFullPayloadVoteHint(attestationData.getIndex());
   }
 
   private ForkChoiceStrategy getForkChoiceStrategy() {

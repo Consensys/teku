@@ -338,6 +338,7 @@ class Eth2PeerSelectionStrategyTest {
         peerId,
         peerId,
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
+        Optional.empty(),
         ENR_FORK_ID,
         SCHEMA_DEFINITIONS.getAttnetsENRFieldSchema().ofBits(attnets),
         SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema().getDefault(),

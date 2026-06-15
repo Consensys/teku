@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,6 +69,13 @@ public class SpecConfigLoader {
 
   public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName,
+      final Consumer<SpecConfigBuilder> modifier,
+      final Map<String, Object> configOverrides) {
+    return loadConfig(configName, true, true, modifier, configOverrides);
+  }
+
+  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
+      final String configName,
       final boolean strictConfigLoadingEnabled,
       final Consumer<SpecConfigBuilder> modifier) {
     return loadConfig(configName, strictConfigLoadingEnabled, true, modifier);
@@ -103,9 +111,30 @@ public class SpecConfigLoader {
       final boolean strictConfigLoadingEnabled,
       final boolean isIgnoreUnknownConfigItems,
       final Consumer<SpecConfigBuilder> modifier) {
+    return loadConfig(
+        configName,
+        strictConfigLoadingEnabled,
+        isIgnoreUnknownConfigItems,
+        modifier,
+        Collections.emptyMap());
+  }
+
+  static SpecConfigAndParent<? extends SpecConfig> loadConfig(
+      final String configName,
+      final boolean strictConfigLoadingEnabled,
+      final boolean isIgnoreUnknownConfigItems,
+      final Consumer<SpecConfigBuilder> modifier,
+      final Map<String, Object> configOverrides) {
     final SpecConfigReader reader = new SpecConfigReader();
     processConfig(configName, reader, strictConfigLoadingEnabled, isIgnoreUnknownConfigItems);
-    return reader.build(modifier);
+    return reader.build(
+        builder -> {
+          modifier.accept(builder);
+          // apply any config overrides last
+          if (!configOverrides.isEmpty()) {
+            reader.loadFromMap(configOverrides, isIgnoreUnknownConfigItems);
+          }
+        });
   }
 
   // A little extra configuration is able to be loaded from builtin configs.

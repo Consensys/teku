@@ -15,11 +15,14 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -31,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -91,8 +95,9 @@ abstract class AbstractAttestationValidatorTest {
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
   protected final GossipValidationHelper gossipValidationHelper =
       new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem());
+  protected final Map<Bytes32, BlockImportResult> invalidBlockRoots = new ConcurrentHashMap<>();
   protected final AttestationValidator validator =
-      new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
+      new AttestationValidator(spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
 
   @BeforeEach
   public void setUp() {

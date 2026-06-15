@@ -18,12 +18,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -33,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -40,7 +44,11 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil.BlockTimeliness;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ForkChoiceUtilGloasTest {
@@ -60,6 +68,74 @@ class ForkChoiceUtilGloasTest {
     gloasSlot = spec.computeStartSlotAtEpoch(GLOAS_FORK_EPOCH);
     forkChoiceUtil = ForkChoiceUtilGloas.required(spec.atSlot(gloasSlot).getForkChoiceUtil());
     justifiedState = dataStructureUtil.randomBeaconState(gloasSlot);
+  }
+
+  @Test
+  void isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope_shouldReturnTrue() {
+    assertThat(forkChoiceUtil.isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()).isTrue();
+  }
+
+  @Test
+  void getPayloadAttributeWithdrawalsUsesEffectiveState() {
+    final UInt64 stateSlot = gloasSlot.plus(spec.getSlotsPerEpoch(gloasSlot));
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(stateSlot).getSchemaDefinitions());
+    final ExecutionRequests parentExecutionRequests =
+        schemaDefinitions.getExecutionRequestsSchema().getDefault();
+    final Bytes32 latestExecutionPayloadBlockHash = Bytes32.fromHexString("0x01");
+    final Bytes32 latestBlockHash = Bytes32.fromHexString("0x02");
+    final UInt64 builderIndex = UInt64.ZERO;
+    final UInt64 parentPayloadValue = UInt64.valueOf(1234);
+    final ExecutionPayloadBid latestExecutionPayloadBid =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .create(
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32(),
+                latestExecutionPayloadBlockHash,
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomEth1Address(),
+                dataStructureUtil.randomUInt64(),
+                builderIndex,
+                UInt64.ZERO,
+                parentPayloadValue,
+                UInt64.ZERO,
+                dataStructureUtil.randomBlobKzgCommitments(),
+                parentExecutionRequests.hashTreeRoot());
+
+    final BeaconState originalState =
+        dataStructureUtil
+            .stateBuilderGloas(100, 1, 100)
+            .slot(stateSlot)
+            .build()
+            .updated(
+                state -> {
+                  final MutableBeaconStateGloas stateGloas =
+                      MutableBeaconStateGloas.required(state);
+                  stateGloas.setLatestBlockHash(latestBlockHash);
+                  stateGloas.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
+                  stateGloas.setNextWithdrawalBuilderIndex(builderIndex);
+                  stateGloas.setBuilders(
+                      BeaconStateSchemaGloas.required(schemaDefinitions.getBeaconStateSchema())
+                          .getBuildersSchema()
+                          .createFromElements(
+                              List.of(
+                                  dataStructureUtil
+                                      .builderBuilder()
+                                      .balance(parentPayloadValue)
+                                      .build())));
+                });
+    final Bytes32 originalStateRoot = originalState.hashTreeRoot();
+
+    final SszList<Withdrawal> actual =
+        forkChoiceUtil.getPayloadAttributeWithdrawals(originalState, parentExecutionRequests);
+
+    assertThat(actual).isNotEmpty();
+    assertThat(actual).extracting(Withdrawal::getAmount).contains(parentPayloadValue);
+    assertThat(actual).isNotEqualTo(spec.getExpectedWithdrawals(originalState).orElseThrow());
+    assertThat(originalState.hashTreeRoot()).isEqualTo(originalStateRoot);
+    assertThat(BeaconStateGloas.required(originalState).getLatestBlockHash())
+        .isEqualTo(latestBlockHash);
   }
 
   @Test
@@ -88,6 +164,14 @@ class ForkChoiceUtilGloasTest {
 
     assertThat(forkChoiceUtil.computeBlockTimeliness(gloasSlot, gloasSlot, ptcDueMillis))
         .isEqualTo(new BlockTimeliness(false, false));
+  }
+
+  @Test
+  void getPayloadDueMillis_shouldUsePayloadDueBps() {
+    assertThat(forkChoiceUtil.getPayloadDueMillis())
+        .hasValue(spec.getSlotDurationMillis(gloasSlot) * 3 / 4);
+    assertThat(forkChoiceUtil.getPayloadDueMillis())
+        .isEqualTo(forkChoiceUtil.getPayloadAttestationDueMillis());
   }
 
   @Test

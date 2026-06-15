@@ -26,8 +26,17 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class MultiaddrUtil {
 
-  public static Multiaddr fromDiscoveryPeer(final DiscoveryPeer peer) {
-    return fromInetSocketAddress(peer.getNodeAddress(), getNodeId(peer));
+  public static Multiaddr fromDiscoveryPeer(
+      final DiscoveryPeer peer, final boolean localNodeQuicEnabled) {
+    final NodeId nodeId = getNodeId(peer);
+    // Only dial a peer over QUIC if this node has the QUIC transport enabled, otherwise we have no
+    // QuicTransport to perform the dial and would fail even though the peer also advertises TCP.
+    if (localNodeQuicEnabled) {
+      return peer.getQuicAddress()
+          .map(quicAddr -> fromInetSocketAddressAsQuic(quicAddr, nodeId))
+          .orElseGet(() -> fromInetSocketAddress(peer.getNodeAddress(), nodeId));
+    }
+    return fromInetSocketAddress(peer.getNodeAddress(), nodeId);
   }
 
   public static Multiaddr fromDiscoveryPeerAsUdp(final DiscoveryPeer peer) {
@@ -36,6 +45,16 @@ public class MultiaddrUtil {
 
   static Multiaddr fromInetSocketAddress(final InetSocketAddress address) {
     return fromInetSocketAddress(address, "tcp");
+  }
+
+  static Multiaddr fromInetSocketAddressAsQuic(final InetSocketAddress address) {
+    final String addrString =
+        String.format(
+            "/%s/%s/udp/%d/quic-v1",
+            protocol(address.getAddress()),
+            address.getAddress().getHostAddress(),
+            address.getPort());
+    return Multiaddr.fromString(addrString);
   }
 
   static Multiaddr fromInetSocketAddress(final InetSocketAddress address, final String protocol) {
@@ -52,6 +71,11 @@ public class MultiaddrUtil {
   public static Multiaddr fromInetSocketAddress(
       final InetSocketAddress address, final NodeId nodeId) {
     return addPeerId(fromInetSocketAddress(address, "tcp"), nodeId);
+  }
+
+  public static Multiaddr fromInetSocketAddressAsQuic(
+      final InetSocketAddress address, final NodeId nodeId) {
+    return addPeerId(fromInetSocketAddressAsQuic(address), nodeId);
   }
 
   private static Multiaddr addPeerId(final Multiaddr addr, final NodeId nodeId) {

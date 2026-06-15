@@ -119,8 +119,12 @@ public class FailedExecutionPayloadPool {
 
   private synchronized void retryExecution(final SignedExecutionPayloadEnvelope executionPayload) {
     LOG.debug("Retrying execution of execution payload {}", executionPayload.toLogString());
+    // Retried payloads may have originated from either gossip-validated or sync/RPC imports and the
+    // pool does not track their provenance, so we deliberately import them as commitment-unverified
+    // to avoid poisoning the invalid-payload cache with envelopes that were never proven to be the
+    // block's committed payload.
     executionPayloadManager
-        .importExecutionPayload(executionPayload)
+        .importExecutionPayload(executionPayload, false)
         .thenAccept(result -> handleExecutionResult(executionPayload, result))
         .finish(
             error -> {
