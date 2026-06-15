@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -165,14 +165,14 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
 
   private void fetchMissingColumnsViaRPC(
       final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
-      // Delayed fetch callbacks can outlive the tracker they were scheduled for.
-      // Only the currently installed tracker may issue RPC requests.
-      if (isStaledTracker(blockRoot, tracker)) {
-          tracker.rpcFetchInProgress().set(false);
-          LOG.debug(
-                  "checkDataAvailability(): skipping stale RPC fetch for slot {} root {}", slot, blockRoot);
-          return;
-      }
+    // Delayed fetch callbacks can outlive the tracker they were scheduled for.
+    // Only the currently installed tracker may issue RPC requests.
+    if (isStaledTracker(blockRoot, tracker)) {
+      tracker.rpcFetchInProgress().set(false);
+      LOG.debug(
+          "checkDataAvailability(): skipping stale RPC fetch for slot {} root {}", slot, blockRoot);
+      return;
+    }
 
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
     LOG.debug(
@@ -222,8 +222,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
 
   @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
   private boolean isStaledTracker(
-  final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
-      return recentlySampledColumnsByRoot.get(blockRoot) != tracker;
+      final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
+    return recentlySampledColumnsByRoot.get(blockRoot) != tracker;
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
@@ -315,18 +315,18 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
   }
 
   private boolean isDataAvailabilityAlreadySatisfied(final UInt64 slot, final Bytes32 blockRoot) {
-      if (!recentChainData.containsBlock(blockRoot)) {
-          return false;
-      }
+    if (!recentChainData.containsBlock(blockRoot)) {
+      return false;
+    }
 
-      if (spec.atSlot(slot)
-              .getForkChoiceUtil()
-              .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
-          return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot).isPresent();
-      }
+    if (spec.atSlot(slot)
+        .getForkChoiceUtil()
+        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
+      return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot).isPresent();
+    }
 
-      // For non-deferred forks, block import already required data availability to be satisfied.
-      return true;
+    // For non-deferred forks, block import already required data availability to be satisfied.
+    return true;
   }
 
   private boolean isInCustodyPeriod(final BeaconBlock block) {
@@ -358,35 +358,35 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
         .values()
         .removeIf(
             tracker -> {
-                final boolean isCleanupDue;
-                if (tracker.slot().isLessThan(firstNonFinalizedSlot)) {
-                    isCleanupDue = true;
-                } else {
-                    final boolean blockImported = recentChainData.containsBlock(tracker.blockRoot());
-                    final boolean isDataAvailabilityDeferred =
-                            spec.atSlot(tracker.slot())
-                                    .getForkChoiceUtil()
-                                    .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope();
-                    isCleanupDue = blockImported && !isDataAvailabilityDeferred;
-                }
+              final boolean isCleanupDue;
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)) {
+                isCleanupDue = true;
+              } else {
+                final boolean blockImported = recentChainData.containsBlock(tracker.blockRoot());
+                final boolean isDataAvailabilityDeferred =
+                    spec.atSlot(tracker.slot())
+                        .getForkChoiceUtil()
+                        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope();
+                isCleanupDue = blockImported && !isDataAvailabilityDeferred;
+              }
 
-                if (isCleanupDue) {
-                    // Outdated
-                    if (!tracker.completionFuture().isDone()) {
-                        // make sure the future releases any pending waiters
-                        tracker
-                                .completionFuture()
-                                .completeExceptionally(
-                                        new RuntimeException("DAS sampling expired while slot finalized"));
-                        // Slot less than finalized slot, but we didn't complete DA check, means it's
-                        // probably orphaned block with data never available - we must prune this
-                        // RecentChainData contains block, but we are here - shouldn't happen
-                        return true;
-                    }
-                    // cleanup only if fully sampled
-                    return tracker.fullySampled().get();
+              if (isCleanupDue) {
+                // Outdated
+                if (!tracker.completionFuture().isDone()) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(
+                          new RuntimeException("DAS sampling expired while slot finalized"));
+                  // Slot less than finalized slot, but we didn't complete DA check, means it's
+                  // probably orphaned block with data never available - we must prune this
+                  // RecentChainData contains block, but we are here - shouldn't happen
+                  return true;
                 }
-                return false;
+                // cleanup only if fully sampled
+                return tracker.fullySampled().get();
+              }
+              return false;
             });
   }
 
@@ -400,12 +400,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block) {
-      if (spec.atSlot(block.getSlot())
-              .getForkChoiceUtil()
-              .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
-          return;
-      }
-      removeAllForBlock(block.getSlotAndBlockRoot());
+    if (spec.atSlot(block.getSlot())
+        .getForkChoiceUtil()
+        .isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope()) {
+      return;
+    }
+    removeAllForBlock(block.getSlotAndBlockRoot());
   }
 
   @Override
