@@ -105,7 +105,7 @@ public class DasSamplerBasicTest {
     when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
-    sampler = createSampler(MAX_RECENTLY_SAMPLED_BLOCKS,metricsSystem);
+    sampler = createSampler(MAX_RECENTLY_SAMPLED_BLOCKS, metricsSystem);
   }
 
   private DasSamplerBasicImpl createSampler(
@@ -944,7 +944,7 @@ public class DasSamplerBasicTest {
         recentChainData,
         true,
         metricsSystem,
-            MAX_RECENTLY_SAMPLED_BLOCKS,
+        MAX_RECENTLY_SAMPLED_BLOCKS,
         blockImportChannel);
   }
 }
