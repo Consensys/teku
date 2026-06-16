@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class RecentBlocksFetchServiceTest {
@@ -64,6 +65,8 @@ public class RecentBlocksFetchServiceTest {
 
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
+
+  private final DasSamplerBasic dasSamplerBasic = mock(DasSamplerBasic.class);
 
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
@@ -87,6 +90,7 @@ public class RecentBlocksFetchServiceTest {
             pendingAttestationsPool,
             pendingPayloadAttestationsPool,
             blockBlobSidecarsTrackersPool,
+            dasSamplerBasic,
             forwardSync,
             fetchTaskFactory,
             maxConcurrentRequests);
