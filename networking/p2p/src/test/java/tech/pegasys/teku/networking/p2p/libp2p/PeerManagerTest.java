@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,11 +37,15 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
@@ -134,6 +139,57 @@ public class PeerManagerTest {
     Assertions.assertThrows(
         PeerAlreadyConnectedException.class, () -> peerManager.onConnectedPeer(peer));
 
+    assertThat(connectedPeers).containsExactly(peer);
+  }
+
+  @Test
+  public void subscribeConnect_shouldRejectInboundConnectionWithBadReputation() {
+    final PeerHandler peerHandler = mock(PeerHandler.class);
+    final PeerManager peerManager =
+        new PeerManager(
+            new StubMetricsSystem(),
+            reputationManager,
+            List.of(peerHandler),
+            Collections.emptyList(),
+            peerId -> 0.0);
+    final List<Peer> connectedPeers = new ArrayList<>();
+    peerManager.subscribeConnect(connectedPeers::add);
+
+    final Peer peer = mock(Peer.class);
+    final MockNodeId nodeId = new MockNodeId(1);
+    final PeerAddress peerAddress = new PeerAddress(nodeId);
+    when(peer.getId()).thenReturn(nodeId);
+    when(peer.getAddress()).thenReturn(peerAddress);
+    when(peer.connectionInitiatedLocally()).thenReturn(false);
+    when(peer.disconnectCleanly(DisconnectReason.BAD_SCORE)).thenReturn(SafeFuture.COMPLETE);
+    when(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .thenReturn(Optional.of(DisconnectReason.BAD_SCORE));
+
+    peerManager.onConnectedPeer(peer);
+
+    final InOrder inOrder = inOrder(peerHandler, peer);
+    inOrder.verify(peerHandler).onConnect(peer);
+    inOrder.verify(peer).disconnectCleanly(DisconnectReason.BAD_SCORE);
+    assertThat(connectedPeers).isEmpty();
+  }
+
+  @Test
+  public void subscribeConnect_shouldNotRejectOutboundConnectionWithBadReputation() {
+    final List<Peer> connectedPeers = new ArrayList<>();
+    peerManager.subscribeConnect(connectedPeers::add);
+
+    final Peer peer = mock(Peer.class);
+    final MockNodeId nodeId = new MockNodeId(1);
+    final PeerAddress peerAddress = new PeerAddress(nodeId);
+    when(peer.getId()).thenReturn(nodeId);
+    when(peer.getAddress()).thenReturn(peerAddress);
+    when(peer.connectionInitiatedLocally()).thenReturn(true);
+    when(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .thenReturn(Optional.of(DisconnectReason.BAD_SCORE));
+
+    peerManager.onConnectedPeer(peer);
+
+    verify(peer, never()).disconnectCleanly(DisconnectReason.BAD_SCORE);
     assertThat(connectedPeers).containsExactly(peer);
   }
 
