@@ -176,7 +176,10 @@ def isNonStable = { String version ->
 }
 
 def isKnownProblematicVersion = { candidate ->
-	def knownProblematicVersions = ['org.xerial.snappy:snappy-java:1.1.10.8', 'org.web3j:*:5.0.0']
+	def knownProblematicVersions = [
+		'org.xerial.snappy:snappy-java:1.1.10.8',
+		'org.web3j:*:5.0.0'
+	]
 	knownProblematicVersions.any { entry ->
 		def (group, name, version) = entry.split(':')
 		(group == candidate.group) &&
