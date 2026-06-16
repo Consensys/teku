@@ -16297,7 +16297,9 @@
 - name: verify_data_column_sidecar_kzg_proofs#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
-      search: public boolean verifyDataColumnSidecarKzgProofs(
+      search: |-
+        public boolean verifyDataColumnSidecarKzgProofs(
+              final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments)
   spec: |
     <spec fn="verify_data_column_sidecar_kzg_proofs" fork="fulu" hash="1cd21395">
     def verify_data_column_sidecar_kzg_proofs(sidecar: DataColumnSidecar) -> bool:
