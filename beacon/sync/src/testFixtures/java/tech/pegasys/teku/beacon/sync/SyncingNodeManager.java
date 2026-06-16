@@ -66,6 +66,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
@@ -239,6 +240,7 @@ public class SyncingNodeManager {
             pendingAttestations,
             pendingPayloadAttestations,
             BlockBlobSidecarsTrackersPool.NOOP,
+            DasSamplerBasic.NOOP,
             syncService,
             fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(blockManager::importBlock);
