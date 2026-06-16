@@ -125,16 +125,16 @@ dependencyManagement {
 			entry 'utils'
 		}
 
-		dependency 'org.xerial.snappy:snappy-java:1.1.10.8'
+		dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
 
 		dependency 'io.prometheus:prometheus-metrics-bom:1.5.1'
 
-		dependencySet(group: 'org.hyperledger.besu.internal', version: '26.4.0') {
+		dependencySet(group: 'org.hyperledger.besu.internal', version: '26.6.0') {
 			entry 'besu-metrics-core'
 			entry 'besu-ethereum-core'
 			entry 'besu-config'
 		}
-		dependencySet(group: 'org.hyperledger.besu', version: '26.4.0') {
+		dependencySet(group: 'org.hyperledger.besu', version: '26.6.0') {
 			entry 'besu-datatypes'
 			entry 'besu-evm'
 			entry 'besu-plugin-api'
