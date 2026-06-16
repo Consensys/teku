@@ -114,6 +114,25 @@ class DefaultReputationManagerTest {
   }
 
   @Test
+  void shouldRejectInboundConnectionAfterRateLimitDisconnect() {
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .contains(DisconnectReason.RATE_LIMITING);
+  }
+
+  @Test
+  void shouldStopRejectingInboundConnectionAfterRateLimitCooldownExpires() {
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+  }
+
+  @Test
   void shouldAllowConnectionAfterDisconnectAfterTimePasses() {
     reputationManager.reportDisconnection(peerAddress, Optional.empty(), true);
 

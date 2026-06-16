@@ -145,6 +145,8 @@ public class DefaultReputationManager implements ReputationManager {
             DisconnectReason.UNABLE_TO_VERIFY_NETWORK,
             DisconnectReason.BAD_SCORE,
             DisconnectReason.REMOTE_FAULT);
+    private static final EnumSet<DisconnectReason> INBOUND_REJECTION_DURING_COOLDOWN_REASONS =
+        EnumSet.of(DisconnectReason.RATE_LIMITING);
 
     private volatile Optional<UInt64> suitableAfter = Optional.empty();
     private volatile Optional<DisconnectReason> inboundConnectionRejectionReason = Optional.empty();
@@ -179,13 +181,22 @@ public class DefaultReputationManager implements ReputationManager {
         score.set(DEFAULT_SCORE);
       } else if (suitableAfter.isEmpty()) {
         suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
-        inboundConnectionRejectionReason = Optional.empty();
+        inboundConnectionRejectionReason =
+            isLocallyConsideredUnsuitableDuringCooldown(reason, locallyInitiated)
+                ? reason
+                : Optional.empty();
       }
     }
 
     private static boolean isLocallyConsideredUnsuitable(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
       return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
+    }
+
+    private static boolean isLocallyConsideredUnsuitableDuringCooldown(
+        final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+      return locallyInitiated
+          && reason.map(INBOUND_REJECTION_DURING_COOLDOWN_REASONS::contains).orElse(false);
     }
 
     public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
