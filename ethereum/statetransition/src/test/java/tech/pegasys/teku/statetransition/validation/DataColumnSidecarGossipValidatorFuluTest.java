@@ -70,7 +70,12 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     this.dataColumnSidecarGossipValidator =
         DataColumnSidecarGossipValidator.create(
-            spec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+            spec,
+            invalidBlocks,
+            gossipValidationHelper,
+            blobKzgCommitmentsProvider,
+            metricsSystemStub,
+            stubTimeProvider);
 
     parentSlot = UInt64.valueOf(1);
     slot = UInt64.valueOf(2);
@@ -148,7 +153,12 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     final DataColumnSidecarGossipValidator validatorWithMockedSpec =
         DataColumnSidecarGossipValidator.create(
-            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+            mockSpec,
+            invalidBlocks,
+            gossipValidationHelper,
+            blobKzgCommitmentsProvider,
+            metricsSystemStub,
+            stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -406,14 +416,19 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.validateWithState(
             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
 
     final DataColumnSidecarGossipValidator validatorWithMockedSpec =
         DataColumnSidecarGossipValidator.create(
-            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+            mockSpec,
+            invalidBlocks,
+            gossipValidationHelper,
+            blobKzgCommitmentsProvider,
+            metricsSystemStub,
+            stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
         .isCompletedWithValue(reject("DataColumnSidecar inclusion proof validation failed"));
@@ -451,7 +466,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     // KZG proof validation fails
-    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofs(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
@@ -462,7 +477,12 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     final DataColumnSidecarGossipValidator validatorWithMockedSpec =
         DataColumnSidecarGossipValidator.create(
-            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+            mockSpec,
+            invalidBlocks,
+            gossipValidationHelper,
+            blobKzgCommitmentsProvider,
+            metricsSystemStub,
+            stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
         .isCompletedWithValue(reject("Invalid DataColumnSidecar KZG Proofs"));
@@ -507,14 +527,19 @@ public class DataColumnSidecarGossipValidatorFuluTest
               proofInfoSet.add(inclusionProofInfo);
               return SafeFuture.completedFuture(Optional.empty());
             });
-    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
 
     final DataColumnSidecarGossipValidator validatorWithMockedSpec =
         DataColumnSidecarGossipValidator.create(
-            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+            mockSpec,
+            invalidBlocks,
+            gossipValidationHelper,
+            blobKzgCommitmentsProvider,
+            metricsSystemStub,
+            stubTimeProvider);
 
     // First validation, inclusion proof is verified and cached
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))

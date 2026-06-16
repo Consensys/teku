@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -275,6 +276,8 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
             new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+        final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider =
+            new BlobKzgCommitmentsProvider(spec, combinedChainDataClient, 128);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
@@ -321,6 +324,7 @@ public class Eth2P2PNetworkFactory {
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
+                blobKzgCommitmentsProvider,
                 () -> custodyGroupCountManager,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,

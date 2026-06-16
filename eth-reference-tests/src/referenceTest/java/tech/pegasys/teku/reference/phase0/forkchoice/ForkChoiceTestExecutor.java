@@ -89,7 +89,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -179,8 +179,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
-    final DasSamplerBasic dasSampler =
-        new DasSamplerBasic(
+    final DasSamplerBasicImpl dasSampler =
+        new DasSamplerBasicImpl(
             spec,
             asyncRunnerFactory.create("das", 1),
             currentSlotProvider,
@@ -192,6 +192,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
             recentChainData,
             false,
+            new StubMetricsSystem(),
+            64,
             (block, level, origin) -> new SafeFuture<>());
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);

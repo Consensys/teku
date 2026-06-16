@@ -588,7 +588,7 @@ public class ProtoArrayScoreCalculatorTest {
   }
 
   @Test
-  void computeDeltas_payloadPresentVoteFallsBackToPendingWhenFullNodeIsMissing() {
+  void computeDeltas_payloadPresentVoteDoesNotFallbackToPendingWhenFullNodeIsMissing() {
     final UInt64 balance = UInt64.valueOf(42);
     final Bytes32 root = getHash(1);
     final ProtoArray protoArray = createProtoArray();
@@ -616,7 +616,7 @@ public class ProtoArrayScoreCalculatorTest {
             blockNodeIndex,
             gloasModel);
 
-    assertThat(deltas).containsExactly(balance.longValue(), 0L);
+    assertThat(deltas).containsExactly(0L, 0L);
   }
 
   @Test

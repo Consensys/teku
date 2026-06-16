@@ -348,6 +348,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
    * @param kzgCommitments the KZG commitments from the execution payload bid
    * @return true if the KZG proofs are valid
    */
+  @Override
   public boolean verifyDataColumnSidecarKzgProofs(
       final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
 
