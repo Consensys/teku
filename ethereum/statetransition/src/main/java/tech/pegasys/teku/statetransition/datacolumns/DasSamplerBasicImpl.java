@@ -226,7 +226,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
     return recentlySampledColumnsByRoot.get(blockRoot) != tracker;
   }
 
-  @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker existing = recentlySampledColumnsByRoot.get(blockRoot);
     if (existing != null) {
@@ -243,10 +242,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
                 : Optional.empty());
     final DataColumnSamplingTracker trackerInserted =
         recentlySampledColumnsByRoot.computeIfAbsent(blockRoot, __ -> dataColumnSamplingTracker);
-    if (dataColumnSamplingTracker == trackerInserted) {
-      makeRoomForNewTracker();
-      onFirstSeen(slot, blockRoot, dataColumnSamplingTracker);
+    if (isStaledTracker(blockRoot, trackerInserted)) {
+      return recentlySampledColumnsByRoot.get(blockRoot);
     }
+    makeRoomForNewTracker();
+    onFirstSeen(slot, blockRoot, dataColumnSamplingTracker);
+
     return trackerInserted;
   }
 
