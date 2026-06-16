@@ -1592,10 +1592,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initBlobKzgCommitmentsProvider() {
     LOG.debug("BeaconChainController.initBlobKzgCommitmentsProvider()");
     final SyncConfig syncConfig = beaconConfig.syncConfig();
+    // Keep one extra batch for overlap between feeding a new forward-sync batch and validating data
+    // column responses for batches already in flight.
     final int maxCacheSize =
         Math.max(
             128,
-            syncConfig.getForwardSyncBatchSize() * syncConfig.getForwardSyncMaxPendingBatches());
+            syncConfig.getForwardSyncBatchSize()
+                * (syncConfig.getForwardSyncMaxPendingBatches() + 1));
     blobKzgCommitmentsProvider =
         new BlobKzgCommitmentsProvider(spec, combinedChainDataClient, maxCacheSize);
     eventChannels

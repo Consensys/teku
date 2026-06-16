@@ -117,6 +117,9 @@ public class BlobKzgCommitmentsProvider
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     // Imported blocks may arrive from RPC or API outside DAS pre-sampling.
     onNewBlock(block);
+    // Keep this block's commitments for late-arriving sidecars. The parent root can be evicted
+    // once a child imports because its import-time data-column validation window has passed; store
+    // fallback still covers later historical/archive lookups.
     commitmentsByRoot.remove(block.getParentRoot());
   }
 
