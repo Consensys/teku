@@ -174,23 +174,33 @@ public class DefaultReputationManager implements ReputationManager {
         final UInt64 disconnectTime,
         final Optional<DisconnectReason> reason,
         final boolean locallyInitiated) {
-      if (isLocallyConsideredUnsuitable(reason, locallyInitiated)
-          || reason.map(DisconnectReason::isPermanent).orElse(false)) {
+      if (shouldBan(reason, locallyInitiated)) {
         suitableAfter = Optional.of(disconnectTime.plus(BAN_PERIOD));
         inboundConnectionRejectionReason = reason;
         score.set(DEFAULT_SCORE);
+      } else if (isLocallyConsideredUnsuitableDuringCooldown(reason, locallyInitiated)) {
+        suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
+        inboundConnectionRejectionReason = reason;
       } else if (suitableAfter.isEmpty()) {
         suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
-        inboundConnectionRejectionReason =
-            isLocallyConsideredUnsuitableDuringCooldown(reason, locallyInitiated)
-                ? reason
-                : Optional.empty();
+        inboundConnectionRejectionReason = Optional.empty();
       }
     }
 
-    private static boolean isLocallyConsideredUnsuitable(
+    private static boolean shouldBan(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
-      return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
+      return reason
+          .map(
+              disconnectReason -> {
+                if (disconnectReason.isPermanent()) {
+                  return true;
+                }
+                if (!locallyInitiated) {
+                  return false;
+                }
+                return BAN_REASONS.contains(disconnectReason);
+              })
+          .orElse(false);
     }
 
     private static boolean isLocallyConsideredUnsuitableDuringCooldown(

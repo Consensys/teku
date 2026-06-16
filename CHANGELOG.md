@@ -11,3 +11,5 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+
+- Prevent RPC rate-limited peers from immediately reconnecting inbound.

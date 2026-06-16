@@ -123,6 +123,28 @@ class DefaultReputationManagerTest {
   }
 
   @Test
+  void shouldRejectInboundConnectionAfterRateLimitDisconnectDuringExistingCooldown() {
+    reputationManager.reportInitiatedConnectionFailed(peerAddress);
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .contains(DisconnectReason.RATE_LIMITING);
+  }
+
+  @Test
+  void shouldNotRejectInboundConnectionForStaticPeerAfterRateLimitDisconnect() {
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.STATIC);
+
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+  }
+
+  @Test
   void shouldStopRejectingInboundConnectionAfterRateLimitCooldownExpires() {
     reputationManager.reportDisconnection(
         peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
