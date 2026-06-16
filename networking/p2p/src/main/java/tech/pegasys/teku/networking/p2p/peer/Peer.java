@@ -43,6 +43,13 @@ public interface Peer {
     return PeerClientType.UNKNOWN;
   }
 
+  /**
+   * Returns the libp2p identify agent version string for this peer, if it has been received yet.
+   */
+  default Optional<String> getAgentVersion() {
+    return Optional.empty();
+  }
+
   default void checkPeerIdentity() {}
 
   void disconnectImmediately(Optional<DisconnectReason> reason, boolean locallyInitiated);

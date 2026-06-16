@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -67,4 +68,13 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
   void publishPayloadAttestationMessage(PayloadAttestationMessage payloadAttestationMessage);
 
   void publishProposerPreferences(SignedProposerPreferences signedProposerPreferences);
+
+  /**
+   * Expose the underlying reputation manager so REST handlers can surface per-peer reputation
+   * scores and the last reputation-affecting action. Defaults to a no-op manager so test/mock
+   * networks don't need to override it.
+   */
+  default ReputationManager getReputationManager() {
+    return ReputationManager.NOOP;
+  }
 }

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -59,18 +60,71 @@ public class Peer {
   @JsonProperty("direction")
   public final Direction direction;
 
+  @JsonProperty("agent_version")
+  @Schema(
+      type = "string",
+      nullable = true,
+      description =
+          "libp2p identify agent version string for the peer, when it has been received.",
+      example = "teku/v25.4.0")
+  public final String agentVersion;
+
+  @JsonProperty("score")
+  @Schema(
+      type = "number",
+      nullable = true,
+      description =
+          "Client-internal reputation score for the peer. The unit and range are "
+              + "implementation-defined; consumers should treat it as a relative ordering only.")
+  public final Double score;
+
+  @JsonProperty("disconnect_reason")
+  @Schema(
+      type = "string",
+      nullable = true,
+      description =
+          "Last observed disconnect reason for the peer, mapped to the simplified beacon-API "
+              + "peer scoring vocabulary.")
+  public final String disconnectReason;
+
+  @JsonProperty("downscore_reasons")
+  @Schema(
+      type = "array",
+      nullable = true,
+      description =
+          "Recent reasons the peer's score was reduced, mapped to the simplified beacon-API "
+              + "peer scoring vocabulary.")
+  public final List<String> downscoreReasons;
+
+  public Peer(
+      final String peerId,
+      final String enr,
+      final String address,
+      final State state,
+      final Direction direction) {
+    this(peerId, enr, address, state, direction, null, null, null, null);
+  }
+
   @JsonCreator
   public Peer(
       @JsonProperty("peer_id") final String peerId,
       @JsonProperty("enr") final String enr,
       @JsonProperty("last_seen_p2p_address") final String address,
       @JsonProperty("state") final State state,
-      @JsonProperty("direction") final Direction direction) {
+      @JsonProperty("direction") final Direction direction,
+      @JsonProperty("agent_version") final String agentVersion,
+      @JsonProperty("score") final Double score,
+      @JsonProperty("disconnect_reason") final String disconnectReason,
+      @JsonProperty("downscore_reasons") final List<String> downscoreReasons) {
     this.peerId = peerId;
     this.enr = enr;
     this.address = address;
     this.state = state;
     this.direction = direction;
+    this.agentVersion = agentVersion;
+    this.score = score;
+    this.disconnectReason = disconnectReason;
+    this.downscoreReasons = downscoreReasons;
   }
 
   @Override
@@ -86,11 +140,24 @@ public class Peer {
         && Objects.equals(enr, peer.enr)
         && Objects.equals(address, peer.address)
         && state == peer.state
-        && direction == peer.direction;
+        && direction == peer.direction
+        && Objects.equals(agentVersion, peer.agentVersion)
+        && Objects.equals(score, peer.score)
+        && Objects.equals(disconnectReason, peer.disconnectReason)
+        && Objects.equals(downscoreReasons, peer.downscoreReasons);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(peerId, enr, address, state, direction);
+    return Objects.hash(
+        peerId,
+        enr,
+        address,
+        state,
+        direction,
+        agentVersion,
+        score,
+        disconnectReason,
+        downscoreReasons);
   }
 }
