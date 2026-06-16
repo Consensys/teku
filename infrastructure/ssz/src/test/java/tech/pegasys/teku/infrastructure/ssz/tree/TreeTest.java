@@ -70,6 +70,33 @@ public class TreeTest {
   }
 
   @Test
+  public void testCreateTreeWithDefaultNode() {
+    final TreeNode defaultLeaf = newTestLeaf(111);
+    BranchNode n1 =
+        (BranchNode)
+            TreeUtil.createTree(
+                IntStream.range(0, 5).mapToObj(TreeTest::newTestLeaf).collect(Collectors.toList()),
+                defaultLeaf,
+                3);
+
+    BranchNode n10 = (BranchNode) n1.left();
+    BranchNode n11 = (BranchNode) n1.right();
+    BranchNode n100 = (BranchNode) n10.left();
+    BranchNode n101 = (BranchNode) n10.right();
+    BranchNode n110 = (BranchNode) n11.left();
+    BranchNode n111 = (BranchNode) n11.right();
+
+    assertThat(n100.left()).isEqualTo(newTestLeaf(0));
+    assertThat(n100.right()).isEqualTo(newTestLeaf(1));
+    assertThat(n101.left()).isEqualTo(newTestLeaf(2));
+    assertThat(n101.right()).isEqualTo(newTestLeaf(3));
+    assertThat(n110.left()).isEqualTo(newTestLeaf(4));
+    assertThat(n110.right()).isSameAs(defaultLeaf);
+    assertThat(n111.left()).isSameAs(defaultLeaf);
+    assertThat(n111.right()).isSameAs(defaultLeaf);
+  }
+
+  @Test
   public void testZeroLeafDefaultTree() {
     TreeNode n1 = TreeUtil.createDefaultTree(5, LeafNode.EMPTY_LEAF);
     assertThat(n1.get(0b1000)).isSameAs(LeafNode.EMPTY_LEAF);
