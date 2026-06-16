@@ -175,10 +175,20 @@ def isNonStable = { String version ->
 	return !stableKeyword && !(version ==~ regex)
 }
 
+def isKnownProblematicVersion = { candidate ->
+	def knownProblematicVersions = ['org.xerial.snappy:snappy-java:1.1.10.8', 'org.web3j:*:5.0.0']
+	knownProblematicVersions.any { entry ->
+		def (group, name, version) = entry.split(':')
+		(group == candidate.group) &&
+				(name == '*' || name == candidate.module) &&
+				(version == '*' || version == candidate.version)
+	}
+}
+
 // reject all non stable versions
 tasks.named("dependencyUpdates").configure {
 	rejectVersionIf {
-		isNonStable(it.candidate.version)
+		isNonStable(it.candidate.version) || isKnownProblematicVersion(it.candidate)
 	}
 }
 
