@@ -21,9 +21,12 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -47,6 +50,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
  * </pre>
  */
 @Fork(1)
+@BenchmarkMode({Mode.Throughput, Mode.AverageTime})
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 public class SnappyCompressionBenchmark {
 
@@ -106,7 +111,10 @@ public class SnappyCompressionBenchmark {
       // Feasibility check (spec item 1): the two implementations must produce/consume the same
       // Snappy block wire format in both directions, or a migration would break gossip
       // interoperability. Fail fast and loudly if not.
-      verifyCrossCompatibility(raw);
+      // Impl-agnostic wire-format check; run once per payload (during the SNAPPY_JAVA trial).
+      if (impl == Impl.SNAPPY_JAVA) {
+        verifyCrossCompatibility(raw);
+      }
     }
   }
 
