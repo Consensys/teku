@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
@@ -161,5 +163,24 @@ public class LibP2PPeerTest {
     assertThat(disconnectionReason.get()).contains(DisconnectReason.IRRELEVANT_NETWORK);
     assertThat(disconnectionLocallyInitiated.get()).isTrue();
     assertThat(disconnectionCount.get()).isEqualTo(1);
+  }
+
+  @Test
+  public void adjustReputation_shouldDisconnectWithBadScoreWhenThresholdIsReached() {
+    final ReputationManager reputationManager = mock(ReputationManager.class);
+    final LibP2PPeer peer =
+        new LibP2PPeer(connection, List.of(rpcHandler), reputationManager, p -> 0.0);
+    final AtomicReference<DisconnectReason> disconnectReason = new AtomicReference<>();
+    peer.setDisconnectRequestHandler(
+        reason -> {
+          disconnectReason.set(reason);
+          return SafeFuture.COMPLETE;
+        });
+    when(reputationManager.adjustReputation(any(PeerAddress.class), eq(LARGE_PENALTY)))
+        .thenReturn(true);
+
+    peer.adjustReputation(LARGE_PENALTY);
+
+    assertThat(disconnectReason).hasValue(DisconnectReason.BAD_SCORE);
   }
 }

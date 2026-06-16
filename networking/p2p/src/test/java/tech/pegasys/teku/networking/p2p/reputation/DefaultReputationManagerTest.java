@@ -55,6 +55,13 @@ class DefaultReputationManagerTest {
   }
 
   @Test
+  public void shouldNotRejectInboundConnectionWhenConnectionHasFailedRecently() {
+    reputationManager.reportInitiatedConnectionFailed(peerAddress);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+  }
+
+  @Test
   public void shouldAllowConnectionInitiationToUnknownPeers() {
     assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
   }
@@ -97,6 +104,54 @@ class DefaultReputationManagerTest {
 
     assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
         .isFalse();
+  }
+
+  @Test
+  void shouldNotRejectInboundConnectionAfterDisconnect() {
+    reputationManager.reportDisconnection(peerAddress, Optional.empty(), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+  }
+
+  @Test
+  void shouldRejectInboundConnectionAfterRateLimitDisconnect() {
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .contains(DisconnectReason.RATE_LIMITING);
+  }
+
+  @Test
+  void shouldRejectInboundConnectionAfterRateLimitDisconnectDuringExistingCooldown() {
+    reputationManager.reportInitiatedConnectionFailed(peerAddress);
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .contains(DisconnectReason.RATE_LIMITING);
+  }
+
+  @Test
+  void shouldNotRejectInboundConnectionForStaticPeerAfterRateLimitDisconnect() {
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.STATIC);
+
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
+  }
+
+  @Test
+  void shouldStopRejectingInboundConnectionAfterRateLimitCooldownExpires() {
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.RATE_LIMITING), true);
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_COOLDOWN_PERIOD);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
   }
 
   @Test
@@ -154,6 +209,7 @@ class DefaultReputationManagerTest {
     return Stream.of(
         DisconnectReason.IRRELEVANT_NETWORK,
         DisconnectReason.UNABLE_TO_VERIFY_NETWORK,
+        DisconnectReason.BAD_SCORE,
         DisconnectReason.REMOTE_FAULT);
   }
 
@@ -170,6 +226,23 @@ class DefaultReputationManagerTest {
 
     timeProvider.advanceTimeBySeconds(MORE_THAN_BAN_PERIOD);
     assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
+  }
+
+  @Test
+  void shouldRejectInboundConnectionAfterScoreDropsBelowThreshold() {
+    reputationManager.adjustReputation(peerAddress, LARGE_PENALTY);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress))
+        .contains(DisconnectReason.BAD_SCORE);
+  }
+
+  @Test
+  void shouldStopRejectingInboundConnectionAfterBanExpires() {
+    reputationManager.adjustReputation(peerAddress, LARGE_PENALTY);
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_BAN_PERIOD);
+
+    assertThat(reputationManager.getInboundConnectionRejectionReason(peerAddress)).isEmpty();
   }
 
   @Test
