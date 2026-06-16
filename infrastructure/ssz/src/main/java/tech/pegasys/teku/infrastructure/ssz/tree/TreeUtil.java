@@ -113,43 +113,54 @@ public class TreeUtil {
   }
 
   public static TreeNode createTree(final List<? extends TreeNode> leafNodes, final int depth) {
-    if (leafNodes.isEmpty()) {
+    return createTree(leafNodes, 0, leafNodes.size(), depth);
+  }
+
+  private static TreeNode createTree(
+      final List<? extends TreeNode> leafNodes, final int from, final int to, final int depth) {
+    if (from == to) {
       return ZERO_TREES[depth];
     } else if (depth == 0) {
-      checkArgument(leafNodes.size() == 1);
-      return leafNodes.get(0);
+      checkArgument(to - from == 1);
+      return leafNodes.get(from);
     } else {
       long index = 1L << (depth - 1);
-      int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
+      int iIndex = index > to - from ? to : from + (int) index;
 
-      List<? extends TreeNode> leftSublist = leafNodes.subList(0, iIndex);
-      List<? extends TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
       return BranchNode.create(
-          createTree(leftSublist, depth - 1), createTree(rightSublist, depth - 1));
+          createTree(leafNodes, from, iIndex, depth - 1),
+          createTree(leafNodes, iIndex, to, depth - 1));
     }
   }
 
   public static TreeNode createTree(
       final List<? extends TreeNode> leafNodes, final TreeNode defaultNode, final int depth) {
-    if (leafNodes.isEmpty()) {
+    return createTree(leafNodes, defaultNode, 0, leafNodes.size(), depth);
+  }
+
+  private static TreeNode createTree(
+      final List<? extends TreeNode> leafNodes,
+      final TreeNode defaultNode,
+      final int from,
+      final int to,
+      final int depth) {
+    if (from == to) {
       if (depth > 0) {
-        TreeNode defaultChild = createTree(leafNodes, defaultNode, depth - 1);
+        TreeNode defaultChild = createTree(leafNodes, defaultNode, from, to, depth - 1);
         return BranchNode.create(defaultChild, defaultChild);
       } else {
         return defaultNode;
       }
     } else if (depth == 0) {
-      checkArgument(leafNodes.size() == 1);
-      return leafNodes.get(0);
+      checkArgument(to - from == 1);
+      return leafNodes.get(from);
     } else {
       long index = 1L << (depth - 1);
-      int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
+      int iIndex = index > to - from ? to : from + (int) index;
 
-      List<? extends TreeNode> leftSublist = leafNodes.subList(0, iIndex);
-      List<? extends TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
       return BranchNode.create(
-          createTree(leftSublist, defaultNode, depth - 1),
-          createTree(rightSublist, defaultNode, depth - 1));
+          createTree(leafNodes, defaultNode, from, iIndex, depth - 1),
+          createTree(leafNodes, defaultNode, iIndex, to, depth - 1));
     }
   }
 
