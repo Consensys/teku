@@ -30,11 +30,13 @@ public interface ExecutionRequestsBuilder {
 
   default ExecutionRequestsBuilder builderDeposits(
       final List<BuilderDepositRequest> builderDeposits) {
-    throw new UnsupportedOperationException("Builder deposits are only supported from Gloas");
+    // NO-OP (until Gloas)
+    return this;
   }
 
   default ExecutionRequestsBuilder builderExits(final List<BuilderExitRequest> builderExits) {
-    throw new UnsupportedOperationException("Builder exits are only supported from Gloas");
+    // NO-OP (until Gloas)
+    return this;
   }
 
   ExecutionRequests build();

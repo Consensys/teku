@@ -3135,8 +3135,10 @@ public final class DataStructureUtil {
         .create(randomEth1Address(), randomPublicKey());
   }
 
-  public ExecutionRequests emptyExecutionRequests() {
-    return getExecutionRequestsSchema().getDefault();
+  public ExecutionRequests emptyExecutionRequests(final UInt64 slot) {
+    return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions())
+        .getExecutionRequestsSchema()
+        .getDefault();
   }
 
   public List<Bytes> randomEncodedExecutionRequests() {

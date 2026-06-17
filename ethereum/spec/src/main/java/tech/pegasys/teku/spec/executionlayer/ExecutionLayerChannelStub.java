@@ -354,8 +354,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private Optional<ExecutionRequests> getExecutionRequests(final UInt64 slot) {
     if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       final ExecutionRequestsSchema<?> executionRequestsSchema =
-          SchemaDefinitionsElectra.required(
-                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+          SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions())
               .getExecutionRequestsSchema();
       return Optional.of(executionRequestsSchema.createBuilder().build());
     } else {

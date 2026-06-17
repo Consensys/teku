@@ -1017,7 +1017,7 @@ public class Spec {
                 new IllegalStateException(
                     "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
         .createNewUnsignedExecutionPayload(
-            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
+            builderIndex, blockAndState, executionPayloadProposalDataFuture);
   }
 
   // Blind Block Utils

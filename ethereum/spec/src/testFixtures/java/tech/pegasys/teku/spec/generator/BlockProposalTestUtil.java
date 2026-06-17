@@ -243,7 +243,7 @@ public class BlockProposalTestUtil {
   private ExecutionRequests getParentExecutionRequests(final UInt64 parentSlot) {
     return Optional.ofNullable(executionPayloadProposalDataCache.get(parentSlot))
         .map(ExecutionPayloadProposalData::executionRequests)
-        .orElseGet(dataStructureUtil::emptyExecutionRequests);
+        .orElseGet(() -> dataStructureUtil.emptyExecutionRequests(parentSlot));
   }
 
   private SafeFuture<SignedBlockAndState> createNewBlock(
@@ -319,7 +319,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(),
+                        dataStructureUtil.randomExecutionRequestsGloas(),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -422,7 +422,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(),
+                        dataStructureUtil.randomExecutionRequestsGloas(),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(

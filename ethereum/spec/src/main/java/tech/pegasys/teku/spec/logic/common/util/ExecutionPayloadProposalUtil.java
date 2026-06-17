@@ -37,7 +37,6 @@ public class ExecutionPayloadProposalUtil {
       SszList<SszKZGCommitment> kzgCommitments) {}
 
   public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
-      final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
       final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {
