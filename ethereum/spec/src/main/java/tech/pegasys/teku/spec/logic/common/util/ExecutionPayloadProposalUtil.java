@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -37,7 +37,6 @@ public class ExecutionPayloadProposalUtil {
       SszList<SszKZGCommitment> kzgCommitments) {}
 
   public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
-      final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
       final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {

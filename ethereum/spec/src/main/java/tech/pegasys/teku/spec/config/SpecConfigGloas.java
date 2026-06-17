@@ -47,6 +47,10 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
 
   int getMaxPayloadAttestations();
 
+  int getMaxBuilderDepositRequestsPerPayload();
+
+  int getMaxBuilderExitRequestsPerPayload();
+
   long getBuilderRegistryLimit();
 
   long getBuilderPendingWithdrawalsLimit();

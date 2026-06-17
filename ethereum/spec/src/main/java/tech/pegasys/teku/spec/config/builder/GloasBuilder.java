@@ -38,6 +38,8 @@ public class GloasBuilder extends BaseForkBuilder
   // gloas preset
   private Integer ptcSize;
   private Integer maxPayloadAttestations;
+  private Integer maxBuilderDepositRequestsPerPayload;
+  private Integer maxBuilderExitRequestsPerPayload;
   private Long builderRegistryLimit;
   private Long builderPendingWithdrawalsLimit;
   private Integer maxBuildersPerWithdrawalsSweep;
@@ -58,6 +60,8 @@ public class GloasBuilder extends BaseForkBuilder
             aggregateDueBpsGloas,
             attestationDueBpsGloas,
             contributionDueBpsGloas,
+            maxBuilderDepositRequestsPerPayload,
+            maxBuilderExitRequestsPerPayload,
             builderRegistryLimit,
             builderPendingWithdrawalsLimit,
             maxBuildersPerWithdrawalsSweep,
@@ -152,6 +156,20 @@ public class GloasBuilder extends BaseForkBuilder
     return this;
   }
 
+  public GloasBuilder maxBuilderDepositRequestsPerPayload(
+      final Integer maxBuilderDepositRequestsPerPayload) {
+    checkNotNull(maxBuilderDepositRequestsPerPayload);
+    this.maxBuilderDepositRequestsPerPayload = maxBuilderDepositRequestsPerPayload;
+    return this;
+  }
+
+  public GloasBuilder maxBuilderExitRequestsPerPayload(
+      final Integer maxBuilderExitRequestsPerPayload) {
+    checkNotNull(maxBuilderExitRequestsPerPayload);
+    this.maxBuilderExitRequestsPerPayload = maxBuilderExitRequestsPerPayload;
+    return this;
+  }
+
   public GloasBuilder churnLimitQuotientGloas(final Integer churnLimitQuotientGloas) {
     checkNotNull(churnLimitQuotientGloas);
     this.churnLimitQuotientGloas = churnLimitQuotientGloas;
@@ -193,6 +211,8 @@ public class GloasBuilder extends BaseForkBuilder
     constants.put("builderRegistryLimit", builderRegistryLimit);
     constants.put("builderPendingWithdrawalsLimit", builderPendingWithdrawalsLimit);
     constants.put("maxBuildersPerWithdrawalsSweep", maxBuildersPerWithdrawalsSweep);
+    constants.put("maxBuilderDepositRequestsPerPayload", maxBuilderDepositRequestsPerPayload);
+    constants.put("maxBuilderExitRequestsPerPayload", maxBuilderExitRequestsPerPayload);
     constants.put("ptcSize", ptcSize);
     constants.put("maxPayloadAttestations", maxPayloadAttestations);
     constants.put("churnLimitQuotientGloas", churnLimitQuotientGloas);

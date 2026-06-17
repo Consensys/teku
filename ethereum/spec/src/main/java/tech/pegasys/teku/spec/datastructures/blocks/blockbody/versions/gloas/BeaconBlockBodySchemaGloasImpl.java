@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -39,8 +40,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -150,7 +151,7 @@ public class BeaconBlockBodySchemaGloasImpl
                 specConfig.getMaxPayloadAttestations())),
         namedSchema(
             BlockBodyFields.PARENT_EXECUTION_REQUESTS,
-            schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA)));
+            SszSchema.as(ExecutionRequests.class, schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA))));
   }
 
   @Override
@@ -240,7 +241,7 @@ public class BeaconBlockBodySchemaGloasImpl
   }
 
   @Override
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+  public ExecutionRequestsSchema<?> getExecutionRequestsSchema() {
     throw new UnsupportedOperationException("execution_requests field was removed in Gloas");
   }
 
@@ -252,8 +253,8 @@ public class BeaconBlockBodySchemaGloasImpl
   }
 
   @Override
-  public ExecutionRequestsSchema getParentExecutionRequestsSchema() {
-    return (ExecutionRequestsSchema)
+  public ExecutionRequestsSchema<?> getParentExecutionRequestsSchema() {
+    return (ExecutionRequestsSchema<?>)
         getChildSchema(getFieldIndex(BlockBodyFields.PARENT_EXECUTION_REQUESTS));
   }
 }

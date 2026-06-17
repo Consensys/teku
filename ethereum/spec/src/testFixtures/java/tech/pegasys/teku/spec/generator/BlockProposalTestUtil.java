@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -240,10 +240,11 @@ public class BlockProposalTestUtil {
     return Optional.ofNullable(executionPayloadProposalDataCache.get(slot));
   }
 
-  private ExecutionRequests getParentExecutionRequests(final UInt64 parentSlot) {
+  private ExecutionRequests getParentExecutionRequests(
+      final UInt64 newSlot, final UInt64 parentSlot) {
     return Optional.ofNullable(executionPayloadProposalDataCache.get(parentSlot))
         .map(ExecutionPayloadProposalData::executionRequests)
-        .orElseGet(dataStructureUtil::emptyExecutionRequests);
+        .orElseGet(() -> dataStructureUtil.emptyExecutionRequests(newSlot));
   }
 
   private SafeFuture<SignedBlockAndState> createNewBlock(
@@ -310,7 +311,7 @@ public class BlockProposalTestUtil {
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
               if (builder.supportsExecutionRequests()) {
-                builder.executionRequests(dataStructureUtil.randomExecutionRequests());
+                builder.executionRequests(dataStructureUtil.randomExecutionRequests(newSlot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
                 final ExecutionPayloadProposalData executionPayloadProposalData =
@@ -319,7 +320,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(),
+                        dataStructureUtil.randomExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -333,7 +334,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsParentExecutionRequests()) {
                 builder.parentExecutionRequests(
                     parentExecutionRequests.orElseGet(
-                        () -> getParentExecutionRequests(parentSlot)));
+                        () -> getParentExecutionRequests(newSlot, parentSlot)));
               }
               return SafeFuture.COMPLETE;
             },
@@ -413,7 +414,7 @@ public class BlockProposalTestUtil {
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
               if (builder.supportsExecutionRequests()) {
-                builder.executionRequests(dataStructureUtil.randomExecutionRequests());
+                builder.executionRequests(dataStructureUtil.randomExecutionRequests(newSlot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
                 final ExecutionPayloadProposalData executionPayloadProposalData =
@@ -422,7 +423,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(),
+                        dataStructureUtil.randomExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -436,7 +437,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsParentExecutionRequests()) {
                 builder.parentExecutionRequests(
                     parentExecutionRequests.orElseGet(
-                        () -> getParentExecutionRequests(parentSlot)));
+                        () -> getParentExecutionRequests(newSlot, parentSlot)));
               }
               return SafeFuture.COMPLETE;
             })
