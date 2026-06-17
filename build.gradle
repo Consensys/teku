@@ -19,7 +19,7 @@ buildscript {
 }
 
 plugins {
-	id 'com.diffplug.spotless' version '8.5.1'
+	id 'com.diffplug.spotless' version '8.7.0'
 	id 'com.github.ben-manes.versions' version '0.54.0'
 	id 'com.github.jk1.dependency-license-report' version '3.1.2'
 	id 'io.spring.dependency-management' version '1.1.7'
@@ -172,7 +172,7 @@ dependencyRules {
 
 def isNonStable = { String version ->
 	def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { keyword -> version.toUpperCase().contains(keyword) }
-	def regex = /^[0-9,.v-]+(-r)?$/
+	def regex = /^[0-9,.v-]+(-r|-jre)?$/
 	return !stableKeyword && !(version ==~ regex)
 }
 
@@ -186,27 +186,27 @@ def isWeb3jMajorUpgrade = { candidate ->
 
 def isRejectedDependencyUpdate = { candidate ->
 	candidate.group == 'org.xerial.snappy' &&
-			candidate.module == 'snappy-java' &&
-			candidate.version == '1.1.10.8'
+	candidate.module == 'snappy-java' &&
+	candidate.version == '1.1.10.8'
 }
 
 // reject all non stable versions and selected major upgrades
 tasks.named("dependencyUpdates").configure {
 	rejectVersionIf {
 		isNonStable(it.candidate.version) ||
-				isWeb3jMajorUpgrade(it.candidate) ||
-				isRejectedDependencyUpdate(it.candidate)
+		isWeb3jMajorUpgrade(it.candidate) ||
+		isRejectedDependencyUpdate(it.candidate)
 	}
 }
 
 spotless {
 	groovyGradle {
 		target files(
-				fileTree(rootDir) {
-					include '*.gradle'
-					include 'gradle/*.gradle'
-				},
-				allprojects.collect { project -> project.file('build.gradle') }.findAll { it.isFile() })
+		fileTree(rootDir) {
+			include '*.gradle'
+			include 'gradle/*.gradle'
+		},
+		allprojects.collect { project -> project.file('build.gradle') }.findAll { it.isFile() })
 		trimTrailingWhitespace()
 		endWithNewline()
 		greclipse()
@@ -684,7 +684,7 @@ def getManagedDependencyVersion = { String group, String artifact ->
 
 def getBesuPrometheusMetricsBomVersion = { String besuVersion ->
 	def besuBom = configurations.detachedConfiguration(
-			dependencies.create("org.hyperledger.besu:bom:${besuVersion}@pom"))
+	dependencies.create("org.hyperledger.besu:bom:${besuVersion}@pom"))
 	besuBom.transitive = false
 	def pom = new XmlSlurper(false, false).parse(besuBom.singleFile)
 	def dependency = pom.dependencyManagement.dependencies.dependency.find {
@@ -1230,11 +1230,11 @@ subprojects {
 		archiveBaseName = jarName
 		manifest {
 			attributes(
-					'Specification-Title': jarName,
-					'Specification-Version': project.version,
-					'Implementation-Title': jarName,
-					'Implementation-Version': specificVersion
-					)
+			'Specification-Title': jarName,
+			'Specification-Version': project.version,
+			'Implementation-Title': jarName,
+			'Implementation-Version': specificVersion
+			)
 		}
 		reproducibleFileOrder = true
 		preserveFileTimestamps = false
