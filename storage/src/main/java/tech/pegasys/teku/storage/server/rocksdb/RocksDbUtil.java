@@ -28,8 +28,7 @@ class RocksDbUtil {
     } catch (final ExceptionInInitializerError e) {
       if (e.getCause() instanceof UnsupportedOperationException) {
         LOG.info("Unable to load RocksDB library", e);
-        throw new IllegalStateException(
-            "Unsupported platform detected. On Windows, ensure you have 64bit Java installed.");
+        throw new IllegalStateException("Unsupported platform detected.");
       } else {
         throw e;
       }
