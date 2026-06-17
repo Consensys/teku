@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import java.util.List;
+import java.util.function.Supplier;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
@@ -29,12 +30,13 @@ public interface ExecutionRequestsBuilder {
   ExecutionRequestsBuilder consolidations(List<ConsolidationRequest> consolidations);
 
   default ExecutionRequestsBuilder builderDeposits(
-      final List<BuilderDepositRequest> builderDeposits) {
+      final Supplier<List<BuilderDepositRequest>> builderDeposits) {
     // NO-OP (until Gloas)
     return this;
   }
 
-  default ExecutionRequestsBuilder builderExits(final List<BuilderExitRequest> builderExits) {
+  default ExecutionRequestsBuilder builderExits(
+      final Supplier<List<BuilderExitRequest>> builderExits) {
     // NO-OP (until Gloas)
     return this;
   }

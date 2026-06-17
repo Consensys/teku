@@ -129,7 +129,7 @@ class EngineGetPayloadV6Test {
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final UInt64 slot = UInt64.ONE;
     final ExecutionPayload executionPayloadFulu = dataStructureUtil.randomExecutionPayload(slot);
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests(slot);
     final List<Bytes> encodedExecutionRequests =
         executionRequestsDataCodec.encode(executionRequests);
     assertThat(executionPayloadFulu).isInstanceOf(ExecutionPayloadDeneb.class);

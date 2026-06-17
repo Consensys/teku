@@ -310,7 +310,7 @@ public class BlockProposalTestUtil {
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
               if (builder.supportsExecutionRequests()) {
-                builder.executionRequests(dataStructureUtil.randomExecutionRequests());
+                builder.executionRequests(dataStructureUtil.randomExecutionRequests(newSlot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
                 final ExecutionPayloadProposalData executionPayloadProposalData =
@@ -319,7 +319,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequestsGloas(),
+                        dataStructureUtil.randomExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -413,7 +413,7 @@ public class BlockProposalTestUtil {
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
               if (builder.supportsExecutionRequests()) {
-                builder.executionRequests(dataStructureUtil.randomExecutionRequests());
+                builder.executionRequests(dataStructureUtil.randomExecutionRequests(newSlot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
                 final ExecutionPayloadProposalData executionPayloadProposalData =
@@ -422,7 +422,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequestsGloas(),
+                        dataStructureUtil.randomExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(

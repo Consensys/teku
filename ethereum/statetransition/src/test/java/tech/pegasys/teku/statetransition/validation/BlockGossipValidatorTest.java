@@ -670,7 +670,7 @@ public class BlockGossipValidatorTest {
     final SignedBlockAndState childBlockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
     final ExecutionRequests parentExecutionRequests =
-        specContext.getDataStructureUtil().randomExecutionRequests();
+        specContext.getDataStructureUtil().randomExecutionRequests(parentSlot);
     final SignedBeaconBlock invalidEmptyParentChildBlock =
         createBlockWithModifiedExecutionPayloadBid(
             childBlockAndState,

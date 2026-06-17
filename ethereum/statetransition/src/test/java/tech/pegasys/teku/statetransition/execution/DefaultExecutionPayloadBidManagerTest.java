@@ -79,7 +79,8 @@ public class DefaultExecutionPayloadBidManagerTest {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(state.getSlot()).getSchemaDefinitions());
 
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests =
+        dataStructureUtil.randomExecutionRequests(state.getSlot());
 
     final GetPayloadResponse getPayloadResponse =
         new GetPayloadResponse(
@@ -159,7 +160,8 @@ public class DefaultExecutionPayloadBidManagerTest {
     final ExecutionPayload executionPayload =
         dataStructureUtil.randomExecutionPayload(state.getSlot());
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests =
+        dataStructureUtil.randomExecutionRequests(state.getSlot());
 
     final GetPayloadResponse getPayloadResponse =
         new GetPayloadResponse(
@@ -414,7 +416,7 @@ public class DefaultExecutionPayloadBidManagerTest {
         UInt256.valueOf(1000000000000L),
         dataStructureUtil.randomBlobsBundle(3),
         false,
-        dataStructureUtil.randomExecutionRequests());
+        dataStructureUtil.randomExecutionRequests(slot));
   }
 
   private SignedExecutionPayloadBid createBid(

@@ -82,16 +82,18 @@ public class ExecutionRequestsDataCodec {
                     .asList());
         case BuilderDepositRequest.REQUEST_TYPE ->
             executionRequestsBuilder.builderDeposits(
-                ExecutionRequestsSchemaGloas.required(executionRequestsSchema)
-                    .getBuilderDepositRequestsSchema()
-                    .sszDeserialize(requestData)
-                    .asList());
+                () ->
+                    ExecutionRequestsSchemaGloas.required(executionRequestsSchema)
+                        .getBuilderDepositRequestsSchema()
+                        .sszDeserialize(requestData)
+                        .asList());
         case BuilderExitRequest.REQUEST_TYPE ->
             executionRequestsBuilder.builderExits(
-                ExecutionRequestsSchemaGloas.required(executionRequestsSchema)
-                    .getBuilderExitRequestsSchema()
-                    .sszDeserialize(requestData)
-                    .asList());
+                () ->
+                    ExecutionRequestsSchemaGloas.required(executionRequestsSchema)
+                        .getBuilderExitRequestsSchema()
+                        .sszDeserialize(requestData)
+                        .asList());
         default ->
             throw new IllegalArgumentException("Invalid execution request type: " + requestType);
       }

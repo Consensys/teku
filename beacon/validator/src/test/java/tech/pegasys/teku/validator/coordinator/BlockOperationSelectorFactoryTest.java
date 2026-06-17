@@ -46,7 +46,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -69,7 +68,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -88,6 +86,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.Attest
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
@@ -317,8 +316,9 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState.getValidators().get(validatorIndex).getPublicKey(),
             UInt64.ZERO);
     final ExecutionRequests parentReqs =
-        new ExecutionRequestsBuilderElectra(
-                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions().getSchemaRegistry())
+        SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .createBuilder()
             .withdrawals(List.of(withdrawalRequest))
             .build();
 
@@ -761,7 +761,8 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
     final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
-    final ExecutionRequests expectedExecutionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests expectedExecutionRequests =
+        dataStructureUtil.randomExecutionRequests(slot);
 
     prepareBlockWithBlobsAndExecutionRequestsProduction(
         randomExecutionPayload,
@@ -801,7 +802,7 @@ class BlockOperationSelectorFactoryTest {
     final UInt64 slot = UInt64.valueOf(2);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests(slot);
 
     final ExecutionPayloadContext executionPayloadContextWithValidatorRegistration =
         dataStructureUtil.randomPayloadExecutionContext(false, true);

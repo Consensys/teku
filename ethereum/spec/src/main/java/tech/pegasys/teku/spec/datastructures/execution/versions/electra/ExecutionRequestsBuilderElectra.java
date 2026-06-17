@@ -13,24 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
-
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
-import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionRequestsBuilderElectra implements ExecutionRequestsBuilder {
 
   private final ExecutionRequestsSchemaElectra executionRequestsSchema;
+
   private List<DepositRequest> deposits = List.of();
   private List<WithdrawalRequest> withdrawals = List.of();
   private List<ConsolidationRequest> consolidations = List.of();
-
-  @VisibleForTesting
-  public ExecutionRequestsBuilderElectra(final SchemaRegistry schemaRegistry) {
-    this((ExecutionRequestsSchemaElectra) schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA));
-  }
 
   public ExecutionRequestsBuilderElectra(
       final ExecutionRequestsSchemaElectra executionRequestsSchema) {

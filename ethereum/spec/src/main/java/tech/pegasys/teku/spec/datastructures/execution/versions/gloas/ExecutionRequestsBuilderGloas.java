@@ -13,29 +13,22 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
 
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
-
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.function.Supplier;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
-import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionRequestsBuilderGloas implements ExecutionRequestsBuilder {
 
   private final ExecutionRequestsSchemaGloas executionRequestsSchema;
+
   private List<DepositRequest> deposits = List.of();
   private List<WithdrawalRequest> withdrawals = List.of();
   private List<ConsolidationRequest> consolidations = List.of();
   private List<BuilderDepositRequest> builderDeposits = List.of();
   private List<BuilderExitRequest> builderExits = List.of();
-
-  @VisibleForTesting
-  public ExecutionRequestsBuilderGloas(final SchemaRegistry schemaRegistry) {
-    this((ExecutionRequestsSchemaGloas) schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA));
-  }
 
   public ExecutionRequestsBuilderGloas(final ExecutionRequestsSchemaGloas executionRequestsSchema) {
     this.executionRequestsSchema = executionRequestsSchema;
@@ -61,14 +54,15 @@ public class ExecutionRequestsBuilderGloas implements ExecutionRequestsBuilder {
 
   @Override
   public ExecutionRequestsBuilder builderDeposits(
-      final List<BuilderDepositRequest> builderDeposits) {
-    this.builderDeposits = builderDeposits;
+      final Supplier<List<BuilderDepositRequest>> builderDeposits) {
+    this.builderDeposits = builderDeposits.get();
     return this;
   }
 
   @Override
-  public ExecutionRequestsBuilder builderExits(final List<BuilderExitRequest> builderExits) {
-    this.builderExits = builderExits;
+  public ExecutionRequestsBuilder builderExits(
+      final Supplier<List<BuilderExitRequest>> builderExits) {
+    this.builderExits = builderExits.get();
     return this;
   }
 
