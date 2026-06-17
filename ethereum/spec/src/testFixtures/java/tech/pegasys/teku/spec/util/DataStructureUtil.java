@@ -654,12 +654,6 @@ public final class DataStructureUtil {
         .getBlobKzgCommitmentsSchema();
   }
 
-  public ExecutionRequestsSchema<? extends ExecutionRequests> getExecutionRequestsSchema() {
-    return SchemaDefinitionsElectra.required(
-            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
-        .getExecutionRequestsSchema();
-  }
-
   public SyncCommittee randomSyncCommittee() {
     final SyncCommitteeSchema syncCommitteeSchema =
         ((BeaconStateSchemaAltair)
@@ -3137,7 +3131,8 @@ public final class DataStructureUtil {
   }
 
   public List<Bytes> randomEncodedExecutionRequests() {
-    return new ExecutionRequestsDataCodec(getExecutionRequestsSchema())
+    return new ExecutionRequestsDataCodec(
+            getElectraSchemaDefinitions(randomSlot()).getExecutionRequestsSchema())
         .encode(randomExecutionRequests());
   }
 
