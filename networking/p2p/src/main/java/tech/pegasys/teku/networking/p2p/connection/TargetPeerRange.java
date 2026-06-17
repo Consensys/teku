@@ -36,10 +36,24 @@ public class TargetPeerRange {
     return currentPeerCount > upperBound ? currentPeerCount - upperBound : 0;
   }
 
+  public int getPeersToDrop(
+      final int currentPeerCount,
+      final int currentRemotelyInitiatedPeerCount,
+      final int totalOutboundRequirement) {
+    return Math.max(
+        getPeersToDrop(currentPeerCount),
+        getRemotelyInitiatedPeersToDrop(
+            currentRemotelyInitiatedPeerCount, totalOutboundRequirement));
+  }
+
   public int getRandomlySelectedPeersToAdd(final int currentRandomlySelectedPeerCount) {
     return currentRandomlySelectedPeerCount < minimumRandomlySelectedPeerCount
         ? minimumRandomlySelectedPeerCount - currentRandomlySelectedPeerCount
         : 0;
+  }
+
+  public int getMinimumRandomlySelectedPeerCount() {
+    return minimumRandomlySelectedPeerCount;
   }
 
   public int getRandomlySelectedPeersToDrop(
@@ -52,5 +66,11 @@ public class TargetPeerRange {
         ? Math.min(
             currentRandomlySelectedPeerCount - minimumRandomlySelectedPeerCount, totalPeersToDrop)
         : 0;
+  }
+
+  public int getRemotelyInitiatedPeersToDrop(
+      final int currentRemotelyInitiatedPeerCount, final int totalOutboundRequirement) {
+    final int remotelyInitiatedPeerLimit = Math.max(0, upperBound - totalOutboundRequirement);
+    return Math.max(0, currentRemotelyInitiatedPeerCount - remotelyInitiatedPeerLimit);
   }
 }

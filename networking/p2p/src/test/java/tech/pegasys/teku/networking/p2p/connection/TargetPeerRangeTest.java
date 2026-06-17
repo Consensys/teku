@@ -54,6 +54,11 @@ class TargetPeerRangeTest {
   }
 
   @Test
+  void shouldDropPeersWhenRemotelyInitiatedPeersExceedReservedLimit() {
+    assertThat(new TargetPeerRange(5, 10, 3).getPeersToDrop(10, 8, 3)).isEqualTo(1);
+  }
+
+  @Test
   void shouldAddRandomlySelectedPeersWhenCountIsBelowMinimum() {
     assertThat(new TargetPeerRange(5, 10, 5).getRandomlySelectedPeersToAdd(2)).isEqualTo(3);
   }
@@ -91,5 +96,15 @@ class TargetPeerRangeTest {
   @Test
   void shouldNotDropRandomlySelectedPeersWhenBelowMinimum() {
     assertThat(new TargetPeerRange(5, 10, 3).getRandomlySelectedPeersToDrop(2, 15)).isZero();
+  }
+
+  @Test
+  void shouldDropRemotelyInitiatedPeersAboveReservedPeerLimit() {
+    assertThat(new TargetPeerRange(5, 10, 3).getRemotelyInitiatedPeersToDrop(8, 3)).isEqualTo(1);
+  }
+
+  @Test
+  void shouldDropAllRemotelyInitiatedPeersWhenOutboundRequirementExceedsUpperBound() {
+    assertThat(new TargetPeerRange(5, 10, 3).getRemotelyInitiatedPeersToDrop(8, 12)).isEqualTo(8);
   }
 }
