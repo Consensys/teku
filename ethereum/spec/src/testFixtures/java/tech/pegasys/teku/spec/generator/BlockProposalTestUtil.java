@@ -240,10 +240,11 @@ public class BlockProposalTestUtil {
     return Optional.ofNullable(executionPayloadProposalDataCache.get(slot));
   }
 
-  private ExecutionRequests getParentExecutionRequests(final UInt64 parentSlot) {
+  private ExecutionRequests getParentExecutionRequests(
+      final UInt64 newSlot, final UInt64 parentSlot) {
     return Optional.ofNullable(executionPayloadProposalDataCache.get(parentSlot))
         .map(ExecutionPayloadProposalData::executionRequests)
-        .orElseGet(() -> dataStructureUtil.emptyExecutionRequests(parentSlot));
+        .orElseGet(() -> dataStructureUtil.emptyExecutionRequests(newSlot));
   }
 
   private SafeFuture<SignedBlockAndState> createNewBlock(
@@ -333,7 +334,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsParentExecutionRequests()) {
                 builder.parentExecutionRequests(
                     parentExecutionRequests.orElseGet(
-                        () -> getParentExecutionRequests(parentSlot)));
+                        () -> getParentExecutionRequests(newSlot, parentSlot)));
               }
               return SafeFuture.COMPLETE;
             },
@@ -436,7 +437,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsParentExecutionRequests()) {
                 builder.parentExecutionRequests(
                     parentExecutionRequests.orElseGet(
-                        () -> getParentExecutionRequests(parentSlot)));
+                        () -> getParentExecutionRequests(newSlot, parentSlot)));
               }
               return SafeFuture.COMPLETE;
             })
