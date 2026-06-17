@@ -41,8 +41,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -105,7 +103,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
     final List<String> expectedPeers = List.of("127.0.1.1", "127.1.1.1");
     final Path peersFile = Files.createFile(tempDir.resolve("peers.txt"));
@@ -125,7 +122,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadBootnodesFromConfigurationFile(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -146,7 +142,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadBootnodesFromYamlConfigurationFile(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -168,7 +163,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldGiveGoodErrorMessageReadingBootnodeUrl(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -216,7 +210,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldMergeBootnodesFromConfigAndFile(@TempDir final Path tempDir)
       throws IOException {
     final List<String> expectedBootnodes =

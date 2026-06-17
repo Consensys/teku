@@ -4,12 +4,10 @@ on:
     paths:
       - 'gradle/wrapper/**'
       - 'gradlew'
-      - 'gradlew.bat'
   pull_request:
     paths:
       - 'gradle/wrapper/**'
       - 'gradlew'
-      - 'gradlew.bat'
 
 permissions:
   contents: read

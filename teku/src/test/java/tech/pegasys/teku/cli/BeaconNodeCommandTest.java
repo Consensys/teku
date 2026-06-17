@@ -524,9 +524,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace(
-                "data-path: \".\"",
-                "data-path: \"" + dataPath.toString().replace("\\", "\\\\") + "\"");
+            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 

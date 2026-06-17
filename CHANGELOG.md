@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+ * Dropped Windows support. Teku is no longer built, tested, or distributed for Windows. The `gradlew.bat` wrapper, Windows CI job, and Windows-specific native dependencies (LevelDB JNI) have been removed.
+
 ### Additions and Improvements
 
 ### Bug Fixes
