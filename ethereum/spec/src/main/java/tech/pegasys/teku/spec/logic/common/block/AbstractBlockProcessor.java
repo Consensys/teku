@@ -818,21 +818,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.isEmpty(),
                 "process_voluntary_exits: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
-
-            initiateExit(state, signedExit, validatorExitContextSupplier);
+            // - Run initiate_validator_exit(state, exit.validator_index)
+            beaconStateMutators.initiateValidatorExit(
+                state,
+                signedExit.getMessage().getValidatorIndex().intValue(),
+                validatorExitContextSupplier);
           }
         });
-  }
-
-  protected void initiateExit(
-      final MutableBeaconState state,
-      final SignedVoluntaryExit signedExit,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // - Run initiate_validator_exit(state, exit.validator_index)
-    beaconStateMutators.initiateValidatorExit(
-        state,
-        signedExit.getMessage().getValidatorIndex().intValue(),
-        validatorExitContextSupplier);
   }
 
   protected BlockValidationResult verifyVoluntaryExits(

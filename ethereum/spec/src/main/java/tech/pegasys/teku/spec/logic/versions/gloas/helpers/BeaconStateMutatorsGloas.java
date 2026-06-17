@@ -21,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -162,35 +161,5 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
           index.intValue());
       builders.set(index.intValue(), builder);
     }
-  }
-
-  public void applyDepositForBuilder(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount,
-      final BLSSignature signature,
-      final UInt64 slot,
-      final boolean signatureAlreadyVerified) {
-    beaconStateAccessorsGloas
-        .getBuilderIndex(state, pubkey)
-        .ifPresentOrElse(
-            builderIndex -> {
-              // Increase balance by deposit amount
-              final SszMutableList<Builder> builders =
-                  MutableBeaconStateGloas.required(state).getBuilders();
-              final Builder builder = builders.get(builderIndex);
-              builders.set(
-                  builderIndex, builder.copyWithNewBalance(builder.getBalance().plus(amount)));
-            },
-            () -> {
-              // Verify the deposit signature (proof of possession) which is not checked by the
-              // deposit contract
-              if (signatureAlreadyVerified
-                  || miscHelpers.isValidDepositSignature(
-                      pubkey, withdrawalCredentials, amount, signature)) {
-                addBuilderToRegistry(state, pubkey, withdrawalCredentials, amount, slot);
-              }
-            });
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -32,6 +34,14 @@ public class ExecutionRequestsGloas
         SszList<BuilderDepositRequest>,
         SszList<BuilderExitRequest>>
     implements ExecutionRequests {
+
+  public static ExecutionRequestsGloas required(final ExecutionRequests executionRequests) {
+    checkArgument(
+        executionRequests instanceof ExecutionRequestsGloas,
+        "Expected ExecutionRequestsGloas but was %s",
+        executionRequests.getClass());
+    return (ExecutionRequestsGloas) executionRequests;
+  }
 
   ExecutionRequestsGloas(
       final ExecutionRequestsSchemaGloas schema,

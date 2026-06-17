@@ -24,17 +24,20 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -168,7 +171,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
             });
   }
 
-  /** Applies any pending deposit for builders, effectively onboarding builders at the fork. */
+  /**
+   * This one-time onboarding is the only path through the validator deposit contract that creates
+   * builders. From the fork onward, builders are created and topped up only via
+   * `BuilderDepositRequest`.
+   */
   private void onboardBuildersFromPendingDeposits(final MutableBeaconStateGloas state) {
     final long startTimeMillis = System.currentTimeMillis();
     LOG.debug(
@@ -206,16 +213,34 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
           pendingDeposits.add(deposit);
           continue;
         }
+        if (!miscHelpers.isValidDepositSignature(
+            pubkey,
+            deposit.getWithdrawalCredentials(),
+            deposit.getAmount(),
+            deposit.getSignature())) {
+          continue;
+        }
+        beaconStateMutators.addBuilderToRegistry(
+            state,
+            pubkey,
+            deposit.getWithdrawalCredentials(),
+            deposit.getAmount(),
+            deposit.getSlot());
       }
-      beaconStateMutators.applyDepositForBuilder(
-          state,
-          deposit.getPublicKey(),
-          deposit.getWithdrawalCredentials(),
-          deposit.getAmount(),
-          deposit.getSignature(),
-          deposit.getSlot(),
-          false);
+      final SszMutableList<Builder> builders = state.getBuilders();
+      final int builderIndex =
+          BeaconStateCache.getTransitionCaches(state)
+              .getBuilderIndexCache()
+              .getBuilderIndex(state, pubkey)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "Builder index for " + pubkey + " is not found in the cache."));
+      final Builder builder = builders.get(builderIndex);
+      builders.set(
+          builderIndex, builder.copyWithNewBalance(builder.getBalance().plus(deposit.getAmount())));
     }
+
     state.setPendingDeposits(
         schemaDefinitions.getPendingDepositsSchema().createFromElements(pendingDeposits));
     LOG.debug(

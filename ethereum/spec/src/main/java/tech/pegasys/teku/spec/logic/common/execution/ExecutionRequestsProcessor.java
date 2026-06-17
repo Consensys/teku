@@ -19,6 +19,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 
@@ -34,4 +36,10 @@ public interface ExecutionRequestsProcessor {
 
   void processConsolidationRequests(
       MutableBeaconState state, List<ConsolidationRequest> consolidationRequests);
+
+  void processBuilderDepositRequests(
+      MutableBeaconState state, List<BuilderDepositRequest> builderDepositRequests);
+
+  void processBuilderExitRequests(
+      MutableBeaconState state, List<BuilderExitRequest> builderExitRequests);
 }
