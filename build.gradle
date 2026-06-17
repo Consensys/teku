@@ -1,5 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import groovy.json.JsonSlurper
+import groovy.xml.XmlSlurper
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import io.consensys.protocols.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
@@ -18,8 +19,8 @@ buildscript {
 }
 
 plugins {
-	id 'com.diffplug.spotless' version '8.5.1'
-	id 'com.github.ben-manes.versions' version '0.53.0'
+	id 'com.diffplug.spotless' version '8.7.0'
+	id 'com.github.ben-manes.versions' version '0.54.0'
 	id 'com.github.jk1.dependency-license-report' version '3.1.2'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
@@ -171,25 +172,41 @@ dependencyRules {
 
 def isNonStable = { String version ->
 	def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { keyword -> version.toUpperCase().contains(keyword) }
-	def regex = /^[0-9,.v-]+(-r)?$/
+	def regex = /^[0-9,.v-]+(-r|-jre)?$/
 	return !stableKeyword && !(version ==~ regex)
 }
 
-// reject all non stable versions
+def isWeb3jMajorUpgrade = { candidate ->
+	if (candidate.group != 'org.web3j') {
+		return false
+	}
+	def majorVersion = candidate.version.tokenize('.')[0]
+	return majorVersion.isInteger() && majorVersion.toInteger() >= 5
+}
+
+def isRejectedDependencyUpdate = { candidate ->
+	candidate.group == 'org.xerial.snappy' &&
+	candidate.module == 'snappy-java' &&
+	candidate.version == '1.1.10.8'
+}
+
+// reject all non stable versions and selected major upgrades
 tasks.named("dependencyUpdates").configure {
 	rejectVersionIf {
-		isNonStable(it.candidate.version)
+		isNonStable(it.candidate.version) ||
+		isWeb3jMajorUpgrade(it.candidate) ||
+		isRejectedDependencyUpdate(it.candidate)
 	}
 }
 
 spotless {
 	groovyGradle {
 		target files(
-				fileTree(rootDir) {
-					include '*.gradle'
-					include 'gradle/*.gradle'
-				},
-				allprojects.collect { project -> project.file('build.gradle') }.findAll { it.isFile() })
+		fileTree(rootDir) {
+			include '*.gradle'
+			include 'gradle/*.gradle'
+		},
+		allprojects.collect { project -> project.file('build.gradle') }.findAll { it.isFile() })
 		trimTrailingWhitespace()
 		endWithNewline()
 		greclipse()
@@ -657,7 +674,63 @@ tasks.register('checkMavenCoordinateCollisions') {
 	}
 }
 
+def getManagedDependencyVersion = { String group, String artifact ->
+	def version = dependencyManagement.managedVersions["${group}:${artifact}"]
+	if (version == null) {
+		throw new GradleException("Managed dependency ${group}:${artifact} not found")
+	}
+	return version
+}
+
+def getBesuPrometheusMetricsBomVersion = { String besuVersion ->
+	def besuBom = configurations.detachedConfiguration(
+	dependencies.create("org.hyperledger.besu:bom:${besuVersion}@pom"))
+	besuBom.transitive = false
+	def pom = new XmlSlurper(false, false).parse(besuBom.singleFile)
+	def dependency = pom.dependencyManagement.dependencies.dependency.find {
+		it.groupId.text() == 'io.prometheus' && it.artifactId.text() == 'prometheus-metrics-bom'
+	}
+	if (dependency == null) {
+		throw new GradleException("Besu ${besuVersion} BOM does not import io.prometheus:prometheus-metrics-bom")
+	}
+	return dependency.version.text()
+}
+
+def majorMinorVersion = { String version ->
+	def parts = version.tokenize('.')
+	if (parts.size() < 2) {
+		throw new GradleException("Version ${version} must include major and minor components")
+	}
+	return parts.take(2).join('.')
+}
+
+tasks.register('checkBesuPrometheusVersionCompatibility') {
+	doLast {
+		def besuVersion = getManagedDependencyVersion('org.hyperledger.besu.internal', 'besu-metrics-core')
+		def tekuPrometheusVersion = getManagedDependencyVersion('io.prometheus', 'prometheus-metrics-bom')
+		def besuPrometheusVersion = getBesuPrometheusMetricsBomVersion(besuVersion)
+
+		if (majorMinorVersion(tekuPrometheusVersion) != majorMinorVersion(besuPrometheusVersion)) {
+			throw new GradleException("Teku manages io.prometheus:prometheus-metrics-bom:${tekuPrometheusVersion}, " +
+			"but org.hyperledger.besu:bom:${besuVersion} imports ${besuPrometheusVersion}. " +
+			"The Prometheus BOM must stay on the same major.minor version line as Besu.")
+		}
+	}
+}
+
+tasks.register('dependencyUpdateChecks', Exec) {
+	group = 'verification'
+	description = 'Runs the dependency update report and dependency compatibility checks.'
+	workingDir rootDir
+	commandLine gradlewCommand,
+			'dependencyUpdates',
+			'checkBesuPrometheusVersionCompatibility',
+			'checkMavenCoordinateCollisions',
+			'--no-parallel'
+}
+
 check.dependsOn('checkMavenCoordinateCollisions')
+check.dependsOn('checkBesuPrometheusVersionCompatibility')
 
 application {
 	applicationName = "teku"
@@ -1157,17 +1230,18 @@ subprojects {
 		archiveBaseName = jarName
 		manifest {
 			attributes(
-					'Specification-Title': jarName,
-					'Specification-Version': project.version,
-					'Implementation-Title': jarName,
-					'Implementation-Version': specificVersion
-					)
+			'Specification-Title': jarName,
+			'Specification-Version': project.version,
+			'Implementation-Title': jarName,
+			'Implementation-Version': specificVersion
+			)
 		}
 		reproducibleFileOrder = true
 		preserveFileTimestamps = false
 	}
 
 	dependencies {
+		compileOnlyApi 'com.google.code.findbugs:jsr305'
 		implementation 'com.google.guava:guava'
 		implementation 'org.apache.commons:commons-lang3'
 		implementation 'org.apache.logging.log4j:log4j-api'
