@@ -1496,8 +1496,7 @@ class ValidatorApiHandlerTest {
         SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(skippedSlot));
 
     assertThat(result).isEmpty();
-    verify(executionPayloadManager, never())
-        .isExecutionPayloadAvailableForPayloadAttestation(any());
+    verify(executionPayloadManager, never()).isExecutionPayloadSeenBeforeDeadline(any());
   }
 
   @Test
