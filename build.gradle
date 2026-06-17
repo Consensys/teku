@@ -1,4 +1,9 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
+import com.github.jk1.license.LicenseFileDetails
+import com.github.jk1.license.ProjectData
+import com.github.jk1.license.render.JsonReportRenderer
+import com.github.jk1.license.render.ReportRenderer
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.xml.XmlSlurper
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -21,11 +26,61 @@ buildscript {
 plugins {
 	id 'com.diffplug.spotless' version '8.7.0'
 	id 'com.github.ben-manes.versions' version '0.54.0'
-	id 'com.github.jk1.dependency-license-report' version '3.1.2'
+	id 'com.github.jk1.dependency-license-report' version '3.1.4'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
 	id 'org.jreleaser' version '1.23.0'
+}
+
+class ConfiguredLicenseBundleNormalizer extends LicenseBundleNormalizer {
+	private final licenseReportExtension
+
+	ConfiguredLicenseBundleNormalizer(licenseReportExtension) {
+		this.licenseReportExtension = licenseReportExtension
+	}
+
+	@Override
+	protected Collection<LicenseFileDetails> normalizeLicenseFileDetailsLicense(
+			final List transformationRuleMatchers,
+			final LicenseFileDetails licenseFileDetails,
+			final String module) {
+		if (licenseFileDetails.file == null || licenseFileDetails.file.isEmpty()) {
+			return [licenseFileDetails]
+		}
+		def rules = transformationRulesFor(
+				transformationRuleMatchers,
+				module,
+				licenseFileDetails.license,
+				licenseFileDetails.licenseUrl,
+				{ new File("${licenseReportExtension.absoluteOutputDir}/${licenseFileDetails.file}").text }.memoize())
+		if (rules.isEmpty()) {
+			return [licenseFileDetails]
+		}
+		return rules.collect { normalizeSingleLicenseFileDetailsLicense(it, licenseFileDetails) }
+	}
+}
+
+class ConfiguredJsonReportRenderer extends JsonReportRenderer {
+	private final licenseReportExtension
+
+	ConfiguredJsonReportRenderer(licenseReportExtension, final String fileName, final boolean onlyOneLicensePerModule) {
+		super(fileName, onlyOneLicensePerModule)
+		this.licenseReportExtension = licenseReportExtension
+	}
+
+	@Override
+	void render(final ProjectData data) {
+		def jsonReport = [:]
+		if (onlyOneLicensePerModuleCache) {
+			jsonReport.dependencies = renderSingleLicensePerModule(data.allDependencies)
+		} else {
+			jsonReport.dependencies = renderAllLicensesPerModule(data.allDependencies)
+		}
+		jsonReport.importedModules = readImportedModules(data.importedModules)
+		new File(licenseReportExtension.absoluteOutputDir, fileNameCache).text =
+				new JsonBuilder(trimAndRemoveNullEntries(jsonReport)).toPrettyString()
+	}
 }
 
 // --- Git CLI helpers (replaces grgit plugin for worktree compatibility) ---
@@ -636,6 +691,7 @@ if (project.hasProperty('enableLicenseReport')) {
 	checkLicense.enabled = true
 }
 
+def licenseReportExtension = extensions.getByName('licenseReport')
 licenseReport {
 	projects = project.subprojects
 	configurations = ['runtimeClasspath']
@@ -651,10 +707,26 @@ licenseReport {
 		'org.jetbrains.kotlin:kotlin-stdlib-common',
 	]
 	allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
-	filters = [new LicenseBundleNormalizer()]
+	filters = [
+		new ConfiguredLicenseBundleNormalizer(licenseReportExtension)
+	]
 	renderers = [
 		new GroupedLicenseHtmlRenderer(includeTimestamp: false)
 	]
+}
+
+tasks.named('checkLicensePreparation') {
+	doLast {
+		licenseReportExtension.renderers = licenseReportExtension.renderers.collect { renderer ->
+			if (renderer instanceof JsonReportRenderer) {
+				return new ConfiguredJsonReportRenderer(
+						licenseReportExtension,
+						renderer.fileNameCache,
+						renderer.onlyOneLicensePerModuleCache)
+			}
+			return renderer
+		} as ReportRenderer[]
+	}
 }
 
 tasks.register('checkMavenCoordinateCollisions') {
