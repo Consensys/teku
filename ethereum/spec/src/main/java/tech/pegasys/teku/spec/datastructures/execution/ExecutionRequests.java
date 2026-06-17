@@ -11,27 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.execution;
+package tech.pegasys.teku.spec.datastructures.execution;
 
 import java.util.List;
-import java.util.function.Supplier;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsGloas;
 
-/** Used for processing requests from {@link ExecutionRequests} */
-public interface ExecutionRequestsProcessor {
+public interface ExecutionRequests extends SszContainer {
 
-  void processDepositRequests(MutableBeaconState state, List<DepositRequest> depositRequests);
+  List<DepositRequest> getDeposits();
 
-  void processWithdrawalRequests(
-      MutableBeaconState state,
-      List<WithdrawalRequest> withdrawalRequests,
-      Supplier<ValidatorExitContext> validatorExitContextSupplier);
+  List<WithdrawalRequest> getWithdrawals();
 
-  void processConsolidationRequests(
-      MutableBeaconState state, List<ConsolidationRequest> consolidationRequests);
+  List<ConsolidationRequest> getConsolidations();
+
+  default Optional<ExecutionRequestsGloas> toVersionGloas() {
+    return Optional.empty();
+  }
 }

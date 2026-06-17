@@ -11,18 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder.versions.electra;
+package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
 
-import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import java.util.Locale;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 
-public interface BuilderBidElectra extends BuilderBidDeneb {
+public enum ExecutionRequestsFieldsGloas implements SszFieldName {
+  DEPOSITS,
+  WITHDRAWALS,
+  CONSOLIDATIONS,
+  BUILDER_DEPOSITS,
+  BUILDER_EXITS;
 
-  ExecutionRequests getExecutionRequests();
+  private final String sszFieldName;
+
+  ExecutionRequestsFieldsGloas() {
+    this.sszFieldName = name().toLowerCase(Locale.ROOT);
+  }
 
   @Override
-  default Optional<ExecutionRequests> getOptionalExecutionRequests() {
-    return Optional.of(getExecutionRequests());
+  public String getSszFieldName() {
+    return sszFieldName;
   }
 }

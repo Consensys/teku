@@ -13,29 +13,20 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
 
-public interface ExecutionRequestsBuilder {
+public interface ExecutionRequestsSchema<T extends ExecutionRequests>
+    extends SszContainerSchema<T> {
 
-  ExecutionRequestsBuilder deposits(List<DepositRequest> deposits);
+  SszListSchema<DepositRequest, ?> getDepositRequestsSchema();
 
-  ExecutionRequestsBuilder withdrawals(List<WithdrawalRequest> withdrawals);
+  SszListSchema<WithdrawalRequest, ?> getWithdrawalRequestsSchema();
 
-  ExecutionRequestsBuilder consolidations(List<ConsolidationRequest> consolidations);
+  SszListSchema<ConsolidationRequest, ?> getConsolidationRequestsSchema();
 
-  default ExecutionRequestsBuilder builderDeposits(
-      final List<BuilderDepositRequest> builderDeposits) {
-    throw new UnsupportedOperationException("Builder deposits are only supported from Gloas");
-  }
-
-  default ExecutionRequestsBuilder builderExits(final List<BuilderExitRequest> builderExits) {
-    throw new UnsupportedOperationException("Builder exits are only supported from Gloas");
-  }
-
-  ExecutionRequests build();
+  ExecutionRequestsBuilder createBuilder();
 }

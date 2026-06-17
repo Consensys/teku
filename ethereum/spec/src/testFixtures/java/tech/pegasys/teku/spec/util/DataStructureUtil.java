@@ -165,18 +165,21 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -653,7 +656,7 @@ public final class DataStructureUtil {
         .getBlobKzgCommitmentsSchema();
   }
 
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+  public ExecutionRequestsSchema<? extends ExecutionRequests> getExecutionRequestsSchema() {
     return SchemaDefinitionsElectra.required(
             spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
         .getExecutionRequestsSchema();
@@ -852,6 +855,18 @@ public final class DataStructureUtil {
   public List<ConsolidationRequest> randomConsolidationRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_CONSOLIDATION_REQUESTS))
         .mapToObj(__ -> randomConsolidationRequest())
+        .collect(toList());
+  }
+
+  public List<BuilderDepositRequest> randomBuilderDepositRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+        .mapToObj(__ -> randomBuilderDepositRequest())
+        .collect(toList());
+  }
+
+  public List<BuilderExitRequest> randomBuilderExitRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
+        .mapToObj(__ -> randomBuilderExitRequest())
         .collect(toList());
   }
 
@@ -1516,7 +1531,7 @@ public final class DataStructureUtil {
                         getMaxPayloadAttestations()));
               }
               if (builder.supportsParentExecutionRequests()) {
-                builder.parentExecutionRequests(randomExecutionRequests());
+                builder.parentExecutionRequests(randomExecutionRequestsGloas());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -1650,7 +1665,7 @@ public final class DataStructureUtil {
                         getMaxPayloadAttestations()));
               }
               if (builder.supportsParentExecutionRequests()) {
-                builder.parentExecutionRequests(randomExecutionRequests());
+                builder.parentExecutionRequests(randomExecutionRequestsGloas());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -1720,7 +1735,7 @@ public final class DataStructureUtil {
                         this::randomPayloadAttestation));
               }
               if (builder.supportsParentExecutionRequests()) {
-                builder.parentExecutionRequests(randomExecutionRequests());
+                builder.parentExecutionRequests(randomExecutionRequestsGloas());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -3098,6 +3113,28 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public ExecutionRequests randomExecutionRequestsGloas() {
+    return new ExecutionRequestsBuilderGloas(getGloasSchemaDefinitions().getSchemaRegistry())
+        .deposits(randomDepositRequests())
+        .withdrawals(randomWithdrawalRequests())
+        .consolidations(randomConsolidationRequests())
+        .builderDeposits(randomBuilderDepositRequests())
+        .builderExits(randomBuilderExitRequests())
+        .build();
+  }
+
+  public BuilderDepositRequest randomBuilderDepositRequest() {
+    return getGloasSchemaDefinitions()
+        .getBuilderDepositRequestSchema()
+        .create(randomPublicKey(), randomBytes32(), randomUInt64(), randomSignature());
+  }
+
+  public BuilderExitRequest randomBuilderExitRequest() {
+    return getGloasSchemaDefinitions()
+        .getBuilderExitRequestSchema()
+        .create(randomEth1Address(), randomPublicKey());
+  }
+
   public ExecutionRequests emptyExecutionRequests() {
     return getExecutionRequestsSchema().getDefault();
   }
@@ -3388,7 +3425,7 @@ public final class DataStructureUtil {
         .getExecutionPayloadEnvelopeSchema()
         .create(
             randomExecutionPayload(block.getSlot()),
-            randomExecutionRequests(),
+            randomExecutionRequestsGloas(),
             BeaconBlockBodyGloas.required(block.getMessage().getBody())
                 .getSignedExecutionPayloadBid()
                 .getMessage()
@@ -3402,7 +3439,7 @@ public final class DataStructureUtil {
         .getExecutionPayloadEnvelopeSchema()
         .create(
             randomExecutionPayload(slot),
-            randomExecutionRequests(),
+            randomExecutionRequestsGloas(),
             randomBuilderIndex(),
             randomBytes32(),
             randomBytes32());

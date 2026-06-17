@@ -11,29 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
+package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class ExecutionRequestsBuilderElectra implements ExecutionRequestsBuilder {
+public class ExecutionRequestsBuilderGloas implements ExecutionRequestsBuilder {
 
-  private final ExecutionRequestsSchemaElectra executionRequestsSchema;
+  private final ExecutionRequestsSchemaGloas executionRequestsSchema;
   private List<DepositRequest> deposits = List.of();
   private List<WithdrawalRequest> withdrawals = List.of();
   private List<ConsolidationRequest> consolidations = List.of();
+  private List<BuilderDepositRequest> builderDeposits = List.of();
+  private List<BuilderExitRequest> builderExits = List.of();
 
   @VisibleForTesting
-  public ExecutionRequestsBuilderElectra(final SchemaRegistry schemaRegistry) {
-    this((ExecutionRequestsSchemaElectra) schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA));
+  public ExecutionRequestsBuilderGloas(final SchemaRegistry schemaRegistry) {
+    this((ExecutionRequestsSchemaGloas) schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA));
   }
 
-  public ExecutionRequestsBuilderElectra(
-      final ExecutionRequestsSchemaElectra executionRequestsSchema) {
+  public ExecutionRequestsBuilderGloas(final ExecutionRequestsSchemaGloas executionRequestsSchema) {
     this.executionRequestsSchema = executionRequestsSchema;
   }
 
@@ -56,8 +60,26 @@ public class ExecutionRequestsBuilderElectra implements ExecutionRequestsBuilder
   }
 
   @Override
-  public ExecutionRequestsElectra build() {
-    return new ExecutionRequestsElectra(
-        executionRequestsSchema, deposits, withdrawals, consolidations);
+  public ExecutionRequestsBuilder builderDeposits(
+      final List<BuilderDepositRequest> builderDeposits) {
+    this.builderDeposits = builderDeposits;
+    return this;
+  }
+
+  @Override
+  public ExecutionRequestsBuilder builderExits(final List<BuilderExitRequest> builderExits) {
+    this.builderExits = builderExits;
+    return this;
+  }
+
+  @Override
+  public ExecutionRequestsGloas build() {
+    return new ExecutionRequestsGloas(
+        executionRequestsSchema,
+        deposits,
+        withdrawals,
+        consolidations,
+        builderDeposits,
+        builderExits);
   }
 }
