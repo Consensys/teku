@@ -36,16 +36,6 @@ public class TargetPeerRange {
     return currentPeerCount > upperBound ? currentPeerCount - upperBound : 0;
   }
 
-  public int getPeersToDrop(
-      final int currentPeerCount,
-      final int currentRemotelyInitiatedPeerCount,
-      final int totalOutboundRequirement) {
-    return Math.max(
-        getPeersToDrop(currentPeerCount),
-        getRemotelyInitiatedPeersToDrop(
-            currentRemotelyInitiatedPeerCount, totalOutboundRequirement));
-  }
-
   public int getRandomlySelectedPeersToAdd(final int currentRandomlySelectedPeerCount) {
     return currentRandomlySelectedPeerCount < minimumRandomlySelectedPeerCount
         ? minimumRandomlySelectedPeerCount - currentRandomlySelectedPeerCount
