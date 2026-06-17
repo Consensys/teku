@@ -6,6 +6,7 @@ RUN $JAVA_HOME/bin/jlink \
          --add-modules java.se \
          --add-modules java.management \
          --add-modules java.prefs \
+         --add-modules jdk.management \
          --add-modules jdk.httpserver \
          --add-modules jdk.unsupported \
          --add-modules jdk.jdwp.agent \

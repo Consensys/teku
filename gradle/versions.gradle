@@ -3,8 +3,8 @@ dependencyManagement {
 		mavenBom 'io.netty:netty-bom:4.2.14.Final'
 	}
 	dependencies {
-		dependency 'com.fasterxml.jackson.core:jackson-databind:2.21.2'
-		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.21.2') {
+		dependency 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
+		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.22.0') {
 			entry 'jackson-dataformat-yaml'
 			entry 'jackson-dataformat-toml'
 		}
@@ -48,12 +48,12 @@ dependencyManagement {
 
 		dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-		dependencySet(group: 'io.swagger.core.v3', version: '2.2.48') {
+		dependencySet(group: 'io.swagger.core.v3', version: '2.2.51') {
 			entry 'swagger-annotations'
 		}
 
 		// On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-		dependency 'org.webjars:swagger-ui:5.32.4'
+		dependency 'org.webjars:swagger-ui:5.32.6'
 
 		dependency 'org.thymeleaf:thymeleaf:3.1.4.RELEASE'
 		dependencySet(group: 'com.github.oshi', version: '6.12.0') {
