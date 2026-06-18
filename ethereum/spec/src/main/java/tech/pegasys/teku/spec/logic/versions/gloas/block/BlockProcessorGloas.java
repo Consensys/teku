@@ -304,7 +304,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                   UInt64.ZERO,
                   schemaDefinitionsGloas
                       .getBuilderPendingWithdrawalSchema()
-                      .create(bid.getFeeRecipient(), amount, builderIndex));
+                      .create(bid.getFeeRecipient(), amount, builderIndex),
+                  beaconBlock.getProposerIndex());
 
       stateGloas
           .getBuilderPendingPayments()
@@ -329,11 +330,13 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   // Remove the BuilderPendingPayment corresponding to this proposal if it is still in the 2-epoch
-  // window.
+  // window. Only clear it when the slashed validator is the proposer associated with the payment;
+  // otherwise an unrelated same-slot equivocation could grief an honest proposer's payment.
   @Override
   protected void removeBuilderPendingPayment(
       final ProposerSlashing proposerSlashing, final MutableBeaconState state) {
     final UInt64 slot = proposerSlashing.getHeader1().getMessage().getSlot();
+    final UInt64 proposerIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
     final UInt64 proposalEpoch = miscHelpers.computeEpochAtSlot(slot);
     OptionalInt paymentIndex = OptionalInt.empty();
     if (proposalEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
@@ -344,10 +347,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       paymentIndex = OptionalInt.of(slot.mod(specConfig.getSlotsPerEpoch()).intValue());
     }
     paymentIndex.ifPresent(
-        index ->
-            MutableBeaconStateGloas.required(state)
+        index -> {
+          final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+          final BuilderPendingPayment payment = stateGloas.getBuilderPendingPayments().get(index);
+          if (payment.getProposerIndex().equals(proposerIndex)) {
+            stateGloas
                 .getBuilderPendingPayments()
-                .set(index, schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault()));
+                .set(index, schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault());
+          }
+        });
   }
 
   @Override
