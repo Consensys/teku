@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorFulu {
 
-  private final MiscHelpersGloas miscHelpersGloas;
+  private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
 
@@ -57,7 +57,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
         validatorsUtil,
         beaconStateMutators,
         beaconStateAccessors);
-    this.miscHelpersGloas = miscHelpers;
+    this.predicatesGloas = predicates;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.beaconStateAccessorsGloas = beaconStateAccessors;
   }
@@ -120,7 +120,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                     final SszMutableList<Builder> builders =
                         MutableBeaconStateGloas.required(state).getBuilders();
                     final Builder builder = builders.get(builderIndex.intValue());
-                    if (!miscHelpersGloas.isActiveBuilder(state, builderIndex)) {
+                    if (!predicatesGloas.isActiveBuilder(state, builderIndex)) {
                       return;
                     }
                     if (!builder.getExecutionAddress().equals(request.getSourceAddress())) {

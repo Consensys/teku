@@ -268,6 +268,8 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
   private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
+  private static final int MAX_EP_RANDOM_BUILDER_DEPOSIT_REQUESTS = 4;
+  private static final int MAX_EP_RANDOM_BUILDER_EXIT_REQUESTS = 2;
 
   private final Spec spec;
 
@@ -850,13 +852,13 @@ public final class DataStructureUtil {
   }
 
   public List<BuilderDepositRequest> randomBuilderDepositRequests() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_BUILDER_DEPOSIT_REQUESTS))
         .mapToObj(__ -> randomBuilderDepositRequest())
         .collect(toList());
   }
 
   public List<BuilderExitRequest> randomBuilderExitRequests() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_BUILDER_EXIT_REQUESTS))
         .mapToObj(__ -> randomBuilderExitRequest())
         .collect(toList());
   }

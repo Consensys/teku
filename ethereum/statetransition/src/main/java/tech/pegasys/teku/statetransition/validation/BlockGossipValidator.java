@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -255,7 +256,8 @@ public class BlockGossipValidator {
        * later, so this may also SAVE_FOR_FUTURE while waiting for the parent execution payload.
        */
       final Optional<InternalValidationResult> maybeParentExecutionPayloadValidationResult =
-          validateExecutionPayloadBidParent(block, parentState, executionPayloadBid);
+          validateExecutionPayloadBidParent(
+              block, BeaconStateGloas.required(parentState), executionPayloadBid);
       if (maybeParentExecutionPayloadValidationResult.isPresent()) {
         return maybeParentExecutionPayloadValidationResult.get();
       }
@@ -291,7 +293,7 @@ public class BlockGossipValidator {
 
   private Optional<InternalValidationResult> validateExecutionPayloadBidParent(
       final SignedBeaconBlock block,
-      final BeaconState parentState,
+      final BeaconStateGloas parentState,
       final ExecutionPayloadBid executionPayloadBid) {
     final MiscHelpersGloas miscHelpersGloas =
         MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers());
@@ -306,8 +308,9 @@ public class BlockGossipValidator {
     // the latest committed FULL parent bid. Check this before EMPTY because the FULL bid hash can
     // equal latest_block_hash at Gloas genesis or fork transition.
     if (miscHelpersGloas.isExecutionPayloadBidForFullParent(parentState, executionPayloadBid)) {
-      if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
-          parentState, parentExecutionRequests)) {
+      if (!parentExecutionRequests
+          .hashTreeRoot()
+          .equals(parentState.getLatestExecutionPayloadBid().getExecutionRequestsRoot())) {
         return Optional.of(
             reject(
                 "The execution requests root in the latest committed bid does not match the parent execution requests in the block"));
@@ -322,7 +325,7 @@ public class BlockGossipValidator {
     }
 
     if (miscHelpersGloas.isExecutionPayloadBidForEmptyParent(parentState, executionPayloadBid)) {
-      if (!miscHelpersGloas.isEmptyExecutionRequests(parentExecutionRequests)) {
+      if (!parentExecutionRequests.isDefault()) {
         return Optional.of(reject("No execution requests were expected for an EMPTY parent"));
       }
       return Optional.empty();

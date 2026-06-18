@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -71,7 +70,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  private final PredicatesGloas predicates;
   private final SpecConfigGloas specConfigGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
 
@@ -80,7 +78,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final PredicatesGloas predicates,
       final SchemaDefinitionsGloas schemaDefinitionsGloas) {
     super(specConfig, predicates, schemaDefinitionsGloas);
-    this.predicates = predicates;
     this.specConfigGloas = specConfig;
     this.schemaDefinitionsGloas = schemaDefinitionsGloas;
   }
@@ -239,37 +236,15 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         extendedMatrix);
   }
 
-  public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
-    return predicates.isActiveBuilder(state, builderIndex);
-  }
-
   public boolean isExecutionPayloadBidForEmptyParent(
-      final BeaconState state, final ExecutionPayloadBid bid) {
-    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
-    return bid.getParentBlockHash().equals(stateGloas.getLatestBlockHash())
-        && !bid.getParentBlockHash()
-            .equals(stateGloas.getLatestExecutionPayloadBid().getBlockHash());
+      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
+    return bid.getParentBlockHash().equals(state.getLatestBlockHash())
+        && !bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
   }
 
   public boolean isExecutionPayloadBidForFullParent(
-      final BeaconState state, final ExecutionPayloadBid bid) {
-    return bid.getParentBlockHash()
-        .equals(BeaconStateGloas.required(state).getLatestExecutionPayloadBid().getBlockHash());
-  }
-
-  public boolean isEmptyExecutionRequests(final ExecutionRequests executionRequests) {
-    return executionRequests.equals(
-        schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault());
-  }
-
-  public boolean isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
-      final BeaconState state, final ExecutionRequests executionRequests) {
-    return executionRequests
-        .hashTreeRoot()
-        .equals(
-            BeaconStateGloas.required(state)
-                .getLatestExecutionPayloadBid()
-                .getExecutionRequestsRoot());
+      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
+    return bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
   }
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.

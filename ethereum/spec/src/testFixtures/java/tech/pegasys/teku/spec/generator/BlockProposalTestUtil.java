@@ -320,7 +320,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(newSlot),
+                        dataStructureUtil.emptyExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -423,7 +423,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(newSlot),
+                        dataStructureUtil.emptyExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(

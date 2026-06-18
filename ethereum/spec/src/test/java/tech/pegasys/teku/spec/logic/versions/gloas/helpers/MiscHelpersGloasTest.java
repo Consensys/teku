@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -54,15 +54,16 @@ public class MiscHelpersGloasTest {
             data.randomBuilderIndex(),
             fullParentBlockHash,
             data.randomBytes32());
-    final BeaconState state =
-        data.randomBeaconState()
-            .updated(
-                mutableState -> {
-                  final MutableBeaconStateGloas stateGloas =
-                      MutableBeaconStateGloas.required(mutableState);
-                  stateGloas.setLatestBlockHash(fullParentBlockHash);
-                  stateGloas.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
-                });
+    final BeaconStateGloas state =
+        BeaconStateGloas.required(
+            data.randomBeaconState()
+                .updated(
+                    mutableState -> {
+                      final MutableBeaconStateGloas stateGloas =
+                          MutableBeaconStateGloas.required(mutableState);
+                      stateGloas.setLatestBlockHash(fullParentBlockHash);
+                      stateGloas.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
+                    }));
     final ExecutionPayloadBid childBid =
         data.randomExecutionPayloadBid(
             fullParentBlockHash,

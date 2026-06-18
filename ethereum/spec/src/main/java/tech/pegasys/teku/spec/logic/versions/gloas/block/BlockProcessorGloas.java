@@ -142,9 +142,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(state, bid)) {
+    if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(stateGloas, bid)) {
       // Parent was EMPTY -- no execution requests expected
-      if (!miscHelpersGloas.isEmptyExecutionRequests(requests)) {
+      if (!requests.isDefault()) {
         throw new BlockProcessingException(
             "No execution requests were expected for an EMPTY parent");
       }
@@ -152,8 +152,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Parent was FULL -- verify the bid commitment and apply the payload
-    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
-        state, requests)) {
+    if (!requests
+        .hashTreeRoot()
+        .equals(stateGloas.getLatestExecutionPayloadBid().getExecutionRequestsRoot())) {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
