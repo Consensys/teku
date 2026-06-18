@@ -182,6 +182,7 @@ specrefs:
       - is_sync_committee_update
       - is_valid_light_client_header
       - is_valid_normalized_merkle_branch
+      - normalize_merkle_branch#electra
       - next_sync_committee_gindex_at_slot
       - process_light_client_finality_update
       - process_light_client_optimistic_update
@@ -253,12 +254,6 @@ specrefs:
       - get_safe_execution_block_hash#gloas
 
       # Not implemented: electra
-      - add_validator_to_registry#electra
-      - compute_on_chain_aggregate#electra
-      - get_committee_indices#electra
-      - get_eth1_pending_deposit_count#electra
-      - is_within_weak_subjectivity_period#electra
-      - normalize_merkle_branch#electra
       - prepare_execution_payload#electra
       - process_execution_payload#electra
       - process_voluntary_exit#electra

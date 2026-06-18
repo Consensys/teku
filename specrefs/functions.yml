@@ -106,7 +106,11 @@
     </spec>
 
 - name: add_validator_to_registry#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
+      search: public void addValidatorToRegistry(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/MiscHelpersElectra.java
+      search: public Validator getValidatorFromDeposit(
   spec: |
     <spec fn="add_validator_to_registry" fork="electra" style="diff" hash="7970ce24">
 
@@ -1497,7 +1501,13 @@
     </spec>
 
 - name: compute_on_chain_aggregate#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/AggregatingAttestationPoolV2.java
+      search: public SszList<Attestation> getAttestationsForBlock(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/MatchingDataAttestationGroupV2.java
+      search: public PooledAttestationWithData fillUpAggregation(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/PooledAttestationWithData.java
+      search: public Attestation toAttestation(
   spec: |
     <spec fn="compute_on_chain_aggregate" fork="electra" hash="3aa56e8f">
     def compute_on_chain_aggregate(network_aggregates: Sequence[Attestation]) -> Attestation:
@@ -3895,7 +3905,9 @@
     </spec>
 
 - name: get_committee_indices#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/electra/AttestationElectra.java
+      search: public Optional<List<UInt64>> getCommitteeIndices()
   spec: |
     <spec fn="get_committee_indices" fork="electra" hash="fa701795">
     def get_committee_indices(committee_bits: Bitvector) -> Sequence[CommitteeIndex]:
@@ -4431,7 +4443,11 @@
     </spec>
 
 - name: get_eth1_pending_deposit_count#electra
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/DepositProvider.java
+      search: final UInt64 eth1PendingDepositCount =
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+      search: protected void verifyOutstandingDepositsAreProcessed(
   spec: |
     <spec fn="get_eth1_pending_deposit_count" fork="electra" hash="5dc54930">
     def get_eth1_pending_deposit_count(state: BeaconState) -> uint64:
@@ -8213,7 +8229,11 @@
     </spec>
 
 - name: is_within_weak_subjectivity_period#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/weaksubjectivity/WeakSubjectivityCalculator.java
+      search: public boolean isWithinWeakSubjectivityPeriod(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/weaksubjectivity/WeakSubjectivityCalculatorElectra.java
+      search: public UInt64 computeWeakSubjectivityPeriod(
   spec: |
     <spec fn="is_within_weak_subjectivity_period" fork="electra" style="diff" hash="d05d230d">
 
