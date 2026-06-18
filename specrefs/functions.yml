@@ -1379,7 +1379,11 @@
     </spec>
 
 - name: compute_matrix#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<List<MatrixEntry>> computeExtendedMatrix(
   spec: |
     <spec fn="compute_matrix" fork="fulu" hash="87e3f29c">
     def compute_matrix(blobs: Sequence[Blob]) -> Sequence[MatrixEntry]:
@@ -4127,7 +4131,9 @@
     </spec>
 
 - name: get_data_column_sidecars#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: protected List<DataColumnSidecar> constructDataColumnSidecarsInternal(
   spec: |
     <spec fn="get_data_column_sidecars" fork="fulu" hash="317fc596">
     def get_data_column_sidecars(
@@ -4212,7 +4218,9 @@
     </spec>
 
 - name: get_data_column_sidecars_from_block#fulu
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/BlockOperationSelectorFactory.java
+      search: createDataColumnSidecarsSelector()
   spec: |
     <spec fn="get_data_column_sidecars_from_block" fork="fulu" hash="02ffae23">
     def get_data_column_sidecars_from_block(
@@ -4264,7 +4272,11 @@
     </spec>
 
 - name: get_data_column_sidecars_from_column_sidecar#fulu
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/datacolumns/util/DataColumnSidecarELManagerImpl.java
+      search: private RecoveryTask createRecoveryTask(final DataColumnSidecar dataColumnSidecar)
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/datacolumns/util/DataColumnSidecarELManagerImpl.java
+      search: private void publishRecoveredDataColumnSidecars(
   spec: |
     <spec fn="get_data_column_sidecars_from_column_sidecar" fork="fulu" hash="4877148a">
     def get_data_column_sidecars_from_column_sidecar(
@@ -12083,7 +12095,11 @@
     </spec>
 
 - name: recover_matrix#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<List<MatrixEntry>> recoverMatrix(
   spec: |
     <spec fn="recover_matrix" fork="fulu" hash="d21e29e7">
     def recover_matrix(

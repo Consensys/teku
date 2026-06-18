@@ -254,11 +254,6 @@ specrefs:
       - get_safe_execution_block_hash#gloas
 
       # Not implemented: fulu
-      - compute_matrix#fulu
-      - get_data_column_sidecars#fulu
-      - get_data_column_sidecars_from_block#fulu
-      - get_data_column_sidecars_from_column_sidecar#fulu
-      - recover_matrix#fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
       - validate_beacon_block_gossip#fulu
