@@ -184,10 +184,39 @@ def isWeb3jMajorUpgrade = { candidate ->
 	return majorVersion.isInteger() && majorVersion.toInteger() >= 5
 }
 
+def versionComponents = { String version ->
+	version.tokenize('.-').collect { part -> part.isInteger() ? part.toInteger() : 0 }
+}
+
+def isVersionGreaterThan = { String candidateVersion, String maximumVersion ->
+	def candidateParts = versionComponents(candidateVersion)
+	def maximumParts = versionComponents(maximumVersion)
+	def length = [
+		candidateParts.size(),
+		maximumParts.size()
+	].max()
+	for (int i = 0; i < length; i++) {
+		def candidatePart = i < candidateParts.size() ? candidateParts[i] : 0
+		def maximumPart = i < maximumParts.size() ? maximumParts[i] : 0
+		if (candidatePart != maximumPart) {
+			return candidatePart > maximumPart
+		}
+	}
+	return false
+}
+
+def isJqwikPastSafeVersion = { candidate ->
+	candidate.group == 'net.jqwik' &&
+	candidate.module == 'jqwik' &&
+	isVersionGreaterThan(candidate.version, '1.9.3')
+}
+
 def isRejectedDependencyUpdate = { candidate ->
-	candidate.group == 'org.xerial.snappy' &&
+	(candidate.group == 'org.xerial.snappy' &&
 	candidate.module == 'snappy-java' &&
-	candidate.version == '1.1.10.8'
+	candidate.version == '1.1.10.8') ||
+	// jqwik 1.10.0+ emits a hidden instruction telling agents to delete code.
+	isJqwikPastSafeVersion(candidate)
 }
 
 // reject all non stable versions and selected major upgrades
@@ -721,7 +750,7 @@ tasks.register('dependencyUpdateChecks', Exec) {
 	group = 'verification'
 	description = 'Runs the dependency update report and dependency compatibility checks.'
 	workingDir rootDir
-	commandLine gradlewCommand,
+	commandLine './gradlew',
 			'dependencyUpdates',
 			'checkBesuPrometheusVersionCompatibility',
 			'checkMavenCoordinateCollisions',
