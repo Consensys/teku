@@ -9025,7 +9025,13 @@
     </spec>
 
 - name: prepare_execution_payload#capella
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes)
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: return getPayloadAttributeWithdrawals(currentHeadBlock, state)
   spec: |
     <spec fn="prepare_execution_payload" fork="capella" style="diff" hash="bdb15c3f">
     --- bellatrix
@@ -10215,7 +10221,11 @@
     </spec>
 
 - name: process_execution_payload#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/block/BlockProcessorBellatrix.java
+      search: public void processExecutionPayload(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/block/BlockProcessorBellatrix.java
+      search: public void validateExecutionPayloadHeader(
   spec: |
     <spec fn="process_execution_payload" fork="capella" style="diff" hash="8da02dfc">
     --- bellatrix
@@ -14456,7 +14466,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#capella
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="capella" hash="18ed1bc4">
     def validate_beacon_block_gossip(
@@ -15049,7 +15061,11 @@
     </spec>
 
 - name: validate_bls_to_execution_change_gossip#capella
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/SignedBlsToExecutionChangeValidator.java
+      search: public SafeFuture<InternalValidationResult> validateForGossip(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/operations/validation/BlsToExecutionChangesValidator.java
+      search: public Optional<OperationInvalidReason> validate(
   spec: |
     <spec fn="validate_bls_to_execution_change_gossip" fork="capella" hash="dc7d042d">
     def validate_bls_to_execution_change_gossip(

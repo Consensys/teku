@@ -252,12 +252,6 @@ specrefs:
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 
-      # Not implemented: capella
-      - prepare_execution_payload#capella
-      - process_execution_payload#capella
-      - validate_beacon_block_gossip#capella
-      - validate_bls_to_execution_change_gossip#capella
-
       # Not implemented: deneb
       - compute_signed_block_header#deneb
       - get_blob_sidecars#deneb
