@@ -26,8 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -44,7 +42,6 @@ class GraffitiManagerTest {
   private DataDirLayout dataDirLayout;
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void shouldThrowExceptionWhenUnableToCreateManagementDirectory(@TempDir final Path tempDir) {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
     dataDirLayout = new SimpleDataDirLayout(tempDir);
@@ -78,7 +75,6 @@ class GraffitiManagerTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void setGraffiti_shouldReturnErrorMessageWhenUnableToWriteFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
@@ -130,7 +126,6 @@ class GraffitiManagerTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void deleteGraffiti_shouldReturnErrorMessageWhenUnableToDeleteFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
@@ -228,7 +223,6 @@ class GraffitiManagerTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void getGraffiti_shouldThrowExceptionWhenNotReadableFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
