@@ -14846,7 +14846,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#fulu
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="fulu" hash="58934408">
     def validate_beacon_block_gossip(
@@ -15206,7 +15208,13 @@
     </spec>
 
 - name: validate_data_column_sidecar_gossip#fulu
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/DataColumnSidecarGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(final DataColumnSidecar dataColumnSidecar)
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/DataColumnSidecarUtilFulu.java
+      search: public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/DataColumnSidecarUtilFulu.java
+      search: public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
   spec: |
     <spec fn="validate_data_column_sidecar_gossip" fork="fulu" hash="57a6f229">
     def validate_data_column_sidecar_gossip(

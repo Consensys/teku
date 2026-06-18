@@ -256,8 +256,6 @@ specrefs:
       # Not implemented: fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
-      - validate_beacon_block_gossip#fulu
-      - validate_data_column_sidecar_gossip#fulu
       - validate_partial_data_column_sidecar_gossip#fulu
 
       # Not implemented: gloas
