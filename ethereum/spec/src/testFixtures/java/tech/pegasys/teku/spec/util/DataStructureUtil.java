@@ -3268,7 +3268,7 @@ public final class DataStructureUtil {
   public BuilderPendingPayment randomBuilderPendingPayment() {
     return getGloasSchemaDefinitions()
         .getBuilderPendingPaymentSchema()
-        .create(randomUInt64(), randomBuilderPendingWithdrawal());
+        .create(randomUInt64(), randomBuilderPendingWithdrawal(), randomValidatorIndex());
   }
 
   public PayloadAttestationMessage randomPayloadAttestationMessage() {
