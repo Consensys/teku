@@ -152,9 +152,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Parent was FULL -- verify the bid commitment and apply the payload
-    if (!requests
-        .hashTreeRoot()
-        .equals(stateGloas.getLatestExecutionPayloadBid().getExecutionRequestsRoot())) {
+    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestBid(stateGloas, requests)) {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }

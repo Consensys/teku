@@ -214,11 +214,10 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                 if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
                   isPendingValidator = true;
                 } else {
-                  isPendingValidator =
-                      miscHelpers.isPendingValidator(pendingDeposits, pubkey)
-                          && verifiedPendingValidatorPubkeys.add(pubkey);
+                  isPendingValidator = miscHelpers.isPendingValidator(pendingDeposits, pubkey);
                 }
                 if (isPendingValidator) {
+                  verifiedPendingValidatorPubkeys.add(pubkey);
                   pendingDeposits.add(deposit);
                   return;
                 }

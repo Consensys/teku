@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -245,6 +246,13 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   public boolean isBidBuildingOnFullParent(
       final BeaconStateGloas state, final ExecutionPayloadBid bid) {
     return bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
+  }
+
+  public boolean isExecutionRequestsRootMatchingLatestBid(
+      final BeaconStateGloas state, final ExecutionRequests executionRequests) {
+    return executionRequests
+        .hashTreeRoot()
+        .equals(state.getLatestExecutionPayloadBid().getExecutionRequestsRoot());
   }
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.

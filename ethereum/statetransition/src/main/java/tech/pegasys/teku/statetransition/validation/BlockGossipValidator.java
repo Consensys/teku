@@ -308,9 +308,8 @@ public class BlockGossipValidator {
     // the latest committed FULL parent bid. Check this before EMPTY because the FULL bid hash can
     // equal latest_block_hash at Gloas genesis or fork transition.
     if (miscHelpersGloas.isBidBuildingOnFullParent(parentState, executionPayloadBid)) {
-      if (!parentExecutionRequests
-          .hashTreeRoot()
-          .equals(parentState.getLatestExecutionPayloadBid().getExecutionRequestsRoot())) {
+      if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestBid(
+          parentState, parentExecutionRequests)) {
         return Optional.of(
             reject(
                 "The execution requests root in the latest committed bid does not match the parent execution requests in the block"));
