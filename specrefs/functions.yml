@@ -6497,7 +6497,13 @@
     </spec>
 
 - name: get_validators_sweep_withdrawals#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/SpecLogicElectra.java
+      search: new WithdrawalsHelpersElectra(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/withdrawals/WithdrawalsHelpersCapella.java
+      search: protected int processValidatorsSweepWithdrawals(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/MiscHelpersElectra.java
+      search: public UInt64 getMaxEffectiveBalance(
   spec: |
     <spec fn="get_validators_sweep_withdrawals" fork="electra" hash="034093ad">
     def get_validators_sweep_withdrawals(
@@ -7335,7 +7341,9 @@
     </spec>
 
 - name: is_eligible_for_partial_withdrawals#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/withdrawals/WithdrawalsHelpersElectra.java
+      search: protected int processPendingPartialWithdrawals(
   spec: |
     <spec fn="is_eligible_for_partial_withdrawals" fork="electra" hash="c8d29720">
     def is_eligible_for_partial_withdrawals(validator: Validator, balance: Gwei) -> bool:
@@ -9122,7 +9130,13 @@
     </spec>
 
 - name: prepare_execution_payload#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV3.java
+      search: public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes)
   spec: |
     <spec fn="prepare_execution_payload" fork="electra" style="diff" hash="c617aa1b">
     --- capella
@@ -10348,7 +10362,11 @@
     </spec>
 
 - name: process_execution_payload#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/block/BlockProcessorDeneb.java
+      search: public void validateExecutionPayload(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+      search: public NewPayloadRequest computeNewPayloadRequest(
   spec: |
     <spec fn="process_execution_payload" fork="electra" style="diff" hash="078e4a6c">
     --- deneb
@@ -11734,7 +11752,15 @@
     </spec>
 
 - name: process_voluntary_exit#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processVoluntaryExits(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/operations/validation/VoluntaryExitValidatorElectra.java
+      search: public Optional<OperationInvalidReason> validate(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/operations/validation/VoluntaryExitValidatorElectra.java
+      search: Optional<OperationInvalidReason> validateElectraConditions(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/operations/OperationSignatureVerifier.java
+      search: public boolean verifyVoluntaryExitSignature(
   spec: |
     <spec fn="process_voluntary_exit" fork="electra" style="diff" hash="51b07d36">
     --- deneb

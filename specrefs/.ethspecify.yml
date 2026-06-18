@@ -253,13 +253,6 @@ specrefs:
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 
-      # Not implemented: electra
-      - prepare_execution_payload#electra
-      - process_execution_payload#electra
-      - process_voluntary_exit#electra
-      - is_eligible_for_partial_withdrawals#electra
-      - get_validators_sweep_withdrawals#electra
-
       # Not implemented: fulu
       - compute_matrix#fulu
       - get_data_column_sidecars#fulu
