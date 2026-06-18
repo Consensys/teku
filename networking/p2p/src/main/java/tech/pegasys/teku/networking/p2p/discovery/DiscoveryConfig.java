@@ -32,7 +32,7 @@ public class DiscoveryConfig {
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 100;
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS = 60;
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS = 80;
-  public static final int DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE = 50;
+  public static final int DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE = 30;
   public static final boolean DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED = false;
 
   private final boolean isDiscoveryEnabled;
