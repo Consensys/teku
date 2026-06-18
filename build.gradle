@@ -176,14 +176,6 @@ def isNonStable = { String version ->
 	return !stableKeyword && !(version ==~ regex)
 }
 
-def isWeb3jMajorUpgrade = { candidate ->
-	if (candidate.group != 'org.web3j') {
-		return false
-	}
-	def majorVersion = candidate.version.tokenize('.')[0]
-	return majorVersion.isInteger() && majorVersion.toInteger() >= 5
-}
-
 def versionComponents = { String version ->
 	version.tokenize('.-').collect { part -> part.isInteger() ? part.toInteger() : 0 }
 }
@@ -227,7 +219,6 @@ def isRejectedDependencyUpdate = { candidate ->
 tasks.named("dependencyUpdates").configure {
 	rejectVersionIf {
 		isNonStable(it.candidate.version) ||
-		isWeb3jMajorUpgrade(it.candidate) ||
 		isRejectedDependencyUpdate(it.candidate)
 	}
 }
