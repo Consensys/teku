@@ -252,13 +252,6 @@ specrefs:
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 
-      # Not implemented: deneb
-      - compute_signed_block_header#deneb
-      - get_blob_sidecars#deneb
-      - prepare_execution_payload#deneb
-      - process_registry_updates#deneb
-      - process_voluntary_exit#deneb
-
       # Not implemented: electra
       - add_validator_to_registry#electra
       - compute_on_chain_aggregate#electra

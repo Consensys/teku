@@ -1811,7 +1811,9 @@
     </spec>
 
 - name: compute_signed_block_header#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlock.java
+      search: public SignedBeaconBlockHeader asHeader()
   spec: |
     <spec fn="compute_signed_block_header" fork="deneb" hash="552442e1">
     def compute_signed_block_header(signed_block: SignedBeaconBlock) -> SignedBeaconBlockHeader:
@@ -3562,7 +3564,15 @@
     </spec>
 
 - name: get_blob_sidecars#deneb
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/BlockFactoryDeneb.java
+      search: public List<BlobSidecar> createBlobSidecars(
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/BlockOperationSelectorFactory.java
+      search: public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector()
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/helpers/MiscHelpersDeneb.java
+      search: public BlobSidecar constructBlobSidecar(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/helpers/MiscHelpersDeneb.java
+      search: public List<Bytes32> computeBlobKzgCommitmentInclusionProof(
   spec: |
     <spec fn="get_blob_sidecars" fork="deneb" hash="0206e9a5">
     def get_blob_sidecars(
@@ -9070,7 +9080,13 @@
     </spec>
 
 - name: prepare_execution_payload#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV3.java
+      search: public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes)
   spec: |
     <spec fn="prepare_execution_payload" fork="deneb" style="diff" hash="c617aa1b">
     --- capella
@@ -11294,7 +11310,9 @@
     </spec>
 
 - name: process_registry_updates#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processRegistryUpdates(
   spec: |
     <spec fn="process_registry_updates" fork="deneb" style="diff" hash="71a6a2d9">
     --- phase0
@@ -11675,7 +11693,9 @@
     </spec>
 
 - name: process_voluntary_exit#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processVoluntaryExits(
   spec: |
     <spec fn="process_voluntary_exit" fork="deneb" style="diff" hash="f97fd167">
     --- phase0
