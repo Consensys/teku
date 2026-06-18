@@ -18,6 +18,7 @@ dependencies {
 
 	api 'org.web3j:core'
 
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 	implementation 'io.consensys.tuweni:tuweni-units'
 
 	testImplementation testFixtures(project(':infrastructure:async'))
