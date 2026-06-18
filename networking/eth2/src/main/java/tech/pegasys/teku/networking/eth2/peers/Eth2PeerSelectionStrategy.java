@@ -183,6 +183,15 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
             peerScorer);
     final int additionalPeersToDrop = peersToDrop - remotelyInitiatedPeersBeingDropped.size();
     if (additionalPeersToDrop == 0) {
+      LOG.trace(
+          "Selected {} remotely initiated peers to disconnect (peerCount={}, "
+              + "remotelyInitiatedPeerCount={}, totalOutboundRequirement={})",
+          remotelyInitiatedPeersBeingDropped::size,
+          peers::size,
+          () -> peers.stream().filter(Peer::connectionInitiatedRemotely).count(),
+          () ->
+              targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
+                  + peerSubnetSubscriptions.getSubscribersRequired());
       return remotelyInitiatedPeersBeingDropped;
     }
 
@@ -204,6 +213,18 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
         .limit(additionalPeersToDrop)
         .forEach(peersBeingDropped::add);
+    LOG.trace(
+        "Selected {} peers to disconnect (peerCount={}, remotelyInitiatedPeerCount={}, "
+            + "remotelyInitiatedPeersDropped={}, locallyInitiatedRandomPeersDemoted={}, "
+            + "totalOutboundRequirement={})",
+        peersBeingDropped::size,
+        peers::size,
+        () -> peers.stream().filter(Peer::connectionInitiatedRemotely).count(),
+        remotelyInitiatedPeersBeingDropped::size,
+        locallyInitiatedRandomlySelectedPeersBeingDropped::size,
+        () ->
+            targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
+                + peerSubnetSubscriptions.getSubscribersRequired());
     return peersBeingDropped.stream().toList();
   }
 
