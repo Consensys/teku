@@ -156,8 +156,11 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<Peer> peers = network.streamPeers().map(Peer.class::cast).toList();
     final PeerSubnetSubscriptions peerSubnetSubscriptions =
         peerSubnetSubscriptionsFactory.create(network);
+    final int totalOutboundRequirement =
+        targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
+            + peerSubnetSubscriptions.getSubscribersRequired();
     final int remotelyInitiatedPeersToDrop =
-        calculateRemotelyInitiatedPeersToDropCount(peers, peerSubnetSubscriptions);
+        calculateRemotelyInitiatedPeersToDropCount(peers, totalOutboundRequirement);
     final int peersToDrop =
         Math.max(targetPeerCountRange.getPeersToDrop(peers.size()), remotelyInitiatedPeersToDrop);
     if (peersToDrop == 0) {
@@ -168,7 +171,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         peers.stream()
             .collect(Collectors.groupingBy(peer -> peerPools.getPeerConnectionType(peer.getId())));
     final List<Peer> randomlySelectedPeers =
-        peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());
+        peersBySource.getOrDefault(RANDOMLY_SELECTED, emptyList());
     final List<Peer> scoreBasedPeers = peersBySource.getOrDefault(SCORE_BASED, emptyList());
     final List<Peer> remotelyInitiatedRandomlySelectedPeers =
         randomlySelectedPeers.stream().filter(Peer::connectionInitiatedRemotely).toList();
@@ -189,24 +192,23 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
           remotelyInitiatedPeersBeingDropped::size,
           peers::size,
           () -> peers.stream().filter(Peer::connectionInitiatedRemotely).count(),
-          () ->
-              targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
-                  + peerSubnetSubscriptions.getSubscribersRequired());
+          () -> totalOutboundRequirement);
       return remotelyInitiatedPeersBeingDropped;
     }
 
     // Fill any remaining drop slots using the normal score-based ordering.
     final List<Peer> peersBeingDropped = new ArrayList<>(remotelyInitiatedPeersBeingDropped);
     final int currentPeerCount = peers.size();
-    final List<Peer> locallyInitiatedRandomlySelectedPeersBeingDropped =
-        filterAndSelectLocallyInitiatedRandomPeersToDrop(randomlySelectedPeers, currentPeerCount);
+    final List<Peer> locallyInitiatedRandomPeersEligibleForDisconnection =
+        selectLocallyInitiatedRandomPeersEligibleForDisconnection(
+            randomlySelectedPeers, currentPeerCount);
     // Peers from the randomly selected pool that have been chosen are moved have their special
     // randomly selected status revoked, leaving them in the default pool where they are considered
     // for disconnection based on their score
-    locallyInitiatedRandomlySelectedPeersBeingDropped.forEach(
+    locallyInitiatedRandomPeersEligibleForDisconnection.forEach(
         peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
     Stream.concat(
-            locallyInitiatedRandomlySelectedPeersBeingDropped.stream(),
+            locallyInitiatedRandomPeersEligibleForDisconnection.stream(),
             Stream.concat(
                 remotelyInitiatedRandomlySelectedPeers.stream(), scoreBasedPeers.stream()))
         .filter(peer -> !peersBeingDropped.contains(peer))
@@ -221,18 +223,13 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         peers::size,
         () -> peers.stream().filter(Peer::connectionInitiatedRemotely).count(),
         remotelyInitiatedPeersBeingDropped::size,
-        locallyInitiatedRandomlySelectedPeersBeingDropped::size,
-        () ->
-            targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
-                + peerSubnetSubscriptions.getSubscribersRequired());
-    return peersBeingDropped.stream().toList();
+        locallyInitiatedRandomPeersEligibleForDisconnection::size,
+        () -> totalOutboundRequirement);
+    return List.copyOf(peersBeingDropped);
   }
 
   private int calculateRemotelyInitiatedPeersToDropCount(
-      final List<Peer> peers, final PeerSubnetSubscriptions peerSubnetSubscriptions) {
-    final int totalOutboundRequirement =
-        targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
-            + peerSubnetSubscriptions.getSubscribersRequired();
+      final List<Peer> peers, final int totalOutboundRequirement) {
     final int remotelyInitiatedPeerCount =
         (int) peers.stream().filter(Peer::connectionInitiatedRemotely).count();
 
@@ -253,7 +250,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         .toList();
   }
 
-  private List<Peer> filterAndSelectLocallyInitiatedRandomPeersToDrop(
+  private List<Peer> selectLocallyInitiatedRandomPeersEligibleForDisconnection(
       final List<Peer> randomlySelectedPeers, final int currentPeerCount) {
     final List<Peer> locallyInitiatedRandomlySelectedPeers =
         randomlySelectedPeers.stream()
