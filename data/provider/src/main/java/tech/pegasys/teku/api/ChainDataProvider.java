@@ -92,6 +92,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -597,10 +598,7 @@ public class ChainDataProvider {
     if (!builder.getWithdrawableEpoch().equals(FAR_FUTURE_EPOCH)) {
       return StateBuilderData.STATUS_EXITED;
     }
-    return spec.atSlot(state.getSlot())
-            .miscHelpers()
-            .toVersionGloas()
-            .orElseThrow()
+    return PredicatesGloas.required(spec.atSlot(state.getSlot()).predicates())
             .isActiveBuilder(state, UInt64.valueOf(builderIndex))
         ? StateBuilderData.STATUS_ACTIVE
         : StateBuilderData.STATUS_PENDING;

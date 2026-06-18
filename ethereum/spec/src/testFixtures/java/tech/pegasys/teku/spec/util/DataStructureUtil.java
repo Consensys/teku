@@ -166,6 +166,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
@@ -268,6 +269,8 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
   private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
+  private static final int MAX_EP_RANDOM_BUILDER_DEPOSIT_REQUESTS = 4;
+  private static final int MAX_EP_RANDOM_BUILDER_EXIT_REQUESTS = 2;
 
   private final Spec spec;
 
@@ -850,13 +853,13 @@ public final class DataStructureUtil {
   }
 
   public List<BuilderDepositRequest> randomBuilderDepositRequests() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_BUILDER_DEPOSIT_REQUESTS))
         .mapToObj(__ -> randomBuilderDepositRequest())
         .collect(toList());
   }
 
   public List<BuilderExitRequest> randomBuilderExitRequests() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_BUILDER_EXIT_REQUESTS))
         .mapToObj(__ -> randomBuilderExitRequest())
         .collect(toList());
   }
@@ -3099,7 +3102,7 @@ public final class DataStructureUtil {
     return randomExecutionRequests(randomSlot());
   }
 
-  public ExecutionRequests randomExecutionRequests(final UInt64 slot) {
+  public ExecutionRequestsBuilder randomExecutionRequestsBuilder(final UInt64 slot) {
     return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions())
         .getExecutionRequestsSchema()
         .createBuilder()
@@ -3107,8 +3110,11 @@ public final class DataStructureUtil {
         .withdrawals(randomWithdrawalRequests())
         .consolidations(randomConsolidationRequests())
         .builderDeposits(this::randomBuilderDepositRequests)
-        .builderExits(this::randomBuilderExitRequests)
-        .build();
+        .builderExits(this::randomBuilderExitRequests);
+  }
+
+  public ExecutionRequests randomExecutionRequests(final UInt64 slot) {
+    return randomExecutionRequestsBuilder(slot).build();
   }
 
   public BuilderDepositRequest randomBuilderDepositRequest() {

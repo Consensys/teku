@@ -320,7 +320,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(newSlot),
+                        createExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -423,7 +423,7 @@ public class BlockProposalTestUtil {
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        dataStructureUtil.randomExecutionRequests(newSlot),
+                        createExecutionRequests(newSlot),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -516,6 +516,15 @@ public class BlockProposalTestUtil {
                 .excessBlobGas(() -> UInt64.ZERO)
                 .blockAccessList(() -> Bytes32.ZERO)
                 .slotNumber(() -> newSlot));
+  }
+
+  private ExecutionRequests createExecutionRequests(final UInt64 newSlot) {
+    return dataStructureUtil
+        .randomExecutionRequestsBuilder(newSlot)
+        // Defaulting the builder requests to empty lists since builders can be onboarded randomly
+        .builderDeposits(List::of)
+        .builderExits(List::of)
+        .build();
   }
 
   private SignedExecutionPayloadBid createSignedExecutionPayloadBid(

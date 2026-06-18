@@ -36,9 +36,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsGloas;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -142,9 +142,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(state, bid)) {
+    if (!miscHelpersGloas.isBidBuildingOnFullParent(stateGloas, bid)) {
       // Parent was EMPTY -- no execution requests expected
-      if (!miscHelpersGloas.isEmptyExecutionRequests(requests)) {
+      if (!requests.isDefault()) {
         throw new BlockProcessingException(
             "No execution requests were expected for an EMPTY parent");
       }
@@ -152,8 +152,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Parent was FULL -- verify the bid commitment and apply the payload
-    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
-        state, requests)) {
+    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestBid(stateGloas, requests)) {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
@@ -184,6 +183,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         state, requests.getWithdrawals(), validatorExitContextSupplier);
     executionRequestsProcessorGloas.processConsolidationRequests(
         state, requests.getConsolidations());
+    final ExecutionRequestsGloas requestsGloas = ExecutionRequestsGloas.required(requests);
+    executionRequestsProcessorGloas.processBuilderDepositRequests(
+        state, requestsGloas.getBuilderDeposits());
+    executionRequestsProcessorGloas.processBuilderExitRequests(
+        state, requestsGloas.getBuilderExits());
 
     // Settle the builder payment
     if (parentEpoch.equals(beaconStateAccessorsGloas.getCurrentEpoch(state))) {
@@ -429,23 +433,6 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                         () ->
                             new BlockProcessingException(
                                 "Payload attestations expected as part of the body"))));
-  }
-
-  @Override
-  protected void initiateExit(
-      final MutableBeaconState state,
-      final SignedVoluntaryExit signedExit,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    final UInt64 validatorIndex = signedExit.getMessage().getValidatorIndex();
-    if (predicatesGloas.isBuilderIndex(validatorIndex)) {
-      // - Run initiate_builder_exit(state, builder_index)
-      beaconStateMutatorsGloas.initiateBuilderExit(
-          state, miscHelpersGloas.convertValidatorIndexToBuilderIndex(validatorIndex));
-    } else {
-      // - Run initiate_validator_exit(state, exit.validator_index)
-      beaconStateMutators.initiateValidatorExit(
-          state, validatorIndex.intValue(), validatorExitContextSupplier);
-    }
   }
 
   @Override
