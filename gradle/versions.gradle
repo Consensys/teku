@@ -161,6 +161,6 @@ dependencyManagement {
 			entry 'jjwt-jackson'
 		}
 
-		dependency 'net.jqwik:jqwik:1.10.1'
+		dependency 'net.jqwik:jqwik:1.9.3'
 	}
 }
