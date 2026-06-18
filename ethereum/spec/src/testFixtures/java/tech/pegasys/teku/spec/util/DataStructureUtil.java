@@ -166,6 +166,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
@@ -3101,7 +3102,7 @@ public final class DataStructureUtil {
     return randomExecutionRequests(randomSlot());
   }
 
-  public ExecutionRequests randomExecutionRequests(final UInt64 slot) {
+  public ExecutionRequestsBuilder randomExecutionRequestsBuilder(final UInt64 slot) {
     return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions())
         .getExecutionRequestsSchema()
         .createBuilder()
@@ -3109,8 +3110,11 @@ public final class DataStructureUtil {
         .withdrawals(randomWithdrawalRequests())
         .consolidations(randomConsolidationRequests())
         .builderDeposits(this::randomBuilderDepositRequests)
-        .builderExits(this::randomBuilderExitRequests)
-        .build();
+        .builderExits(this::randomBuilderExitRequests);
+  }
+
+  public ExecutionRequests randomExecutionRequests(final UInt64 slot) {
+    return randomExecutionRequestsBuilder(slot).build();
   }
 
   public BuilderDepositRequest randomBuilderDepositRequest() {

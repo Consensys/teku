@@ -142,7 +142,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(stateGloas, bid)) {
+    if (!miscHelpersGloas.isBidBuildingOnFullParent(stateGloas, bid)) {
       // Parent was EMPTY -- no execution requests expected
       if (!requests.isDefault()) {
         throw new BlockProcessingException(
