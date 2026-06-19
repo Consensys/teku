@@ -429,6 +429,26 @@ class Eth2PeerSelectionStrategyTest {
         .containsExactlyInAnyOrder(remotelyInitiatedScoreBasedPeer1);
   }
 
+  @Test
+  void selectPeersToDisconnect_shouldNotDropRemotelyInitiatedPeersWhenPeerCountIsBelowLowerBound() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(25, 35, 25);
+    final List<Peer> remotelyInitiatedPeers =
+        IntStream.range(0, 12)
+            .mapToObj(index -> (Peer) new InboundStubPeer(new MockNodeId(index)))
+            .toList();
+    final List<Peer> locallyInitiatedPeers =
+        IntStream.range(12, 18)
+            .mapToObj(index -> (Peer) new StubPeer(new MockNodeId(index)))
+            .toList();
+    when(network.getPeerCount()).thenReturn(18);
+    when(network.streamPeers())
+        .thenAnswer(
+            __ -> Stream.concat(remotelyInitiatedPeers.stream(), locallyInitiatedPeers.stream()));
+    when(peerSubnetSubscriptions.getSubscribersRequired()).thenReturn(1);
+
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools)).isEmpty();
+  }
+
   private Eth2PeerSelectionStrategy createStrategy() {
     return createStrategy(10, 20, 0);
   }

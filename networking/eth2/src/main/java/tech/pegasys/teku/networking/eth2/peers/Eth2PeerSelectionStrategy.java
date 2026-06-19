@@ -234,7 +234,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         (int) peers.stream().filter(Peer::connectionInitiatedRemotely).count();
 
     return targetPeerCountRange.getRemotelyInitiatedPeersToDrop(
-        remotelyInitiatedPeerCount, totalOutboundRequirement);
+        remotelyInitiatedPeerCount, totalOutboundRequirement, peers.size());
   }
 
   private List<Peer> findRemotelyInitiatedPeersToDrop(
