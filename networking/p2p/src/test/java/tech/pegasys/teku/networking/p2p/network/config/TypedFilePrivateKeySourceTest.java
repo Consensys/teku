@@ -24,14 +24,11 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Collections;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 class TypedFilePrivateKeySourceTest {
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void privateKeyFile_ioError(@TempDir final Path tempDir) throws IOException {
     final Path path = tempDir.resolve("myFile");
 

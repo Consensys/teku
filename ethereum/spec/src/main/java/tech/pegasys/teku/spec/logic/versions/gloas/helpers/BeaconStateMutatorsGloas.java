@@ -170,7 +170,8 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
       final BLSSignature signature,
-      final UInt64 slot) {
+      final UInt64 slot,
+      final boolean signatureAlreadyVerified) {
     beaconStateAccessorsGloas
         .getBuilderIndex(state, pubkey)
         .ifPresentOrElse(
@@ -185,8 +186,9 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
             () -> {
               // Verify the deposit signature (proof of possession) which is not checked by the
               // deposit contract
-              if (miscHelpers.isValidDepositSignature(
-                  pubkey, withdrawalCredentials, amount, signature)) {
+              if (signatureAlreadyVerified
+                  || miscHelpers.isValidDepositSignature(
+                      pubkey, withdrawalCredentials, amount, signature)) {
                 addBuilderToRegistry(state, pubkey, withdrawalCredentials, amount, slot);
               }
             });

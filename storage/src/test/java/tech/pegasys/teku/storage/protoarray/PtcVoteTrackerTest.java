@@ -30,11 +30,15 @@ class PtcVoteTrackerTest {
   void recordVote_incrementsPayloadAndDataCounts() {
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isZero();
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isZero();
+    assertThat(tracker.getPayloadPresentVote(ROOT_1, 0)).isEmpty();
+    assertThat(tracker.getDataAvailableVote(ROOT_1, 0)).isEmpty();
 
     tracker.recordVote(ROOT_1, IntSet.of(0), true, false);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isZero();
+    assertThat(tracker.getPayloadPresentVote(ROOT_1, 0)).contains(true);
+    assertThat(tracker.getDataAvailableVote(ROOT_1, 0)).contains(false);
 
     tracker.recordVote(ROOT_1, IntSet.of(1), true, true);
     tracker.recordVote(ROOT_1, IntSet.of(2), true, true);
@@ -62,23 +66,29 @@ class PtcVoteTrackerTest {
   }
 
   @Test
-  void recordVote_removesPtcPositionsWhenPayloadOrDataBecomesAbsent() {
+  void recordVote_recordsFalseWhenPayloadOrDataBecomesAbsent() {
     tracker.recordVote(ROOT_1, IntSet.of(0), true, true);
     tracker.recordVote(ROOT_1, IntSet.of(1), true, true);
     tracker.recordVote(ROOT_1, IntSet.of(0), false, false);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(1);
+    assertThat(tracker.getPayloadPresentVoteCount(ROOT_1, false)).isEqualTo(1);
+    assertThat(tracker.getDataAvailableVoteCount(ROOT_1, false)).isEqualTo(1);
+    assertThat(tracker.getPayloadPresentVote(ROOT_1, 0)).contains(false);
+    assertThat(tracker.getDataAvailableVote(ROOT_1, 0)).contains(false);
   }
 
   @Test
-  void recordVote_removesAllPtcPositionsWhenPayloadOrDataBecomesAbsent() {
+  void recordVote_recordsFalseForAllPtcPositionsWhenPayloadOrDataBecomesAbsent() {
     tracker.recordVote(ROOT_1, IntSet.of(0, 2, 4), true, true);
     tracker.recordVote(ROOT_1, IntSet.of(1), true, true);
     tracker.recordVote(ROOT_1, IntSet.of(0, 2, 4), false, false);
 
     assertThat(tracker.getPayloadPresentVoteCount(ROOT_1)).isEqualTo(1);
     assertThat(tracker.getDataAvailableVoteCount(ROOT_1)).isEqualTo(1);
+    assertThat(tracker.getPayloadPresentVote(ROOT_1, 2)).contains(false);
+    assertThat(tracker.getDataAvailableVote(ROOT_1, 4)).contains(false);
   }
 
   @Test

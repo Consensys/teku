@@ -41,6 +41,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -79,6 +80,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -157,6 +159,32 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(typeDefClient.createSyncCommitteeContribution(UInt64.ONE, 0, Bytes32.ZERO))
         .isEmpty();
+  }
+
+  @TestTemplate
+  public void createPayloadAttestationData_whenSuccess_returnsPayloadAttestationData()
+      throws Exception {
+    assumeThat(specMilestone).isEqualTo(GLOAS);
+    final PayloadAttestationData payloadAttestationData =
+        dataStructureUtil.randomPayloadAttestationData(UInt64.ONE);
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(serializeSpecPayloadAttestationDataResponse(payloadAttestationData)));
+
+    final Optional<PayloadAttestationData> response =
+        typeDefClient.createPayloadAttestationData(UInt64.ONE);
+
+    assertThat(response).isPresent();
+    assertThat(response.get()).isEqualTo(payloadAttestationData);
+  }
+
+  @TestTemplate
+  public void createPayloadAttestationData_whenNotFound_returnsEmpty() {
+    assumeThat(specMilestone).isEqualTo(GLOAS);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(typeDefClient.createPayloadAttestationData(UInt64.ONE)).isEmpty();
   }
 
   @TestTemplate
@@ -1107,5 +1135,11 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
     }
+  }
+
+  private String serializeSpecPayloadAttestationDataResponse(
+      final PayloadAttestationData payloadAttestationData) throws Exception {
+    return "{\"version\":\"gloas\","
+        + serializeSszObjectToJsonWithDataWrapper(payloadAttestationData).substring(1);
   }
 }

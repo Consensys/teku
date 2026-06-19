@@ -467,6 +467,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     public Optional<SlotAndBlockRoot> findCommonAncestor(
         final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
       throw new UnsupportedOperationException("Not implemented");
@@ -538,8 +543,15 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 blockRoot) {
-      return store.getExecutionPayloadIfAvailable(blockRoot).isPresent();
+    public boolean shouldExtendPayload(
+        final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
+      return store.getExecutionPayloadIfAvailable(slotAndBlockRoot.getBlockRoot()).isPresent();
+    }
+
+    @Override
+    public boolean shouldBuildOnFull(
+        final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
+      return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
     }
 
     @Override

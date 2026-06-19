@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 
 import java.util.List;
 import java.util.Map;
@@ -65,12 +66,16 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
@@ -123,6 +128,7 @@ public class SyncingNodeManager {
         new MergeTransitionBlockValidator(spec, recentChainData);
 
     final MetricsSystem metricsSystem = new StubMetricsSystem();
+    final PoolFactory poolFactory = new PoolFactory(metricsSystem);
 
     final ForkChoice forkChoice =
         new ForkChoice(
@@ -144,11 +150,13 @@ public class SyncingNodeManager {
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
-    final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
+    final PendingBlockPool pendingBlockPool = poolFactory.createPendingBlockPool(spec);
     final PendingPool<SignedBeaconBlock> pendingBlocks =
-        poolFactory.createPendingPoolForBlocks(spec);
+        pendingBlockPool.getBlocksWaitingForParent();
+    final PendingAttestationPool pendingAttestationPool =
+        poolFactory.createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
     final PendingPool<ValidatableAttestation> pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(spec, 10000);
+        pendingAttestationPool.getAttestationsWaitingForBlock();
     final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
         poolFactory.createPendingPoolForPayloadAttestations(spec, 100);
     final FutureItems<SignedBeaconBlock> futureBlocks =
@@ -176,7 +184,8 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            () -> DataAvailabilitySampler.NOOP,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -188,8 +197,11 @@ public class SyncingNodeManager {
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
         .subscribe(ReceivedBlockEventsChannel.class, blockManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
-        .subscribe(SlotEventsChannel.class, pendingBlocks);
+        .subscribe(ReceivedExecutionPayloadEventsChannel.class, blockManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
+        .subscribe(SlotEventsChannel.class, pendingBlockPool)
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestationPool)
+        .subscribe(SlotEventsChannel.class, pendingAttestationPool);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
@@ -228,6 +240,7 @@ public class SyncingNodeManager {
             pendingAttestations,
             pendingPayloadAttestations,
             BlockBlobSidecarsTrackersPool.NOOP,
+            DasSamplerBasic.NOOP,
             syncService,
             fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(blockManager::importBlock);

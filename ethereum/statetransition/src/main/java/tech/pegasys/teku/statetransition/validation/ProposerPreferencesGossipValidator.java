@@ -19,6 +19,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +49,7 @@ public class ProposerPreferencesGossipValidator {
   private final RecentChainData recentChainData;
 
   private final Set<DedupKey> seenProposerPreferences =
-      LimitedSet.createSynchronized(RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE);
+      LimitedSet.createSynchronizedLRU(RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE);
 
   public ProposerPreferencesGossipValidator(
       final Spec spec,
@@ -67,16 +68,17 @@ public class ProposerPreferencesGossipValidator {
     final Bytes32 dependentRoot = proposerPreferences.getDependentRoot();
 
     /*
-     * [IGNORE] preferences.proposal_slot is in the current or next epoch
+     * [IGNORE]_ `preferences.proposal_slot` is within the proposer lookahead --
+     * i.e. `compute_epoch_at_slot(preferences.proposal_slot)` is in the range
+     * [compute_epoch_at_slot(current_slot), compute_epoch_at_slot(current_slot) + MIN_SEED_LOOKAHEAD]`.
      */
-    if (!gossipValidationHelper.isSlotInCurrentEpoch(proposalSlot)
-        && !gossipValidationHelper.isSlotInNextEpoch(proposalSlot)) {
+    if (!gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot)) {
       LOG.trace(
-          "Proposer preferences proposal slot {} is not in the current or next epoch",
+          "Proposer preferences proposal slot {} is not in the current or within lookahead epoch",
           proposalSlot);
       return completedFuture(
           ignore(
-              "Proposer preferences proposal slot %s is not in the current or next epoch",
+              "Proposer preferences proposal slot %s is not in the current or within lookahead epoch",
               proposalSlot));
     }
 
@@ -112,11 +114,36 @@ public class ProposerPreferencesGossipValidator {
     }
 
     /*
-     * Look up the checkpoint state at (proposal_epoch - 1, dependent_root). The state used by
-     * is_valid_proposal_slot has current_epoch == proposal_epoch - 1, so the lookahead index for
-     * proposal_slot is always SLOTS_PER_EPOCH + (proposal_slot % SLOTS_PER_EPOCH).
+     * Look up the checkpoint state at (proposal_epoch - MIN_SEED_LOOKAHEAD, dependent_root). The state used by
+     * is_valid_proposal_slot has current_epoch == proposal_epoch - MIN_SEED_LOOKAHEAD, so the lookahead index for
+     * proposal_slot is MIN_SEED_LOOKAHEAD * SLOTS_PER_EPOCH + (proposal_slot % SLOTS_PER_EPOCH).
      */
-    final UInt64 checkpointEpoch = spec.computeEpochAtSlot(proposalSlot).minusMinZero(1);
+    final int minSeedLookahead = spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead();
+    final UInt64 checkpointEpoch =
+        spec.computeEpochAtSlot(proposalSlot).minusMinZero(minSeedLookahead);
+
+    /*
+     * Pre-flight the checkpoint-state precondition for the [REJECT] is_valid_proposal_slot rule below.
+     * A dependent root at or after the checkpoint boundary cannot be the root of the checkpoint state
+     * required by that rule.
+     */
+    final UInt64 checkpointBoundarySlot = spec.computeStartSlotAtEpoch(checkpointEpoch);
+    final Optional<UInt64> maybeDependentRootSlot =
+        recentChainData.getSlotForBlockRoot(dependentRoot);
+    if (maybeDependentRootSlot.isPresent()) {
+      final UInt64 dependentRootSlot = maybeDependentRootSlot.get();
+      if (!dependentRootSlot.isLessThan(checkpointBoundarySlot)) {
+        LOG.trace(
+            "Proposer preferences dependent root {} is at slot {}, but must be before checkpoint boundary slot {}",
+            dependentRoot,
+            dependentRootSlot,
+            checkpointBoundarySlot);
+        return completedFuture(
+            reject(
+                "Proposer preferences dependent root %s is at slot %s, but must be before checkpoint boundary slot %s",
+                dependentRoot, dependentRootSlot, checkpointBoundarySlot));
+      }
+    }
     return recentChainData
         .retrieveCheckpointState(new Checkpoint(checkpointEpoch, dependentRoot))
         .thenApply(
@@ -131,10 +158,13 @@ public class ProposerPreferencesGossipValidator {
               final BeaconState state = maybeState.get();
 
               /*
-               * [REJECT] is_valid_proposal_slot(state, preferences) returns True
+               * [REJECT] is_valid_proposal_slot(state, preferences) returns True, where state is the checkpoint state
+               * at the epoch compute_epoch_at_slot(preferences.proposal_slot) - MIN_SEED_LOOKAHEAD
+               * and the root preferences.dependent_root.
                */
               final int slotsPerEpoch = spec.atSlot(proposalSlot).getConfig().getSlotsPerEpoch();
-              final int lookaheadIndex = slotsPerEpoch + proposalSlot.mod(slotsPerEpoch).intValue();
+              final int lookaheadIndex =
+                  minSeedLookahead * slotsPerEpoch + proposalSlot.mod(slotsPerEpoch).intValue();
               final UInt64 expectedValidatorIndex =
                   BeaconStateFulu.required(state).getProposerLookahead().getElement(lookaheadIndex);
               if (!expectedValidatorIndex.equals(proposerPreferences.getValidatorIndex())) {
@@ -162,6 +192,17 @@ public class ProposerPreferencesGossipValidator {
               }
 
               return ACCEPT;
+            })
+        .exceptionally(
+            error -> {
+              LOG.trace(
+                  "Unable to generate proposer preferences checkpoint state for checkpoint epoch {} and dependent root {}",
+                  checkpointEpoch,
+                  dependentRoot,
+                  error);
+              return reject(
+                  "Unable to generate proposer preferences checkpoint state for checkpoint epoch %s and dependent root %s",
+                  checkpointEpoch, dependentRoot);
             });
   }
 

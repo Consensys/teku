@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
@@ -160,6 +161,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public OperationSignatureVerifier operationSignatureVerifier() {
     return specLogic.operationSignatureVerifier();
+  }
+
+  @Override
+  public WeakSubjectivityCalculator weakSubjectivityCalculator() {
+    return specLogic.weakSubjectivityCalculator();
   }
 
   @Override

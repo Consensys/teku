@@ -16,7 +16,9 @@ package tech.pegasys.teku.validator.client;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
@@ -32,13 +34,19 @@ public class DvtAttestationAggregations {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
+  private final UInt64 epoch;
   private final Map<BeaconCommitteeSelectionProof, SafeFuture<BLSSignature>> pendingRequests =
       new ConcurrentHashMap<>();
   private final int expectedDutiesCount;
+  private final AtomicBoolean submitted = new AtomicBoolean(false);
+  private volatile boolean activated = false;
 
   public DvtAttestationAggregations(
-      final ValidatorApiChannel validatorApiChannel, final int expectedDutiesCount) {
+      final ValidatorApiChannel validatorApiChannel,
+      final UInt64 epoch,
+      final int expectedDutiesCount) {
     this.validatorApiChannel = validatorApiChannel;
+    this.epoch = epoch;
     this.expectedDutiesCount = expectedDutiesCount;
   }
 
@@ -57,24 +65,56 @@ public class DvtAttestationAggregations {
             .selectionProof(partialProof.toBytesCompressed().toHexString())
             .build();
 
+    if (submitted.get()) {
+      return SafeFuture.failedFuture(alreadySubmittedOrCancelledException());
+    }
+
     final SafeFuture<BLSSignature> future = new SafeFuture<>();
     pendingRequests.put(request, future);
 
-    if (pendingRequests.size() >= expectedDutiesCount) {
-      submitBatchRequests(slot);
+    if (submitted.get()) {
+      pendingRequests.remove(request, future);
+      future.completeExceptionally(alreadySubmittedOrCancelledException());
+    } else if (activated && pendingRequests.size() >= expectedDutiesCount) {
+      maybeSubmit();
     }
 
     return future;
   }
 
-  private void submitBatchRequests(final UInt64 slot) {
+  private CancellationException alreadySubmittedOrCancelledException() {
+    return new CancellationException(
+        "DVT attestation aggregation already submitted or cancelled for epoch " + epoch);
+  }
+
+  public void activate() {
+    activated = true;
+    if (!pendingRequests.isEmpty()) {
+      maybeSubmit();
+    }
+  }
+
+  public void cancel() {
+    if (submitted.compareAndSet(false, true)) {
+      completeAllPendingFuturesExceptionally(
+          new CancellationException(
+              "DVT attestation aggregation duties rescheduled for epoch " + epoch));
+    }
+  }
+
+  private void maybeSubmit() {
+    if (submitted.compareAndSet(false, true)) {
+      submitBatchRequests();
+    }
+  }
+
+  private void submitBatchRequests() {
     validatorApiChannel
         .getBeaconCommitteeSelectionProof(pendingRequests.keySet().stream().toList())
         .thenAccept(
             response ->
                 response.ifPresentOrElse(
-                    this::handleBeaconCommitteeSelectionProofsResponse,
-                    () -> handleEmptyResponse(slot)))
+                    this::handleBeaconCommitteeSelectionProofsResponse, this::handleEmptyResponse))
         .exceptionally(unexpectedErrorHandler())
         .finishStackTrace();
   }
@@ -102,6 +142,7 @@ public class DvtAttestationAggregations {
                       new RuntimeException(
                           "No matching complete proof from DVT middleware for this request")));
         });
+    pendingRequests.clear();
   }
 
   private static Predicate<BeaconCommitteeSelectionProof> matchingRequest(
@@ -111,11 +152,12 @@ public class DvtAttestationAggregations {
             && request.getSlot().equals(proof.getSlot());
   }
 
-  private void handleEmptyResponse(final UInt64 slot) {
+  private void handleEmptyResponse() {
     LOG.warn(
-        "Received empty response from DVT middleware for slot {}. This will impact aggregation duties.",
-        slot);
-    completeAllPendingFuturesExceptionally("Empty response from DVT middleware for slot " + slot);
+        "Received empty response from DVT middleware for epoch {}. This will impact aggregation duties.",
+        epoch);
+    completeAllPendingFuturesExceptionally(
+        new RuntimeException("Empty response from DVT middleware for epoch " + epoch));
   }
 
   private Function<Throwable, Void> unexpectedErrorHandler() {
@@ -124,19 +166,20 @@ public class DvtAttestationAggregations {
       LOG.warn(errorMsg);
       LOG.debug(errorMsg, ex);
 
-      completeAllPendingFuturesExceptionally(errorMsg);
+      completeAllPendingFuturesExceptionally(new RuntimeException(errorMsg, ex));
       return null;
     };
   }
 
-  private void completeAllPendingFuturesExceptionally(final String errorMsg) {
+  private void completeAllPendingFuturesExceptionally(final Throwable cause) {
     pendingRequests
         .values()
         .forEach(
             future -> {
               if (!future.isDone()) {
-                future.completeExceptionally(new RuntimeException(errorMsg));
+                future.completeExceptionally(cause);
               }
             });
+    pendingRequests.clear();
   }
 }

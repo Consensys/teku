@@ -96,6 +96,43 @@ public class P2POptions {
   private Integer p2pUdpPortIpv6;
 
   @Option(
+      names = {"--Xp2p-quic-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables QUIC transport",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean p2pQuicEnabled = NetworkConfig.DEFAULT_QUIC_ENABLED;
+
+  @Option(
+      names = {"--Xp2p-tcp-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables TCP transport",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean p2pTcpEnabled = NetworkConfig.DEFAULT_TCP_ENABLED;
+
+  @Option(
+      names = {"--Xp2p-quic-port"},
+      paramLabel = "<INTEGER>",
+      description = "P2P QUIC port",
+      hidden = true,
+      arity = "1")
+  private Integer p2pQuicPort = NetworkConfig.DEFAULT_P2P_QUIC_PORT;
+
+  @Option(
+      names = {"--Xp2p-quic-port-ipv6"},
+      paramLabel = "<INTEGER>",
+      description =
+          "P2P IPv6 QUIC port. This port is only used when listening over both IPv4 and IPv6.",
+      hidden = true,
+      arity = "1")
+  private int p2pQuicPortIpv6 = NetworkConfig.DEFAULT_P2P_QUIC_PORT_IPV6;
+
+  @Option(
       names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -164,6 +201,26 @@ public class P2POptions {
               The default is the port specified in --p2p-advertised-port-ipv6.""",
       arity = "1")
   private Integer p2pAdvertisedUdpPortIpv6;
+
+  @Option(
+      names = {"--Xp2p-advertised-quic-port"},
+      paramLabel = "<INTEGER>",
+      description =
+          "P2P advertised QUIC port. The default is the port specified in --p2p-quic-port",
+      hidden = true,
+      arity = "1")
+  private Integer p2pAdvertisedQuicPort;
+
+  @Option(
+      names = {"--Xp2p-advertised-quic-port-ipv6"},
+      paramLabel = "<INTEGER>",
+      description =
+          """
+                      P2P advertised IPv6 QUIC port. This port is only used when advertising both IPv4 and IPv6 addresses.
+                      The default is the port specified in --p2p-quic-port-ipv6.""",
+      hidden = true,
+      arity = "1")
+  private Integer p2pAdvertisedQuicPortIpv6;
 
   @Option(
       names = {"--p2p-private-key-file"},
@@ -319,6 +376,16 @@ public class P2POptions {
       hidden = true,
       arity = "1")
   private Integer forwardSyncMaxDistanceFromHead;
+
+  @Option(
+      names = {"--Xp2p-max-concurrently-sampled-blocks"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Maximum number of recent blocks we keep in the temporary cache to serve requests of recent blocks that have not being fully imported.",
+      hidden = true,
+      arity = "1")
+  private Integer maxConcurrentlySampledBlocks = SyncConfig.DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
 
   @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
@@ -766,6 +833,12 @@ public class P2POptions {
               if (p2pAdvertisedPortIpv6 != null) {
                 n.advertisedPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
+              if (p2pAdvertisedQuicPort != null) {
+                n.advertisedQuicPort(OptionalInt.of(p2pAdvertisedQuicPort));
+              }
+              if (p2pAdvertisedQuicPortIpv6 != null) {
+                n.advertisedQuicPortIpv6(OptionalInt.of(p2pAdvertisedQuicPortIpv6));
+              }
               if (!p2pDirectPeers.isEmpty()) {
                 n.directPeers(
                     p2pDirectPeers.stream()
@@ -777,8 +850,12 @@ public class P2POptions {
                   .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
                   .listenPortIpv6(p2pPortIpv6)
+                  .listenQuicPort(p2pQuicPort)
+                  .listenQuicPortIpv6(p2pQuicPortIpv6)
                   .advertisedIps(Optional.ofNullable(p2pAdvertisedIps))
-                  .yamuxEnabled(yamuxEnabled);
+                  .yamuxEnabled(yamuxEnabled)
+                  .quicEnabled(p2pQuicEnabled)
+                  .tcpEnabled(p2pTcpEnabled);
             })
         .sync(
             s ->
@@ -788,7 +865,8 @@ public class P2POptions {
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
-                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead)
+                    .maxRecentlySampledBlocks(maxConcurrentlySampledBlocks));
 
     if (subscribeAllSubnetsEnabled) {
       builder

@@ -62,6 +62,16 @@ public class ForkChoiceModelFactory {
         .rebuildBlockNodesFromMetadata(protoArray, blockNodeIndex, block, optimisticallyProcessed);
   }
 
+  public void rebuildAnchorBlockNodesFromMetadata(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final StoredBlockMetadata block,
+      final boolean optimisticallyProcessed) {
+    forSlot(block.getBlockSlot())
+        .rebuildAnchorBlockNodesFromMetadata(
+            protoArray, blockNodeIndex, block, optimisticallyProcessed);
+  }
+
   void onPrunedBlocks(final BlockNodeVariantsIndex blockNodeIndex) {
     phase0Model.onPrunedBlocks(blockNodeIndex);
     gloasModel.onPrunedBlocks(blockNodeIndex);

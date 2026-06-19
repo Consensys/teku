@@ -149,6 +149,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getVariableEarliestAvailableDataColumnSlot();
   }
 
+  public KvStoreVariable<UInt64> getVariableLastDataColumnSidecarPrunedSlot() {
+    return delegate.getVariableLastDataColumnSidecarPrunedSlot();
+  }
+
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return delegate.getVariableEarliestBlockSlot();
   }
@@ -168,6 +172,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "FIRST_CUSTODY_INCOMPLETE_SLOT",
         getVariableFirstCustodyIncompleteSlot(),
         "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
-        getVariableEarliestAvailableDataColumnSlot());
+        getVariableEarliestAvailableDataColumnSlot(),
+        "LAST_DATA_COLUMN_SLOT_PRUNED",
+        getVariableLastDataColumnSidecarPrunedSlot());
   }
 }
