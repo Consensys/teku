@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.AuxCounters;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,6 +36,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.BenchmarkParams;
 
 /**
  * Benchmarks the raw Snappy block format implementations available in Teku.
@@ -66,12 +68,14 @@ public class SnappyCodecBenchmark {
   private byte[] payload;
   private byte[] snappyJavaCompressedPayload;
   private Snappy nettySnappy;
+  private int measurementCount;
 
   @Setup
-  public void setup() throws IOException {
+  public void setup(final BenchmarkParams benchmarkParams) throws IOException {
     payload = createPayload(payloadSize, payloadPattern);
     snappyJavaCompressedPayload = compress(payload);
     nettySnappy = new Snappy();
+    measurementCount = benchmarkParams.getMeasurement().getCount();
 
     assertRoundTrip("snappy-java", uncompress(snappyJavaCompressedPayload));
     assertRoundTrip("netty", nettyDecode(snappyJavaCompressedPayload));
@@ -79,22 +83,28 @@ public class SnappyCodecBenchmark {
   }
 
   @Benchmark
-  public byte[] snappyJavaEncode() throws IOException {
-    return compress(payload);
+  public byte[] snappyJavaEncode(final CompressionMetrics compressionMetrics) throws IOException {
+    final byte[] compressedPayload = compress(payload);
+    compressionMetrics.record(payload.length, compressedPayload.length, measurementCount);
+    return compressedPayload;
   }
 
   @Benchmark
-  public byte[] nettyEncode() {
-    return nettyEncode(payload);
+  public byte[] nettyEncode(final CompressionMetrics compressionMetrics) {
+    final byte[] compressedPayload = nettyEncode(payload);
+    compressionMetrics.record(payload.length, compressedPayload.length, measurementCount);
+    return compressedPayload;
   }
 
   @Benchmark
-  public byte[] snappyJavaDecode() throws IOException {
+  public byte[] snappyJavaDecode(final CompressionMetrics compressionMetrics) throws IOException {
+    compressionMetrics.record(payload.length, snappyJavaCompressedPayload.length, measurementCount);
     return uncompress(snappyJavaCompressedPayload);
   }
 
   @Benchmark
-  public byte[] nettyDecode() {
+  public byte[] nettyDecode(final CompressionMetrics compressionMetrics) {
+    compressionMetrics.record(payload.length, snappyJavaCompressedPayload.length, measurementCount);
     return nettyDecode(snappyJavaCompressedPayload);
   }
 
@@ -165,5 +175,22 @@ public class SnappyCodecBenchmark {
     RANDOM,
     REPEATING,
     MIXED
+  }
+
+  @AuxCounters(AuxCounters.Type.EVENTS)
+  @State(Scope.Thread)
+  public static class CompressionMetrics {
+    private double rawToEncodedRatio;
+
+    void record(
+        final int rawDataSizeBytes, final int encodedSizeBytes, final int measurementCount) {
+      // JMH sums EVENTS counters across measurement iterations, so each iteration contributes its
+      // share of the constant ratio.
+      rawToEncodedRatio = (double) rawDataSizeBytes / encodedSizeBytes / measurementCount;
+    }
+
+    public double rawToEncodedRatio() {
+      return rawToEncodedRatio;
+    }
   }
 }
