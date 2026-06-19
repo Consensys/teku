@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorFulu {
 
+  private final SpecConfigGloas specConfigGloas;
   private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
@@ -57,6 +59,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
         validatorsUtil,
         beaconStateMutators,
         beaconStateAccessors);
+    this.specConfigGloas = specConfig;
     this.predicatesGloas = predicates;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.beaconStateAccessorsGloas = beaconStateAccessors;
@@ -76,9 +79,17 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                     final SszMutableList<Builder> builders =
                         MutableBeaconStateGloas.required(state).getBuilders();
                     final Builder builder = builders.get(builderIndex);
-                    builders.set(
-                        builderIndex,
-                        builder.copyWithNewBalance(builder.getBalance().plus(request.getAmount())));
+                    //  Increase balance by deposit amount
+                    Builder modifiedBuilder =
+                        builder.copyWithNewBalance(builder.getBalance().plus(request.getAmount()));
+                    // If exited, reset the withdrawable epoch
+                    if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+                      final UInt64 epoch = beaconStateAccessorsGloas.getCurrentEpoch(state);
+                      modifiedBuilder =
+                          builder.copyWithNewWithdrawableEpoch(
+                              epoch.plus(specConfigGloas.getMinBuilderWithdrawabilityDelay()));
+                    }
+                    builders.set(builderIndex, modifiedBuilder);
                   },
                   () -> {
                     if (isValidBuilderDepositSignature(request)) {
