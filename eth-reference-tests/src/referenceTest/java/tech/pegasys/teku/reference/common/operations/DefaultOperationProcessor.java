@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -197,5 +199,19 @@ public class DefaultOperationProcessor implements OperationProcessor {
             BeaconBlockBodySchemaGloas.required(beaconBlockBodySchema)
                 .getPayloadAttestationsSchema()
                 .of(payloadAttestation));
+  }
+
+  @Override
+  public void processBuilderDepositRequest(
+      final MutableBeaconState state, final List<BuilderDepositRequest> builderDepositRequests) {
+    spec.getExecutionRequestsProcessor(state.getSlot())
+        .processBuilderDepositRequests(state, builderDepositRequests);
+  }
+
+  @Override
+  public void processBuilderExitRequest(
+      final MutableBeaconState state, final List<BuilderExitRequest> builderExitRequests) {
+    spec.getExecutionRequestsProcessor(state.getSlot())
+        .processBuilderExitRequests(state, builderExitRequests);
   }
 }

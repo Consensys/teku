@@ -86,7 +86,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                     if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
                       final UInt64 epoch = beaconStateAccessorsGloas.getCurrentEpoch(state);
                       modifiedBuilder =
-                          builder.copyWithNewWithdrawableEpoch(
+                          modifiedBuilder.copyWithNewWithdrawableEpoch(
                               epoch.plus(specConfigGloas.getMinBuilderWithdrawabilityDelay()));
                     }
                     builders.set(builderIndex, modifiedBuilder);
@@ -134,7 +134,10 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                     if (!predicatesGloas.isActiveBuilder(state, builderIndex)) {
                       return;
                     }
-                    if (!builder.getExecutionAddress().equals(request.getSourceAddress())) {
+                    if (!builder
+                        .getExecutionAddress()
+                        .getWrappedBytes()
+                        .equals(request.getSourceAddress().getWrappedBytes())) {
                       return;
                     }
                     if (!beaconStateAccessorsGloas
