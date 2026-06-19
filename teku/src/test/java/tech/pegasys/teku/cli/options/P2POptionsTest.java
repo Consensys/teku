@@ -471,6 +471,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void minimumRandomlySelectedPeerCount_shouldNotExceedUpperBound() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--p2p-peer-upper-bound",
+                    "10",
+                    "--Xp2p-minimum-randomly-selected-peer-count",
+                    "11"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid minRandomlySelectedPeers: 11 exceeds maxPeers: 10");
+  }
+
+  @Test
   public void historicalSyncBatchSize_shouldBeSettable() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--Xp2p-historical-sync-batch-size", "10");

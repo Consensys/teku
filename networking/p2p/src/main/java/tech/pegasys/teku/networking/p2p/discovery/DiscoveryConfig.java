@@ -139,6 +139,7 @@ public class DiscoveryConfig {
 
     public DiscoveryConfig build() {
       initMissingDefaults();
+      validateRandomlySelectedPeerCount();
 
       return new DiscoveryConfig(
           isDiscoveryEnabled,
@@ -173,6 +174,17 @@ public class DiscoveryConfig {
       }
       if (listenUdpPortIpv6.isEmpty()) {
         listenUdpPortIpv6 = OptionalInt.of(DEFAULT_P2P_PORT_IPV6);
+      }
+    }
+
+    private void validateRandomlySelectedPeerCount() {
+      final int effectiveMaxPeers = maxPeers.orElse(DEFAULT_P2P_PEERS_UPPER_BOUND);
+      final int effectiveMinRandomlySelectedPeers = minRandomlySelectedPeers.orElseThrow();
+      if (effectiveMinRandomlySelectedPeers > effectiveMaxPeers) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid minRandomlySelectedPeers: %d exceeds maxPeers: %d",
+                effectiveMinRandomlySelectedPeers, effectiveMaxPeers));
       }
     }
 
