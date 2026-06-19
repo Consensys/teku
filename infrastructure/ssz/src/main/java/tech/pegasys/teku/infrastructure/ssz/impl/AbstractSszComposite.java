@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import com.google.common.base.Suppliers;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.SszComposite;
@@ -42,7 +41,8 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final IntCache<SszChildT> childrenViewCache;
   private int sizeCache = -1;
   private final SszCompositeSchema<?> schema;
-  private final Supplier<TreeNode> backingNode;
+  private volatile TreeNode backingNode;
+  private final Supplier<TreeNode> lazyBackingNode;
 
   /** Creates an instance from a schema and a backing node */
   protected AbstractSszComposite(
@@ -51,7 +51,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   }
 
   protected AbstractSszComposite(final SszCompositeSchema<?> schema, final TreeNode backingNode) {
-    this(schema, () -> backingNode, Optional.empty());
+    this(schema, backingNode, null, null);
   }
 
   /**
@@ -64,16 +64,25 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
       final SszCompositeSchema<?> schema,
       final TreeNode backingNode,
       final IntCache<SszChildT> cache) {
-    this(schema, () -> backingNode, Optional.of(cache));
+    this(schema, backingNode, null, cache);
+  }
+
+  private AbstractSszComposite(
+      final SszCompositeSchema<?> schema,
+      final TreeNode backingNode,
+      final Supplier<TreeNode> lazyBackingNode,
+      final IntCache<SszChildT> cache) {
+    this.schema = schema;
+    this.backingNode = backingNode;
+    this.lazyBackingNode = lazyBackingNode;
+    this.childrenViewCache = cache != null ? cache : createCache();
   }
 
   protected AbstractSszComposite(
       final SszCompositeSchema<?> schema,
       final Supplier<TreeNode> lazyBackingNode,
       final Optional<IntCache<SszChildT>> cache) {
-    this.schema = schema;
-    this.backingNode = Suppliers.memoize(lazyBackingNode::get);
-    this.childrenViewCache = cache.orElseGet(this::createCache);
+    this(schema, null, lazyBackingNode, cache.orElse(null));
   }
 
   /**
@@ -96,7 +105,12 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   @Override
   public final SszChildT get(final int index) {
-    return childrenViewCache.getInt(index, this::getImplWithIndexCheck);
+    SszChildT child = childrenViewCache.getCachedInt(index);
+    if (child == null) {
+      child = getImplWithIndexCheck(index);
+      childrenViewCache.invalidateWithNewValueInt(index, child);
+    }
+    return child;
   }
 
   private SszChildT getImplWithIndexCheck(final int index) {
@@ -114,7 +128,20 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   @Override
   public TreeNode getBackingNode() {
-    return backingNode.get();
+    TreeNode node = backingNode;
+    if (node == null) {
+      node = getLazyBackingNode();
+    }
+    return node;
+  }
+
+  private TreeNode getLazyBackingNode() {
+    synchronized (this) {
+      if (backingNode == null) {
+        backingNode = lazyBackingNode.get();
+      }
+      return backingNode;
+    }
   }
 
   @Override
