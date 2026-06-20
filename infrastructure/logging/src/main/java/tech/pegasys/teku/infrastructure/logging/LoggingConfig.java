@@ -32,6 +32,7 @@ public class LoggingConfig {
   private final boolean includeValidatorDutiesEnabled;
   private final boolean includeP2pWarningsEnabled;
   private final LoggingDestination destination;
+  private final LoggingFormat format;
   private final String logFile;
   private final String logFileNamePattern;
   private final int dbOpAlertThresholdMillis;
@@ -43,6 +44,7 @@ public class LoggingConfig {
       final boolean includeValidatorDutiesEnabled,
       final boolean includeP2pWarningsEnabled,
       final LoggingDestination destination,
+      final LoggingFormat format,
       final String logFile,
       final String logFileNamePattern,
       final int dbOpAlertThresholdMillis) {
@@ -52,6 +54,7 @@ public class LoggingConfig {
     this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
     this.includeP2pWarningsEnabled = includeP2pWarningsEnabled;
     this.destination = destination;
+    this.format = format;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
     this.dbOpAlertThresholdMillis = dbOpAlertThresholdMillis;
@@ -85,6 +88,10 @@ public class LoggingConfig {
     return destination;
   }
 
+  public LoggingFormat getFormat() {
+    return format;
+  }
+
   public String getLogFile() {
     return logFile;
   }
@@ -113,6 +120,7 @@ public class LoggingConfig {
         && dbOpAlertThresholdMillis == that.dbOpAlertThresholdMillis
         && Objects.equals(logLevel, that.logLevel)
         && destination == that.destination
+        && format == that.format
         && Objects.equals(logFile, that.logFile)
         && Objects.equals(logFileNamePattern, that.logFileNamePattern);
   }
@@ -126,6 +134,7 @@ public class LoggingConfig {
         includeValidatorDutiesEnabled,
         includeP2pWarningsEnabled,
         destination,
+        format,
         logFile,
         logFileNamePattern,
         dbOpAlertThresholdMillis);
@@ -140,6 +149,7 @@ public class LoggingConfig {
     private boolean includeValidatorDutiesEnabled = true;
     private boolean includeP2pWarningsEnabled = false;
     private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
+    private LoggingFormat format = LoggingFormat.PLAIN;
 
     private String logFileNamePrefix = DEFAULT_LOG_FILE_NAME_PREFIX;
     private String logFileName;
@@ -218,6 +228,11 @@ public class LoggingConfig {
       return this;
     }
 
+    public LoggingConfigBuilder format(final LoggingFormat format) {
+      this.format = format;
+      return this;
+    }
+
     public LoggingConfigBuilder dataDirectory(final String dataDirectory) {
       this.dataDirectory = dataDirectory;
       return this;
@@ -268,6 +283,7 @@ public class LoggingConfig {
           includeValidatorDutiesEnabled,
           includeP2pWarningsEnabled,
           destination,
+          format,
           logPath,
           logPathPattern,
           dbOpAlertThresholdMillis);

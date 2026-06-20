@@ -22,6 +22,7 @@ import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.infrastructure.logging.LoggingFormat;
 
 public class LoggingOptions {
   private static final String LINUX_SEP = "/";
@@ -79,6 +80,13 @@ public class LoggingOptions {
           "Whether a logger is added for the console, the log file, or both (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
   private LoggingDestination logDestination = DEFAULT_BOTH;
+
+  @Option(
+      names = {"--log-format"},
+      paramLabel = "<LOG_FORMAT>",
+      description = "Format for log output (Valid values: ${COMPLETION-CANDIDATES})",
+      arity = "1")
+  private LoggingFormat logFormat = LoggingFormat.PLAIN;
 
   @Option(
       names = {"--log-file"},
@@ -187,6 +195,7 @@ public class LoggingOptions {
         .includeEventsEnabled(logIncludeEventsEnabled)
         .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
         .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
+        .format(logFormat)
         .destination(logDestination);
     return loggingBuilder.build();
   }

@@ -31,6 +31,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.core.pattern.RegexReplacement;
+import org.apache.logging.log4j.layout.template.json.JsonTemplateLayout;
 import org.apache.logging.log4j.status.StatusLogger;
 
 public class LoggingConfigurator {
@@ -50,11 +51,22 @@ public class LoggingConfigurator {
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
   private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
+  private static final String JSON_LOG_EVENT_TEMPLATE =
+      "{\"timestamp\":{\"$resolver\":\"timestamp\"},"
+          + "\"level\":{\"$resolver\":\"level\",\"field\":\"name\"},"
+          + "\"loggerName\":{\"$resolver\":\"logger\",\"field\":\"name\"},"
+          + "\"threadName\":{\"$resolver\":\"thread\",\"field\":\"name\"},"
+          + "\"message\":{\"$resolver\":\"message\",\"stringified\":true},"
+          + "\"exception\":{\"$resolver\":\"exception\",\"field\":\"stackTrace\","
+          + "\"stackTrace\":{\"stringified\":true}}}";
   private static final AtomicBoolean COLOR = new AtomicBoolean();
   private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   @SuppressWarnings("NonFinalStaticField")
   private static LoggingDestination destination;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static LoggingFormat format;
 
   @SuppressWarnings("NonFinalStaticField")
   private static boolean includeEvents;
@@ -121,6 +133,7 @@ public class LoggingConfigurator {
     configuration.getLogLevel().ifPresent(LoggingConfigurator::setAllLevels);
     COLOR.set(configuration.isColorEnabled());
     destination = configuration.getDestination();
+    format = configuration.getFormat();
     includeEvents = configuration.isIncludeEventsEnabled();
     includeValidatorDuties = configuration.isIncludeValidatorDutiesEnabled();
     includeP2pWarnings = configuration.isIncludeP2pWarningsEnabled();
@@ -228,6 +241,7 @@ public class LoggingConfigurator {
     STATUS_LOG.info("Logging includes events: {}", includeEvents);
     STATUS_LOG.info("Logging includes validator duties: {}", includeValidatorDuties);
     STATUS_LOG.info("Logging includes color: {}", COLOR);
+    STATUS_LOG.info("Logging format: {}", format);
   }
 
   private static void displayCustomLog4jConfigUsed() {
@@ -255,6 +269,14 @@ public class LoggingConfigurator {
   static LoggingDestination setDestination(final LoggingDestination destination) {
     final LoggingDestination original = LoggingConfigurator.destination;
     LoggingConfigurator.destination = destination;
+    return original;
+  }
+
+  @VisibleForTesting
+  // returns the original format
+  static LoggingFormat setFormat(final LoggingFormat format) {
+    final LoggingFormat original = LoggingConfigurator.format;
+    LoggingConfigurator.format = format;
     return original;
   }
 
@@ -315,8 +337,12 @@ public class LoggingConfigurator {
   }
 
   @VisibleForTesting
-  static PatternLayout consoleAppenderLayout(
+  static Layout<?> consoleAppenderLayout(
       final AbstractConfiguration configuration, final boolean omitStackTraces) {
+    if (format == LoggingFormat.JSON) {
+      return jsonLayout(configuration);
+    }
+
     final Pattern logReplacement =
         Pattern.compile(isColorEnabled() ? COLOR_LOG_REGEX : NO_COLOR_LOG_REGEX);
     return PatternLayout.newBuilder()
@@ -344,13 +370,25 @@ public class LoggingConfigurator {
   }
 
   @VisibleForTesting
-  static PatternLayout fileAppenderLayout(final AbstractConfiguration configuration) {
+  static Layout<?> fileAppenderLayout(final AbstractConfiguration configuration) {
+    if (format == LoggingFormat.JSON) {
+      return jsonLayout(configuration);
+    }
+
     final Pattern logReplacement =
         Pattern.compile(isColorEnabled() ? COLOR_LOG_REGEX : NO_COLOR_LOG_REGEX);
     return PatternLayout.newBuilder()
         .withRegexReplacement(RegexReplacement.createRegexReplacement(logReplacement, ""))
         .withPattern(FILE_MESSAGE_FORMAT)
         .withConfiguration(configuration)
+        .build();
+  }
+
+  private static JsonTemplateLayout jsonLayout(final AbstractConfiguration configuration) {
+    return JsonTemplateLayout.newBuilder()
+        .setConfiguration(configuration)
+        .setEventTemplate(JSON_LOG_EVENT_TEMPLATE)
+        .setEventDelimiter(System.lineSeparator())
         .build();
   }
 

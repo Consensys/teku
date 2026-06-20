@@ -28,6 +28,7 @@ import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.infrastructure.logging.LoggingFormat;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 
@@ -42,6 +43,7 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final LoggingConfig loggingConfig = getLoggingConfigFromFile("loggingOptions_config.yaml");
 
     assertThat(loggingConfig.getDestination()).isEqualTo(LoggingDestination.FILE);
+    assertThat(loggingConfig.getFormat()).isEqualTo(LoggingFormat.JSON);
     assertThat(loggingConfig.isColorEnabled()).isFalse();
     assertThat(loggingConfig.isIncludeEventsEnabled()).isFalse();
     assertThat(loggingConfig.getLogFile())
@@ -96,6 +98,20 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   public void logDestination_shouldAcceptBothAsDestination() {
     final LoggingConfig config = getLoggingConfigurationFromArguments("--log-destination", "both");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.BOTH);
+  }
+
+  @Test
+  public void logFormat_shouldHaveSensibleDefaultValue() {
+    beaconNodeCommand.parse(new String[0]);
+
+    final LoggingConfig config = getResultingLoggingConfiguration();
+    assertThat(config.getFormat()).isEqualTo(LoggingFormat.PLAIN);
+  }
+
+  @Test
+  public void logFormat_shouldAcceptJsonFormat() {
+    final LoggingConfig config = getLoggingConfigurationFromArguments("--log-format", "json");
+    assertThat(config.getFormat()).isEqualTo(LoggingFormat.JSON);
   }
 
   @Test

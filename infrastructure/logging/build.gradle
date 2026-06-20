@@ -4,8 +4,10 @@ dependencies {
 
 	implementation 'org.web3j:utils'
 	implementation 'org.apache.logging.log4j:log4j-core'
+	implementation 'org.apache.logging.log4j:log4j-layout-template-json'
 	compileOnly 'com.github.oshi:oshi-core'
 
 	testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
+	testImplementation 'com.fasterxml.jackson.core:jackson-databind'
 	testImplementation 'com.github.oshi:oshi-core'
 }

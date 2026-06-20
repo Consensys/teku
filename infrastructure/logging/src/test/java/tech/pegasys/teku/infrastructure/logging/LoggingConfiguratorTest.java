@@ -15,11 +15,15 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.CharArrayWriter;
+import java.io.IOException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.WriterAppender;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +35,7 @@ public class LoggingConfiguratorTest {
   public static final String STRIPPED_COLOR_STRING = "a[30mb[31mc[37md" + ENDL;
   private WriterAppender appender;
   private final CharArrayWriter outContent = new CharArrayWriter();
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
   void toFile_shouldPrintColorIfEnabled() {
@@ -143,6 +148,32 @@ public class LoggingConfiguratorTest {
     }
   }
 
+  @Test
+  void toFile_shouldPrintJsonIfEnabled() throws IOException {
+    final LoggingFormat initialFormat = LoggingConfigurator.setFormat(LoggingFormat.JSON);
+    try {
+      fileAppenderLog("ab");
+      final JsonNode jsonLog = objectMapper.readTree(outContent.toString());
+      assertThat(jsonLog.get("message").asText()).isEqualTo("ab");
+      assertThat(jsonLog.get("loggerName").asText()).isEqualTo("TestLogger");
+    } finally {
+      LoggingConfigurator.setFormat(initialFormat);
+    }
+  }
+
+  @Test
+  void toConsole_shouldPrintJsonIfEnabled() throws IOException {
+    final LoggingFormat initialFormat = LoggingConfigurator.setFormat(LoggingFormat.JSON);
+    try {
+      consoleAppenderLog("ab");
+      final JsonNode jsonLog = objectMapper.readTree(outContent.toString());
+      assertThat(jsonLog.get("message").asText()).isEqualTo("ab");
+      assertThat(jsonLog.get("loggerName").asText()).isEqualTo("TestLogger");
+    } finally {
+      LoggingConfigurator.setFormat(initialFormat);
+    }
+  }
+
   private void fileAppenderLog(final String message) {
     log(message, LoggingConfigurator.fileAppenderLayout(null));
   }
@@ -151,7 +182,7 @@ public class LoggingConfiguratorTest {
     log(message, LoggingConfigurator.consoleAppenderLayout(null, true));
   }
 
-  private void log(final String message, final PatternLayout layout) {
+  private void log(final String message, final Layout<?> layout) {
     try {
       appender =
           WriterAppender.newBuilder()
@@ -164,6 +195,7 @@ public class LoggingConfiguratorTest {
           Log4jLogEvent.newBuilder()
               .setLoggerName("TestLogger")
               .setLoggerFqcn(LoggingConfiguratorTest.class.getName())
+              .setLevel(Level.INFO)
               .setMessage(new SimpleMessage(message))
               .build();
       appender.append(event);
