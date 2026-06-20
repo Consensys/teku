@@ -717,15 +717,40 @@
         withdrawable_epoch: Epoch
     </spec>
 
+- name: BuilderDepositRequest#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderDepositRequest.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderDepositRequestSchema.java
+  spec: |
+    <spec container="BuilderDepositRequest" fork="gloas" hash="428c4c71">
+    class BuilderDepositRequest(Container):
+        pubkey: BLSPubkey
+        withdrawal_credentials: Bytes32
+        amount: Gwei
+        signature: BLSSignature
+    </spec>
+
+- name: BuilderExitRequest#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderExitRequest.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderExitRequestSchema.java
+  spec: |
+    <spec container="BuilderExitRequest" fork="gloas" hash="85c60f61">
+    class BuilderExitRequest(Container):
+        source_address: ExecutionAddress
+        pubkey: BLSPubkey
+    </spec>
+
 - name: BuilderPendingPayment#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPayment.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPaymentSchema.java
   spec: |
-    <spec container="BuilderPendingPayment" fork="gloas" hash="73cf1649">
+    <spec container="BuilderPendingPayment" fork="gloas" hash="835a8ae6">
     class BuilderPendingPayment(Container):
         weight: Gwei
         withdrawal: BuilderPendingWithdrawal
+        proposer_index: ValidatorIndex
     </spec>
 
 - name: BuilderPendingWithdrawal#gloas
@@ -1120,9 +1145,9 @@
 
 - name: ExecutionRequests#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequests.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsBuilderElectra.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsSchemaElectra.java
   spec: |
     <spec container="ExecutionRequests" fork="electra" hash="048c4a44">
     class ExecutionRequests(Container):
@@ -1132,6 +1157,23 @@
         withdrawals: List[WithdrawalRequest, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]
         # [New in Electra:EIP7251]
         consolidations: List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD]
+    </spec>
+
+- name: ExecutionRequests#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionRequestsGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionRequestsBuilderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionRequestsSchemaGloas.java
+  spec: |
+    <spec container="ExecutionRequests" fork="gloas" hash="977acaf4">
+    class ExecutionRequests(Container):
+        deposits: List[DepositRequest, MAX_DEPOSIT_REQUESTS_PER_PAYLOAD]
+        withdrawals: List[WithdrawalRequest, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]
+        consolidations: List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD]
+        # [New in Gloas:EIP8282]
+        builder_deposits: List[BuilderDepositRequest, MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD]
+        # [New in Gloas:EIP8282]
+        builder_exits: List[BuilderExitRequest, MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD]
     </spec>
 
 - name: Fork#phase0

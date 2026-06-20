@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -160,7 +161,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>("block.ssz_snappy", Operation.PARENT_EXECUTION_PAYLOAD))
           .put(
               "operations/execution_payload_bid",
-              new OperationsTestExecutor<>("block.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
+              new OperationsTestExecutor<>(
+                  "execution_payload_bid.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
           .put(
               "operations/payload_attestation",
               new OperationsTestExecutor<>(
@@ -385,12 +387,14 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         processor.processParentExecutionPayload(state, beaconBlock);
       }
       case EXECUTION_PAYLOAD_BID -> {
-        final BeaconBlock beaconBlock =
+        final SignedExecutionPayloadBid signedBid =
             loadSsz(
                 testDefinition,
                 dataFileName,
-                testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
-        processor.processExecutionPayloadBid(state, beaconBlock);
+                SchemaDefinitionsGloas.required(
+                        testDefinition.getSpec().getGenesisSchemaDefinitions())
+                    .getSignedExecutionPayloadBidSchema());
+        processor.processExecutionPayloadBid(state, signedBid);
       }
       case PAYLOAD_ATTESTATION -> {
         final PayloadAttestation payloadAttestation =

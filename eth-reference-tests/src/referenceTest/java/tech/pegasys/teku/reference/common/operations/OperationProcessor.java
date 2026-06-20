@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -83,7 +84,8 @@ public interface OperationProcessor {
   void processParentExecutionPayload(MutableBeaconState state, BeaconBlock beaconBlock)
       throws BlockProcessingException;
 
-  void processExecutionPayloadBid(MutableBeaconState state, BeaconBlock beaconBlock)
+  void processExecutionPayloadBid(
+      MutableBeaconState state, SignedExecutionPayloadBid executionPayloadBid)
       throws BlockProcessingException;
 
   void processPayloadAttestation(MutableBeaconState state, PayloadAttestation payloadAttestation)

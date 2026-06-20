@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -184,9 +185,10 @@ public class DefaultOperationProcessor implements OperationProcessor {
 
   @Override
   public void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
-    spec.getBlockProcessor(beaconBlock.getSlot()).processExecutionPayloadBid(state, beaconBlock);
+    spec.getBlockProcessor(signedBid.getMessage().getSlot())
+        .processExecutionPayloadBid(state, signedBid);
   }
 
   @Override

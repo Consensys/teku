@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
+
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -96,7 +98,8 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                       beaconStateMutatorsGloas.addBuilderToRegistry(
                           state,
                           pubkey,
-                          request.getWithdrawalCredentials(),
+                          request.getWithdrawalCredentials().get(0),
+                          getExecutionAddressUnchecked(request.getWithdrawalCredentials()),
                           request.getAmount(),
                           state.getSlot());
                     }
