@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
 
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -127,7 +128,12 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         () ->
             processParentExecutionPayload(genericState, beaconBlock, validatorExitContextSupplier));
     processWithdrawals(genericState, Optional.empty());
-    safelyProcess(() -> processExecutionPayloadBid(genericState, beaconBlock));
+    safelyProcess(
+        () ->
+            processExecutionPayloadBid(
+                genericState,
+                BeaconBlockBodyGloas.required(beaconBlock.getBody())
+                    .getSignedExecutionPayloadBid()));
   }
 
   // process_parent_execution_payload
@@ -230,22 +236,16 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   // process_execution_payload_bid
   @Override
   public void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
-    final SignedExecutionPayloadBid signedBid =
-        beaconBlock
-            .getBody()
-            .getOptionalSignedExecutionPayloadBid()
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "Signed Execution Payload Bid expected as part of body"));
 
     final ExecutionPayloadBid bid = signedBid.getMessage();
 
     final UInt64 builderIndex = bid.getBuilderIndex();
 
     final UInt64 amount = bid.getValue();
+
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
 
     if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
       // For self-builds, amount must be zero regardless of withdrawal credential prefix
@@ -260,6 +260,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       // Verify that the builder is active
       if (!predicatesGloas.isActiveBuilder(state, builderIndex)) {
         throw new BlockProcessingException("Builder is not active");
+      }
+      // Verify that the builder is a payload builder
+      if (stateGloas.getBuilders().get(builderIndex.intValue()).getVersion()
+          != PAYLOAD_BUILDER_VERSION) {
+        throw new BlockProcessingException("Builder is not a payload builder");
       }
       // Verify that the builder has funds to cover the bid
       if (!beaconStateAccessorsGloas.canBuilderCoverBid(state, builderIndex, amount)) {
@@ -281,15 +286,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Verify that the bid is for the current slot
-    if (!bid.getSlot().equals(beaconBlock.getSlot())) {
+    if (!bid.getSlot().equals(state.getSlot())) {
       throw new BlockProcessingException("Bid is not for the current slot");
     }
 
-    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
-
     // Verify that the bid is for the right parent block
     if (!bid.getParentBlockHash().equals(stateGloas.getLatestBlockHash())
-        || !bid.getParentBlockRoot().equals(beaconBlock.getParentRoot())) {
+        || !bid.getParentBlockRoot()
+            .equals(
+                beaconStateAccessors.getBlockRootAtSlot(state, state.getSlot().minusMinZero(1)))) {
       throw new BlockProcessingException("Bid is not for the right parent block");
     }
     if (!bid.getPrevRandao()
@@ -309,7 +314,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                   schemaDefinitionsGloas
                       .getBuilderPendingWithdrawalSchema()
                       .create(bid.getFeeRecipient(), amount, builderIndex),
-                  beaconBlock.getProposerIndex());
+                  UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
 
       stateGloas
           .getBuilderPendingPayments()

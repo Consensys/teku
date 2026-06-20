@@ -15,12 +15,11 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -132,16 +131,16 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
   public void addBuilderToRegistry(
       final MutableBeaconState state,
       final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
+      final int version,
+      final Eth1Address executionAddress,
       final UInt64 amount,
       final UInt64 slot) {
     final UInt64 index = beaconStateAccessorsGloas.getIndexForNewBuilder(state);
-    final int version = withdrawalCredentials.get(0);
     final Builder builder =
         new Builder(
             pubkey,
             version,
-            getExecutionAddressUnchecked(withdrawalCredentials),
+            executionAddress,
             amount,
             miscHelpers.computeEpochAtSlot(slot),
             FAR_FUTURE_EPOCH);

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
+import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -231,7 +234,8 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                 beaconStateMutators.addBuilderToRegistry(
                     state,
                     pubkey,
-                    deposit.getWithdrawalCredentials(),
+                    PAYLOAD_BUILDER_VERSION,
+                    getExecutionAddressUnchecked(deposit.getWithdrawalCredentials()),
                     deposit.getAmount(),
                     deposit.getSlot());
               });
