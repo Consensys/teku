@@ -38,7 +38,8 @@ public enum EventType {
   execution_payload_gossip,
   execution_payload_available,
   execution_payload_bid,
-  payload_attestation_message;
+  payload_attestation_message,
+  proposer_preferences;
 
   public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

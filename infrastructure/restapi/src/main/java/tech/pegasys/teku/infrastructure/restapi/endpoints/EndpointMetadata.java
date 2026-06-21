@@ -724,7 +724,7 @@ public class EndpointMetadata {
       return response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE);
     }
 
-    public EndpointMetaDataBuilder withNotAcceptedResponse() {
+    public EndpointMetaDataBuilder withNotAcceptableResponse() {
       return response(SC_NOT_ACCEPTABLE, "Not acceptable", HTTP_ERROR_RESPONSE_TYPE);
     }
 

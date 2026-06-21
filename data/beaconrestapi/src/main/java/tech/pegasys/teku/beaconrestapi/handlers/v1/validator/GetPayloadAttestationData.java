@@ -88,7 +88,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 SC_NOT_FOUND,
                 "No canonical block has been seen for the requested slot.",
                 HTTP_ERROR_RESPONSE_TYPE)
-            .withNotAcceptedResponse()
+            .withNotAcceptableResponse()
             .withInternalErrorResponse()
             .withChainDataResponses()
             .build());
