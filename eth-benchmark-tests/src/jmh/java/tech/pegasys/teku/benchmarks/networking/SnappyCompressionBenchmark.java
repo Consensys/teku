@@ -24,6 +24,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.Snappy;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -62,6 +63,16 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
  * fallback, so a successful run (which passes the startup cross-compatibility round-trip) proves
  * the native library actually loaded and executed on this platform.
  *
+ * <p>Compression ratio matters: Snappy fixes the wire format but not the encoder heuristics, so two
+ * implementations can produce different compressed sizes for the same input — a faster encoder that
+ * compresses less is not actually better for gossip bandwidth. Each implementation's compressed
+ * size and ratio are therefore reported (deterministically, in {@code @Setup}, as {@code RATIO|...}
+ * lines) alongside the timing metrics. To keep the comparison fair, {@code decompress} decodes a
+ * single shared snappy-java-encoded buffer for every implementation (all are wire-compatible), so
+ * decode cost is isolated from encoder-specific output shape. Synthetic {@code SYNTHETIC_*}
+ * payloads exercise the encoder heuristics on compressible data, which the high-entropy SSZ message
+ * payloads cannot.
+ *
  * <p>Run a specific payload/impl with GC profiling:
  *
  * <pre>
@@ -86,7 +97,11 @@ public class SnappyCompressionBenchmark {
     AGGREGATE,
     SYNC_COMMITTEE_MESSAGE,
     BEACON_BLOCK,
-    DATA_COLUMN_SIDECAR
+    DATA_COLUMN_SIDECAR,
+    // Synthetic payloads to exercise encoder heuristics on compressible data (the SSZ message
+    // payloads above are high-entropy and barely compress).
+    SYNTHETIC_REPEATING_64K,
+    SYNTHETIC_MIXED_64K
   }
 
   @State(Scope.Benchmark)
@@ -97,39 +112,47 @@ public class SnappyCompressionBenchmark {
       "AGGREGATE",
       "SYNC_COMMITTEE_MESSAGE",
       "BEACON_BLOCK",
-      "DATA_COLUMN_SIDECAR"
+      "DATA_COLUMN_SIDECAR",
+      "SYNTHETIC_REPEATING_64K",
+      "SYNTHETIC_MIXED_64K"
     })
     public Payload payload;
 
     @Param({"SNAPPY_JAVA", "NETTY", "AIRCOMPRESSOR_NATIVE", "AIRCOMPRESSOR_JAVA"})
     public Impl impl;
 
-    // Uncompressed SSZ bytes (input for the compress benchmark).
+    // Uncompressed payload (input for the compress benchmark).
     public byte[] raw;
-    // Pre-compressed bytes produced by the impl under test (input for the decompress benchmark).
-    public byte[] compressed;
+    // Shared reference compressed bytes (snappy-java block format), used as the decompress input
+    // for
+    // EVERY implementation so decode is compared on byte-identical input (all impls are
+    // wire-compatible). Isolates decoder cost from encoder-specific output shape.
+    public byte[] referenceCompressed;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
       final Spec spec = TestSpecFactory.createMainnetFulu();
       final DataStructureUtil data = new DataStructureUtil(1, spec);
-      final Bytes ssz =
-          switch (payload) {
-            case ATTESTATION -> data.randomAttestation().sszSerialize();
-            case AGGREGATE -> data.randomSignedAggregateAndProof().sszSerialize();
-            case SYNC_COMMITTEE_MESSAGE -> data.randomSyncCommitteeMessage().sszSerialize();
-            case BEACON_BLOCK -> data.randomSignedBeaconBlock().sszSerialize();
-            case DATA_COLUMN_SIDECAR -> data.randomDataColumnSidecar().sszSerialize();
-          };
-      raw = ssz.toArrayUnsafe();
+      raw = buildPayload(payload, data).toArrayUnsafe();
+      referenceCompressed = snappyJavaCompress(raw);
 
-      compressed =
+      // Report compressed size / ratio for the implementation under test. Deterministic, so it is
+      // computed once here and logged rather than via JMH timing counters (avoids the AuxCounters
+      // pitfalls that misreport floating-point ratios).
+      final byte[] ownCompressed =
           switch (impl) {
             case SNAPPY_JAVA -> snappyJavaCompress(raw);
             case NETTY -> nettyCompress(raw);
             case AIRCOMPRESSOR_NATIVE -> aircompressorCompress(new SnappyNativeCompressor(), raw);
             case AIRCOMPRESSOR_JAVA -> aircompressorCompress(new SnappyJavaCompressor(), raw);
           };
+      System.out.printf(
+          "RATIO|%s|%s|raw=%d|compressed=%d|ratio=%.4f%n",
+          payload,
+          impl,
+          raw.length,
+          ownCompressed.length,
+          (double) raw.length / ownCompressed.length);
 
       // Feasibility check (spec item 1): every implementation must produce/consume the same Snappy
       // block wire format as snappy-java, or a migration would break gossip interoperability. Fail
@@ -158,13 +181,55 @@ public class SnappyCompressionBenchmark {
   @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public byte[] decompress(final Data data) throws IOException {
     return switch (data.impl) {
-      case SNAPPY_JAVA -> snappyJavaUncompress(data.compressed);
-      case NETTY -> nettyUncompress(data.compressed);
+      case SNAPPY_JAVA -> snappyJavaUncompress(data.referenceCompressed);
+      case NETTY -> nettyUncompress(data.referenceCompressed);
       case AIRCOMPRESSOR_NATIVE ->
-          aircompressorUncompress(new SnappyNativeDecompressor(), data.compressed, data.raw.length);
+          aircompressorUncompress(
+              new SnappyNativeDecompressor(), data.referenceCompressed, data.raw.length);
       case AIRCOMPRESSOR_JAVA ->
-          aircompressorUncompress(new SnappyJavaDecompressor(), data.compressed, data.raw.length);
+          aircompressorUncompress(
+              new SnappyJavaDecompressor(), data.referenceCompressed, data.raw.length);
     };
+  }
+
+  private static final int SYNTHETIC_PAYLOAD_SIZE = 65536;
+  private static final int REPEATING_PATTERN_SIZE = 256;
+  private static final long SYNTHETIC_SEED = 5566;
+
+  private static Bytes buildPayload(final Payload payload, final DataStructureUtil data) {
+    return switch (payload) {
+      case ATTESTATION -> data.randomAttestation().sszSerialize();
+      case AGGREGATE -> data.randomSignedAggregateAndProof().sszSerialize();
+      case SYNC_COMMITTEE_MESSAGE -> data.randomSyncCommitteeMessage().sszSerialize();
+      case BEACON_BLOCK -> data.randomSignedBeaconBlock().sszSerialize();
+      case DATA_COLUMN_SIDECAR -> data.randomDataColumnSidecar().sszSerialize();
+      case SYNTHETIC_REPEATING_64K -> Bytes.wrap(syntheticRepeating(SYNTHETIC_PAYLOAD_SIZE));
+      case SYNTHETIC_MIXED_64K -> Bytes.wrap(syntheticMixed(SYNTHETIC_PAYLOAD_SIZE));
+    };
+  }
+
+  private static byte[] syntheticRepeating(final int size) {
+    final byte[] out = new byte[size];
+    final Random random = new Random(SYNTHETIC_SEED);
+    final byte[] pattern = new byte[REPEATING_PATTERN_SIZE];
+    random.nextBytes(pattern);
+    for (int i = 0; i < size; i++) {
+      out[i] = pattern[i % pattern.length];
+    }
+    return out;
+  }
+
+  private static byte[] syntheticMixed(final int size) {
+    final byte[] out = new byte[size];
+    final Random random = new Random(SYNTHETIC_SEED);
+    random.nextBytes(out);
+    final int half = size / 2;
+    final byte[] pattern = new byte[REPEATING_PATTERN_SIZE];
+    random.nextBytes(pattern);
+    for (int i = half; i < size; i++) {
+      out[i] = pattern[(i - half) % pattern.length];
+    }
+    return out;
   }
 
   static byte[] snappyJavaCompress(final byte[] in) throws IOException {
