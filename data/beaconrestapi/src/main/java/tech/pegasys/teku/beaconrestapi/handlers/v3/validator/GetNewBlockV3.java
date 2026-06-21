@@ -109,6 +109,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             blockContainerAndMetaDataSszResponseType(),
             getHeaders())
         .withChainDataResponses()
+        .withNotAcceptableResponse()
         .build();
   }
 

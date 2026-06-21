@@ -67,7 +67,7 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
                 getResponseType(schemaDefinitionCache),
                 sszResponseType())
             .withNotFoundResponse()
-            .withNotAcceptedResponse()
+            .withNotAcceptableResponse()
             .withNotImplementedResponse()
             .withChainDataResponses()
             .build());

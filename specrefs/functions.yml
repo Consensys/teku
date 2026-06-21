@@ -107,7 +107,11 @@
     </spec>
 
 - name: add_validator_to_registry#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
+      search: public void addValidatorToRegistry(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/MiscHelpersElectra.java
+      search: public Validator getValidatorFromDeposit(
   spec: |
     <spec fn="add_validator_to_registry" fork="electra" style="diff" hash="7970ce24">
 
@@ -1355,7 +1359,11 @@
     </spec>
 
 - name: compute_matrix#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<List<MatrixEntry>> computeExtendedMatrix(
   spec: |
     <spec fn="compute_matrix" fork="fulu" hash="87e3f29c">
     def compute_matrix(blobs: Sequence[Blob]) -> Sequence[MatrixEntry]:
@@ -1477,7 +1485,13 @@
     </spec>
 
 - name: compute_on_chain_aggregate#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/AggregatingAttestationPoolV2.java
+      search: public SszList<Attestation> getAttestationsForBlock(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/MatchingDataAttestationGroupV2.java
+      search: public PooledAttestationWithData fillUpAggregation(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/attestation/PooledAttestationWithData.java
+      search: public Attestation toAttestation(
   spec: |
     <spec fn="compute_on_chain_aggregate" fork="electra" hash="3aa56e8f">
     def compute_on_chain_aggregate(network_aggregates: Sequence[Attestation]) -> Attestation:
@@ -1791,7 +1805,9 @@
     </spec>
 
 - name: compute_signed_block_header#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlock.java
+      search: public SignedBeaconBlockHeader asHeader()
   spec: |
     <spec fn="compute_signed_block_header" fork="deneb" hash="552442e1">
     def compute_signed_block_header(signed_block: SignedBeaconBlock) -> SignedBeaconBlockHeader:
@@ -3542,7 +3558,15 @@
     </spec>
 
 - name: get_blob_sidecars#deneb
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/BlockFactoryDeneb.java
+      search: public List<BlobSidecar> createBlobSidecars(
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/BlockOperationSelectorFactory.java
+      search: public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector()
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/helpers/MiscHelpersDeneb.java
+      search: public BlobSidecar constructBlobSidecar(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/helpers/MiscHelpersDeneb.java
+      search: public List<Bytes32> computeBlobKzgCommitmentInclusionProof(
   spec: |
     <spec fn="get_blob_sidecars" fork="deneb" hash="0206e9a5">
     def get_blob_sidecars(
@@ -3865,7 +3889,9 @@
     </spec>
 
 - name: get_committee_indices#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/electra/AttestationElectra.java
+      search: public Optional<List<UInt64>> getCommitteeIndices()
   spec: |
     <spec fn="get_committee_indices" fork="electra" hash="fa701795">
     def get_committee_indices(committee_bits: Bitvector) -> Sequence[CommitteeIndex]:
@@ -4085,7 +4111,9 @@
     </spec>
 
 - name: get_data_column_sidecars#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: protected List<DataColumnSidecar> constructDataColumnSidecarsInternal(
   spec: |
     <spec fn="get_data_column_sidecars" fork="fulu" hash="317fc596">
     def get_data_column_sidecars(
@@ -4170,7 +4198,9 @@
     </spec>
 
 - name: get_data_column_sidecars_from_block#fulu
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/BlockOperationSelectorFactory.java
+      search: createDataColumnSidecarsSelector()
   spec: |
     <spec fn="get_data_column_sidecars_from_block" fork="fulu" hash="02ffae23">
     def get_data_column_sidecars_from_block(
@@ -4222,7 +4252,11 @@
     </spec>
 
 - name: get_data_column_sidecars_from_column_sidecar#fulu
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/datacolumns/util/DataColumnSidecarELManagerImpl.java
+      search: private RecoveryTask createRecoveryTask(final DataColumnSidecar dataColumnSidecar)
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/datacolumns/util/DataColumnSidecarELManagerImpl.java
+      search: private void publishRecoveredDataColumnSidecars(
   spec: |
     <spec fn="get_data_column_sidecars_from_column_sidecar" fork="fulu" hash="4877148a">
     def get_data_column_sidecars_from_column_sidecar(
@@ -4401,7 +4435,11 @@
     </spec>
 
 - name: get_eth1_pending_deposit_count#electra
-  sources: []
+  sources:
+    - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/DepositProvider.java
+      search: final UInt64 eth1PendingDepositCount =
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+      search: protected void verifyOutstandingDepositsAreProcessed(
   spec: |
     <spec fn="get_eth1_pending_deposit_count" fork="electra" hash="5dc54930">
     def get_eth1_pending_deposit_count(state: BeaconState) -> uint64:
@@ -6609,7 +6647,13 @@
     </spec>
 
 - name: get_validators_sweep_withdrawals#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/SpecLogicElectra.java
+      search: new WithdrawalsHelpersElectra(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/withdrawals/WithdrawalsHelpersCapella.java
+      search: protected int processValidatorsSweepWithdrawals(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/MiscHelpersElectra.java
+      search: public UInt64 getMaxEffectiveBalance(
   spec: |
     <spec fn="get_validators_sweep_withdrawals" fork="electra" hash="034093ad">
     def get_validators_sweep_withdrawals(
@@ -7447,7 +7491,9 @@
     </spec>
 
 - name: is_eligible_for_partial_withdrawals#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/withdrawals/WithdrawalsHelpersElectra.java
+      search: protected int processPendingPartialWithdrawals(
   spec: |
     <spec fn="is_eligible_for_partial_withdrawals" fork="electra" hash="c8d29720">
     def is_eligible_for_partial_withdrawals(validator: Validator, balance: Gwei) -> bool:
@@ -8357,7 +8403,11 @@
     </spec>
 
 - name: is_within_weak_subjectivity_period#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/weaksubjectivity/WeakSubjectivityCalculator.java
+      search: public boolean isWithinWeakSubjectivityPeriod(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/weaksubjectivity/WeakSubjectivityCalculatorElectra.java
+      search: public UInt64 computeWeakSubjectivityPeriod(
   spec: |
     <spec fn="is_within_weak_subjectivity_period" fork="electra" style="diff" hash="d05d230d">
 
@@ -9189,7 +9239,13 @@
     </spec>
 
 - name: prepare_execution_payload#capella
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes)
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: return getPayloadAttributeWithdrawals(currentHeadBlock, state)
   spec: |
     <spec fn="prepare_execution_payload" fork="capella" style="diff" hash="bdb15c3f">
     --- bellatrix
@@ -9228,7 +9284,13 @@
     </spec>
 
 - name: prepare_execution_payload#deneb
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV3.java
+      search: public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes)
   spec: |
     <spec fn="prepare_execution_payload" fork="deneb" style="diff" hash="c617aa1b">
     --- capella
@@ -9244,7 +9306,13 @@
     </spec>
 
 - name: prepare_execution_payload#electra
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ProposersDataManager.java
+      search: private SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+    - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV3.java
+      search: public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoiceUpdateData.java
+      search: executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes)
   spec: |
     <spec fn="prepare_execution_payload" fork="electra" style="diff" hash="c617aa1b">
     --- capella
@@ -10390,7 +10458,11 @@
     </spec>
 
 - name: process_execution_payload#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/block/BlockProcessorBellatrix.java
+      search: public void processExecutionPayload(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/block/BlockProcessorBellatrix.java
+      search: public void validateExecutionPayloadHeader(
   spec: |
     <spec fn="process_execution_payload" fork="capella" style="diff" hash="8da02dfc">
     --- bellatrix
@@ -10477,7 +10549,11 @@
     </spec>
 
 - name: process_execution_payload#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/block/BlockProcessorDeneb.java
+      search: public void validateExecutionPayload(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+      search: public NewPayloadRequest computeNewPayloadRequest(
   spec: |
     <spec fn="process_execution_payload" fork="electra" style="diff" hash="078e4a6c">
     --- deneb
@@ -11469,7 +11545,9 @@
     </spec>
 
 - name: process_registry_updates#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processRegistryUpdates(
   spec: |
     <spec fn="process_registry_updates" fork="deneb" style="diff" hash="71a6a2d9">
     --- phase0
@@ -11850,7 +11928,9 @@
     </spec>
 
 - name: process_voluntary_exit#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processVoluntaryExits(
   spec: |
     <spec fn="process_voluntary_exit" fork="deneb" style="diff" hash="f97fd167">
     --- phase0
@@ -11869,7 +11949,15 @@
     </spec>
 
 - name: process_voluntary_exit#electra
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processVoluntaryExits(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/operations/validation/VoluntaryExitValidatorElectra.java
+      search: public Optional<OperationInvalidReason> validate(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/operations/validation/VoluntaryExitValidatorElectra.java
+      search: Optional<OperationInvalidReason> validateElectraConditions(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/operations/OperationSignatureVerifier.java
+      search: public boolean verifyVoluntaryExitSignature(
   spec: |
     <spec fn="process_voluntary_exit" fork="electra" style="diff" hash="51b07d36">
     --- deneb
@@ -12143,7 +12231,11 @@
     </spec>
 
 - name: recover_matrix#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: public List<List<MatrixEntry>> recoverMatrix(
   spec: |
     <spec fn="recover_matrix" fork="fulu" hash="d21e29e7">
     def recover_matrix(
@@ -14595,7 +14687,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#capella
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="capella" hash="18ed1bc4">
     def validate_beacon_block_gossip(
@@ -14891,7 +14985,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#fulu
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="fulu" hash="58934408">
     def validate_beacon_block_gossip(
@@ -15188,7 +15284,11 @@
     </spec>
 
 - name: validate_bls_to_execution_change_gossip#capella
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/SignedBlsToExecutionChangeValidator.java
+      search: public SafeFuture<InternalValidationResult> validateForGossip(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/operations/validation/BlsToExecutionChangesValidator.java
+      search: public Optional<OperationInvalidReason> validate(
   spec: |
     <spec fn="validate_bls_to_execution_change_gossip" fork="capella" hash="dc7d042d">
     def validate_bls_to_execution_change_gossip(
@@ -15247,7 +15347,13 @@
     </spec>
 
 - name: validate_data_column_sidecar_gossip#fulu
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/DataColumnSidecarGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(final DataColumnSidecar dataColumnSidecar)
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/DataColumnSidecarUtilFulu.java
+      search: public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/DataColumnSidecarUtilFulu.java
+      search: public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
   spec: |
     <spec fn="validate_data_column_sidecar_gossip" fork="fulu" hash="57a6f229">
     def validate_data_column_sidecar_gossip(

@@ -524,9 +524,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace(
-                "data-path: \".\"",
-                "data-path: \"" + dataPath.toString().replace("\\", "\\\\") + "\"");
+            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
@@ -774,10 +772,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(actual.eth2NetworkConfiguration().getSpec())
         .isEqualTo(expected.eth2NetworkConfiguration().getSpec());
 
-    // Ignore any Spec assertion on recursion
+    // Ignore Spec recursion and synchronization locks from lazy suppliers.
     assertThat(actual)
         .usingRecursiveComparison()
         .ignoringFieldsOfTypes(Spec.class)
+        .ignoringFieldsMatchingRegexes(".*\\.lock")
         .isEqualTo(expected);
   }
 

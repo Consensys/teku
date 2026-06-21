@@ -182,6 +182,7 @@ specrefs:
       - is_sync_committee_update
       - is_valid_light_client_header
       - is_valid_normalized_merkle_branch
+      - normalize_merkle_branch#electra
       - next_sync_committee_gindex_at_slot
       - process_light_client_finality_update
       - process_light_client_optimistic_update
@@ -252,42 +253,9 @@ specrefs:
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 
-      # Not implemented: capella
-      - prepare_execution_payload#capella
-      - process_execution_payload#capella
-      - validate_beacon_block_gossip#capella
-      - validate_bls_to_execution_change_gossip#capella
-
-      # Not implemented: deneb
-      - compute_signed_block_header#deneb
-      - get_blob_sidecars#deneb
-      - prepare_execution_payload#deneb
-      - process_registry_updates#deneb
-      - process_voluntary_exit#deneb
-
-      # Not implemented: electra
-      - add_validator_to_registry#electra
-      - compute_on_chain_aggregate#electra
-      - get_committee_indices#electra
-      - get_eth1_pending_deposit_count#electra
-      - is_within_weak_subjectivity_period#electra
-      - normalize_merkle_branch#electra
-      - prepare_execution_payload#electra
-      - process_execution_payload#electra
-      - process_voluntary_exit#electra
-      - is_eligible_for_partial_withdrawals#electra
-      - get_validators_sweep_withdrawals#electra
-
       # Not implemented: fulu
-      - compute_matrix#fulu
-      - get_data_column_sidecars#fulu
-      - get_data_column_sidecars_from_block#fulu
-      - get_data_column_sidecars_from_column_sidecar#fulu
-      - recover_matrix#fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
-      - validate_beacon_block_gossip#fulu
-      - validate_data_column_sidecar_gossip#fulu
       - validate_partial_data_column_sidecar_gossip#fulu
 
       # Not implemented: gloas
