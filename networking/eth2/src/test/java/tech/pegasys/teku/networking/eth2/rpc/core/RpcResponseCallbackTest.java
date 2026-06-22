@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.netty.channel.socket.ChannelOutputShutdownException;
@@ -27,6 +29,7 @@ import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 
 class RpcResponseCallbackTest {
 
@@ -73,6 +76,46 @@ class RpcResponseCallbackTest {
 
       logCaptor.assertErrorLog("Failed to write req/resp response");
     }
+  }
+
+  @Test
+  void completeWithUnexpectedErrorShouldNotWriteErrorResponseWhenStreamClosedByStopSending() {
+    when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithUnexpectedError(
+          new RuntimeException(new ChannelOutputShutdownException("STOP_SENDING frame received")));
+
+      // The peer has stopped reading the stream, so writing a server error response is pointless
+      // and would just fail again and resurface as a noisy uncaught exception.
+      verify(rpcStream, never()).writeBytes(any());
+      verify(rpcStream).closeAbruptly();
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithUnexpectedErrorShouldNotWriteErrorResponseWhenStreamAlreadyClosed() {
+    when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithUnexpectedError(new StreamClosedException());
+
+      verify(rpcStream, never()).writeBytes(any());
+      verify(rpcStream).closeAbruptly();
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithUnexpectedErrorShouldWriteErrorResponseForUnexpectedError() {
+    when(responseEncoder.encodeErrorResponse(any())).thenReturn(Bytes.EMPTY);
+    when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
+    when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
+
+    callback.completeWithUnexpectedError(new IllegalStateException("Boom"));
+
+    verify(rpcStream).writeBytes(any());
   }
 
   private void failWriteWith(final Throwable error) {
