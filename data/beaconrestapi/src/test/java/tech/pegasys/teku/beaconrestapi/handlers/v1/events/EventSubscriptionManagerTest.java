@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -162,6 +163,8 @@ public class EventSubscriptionManagerTest {
       data.randomSignedExecutionPayloadBid();
   private final PayloadAttestationMessage samplePayloadAttestationMessage =
       data.randomPayloadAttestationMessage();
+  private final SignedProposerPreferences sampleProposerPreferences =
+      data.randomSignedProposerPreferences();
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -507,6 +510,16 @@ public class EventSubscriptionManagerTest {
     assertThat(outputStream.getString()).contains("\"version\":\"gloas\"");
   }
 
+  @Test
+  void shouldPropagateProposerPreferences() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=proposer_preferences");
+    manager.registerClient(client1);
+
+    triggerProposerPreferencesEvent();
+    checkEvent("proposer_preferences", new ProposerPreferencesEvent(sampleProposerPreferences));
+    assertThat(outputStream.getString()).contains("\"version\":\"gloas\"");
+  }
+
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(sampleVoluntaryExit, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
@@ -635,6 +648,12 @@ public class EventSubscriptionManagerTest {
   private void triggerPayloadAttestationMessageEvent() {
     manager.onNewPayloadAttestationMessage(
         samplePayloadAttestationMessage, InternalValidationResult.ACCEPT, true);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerProposerPreferencesEvent() {
+    manager.onNewProposerPreferences(
+        sampleProposerPreferences, InternalValidationResult.ACCEPT, true);
     asyncRunner.executeQueuedActions();
   }
 
