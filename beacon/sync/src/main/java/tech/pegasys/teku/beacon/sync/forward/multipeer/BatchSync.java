@@ -15,7 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
-import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.GloasBatchValidation.isParentBlockFull;
+import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.SyncSourceBatch.isParentBlockFull;
 import static tech.pegasys.teku.infrastructure.async.ExceptionHandlers.exceptionHandlingConsumer;
 import static tech.pegasys.teku.infrastructure.async.ExceptionHandlers.exceptionHandlingRunnable;
 

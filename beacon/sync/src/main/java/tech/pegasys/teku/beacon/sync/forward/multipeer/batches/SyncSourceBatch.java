@@ -15,7 +15,6 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer.batches;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.GloasBatchValidation.isParentBlockFull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
@@ -508,6 +508,23 @@ public class SyncSourceBatch implements Batch {
       }
     }
     return true;
+  }
+
+  public static boolean isParentBlockFull(
+      final SignedBeaconBlock parentBlock, final SignedBeaconBlock block) {
+    if (parentBlock.getMessage().getBody().toVersionGloas().isEmpty()
+        || block.getMessage().getBody().toVersionGloas().isEmpty()) {
+      return false;
+    }
+    return BeaconBlockBodyGloas.required(block.getMessage().getBody())
+        .getSignedExecutionPayloadBid()
+        .getMessage()
+        .getParentBlockHash()
+        .equals(
+            BeaconBlockBodyGloas.required(parentBlock.getMessage().getBody())
+                .getSignedExecutionPayloadBid()
+                .getMessage()
+                .getBlockHash());
   }
 
   private void logBatchInvalidBecauseOfExecutionPayloadMissing(final SignedBeaconBlock block) {
