@@ -87,7 +87,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
       rpcStream.closeAbruptly().finishTrace(LOG);
       return;
     }
-    // A closed/half-closed stream is benign peer churn. Writing a server error response to it is
+    // A closed/half-closed stream is expected peer churn. Writing a server error response to it is
     // pointless: the write would just fail again and resurface as a noisy uncaught exception (e.g.
     // the peer sent STOP_SENDING, which is a ChannelOutputShutdownException rather than a
     // ClosedChannelException, so each close type must be matched separately).

@@ -85,7 +85,7 @@ public class GossipFailureLogger {
               "Failed to publish {}{} because no active outbound stream for the required gossip topic",
               messageType,
               slotLog);
-      // a closed/half-closed stream is benign peer churn (e.g. a disconnecting peer, or one that
+      // a closed/half-closed stream is expected peer churn (e.g. a disconnecting peer, or one that
       // sent STOP_SENDING); ChannelOutputShutdownException is not a ClosedChannelException so it
       // must be handled separately.
       case ClosedChannelException ignored ->

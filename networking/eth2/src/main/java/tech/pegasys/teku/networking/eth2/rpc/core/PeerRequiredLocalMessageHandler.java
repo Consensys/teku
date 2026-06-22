@@ -64,7 +64,7 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
       return;
     }
 
-    // a closed/half-closed stream is benign peer churn; ChannelOutputShutdownException (e.g. the
+    // a closed/half-closed stream is expected peer churn; ChannelOutputShutdownException (e.g. the
     // peer sent STOP_SENDING) is not a ClosedChannelException so it must be matched separately.
     if (rootCause instanceof StreamClosedException
         || rootCause instanceof ClosedChannelException

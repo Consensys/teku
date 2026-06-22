@@ -41,7 +41,7 @@ class PeerRequiredLocalMessageHandlerTest {
       };
 
   @Test
-  void shouldHandleStopSendingAsBenignStreamClose() {
+  void shouldHandleStopSendingAsExpectedStreamClose() {
     final Throwable error =
         new RuntimeException(new ChannelOutputShutdownException("STOP_SENDING frame received"));
 
@@ -57,7 +57,7 @@ class PeerRequiredLocalMessageHandlerTest {
   }
 
   @Test
-  void shouldHandleClosedChannelAsBenignStreamClose() {
+  void shouldHandleClosedChannelAsExpectedStreamClose() {
     final Throwable error = new RuntimeException(new ClosedChannelException());
 
     try (final LogCaptor logCaptor =
