@@ -63,9 +63,12 @@ public class TargetPeerRange {
       final int totalOutboundRequirement,
       final int currentTotalPeerCount) {
     final int remotelyInitiatedPeerLimit = Math.max(0, upperBound - totalOutboundRequirement);
-    final int remotelyInitiatedPeersAboveLimit =
-        Math.max(0, currentRemotelyInitiatedPeerCount - remotelyInitiatedPeerLimit);
-    final int peersAboveLowerBound = Math.max(0, currentTotalPeerCount - lowerBound);
-    return Math.min(remotelyInitiatedPeersAboveLimit, peersAboveLowerBound);
+    final int maxPeersToDropWithoutGoingBelowLowerBound =
+        Math.max(0, currentTotalPeerCount - lowerBound);
+
+    return Math.clamp(
+        currentRemotelyInitiatedPeerCount - remotelyInitiatedPeerLimit,
+        0,
+        maxPeersToDropWithoutGoingBelowLowerBound);
   }
 }
