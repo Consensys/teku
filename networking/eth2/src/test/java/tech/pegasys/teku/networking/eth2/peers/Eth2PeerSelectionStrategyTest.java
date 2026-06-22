@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -217,6 +218,46 @@ class Eth2PeerSelectionStrategyTest {
   }
 
   @Test
+  void selectPeersToConnect_shouldFillPeerTargetWhenRandomlySelectedPeersAlreadyConnected() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(10, 20, 5);
+    final List<StubPeer> existingRandomlySelectedPeers =
+        IntStream.range(0, 5).mapToObj(index -> new StubPeer(new MockNodeId(20 + index))).toList();
+    existingRandomlySelectedPeers.forEach(
+        peer -> peerPools.addPeerToPool(peer.getId(), PeerConnectionType.RANDOMLY_SELECTED));
+    when(network.getPeerCount()).thenReturn(9);
+    when(network.streamPeers()).thenAnswer(__ -> existingRandomlySelectedPeers.stream());
+
+    final List<DiscoveryPeer> candidatePeers =
+        IntStream.range(0, 12)
+            .mapToObj(index -> createDiscoveryPeer(new PeerAddress(new MockNodeId(index + 1))))
+            .toList();
+
+    assertThat(strategy.selectPeersToConnect(network, peerPools, () -> candidatePeers)).hasSize(11);
+  }
+
+  @Test
+  void selectPeersToConnect_shouldFillRandomTargetWhenInboundPeersAlreadyFillPeerTarget() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(10, 20, 5);
+    final List<Peer> inboundPeers =
+        IntStream.range(0, 20)
+            .mapToObj(index -> (Peer) new InboundStubPeer(new MockNodeId(20 + index)))
+            .toList();
+    inboundPeers
+        .subList(0, 5)
+        .forEach(
+            peer -> peerPools.addPeerToPool(peer.getId(), PeerConnectionType.RANDOMLY_SELECTED));
+    when(network.getPeerCount()).thenReturn(20);
+    when(network.streamPeers()).thenAnswer(__ -> inboundPeers.stream());
+
+    final List<DiscoveryPeer> candidatePeers =
+        IntStream.range(0, 5)
+            .mapToObj(index -> createDiscoveryPeer(new PeerAddress(new MockNodeId(index + 1))))
+            .toList();
+
+    assertThat(strategy.selectPeersToConnect(network, peerPools, () -> candidatePeers)).hasSize(5);
+  }
+
+  @Test
   void selectPeersToDisconnect_shouldDisconnectLowestScoringPeersWhenPeerCountExceedsUpperBound() {
     final Eth2PeerSelectionStrategy strategy = createStrategy(0, 1, 0);
     final StubPeer peer1 = new StubPeer(new MockNodeId(1));
@@ -311,6 +352,103 @@ class Eth2PeerSelectionStrategyTest {
         .containsExactlyInAnyOrder(peer2);
   }
 
+  @Test
+  void selectPeersToDisconnect_shouldReserveSlotsForMinimumRandomlySelectedOutboundPeers() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(10, 20, 5);
+    final List<Peer> inboundPeers =
+        IntStream.range(0, 20)
+            .mapToObj(index -> (Peer) new InboundStubPeer(new MockNodeId(20 + index)))
+            .toList();
+    when(network.getPeerCount()).thenReturn(20);
+    when(network.streamPeers()).thenAnswer(__ -> inboundPeers.stream());
+
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
+        .hasSize(5)
+        .allMatch(Peer::connectionInitiatedRemotely);
+  }
+
+  @Test
+  void selectPeersToDisconnect_shouldReserveSlotsForRandomAndSubnetRequiredOutboundPeers() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(10, 20, 5);
+    final List<Peer> inboundPeers =
+        IntStream.range(0, 20)
+            .mapToObj(index -> (Peer) new InboundStubPeer(new MockNodeId(20 + index)))
+            .toList();
+    when(network.getPeerCount()).thenReturn(20);
+    when(network.streamPeers()).thenAnswer(__ -> inboundPeers.stream());
+    when(peerSubnetSubscriptions.getSubscribersRequired()).thenReturn(3);
+
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
+        .hasSize(8)
+        .allMatch(Peer::connectionInitiatedRemotely);
+  }
+
+  @Test
+  void selectPeersToDisconnect_shouldNotProtectRemotelyInitiatedRandomlySelectedPeers() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(0, 2, 1);
+    final StubPeer locallyInitiatedRandomPeer = new StubPeer(new MockNodeId(1));
+    final StubPeer remotelyInitiatedRandomPeer = new InboundStubPeer(new MockNodeId(2));
+    final StubPeer scoreBasedPeer = new StubPeer(new MockNodeId(3));
+    when(network.getPeerCount()).thenReturn(3);
+    when(network.streamPeers())
+        .thenReturn(
+            Stream.of(locallyInitiatedRandomPeer, remotelyInitiatedRandomPeer, scoreBasedPeer));
+
+    peerPools.addPeerToPool(
+        locallyInitiatedRandomPeer.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(
+        remotelyInitiatedRandomPeer.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+
+    peerScorer.setScore(locallyInitiatedRandomPeer.getId(), 0);
+    peerScorer.setScore(remotelyInitiatedRandomPeer.getId(), 50);
+    peerScorer.setScore(scoreBasedPeer.getId(), 100);
+
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
+        .containsExactlyInAnyOrder(remotelyInitiatedRandomPeer);
+  }
+
+  @Test
+  void selectPeersToDisconnect_shouldDropRemotelyInitiatedPeersFirstWhenRemoteLimitExceeded() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(0, 2, 1);
+    final StubPeer locallyInitiatedScoreBasedPeer = new StubPeer(new MockNodeId(1));
+    final StubPeer remotelyInitiatedScoreBasedPeer1 = new InboundStubPeer(new MockNodeId(2));
+    final StubPeer remotelyInitiatedScoreBasedPeer2 = new InboundStubPeer(new MockNodeId(3));
+    when(network.getPeerCount()).thenReturn(3);
+    when(network.streamPeers())
+        .thenReturn(
+            Stream.of(
+                locallyInitiatedScoreBasedPeer,
+                remotelyInitiatedScoreBasedPeer1,
+                remotelyInitiatedScoreBasedPeer2));
+
+    peerScorer.setScore(locallyInitiatedScoreBasedPeer.getId(), 0);
+    peerScorer.setScore(remotelyInitiatedScoreBasedPeer1.getId(), 100);
+    peerScorer.setScore(remotelyInitiatedScoreBasedPeer2.getId(), 200);
+
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
+        .containsExactlyInAnyOrder(remotelyInitiatedScoreBasedPeer1);
+  }
+
+  @Test
+  void selectPeersToDisconnect_shouldNotDropRemotelyInitiatedPeersWhenPeerCountIsBelowLowerBound() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(25, 35, 25);
+    final List<Peer> remotelyInitiatedPeers =
+        IntStream.range(0, 12)
+            .mapToObj(index -> (Peer) new InboundStubPeer(new MockNodeId(index)))
+            .toList();
+    final List<Peer> locallyInitiatedPeers =
+        IntStream.range(12, 18)
+            .mapToObj(index -> (Peer) new StubPeer(new MockNodeId(index)))
+            .toList();
+    when(network.getPeerCount()).thenReturn(18);
+    when(network.streamPeers())
+        .thenAnswer(
+            __ -> Stream.concat(remotelyInitiatedPeers.stream(), locallyInitiatedPeers.stream()));
+    when(peerSubnetSubscriptions.getSubscribersRequired()).thenReturn(1);
+
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools)).isEmpty();
+  }
+
   private Eth2PeerSelectionStrategy createStrategy() {
     return createStrategy(10, 20, 0);
   }
@@ -344,5 +482,21 @@ class Eth2PeerSelectionStrategyTest {
         SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema().getDefault(),
         Optional.empty(),
         Optional.empty());
+  }
+
+  private static class InboundStubPeer extends StubPeer {
+    public InboundStubPeer(final MockNodeId nodeId) {
+      super(nodeId);
+    }
+
+    @Override
+    public boolean connectionInitiatedLocally() {
+      return false;
+    }
+
+    @Override
+    public boolean connectionInitiatedRemotely() {
+      return true;
+    }
   }
 }

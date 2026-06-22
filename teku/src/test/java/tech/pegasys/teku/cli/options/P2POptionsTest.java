@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE;
 import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
@@ -383,12 +384,13 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void minimumRandomlySelectedPeerCount_shouldDefaultTo20PercentOfLowerBound() {
+  public void minimumRandomlySelectedPeerCount_shouldDefaultTo30PercentOfLowerBound() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(
             "--p2p-peer-lower-bound", "100",
             "--p2p-peer-upper-bound", "110");
-    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(20);
+    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers())
+        .isEqualTo(100 * DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE / 100);
   }
 
   @Test
@@ -466,6 +468,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             "--p2p-peer-lower-bound", "0",
             "--p2p-peer-upper-bound", "0");
     assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(0);
+  }
+
+  @Test
+  public void minimumRandomlySelectedPeerCount_shouldNotExceedUpperBound() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--p2p-peer-upper-bound",
+                    "10",
+                    "--Xp2p-minimum-randomly-selected-peer-count",
+                    "11"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid minRandomlySelectedPeers: 11 exceeds maxPeers: 10");
   }
 
   @Test
