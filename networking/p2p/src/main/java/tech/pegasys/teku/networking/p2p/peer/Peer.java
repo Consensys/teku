@@ -37,6 +37,10 @@ public interface Peer {
 
   Double getGossipScore();
 
+  default Optional<String> getAgentVersion() {
+    return Optional.empty();
+  }
+
   boolean isConnected();
 
   default PeerClientType getPeerClientType() {

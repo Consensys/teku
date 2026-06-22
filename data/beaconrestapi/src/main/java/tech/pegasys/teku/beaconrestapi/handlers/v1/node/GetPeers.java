@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_DOUBLE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -23,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -80,6 +82,16 @@ public class GetPeers extends RestApiEndpoint {
                   eth2Peer.peer().connectionInitiatedLocally()
                       ? Direction.outbound
                       : Direction.inbound)
+          .withOptionalField(
+              "agent_version",
+              string(
+                  "The peer's libp2p agent version string.",
+                  "Lighthouse/v8.1.3-66919c2/aarch64-linux"),
+              eth2Peer -> eth2Peer.peer().getAgentVersion())
+          .withOptionalField(
+              "score",
+              RAW_DOUBLE_TYPE.withDescription("Client-native peer score."),
+              eth2Peer -> Optional.ofNullable(eth2Peer.peer().getGossipScore()))
           .build();
 
   private static final SerializableTypeDefinition<Integer> PEERS_META_TYPE =
