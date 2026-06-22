@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,6 +50,12 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
                 .addCatch(
                     ClosedChannelException.class,
                     err -> LOG.trace("Failed to write because channel was closed", err))
+                .addCatch(
+                    ChannelOutputShutdownException.class,
+                    err ->
+                        LOG.trace(
+                            "Failed to write because peer stopped reading the stream (STOP_SENDING)",
+                            err))
                 .defaultCatch(err -> LOG.error("Failed to write req/resp response", err)));
   }
 

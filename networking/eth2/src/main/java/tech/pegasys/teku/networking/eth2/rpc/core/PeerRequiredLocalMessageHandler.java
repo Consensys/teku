@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import com.google.common.base.Throwables;
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -63,7 +64,11 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
       return;
     }
 
-    if (rootCause instanceof StreamClosedException || rootCause instanceof ClosedChannelException) {
+    // a closed/half-closed stream is benign peer churn; ChannelOutputShutdownException (e.g. the
+    // peer sent STOP_SENDING) is not a ClosedChannelException so it must be matched separately.
+    if (rootCause instanceof StreamClosedException
+        || rootCause instanceof ClosedChannelException
+        || rootCause instanceof ChannelOutputShutdownException) {
       LOG.trace("Stream closed while sending requested {}", type, error);
       callback.completeWithUnexpectedError(error);
       return;
