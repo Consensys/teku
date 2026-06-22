@@ -27,6 +27,9 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
@@ -673,9 +676,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 d.isDiscoveryEnabled(false)
                     .listenUdpPort(1234)
                     .advertisedUdpPort(OptionalInt.of(9000))
-                    .minPeers(64)
-                    .maxPeers(100)
-                    .minRandomlySelectedPeers(12))
+                    .minPeers(DEFAULT_P2P_PEERS_LOWER_BOUND)
+                    .maxPeers(DEFAULT_P2P_PEERS_UPPER_BOUND)
+                    .minRandomlySelectedPeers(
+                        DEFAULT_P2P_PEERS_LOWER_BOUND
+                            * DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE
+                            / 100))
         .network(
             n ->
                 n.isEnabled(false)

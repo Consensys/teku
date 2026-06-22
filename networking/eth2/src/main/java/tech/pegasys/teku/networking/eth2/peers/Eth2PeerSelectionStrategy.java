@@ -75,7 +75,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
 
     final int peersRequiredForSubnets = peerSubnetSubscriptions.getSubscribersRequired();
     final int scoreBasedPeersToAdd =
-        Math.max(peersRequiredForPeerCount - randomlySelectedPeerCount, peersRequiredForSubnets);
+        Math.max(peersRequiredForPeerCount - randomlySelectedPeersToAdd, peersRequiredForSubnets);
     final int maxPeersToAdd = scoreBasedPeersToAdd + randomlySelectedPeersToAdd;
     LOG.trace("Connecting to up to {} known peers", maxPeersToAdd);
     if (maxPeersToAdd == 0) {
@@ -139,6 +139,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         network
             .streamPeers()
             .filter(peer -> peerPools.getPeerConnectionType(peer.getId()) == RANDOMLY_SELECTED)
+            .filter(Peer::connectionInitiatedLocally)
             .count();
   }
 
@@ -152,40 +153,119 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   @Override
   public List<Peer> selectPeersToDisconnect(
       final P2PNetwork<?> network, final PeerPools peerPools) {
-
-    final Map<PeerConnectionType, List<Peer>> peersBySource =
-        network
-            .streamPeers()
-            .collect(Collectors.groupingBy(peer -> peerPools.getPeerConnectionType(peer.getId())));
-
-    final List<Peer> randomlySelectedPeers =
-        peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());
-    final int randomlySelectedPeerCount = randomlySelectedPeers.size();
-
-    final int currentPeerCount = network.getPeerCount();
-    final int peersToDrop = targetPeerCountRange.getPeersToDrop(currentPeerCount);
+    final List<Peer> peers = network.streamPeers().map(Peer.class::cast).toList();
+    final PeerSubnetSubscriptions peerSubnetSubscriptions =
+        peerSubnetSubscriptionsFactory.create(network);
+    final int totalOutboundRequirement =
+        targetPeerCountRange.getMinimumRandomlySelectedPeerCount()
+            + peerSubnetSubscriptions.getSubscribersRequired();
+    final int remotelyInitiatedPeersToDrop =
+        calculateRemotelyInitiatedPeersToDropCount(peers, totalOutboundRequirement);
+    final int peersToDrop =
+        Math.max(targetPeerCountRange.getPeersToDrop(peers.size()), remotelyInitiatedPeersToDrop);
     if (peersToDrop == 0) {
       return emptyList();
     }
-    final PeerScorer peerScorer = peerSubnetSubscriptionsFactory.create(network).createScorer();
-    final int randomlySelectedPeersToDrop =
-        targetPeerCountRange.getRandomlySelectedPeersToDrop(
-            randomlySelectedPeerCount, currentPeerCount);
-    shuffler.shuffle(randomlySelectedPeers);
-    final List<Peer> randomlySelectedPeersBeingDropped =
-        randomlySelectedPeers.subList(
-            0, Math.min(randomlySelectedPeersToDrop, randomlySelectedPeers.size()));
+
+    final Map<PeerConnectionType, List<Peer>> peersBySource =
+        peers.stream()
+            .collect(Collectors.groupingBy(peer -> peerPools.getPeerConnectionType(peer.getId())));
+    final List<Peer> randomlySelectedPeers =
+        peersBySource.getOrDefault(RANDOMLY_SELECTED, emptyList());
+    final List<Peer> scoreBasedPeers = peersBySource.getOrDefault(SCORE_BASED, emptyList());
+    final List<Peer> remotelyInitiatedRandomlySelectedPeers =
+        randomlySelectedPeers.stream().filter(Peer::connectionInitiatedRemotely).toList();
+
+    final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
+    // Satisfy remote-cap drops from remotely initiated peers first.
+    final List<Peer> remotelyInitiatedPeersBeingDropped =
+        findRemotelyInitiatedPeersToDrop(
+            remotelyInitiatedRandomlySelectedPeers,
+            scoreBasedPeers,
+            remotelyInitiatedPeersToDrop,
+            peerScorer);
+    final int additionalPeersToDrop = peersToDrop - remotelyInitiatedPeersBeingDropped.size();
+    if (additionalPeersToDrop == 0) {
+      LOG.trace(
+          "Selected {} remotely initiated peers to disconnect (peerCount={}, "
+              + "remotelyInitiatedPeerCount={}, totalOutboundRequirement={})",
+          remotelyInitiatedPeersBeingDropped::size,
+          peers::size,
+          () -> peers.stream().filter(Peer::connectionInitiatedRemotely).count(),
+          () -> totalOutboundRequirement);
+      return remotelyInitiatedPeersBeingDropped;
+    }
+
+    // Fill any remaining drop slots using the normal score-based ordering.
+    final List<Peer> peersBeingDropped = new ArrayList<>(remotelyInitiatedPeersBeingDropped);
+    final int currentPeerCount = peers.size();
+    final List<Peer> locallyInitiatedRandomPeersEligibleForDisconnection =
+        selectLocallyInitiatedRandomPeersEligibleForDisconnection(
+            randomlySelectedPeers, currentPeerCount);
     // Peers from the randomly selected pool that have been chosen are moved have their special
     // randomly selected status revoked, leaving them in the default pool where they are considered
     // for disconnection based on their score
-    randomlySelectedPeersBeingDropped.forEach(
+    locallyInitiatedRandomPeersEligibleForDisconnection.forEach(
         peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
-    return Stream.concat(
-            randomlySelectedPeersBeingDropped.stream(),
-            peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
+    Stream.concat(
+            locallyInitiatedRandomPeersEligibleForDisconnection.stream(),
+            Stream.concat(
+                remotelyInitiatedRandomlySelectedPeers.stream(), scoreBasedPeers.stream()))
+        .filter(peer -> !peersBeingDropped.contains(peer))
         .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
-        .limit(peersToDrop)
+        .limit(additionalPeersToDrop)
+        .forEach(peersBeingDropped::add);
+    LOG.trace(
+        "Selected {} peers to disconnect (peerCount={}, remotelyInitiatedPeerCount={}, "
+            + "remotelyInitiatedPeersDropped={}, locallyInitiatedRandomPeersDemoted={}, "
+            + "totalOutboundRequirement={})",
+        peersBeingDropped::size,
+        peers::size,
+        () -> peers.stream().filter(Peer::connectionInitiatedRemotely).count(),
+        remotelyInitiatedPeersBeingDropped::size,
+        locallyInitiatedRandomPeersEligibleForDisconnection::size,
+        () -> totalOutboundRequirement);
+    return List.copyOf(peersBeingDropped);
+  }
+
+  private int calculateRemotelyInitiatedPeersToDropCount(
+      final List<Peer> peers, final int totalOutboundRequirement) {
+    final int remotelyInitiatedPeerCount =
+        (int) peers.stream().filter(Peer::connectionInitiatedRemotely).count();
+
+    return targetPeerCountRange.getRemotelyInitiatedPeersToDrop(
+        remotelyInitiatedPeerCount, totalOutboundRequirement, peers.size());
+  }
+
+  private List<Peer> findRemotelyInitiatedPeersToDrop(
+      final List<Peer> remotelyInitiatedRandomlySelectedPeers,
+      final List<Peer> scoreBasedPeers,
+      final int remotelyInitiatedPeersToDropCount,
+      final PeerScorer peerScorer) {
+    return Stream.concat(
+            remotelyInitiatedRandomlySelectedPeers.stream(),
+            scoreBasedPeers.stream().filter(Peer::connectionInitiatedRemotely))
+        .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
+        .limit(remotelyInitiatedPeersToDropCount)
         .toList();
+  }
+
+  private List<Peer> selectLocallyInitiatedRandomPeersEligibleForDisconnection(
+      final List<Peer> randomlySelectedPeers, final int currentPeerCount) {
+    final List<Peer> locallyInitiatedRandomlySelectedPeers =
+        randomlySelectedPeers.stream()
+            .filter(Peer::connectionInitiatedLocally)
+            .collect(Collectors.toCollection(ArrayList::new));
+    final int locallyInitiatedRandomlySelectedPeerCount =
+        locallyInitiatedRandomlySelectedPeers.size();
+
+    shuffler.shuffle(locallyInitiatedRandomlySelectedPeers);
+    final int randomlySelectedPeersToDrop =
+        targetPeerCountRange.getRandomlySelectedPeersToDrop(
+            locallyInitiatedRandomlySelectedPeerCount, currentPeerCount);
+
+    return locallyInitiatedRandomlySelectedPeers.subList(
+        0, Math.min(randomlySelectedPeersToDrop, locallyInitiatedRandomlySelectedPeers.size()));
   }
 
   @FunctionalInterface
