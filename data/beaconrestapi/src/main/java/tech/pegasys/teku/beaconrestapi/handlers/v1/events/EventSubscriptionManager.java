@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -114,6 +115,7 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) -> onNewDataColumnSidecar(dataColumnSidecar));
     nodeDataProvider.subscribeToPayloadAttestationMessages(this::onNewPayloadAttestationMessage);
+    nodeDataProvider.subscribeToProposerPreferences(this::onNewProposerPreferences);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -354,6 +356,16 @@ public class EventSubscriptionManager
       notifySubscribersOfEvent(
           EventType.payload_attestation_message,
           new PayloadAttestationMessageEvent(payloadAttestationMessage));
+    }
+  }
+
+  protected void onNewProposerPreferences(
+      final SignedProposerPreferences proposerPreferences,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.proposer_preferences, new ProposerPreferencesEvent(proposerPreferences));
     }
   }
 
