@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.SszComposite;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -41,13 +40,16 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final IntCache<SszChildT> childrenViewCache;
   private int sizeCache = -1;
   private final SszCompositeSchema<?> schema;
+
+  // Exactly one of these fields is set at a time: either the backing node has already been
+  // materialized, or the supplier is still available to create it lazily.
   private volatile TreeNode backingNode;
-  private final Supplier<TreeNode> lazyBackingNode;
+  private volatile Supplier<TreeNode> lazyBackingNode;
 
   /** Creates an instance from a schema and a backing node */
   protected AbstractSszComposite(
       final SszCompositeSchema<?> schema, final Supplier<TreeNode> lazyBackingNode) {
-    this(schema, lazyBackingNode, Optional.empty());
+    this(schema, null, lazyBackingNode, null);
   }
 
   protected AbstractSszComposite(final SszCompositeSchema<?> schema, final TreeNode backingNode) {
@@ -76,13 +78,6 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
     this.backingNode = backingNode;
     this.lazyBackingNode = lazyBackingNode;
     this.childrenViewCache = cache != null ? cache : createCache();
-  }
-
-  protected AbstractSszComposite(
-      final SszCompositeSchema<?> schema,
-      final Supplier<TreeNode> lazyBackingNode,
-      final Optional<IntCache<SszChildT>> cache) {
-    this(schema, null, lazyBackingNode, cache.orElse(null));
   }
 
   /**
@@ -138,6 +133,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private synchronized TreeNode getLazyBackingNode() {
     if (backingNode == null) {
       backingNode = lazyBackingNode.get();
+      lazyBackingNode = null;
     }
     return backingNode;
   }
