@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -320,6 +321,73 @@ class BatchImporterTest {
 
     // And check we didn't touch the batch from a different thread
     verifyNoMoreInteractions(batch);
+  }
+
+  @Test
+  void shouldRecoverMissingParentExecutionPayloadByRootAndRetryImport() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(gloasFirstSlot.plus(1).longValue());
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    final SafeFuture<Optional<SignedExecutionPayloadEnvelope>> parentFetch = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> parentImport = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> retryImport = new SafeFuture<>();
+
+    when(blockImporter.importBlock(block)).thenReturn(firstImport).thenReturn(retryImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(parentFetch);
+    when(executionPayloadManager.importExecutionPayload(parentExecutionPayload, false))
+        .thenReturn(parentImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    // First import fails because the parent's execution payload envelope was not delivered
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    // The parent's execution payload envelope is fetched by root and imported
+    verify(syncSource).requestExecutionPayloadEnvelopeByRoot(block.getParentRoot());
+    parentFetch.complete(Optional.of(parentExecutionPayload));
+    ignoreFuture(
+        verify(executionPayloadManager).importExecutionPayload(parentExecutionPayload, false));
+    parentImport.complete(ExecutionPayloadImportResult.successful(parentExecutionPayload));
+
+    // The block import is retried and now succeeds
+    ignoreFuture(verify(blockImporter, times(2)).importBlock(block));
+    retryImport.complete(BlockImportResult.successful(block));
+
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
+  }
+
+  @Test
+  void shouldFailBatchWhenMissingParentExecutionPayloadCannotBeRecovered() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    when(blockImporter.importBlock(block)).thenReturn(firstImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    // No envelope available: the block is not retried and the batch import fails
+    verify(syncSource).requestExecutionPayloadEnvelopeByRoot(block.getParentRoot());
+    ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
   }
 
   private void blobSidecarsImportedSuccessfully(

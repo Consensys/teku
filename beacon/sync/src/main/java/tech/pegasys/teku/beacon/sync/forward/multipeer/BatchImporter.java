@@ -146,8 +146,7 @@ public class BatchImporter {
       final SyncSource source) {
     LOG.trace(
         "Importing block during syncing for slot {} and root {}", block.getSlot(), block.getRoot());
-    return blockImporter
-        .importBlock(block)
+    return importBlockWithParentExecutionPayloadRecovery(block, source)
         .thenCompose(
             blockImportResult -> {
               if (blockImportResult.getFailureReason()
@@ -185,6 +184,55 @@ public class BatchImporter {
                                   .map(Enum::name)
                                   .orElse(null),
                               executionPayloadImportResult.getFailureCause()));
+            });
+  }
+
+  /**
+   * Imports the block, lazily recovering from a missing parent execution payload during sync.
+   *
+   * <p>When the block fails with {@code UNKNOWN_PARENT_EXECUTION_PAYLOAD} the parent block's
+   * execution payload envelope has not been delivered (for example it was the last block of a
+   * previous batch, whose envelope is allowed to be deferred). The parent's slot is unknown - the
+   * next batch may be built on top of empty slots - so the envelope is fetched by root, imported,
+   * and the block import is retried once. If the envelope cannot be recovered the original failure
+   * is returned and the batch is retried as before.
+   */
+  private SafeFuture<BlockImportResult> importBlockWithParentExecutionPayloadRecovery(
+      final SignedBeaconBlock block, final SyncSource source) {
+    return blockImporter
+        .importBlock(block)
+        .thenCompose(
+            result -> {
+              if (result.getFailureReason()
+                  != BlockImportResult.FailureReason.UNKNOWN_PARENT_EXECUTION_PAYLOAD) {
+                return SafeFuture.completedFuture(result);
+              }
+              LOG.debug(
+                  "Recovering missing parent execution payload by root {} for block at slot {}",
+                  block.getParentRoot(),
+                  block.getSlot());
+              return source
+                  .requestExecutionPayloadEnvelopeByRoot(block.getParentRoot())
+                  .thenCompose(
+                      maybeExecutionPayload -> {
+                        return maybeExecutionPayload
+                            .map(
+                                signedExecutionPayloadEnvelope ->
+                                    executionPayloadManager
+                                        .importExecutionPayload(
+                                            signedExecutionPayloadEnvelope, false)
+                                        .thenCompose(__ -> blockImporter.importBlock(block)))
+                            .orElseGet(() -> SafeFuture.completedFuture(result));
+                      })
+                  .exceptionally(
+                      error -> {
+                        LOG.debug(
+                            "Failed to recover parent execution payload by root {} for block at slot {}",
+                            block.getParentRoot(),
+                            block.getSlot(),
+                            error);
+                        return result;
+                      });
             });
   }
 

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -37,6 +38,7 @@ public class StubSyncSource implements SyncSource {
   private final List<Request> blobSidecarsRequests = new ArrayList<>();
   private final List<Request> dataColumnSidecarsRequests = new ArrayList<>();
   private final List<Request> executionPayloadEnvelopesRequests = new ArrayList<>();
+  private final List<Bytes32> executionPayloadEnvelopeByRootRequests = new ArrayList<>();
 
   private Optional<SafeFuture<Void>> currentBlockRequest = Optional.empty();
   private Optional<RpcResponseListener<SignedBeaconBlock>> currentBlockListener = Optional.empty();
@@ -135,6 +137,13 @@ public class StubSyncSource implements SyncSource {
     currentExecutionPayloadEnvelopesRequest = Optional.of(request);
     currentExecutionPayloadEnvelopesListener = Optional.of(listener);
     return request;
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      final Bytes32 beaconBlockRoot) {
+    executionPayloadEnvelopeByRootRequests.add(beaconBlockRoot);
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override

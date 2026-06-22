@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -204,6 +205,12 @@ public class ThrottlingSyncSource implements SyncSource {
                   () -> requestExecutionPayloadEnvelopesByRange(startSlot, count, listener),
                   PEER_REQUEST_DELAY);
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      final Bytes32 beaconBlockRoot) {
+    return delegate.requestExecutionPayloadEnvelopeByRoot(beaconBlockRoot);
   }
 
   @Override
