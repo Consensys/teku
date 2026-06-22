@@ -118,6 +118,49 @@ class RpcResponseCallbackTest {
     verify(rpcStream).writeBytes(any());
   }
 
+  @Test
+  void completeWithErrorResponseShouldNotLogErrorWhenWriteFailsWithStopSending() {
+    failErrorResponseWriteWith(new ChannelOutputShutdownException("STOP_SENDING frame received"));
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      // The peer sent STOP_SENDING, so failing to write the error response is expected churn, not
+      // a noisy uncaught exception.
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+      assertThat(logCaptor.getTraceLogs())
+          .anySatisfy(log -> assertThat(log).contains("STOP_SENDING"));
+    }
+  }
+
+  @Test
+  void completeWithErrorResponseShouldNotLogErrorWhenWriteFailsWithClosedChannel() {
+    failErrorResponseWriteWith(new ClosedChannelException());
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithErrorResponseShouldLogErrorWhenWriteFailsWithUnexpectedError() {
+    failErrorResponseWriteWith(new IllegalStateException("Boom"));
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      logCaptor.assertErrorLog("Failed to write req/resp error response");
+    }
+  }
+
+  private void failErrorResponseWriteWith(final Throwable error) {
+    when(responseEncoder.encodeErrorResponse(any())).thenReturn(Bytes.EMPTY);
+    when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.failedFuture(error));
+    when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
+  }
+
   private void failWriteWith(final Throwable error) {
     when(responseEncoder.encodeSuccessfulResponse(any())).thenReturn(Bytes.EMPTY);
     when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.failedFuture(error));

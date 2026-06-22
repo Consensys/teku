@@ -69,7 +69,22 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   public void completeWithErrorResponse(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessageString());
     try {
-      rpcStream.writeBytes(responseEncoder.encodeErrorResponse(error)).finishStackTrace();
+      rpcStream
+          .writeBytes(responseEncoder.encodeErrorResponse(error))
+          .finish(
+              RootCauseExceptionHandler.builder()
+                  .addCatch(
+                      ClosedChannelException.class,
+                      err ->
+                          LOG.trace(
+                              "Failed to write error response because channel was closed", err))
+                  .addCatch(
+                      ChannelOutputShutdownException.class,
+                      err ->
+                          LOG.trace(
+                              "Failed to write error response because peer stopped reading the stream (STOP_SENDING)",
+                              err))
+                  .defaultCatch(err -> LOG.error("Failed to write req/resp error response", err)));
     } catch (StreamClosedException e) {
       LOG.debug(
           "Unable to send error message ({}) to peer, rpc stream already closed: {}",
