@@ -69,7 +69,7 @@ public class PostStateValidatorIdentities extends RestApiEndpoint {
             .requestBodyType(BODY_STRING_LIST)
             .response(SC_OK, "Request successful", RESPONSE_TYPE, EthereumTypes.sszResponseType())
             .withNotFoundResponse()
-            .withNotAcceptedResponse()
+            .withNotAcceptableResponse()
             .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;

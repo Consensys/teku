@@ -1590,6 +1590,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
             .payloadAttestationPool(payloadAttestationPool)
+            .proposerPreferencesManager(proposerPreferencesManager)
             .build();
   }
 
