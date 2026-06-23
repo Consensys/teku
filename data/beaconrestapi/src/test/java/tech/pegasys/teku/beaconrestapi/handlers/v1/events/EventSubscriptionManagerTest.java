@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -103,6 +104,17 @@ public class EventSubscriptionManagerTest {
           true,
           data.randomBytes32(),
           data.randomBytes32());
+  private final HeadV2Event headV2Event =
+      HeadV2Event.create(
+          SpecMilestone.GLOAS,
+          slot,
+          headEvent.getData().getBlock(),
+          headEvent.getData().getState(),
+          false,
+          true,
+          headEvent.getData().getPreviousDutyDependentRoot(),
+          headEvent.getData().getCurrentDutyDependentRoot(),
+          ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
   private final SignedContributionAndProof contributionAndProof =
       data.randomSignedContributionAndProof(0L);
 
@@ -212,6 +224,19 @@ public class EventSubscriptionManagerTest {
 
     triggerHeadEvent();
     checkEvent("head", headEvent);
+  }
+
+  @Test
+  void shouldPropagateHeadV2Event() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head_v2");
+    manager.registerClient(client1);
+
+    triggerHeadV2Event();
+    checkEvent("head_v2", headV2Event);
+    assertThat(outputStream.getString()).contains("\"version\":\"gloas\"");
+    assertThat(outputStream.getString()).contains("\"payload_status\":\"full\"");
+    assertThat(outputStream.getString()).contains("\"current_epoch_dependent_root\"");
+    assertThat(outputStream.getString()).contains("\"next_epoch_dependent_root\"");
   }
 
   @Test
@@ -597,6 +622,7 @@ public class EventSubscriptionManagerTest {
         false,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
+        Optional.empty(),
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.getData().getOldHeadBlock(),
@@ -616,6 +642,21 @@ public class EventSubscriptionManagerTest {
         true,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
+        Optional.empty(),
+        Optional.empty());
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerHeadV2Event() {
+    manager.chainHeadUpdated(
+        headV2Event.getData().data().slot(),
+        headV2Event.getData().data().state(),
+        headV2Event.getData().data().block(),
+        false,
+        true,
+        headV2Event.getData().data().currentEpochDependentRoot(),
+        headV2Event.getData().data().nextEpochDependentRoot(),
+        Optional.of(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL),
         Optional.empty());
     asyncRunner.executeQueuedActions();
   }

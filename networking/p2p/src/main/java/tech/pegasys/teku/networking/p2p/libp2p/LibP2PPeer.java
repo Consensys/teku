@@ -167,6 +167,11 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public Optional<String> getAgentVersion() {
+    return maybeAgentString;
+  }
+
+  @Override
   public boolean isConnected() {
     return connected.get();
   }

@@ -18,6 +18,7 @@ import java.util.List;
 @SuppressWarnings("JavaCase")
 public enum EventType {
   head,
+  head_v2,
   block,
   attestation,
   voluntary_exit,
