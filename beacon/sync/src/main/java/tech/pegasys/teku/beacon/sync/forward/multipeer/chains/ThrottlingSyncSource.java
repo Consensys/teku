@@ -210,6 +210,8 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
       final Bytes32 beaconBlockRoot) {
+    // Intentionally bypass throttling: this rare single lookup unblocks sync recovery when a
+    // parent execution payload envelope was deferred, and delaying it would stall the batch.
     return delegate.requestExecutionPayloadEnvelopeByRoot(beaconBlockRoot);
   }
 

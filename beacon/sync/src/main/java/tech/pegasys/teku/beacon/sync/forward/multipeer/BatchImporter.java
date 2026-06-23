@@ -194,8 +194,9 @@ public class BatchImporter {
    * execution payload envelope has not been delivered (for example it was the last block of a
    * previous batch, whose envelope is allowed to be deferred). The parent's slot is unknown - the
    * next batch may be built on top of empty slots - so the envelope is fetched by root, imported,
-   * and the block import is retried once. If the envelope cannot be recovered the original failure
-   * is returned and the batch is retried as before.
+   * and the block import is retried once. If the envelope cannot be fetched or imported, the
+   * original failure is returned unless the recovered envelope import fails execution or reports
+   * data unavailable, in which case that failure is forwarded to the batch result.
    */
   private SafeFuture<BlockImportResult> importBlockWithParentExecutionPayloadRecovery(
       final SignedBeaconBlock block, final SyncSource source) {
