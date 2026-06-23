@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -53,8 +54,10 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -147,6 +150,79 @@ class BatchSyncTest {
     assertThatBatch(batch1).isComplete();
     assertThatBatch(batch1).isConfirmed();
     assertBatchImported(batch1);
+  }
+
+  @Test
+  void shouldNotImportPreviousBatchWhenBoundaryParentExecutionPayloadIsMissing() {
+    final UInt64 gloasForkEpoch = UInt64.valueOf(1000);
+    final Spec gloasSpec =
+        TestSpecFactory.createMinimalGloas(builder -> builder.gloasForkEpoch(gloasForkEpoch));
+    final StorageSystem gloasStorageSystem =
+        InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE, gloasSpec);
+    final ChainBuilder gloasChainBuilder = gloasStorageSystem.chainBuilder();
+    final RecentChainData gloasRecentChainData = gloasStorageSystem.recentChainData();
+    gloasStorageSystem.chainUpdater().initializeGenesis();
+    final StubBatchFactory gloasBatches =
+        new StubBatchFactory(eventThread, gloasSpec, BlobSidecarManager.NOOP, true);
+    final BatchImporter gloasBatchImporter = mock(BatchImporter.class);
+    when(gloasBatchImporter.importBatch(any()))
+        .thenAnswer(invocation -> gloasBatches.getImportResult(invocation.getArgument(0)));
+    final MultipeerCommonAncestorFinder gloasCommonAncestor =
+        mock(MultipeerCommonAncestorFinder.class);
+
+    final UInt64 commonAncestorSlot = gloasSpec.computeStartSlotAtEpoch(gloasForkEpoch).minus(1);
+    final UInt64 parentSlot = commonAncestorSlot.plus(BATCH_SIZE);
+    final UInt64 childSlot = parentSlot.plus(1);
+
+    for (UInt64 slot = commonAncestorSlot.plus(1);
+        slot.isLessThanOrEqualTo(childSlot);
+        slot = slot.plus(1)) {
+      gloasChainBuilder.generateBlockAtSlot(slot);
+    }
+
+    final SignedBeaconBlock childBlock = gloasChainBuilder.getBlockAtSlot(childSlot);
+    final TargetChain gloasTargetChain =
+        chainWith(new SlotAndBlockRoot(childSlot, childBlock.getRoot()), syncSource);
+    when(gloasCommonAncestor.findCommonAncestor(any()))
+        .thenReturn(completedFuture(commonAncestorSlot));
+
+    final BatchSync gloasSync =
+        BatchSync.create(
+            eventThread,
+            asyncRunner,
+            gloasRecentChainData,
+            gloasBatchImporter,
+            gloasBatches,
+            BATCH_SIZE.intValue(),
+            5,
+            gloasCommonAncestor,
+            timeProvider,
+            syncPreImportBlockChannel);
+
+    assertThat(gloasSync.syncToChain(gloasTargetChain)).isNotDone();
+
+    final Batch batch0 = gloasBatches.get(0);
+    final Batch batch1 = gloasBatches.get(1);
+
+    gloasBatches.receiveBlocks(
+        batch0,
+        gloasChainBuilder
+            .streamBlocksAndStates(commonAncestorSlot.plus(1), parentSlot)
+            .map(SignedBlockAndState::getBlock)
+            .toArray(SignedBeaconBlock[]::new));
+    gloasBatches.receiveExecutionPayloads(
+        batch0,
+        gloasChainBuilder
+            .streamExecutionPayloads(commonAncestorSlot.plus(1), parentSlot)
+            .filter(executionPayload -> !executionPayload.getSlot().equals(parentSlot))
+            .toArray(SignedExecutionPayloadEnvelope[]::new));
+
+    gloasBatches.receiveBlocks(batch1, childBlock);
+    gloasBatches.receiveExecutionPayloads(
+        batch1, gloasChainBuilder.getExecutionPayloadAtSlot(childSlot).orElseThrow());
+
+    gloasBatches.assertMarkedInvalid(batch0);
+    verify(gloasBatchImporter, never()).importBatch(gloasBatches.getEventThreadOnlyBatch(batch0));
   }
 
   @Test
