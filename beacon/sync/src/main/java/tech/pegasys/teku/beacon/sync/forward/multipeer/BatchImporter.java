@@ -137,7 +137,7 @@ public class BatchImporter {
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    return importBlock(block, Optional.empty(), source);
+    return importBlock(block, executionPayload, source);
   }
 
   private SafeFuture<SingleImportResult> importBlock(
