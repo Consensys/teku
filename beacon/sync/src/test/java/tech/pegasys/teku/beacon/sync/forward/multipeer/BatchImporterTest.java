@@ -390,6 +390,41 @@ class BatchImporterTest {
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
   }
 
+  @Test
+  void shouldNotRetryBlockWhenRecoveredParentExecutionPayloadFailsToImport() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(gloasFirstSlot.plus(1).longValue());
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> parentImport = new SafeFuture<>();
+    when(blockImporter.importBlock(block)).thenReturn(firstImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentExecutionPayload)));
+    when(executionPayloadManager.importExecutionPayload(parentExecutionPayload, false))
+        .thenReturn(parentImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    // Envelope is fetched but fails to import: the block must NOT be re-imported
+    ignoreFuture(
+        verify(executionPayloadManager).importExecutionPayload(parentExecutionPayload, false));
+    parentImport.complete(
+        ExecutionPayloadImportResult.failedVerification(new IllegalStateException("bad payload")));
+
+    // Didn't retry block import because execution payload import failed
+    ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
+  }
+
   private void blobSidecarsImportedSuccessfully(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     verify(blockBlobSidecarsTrackersPool).onCompletedBlockAndBlobSidecars(block, blobSidecars);

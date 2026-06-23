@@ -221,7 +221,19 @@ public class BatchImporter {
                                     executionPayloadManager
                                         .importExecutionPayload(
                                             signedExecutionPayloadEnvelope, false)
-                                        .thenCompose(__ -> blockImporter.importBlock(block)))
+                                        .thenCompose(
+                                            executionPayloadImportResult -> {
+                                              if (!executionPayloadImportResult.isSuccessful()) {
+                                                LOG.debug(
+                                                    "Failed to import recovered parent execution payload by root {} for block at slot {}: {}",
+                                                    block.getParentRoot(),
+                                                    block.getSlot(),
+                                                    executionPayloadImportResult
+                                                        .getFailureReason());
+                                                return SafeFuture.completedFuture(result);
+                                              }
+                                              return blockImporter.importBlock(block);
+                                            }))
                             .orElseGet(() -> SafeFuture.completedFuture(result));
                       })
                   .exceptionally(
