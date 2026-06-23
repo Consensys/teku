@@ -211,40 +211,80 @@ public class BatchImporter {
                   "Recovering missing parent execution payload by root {} for block at slot {}",
                   block.getParentRoot(),
                   block.getSlot());
-              return source
-                  .requestExecutionPayloadEnvelopeByRoot(block.getParentRoot())
-                  .thenCompose(
-                      maybeExecutionPayload -> {
-                        return maybeExecutionPayload
-                            .map(
-                                signedExecutionPayloadEnvelope ->
-                                    executionPayloadManager
-                                        .importExecutionPayload(
-                                            signedExecutionPayloadEnvelope, false)
-                                        .thenCompose(
-                                            executionPayloadImportResult -> {
-                                              if (!executionPayloadImportResult.isSuccessful()) {
-                                                LOG.debug(
-                                                    "Failed to import recovered parent execution payload by root {} for block at slot {}: {}",
-                                                    block.getParentRoot(),
-                                                    block.getSlot(),
-                                                    executionPayloadImportResult
-                                                        .getFailureReason());
-                                                return SafeFuture.completedFuture(result);
-                                              }
-                                              return blockImporter.importBlock(block);
-                                            }))
-                            .orElseGet(() -> SafeFuture.completedFuture(result));
-                      })
-                  .exceptionally(
-                      error -> {
-                        LOG.debug(
-                            "Failed to recover parent execution payload by root {} for block at slot {}",
-                            block.getParentRoot(),
-                            block.getSlot(),
-                            error);
-                        return result;
-                      });
+              return recoverParentExecutionPayloadByRoot(block, source, result);
+            });
+  }
+
+  private SafeFuture<BlockImportResult> recoverParentExecutionPayloadByRoot(
+      final SignedBeaconBlock block, final SyncSource source, final BlockImportResult result) {
+    return source
+        .requestExecutionPayloadEnvelopeByRoot(block.getParentRoot())
+        .thenCompose(
+            maybeExecutionPayload ->
+                maybeExecutionPayload
+                    .map(
+                        signedExecutionPayloadEnvelope ->
+                            importRecoveredParentExecutionPayload(
+                                block, signedExecutionPayloadEnvelope, result))
+                    .orElseGet(
+                        () -> {
+                          LOG.debug(
+                              "Failed to recover parent execution payload by root {} for block at slot {}: no envelope returned",
+                              block.getParentRoot(),
+                              block.getSlot());
+                          return SafeFuture.completedFuture(result);
+                        }))
+        .exceptionally(
+            error -> {
+              LOG.debug(
+                  "Failed to recover parent execution payload by root {} for block at slot {}",
+                  block.getParentRoot(),
+                  block.getSlot(),
+                  error);
+              return result;
+            });
+  }
+
+  private SafeFuture<BlockImportResult> importRecoveredParentExecutionPayload(
+      final SignedBeaconBlock block,
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
+      final BlockImportResult originalResult) {
+    return executionPayloadManager
+        .importExecutionPayload(signedExecutionPayloadEnvelope, false)
+        .thenCompose(
+            executionPayloadImportResult -> {
+              if (executionPayloadImportResult.isSuccessful()) {
+                return blockImporter.importBlock(block);
+              }
+              if (executionPayloadImportResult.hasFailedExecution()) {
+                LOG.debug(
+                    "Failed to import recovered parent execution payload by root {} for block at slot {}: {}",
+                    block.getParentRoot(),
+                    block.getSlot(),
+                    executionPayloadImportResult.toLogString(),
+                    executionPayloadImportResult.getFailureCause().orElse(null));
+                return SafeFuture.completedFuture(
+                    BlockImportResult.failedExecutionPayloadExecution(
+                        executionPayloadImportResult.getFailureCause().orElseThrow()));
+              }
+              if (executionPayloadImportResult.isDataNotAvailable()) {
+                LOG.debug(
+                    "Recovered parent execution payload by root {} for block at slot {} is data unavailable: {}",
+                    block.getParentRoot(),
+                    block.getSlot(),
+                    executionPayloadImportResult.toLogString(),
+                    executionPayloadImportResult.getFailureCause().orElse(null));
+                return SafeFuture.completedFuture(
+                    BlockImportResult.failedDataAvailabilityCheckNotAvailable(
+                        executionPayloadImportResult.getFailureCause()));
+              }
+              LOG.debug(
+                  "Failed to import recovered parent execution payload by root {} for block at slot {}: {}",
+                  block.getParentRoot(),
+                  block.getSlot(),
+                  executionPayloadImportResult.toLogString(),
+                  executionPayloadImportResult.getFailureCause().orElse(null));
+              return SafeFuture.completedFuture(originalResult);
             });
   }
 
