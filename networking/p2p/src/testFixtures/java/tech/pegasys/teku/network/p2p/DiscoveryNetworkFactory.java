@@ -28,6 +28,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
@@ -94,7 +95,8 @@ public class DiscoveryNetworkFactory {
       int attempt = 1;
       while (true) {
         final Random random = new Random();
-        final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+        final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT - 1);
+        final int quicPort = port + 1;
         final DiscoveryConfig discoveryConfig =
             DiscoveryConfig.builder()
                 .listenUdpPort(port)
@@ -104,6 +106,7 @@ public class DiscoveryNetworkFactory {
         final NetworkConfig config =
             NetworkConfig.builder()
                 .listenPort(port)
+                .listenQuicPort(quicPort)
                 .advertisedIp(Optional.of("127.0.0.1"))
                 .networkInterface("127.0.0.1")
                 .build();
@@ -149,7 +152,7 @@ public class DiscoveryNetworkFactory {
           networks.add(network);
           return network;
         } catch (final ExecutionException e) {
-          if (e.getCause() instanceof BindException) {
+          if (ExceptionUtil.hasCause(e, BindException.class)) {
             if (attempt > 10) {
               throw new RuntimeException("Failed to find a free port after multiple attempts", e);
             }
