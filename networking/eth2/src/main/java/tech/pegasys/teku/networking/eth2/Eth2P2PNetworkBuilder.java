@@ -100,6 +100,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -121,6 +122,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
+  protected BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
   protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   protected MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
@@ -191,6 +193,7 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
+            blobKzgCommitmentsProvider,
             custodyGroupCountManagerSupplier,
             metadataMessagesFactory,
             metricsSystem,
@@ -617,6 +620,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
+    assertNotNull("blobKzgCommitmentsProvider", blobKzgCommitmentsProvider);
     assertNotNull("custodyGroupCountManagerSupplier", custodyGroupCountManagerSupplier);
     assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
@@ -662,6 +666,13 @@ public class Eth2P2PNetworkBuilder {
       final CombinedChainDataClient combinedChainDataClient) {
     checkNotNull(combinedChainDataClient);
     this.combinedChainDataClient = combinedChainDataClient;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder blobKzgCommitmentsProvider(
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
+    checkNotNull(blobKzgCommitmentsProvider);
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
     return this;
   }
 

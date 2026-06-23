@@ -18,9 +18,14 @@ import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PubKey;
+import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.multiformats.Multihash;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.IdentifyController;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,10 +88,21 @@ public class LibP2PPeer implements Peer {
     this.reputationManager = reputationManager;
     this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
-    this.pubKey = connection.secureSession().getRemotePubKey();
+    // Prefer the libp2p identity key derived from the peer id. For Noise (TCP) the secure session
+    // already exposes the identity key, but for QUIC the libp2p-TLS session reports the ephemeral
+    // certificate key (ECDSA) instead. Downstream consumers (e.g. discovery node id derivation)
+    // require the secp256k1 identity key, which is recoverable from the peer id whenever it inlines
+    // the key (the case for secp256k1 and Ed25519 identities).
+    this.pubKey =
+        extractIdentityPublicKey(peerId)
+            .orElseGet(() -> connection.secureSession().getRemotePubKey());
 
     final NodeId nodeId = new LibP2PNodeId(peerId);
-    peerAddress = new MultiaddrPeerAddress(nodeId, connection.remoteAddress());
+    final Multiaddr remoteAddress = connection.remoteAddress();
+    peerAddress = new MultiaddrPeerAddress(nodeId, remoteAddress);
+    if (remoteAddress != null) {
+      LOG.debug("Connected to peer {} via {}", nodeId, remoteAddress);
+    }
     SafeFuture.of(connection.closeFuture())
         .finish(
             this::handleConnectionClosed,
@@ -121,6 +137,25 @@ public class LibP2PPeer implements Peer {
     return pubKey;
   }
 
+  /**
+   * Recovers the libp2p identity public key embedded in the peer id. Peer ids inline the identity
+   * key (as an identity multihash) for small key types such as secp256k1 and Ed25519; larger keys
+   * (e.g. RSA) are hashed and cannot be recovered, in which case an empty result is returned.
+   */
+  private static Optional<PubKey> extractIdentityPublicKey(final PeerId peerId) {
+    try {
+      final Multihash multihash = Multihash.Companion.of(Unpooled.wrappedBuffer(peerId.getBytes()));
+      if (multihash.getDesc().getDigest() != Multihash.Digest.Identity) {
+        return Optional.empty();
+      }
+      final byte[] marshalledKey = ByteBufUtil.getBytes(multihash.getValue());
+      return Optional.of(KeyKt.unmarshalPublicKey(marshalledKey));
+    } catch (final Exception e) {
+      LOG.debug("Failed to recover identity public key from peer id {}", peerId, e);
+      return Optional.empty();
+    }
+  }
+
   @Override
   public PeerAddress getAddress() {
     return peerAddress;
@@ -129,6 +164,11 @@ public class LibP2PPeer implements Peer {
   @Override
   public Double getGossipScore() {
     return peerScoreFunction.apply(peerId);
+  }
+
+  @Override
+  public Optional<String> getAgentVersion() {
+    return maybeAgentString;
   }
 
   @Override
@@ -151,6 +191,9 @@ public class LibP2PPeer implements Peer {
 
   private void internalDisconnectImmediately(
       final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+    // capture the remote address before closing the connection as it may no longer be available
+    // afterwards (e.g. for QUIC connections)
+    final Multiaddr remoteAddress = connection.remoteAddress();
     disconnectReason = reason;
     disconnectLocallyInitiated = locallyInitiated;
     SafeFuture.of(connection.close())
@@ -160,7 +203,7 @@ public class LibP2PPeer implements Peer {
                     "Disconnected forcibly {} because {} from {}",
                     locallyInitiated ? "locally" : "remotely",
                     reason,
-                    connection.remoteAddress()),
+                    remoteAddress),
             error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
@@ -254,7 +297,7 @@ public class LibP2PPeer implements Peer {
   public void adjustReputation(final ReputationAdjustment adjustment) {
     final boolean shouldDisconnect = reputationManager.adjustReputation(getAddress(), adjustment);
     if (shouldDisconnect) {
-      disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishError(LOG);
+      disconnectCleanly(DisconnectReason.BAD_SCORE).finishError(LOG);
     }
   }
 

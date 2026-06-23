@@ -290,9 +290,9 @@ class BatchImporterTest {
 
     when(blockImporter.importBlock(block1)).thenReturn(blockImportResult1);
     when(blockImporter.importBlock(block2)).thenReturn(blockImportResult2);
-    when(executionPayloadManager.importExecutionPayload(executionPayload1))
+    when(executionPayloadManager.importExecutionPayload(executionPayload1, false))
         .thenReturn(executionPayloadImportResult1);
-    when(executionPayloadManager.importExecutionPayload(executionPayload2))
+    when(executionPayloadManager.importExecutionPayload(executionPayload2, false))
         .thenReturn(executionPayloadImportResult2);
 
     final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
@@ -322,6 +322,43 @@ class BatchImporterTest {
     verifyNoMoreInteractions(batch);
   }
 
+  @Test
+  void shouldImportBlobSidecarsAndExecutionPayloadForSameBlock() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(1));
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
+
+    final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> executionPayloadImportResult =
+        new SafeFuture<>();
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+    when(batch.getBlobSidecarsByBlockRoot()).thenReturn(Map.of(block.getRoot(), blobSidecars));
+    when(batch.getExecutionPayloadsByBlockRoot())
+        .thenReturn(Map.of(block.getRoot(), executionPayload));
+
+    when(blockImporter.importBlock(block)).thenReturn(blockImportResult);
+    when(executionPayloadManager.importExecutionPayload(executionPayload, false))
+        .thenReturn(executionPayloadImportResult);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+
+    verifyNoInteractions(blockImporter);
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
+    verifyNoInteractions(executionPayloadManager);
+
+    asyncRunner.executeQueuedActions();
+
+    blobSidecarsImportedSuccessfully(block, blobSidecars);
+    blockImportedSuccessfully(block, blockImportResult);
+    executionPayloadImportedSuccessfully(executionPayload, executionPayloadImportResult);
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
+  }
+
   private void blobSidecarsImportedSuccessfully(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     verify(blockBlobSidecarsTrackersPool).onCompletedBlockAndBlobSidecars(block, blobSidecars);
@@ -338,7 +375,7 @@ class BatchImporterTest {
   private void executionPayloadImportedSuccessfully(
       final SignedExecutionPayloadEnvelope executionPayload,
       final SafeFuture<ExecutionPayloadImportResult> importResult) {
-    ignoreFuture(verify(executionPayloadManager).importExecutionPayload(executionPayload));
+    ignoreFuture(verify(executionPayloadManager).importExecutionPayload(executionPayload, false));
     verifyNoMoreInteractions(executionPayloadManager);
     importResult.complete(ExecutionPayloadImportResult.successful(executionPayload));
   }

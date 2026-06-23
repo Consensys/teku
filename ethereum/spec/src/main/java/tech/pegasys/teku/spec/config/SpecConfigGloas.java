@@ -23,6 +23,9 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
   UInt64 BUILDER_INDEX_SELF_BUILD = UInt64.MAX_VALUE;
   UInt64 BUILDER_PAYMENT_THRESHOLD_NUMERATOR = UInt64.valueOf(6);
   UInt64 BUILDER_PAYMENT_THRESHOLD_DENOMINATOR = UInt64.valueOf(10);
+  // builder-specs
+  UInt64 MAX_EXECUTION_PAYMENT = UInt64.MAX_VALUE; // 2**64 - 1
+  long MAX_DATA_SIZE = 4096;
 
   static SpecConfigGloas required(final SpecConfig specConfig) {
     return specConfig
@@ -37,6 +40,8 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
   int getMinBuilderWithdrawabilityDelay();
 
   int getPayloadAttestationDueBps();
+
+  int getPayloadDueBps();
 
   int getPtcSize();
 

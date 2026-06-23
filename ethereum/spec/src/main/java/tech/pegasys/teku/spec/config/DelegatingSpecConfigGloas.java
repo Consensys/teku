@@ -55,6 +55,11 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public int getPayloadDueBps() {
+    return delegate.getPayloadDueBps();
+  }
+
+  @Override
   public int getPtcSize() {
     return delegate.getPtcSize();
   }

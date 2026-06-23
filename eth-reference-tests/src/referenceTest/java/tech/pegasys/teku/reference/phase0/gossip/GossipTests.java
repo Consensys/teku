@@ -22,11 +22,20 @@ public class GossipTests {
   public static final ImmutableMap<String, TestExecutor> GOSSIP_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTestExecutor())
+          .put(
+              "networking/gossip_beacon_aggregate_and_proof",
+              new GossipBeaconAggregateAndProofTestExecutor())
+          .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
+          .put("networking/gossip_blob_sidecar", new GossipBlobSidecarTestExecutor())
           // TODO: https://github.com/Consensys/teku/issues/10578
-          .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_bls_to_execution_change", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_data_column_sidecar", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_partial_data_column_sidecar", TestExecutor.IGNORE_TESTS)
+          .put(
+              "networking/gossip_bls_to_execution_change",
+              new GossipBlsToExecutionChangeTestExecutor(
+                  // TODO: this test should be fixed in the next consensus-specs release
+                  "gossip_bls_to_execution_change__ignore_pre_capella"))
+          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
           .put(
               "networking/gossip_sync_committee_contribution_and_proof",
               new GossipSyncCommitteeContributionAndProofTestExecutor())

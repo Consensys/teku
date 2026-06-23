@@ -167,10 +167,14 @@ public class PeerManager implements ConnectionHandler {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
       LOG.debug("onConnectedPeer() {}", peer.getId());
-      peerHandlers.forEach(h -> h.onConnect(peer));
-      connectSubscribers.forEach(c -> c.onConnected(peer));
       peer.subscribeDisconnect(
           (reason, locallyInitiated) -> onDisconnectedPeer(peer, reason, locallyInitiated));
+      // Eth2PeerManager installs the clean-disconnect handler used to send goodbye messages.
+      peerHandlers.forEach(h -> h.onConnect(peer));
+      if (rejectUnsuitableInboundConnection(peer)) {
+        return;
+      }
+      connectSubscribers.forEach(c -> c.onConnected(peer));
     } else {
       LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
       peer.disconnectImmediately(Optional.of(DisconnectReason.DUPLICATE_CONNECTION), true);
@@ -186,6 +190,21 @@ public class PeerManager implements ConnectionHandler {
       reputationManager.reportDisconnection(peer.getAddress(), reason, locallyInitiated);
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
+  }
+
+  private boolean rejectUnsuitableInboundConnection(final Peer peer) {
+    if (peer.connectionInitiatedLocally()) {
+      return false;
+    }
+    return reputationManager
+        .getInboundConnectionRejectionReason(peer.getAddress())
+        .map(
+            reason -> {
+              LOG.debug("Rejecting inbound connection from {} because {}", peer.getId(), reason);
+              peer.disconnectCleanly(reason).finishTrace(LOG);
+              return true;
+            })
+        .orElse(false);
   }
 
   public Stream<Peer> streamPeers() {

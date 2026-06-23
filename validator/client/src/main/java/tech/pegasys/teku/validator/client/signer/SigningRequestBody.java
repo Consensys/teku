@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.signer.AggregationSlotWrapper;
 import tech.pegasys.teku.validator.api.signer.BlockWrapper;
@@ -78,7 +79,7 @@ public record SigningRequestBody(Bytes signingRoot, SignType type, Map<String, O
             SigningRequestBody::getBlockWrapper)
         .withOptionalField(
             SignType.VALIDATOR_REGISTRATION.getName(),
-            ValidatorRegistration.SSZ_SCHEMA.getJsonTypeDefinition(),
+            ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.getJsonTypeDefinition(),
             SigningRequestBody::getValidatorRegistration)
         .withOptionalField(
             SignType.CONTRIBUTION_AND_PROOF.getName(),

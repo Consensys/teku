@@ -73,6 +73,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final AttestationUtilGloas attestationUtilGloas;
+  private final ExecutionRequestsProcessorGloas executionRequestsProcessorGloas;
 
   public BlockProcessorGloas(
       final SpecConfigGloas specConfig,
@@ -112,6 +113,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     this.beaconStateAccessorsGloas = beaconStateAccessors;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.attestationUtilGloas = attestationUtil;
+    this.executionRequestsProcessorGloas = executionRequestsProcessor;
   }
 
   @Override
@@ -138,12 +140,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(beaconBlock.getBody());
     final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
-    final ExecutionPayloadBid parentBid = stateGloas.getLatestExecutionPayloadBid();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    if (!bid.getParentBlockHash().equals(parentBid.getBlockHash())) {
+    if (!miscHelpersGloas.isExecutionPayloadBidForFullParent(state, bid)) {
       // Parent was EMPTY -- no execution requests expected
-      if (!requests.equals(schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault())) {
+      if (!miscHelpersGloas.isEmptyExecutionRequests(requests)) {
         throw new BlockProcessingException(
             "No execution requests were expected for an EMPTY parent");
       }
@@ -151,16 +152,16 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Parent was FULL -- verify the bid commitment and apply the payload
-    if (!requests.hashTreeRoot().equals(parentBid.getExecutionRequestsRoot())) {
+    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestExecutionPayloadBid(
+        state, requests)) {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
-
     applyParentExecutionPayload(stateGloas, requests, validatorExitContextSupplier);
   }
 
   // apply_parent_execution_payload
-  protected void applyParentExecutionPayload(
+  public void applyParentExecutionPayload(
       final MutableBeaconStateGloas state,
       final ExecutionRequests requests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
@@ -170,29 +171,26 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
     // Process execution requests from parent's payload. The execution requests are processed at
     // state.slot (child's slot), not the parent's slot.
-    final long startTimeNanos = System.nanoTime();
+    final long startTimeMillis = System.currentTimeMillis();
+    LOG.debug("Starting processing {} deposit requests", requests.getDeposits().size());
+    executionRequestsProcessorGloas.processDepositRequests(state, requests.getDeposits());
     LOG.debug(
-        "Starting processing builder deposits from {} execution request deposits at timestampNanos={}",
+        "Finished processing {} deposit requests. Pending deposits: {}, builders: {}. Took {} ms.",
         requests.getDeposits().size(),
-        startTimeNanos);
-    executionRequestsProcessor.processDepositRequests(state, requests.getDeposits());
-    final long finishTimeNanos = System.nanoTime();
-    LOG.debug(
-        "Finished processing builder deposits at timestampNanos={}. Pending deposits: {}, builders: {}, elapsedNanos={}",
-        finishTimeNanos,
         state.getPendingDeposits().size(),
         state.getBuilders().size(),
-        finishTimeNanos - startTimeNanos);
-    executionRequestsProcessor.processWithdrawalRequests(
+        System.currentTimeMillis() - startTimeMillis);
+    executionRequestsProcessorGloas.processWithdrawalRequests(
         state, requests.getWithdrawals(), validatorExitContextSupplier);
-    executionRequestsProcessor.processConsolidationRequests(state, requests.getConsolidations());
+    executionRequestsProcessorGloas.processConsolidationRequests(
+        state, requests.getConsolidations());
 
     // Settle the builder payment
-    if (parentEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
+    if (parentEpoch.equals(beaconStateAccessorsGloas.getCurrentEpoch(state))) {
       final UInt64 paymentIndex =
           parentSlot.mod(specConfig.getSlotsPerEpoch()).plus(specConfig.getSlotsPerEpoch());
       beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
-    } else if (parentEpoch.equals(beaconStateAccessors.getPreviousEpoch(state))) {
+    } else if (parentEpoch.equals(beaconStateAccessorsGloas.getPreviousEpoch(state))) {
       final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
       beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
     } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {

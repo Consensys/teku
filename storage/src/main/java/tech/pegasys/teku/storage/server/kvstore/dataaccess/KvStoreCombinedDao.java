@@ -192,24 +192,16 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
-  /**
-   * Returns the greatest data column sidecar slot less than or equal to {@code slot}. The lookup
-   * uses a floor key for {@code slot}, so it seeks directly to the newest eligible sidecar entry.
-   */
-  Optional<UInt64> getPreviousDataColumnSidecarSlotAtOrBefore(UInt64 slot);
-
-  /**
-   * Returns the greatest non-canonical data column sidecar slot less than or equal to {@code slot}.
-   * The lookup uses a floor key for {@code slot}, so it seeks directly to the newest eligible
-   * sidecar entry.
-   */
-  Optional<UInt64> getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(UInt64 slot);
-
   Optional<UInt64> getEarliestAvailableDataColumnSlot();
+
+  Optional<UInt64> getLastDataColumnSidecarPrunedSlot();
 
   Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
   Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
+
+  /** Triggers a full, blocking compaction of the underlying storage to reclaim freed space. */
+  void compact();
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -321,6 +313,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void setEarliestBlockSlot(UInt64 slot);
 
     void setEarliestAvailableDataColumnSlot(UInt64 slot);
+
+    void setLastDataColumnSidecarPrunedSlot(UInt64 slot);
 
     void deleteEarliestBlockSlot();
 

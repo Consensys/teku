@@ -22,7 +22,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -84,6 +83,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -101,6 +102,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
@@ -146,8 +148,8 @@ public class Spec {
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
       final Map<SpecMilestone, SpecVersion> specVersions,
       final ForkSchedule forkSchedule) {
-    Preconditions.checkArgument(specVersions != null && !specVersions.isEmpty());
-    Preconditions.checkArgument(forkSchedule != null);
+    checkArgument(specVersions != null && !specVersions.isEmpty());
+    checkArgument(forkSchedule != null);
     this.specConfigAndParent = specConfigAndParent;
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
@@ -607,6 +609,20 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeTimeMillisAtSlot(genesisTimeMillis, slot);
   }
 
+  public boolean isTimeReached(final UInt64 currentTimeMillis, final UInt64 earliestTimeMillis) {
+    return currentTimeMillis.isGreaterThanOrEqualTo(earliestTimeMillis);
+  }
+
+  public boolean isBeforeTimeInSlot(
+      final UInt64 slot,
+      final UInt64 genesisTimeMillis,
+      final UInt64 currentTimeMillis,
+      final int timeInSlotMillisExclusive) {
+    return !isTimeReached(
+        currentTimeMillis,
+        computeTimeMillisAtSlot(slot, genesisTimeMillis).plus(timeInSlotMillisExclusive));
+  }
+
   public Bytes computeSigningRoot(final BeaconBlock block, final Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
@@ -724,6 +740,10 @@ public class Spec {
 
   public Optional<Integer> getPayloadAttestationDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
+  }
+
+  public Optional<Integer> getPayloadDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getPayloadDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
@@ -1041,6 +1061,37 @@ public class Spec {
     return atState(state)
         .getWithdrawalsHelpers()
         .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
+  }
+
+  /**
+   * Returns the withdrawals to include in Engine API payload attributes for the supplied
+   * post-slot-processing state.
+   *
+   * <p>For pre-GLOAS parents this is the state's expected withdrawals. For a GLOAS parent with an
+   * empty payload, this is the state's payload_expected_withdrawals. For a GLOAS parent with a full
+   * payload, the parent execution requests must be applied first so the withdrawals reflect the
+   * effective state used for payload building.
+   */
+  public Optional<List<Withdrawal>> getPayloadAttributeWithdrawals(
+      final BeaconState state,
+      final ForkChoicePayloadStatus parentPayloadStatus,
+      final Optional<ExecutionRequests> parentExecutionRequests) {
+    return switch (parentPayloadStatus) {
+      case PAYLOAD_STATUS_PENDING -> getExpectedWithdrawals(state);
+      case PAYLOAD_STATUS_EMPTY ->
+          Optional.of(BeaconStateGloas.required(state).getPayloadExpectedWithdrawals().asList());
+      case PAYLOAD_STATUS_FULL -> {
+        final ExecutionRequests executionRequests =
+            parentExecutionRequests.orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Parent execution requests are required for GLOAS FULL parent payload attributes"));
+        final ForkChoiceUtilGloas forkChoiceUtilGloas =
+            ForkChoiceUtilGloas.required(atState(state).getForkChoiceUtil());
+        yield Optional.of(
+            forkChoiceUtilGloas.getPayloadAttributeWithdrawals(state, executionRequests).asList());
+      }
+    };
   }
 
   // Block Processor Utils

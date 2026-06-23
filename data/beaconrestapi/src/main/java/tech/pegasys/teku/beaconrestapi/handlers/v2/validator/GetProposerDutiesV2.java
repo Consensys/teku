@@ -56,29 +56,15 @@ public class GetProposerDutiesV2 extends RestApiEndpoint {
 
                     Duties should only need to be checked once per epoch,
                     however a chain reorganization could occur that results in a change of duties. For full safety,
-                    you should monitor head events and confirm the dependent root in this response matches. After Fulu,
-                    different checks need to be performed as the dependent root changes due to deterministic proposer lookahead.
+                    you should monitor head_v2 events and confirm the dependent root in this response matches:
+
+                     - event.current_epoch_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`
+
+                     - event.next_epoch_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`
 
 
-                    Before Fulu:
-
-                     - event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`
-
-                     - event.block otherwise
-
-                     - dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch) - 1)`
-
-
-                    After Fulu:
-
-                     - event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`
-
-                     - event.block otherwise
-
-                     - dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)`
-
-
-                    The dependent_root value is the genesis block root in the case of underflow.""")
+                    The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)`
+                    or the genesis block root in the case of underflow.""")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Request successful", PROPOSER_DUTIES_TYPE)

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,15 +32,23 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.execution.ExecutionRequestsProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorElectra {
+public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorFulu {
+
+  // New builder deposit signatures are checked with BLS batch verification, which only returns a
+  // single pass/fail for the whole batch. A failure does not reveal which signature is invalid, so
+  // a single bad signature forces a fallback to verify every signature in the batch one by one.
+  // Capping the batch at this size bounds that cost: a bad signature only triggers individual
+  // re-verification within its own sub-batch rather than across all new builder deposits.
+  private static final int NEW_BUILDER_DEPOSIT_SIGNATURE_VERIFICATION_BATCH_SIZE = 256;
+
   private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
@@ -50,7 +59,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       final MiscHelpersGloas miscHelpers,
       final SpecConfigGloas specConfig,
       final PredicatesGloas predicates,
-      final ValidatorsUtil validatorsUtil,
+      final ValidatorsUtilGloas validatorsUtil,
       final BeaconStateMutatorsGloas beaconStateMutators,
       final BeaconStateAccessorsGloas beaconStateAccessors) {
     super(
@@ -82,17 +91,17 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       // this pubkey, apply the deposit to their balance
       final boolean isBuilder =
           beaconStateAccessorsGloas.getBuilderIndex(state, pubkey).isPresent();
-      final boolean isValidator = validatorsUtil.getValidatorIndex(state, pubkey).isPresent();
-      final boolean isPendingValidator =
-          verifiedPendingValidatorPubkeys.contains(pubkey)
-              || (miscHelpersGloas.isPendingValidator(stateElectra.getPendingDeposits(), pubkey)
-                  && verifiedPendingValidatorPubkeys.add(pubkey));
       final boolean isNewBuilderDeposit =
           !isBuilder
               && predicatesGloas.isBuilderWithdrawalCredential(
                   depositRequest.getWithdrawalCredentials())
-              && !isValidator
-              && !isPendingValidator;
+              // not is_validator
+              && validatorsUtil.getValidatorIndex(state, pubkey).isEmpty()
+              // not is_pending_validator
+              && !(verifiedPendingValidatorPubkeys.contains(pubkey)
+                  || (miscHelpersGloas.isPendingValidator(
+                          stateElectra.getPendingDeposits().asList(), pubkey)
+                      && verifiedPendingValidatorPubkeys.add(pubkey)));
 
       if (isNewBuilderDeposit) {
         // new builder deposits will be processed at the end so we can batch the signature
@@ -116,12 +125,16 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       }
     }
 
-    final boolean newBuilderDepositSignaturesAreAllGood =
-        batchVerifyNewBuilderDepositSignatures(newBuilderDeposits);
-
-    for (final DepositRequest newBuilderDeposit : newBuilderDeposits) {
-      applyDepositForBuilder(state, newBuilderDeposit, newBuilderDepositSignaturesAreAllGood);
-    }
+    Lists.partition(newBuilderDeposits, NEW_BUILDER_DEPOSIT_SIGNATURE_VERIFICATION_BATCH_SIZE)
+        .forEach(
+            newBuilderDepositsBatch -> {
+              final boolean newBuilderDepositSignaturesAreAllGood =
+                  batchVerifyNewBuilderDepositSignatures(newBuilderDepositsBatch);
+              for (final DepositRequest newBuilderDeposit : newBuilderDepositsBatch) {
+                applyDepositForBuilder(
+                    state, newBuilderDeposit, newBuilderDepositSignaturesAreAllGood);
+              }
+            });
   }
 
   // Apply builder deposits immediately

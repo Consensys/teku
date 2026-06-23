@@ -13,9 +13,15 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.block;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -74,5 +80,19 @@ public class BlockProcessorFulu extends BlockProcessorElectra {
     return miscHelpersFulu
         .getBlobParameters(miscHelpers.computeEpochAtSlot(state.getSlot()))
         .maxBlobsPerBlock();
+  }
+
+  // modified to remove support for the former deposit mechanism.
+  @Override
+  protected void verifyOutstandingDepositsAreProcessed(
+      final BeaconState state, final BeaconBlockBody body) {
+    checkArgument(
+        body.getDeposits().isEmpty(),
+        "process_operations: Verify that former deposit mechanism has been disabled");
+  }
+
+  @Override
+  public void processDeposits(final MutableBeaconState state, final SszList<Deposit> deposits) {
+    // NOOP
   }
 }

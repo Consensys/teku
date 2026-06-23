@@ -20,9 +20,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.web3j.protocol.ipc.IpcService;
 import org.web3j.protocol.ipc.UnixIpcService;
-import org.web3j.protocol.ipc.WindowsIpcService;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -43,16 +41,10 @@ class Web3jIpcClient extends Web3JClient {
     if (jwtConfig.isPresent()) {
       LOG.warn("JWT configuration is ignored with IPC endpoint URI");
     }
-    final String ipcPath = Path.of(endpoint).toString();
-    final IpcService ipcService;
-    if (SystemUtils.IS_OS_WINDOWS) {
-      ipcService = new WindowsIpcService(ipcPath);
-    } else if (SystemUtils.IS_OS_UNIX) {
-      ipcService = new UnixIpcService(ipcPath);
-    } else {
+    if (!SystemUtils.IS_OS_UNIX) {
       throw new InvalidConfigurationException(
-          "IPC is supported only on Windows and UNIX-compliant operating systems");
+          "IPC is supported only on UNIX-compliant operating systems");
     }
-    initWeb3jService(ipcService);
+    initWeb3jService(new UnixIpcService(Path.of(endpoint).toString()));
   }
 }

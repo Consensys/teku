@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -28,10 +29,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -152,6 +156,14 @@ public class GossipValidationHelper {
         recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
+  @SuppressWarnings("unused")
+  public boolean currentFinalizedCheckpointIsAncestorOfAttestationBlock(final Bytes32 blockRoot) {
+    // All nodes in the proto-array descend from the finalized block, so no production validation
+    // is needed for this rule. The reference-test executor overrides this method to model
+    // generated tests with fake finalized checkpoint roots that cannot be represented in Store.
+    return true;
+  }
+
   public boolean isProposerTheExpectedProposer(
       final UInt64 proposerIndex, final UInt64 slot, final BeaconState postState) {
     final int expectedProposerIndex = spec.getBeaconProposerIndex(postState, slot);
@@ -168,6 +180,38 @@ public class GossipValidationHelper {
 
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
     return recentChainData.getSlotForBlockRoot(blockRoot);
+  }
+
+  public InternalValidationResult validatePayloadStatus(
+      final AttestationUtil attestationUtil,
+      final AttestationData attestationData,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload) {
+    final AttestationValidationResult payloadStatusValidationResult =
+        attestationUtil.validatePayloadStatus(
+            attestationData, getSlotForBlockRoot(attestationData.getBeaconBlockRoot()));
+    // [REJECT] attestation.data.index == 0 if block.slot == attestation.data.slot.
+    if (!payloadStatusValidationResult.isValid()) {
+      return reject(payloadStatusValidationResult.getReason().orElse("Invalid payload status"));
+    }
+
+    final Bytes32 blockRoot = attestationData.getBeaconBlockRoot();
+    if (spec.atSlot(attestationData.getSlot())
+        .getForkChoiceUtil()
+        .getFullPayloadVoteHint(attestationData.getIndex())) {
+      // [REJECT] If attestation.data.index == 1 (payload present for a past block), the execution
+      // payload for block passes validation.
+      if (blockRootsWithInvalidExecutionPayload.contains(blockRoot)) {
+        return InternalValidationResult.reject(
+            "Execution payload for full payload attestation is invalid");
+      }
+      // [IGNORE] When attestation.data.index == 1 (payload present for a past block), the execution
+      // payload for block has been seen.
+      if (getRecentlyImportedExecutionPayload(blockRoot).isEmpty()) {
+        return InternalValidationResult.SAVE_FOR_FUTURE;
+      }
+    }
+
+    return InternalValidationResult.ACCEPT;
   }
 
   public boolean isBlockAvailable(final Bytes32 blockRoot) {
@@ -242,5 +286,20 @@ public class GossipValidationHelper {
     final Optional<Bytes32> maybeBlockHash =
         recentChainData.getExecutionBlockHashForBlockRoot(blockRoot);
     return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getRecentlyImportedExecutionPayload(
+      final Bytes32 blockRoot) {
+    return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot);
+  }
+
+  public Optional<UInt64> getGasLimitForExecutionPayload(final Bytes32 blockRoot) {
+    return getRecentlyImportedExecutionPayload(blockRoot)
+        .map(SignedExecutionPayloadEnvelope::getMessage)
+        .map(envelope -> envelope.getPayload().getGasLimit());
+  }
+
+  private static InternalValidationResult reject(final String reason) {
+    return InternalValidationResult.create(ValidationResultCode.REJECT, reason);
   }
 }

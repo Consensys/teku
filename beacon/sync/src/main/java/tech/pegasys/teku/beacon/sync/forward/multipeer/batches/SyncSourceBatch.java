@@ -510,9 +510,11 @@ public class SyncSourceBatch implements Batch {
     return true;
   }
 
-  private boolean isParentBlockFull(
+  public static boolean isParentBlockFull(
       final SignedBeaconBlock parentBlock, final SignedBeaconBlock block) {
-    if (parentBlock.getMessage().getBody().toVersionGloas().isEmpty()) {
+    final Optional<BeaconBlockBodyGloas> maybeParentBlockBody =
+        parentBlock.getMessage().getBody().toVersionGloas();
+    if (maybeParentBlockBody.isEmpty()) {
       // we don't expect execution payloads for blocks prior to Gloas
       return false;
     }
@@ -521,10 +523,7 @@ public class SyncSourceBatch implements Batch {
         .getMessage()
         .getParentBlockHash()
         .equals(
-            BeaconBlockBodyGloas.required(parentBlock.getMessage().getBody())
-                .getSignedExecutionPayloadBid()
-                .getMessage()
-                .getBlockHash());
+            maybeParentBlockBody.get().getSignedExecutionPayloadBid().getMessage().getBlockHash());
   }
 
   private void logBatchInvalidBecauseOfExecutionPayloadMissing(final SignedBeaconBlock block) {

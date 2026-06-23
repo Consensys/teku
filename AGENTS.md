@@ -46,11 +46,26 @@ Teku is an open-source Ethereum consensus client written in Java, implementing a
 # Run reference tests (consensus spec tests)
 ./gradlew referenceTest
 
+# Run one reference suite manually (example)
+ENV_TEST_TYPE=fork_choice/on_attestation ENV_SPEC=minimal ENV_MILESTONE=gloas ./gradlew --no-daemon :eth-reference-tests:referenceTest --tests tech.pegasys.teku.reference.ManualReferenceTestRunner -x generateReferenceTestClasses
+
 # Run acceptance tests
 ./gradlew acceptanceTest
 
 # Run property tests
 ./gradlew propertyTest
+```
+
+### Specrefs
+Spec references live in `specrefs/` and reference the [Ethereum consensus specs](https://github.com/ethereum/consensus-specs/) or the user's local checkout of that repository. Run from the repository root:
+```bash
+ethspecify process --path=specrefs
+ethspecify check --path=specrefs
+```
+
+When updating specrefs, keep exceptions only for references that are genuinely unimplemented, unnecessary, or intentionally implemented differently in Teku. If a reference has a real implementation source, remove it from exceptions and add stable `sources` anchors. After large generated diffs, check for duplicate entries:
+```bash
+rg '^- name:' specrefs/*.yml | sed 's/.*:- name: //' | sort | uniq -d
 ```
 
 ### Distribution

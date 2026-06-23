@@ -115,6 +115,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
+  // modified to remove support for the former deposit mechanism
+  @Override
+  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
+    return true;
+  }
+
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
@@ -283,7 +289,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
+    return verifyDataColumnSidecarKzgProofs(
+        dataColumnSidecar, DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments());
+  }
 
+  public boolean verifyDataColumnSidecarKzgProofs(
+      final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getColumn().size())
             .mapToObj(
@@ -294,9 +305,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
             .collect(Collectors.toList());
     return getKzg()
         .verifyCellProofBatch(
-            DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments().stream()
-                .map(SszKZGCommitment::getKZGCommitment)
-                .toList(),
+            kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList(),
             cellWithIds,
             dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }
