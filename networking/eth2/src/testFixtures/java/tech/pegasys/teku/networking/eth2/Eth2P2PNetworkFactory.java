@@ -647,14 +647,20 @@ public class Eth2P2PNetworkFactory {
           peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
 
       final Random random = new Random();
-      final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      final int tcpPort = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      int candidateQuicPort;
+      do {
+        candidateQuicPort = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      } while (candidateQuicPort == tcpPort);
+      final int quicPort = candidateQuicPort;
 
       return P2PConfig.builder()
           .specProvider(spec)
           .targetSubnetSubscriberCount(2)
           .network(
               b ->
-                  b.listenPort(port)
+                  b.listenPort(tcpPort)
+                      .listenQuicPort(quicPort)
                       .networkInterface("127.0.0.1")
                       .wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
