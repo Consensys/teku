@@ -12,6 +12,8 @@
 
 ### Additions and Improvements
 
+- Added some extra fields to the peers output for beacon-apis #606. Consumers of the peers endpoint should be aware of this new optional data.
+
 ### Bug Fixes
 
 - Prevent RPC rate-limited peers from immediately reconnecting inbound.
