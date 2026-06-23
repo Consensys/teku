@@ -36,6 +36,7 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.StubSyncSource;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
@@ -408,12 +409,14 @@ class BatchImporterTest {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
 
+    // StubSyncSource returns Optional.empty() for by-root requests, simulating a parent execution
+    // payload envelope that cannot be recovered
+    final StubSyncSource stubSyncSource = new StubSyncSource();
+    when(batch.getSource()).thenReturn(Optional.of(stubSyncSource));
     when(batch.getBlocks()).thenReturn(List.of(block));
 
     final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
     when(blockImporter.importBlock(block)).thenReturn(firstImport);
-    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
     asyncRunner.executeQueuedActions();
@@ -422,7 +425,7 @@ class BatchImporterTest {
     firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
 
     // No envelope available: the block is not retried and the batch import fails
-    verify(syncSource).requestExecutionPayloadEnvelopeByRoot(block.getParentRoot());
+    stubSyncSource.assertRequestedExecutionPayloadEnvelopeByRoot(block.getParentRoot());
     ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
   }
