@@ -55,6 +55,8 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
     when(peer.getAddress()).thenReturn(new PeerAddress(peerId));
     when(peer.isConnected()).thenReturn(true);
     when(peer.connectionInitiatedLocally()).thenReturn(false);
+    when(peer.getAgentVersion()).thenReturn(Optional.empty());
+    when(peer.getGossipScore()).thenReturn(2.0);
   }
 
   @Test
@@ -101,6 +103,7 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             "{\"data\":{\"peer_id\":\"1111111111111111111111111111177em\","
                 + "\"enr\":\"enr:test\","
-                + "\"last_seen_p2p_address\":\"1111111111111111111111111111177em\",\"state\":\"connected\",\"direction\":\"inbound\"}}");
+                + "\"last_seen_p2p_address\":\"1111111111111111111111111111177em\","
+                + "\"state\":\"connected\",\"direction\":\"inbound\",\"score\":2.0}}");
   }
 }
