@@ -385,11 +385,16 @@ public class KvStoreDatabase implements Database {
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
+            final Optional<SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayload =
+                Optional.ofNullable(blindedExecutionPayloads.get(block.getRoot()));
+            blindedExecutionPayload.ifPresent(
+                envelope -> updater.addBlindedExecutionPayloadEnvelope(block.getRoot(), envelope));
             // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
             // availability period
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
@@ -752,6 +757,7 @@ public class KvStoreDatabase implements Database {
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
@@ -777,7 +783,8 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
+    storeFinalizedBlocksToDao(
+        blocks, blobSidecarsBySlot, blindedExecutionPayloads, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
