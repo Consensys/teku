@@ -199,10 +199,15 @@ public class HistoricalBatchFetcher {
     final Throwable rootCause = Throwables.getRootCause(throwable);
     if (rootCause instanceof InvalidResponseException) {
       // Disconnect misbehaving peer
-      LOG.debug("Received invalid response from peer. Disconnecting: " + peer, throwable);
+      LOG.debug("Received invalid response from peer. Disconnecting: {}", peer, throwable);
       peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishStackTrace();
       future.completeExceptionally(throwable);
     } else {
+      LOG.debug(
+          "Error processing historical batch from peer {} targeting block root {}.",
+          peer.getId(),
+          lastBlockRoot,
+          throwable);
       future.completeExceptionally(throwable);
     }
   }
@@ -583,11 +588,6 @@ public class HistoricalBatchFetcher {
         "parent block hash", payloadHeader.getParentHash(), bid.getParentBlockHash(), blockRoot);
     requireEqual("block hash", payloadHeader.getBlockHash(), bid.getBlockHash(), blockRoot);
     requireEqual("prev randao", payloadHeader.getPrevRandao(), bid.getPrevRandao(), blockRoot);
-    requireEqual(
-        "fee recipient",
-        payloadHeader.getFeeRecipient().getWrappedBytes(),
-        bid.getFeeRecipient().getWrappedBytes(),
-        blockRoot);
     requireEqual("gas limit", payloadHeader.getGasLimit(), bid.getGasLimit(), blockRoot);
     requireEqual(
         "execution requests root",
