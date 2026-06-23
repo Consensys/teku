@@ -715,8 +715,19 @@ tasks.register('deploy') {}
 generateLicenseReport.enabled = false
 checkLicense.enabled = false
 tasks.register('licenseCheck', Exec) {
+	def output = new ByteArrayOutputStream()
 	workingDir rootDir
 	commandLine './gradlew', 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
+	standardOutput = output
+	errorOutput = output
+	ignoreExitValue = true
+	doLast {
+		def result = executionResult.get()
+		if (result.exitValue != 0) {
+			logger.error(output.toString().trim())
+			throw new GradleException("License check failed")
+		}
+	}
 }
 if (project.hasProperty('enableLicenseReport')) {
 	generateLicenseReport.enabled = true
