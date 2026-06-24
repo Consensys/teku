@@ -19,37 +19,11 @@ on:
       - master
     tags:
       - '*'
-    # Keep in sync with ci-skipped.yml `paths:` — that stub reports the required
-    # checks green when only these paths change; without it the PR would stall.
-    paths-ignore:
-      - '**/*.md'
-      - 'LICENSE*'
-      - 'NOTICE*'
-      - 'CHANGELOG*'
-      - 'CODEOWNERS'
-      - '.gitignore'
-      - '.gitattributes'
-      - '.codespell/**'
-      - 'specrefs/**'
-      - 'mlc_config.json'
   pull_request:
     branches:
       - master
       - '**prototype**'
       - '**devnet**'
-    # Keep in sync with ci-skipped.yml `paths:` — that stub reports the required
-    # checks green when only these paths change; without it the PR would stall.
-    paths-ignore:
-      - '**/*.md'
-      - 'LICENSE*'
-      - 'NOTICE*'
-      - 'CHANGELOG*'
-      - 'CODEOWNERS'
-      - '.gitignore'
-      - '.gitattributes'
-      - '.codespell/**'
-      - 'specrefs/**'
-      - 'mlc_config.json'
   workflow_dispatch:
     inputs:
       include_hash_in_docker:
@@ -79,7 +53,93 @@ permissions: read-all
 
 jobs:
 
+  # ============================================================================
+  # ** DOCS-ONLY SHORT-CIRCUIT (the `changes` gate) **
+  # ----------------------------------------------------------------------------
+  # WHAT: Skip the heavy CI pipeline when a PR/push changes ONLY docs-type files
+  # (see the path list in the `changes` job below), while still satisfying the
+  # required status checks on branch protection.
+  #
+  # HOW: `changes` diffs the PR/push and sets the output `code`, which every
+  # gated job reads as needs.changes.outputs.code:
+  #
+  #     code == "true"   ->  FULL pipeline runs  (all gated jobs execute)
+  #     code == "false"  ->  heavy jobs are SKIPPED  (docs-only short-circuit);
+  #                          the test aggregators report success, so the required
+  #                          checks (spotless, moduleChecks, assemble, unitTests,
+  #                          integrationTests, propertyTests, referenceTests) go
+  #                          green in seconds.
+  #
+  # code is "true" when any non-doc file changed, OR it's a tag build, OR a manual
+  # (workflow_dispatch) run. It is "false" only for a docs-only push/PR.
+  #
+  # WHY ONE GATE (and not two workflows): this replaces the old
+  # ci.yml + ci-skipped.yml pair. On a mixed (code + docs) PR BOTH of those fired,
+  # emitting two status checks per required name and racing -- the no-op stub could
+  # flip auto-merge green before the real CI finished. One gate => one check per
+  # name => no race.
+  #
+  # IMPORTANT: ci.yml must NOT use `paths-ignore`. A job skipped via `if:` counts
+  # as a PASSING required check, but a whole workflow skipped by a path filter
+  # leaves its required checks stuck on "Expected" forever and blocks merge.
+  # ============================================================================
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.detect.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - name: Detect non-doc changes
+        id: detect
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+            range="$base...$head"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+            range="$base $head"
+          fi
+          emit() { echo "code=$1" >> "$GITHUB_OUTPUT"; echo "Result: code=$1"; exit 0; }
+          # Without a usable base (new branch/tag, force-push) we cannot diff: run full.
+          if [ -z "${base:-}" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No usable base ('${base:-}'); running full pipeline."
+            emit true
+          fi
+          if ! changed="$(git diff --name-only $range)"; then
+            echo "git diff failed for range '$range'; running full pipeline."
+            emit true
+          fi
+          echo "Changed files:"
+          echo "$changed"
+          # List of doc-classified changes
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              *.md | \
+              LICENSE* | \
+              NOTICE* | \
+              CHANGELOG* | \
+              CODEOWNERS | \
+              .gitignore | \
+              .gitattributes | \
+              .codespell/* | \
+              specrefs/* | \
+              mlc_config.json) ;;
+              *) echo "Non-doc file changed: $f"; emit true ;;
+            esac
+          done <<< "$changed"
+          emit false
+
   spotless:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -93,6 +153,8 @@ jobs:
           ./gradlew spotlessCheck
 
   moduleChecks:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -106,6 +168,8 @@ jobs:
           ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
   assemble:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     # assemble is in our critical path so we want it to finish as quick as possible
     runs-on: ubuntu-latest-128
     outputs:
@@ -268,21 +332,25 @@ jobs:
   unitTestsResult:
     name: unitTests
     runs-on: ubuntu-24.04
-    needs: unitTests
+    needs: [changes, unitTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; unitTests not required."
+            exit 0
+          fi
           echo "unitTests result: ${{ needs.unitTests.result }}"
           if [ "${{ needs.unitTests.result }}" != "success" ]; then
             echo "❌ One or more unitTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All unitTests matrix jobs passed."   
+          echo "✅ All unitTests matrix jobs passed."
 
   unitTestsReport:
     runs-on: ubuntu-24.04
-    needs: unitTests
-    if: always()
+    needs: [changes, unitTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
@@ -314,10 +382,14 @@ jobs:
   integrationTestsResult:
     name: integrationTests
     runs-on: ubuntu-24.04
-    needs: integrationTests
+    needs: [changes, integrationTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; integrationTests not required."
+            exit 0
+          fi
           echo "integrationTests result: ${{ needs.integrationTests.result }}"
           if [ "${{ needs.integrationTests.result }}" != "success" ]; then
             echo "❌ One or more integrationTests matrix jobs failed."
@@ -327,8 +399,8 @@ jobs:
 
   integrationTestsReport:
     runs-on: ubuntu-24.04
-    needs: integrationTests
-    if: always()
+    needs: [changes, integrationTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
@@ -360,21 +432,25 @@ jobs:
   propertyTestsResult:
     name: propertyTests
     runs-on: ubuntu-24.04
-    needs: propertyTests
+    needs: [changes, propertyTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; propertyTests not required."
+            exit 0
+          fi
           echo "propertyTests result: ${{ needs.propertyTests.result }}"
           if [ "${{ needs.propertyTests.result }}" != "success" ]; then
             echo "❌ One or more propertyTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All propertyTests matrix jobs passed."    
+          echo "✅ All propertyTests matrix jobs passed."
 
   propertyTestsReport:
     runs-on: ubuntu-24.04
-    needs: propertyTests
-    if: always()
+    needs: [changes, propertyTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
@@ -406,21 +482,25 @@ jobs:
   acceptanceTestsResult:
     name: acceptanceTests
     runs-on: ubuntu-24.04
-    needs: acceptanceTests
+    needs: [changes, acceptanceTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; acceptanceTests not required."
+            exit 0
+          fi
           echo "acceptanceTests result: ${{ needs.acceptanceTests.result }}"
           if [ "${{ needs.acceptanceTests.result }}" != "success" ]; then
             echo "❌ One or more acceptanceTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All acceptanceTests matrix jobs passed."    
+          echo "✅ All acceptanceTests matrix jobs passed."
 
   acceptanceTestsReport:
     runs-on: ubuntu-24.04
-    needs: acceptanceTests
-    if: always()
+    needs: [changes, acceptanceTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
@@ -587,21 +667,25 @@ jobs:
   referenceTestsResult:
     name: referenceTests
     runs-on: ubuntu-24.04
-    needs: referenceTests
+    needs: [changes, referenceTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; referenceTests not required."
+            exit 0
+          fi
           echo "referenceTests result: ${{ needs.referenceTests.result }}"
           if [ "${{ needs.referenceTests.result }}" != "success" ]; then
             echo "❌ One or more referenceTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All referenceTests matrix jobs passed."    
+          echo "✅ All referenceTests matrix jobs passed."
 
   referenceTestsReport:
     runs-on: ubuntu-24.04
-    needs: referenceTests
-    if: always()
+    needs: [changes, referenceTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
