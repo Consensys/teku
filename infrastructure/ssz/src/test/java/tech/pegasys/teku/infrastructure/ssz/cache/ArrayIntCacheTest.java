@@ -146,14 +146,18 @@ public class ArrayIntCacheTest {
   }
 
   @Test
-  void invalidateInt_clearsSlotAndIsNoOpBeyondCapacity() {
+  void invalidateInt_clearsSlot() {
     final ArrayIntCache<String> cache = new ArrayIntCache<>(4);
     cache.invalidateWithNewValueInt(1, "a");
 
     cache.invalidateInt(1);
     assertThat(cache.getCachedInt(1)).isNull();
+  }
 
-    // beyond the backing array length: no exception, no effect
+  @Test
+  void invalidateInt_ignoresIndexBeyondCapacity() {
+    final ArrayIntCache<String> cache = new ArrayIntCache<>(4);
+
     cache.invalidateInt(9999);
     assertThat(cache.getCachedInt(9999)).isNull();
   }
