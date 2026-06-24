@@ -39,6 +39,7 @@ public class ExecutionLayerConfiguration {
   public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
   public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED = true;
   public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
+  public static final boolean DEFAULT_USE_NEW_ENGINE_API = true;
 
   private final Spec spec;
   private final Optional<String> engineEndpoint;
@@ -170,7 +171,7 @@ public class ExecutionLayerConfiguration {
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
     private boolean exchangeCapabilitiesMonitoringEnabled =
         DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
-    private boolean useNewEngineApiClient = false;
+    private boolean useNewEngineApiClient = DEFAULT_USE_NEW_ENGINE_API;
 
     private Builder() {}
 

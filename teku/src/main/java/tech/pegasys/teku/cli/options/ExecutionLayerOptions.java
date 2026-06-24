@@ -22,6 +22,7 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_NEW_ENGINE_API;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
@@ -154,7 +155,7 @@ public class ExecutionLayerOptions {
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       hidden = true)
-  private boolean useNewEngineApiClient = false;
+  private boolean useNewEngineApiClient = DEFAULT_USE_NEW_ENGINE_API;
 
   public void configure(final Builder builder) {
     builder.executionLayer(

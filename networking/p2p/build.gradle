@@ -41,6 +41,7 @@ dependencies {
 	testFixturesImplementation testFixtures(project(':infrastructure:async'))
 	testFixturesImplementation testFixtures(project(':infrastructure:crypto'))
 	testFixturesImplementation testFixtures(project(':infrastructure:time'))
+	testFixturesImplementation project(':infrastructure:exceptions')
 	testFixturesImplementation project(':infrastructure:subscribers')
 
 	testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'

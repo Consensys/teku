@@ -304,6 +304,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void quic_shouldBeEnabledByDefault() {
+    final NetworkConfig config = getTekuConfigurationFromArguments().network();
+    assertThat(config.isQuicEnabled()).isTrue();
+  }
+
+  @Test
+  public void quic_shouldAcceptValue() {
+    final NetworkConfig config =
+        getTekuConfigurationFromArguments("--Xp2p-quic-enabled", "false").network();
+    assertThat(config.isQuicEnabled()).isFalse();
+  }
+
+  @Test
   public void advertisedIps_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
     assertThat(config.hasUserExplicitlySetAdvertisedIps()).isFalse();
