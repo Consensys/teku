@@ -113,7 +113,7 @@ public class HistoricalBlockSyncServiceTest {
   @SuppressWarnings("unchecked")
   @BeforeEach
   public void setup() {
-    when(storageUpdateChannel.onFinalizedBlocks(any(), any(), any()))
+    when(storageUpdateChannel.onFinalizedBlocks(any(), any(), any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
     when(syncStateProvider.subscribeToSyncStateChanges(any()))
         .thenAnswer((i) -> syncStateSubscribers.subscribe(i.getArgument(0)));
@@ -136,7 +136,7 @@ public class HistoricalBlockSyncServiceTest {
 
     // Service should complete immediately
     assertServiceFinished();
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any(), any());
   }
 
   @Test
@@ -168,7 +168,7 @@ public class HistoricalBlockSyncServiceTest {
 
     // We should be waiting to actually start the historic sync
     assertServiceNotActive(peer);
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any(), any());
 
     // When we switch to in sync, the service should run and complete
     updateSyncState(SyncState.IN_SYNC);
@@ -203,7 +203,7 @@ public class HistoricalBlockSyncServiceTest {
 
     // We should be waiting to actually start the historic sync
     assertServiceIsWaitingForPeers(peer);
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any(), any());
 
     // When should succeed on the next retry
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
@@ -396,7 +396,7 @@ public class HistoricalBlockSyncServiceTest {
 
   private void assertBlocksSaved(final List<SignedBeaconBlock> expectedBlocks) {
     verify(storageUpdateChannel, atLeastOnce())
-        .onFinalizedBlocks(blockCaptor.capture(), any(), any());
+        .onFinalizedBlocks(blockCaptor.capture(), any(), any(), any());
     final List<SignedBeaconBlock> allBlocks =
         blockCaptor.getAllValues().stream()
             .flatMap(Collection::stream)

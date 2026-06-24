@@ -47,6 +47,10 @@ public interface Peer {
     return PeerClientType.UNKNOWN;
   }
 
+  default Transport getTransport() {
+    return Transport.UNKNOWN;
+  }
+
   default void checkPeerIdentity() {}
 
   void disconnectImmediately(Optional<DisconnectReason> reason, boolean locallyInitiated);
