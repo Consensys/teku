@@ -8,10 +8,10 @@ name: ci
 # ubuntu-24.04-arm = 4cpu, 16GB
 # macos-13 = 4cpu, 14GB
 # macos-15 = 3cpu(M1), 7GB
-# gha-runner-scale-set-ubuntu-24-amd64-med   = 4 , 16G 
-# gha-runner-scale-set-ubuntu-24-amd64-large = 8 , 32G 
-# gha-runner-scale-set-ubuntu-24-amd64-xl = 16 , 64G 
-# gha-runner-scale-set-ubuntu-24-amd64-xxl = 32 , 128G 
+# gha-runner-scale-set-ubuntu-24-amd64-med   = 4 , 16G
+# gha-runner-scale-set-ubuntu-24-amd64-large = 8 , 32G
+# gha-runner-scale-set-ubuntu-24-amd64-xl = 16 , 64G
+# gha-runner-scale-set-ubuntu-24-amd64-xxl = 32 , 128G
 
 on:
   push:
@@ -104,7 +104,26 @@ jobs:
           FORCE_FULL_CI: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
         run: |
           set -uo pipefail
+
           emit() { echo "code=$1" >> "$GITHUB_OUTPUT"; echo "Result: code=$1"; exit 0; }
+
+          is_doc_path() {
+            local f="$1"
+            case "$f" in
+              *.md | \
+              CODEOWNERS | \
+              .gitignore | \
+              .gitattributes | \
+              .codespell/* | \
+              specrefs/* | \
+              mlc_config.json) return 0 ;;
+              LICENSE* | \
+              NOTICE* | \
+              CHANGELOG*) [[ "$f" != */* ]] ;;
+              *) return 1 ;;
+            esac
+          }
+
           if [ "$FORCE_FULL_CI" = "true" ]; then
             echo "Tag or manual run; running full pipeline."
             emit true
@@ -129,22 +148,7 @@ jobs:
           fi
           echo "Changed files:"
           echo "$changed"
-          is_doc_path() {
-            local f="$1"
-            case "$f" in
-              *.md | \
-              CODEOWNERS | \
-              .gitignore | \
-              .gitattributes | \
-              .codespell/* | \
-              specrefs/* | \
-              mlc_config.json) return 0 ;;
-              LICENSE* | \
-              NOTICE* | \
-              CHANGELOG*) [[ "$f" != */* ]] ;;
-              *) return 1 ;;
-            esac
-          }
+
           # List of doc-classified changes
           while IFS= read -r f; do
             [ -z "$f" ] && continue
@@ -211,7 +215,7 @@ jobs:
         id: projectDetails
         uses: ./.github/actions/get-project-version
       - name: Assemble
-        shell: bash      
+        shell: bash
         run: |
           ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
       - name: Upload distribution tar
@@ -227,7 +231,7 @@ jobs:
           name: distribution-zip
           path: |
             build/distributions/*.zip
-          retention-days: 7          
+          retention-days: 7
       - name: Upload workspace build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -256,7 +260,7 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: assemble-output
-          merge-multiple: true            
+          merge-multiple: true
       - name: Build runnable Teku binaries
         shell: bash
         run: |
@@ -313,7 +317,7 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
-          cache-dependency-path: .openapidoc/package-lock.json 
+          cache-dependency-path: .openapidoc/package-lock.json
           cache: 'npm'
       - name: Setup Git identity
         run: |
@@ -330,7 +334,7 @@ jobs:
           OA_GH_PAGES_BRANCH="gh-pages" \
           node publish.js
 
-  ## Tests 
+  ## Tests
   unitTests:
     needs: assemble
     permissions:
@@ -477,7 +481,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
-        if: always()       
+        if: always()
         with:
           stage_key: property
 
@@ -527,7 +531,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
-        if: always()          
+        if: always()
         with:
           stage_key: acceptance
 
@@ -712,7 +716,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
-        if: always()    
+        if: always()
         with:
           stage_key: reference
 
