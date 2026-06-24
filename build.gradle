@@ -1107,6 +1107,21 @@ tasks.register('manifestDocker') {
 	}
 }
 
+def ciJacocoConfigurations = [
+	'jacocoAgent',
+	'jacocoAnt',
+]
+
+def resolveCiJacocoConfigurations = { targetProject ->
+	ciJacocoConfigurations.each { configurationName ->
+		def configuration = targetProject.configurations.findByName(configurationName)
+		if (configuration != null && configuration.canBeResolved) {
+			logger.info("Resolving ${targetProject.path}:${configurationName}")
+			configuration.resolve()
+		}
+	}
+}
+
 subprojects {
 	tasks.withType(Test) {
 		// If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
@@ -1412,6 +1427,25 @@ subprojects {
 	// avoids JDK 24+ warning from native libraries (e.g. jblst) across all Test tasks
 	tasks.withType(Test).configureEach {
 		jvmArgs '--enable-native-access=ALL-UNNAMED'
+	}
+
+	tasks.register('resolveCiJacocoDependencies') {
+		group = 'build setup'
+		description = 'Resolves Jacoco configurations used by CI shards to warm the Gradle cache.'
+
+		doLast {
+			resolveCiJacocoConfigurations(project)
+		}
+	}
+}
+
+tasks.register('resolveCiJacocoDependencies') {
+	group = 'build setup'
+	description = 'Resolves Jacoco configurations used by CI shards to warm the Gradle cache.'
+	dependsOn subprojects.collect { it.tasks.named('resolveCiJacocoDependencies') }
+
+	doLast {
+		resolveCiJacocoConfigurations(project)
 	}
 }
 
