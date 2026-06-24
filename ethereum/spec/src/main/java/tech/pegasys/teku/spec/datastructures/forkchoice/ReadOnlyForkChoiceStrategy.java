@@ -127,5 +127,17 @@ public interface ReadOnlyForkChoiceStrategy {
     return Optional.empty();
   }
 
+  default UInt64 getPayloadAttesterCount(final Bytes32 blockRoot) {
+    return UInt64.ZERO;
+  }
+
+  default UInt64 getPayloadAvailabilityYesCount(final Bytes32 blockRoot) {
+    return UInt64.ZERO;
+  }
+
+  default UInt64 getPayloadDataAvailabilityYesCount(final Bytes32 blockRoot) {
+    return UInt64.ZERO;
+  }
+
   Optional<UInt64> getWeight(Bytes32 blockRoot);
 }
