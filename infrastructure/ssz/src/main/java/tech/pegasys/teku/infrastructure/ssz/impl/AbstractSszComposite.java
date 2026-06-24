@@ -125,12 +125,12 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   public TreeNode getBackingNode() {
     TreeNode node = backingNode;
     if (node == null) {
-      node = getLazyBackingNode();
+      node = resolveLazyBackingNode();
     }
     return node;
   }
 
-  private synchronized TreeNode getLazyBackingNode() {
+  private synchronized TreeNode resolveLazyBackingNode() {
     if (backingNode == null) {
       backingNode = lazyBackingNode.get();
       lazyBackingNode = null;
