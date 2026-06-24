@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 
 public interface BeaconBlockBodySchemaGloas<T extends BeaconBlockBodyGloas>
     extends BeaconBlockBodySchemaElectra<T> {
@@ -35,7 +35,7 @@ public interface BeaconBlockBodySchemaGloas<T extends BeaconBlockBodyGloas>
 
   SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema();
 
-  ExecutionRequestsSchema getParentExecutionRequestsSchema();
+  ExecutionRequestsSchema<?> getParentExecutionRequestsSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaGloas<?>> toVersionGloas() {

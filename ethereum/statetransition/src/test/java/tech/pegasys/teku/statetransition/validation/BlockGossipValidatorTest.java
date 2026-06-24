@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -670,7 +670,7 @@ public class BlockGossipValidatorTest {
     final SignedBlockAndState childBlockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
     final ExecutionRequests parentExecutionRequests =
-        specContext.getDataStructureUtil().randomExecutionRequests();
+        specContext.getDataStructureUtil().randomExecutionRequests(parentSlot);
     final SignedBeaconBlock invalidEmptyParentChildBlock =
         createBlockWithModifiedExecutionPayloadBid(
             childBlockAndState,

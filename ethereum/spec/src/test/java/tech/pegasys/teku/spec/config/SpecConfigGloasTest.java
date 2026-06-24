@@ -93,6 +93,8 @@ public class SpecConfigGloasTest {
         dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(12000),
+        dataStructureUtil.randomPositiveInt(256),
+        dataStructureUtil.randomPositiveInt(16),
         dataStructureUtil.randomLong(),
         dataStructureUtil.randomLong(),
         dataStructureUtil.randomPositiveInt(16384),

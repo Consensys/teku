@@ -70,6 +70,16 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public int getMaxBuilderDepositRequestsPerPayload() {
+    return delegate.getMaxBuilderDepositRequestsPerPayload();
+  }
+
+  @Override
+  public int getMaxBuilderExitRequestsPerPayload() {
+    return delegate.getMaxBuilderExitRequestsPerPayload();
+  }
+
+  @Override
   public long getBuilderRegistryLimit() {
     return delegate.getBuilderRegistryLimit();
   }
