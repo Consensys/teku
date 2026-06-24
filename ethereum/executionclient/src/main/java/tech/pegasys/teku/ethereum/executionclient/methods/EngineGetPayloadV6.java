@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -65,8 +64,6 @@ public class EngineGetPayloadV6 extends AbstractEngineJsonRpcMethod<GetPayloadRe
 
     final SchemaDefinitionsElectra schemaDefinitions =
         SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions());
-    final ExecutionRequestsDataCodec executionRequestsDataDecoder =
-        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
 
     return executionEngineClient
         .getPayloadV6(executionPayloadContext.getPayloadId())
@@ -78,7 +75,7 @@ public class EngineGetPayloadV6 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                       schemaDefinitions.getExecutionPayloadSchema());
               final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
               final ExecutionRequests executionRequests =
-                  executionRequestsDataDecoder.decode(response.executionRequests);
+                  spec.getExecutionRequestsDataCodec(slot).decode(response.executionRequests);
               return new GetPayloadResponse(
                   executionPayload,
                   response.blockValue,
