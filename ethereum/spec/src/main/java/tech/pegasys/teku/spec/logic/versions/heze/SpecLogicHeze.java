@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.heze;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
+import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlockProposalUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
@@ -46,7 +47,6 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.operations.OperationSignatureVerifierGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.AttestationDataValidatorGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.VoluntaryExitValidatorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
@@ -153,8 +153,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         new AttestationUtilGloas(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidatorGloas attestationDataValidator =
         new AttestationDataValidatorGloas(config, miscHelpers, beaconStateAccessors);
-    final VoluntaryExitValidatorGloas voluntaryExitValidator =
-        new VoluntaryExitValidatorGloas(config, predicates, beaconStateAccessors, miscHelpers);
+    final VoluntaryExitValidatorElectra voluntaryExitValidator =
+        new VoluntaryExitValidatorElectra(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorCapella(
             predicates,

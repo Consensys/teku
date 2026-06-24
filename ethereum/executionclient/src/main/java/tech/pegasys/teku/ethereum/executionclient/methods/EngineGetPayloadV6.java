@@ -21,18 +21,13 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV6Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class EngineGetPayloadV6 extends AbstractEngineJsonRpcMethod<GetPayloadResponse> {
@@ -40,16 +35,10 @@ public class EngineGetPayloadV6 extends AbstractEngineJsonRpcMethod<GetPayloadRe
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final ExecutionRequestsDataCodec executionRequestsDataDecoder;
 
   public EngineGetPayloadV6(final ExecutionEngineClient executionEngineClient, final Spec spec) {
     super(executionEngineClient);
     this.spec = spec;
-    this.executionRequestsDataDecoder =
-        new ExecutionRequestsDataCodec(
-            SchemaDefinitionsElectra.required(
-                    spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
-                .getExecutionRequestsSchema());
   }
 
   @Override
@@ -74,17 +63,19 @@ public class EngineGetPayloadV6 extends AbstractEngineJsonRpcMethod<GetPayloadRe
         executionPayloadContext.getPayloadId(),
         slot);
 
+    final SchemaDefinitionsElectra schemaDefinitions =
+        SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions());
+    final ExecutionRequestsDataCodec executionRequestsDataDecoder =
+        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+
     return executionEngineClient
         .getPayloadV6(executionPayloadContext.getPayloadId())
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(
             response -> {
-              final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
-              final ExecutionPayloadSchema<?> payloadSchema =
-                  SchemaDefinitionsBellatrix.required(schemaDefinitions)
-                      .getExecutionPayloadSchema();
               final ExecutionPayload executionPayload =
-                  response.executionPayload.asInternalExecutionPayload(payloadSchema);
+                  response.executionPayload.asInternalExecutionPayload(
+                      schemaDefinitions.getExecutionPayloadSchema());
               final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
               final ExecutionRequests executionRequests =
                   executionRequestsDataDecoder.decode(response.executionRequests);
@@ -106,9 +97,8 @@ public class EngineGetPayloadV6 extends AbstractEngineJsonRpcMethod<GetPayloadRe
   }
 
   private BlobsBundle getBlobsBundle(
-      final GetPayloadV6Response response, final SchemaDefinitions schemaDefinitions) {
-    final BlobSchema blobSchema =
-        SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobSchema();
+      final GetPayloadV6Response response, final SchemaDefinitionsElectra schemaDefinitions) {
+    final BlobSchema blobSchema = schemaDefinitions.getBlobSchema();
     return response.blobsBundle.asInternalBlobsBundle(blobSchema);
   }
 }

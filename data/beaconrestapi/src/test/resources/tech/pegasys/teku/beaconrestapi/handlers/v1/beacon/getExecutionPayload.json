@@ -70,12 +70,26 @@
             "source_pubkey": "0x90b2ffa8992560bca2080afa9b3adc904ce9085a8c2cc897282f20378bdf3cdc0a74100f226ea698e07d4afe50d8ff54",
             "target_pubkey": "0xaed83e77fbc39e3b1115994cf6cffb5e12c8a60d6e5a511b8f4176f74660db30cc9acedb53d3288806420f903ab69157"
           }
+        ],
+        "builder_deposits": [
+          {
+            "pubkey": "0xb94235fc2765496162b52009ab14fa6d0d0ed1debc25fbbd1fa6da8c64b58e5edaf39419489b556cb563cdd1d08c2eb0",
+            "withdrawal_credentials": "0x8afa683fea95afdc0ad91e4937a9c6185315a1076506bd45a4357cc27fe5a75c",
+            "amount": "4560914871608938506",
+            "signature": "0x81f173b724a40d8b729570158524a2726ac3bfe244452b6d22f3ad25183de08172ebd10cbaee58393db7d74d95b1a1ec02fe9de1487a744ba3d5d9ba01359c4050fc5d6eec7672662b703d6035100800a3952f4e4b2d9e4143ab0d9f044e5aed"
+          }
+        ],
+        "builder_exits": [
+          {
+            "source_address": "0xd67e513f6ac42cf0dfe4bbf686cc184d6c219d4f",
+            "pubkey": "0x83b9036200e9e907c86ede7f98b23297389e8af19d403466e00f1946867db735d8620019e28aa42739f49c65b78a2806"
+          }
         ]
       },
-      "builder_index": "537496",
-      "beacon_block_root": "0x77d96e3f4a4ad0971596b71d6420b24b4d12a275af3d948b77b438faa484f0d1",
-      "parent_beacon_block_root": "0x8afa683fea95afdc0ad91e4937a9c6185315a1076506bd45a4357cc27fe5a75c"
+      "builder_index": "1998500",
+      "beacon_block_root": "0x10e23f3f49a7cabebfadf178016756b47f2a9a056183da5ce5bd543c778bab27",
+      "parent_beacon_block_root": "0x23033a3fe9f2a903b4f058a4d4ef6a81852d9997184c0317133f980452ec62b2"
     },
-    "signature": "0x8ab48d0165e8cc8bfc6804760141896946c3be751af5f16d1a03ead456ebceab88a8168e1da194df56c512edc15ca6350c413cb819d31a7ef69b329d8cb9fa8e5d93ae66289a445f1465d57d97e72d4c0866e48a806df7f58ebcd060e2d03a72"
+    "signature": "0xaacffaf60c8253477ecad70de8589f2ef7670d0b0dc446d4baac3b465a901d3e64bb6d2c3d8bdb58aed45ac30466261416d152d5ae242204201bf6decfddde697ae0c5d44cf31ca3d43aa18f2799461fc1ee14dbf905b1e31f242fd31c083c5a"
   }
 }

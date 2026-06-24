@@ -26,16 +26,19 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class ExecutionRequestsSchema
+public class ExecutionRequestsSchemaElectra
     extends ContainerSchema3<
-        ExecutionRequests,
+        ExecutionRequestsElectra,
         SszList<DepositRequest>,
         SszList<WithdrawalRequest>,
-        SszList<ConsolidationRequest>> {
+        SszList<ConsolidationRequest>>
+    implements ExecutionRequestsSchema<ExecutionRequestsElectra> {
 
-  public ExecutionRequestsSchema(
+  public ExecutionRequestsSchemaElectra(
       final SpecConfigElectra specConfig,
       final SchemaRegistry schemaRegistry,
       final String containerName) {
@@ -58,28 +61,36 @@ public class ExecutionRequestsSchema
                 specConfig.getMaxConsolidationRequestsPerPayload())));
   }
 
-  public ExecutionRequests create(
+  public ExecutionRequestsElectra create(
       final List<DepositRequest> deposits,
       final List<WithdrawalRequest> withdrawals,
       final List<ConsolidationRequest> consolidations) {
-    return new ExecutionRequests(this, deposits, withdrawals, consolidations);
+    return new ExecutionRequestsElectra(this, deposits, withdrawals, consolidations);
   }
 
   @Override
-  public ExecutionRequests createFromBackingNode(final TreeNode node) {
-    return new ExecutionRequests(this, node);
+  public ExecutionRequestsElectra createFromBackingNode(final TreeNode node) {
+    return new ExecutionRequestsElectra(this, node);
   }
 
+  @Override
+  public ExecutionRequestsBuilder createBuilder() {
+    return new ExecutionRequestsBuilderElectra(this);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public SszListSchema<DepositRequest, ?> getDepositRequestsSchema() {
     return (SszListSchema<DepositRequest, ?>) getChildSchema(getFieldIndex(DEPOSITS));
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public SszListSchema<WithdrawalRequest, ?> getWithdrawalRequestsSchema() {
     return (SszListSchema<WithdrawalRequest, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public SszListSchema<ConsolidationRequest, ?> getConsolidationRequestsSchema() {
     return (SszListSchema<ConsolidationRequest, ?>) getChildSchema(getFieldIndex(CONSOLIDATIONS));

@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -39,7 +38,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -244,13 +243,9 @@ public class GossipValidationHelper {
     return recentChainData.retrieveBlockByRoot(root);
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlockByRoot(final Bytes32 root) {
-    return recentChainData.retrieveSignedBlockByRoot(root);
-  }
-
   public boolean isActiveBuilder(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
+    return PredicatesGloas.required(spec.atSlot(slot).predicates())
         .isActiveBuilder(state, builderIndex);
   }
 

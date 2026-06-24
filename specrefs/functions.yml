@@ -22,11 +22,12 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateMutatorsGloas.java
       search: public void addBuilderToRegistry(
   spec: |
-    <spec fn="add_builder_to_registry" fork="gloas" hash="cd0414c9">
+    <spec fn="add_builder_to_registry" fork="gloas" hash="21ceace9">
     def add_builder_to_registry(
         state: BeaconState,
         pubkey: BLSPubkey,
-        withdrawal_credentials: Bytes32,
+        version: uint8,
+        execution_address: ExecutionAddress,
         amount: uint64,
         slot: Slot,
     ) -> None:
@@ -35,8 +36,8 @@
             get_index_for_new_builder(state),
             Builder(
                 pubkey=pubkey,
-                version=uint8(withdrawal_credentials[0]),
-                execution_address=ExecutionAddress(withdrawal_credentials[12:]),
+                version=version,
+                execution_address=execution_address,
                 balance=amount,
                 deposit_epoch=compute_epoch_at_slot(slot),
                 withdrawable_epoch=FAR_FUTURE_EPOCH,
@@ -196,31 +197,6 @@
         )
     </spec>
 
-- name: apply_deposit_for_builder#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateMutatorsGloas.java
-      search: public void applyDepositForBuilder(
-  spec: |
-    <spec fn="apply_deposit_for_builder" fork="gloas" hash="e4bc98c7">
-    def apply_deposit_for_builder(
-        state: BeaconState,
-        pubkey: BLSPubkey,
-        withdrawal_credentials: Bytes32,
-        amount: uint64,
-        signature: BLSSignature,
-        slot: Slot,
-    ) -> None:
-        builder_pubkeys = [b.pubkey for b in state.builders]
-        if pubkey not in builder_pubkeys:
-            # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
-            if is_valid_deposit_signature(pubkey, withdrawal_credentials, amount, signature):
-                add_builder_to_registry(state, pubkey, withdrawal_credentials, amount, slot)
-        else:
-            # Increase balance by deposit amount
-            builder_index = builder_pubkeys.index(pubkey)
-            state.builders[builder_index].balance += amount
-    </spec>
-
 - name: apply_light_client_update#altair
   sources: []
   spec: |
@@ -249,7 +225,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: public void applyParentExecutionPayload(
   spec: |
-    <spec fn="apply_parent_execution_payload" fork="gloas" hash="44874701">
+    <spec fn="apply_parent_execution_payload" fork="gloas" hash="64e168db">
     def apply_parent_execution_payload(
         state: BeaconState,
         requests: ExecutionRequests,
@@ -267,6 +243,10 @@
         for_ops(requests.deposits, process_deposit_request)
         for_ops(requests.withdrawals, process_withdrawal_request)
         for_ops(requests.consolidations, process_consolidation_request)
+        # [New in Gloas:EIP8282]
+        for_ops(requests.builder_deposits, process_builder_deposit_request)
+        # [New in Gloas:EIP8282]
+        for_ops(requests.builder_exits, process_builder_exit_request)
 
         # Settle the builder payment
         if parent_epoch == get_current_epoch(state):
@@ -4603,7 +4583,7 @@
 
 - name: get_execution_requests#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsDataCodec.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/ExecutionRequestsDataCodec.java
       search: public ExecutionRequests decode(
   spec: |
     <spec fn="get_execution_requests" fork="electra" hash="2c0fb728">
@@ -4651,9 +4631,82 @@
         )
     </spec>
 
+- name: get_execution_requests#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/ExecutionRequestsDataCodec.java
+      search: public List<Bytes> encode(
+  spec: |
+    <spec fn="get_execution_requests" fork="gloas" hash="7b351e91">
+    def get_execution_requests(execution_requests_list: Sequence[bytes]) -> ExecutionRequests:
+        deposits = []
+        withdrawals = []
+        consolidations = []
+        # [New in Gloas:EIP8282]
+        builder_deposits = []
+        # [New in Gloas:EIP8282]
+        builder_exits = []
+
+        request_types = [
+            DEPOSIT_REQUEST_TYPE,
+            WITHDRAWAL_REQUEST_TYPE,
+            CONSOLIDATION_REQUEST_TYPE,
+            # [New in Gloas:EIP8282]
+            BUILDER_DEPOSIT_REQUEST_TYPE,
+            # [New in Gloas:EIP8282]
+            BUILDER_EXIT_REQUEST_TYPE,
+        ]
+
+        prev_request_type = None
+        for request in execution_requests_list:
+            request_type, request_data = request[0:1], request[1:]
+
+            # Check that the request type is valid
+            assert request_type in request_types
+            # Check that the request data is not empty
+            assert len(request_data) != 0
+            # Check that requests are in strictly ascending order
+            # Each successive type must be greater than the last with no duplicates
+            assert prev_request_type is None or prev_request_type < request_type
+            prev_request_type = request_type
+
+            if request_type == DEPOSIT_REQUEST_TYPE:
+                deposits = ssz_deserialize(
+                    List[DepositRequest, MAX_DEPOSIT_REQUESTS_PER_PAYLOAD], request_data
+                )
+            elif request_type == WITHDRAWAL_REQUEST_TYPE:
+                withdrawals = ssz_deserialize(
+                    List[WithdrawalRequest, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD], request_data
+                )
+            elif request_type == CONSOLIDATION_REQUEST_TYPE:
+                consolidations = ssz_deserialize(
+                    List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD], request_data
+                )
+            # [New in Gloas:EIP8282]
+            elif request_type == BUILDER_DEPOSIT_REQUEST_TYPE:
+                builder_deposits = ssz_deserialize(
+                    List[BuilderDepositRequest, MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD],
+                    request_data,
+                )
+            # [New in Gloas:EIP8282]
+            elif request_type == BUILDER_EXIT_REQUEST_TYPE:
+                builder_exits = ssz_deserialize(
+                    List[BuilderExitRequest, MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD], request_data
+                )
+
+        return ExecutionRequests(
+            deposits=deposits,
+            withdrawals=withdrawals,
+            consolidations=consolidations,
+            # [New in Gloas:EIP8282]
+            builder_deposits=builder_deposits,
+            # [New in Gloas:EIP8282]
+            builder_exits=builder_exits,
+        )
+    </spec>
+
 - name: get_execution_requests_list#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsDataCodec.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/ExecutionRequestsDataCodec.java
       search: public List<Bytes> encode(
   spec: |
     <spec fn="get_execution_requests_list" fork="electra" hash="0a0be93f">
@@ -4662,6 +4715,30 @@
             (DEPOSIT_REQUEST_TYPE, execution_requests.deposits),
             (WITHDRAWAL_REQUEST_TYPE, execution_requests.withdrawals),
             (CONSOLIDATION_REQUEST_TYPE, execution_requests.consolidations),
+        ]
+
+        return [
+            request_type + ssz_serialize(request_data)
+            for request_type, request_data in requests
+            if len(request_data) != 0
+        ]
+    </spec>
+
+- name: get_execution_requests_list#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/ExecutionRequestsDataCodec.java
+      search: public List<Bytes> encode(
+  spec: |
+    <spec fn="get_execution_requests_list" fork="gloas" hash="a9021134">
+    def get_execution_requests_list(execution_requests: ExecutionRequests) -> Sequence[bytes]:
+        requests = [
+            (DEPOSIT_REQUEST_TYPE, execution_requests.deposits),
+            (WITHDRAWAL_REQUEST_TYPE, execution_requests.withdrawals),
+            (CONSOLIDATION_REQUEST_TYPE, execution_requests.consolidations),
+            # [New in Gloas:EIP8282]
+            (BUILDER_DEPOSIT_REQUEST_TYPE, execution_requests.builder_deposits),
+            # [New in Gloas:EIP8282]
+            (BUILDER_EXIT_REQUEST_TYPE, execution_requests.builder_exits),
         ]
 
         return [
@@ -5795,20 +5872,21 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public ForkChoiceNode getProposerHead(
   spec: |
-    <spec fn="get_proposer_head" fork="phase0" hash="0b2b3507">
-    def get_proposer_head(store: Store, head_root: Root, slot: Slot) -> Root:
-        head_block = store.blocks[head_root]
+    <spec fn="get_proposer_head" fork="phase0" hash="3558f2cc">
+    def get_proposer_head(store: Store, head_node: ForkChoiceNode, slot: Slot) -> ForkChoiceNode:
+        head_block = store.blocks[head_node.root]
         parent_root = head_block.parent_root
         parent_block = store.blocks[parent_root]
+        parent_node = ForkChoiceNode(root=parent_root)
 
         # Only re-org the head block if it arrived later than the attestation deadline.
-        head_late = is_head_late(store, head_root)
+        head_late = is_head_late(store, head_node.root)
 
-        # Do not re-org on an epoch boundary where the proposer shuffling could change.
-        shuffling_stable = is_shuffling_stable(slot)
+        # Do not re-org on an epoch boundary.
+        epoch_boundary = is_epoch_boundary(slot)
 
         # Ensure that the FFG information of the new head will be competitive with the current head.
-        ffg_competitive = is_ffg_competitive(store, head_root, parent_root)
+        ffg_competitive = is_ffg_competitive(store, head_node.root, parent_root)
 
         # Do not re-org if the chain is not finalizing with acceptable frequency.
         finalization_ok = is_finalization_ok(store, slot)
@@ -5822,18 +5900,18 @@
         single_slot_reorg = parent_slot_ok and current_time_ok
 
         # Check that the head has few enough votes to be overpowered by our proposer boost.
-        assert store.proposer_boost_root != head_root  # ensure boost has worn off
-        head_weak = is_head_weak(store, head_root)
+        assert store.proposer_boost_root != head_node.root  # ensure boost has worn off
+        head_weak = is_head_weak(store, head_node.root)
 
         # Check that the missing votes are assigned to the parent and not being hoarded.
-        parent_strong = is_parent_strong(store, head_root)
+        parent_strong = is_parent_strong(store, head_node.root)
 
         # Re-org more aggressively if there is a proposer equivocation in the previous slot.
-        proposer_equivocation = is_proposer_equivocation(store, head_root)
+        proposer_equivocation = is_proposer_equivocation(store, head_node.root)
 
         if all([
             head_late,
-            shuffling_stable,
+            epoch_boundary,
             ffg_competitive,
             finalization_ok,
             proposing_on_time,
@@ -5841,12 +5919,72 @@
             head_weak,
             parent_strong,
         ]):
-            # We can re-org the current head by building upon its parent block.
-            return parent_root
+            # We can re-org the current head by building upon its parent node.
+            return parent_node
         elif all([head_weak, current_time_ok, proposer_equivocation]):
-            return parent_root
+            return parent_node
         else:
-            return head_root
+            return head_node
+    </spec>
+
+- name: get_proposer_head#gloas
+  sources: []
+  spec: |
+    <spec fn="get_proposer_head" fork="gloas" hash="52ed6595">
+    def get_proposer_head(store: Store, head_node: ForkChoiceNode, slot: Slot) -> ForkChoiceNode:
+        head_block = store.blocks[head_node.root]
+        parent_root = head_block.parent_root
+        parent_block = store.blocks[parent_root]
+        # [Modified in Gloas:EIP7732]
+        parent_payload_status = get_parent_payload_status(store, head_block)
+        parent_node = ForkChoiceNode(root=parent_root, payload_status=parent_payload_status)
+
+        # Only re-org the head block if it arrived later than the attestation deadline.
+        head_late = is_head_late(store, head_node.root)
+
+        # Do not re-org on an epoch boundary.
+        epoch_boundary = is_epoch_boundary(slot)
+
+        # Ensure that the FFG information of the new head will be competitive with the current head.
+        ffg_competitive = is_ffg_competitive(store, head_node.root, parent_root)
+
+        # Do not re-org if the chain is not finalizing with acceptable frequency.
+        finalization_ok = is_finalization_ok(store, slot)
+
+        # Only re-org if we are proposing on-time.
+        proposing_on_time = is_proposing_on_time(store)
+
+        # Only re-org a single slot at most.
+        parent_slot_ok = parent_block.slot + 1 == head_block.slot
+        current_time_ok = head_block.slot + 1 == slot
+        single_slot_reorg = parent_slot_ok and current_time_ok
+
+        # Check that the head has few enough votes to be overpowered by our proposer boost.
+        assert store.proposer_boost_root != head_node.root  # ensure boost has worn off
+        head_weak = is_head_weak(store, head_node.root)
+
+        # Check that the missing votes are assigned to the parent and not being hoarded.
+        parent_strong = is_parent_strong(store, head_node.root)
+
+        # Re-org more aggressively if there is a proposer equivocation in the previous slot.
+        proposer_equivocation = is_proposer_equivocation(store, head_node.root)
+
+        if all([
+            head_late,
+            epoch_boundary,
+            ffg_competitive,
+            finalization_ok,
+            proposing_on_time,
+            single_slot_reorg,
+            head_weak,
+            parent_strong,
+        ]):
+            # We can re-org the current head by building upon its parent node.
+            return parent_node
+        elif all([head_weak, current_time_ok, proposer_equivocation]):
+            return parent_node
+        else:
+            return head_node
     </spec>
 
 - name: get_proposer_preferences_signature#gloas
@@ -7371,6 +7509,14 @@
         )
     </spec>
 
+- name: is_epoch_boundary#phase0
+  sources: []
+  spec: |
+    <spec fn="is_epoch_boundary" fork="phase0" hash="8900b82d">
+    def is_epoch_boundary(slot: Slot) -> bool:
+        return slot % SLOTS_PER_EPOCH != 0
+    </spec>
+
 - name: is_execution_block#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
@@ -7707,12 +7853,13 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public boolean isParentStrong(
   spec: |
-    <spec fn="is_parent_strong" fork="phase0" hash="24316fbe">
+    <spec fn="is_parent_strong" fork="phase0" hash="a23d498f">
     def is_parent_strong(store: Store, root: Root) -> bool:
         justified_state = store.checkpoint_states[store.justified_checkpoint]
         parent_threshold = calculate_committee_fraction(justified_state, REORG_PARENT_WEIGHT_THRESHOLD)
         parent_root = store.blocks[root].parent_root
-        parent_weight = get_weight(store, ForkChoiceNode(root=parent_root))
+        parent_node = ForkChoiceNode(root=parent_root)
+        parent_weight = get_weight(store, parent_node)
         return parent_weight > parent_threshold
     </spec>
 
@@ -7721,13 +7868,13 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
       search: public boolean isParentStrong(
   spec: |
-    <spec fn="is_parent_strong" fork="gloas" hash="37089462">
+    <spec fn="is_parent_strong" fork="gloas" hash="3177c56c">
     def is_parent_strong(store: Store, root: Root) -> bool:
         justified_state = store.checkpoint_states[store.justified_checkpoint]
         parent_threshold = calculate_committee_fraction(justified_state, REORG_PARENT_WEIGHT_THRESHOLD)
-        block = store.blocks[root]
-        parent_payload_status = get_parent_payload_status(store, block)
-        parent_node = ForkChoiceNode(root=block.parent_root, payload_status=parent_payload_status)
+        parent_root = store.blocks[root].parent_root
+        # [Modified in Gloas:EIP7732]
+        parent_node = ForkChoiceNode(root=parent_root, payload_status=PAYLOAD_STATUS_PENDING)
         parent_weight = get_attestation_score(store, parent_node, justified_state)
         return parent_weight > parent_threshold
     </spec>
@@ -7878,16 +8025,6 @@
         return time_into_slot_ms <= proposer_reorg_cutoff_ms
     </spec>
 
-- name: is_shuffling_stable#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public boolean isShufflingStable(
-  spec: |
-    <spec fn="is_shuffling_stable" fork="phase0" hash="680f0aa0">
-    def is_shuffling_stable(slot: Slot) -> bool:
-        return slot % SLOTS_PER_EPOCH != 0
-    </spec>
-
 - name: is_slashable_attestation_data#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
@@ -7955,6 +8092,23 @@
     <spec fn="is_sync_committee_update" fork="altair" hash="af6f8cb0">
     def is_sync_committee_update(update: LightClientUpdate) -> bool:
         return update.next_sync_committee_branch != NextSyncCommitteeBranch()
+    </spec>
+
+- name: is_valid_builder_deposit_signature#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionRequestsProcessorGloas.java
+      search: private boolean isValidBuilderDepositSignature(
+  spec: |
+    <spec fn="is_valid_builder_deposit_signature" fork="gloas" hash="a4b72f03">
+    def is_valid_builder_deposit_signature(request: BuilderDepositRequest) -> bool:
+        deposit_message = DepositMessage(
+            pubkey=request.pubkey,
+            withdrawal_credentials=request.withdrawal_credentials,
+            amount=request.amount,
+        )
+        domain = compute_domain(DOMAIN_BUILDER_DEPOSIT)
+        signing_root = compute_signing_root(deposit_message, domain)
+        return bls.Verify(request.pubkey, signing_root, request.signature)
     </spec>
 
 - name: is_valid_deposit_signature#electra
@@ -8914,7 +9068,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/forktransition/GloasStateUpgrade.java
       search: private void onboardBuildersFromPendingDeposits(
   spec: |
-    <spec fn="onboard_builders_from_pending_deposits" fork="gloas" hash="6bb266a4">
+    <spec fn="onboard_builders_from_pending_deposits" fork="gloas" hash="2f9926a6">
     def onboard_builders_from_pending_deposits(state: BeaconState) -> None:
         """
         Applies any pending deposit for builders, effectively
@@ -8929,9 +9083,9 @@
                 pending_deposits.append(deposit)
                 continue
 
-            # Note that the function apply_deposit_for_builder can mutate the
-            # state and may add a builder to the registry. For this reason, the
-            # list of builder pubkeys must be recomputed each iteration.
+            # Note that applying a deposit below can mutate the state and
+            # may add a builder to the registry. For this reason, the list
+            # of builder pubkeys must be recomputed each iteration.
             builder_pubkeys = [b.pubkey for b in state.builders]
 
             # Deposits for non-builders stay in the pending queue. If there is a
@@ -8944,15 +9098,25 @@
                 if is_pending_validator(pending_deposits, deposit.pubkey):
                     pending_deposits.append(deposit)
                     continue
+                if not is_valid_deposit_signature(
+                    deposit.pubkey,
+                    deposit.withdrawal_credentials,
+                    deposit.amount,
+                    deposit.signature,
+                ):
+                    continue
 
-            apply_deposit_for_builder(
-                state,
-                deposit.pubkey,
-                deposit.withdrawal_credentials,
-                deposit.amount,
-                deposit.signature,
-                deposit.slot,
-            )
+                add_builder_to_registry(
+                    state,
+                    deposit.pubkey,
+                    PAYLOAD_BUILDER_VERSION,
+                    ExecutionAddress(deposit.withdrawal_credentials[12:]),
+                    deposit.amount,
+                    deposit.slot,
+                )
+            else:
+                builder_index = BuilderIndex(builder_pubkeys.index(deposit.pubkey))
+                state.builders[builder_index].balance += deposit.amount
 
         state.pending_deposits = pending_deposits
     </spec>
@@ -8962,7 +9126,7 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
       search: private boolean payloadDataAvailability(
   spec: |
-    <spec fn="payload_data_availability" fork="gloas" hash="9d298e0e">
+    <spec fn="payload_data_availability" fork="gloas" hash="19906223">
     def payload_data_availability(store: Store, root: Root, available: bool) -> bool:
         """
         Return whether the blob data for the beacon block with root ``root`` is
@@ -8978,7 +9142,7 @@
             return not available
 
         votes = store.payload_data_availability_vote[root]
-        return sum(vote is available for vote in votes) > DATA_AVAILABILITY_TIMELY_THRESHOLD
+        return sum(vote == available for vote in votes) > DATA_AVAILABILITY_TIMELY_THRESHOLD
     </spec>
 
 - name: payload_timeliness#gloas
@@ -8986,7 +9150,7 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
       search: private boolean payloadTimeliness(
   spec: |
-    <spec fn="payload_timeliness" fork="gloas" hash="4490a649">
+    <spec fn="payload_timeliness" fork="gloas" hash="c8eb8248">
     def payload_timeliness(store: Store, root: Root, timely: bool) -> bool:
         """
         Return whether the execution payload for the beacon block with root ``root``
@@ -9002,7 +9166,7 @@
             return not timely
 
         votes = store.payload_timeliness_vote[root]
-        return sum(vote is timely for vote in votes) > PAYLOAD_TIMELY_THRESHOLD
+        return sum(vote == timely for vote in votes) > PAYLOAD_TIMELY_THRESHOLD
     </spec>
 
 - name: polynomial_eval_to_coeff#fulu
@@ -9638,7 +9802,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: public void executionProcessing(
   spec: |
-    <spec fn="process_block" fork="gloas" hash="a911a43e">
+    <spec fn="process_block" fork="gloas" hash="7d98b5a3">
     def process_block(state: BeaconState, block: BeaconBlock) -> None:
         # [New in Gloas:EIP7732]
         process_parent_execution_payload(state, block)
@@ -9648,7 +9812,7 @@
         # [Modified in Gloas:EIP7732]
         # Removed `process_execution_payload`
         # [New in Gloas:EIP7732]
-        process_execution_payload_bid(state, block)
+        process_execution_payload_bid(state, block.body.signed_execution_payload_bid)
         process_randao(state, block.body)
         process_eth1_data(state, block.body)
         # [Modified in Gloas:EIP7732]
@@ -9713,6 +9877,61 @@
         validator.withdrawal_credentials = (
             ETH1_ADDRESS_WITHDRAWAL_PREFIX + b"\x00" * 11 + address_change.to_execution_address
         )
+    </spec>
+
+- name: process_builder_deposit_request#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionRequestsProcessorGloas.java
+      search: public void processBuilderDepositRequests(
+  spec: |
+    <spec fn="process_builder_deposit_request" fork="gloas" hash="c3ba5adf">
+    def process_builder_deposit_request(state: BeaconState, request: BuilderDepositRequest) -> None:
+        builder_pubkeys = [b.pubkey for b in state.builders]
+        if request.pubkey not in builder_pubkeys:
+            if is_valid_builder_deposit_signature(request):
+                add_builder_to_registry(
+                    state,
+                    request.pubkey,
+                    uint8(request.withdrawal_credentials[0]),
+                    ExecutionAddress(request.withdrawal_credentials[12:]),
+                    request.amount,
+                    state.slot,
+                )
+        else:
+            builder_index = BuilderIndex(builder_pubkeys.index(request.pubkey))
+            builder = state.builders[builder_index]
+
+            # Increase balance by deposit amount
+            builder.balance += request.amount
+
+            # If exited, reset the withdrawable epoch
+            if builder.withdrawable_epoch != FAR_FUTURE_EPOCH:
+                epoch = get_current_epoch(state)
+                builder.withdrawable_epoch = epoch + MIN_BUILDER_WITHDRAWABILITY_DELAY
+    </spec>
+
+- name: process_builder_exit_request#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionRequestsProcessorGloas.java
+      search: public void processBuilderExitRequests(
+  spec: |
+    <spec fn="process_builder_exit_request" fork="gloas" hash="144e9faf">
+    def process_builder_exit_request(state: BeaconState, request: BuilderExitRequest) -> None:
+        builder_pubkeys = [b.pubkey for b in state.builders]
+        if request.pubkey not in builder_pubkeys:
+            return
+
+        builder_index = BuilderIndex(builder_pubkeys.index(request.pubkey))
+        builder = state.builders[builder_index]
+
+        if not is_active_builder(state, builder_index):
+            return
+        if builder.execution_address != request.source_address:
+            return
+        if get_pending_balance_to_withdraw_for_builder(state, builder_index) != 0:
+            return
+
+        initiate_builder_exit(state, builder_index)
     </spec>
 
 - name: process_builder_pending_payments#gloas
@@ -9904,50 +10123,6 @@
   spec: |
     <spec fn="process_deposit_request" fork="fulu" hash="26509dcc">
     def process_deposit_request(state: BeaconState, deposit_request: DepositRequest) -> None:
-        state.pending_deposits.append(
-            PendingDeposit(
-                pubkey=deposit_request.pubkey,
-                withdrawal_credentials=deposit_request.withdrawal_credentials,
-                amount=deposit_request.amount,
-                signature=deposit_request.signature,
-                slot=state.slot,
-            )
-        )
-    </spec>
-
-- name: process_deposit_request#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionRequestsProcessorGloas.java
-      search: public void processDepositRequests(
-  spec: |
-    <spec fn="process_deposit_request" fork="gloas" hash="a6fff32f">
-    def process_deposit_request(state: BeaconState, deposit_request: DepositRequest) -> None:
-        # [New in Gloas:EIP7732]
-        builder_pubkeys = [b.pubkey for b in state.builders]
-        validator_pubkeys = [v.pubkey for v in state.validators]
-
-        # [New in Gloas:EIP7732]
-        # Regardless of the withdrawal credentials prefix, if a builder/validator
-        # already exists with this pubkey, apply the deposit to their balance
-        is_builder = deposit_request.pubkey in builder_pubkeys
-        is_validator = deposit_request.pubkey in validator_pubkeys
-        if is_builder or (
-            is_builder_withdrawal_credential(deposit_request.withdrawal_credentials)
-            and not is_validator
-            and not is_pending_validator(state.pending_deposits, deposit_request.pubkey)
-        ):
-            # Apply builder deposits immediately
-            apply_deposit_for_builder(
-                state,
-                deposit_request.pubkey,
-                deposit_request.withdrawal_credentials,
-                deposit_request.amount,
-                deposit_request.signature,
-                state.slot,
-            )
-            return
-
-        # Add validator deposits to the queue
         state.pending_deposits.append(
             PendingDeposit(
                 pubkey=deposit_request.pubkey,
@@ -10467,9 +10642,10 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: public void processExecutionPayloadBid(
   spec: |
-    <spec fn="process_execution_payload_bid" fork="gloas" hash="823c9f3a">
-    def process_execution_payload_bid(state: BeaconState, block: BeaconBlock) -> None:
-        signed_bid = block.body.signed_execution_payload_bid
+    <spec fn="process_execution_payload_bid" fork="gloas" hash="ba18a784">
+    def process_execution_payload_bid(
+        state: BeaconState, signed_bid: SignedExecutionPayloadBid
+    ) -> None:
         bid = signed_bid.message
         builder_index = bid.builder_index
         amount = bid.value
@@ -10481,6 +10657,8 @@
         else:
             # Verify that the builder is active
             assert is_active_builder(state, builder_index)
+            # Verify that the builder is a payload builder
+            assert state.builders[builder_index].version == PAYLOAD_BUILDER_VERSION
             # Verify that the builder has funds to cover the bid
             assert can_builder_cover_bid(state, builder_index, amount)
             # Verify that the bid signature is valid
@@ -10493,10 +10671,11 @@
         )
 
         # Verify that the bid is for the current slot
-        assert bid.slot == block.slot
+        assert bid.slot == state.slot
+        assert state.slot > GENESIS_SLOT
         # Verify that the bid is for the right parent block
         assert bid.parent_block_hash == state.latest_block_hash
-        assert bid.parent_block_root == block.parent_root
+        assert bid.parent_block_root == get_block_root_at_slot(state, Slot(state.slot - 1))
         assert bid.prev_randao == get_randao_mix(state, get_current_epoch(state))
 
         # Record the pending payment if there is some payment
@@ -10508,6 +10687,7 @@
                     amount=amount,
                     builder_index=builder_index,
                 ),
+                proposer_index=get_beacon_proposer_index(state),
             )
             state.builder_pending_payments[SLOTS_PER_EPOCH + bid.slot % SLOTS_PER_EPOCH] = (
                 pending_payment
@@ -10861,7 +11041,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: protected void processOperationsNoValidation(
   spec: |
-    <spec fn="process_operations" fork="gloas" hash="e0633745">
+    <spec fn="process_operations" fork="gloas" hash="4864d8ef">
     def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
         assert len(body.deposits) == 0
 
@@ -10874,7 +11054,6 @@
         for_ops(body.attester_slashings, process_attester_slashing)
         # [Modified in Gloas:EIP7732]
         for_ops(body.attestations, process_attestation)
-        # [Modified in Gloas:EIP7732]
         for_ops(body.voluntary_exits, process_voluntary_exit)
         for_ops(body.bls_to_execution_changes, process_bls_to_execution_change)
         # [Modified in Gloas:EIP7732]
@@ -11236,7 +11415,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: protected void removeBuilderPendingPayment(
   spec: |
-    <spec fn="process_proposer_slashing" fork="gloas" hash="10bda1c5">
+    <spec fn="process_proposer_slashing" fork="gloas" hash="4e7f566d">
     def process_proposer_slashing(state: BeaconState, proposer_slashing: ProposerSlashing) -> None:
         header_1 = proposer_slashing.signed_header_1.message
         header_2 = proposer_slashing.signed_header_2.message
@@ -11259,16 +11438,22 @@
             assert bls.Verify(proposer.pubkey, signing_root, signed_header.signature)
 
         # [New in Gloas:EIP7732]
-        # Remove the BuilderPendingPayment corresponding to
-        # this proposal if it is still in the 2-epoch window.
+        # Remove the BuilderPendingPayment corresponding to this proposal if it is
+        # still in the 2-epoch window. Only clear it when the slashed validator is
+        # the proposer associated with the payment; otherwise an unrelated same-slot
+        # equivocation could grief an honest proposer's payment.
         slot = header_1.slot
         proposal_epoch = compute_epoch_at_slot(slot)
         if proposal_epoch == get_current_epoch(state):
             payment_index = SLOTS_PER_EPOCH + slot % SLOTS_PER_EPOCH
-            state.builder_pending_payments[payment_index] = BuilderPendingPayment()
+            payment = state.builder_pending_payments[payment_index]
+            if payment.proposer_index == header_1.proposer_index:
+                state.builder_pending_payments[payment_index] = BuilderPendingPayment()
         elif proposal_epoch == get_previous_epoch(state):
             payment_index = slot % SLOTS_PER_EPOCH
-            state.builder_pending_payments[payment_index] = BuilderPendingPayment()
+            payment = state.builder_pending_payments[payment_index]
+            if payment.proposer_index == header_1.proposer_index:
+                state.builder_pending_payments[payment_index] = BuilderPendingPayment()
 
         slash_validator(state, header_1.proposer_index)
     </spec>
@@ -11787,55 +11972,6 @@
          )
     </spec>
 
-- name: process_voluntary_exit#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: public void processVoluntaryExits(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/operations/validation/VoluntaryExitValidatorGloas.java
-      search: public Optional<OperationInvalidReason> validate(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: protected void initiateExit(
-  spec: |
-    <spec fn="process_voluntary_exit" fork="gloas" hash="2a22a698">
-    def process_voluntary_exit(state: BeaconState, signed_voluntary_exit: SignedVoluntaryExit) -> None:
-        voluntary_exit = signed_voluntary_exit.message
-        domain = compute_domain(
-            DOMAIN_VOLUNTARY_EXIT, CAPELLA_FORK_VERSION, state.genesis_validators_root
-        )
-        signing_root = compute_signing_root(voluntary_exit, domain)
-
-        # Exits must specify an epoch when they become valid; they are not valid before then
-        assert get_current_epoch(state) >= voluntary_exit.epoch
-
-        # [New in Gloas:EIP7732]
-        if is_builder_index(voluntary_exit.validator_index):
-            builder_index = convert_validator_index_to_builder_index(voluntary_exit.validator_index)
-            # Verify the builder is active
-            assert is_active_builder(state, builder_index)
-            # Only exit builder if it has no pending withdrawals in the queue
-            assert get_pending_balance_to_withdraw_for_builder(state, builder_index) == 0
-            # Verify signature
-            pubkey = state.builders[builder_index].pubkey
-            assert bls.Verify(pubkey, signing_root, signed_voluntary_exit.signature)
-            # Initiate exit
-            initiate_builder_exit(state, builder_index)
-            return
-
-        validator = state.validators[voluntary_exit.validator_index]
-        # Verify the validator is active
-        assert is_active_validator(validator, get_current_epoch(state))
-        # Verify exit has not been initiated
-        assert validator.exit_epoch == FAR_FUTURE_EPOCH
-        # Verify the validator has been active long enough
-        assert get_current_epoch(state) >= validator.activation_epoch + SHARD_COMMITTEE_PERIOD
-        # Only exit validator if it has no pending withdrawals in the queue
-        assert get_pending_balance_to_withdraw(state, voluntary_exit.validator_index) == 0
-        # Verify signature
-        assert bls.Verify(validator.pubkey, signing_root, signed_voluntary_exit.signature)
-        # Initiate exit
-        initiate_validator_exit(state, voluntary_exit.validator_index)
-    </spec>
-
 - name: process_withdrawal_request#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/execution/ExecutionRequestsProcessorElectra.java
@@ -12305,16 +12441,16 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
       search: public boolean shouldBuildOnFull(
   spec: |
-    <spec fn="should_build_on_full" fork="gloas" hash="40a75144">
+    <spec fn="should_build_on_full" fork="gloas" hash="c93c17f0">
     def should_build_on_full(store: Store, head: ForkChoiceNode) -> bool:
         assert head.payload_status != PAYLOAD_STATUS_PENDING
+        if store.blocks[head.root].slot + 1 != get_current_slot(store):
+            return head.payload_status == PAYLOAD_STATUS_FULL
         if head.payload_status == PAYLOAD_STATUS_EMPTY:
             return False
-        if store.blocks[head.root].slot + 1 != get_current_slot(store):
-            return True
-        if payload_data_availability(store, head.root, available=False):
-            return False
         if payload_timeliness(store, head.root, timely=False):
+            return False
+        if payload_data_availability(store, head.root, available=False):
             return False
         return True
     </spec>
@@ -12324,8 +12460,9 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
       search: private boolean shouldExtendPayload(
   spec: |
-    <spec fn="should_extend_payload" fork="gloas" hash="fd2b578c">
+    <spec fn="should_extend_payload" fork="gloas" hash="4c7f1056">
     def should_extend_payload(store: Store, root: Root) -> bool:
+        assert store.blocks[root].slot + 1 == get_current_slot(store)
         if not is_payload_verified(store, root):
             return False
         proposer_root = store.proposer_boost_root
@@ -13120,7 +13257,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/forktransition/AltairStateUpgrade.java
       search: public BeaconStateAltair upgrade(
   spec: |
-    <spec fn="upgrade_to_altair" fork="altair" hash="4f858ca3">
+    <spec fn="upgrade_to_altair" fork="altair" hash="45bb04f7">
     def upgrade_to_altair(pre: phase0.BeaconState) -> BeaconState:
         epoch = phase0.get_current_epoch(pre)
         post = BeaconState(
@@ -13129,6 +13266,7 @@
             slot=pre.slot,
             fork=Fork(
                 previous_version=pre.fork.current_version,
+                # [New in Altair]
                 current_version=ALTAIR_FORK_VERSION,
                 epoch=epoch,
             ),
@@ -13170,7 +13308,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/forktransition/BellatrixStateUpgrade.java
       search: public BeaconStateBellatrix upgrade(
   spec: |
-    <spec fn="upgrade_to_bellatrix" fork="bellatrix" hash="73a0a7ba">
+    <spec fn="upgrade_to_bellatrix" fork="bellatrix" hash="378e5a8d">
     def upgrade_to_bellatrix(pre: altair.BeaconState) -> BeaconState:
         epoch = altair.get_current_epoch(pre)
         post = BeaconState(
@@ -13179,7 +13317,7 @@
             slot=pre.slot,
             fork=Fork(
                 previous_version=pre.fork.current_version,
-                # [New in Bellatrix]
+                # [Modified in Bellatrix]
                 current_version=BELLATRIX_FORK_VERSION,
                 epoch=epoch,
             ),
@@ -13215,7 +13353,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/forktransition/CapellaStateUpgrade.java
       search: public BeaconStateCapella upgrade(
   spec: |
-    <spec fn="upgrade_to_capella" fork="capella" hash="673c74f0">
+    <spec fn="upgrade_to_capella" fork="capella" hash="f1f20b37">
     def upgrade_to_capella(pre: bellatrix.BeaconState) -> BeaconState:
         epoch = bellatrix.get_current_epoch(pre)
         latest_execution_payload_header = ExecutionPayloadHeader(
@@ -13242,6 +13380,7 @@
             slot=pre.slot,
             fork=Fork(
                 previous_version=pre.fork.current_version,
+                # [Modified in Capella]
                 current_version=CAPELLA_FORK_VERSION,
                 epoch=epoch,
             ),
@@ -13518,7 +13657,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/forktransition/GloasStateUpgrade.java
       search: public BeaconStateGloas upgrade(
   spec: |
-    <spec fn="upgrade_to_gloas" fork="gloas" hash="d9a22a92">
+    <spec fn="upgrade_to_gloas" fork="gloas" hash="c769e40a">
     def upgrade_to_gloas(pre: fulu.BeaconState) -> BeaconState:
         epoch = fulu.get_current_epoch(pre)
 
@@ -13528,7 +13667,7 @@
             slot=pre.slot,
             fork=Fork(
                 previous_version=pre.fork.current_version,
-                # [Modified in Gloas:EIP7732]
+                # [Modified in Gloas]
                 current_version=GLOAS_FORK_VERSION,
                 epoch=epoch,
             ),
