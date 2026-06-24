@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.capella;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -246,6 +247,11 @@ public class SpecLogicCapella extends AbstractSpecLogic {
 
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
     return Optional.empty();
   }
 

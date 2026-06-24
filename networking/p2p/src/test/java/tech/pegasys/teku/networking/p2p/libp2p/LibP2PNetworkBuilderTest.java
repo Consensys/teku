@@ -45,13 +45,13 @@ class LibP2PNetworkBuilderTest {
 
   @Test
   void buildListenPorts_singleStackTcpOnly() {
-    final NetworkConfig config = singleStackConfig().build();
+    final NetworkConfig config = singleStackConfig().quicEnabled(false).build();
     assertThat(LibP2PNetworkBuilder.buildListenPorts(config)).containsExactly(9000);
   }
 
   @Test
   void buildListenPorts_singleStackTcpAndQuic() {
-    final NetworkConfig config = singleStackConfig().quicEnabled(true).build();
+    final NetworkConfig config = singleStackConfig().build();
     assertThat(LibP2PNetworkBuilder.buildListenPorts(config)).containsExactly(9000, 9001);
   }
 
@@ -64,14 +64,14 @@ class LibP2PNetworkBuilderTest {
 
   @Test
   void buildListenPorts_dualStackTcpOnly() {
-    final NetworkConfig config = dualStackConfig().build();
+    final NetworkConfig config = dualStackConfig().quicEnabled(false).build();
     assertThat(LibP2PNetworkBuilder.buildListenPorts(config)).containsExactly(9000, 9090);
   }
 
   @Test
   void buildListenPorts_dualStackTcpAndQuic() {
     // Regression: dual-stack QUIC must report all four ports, not just two.
-    final NetworkConfig config = dualStackConfig().quicEnabled(true).build();
+    final NetworkConfig config = dualStackConfig().build();
     assertThat(LibP2PNetworkBuilder.buildListenPorts(config))
         .containsExactly(9000, 9001, 9090, 9091);
   }

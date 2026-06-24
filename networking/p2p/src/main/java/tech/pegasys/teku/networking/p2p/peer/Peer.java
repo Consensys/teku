@@ -37,10 +37,18 @@ public interface Peer {
 
   Double getGossipScore();
 
+  default Optional<String> getAgentVersion() {
+    return Optional.empty();
+  }
+
   boolean isConnected();
 
   default PeerClientType getPeerClientType() {
     return PeerClientType.UNKNOWN;
+  }
+
+  default Transport getTransport() {
+    return Transport.UNKNOWN;
   }
 
   default void checkPeerIdentity() {}

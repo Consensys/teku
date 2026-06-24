@@ -1,0 +1,37 @@
+{
+  "title" : "ExecutionRequestsGloas",
+  "type" : "object",
+  "required" : [ "deposits", "withdrawals", "consolidations", "builder_deposits", "builder_exits" ],
+  "properties" : {
+    "deposits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/DepositRequest"
+      }
+    },
+    "withdrawals" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/WithdrawalRequest"
+      }
+    },
+    "consolidations" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ConsolidationRequest"
+      }
+    },
+    "builder_deposits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/BuilderDepositRequest"
+      }
+    },
+    "builder_exits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/BuilderExitRequest"
+      }
+    }
+  }
+}

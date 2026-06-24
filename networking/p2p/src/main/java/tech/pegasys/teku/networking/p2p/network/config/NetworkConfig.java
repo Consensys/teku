@@ -52,7 +52,7 @@ public class NetworkConfig {
   public static final int DEFAULT_P2P_QUIC_PORT_IPV6 = 9091;
   public static final boolean DEFAULT_YAMUX_ENABLED = false;
   public static final boolean DEFAULT_STRICT_CONFIG_LOADING_ENABLED = false;
-  public static final boolean DEFAULT_QUIC_ENABLED = false;
+  public static final boolean DEFAULT_QUIC_ENABLED = true;
   public static final boolean DEFAULT_TCP_ENABLED = true;
 
   private final GossipConfig gossipConfig;

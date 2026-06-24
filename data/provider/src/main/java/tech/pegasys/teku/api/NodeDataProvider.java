@@ -34,10 +34,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -56,6 +56,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.New
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -86,6 +87,7 @@ public class NodeDataProvider {
   private final DataColumnSidecarManager dataColumnSidecarManager;
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final PayloadAttestationPool payloadAttestationPool;
+  private final ProposerPreferencesManager proposerPreferencesManager;
   private final Spec spec;
 
   public NodeDataProvider(
@@ -105,6 +107,7 @@ public class NodeDataProvider {
       final DataColumnSidecarManager dataColumnSidecarManager,
       final CustodyGroupCountManager custodyGroupCountManager,
       final PayloadAttestationPool payloadAttestationPool,
+      final ProposerPreferencesManager proposerPreferencesManager,
       final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -122,6 +125,7 @@ public class NodeDataProvider {
     this.dataColumnSidecarManager = dataColumnSidecarManager;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.payloadAttestationPool = payloadAttestationPool;
+    this.proposerPreferencesManager = proposerPreferencesManager;
     this.spec = spec;
   }
 
@@ -215,17 +219,10 @@ public class NodeDataProvider {
                     .thenApply(
                         state -> {
                           final SszList<Validator> validators = state.getValidators();
-                          // TODO-GLOAS This would have a flow for builders, and they have 40th bit
-                          // set (it requires more validation)
                           final UInt64 validatorId = exit.getValidatorId();
-                          if ((validatorId.longValue()
-                                  & SpecConfigGloas.BUILDER_INDEX_FLAG.longValue())
-                              != 0) {
-                            return InternalValidationResult.ACCEPT;
-                          }
                           if (validatorId.isGreaterThanOrEqualTo(validators.size())) {
                             return InternalValidationResult.reject(
-                                "Validator index %s was not found", validatorId);
+                                "Validator index %s was not found", exit.getValidatorId());
                           } else if (validators
                               .get(validatorId.intValue())
                               .getExitEpoch()
@@ -352,6 +349,11 @@ public class NodeDataProvider {
   public void subscribeToPayloadAttestationMessages(
       final OperationAddedSubscriber<PayloadAttestationMessage> listener) {
     payloadAttestationPool.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToProposerPreferences(
+      final OperationAddedSubscriber<SignedProposerPreferences> listener) {
+    proposerPreferencesManager.subscribeOperationAdded(listener);
   }
 
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorLiveness(

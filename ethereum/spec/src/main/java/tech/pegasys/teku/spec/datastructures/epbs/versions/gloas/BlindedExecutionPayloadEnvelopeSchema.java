@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BlindedExecutionPayloadEnvelopeSchema
@@ -44,7 +44,9 @@ public class BlindedExecutionPayloadEnvelopeSchema
             "payload_header",
             SszSchema.as(
                 ExecutionPayloadHeader.class, schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA))),
-        namedSchema("execution_requests", schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA)),
+        namedSchema(
+            "execution_requests",
+            SszSchema.as(ExecutionRequests.class, schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA))),
         namedSchema("builder_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("parent_beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA));

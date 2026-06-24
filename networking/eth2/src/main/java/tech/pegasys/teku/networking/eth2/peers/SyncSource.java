@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.List;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -43,6 +45,9 @@ public interface SyncSource {
 
   SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<SignedExecutionPayloadEnvelope> listener);
+
+  SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      Bytes32 beaconBlockRoot);
 
   void adjustReputation(final ReputationAdjustment adjustment);
 

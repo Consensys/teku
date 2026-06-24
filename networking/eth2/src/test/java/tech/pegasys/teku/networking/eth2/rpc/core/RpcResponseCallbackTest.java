@@ -1,0 +1,168 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.networking.eth2.rpc.core;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import io.netty.channel.socket.ChannelOutputShutdownException;
+import java.nio.channels.ClosedChannelException;
+import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+
+class RpcResponseCallbackTest {
+
+  private final RpcStream rpcStream = mock(RpcStream.class);
+
+  @SuppressWarnings("unchecked")
+  private final RpcResponseEncoder<SszData, ?> responseEncoder = mock(RpcResponseEncoder.class);
+
+  private final SszData data = mock(SszData.class);
+
+  private final RpcResponseCallback<SszData> callback =
+      new RpcResponseCallback<>(rpcStream, responseEncoder);
+
+  @Test
+  void shouldNotLogErrorWhenWriteFailsWithStopSending() {
+    failWriteWith(new ChannelOutputShutdownException("STOP_SENDING frame received"));
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.respondAndCompleteSuccessfully(data);
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+      assertThat(logCaptor.getTraceLogs())
+          .anySatisfy(log -> assertThat(log).contains("STOP_SENDING"));
+    }
+  }
+
+  @Test
+  void shouldNotLogErrorWhenWriteFailsWithClosedChannel() {
+    failWriteWith(new ClosedChannelException());
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.respondAndCompleteSuccessfully(data);
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void shouldLogErrorWhenWriteFailsWithUnexpectedError() {
+    failWriteWith(new IllegalStateException("Boom"));
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class)) {
+      callback.respondAndCompleteSuccessfully(data);
+
+      logCaptor.assertErrorLog("Failed to write req/resp response");
+    }
+  }
+
+  @Test
+  void completeWithUnexpectedErrorShouldNotWriteErrorResponseWhenStreamClosedByStopSending() {
+    when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithUnexpectedError(
+          new RuntimeException(new ChannelOutputShutdownException("STOP_SENDING frame received")));
+
+      // The peer has stopped reading the stream, so writing a server error response is pointless
+      // and would just fail again and resurface as a noisy uncaught exception.
+      verify(rpcStream, never()).writeBytes(any());
+      verify(rpcStream).closeAbruptly();
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithUnexpectedErrorShouldNotWriteErrorResponseWhenStreamAlreadyClosed() {
+    when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithUnexpectedError(new StreamClosedException());
+
+      verify(rpcStream, never()).writeBytes(any());
+      verify(rpcStream).closeAbruptly();
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithUnexpectedErrorShouldWriteErrorResponseForUnexpectedError() {
+    when(responseEncoder.encodeErrorResponse(any())).thenReturn(Bytes.EMPTY);
+    when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
+    when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
+
+    callback.completeWithUnexpectedError(new IllegalStateException("Boom"));
+
+    verify(rpcStream).writeBytes(any());
+  }
+
+  @Test
+  void completeWithErrorResponseShouldNotLogErrorWhenWriteFailsWithStopSending() {
+    failErrorResponseWriteWith(new ChannelOutputShutdownException("STOP_SENDING frame received"));
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      // The peer sent STOP_SENDING, so failing to write the error response is expected churn, not
+      // a noisy uncaught exception.
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+      assertThat(logCaptor.getTraceLogs())
+          .anySatisfy(log -> assertThat(log).contains("STOP_SENDING"));
+    }
+  }
+
+  @Test
+  void completeWithErrorResponseShouldNotLogErrorWhenWriteFailsWithClosedChannel() {
+    failErrorResponseWriteWith(new ClosedChannelException());
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithErrorResponseShouldLogErrorWhenWriteFailsWithUnexpectedError() {
+    failErrorResponseWriteWith(new IllegalStateException("Boom"));
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      logCaptor.assertErrorLog("Failed to write req/resp error response");
+    }
+  }
+
+  private void failErrorResponseWriteWith(final Throwable error) {
+    when(responseEncoder.encodeErrorResponse(any())).thenReturn(Bytes.EMPTY);
+    when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.failedFuture(error));
+    when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
+  }
+
+  private void failWriteWith(final Throwable error) {
+    when(responseEncoder.encodeSuccessfulResponse(any())).thenReturn(Bytes.EMPTY);
+    when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.failedFuture(error));
+  }
+}
