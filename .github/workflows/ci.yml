@@ -86,7 +86,7 @@ jobs:
   changes:
     runs-on: ubuntu-24.04
     outputs:
-      code: ${{ steps.detect.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+      code: ${{ steps.detect.outputs.code }}
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -95,25 +95,36 @@ jobs:
       - name: Detect non-doc changes
         id: detect
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+          FORCE_FULL_CI: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
         run: |
           set -uo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base="${{ github.event.pull_request.base.sha }}"
-            head="${{ github.event.pull_request.head.sha }}"
-            range="$base...$head"
-          else
-            base="${{ github.event.before }}"
-            head="${{ github.sha }}"
-            range="$base $head"
-          fi
           emit() { echo "code=$1" >> "$GITHUB_OUTPUT"; echo "Result: code=$1"; exit 0; }
-          # Without a usable base (new branch/tag, force-push) we cannot diff: run full.
-          if [ -z "${base:-}" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
-            echo "No usable base ('${base:-}'); running full pipeline."
+          if [ "$FORCE_FULL_CI" = "true" ]; then
+            echo "Tag or manual run; running full pipeline."
             emit true
           fi
-          if ! changed="$(git diff --name-only $range)"; then
-            echo "git diff failed for range '$range'; running full pipeline."
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE_SHA"
+            head="$PR_HEAD_SHA"
+            diff_args=("$base...$head")
+          else
+            base="$BEFORE_SHA"
+            head="$CURRENT_SHA"
+            diff_args=("$base" "$head")
+          fi
+          # Without a usable base (new branch/tag, force-push) we cannot diff: run full.
+          if [ -z "${base:-}" ] || [ -z "${head:-}" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No usable base/head ('${base:-}'/'${head:-}'); running full pipeline."
+            emit true
+          fi
+          if ! changed="$(git diff --name-only "${diff_args[@]}")"; then
+            echo "git diff failed for base '$base' and head '$head'; running full pipeline."
             emit true
           fi
           echo "Changed files:"
