@@ -13,6 +13,8 @@
 ### Additions and Improvements
 
 - Added some extra fields to the peers output for beacon-apis #606. Consumers of the peers endpoint should be aware of this new optional data.
+- QUIC enabled by default (uses UDP port 9001 by default)
+- New Engine API client with better performance enabled by default
 
 ### Bug Fixes
 
