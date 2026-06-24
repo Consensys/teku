@@ -63,6 +63,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
+  private final Optional<ExecutionRequestsDataCodec> executionRequestsDataCodec;
   private final Optional<ExecutionPayloadVerifier> executionPayloadVerifier;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
@@ -83,6 +84,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final EpochProcessorGloas epochProcessor,
       final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsProcessorGloas executionRequestsProcessor,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final BlockProcessorGloas blockProcessor,
       final ExecutionPayloadVerifierGloas executionPayloadVerifier,
       final ForkChoiceUtil forkChoiceUtil,
@@ -115,6 +117,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
+    this.executionRequestsDataCodec = Optional.of(executionRequestsDataCodec);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionPayloadVerifier = Optional.of(executionPayloadVerifier);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
@@ -264,6 +267,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         epochProcessor,
         withdrawalsHelpers,
         executionRequestsProcessor,
+        executionRequestsDataCodec,
         blockProcessor,
         executionPayloadVerifier,
         forkChoiceUtil,
@@ -300,6 +304,11 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return executionRequestsProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
+    return executionRequestsDataCodec;
   }
 
   @Override

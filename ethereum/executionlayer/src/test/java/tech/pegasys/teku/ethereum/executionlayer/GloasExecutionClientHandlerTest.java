@@ -93,7 +93,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final BlobSchema blobSchema = schemaDefinitionGloas.getBlobSchema();
     final GetPayloadResponse expectedGetPayloadResponse =
         responseData.asInternalGetPayloadResponse(
-            executionPayloadSchema, blobSchema, schemaDefinitionGloas.getExecutionRequestsSchema());
+            executionPayloadSchema, blobSchema, spec.getExecutionRequestsDataCodec(slot));
     assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 

@@ -83,6 +83,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -1201,6 +1202,15 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Attempting to use execution requests processor when spec does not have execution requests processor"));
+  }
+
+  public ExecutionRequestsDataCodec getExecutionRequestsDataCodec(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionRequestsDataCodec()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution requests data codec when spec does not have execution requests data codec"));
   }
 
   // Data Column Sidecar Util
