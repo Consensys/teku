@@ -118,22 +118,29 @@ jobs:
           fi
           echo "Changed files:"
           echo "$changed"
-          # List of doc-classified changes
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
+          is_doc_path() {
+            local f="$1"
             case "$f" in
               *.md | \
-              LICENSE* | \
-              NOTICE* | \
-              CHANGELOG* | \
               CODEOWNERS | \
               .gitignore | \
               .gitattributes | \
               .codespell/* | \
               specrefs/* | \
-              mlc_config.json) ;;
-              *) echo "Non-doc file changed: $f"; emit true ;;
+              mlc_config.json) return 0 ;;
+              LICENSE* | \
+              NOTICE* | \
+              CHANGELOG*) [[ "$f" != */* ]] ;;
+              *) return 1 ;;
             esac
+          }
+          # List of doc-classified changes
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! is_doc_path "$f"; then
+              echo "Non-doc file changed: $f"
+              emit true
+            fi
           done <<< "$changed"
           emit false
 
