@@ -109,6 +109,7 @@ jobs:
 
           is_doc_path() {
             local f="$1"
+            # List of doc-classified changes
             case "$f" in
               *.md | \
               CODEOWNERS | \
@@ -149,7 +150,6 @@ jobs:
           echo "Changed files:"
           echo "$changed"
 
-          # List of doc-classified changes
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             if ! is_doc_path "$f"; then
