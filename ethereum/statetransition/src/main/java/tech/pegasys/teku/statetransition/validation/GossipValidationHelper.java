@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -246,6 +247,15 @@ public class GossipValidationHelper {
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
     return PredicatesGloas.required(spec.atSlot(slot).predicates())
         .isActiveBuilder(state, builderIndex);
+  }
+
+  /**
+   * Returns the RANDAO mix of the given state at the state's current epoch -- i.e.
+   * get_randao_mix(state, get_current_epoch(state)).
+   */
+  public Bytes32 getRandaoMixForCurrentEpoch(final BeaconState state, final UInt64 slot) {
+    final BeaconStateAccessors beaconStateAccessors = spec.atSlot(slot).beaconStateAccessors();
+    return beaconStateAccessors.getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state));
   }
 
   public boolean isSlotCurrentOrNext(final UInt64 slot) {
