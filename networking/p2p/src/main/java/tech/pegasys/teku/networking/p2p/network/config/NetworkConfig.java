@@ -403,13 +403,13 @@ public class NetworkConfig {
     }
 
     public Builder listenQuicPort(final int listenQuicPort) {
-      validatePort(listenQuicPort, "--Xp2p-quic-port");
+      validatePort(listenQuicPort, "--p2p-quic-port");
       this.listenQuicPort = listenQuicPort;
       return this;
     }
 
     public Builder listenQuicPortIpv6(final int listenQuicPortIpv6) {
-      validatePort(listenQuicPortIpv6, "--Xp2p-quic-port-ipv6");
+      validatePort(listenQuicPortIpv6, "--p2p-quic-port-ipv6");
       this.listenQuicPortIpv6 = listenQuicPortIpv6;
       return this;
     }

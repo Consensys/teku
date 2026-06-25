@@ -15,6 +15,7 @@
 - Added some extra fields to the peers output for beacon-apis #606. Consumers of the peers endpoint should be aware of this new optional data.
 - QUIC enabled by default (uses UDP port 9001 by default)
 - New Engine API client with better performance enabled by default
+- Quic port command arguments `p2p-quic-port` (default 9001) and `p2p-quic-port-ipv6` (default 9091) were unhidden. Users will need to update firewall rules to allow incoming connections for QUIC (UDP).
 
 ### Bug Fixes
 
