@@ -32,6 +32,8 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -472,5 +474,17 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
 
     // Verify exit for source has not been initiated
     return sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+  }
+
+  @Override
+  public void processBuilderDepositRequests(
+      final MutableBeaconState state, final List<BuilderDepositRequest> builderDepositRequests) {
+    // NO-OP (until Gloas)
+  }
+
+  @Override
+  public void processBuilderExitRequests(
+      final MutableBeaconState state, final List<BuilderExitRequest> builderExitRequests) {
+    // NO-OP (until Gloas)
   }
 }

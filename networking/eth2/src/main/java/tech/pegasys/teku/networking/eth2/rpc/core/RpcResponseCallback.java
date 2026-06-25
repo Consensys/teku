@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import com.google.common.base.Throwables;
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,6 +51,12 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
                 .addCatch(
                     ClosedChannelException.class,
                     err -> LOG.trace("Failed to write because channel was closed", err))
+                .addCatch(
+                    ChannelOutputShutdownException.class,
+                    err ->
+                        LOG.trace(
+                            "Failed to write because peer stopped reading the stream (STOP_SENDING)",
+                            err))
                 .defaultCatch(err -> LOG.error("Failed to write req/resp response", err)));
   }
 
@@ -61,7 +69,22 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   public void completeWithErrorResponse(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessageString());
     try {
-      rpcStream.writeBytes(responseEncoder.encodeErrorResponse(error)).finishStackTrace();
+      rpcStream
+          .writeBytes(responseEncoder.encodeErrorResponse(error))
+          .finish(
+              RootCauseExceptionHandler.builder()
+                  .addCatch(
+                      ClosedChannelException.class,
+                      err ->
+                          LOG.trace(
+                              "Failed to write error response because channel was closed", err))
+                  .addCatch(
+                      ChannelOutputShutdownException.class,
+                      err ->
+                          LOG.trace(
+                              "Failed to write error response because peer stopped reading the stream (STOP_SENDING)",
+                              err))
+                  .defaultCatch(err -> LOG.error("Failed to write req/resp error response", err)));
     } catch (StreamClosedException e) {
       LOG.debug(
           "Unable to send error message ({}) to peer, rpc stream already closed: {}",
@@ -77,8 +100,20 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
       LOG.trace("Not sending RPC response as peer has already disconnected");
       // But close the stream just to be completely sure we don't leak any resources.
       rpcStream.closeAbruptly().finishTrace(LOG);
-    } else {
-      completeWithErrorResponse(new ServerErrorException());
+      return;
     }
+    // A closed/half-closed stream is expected peer churn. Writing a server error response to it is
+    // pointless: the write would just fail again and resurface as a noisy uncaught exception (e.g.
+    // the peer sent STOP_SENDING, which is a ChannelOutputShutdownException rather than a
+    // ClosedChannelException, so each close type must be matched separately).
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof StreamClosedException
+        || rootCause instanceof ClosedChannelException
+        || rootCause instanceof ChannelOutputShutdownException) {
+      LOG.trace("Not sending RPC response as the stream is already closed", error);
+      rpcStream.closeAbruptly().finishTrace(LOG);
+      return;
+    }
+    completeWithErrorResponse(new ServerErrorException());
   }
 }

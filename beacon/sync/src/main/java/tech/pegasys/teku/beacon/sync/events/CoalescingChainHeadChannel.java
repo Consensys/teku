@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
@@ -44,6 +45,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
     if (!syncing) {
       optionalReorgContext.ifPresent(
@@ -63,6 +65,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
           executionOptimistic,
           previousDutyDependentRoot,
           currentDutyDependentRoot,
+          payloadStatus,
           optionalReorgContext);
     } else {
       pendingEvent =
@@ -77,6 +80,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                           executionOptimistic,
                           previousDutyDependentRoot,
                           currentDutyDependentRoot,
+                          payloadStatus,
                           optionalReorgContext))
               .or(
                   () ->
@@ -89,6 +93,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                               executionOptimistic,
                               previousDutyDependentRoot,
                               currentDutyDependentRoot,
+                              payloadStatus,
                               optionalReorgContext)));
     }
   }
@@ -110,6 +115,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     private boolean executionOptimistic;
     private Bytes32 previousDutyDependentRoot;
     private Bytes32 currentDutyDependentRoot;
+    private Optional<ForkChoicePayloadStatus> payloadStatus;
     private Optional<ReorgContext> reorgContext;
 
     private PendingEvent(
@@ -120,6 +126,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final boolean executionOptimistic,
         final Bytes32 previousDutyDependentRoot,
         final Bytes32 currentDutyDependentRoot,
+        final Optional<ForkChoicePayloadStatus> payloadStatus,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
@@ -128,6 +135,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       this.executionOptimistic = executionOptimistic;
       this.previousDutyDependentRoot = previousDutyDependentRoot;
       this.currentDutyDependentRoot = currentDutyDependentRoot;
+      this.payloadStatus = payloadStatus;
       this.reorgContext = reorgContext;
     }
 
@@ -140,6 +148,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
           executionOptimistic,
           previousDutyDependentRoot,
           currentDutyDependentRoot,
+          payloadStatus,
           reorgContext);
     }
 
@@ -151,6 +160,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final boolean executionOptimistic,
         final Bytes32 previousDutyDependentRoot,
         final Bytes32 currentDutyDependentRoot,
+        final Optional<ForkChoicePayloadStatus> payloadStatus,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
@@ -161,6 +171,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       this.executionOptimistic = executionOptimistic;
       this.previousDutyDependentRoot = previousDutyDependentRoot;
       this.currentDutyDependentRoot = currentDutyDependentRoot;
+      this.payloadStatus = payloadStatus;
       if (reorgContext.isPresent() && hasEarlierCommonAncestor(reorgContext)) {
         this.reorgContext = reorgContext;
       }

@@ -114,6 +114,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(true);
+    when(gossipValidationHelper.getRandaoMixForCurrentEpoch(postState, slot))
+        .thenReturn(bid.getPrevRandao());
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bid.getValue(), builderIndex, postState, slot))
         .thenReturn(true);
@@ -307,6 +309,18 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(SAVE_FOR_FUTURE);
+  }
+
+  @TestTemplate
+  void shouldReject_whenPrevRandaoIsIncorrect() {
+    final Bytes32 incorrectRandaoMix = dataStructureUtil.randomBytes32();
+    when(gossipValidationHelper.getRandaoMixForCurrentEpoch(postState, slot))
+        .thenReturn(incorrectRandaoMix);
+    assertThatSafeFuture(bidValidator.validate(signedBid))
+        .isCompletedWithValue(
+            reject(
+                "Bid prev_randao %s does not match expected RANDAO mix %s",
+                bid.getPrevRandao(), incorrectRandaoMix));
   }
 
   @TestTemplate
@@ -564,6 +578,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
             slot.decrement(), message.getParentBlockRoot(), slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(true);
+    when(gossipValidationHelper.getRandaoMixForCurrentEpoch(postState, slot))
+        .thenReturn(message.getPrevRandao());
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bidValue, builderIndex, postState, slot))
         .thenReturn(true);

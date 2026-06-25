@@ -75,7 +75,8 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
   @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final SignedVoluntaryExit signedVoluntaryExit = dataStructureUtil.randomSignedVoluntaryExit();
+    final SignedVoluntaryExit signedVoluntaryExit =
+        dataStructureUtil.randomSignedVoluntaryExit(UInt64.ZERO);
     doThrow(new RuntimeException()).when(voluntaryExitPool).addLocal(signedVoluntaryExit);
 
     final Response response = getResponse(signedVoluntaryExit);

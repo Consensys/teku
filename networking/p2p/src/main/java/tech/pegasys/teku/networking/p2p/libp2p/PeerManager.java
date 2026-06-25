@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.peer.Transport;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class PeerManager implements ConnectionHandler {
@@ -85,14 +87,29 @@ public class PeerManager implements ConnectionHandler {
         metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.LIBP2P,
             "peers_direction_current",
-            "The number of peers by direction including inbound and outbound",
-            "direction");
-    peerDirectionLabelledGauge.labels(
-        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedRemotely).count(),
-        "inbound");
-    peerDirectionLabelledGauge.labels(
-        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedLocally).count(),
-        "outbound");
+            "The number of peers by direction and transport",
+            "direction",
+            "transport");
+    registerPeersByDirectionAndTransport(
+        peerDirectionLabelledGauge, "inbound", Peer::connectionInitiatedRemotely);
+    registerPeersByDirectionAndTransport(
+        peerDirectionLabelledGauge, "outbound", Peer::connectionInitiatedLocally);
+  }
+
+  private void registerPeersByDirectionAndTransport(
+      final LabelledSuppliedMetric gauge,
+      final String direction,
+      final Predicate<Peer> directionPredicate) {
+    for (final Transport transport : List.of(Transport.TCP, Transport.QUIC)) {
+      gauge.labels(
+          () ->
+              connectedPeerMap.values().stream()
+                  .filter(directionPredicate)
+                  .filter(peer -> peer.getTransport() == transport)
+                  .count(),
+          direction,
+          transport.getLabel());
+    }
   }
 
   @Override

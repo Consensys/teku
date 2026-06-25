@@ -82,8 +82,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeInvariants;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -130,6 +131,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -1017,7 +1019,7 @@ public class Spec {
                 new IllegalStateException(
                     "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
         .createNewUnsignedExecutionPayload(
-            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
+            builderIndex, blockAndState, executionPayloadProposalDataFuture);
   }
 
   // Blind Block Utils
@@ -1200,6 +1202,15 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Attempting to use execution requests processor when spec does not have execution requests processor"));
+  }
+
+  public ExecutionRequestsDataCodec getExecutionRequestsDataCodec(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionRequestsDataCodec()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution requests data codec when spec does not have execution requests data codec"));
   }
 
   // Data Column Sidecar Util
@@ -1429,6 +1440,15 @@ public class Spec {
     return getSpecConfigFulu()
         .map(SpecConfigFulu::getFuluForkEpoch)
         .map(this::computeStartSlotAtEpoch);
+  }
+
+  // Gloas Utils
+  public boolean isExecutionPayloadEnvelopeAvailableAtSlot(final UInt64 slot) {
+    return atSlot(slot)
+        .miscHelpers()
+        .toVersionGloas()
+        .map(MiscHelpersGloas::isExecutionPayloadEnvelopeAvailable)
+        .orElse(false);
   }
 
   // Electra Utils

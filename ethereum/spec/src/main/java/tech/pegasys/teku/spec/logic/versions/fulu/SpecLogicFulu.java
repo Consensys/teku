@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.fulu;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -68,6 +68,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
+  private final Optional<ExecutionRequestsDataCodec> executionRequestsDataCodec;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
 
   private SpecLogicFulu(
@@ -85,6 +86,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
       final EpochProcessorElectra epochProcessor,
       final WithdrawalsHelpersElectra withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final BlockProcessorFulu blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -115,6 +117,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
+    this.executionRequestsDataCodec = Optional.of(executionRequestsDataCodec);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
   }
 
@@ -243,6 +246,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         epochProcessor,
         withdrawalsHelpers,
         executionRequestsProcessor,
+        executionRequestsDataCodec,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -276,6 +280,11 @@ public class SpecLogicFulu extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return executionRequestsProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
+    return executionRequestsDataCodec;
   }
 
   @Override

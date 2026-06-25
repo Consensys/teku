@@ -57,11 +57,15 @@ public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
     when(peer1.getAddress()).thenReturn(new PeerAddress(peerId1));
     when(peer1.isConnected()).thenReturn(true);
     when(peer1.connectionInitiatedLocally()).thenReturn(false);
+    when(peer1.getAgentVersion()).thenReturn(Optional.of("Lighthouse/v8.1.3"));
+    when(peer1.getGossipScore()).thenReturn(-17.4828);
 
     when(peer2.getId()).thenReturn(peerId2);
     when(peer2.getAddress()).thenReturn(new PeerAddress(peerId2));
     when(peer2.isConnected()).thenReturn(true);
     when(peer2.connectionInitiatedLocally()).thenReturn(true);
+    when(peer2.getAgentVersion()).thenReturn(Optional.empty());
+    when(peer2.getGossipScore()).thenReturn(3.5);
   }
 
   @Test
@@ -92,9 +96,11 @@ public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             "{\"data\":[{\"peer_id\":\"1111111111111111111111111111177em\","
                 + "\"last_seen_p2p_address\":\"1111111111111111111111111111177em\","
-                + "\"state\":\"connected\",\"direction\":\"inbound\"},"
+                + "\"state\":\"connected\",\"direction\":\"inbound\","
+                + "\"agent_version\":\"Lighthouse/v8.1.3\",\"score\":-17.4828},"
                 + "{\"peer_id\":\"11111111111111111111111111111hVqL\","
                 + "\"last_seen_p2p_address\":\"11111111111111111111111111111hVqL\","
-                + "\"state\":\"connected\",\"direction\":\"outbound\"}],\"meta\":{\"count\":2}}");
+                + "\"state\":\"connected\",\"direction\":\"outbound\","
+                + "\"score\":3.5}],\"meta\":{\"count\":2}}");
   }
 }

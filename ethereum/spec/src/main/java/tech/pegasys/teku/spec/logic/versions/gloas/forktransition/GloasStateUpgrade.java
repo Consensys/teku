@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
+import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -24,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -35,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -168,7 +173,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
             });
   }
 
-  /** Applies any pending deposit for builders, effectively onboarding builders at the fork. */
+  /**
+   * This one-time onboarding is the only path through the validator deposit contract that creates
+   * builders. From the fork onward, builders are created and topped up only via
+   * `BuilderDepositRequest`.
+   */
   private void onboardBuildersFromPendingDeposits(final MutableBeaconStateGloas state) {
     final long startTimeMillis = System.currentTimeMillis();
     LOG.debug(
@@ -185,37 +194,53 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         pendingDeposits.add(deposit);
         continue;
       }
-      // Deposits for non-builders stay in the pending queue. If there is a valid pending deposit
-      // for a new validator with this pubkey, keep this deposit in the pending queue to be
-      // applied to that validator later.
-      if (beaconStateAccessors.getBuilderIndex(state, pubkey).isEmpty()) {
-        // Deposits without builder credentials stay in the pending queue
-        if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
-          pendingDeposits.add(deposit);
-          continue;
-        }
-        boolean isPendingValidator;
-        if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
-          isPendingValidator = true;
-        } else {
-          isPendingValidator =
-              miscHelpers.isPendingValidator(pendingDeposits, pubkey)
-                  && verifiedPendingValidatorPubkeys.add(pubkey);
-        }
-        if (isPendingValidator) {
-          pendingDeposits.add(deposit);
-          continue;
-        }
-      }
-      beaconStateMutators.applyDepositForBuilder(
-          state,
-          deposit.getPublicKey(),
-          deposit.getWithdrawalCredentials(),
-          deposit.getAmount(),
-          deposit.getSignature(),
-          deposit.getSlot(),
-          false);
+      beaconStateAccessors
+          .getBuilderIndex(state, pubkey)
+          .ifPresentOrElse(
+              builderIndex -> {
+                final SszMutableList<Builder> builders = state.getBuilders();
+                final Builder builder = builders.get(builderIndex);
+                builders.set(
+                    builderIndex,
+                    builder.copyWithNewBalance(builder.getBalance().plus(deposit.getAmount())));
+              },
+              // Deposits for non-builders stay in the pending queue. If there is a valid pending
+              // deposit for a new validator with this pubkey, keep this deposit in the pending
+              // queue to be applied to that validator later.
+              () -> {
+                // Deposits without builder credentials stay in the pending queue
+                if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
+                  pendingDeposits.add(deposit);
+                  return;
+                }
+                boolean isPendingValidator;
+                if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
+                  isPendingValidator = true;
+                } else {
+                  isPendingValidator = miscHelpers.isPendingValidator(pendingDeposits, pubkey);
+                }
+                if (isPendingValidator) {
+                  verifiedPendingValidatorPubkeys.add(pubkey);
+                  pendingDeposits.add(deposit);
+                  return;
+                }
+                if (!miscHelpers.isValidDepositSignature(
+                    pubkey,
+                    deposit.getWithdrawalCredentials(),
+                    deposit.getAmount(),
+                    deposit.getSignature())) {
+                  return;
+                }
+                beaconStateMutators.addBuilderToRegistry(
+                    state,
+                    pubkey,
+                    PAYLOAD_BUILDER_VERSION,
+                    getExecutionAddressUnchecked(deposit.getWithdrawalCredentials()),
+                    deposit.getAmount(),
+                    deposit.getSlot());
+              });
     }
+
     state.setPendingDeposits(
         schemaDefinitions.getPendingDepositsSchema().createFromElements(pendingDeposits));
     LOG.debug(

@@ -166,6 +166,18 @@ interface ForkChoiceModel {
 
   Optional<Boolean> getPayloadDataAvailabilityVote(Bytes32 blockRoot, int ptcPosition);
 
+  default int getPayloadAttesterCount(final Bytes32 blockRoot) {
+    return 0;
+  }
+
+  default int getPayloadAvailabilityYesCount(final Bytes32 blockRoot) {
+    return 0;
+  }
+
+  default int getPayloadDataAvailabilityYesCount(final Bytes32 blockRoot) {
+    return 0;
+  }
+
   void onRemovedBlockRoot(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
