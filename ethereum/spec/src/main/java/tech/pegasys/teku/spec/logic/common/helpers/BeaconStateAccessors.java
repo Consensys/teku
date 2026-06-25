@@ -244,7 +244,7 @@ public abstract class BeaconStateAccessors {
   }
 
   public UInt64 getFinalityDelay(final BeaconState state) {
-    return getPreviousEpoch(state).minus(state.getFinalizedCheckpoint().getEpoch());
+    return getPreviousEpoch(state).minusMinZero(state.getFinalizedCheckpoint().getEpoch());
   }
 
   public boolean isInactivityLeak(final UInt64 finalityDelay) {

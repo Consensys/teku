@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
@@ -134,6 +136,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
+    return specLogic.getExecutionRequestsDataCodec();
+  }
+
+  @Override
   public Optional<ExecutionPayloadVerifier> getExecutionPayloadVerifier() {
     return specLogic.getExecutionPayloadVerifier();
   }
@@ -166,6 +173,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public OperationSignatureVerifier operationSignatureVerifier() {
     return specLogic.operationSignatureVerifier();
+  }
+
+  @Override
+  public WeakSubjectivityCalculator weakSubjectivityCalculator() {
+    return specLogic.weakSubjectivityCalculator();
   }
 
   @Override

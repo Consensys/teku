@@ -773,7 +773,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return NodeSyncingException.failedFuture();
     }
     return combinedChainDataClient
-        .getBlockInEffectAtSlot(slot)
+        .getBlockAtSlotExact(slot)
         .thenApply(
             maybeBlock -> {
               if (maybeBlock.isEmpty()) {
@@ -781,7 +781,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               }
               final SignedBeaconBlock block = maybeBlock.get();
               final boolean payloadPresent =
-                  executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot());
+                  executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot());
               // if execution payload is in the store, blob data is available
               final boolean blobDataAvailable =
                   combinedChainDataClient

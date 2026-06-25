@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE;
 import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
@@ -41,8 +42,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -105,7 +104,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
     final List<String> expectedPeers = List.of("127.0.1.1", "127.1.1.1");
     final Path peersFile = Files.createFile(tempDir.resolve("peers.txt"));
@@ -125,7 +123,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadBootnodesFromConfigurationFile(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -146,7 +143,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadBootnodesFromYamlConfigurationFile(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -168,7 +164,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldGiveGoodErrorMessageReadingBootnodeUrl(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -216,7 +211,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
   public void shouldMergeBootnodesFromConfigAndFile(@TempDir final Path tempDir)
       throws IOException {
     final List<String> expectedBootnodes =
@@ -310,6 +304,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void quic_shouldBeEnabledByDefault() {
+    final NetworkConfig config = getTekuConfigurationFromArguments().network();
+    assertThat(config.isQuicEnabled()).isTrue();
+  }
+
+  @Test
+  public void quic_shouldAcceptValue() {
+    final NetworkConfig config =
+        getTekuConfigurationFromArguments("--Xp2p-quic-enabled", "false").network();
+    assertThat(config.isQuicEnabled()).isFalse();
+  }
+
+  @Test
   public void advertisedIps_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
     assertThat(config.hasUserExplicitlySetAdvertisedIps()).isFalse();
@@ -390,12 +397,13 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void minimumRandomlySelectedPeerCount_shouldDefaultTo20PercentOfLowerBound() {
+  public void minimumRandomlySelectedPeerCount_shouldDefaultTo30PercentOfLowerBound() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(
             "--p2p-peer-lower-bound", "100",
             "--p2p-peer-upper-bound", "110");
-    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(20);
+    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers())
+        .isEqualTo(100 * DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE / 100);
   }
 
   @Test
@@ -473,6 +481,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             "--p2p-peer-lower-bound", "0",
             "--p2p-peer-upper-bound", "0");
     assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(0);
+  }
+
+  @Test
+  public void minimumRandomlySelectedPeerCount_shouldNotExceedUpperBound() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--p2p-peer-upper-bound",
+                    "10",
+                    "--Xp2p-minimum-randomly-selected-peer-count",
+                    "11"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid minRandomlySelectedPeers: 11 exceeds maxPeers: 10");
   }
 
   @Test

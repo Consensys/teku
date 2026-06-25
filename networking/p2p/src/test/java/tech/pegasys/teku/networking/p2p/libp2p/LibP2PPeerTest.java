@@ -20,13 +20,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
 
+import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.StreamPromise;
+import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.security.SecureChannel.Session;
+import io.libp2p.crypto.keys.EcdsaKt;
+import io.libp2p.crypto.keys.Secp256k1Kt;
+import io.libp2p.protocol.IdentifyController;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +45,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.Transport;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
@@ -73,6 +84,48 @@ public class LibP2PPeerTest {
     when(secureSession.getRemoteId()).thenReturn(PeerId.fromBase58(PEER_ID));
     libP2PPeer =
         new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, peer -> 0.0);
+  }
+
+  @Test
+  public void getPubKey_recoversIdentityKeyFromPeerIdWhenSecureSessionExposesDifferentKey() {
+    // Simulates a QUIC connection: the libp2p-TLS secure session reports the ephemeral
+    // certificate key (ECDSA) as the remote public key, while the verified peer identity (and
+    // hence the peer id) is derived from the node's secp256k1 identity key. The discovery node id
+    // must be derived from the secp256k1 identity key, so getPubKey() must return that key rather
+    // than the certificate key.
+    final PubKey identityKey = Secp256k1Kt.generateSecp256k1KeyPair().getSecond();
+    final PubKey certificateKey = EcdsaKt.generateEcdsaKeyPair().getSecond();
+
+    final Session secureSession = mock(Session.class);
+    when(connection.secureSession()).thenReturn(secureSession);
+    when(secureSession.getRemoteId()).thenReturn(PeerId.fromPubKey(identityKey));
+    when(secureSession.getRemotePubKey()).thenReturn(certificateKey);
+
+    final LibP2PPeer peer =
+        new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, p -> 0.0);
+
+    assertThat(peer.getPubKey().raw()).isEqualTo(identityKey.raw());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void checkPeerIdentity_shouldExposeAgentVersion() {
+    final io.libp2p.core.mux.StreamMuxer.Session muxerSession =
+        mock(io.libp2p.core.mux.StreamMuxer.Session.class);
+    final IdentifyController identifyController = mock(IdentifyController.class);
+    final StreamPromise<IdentifyController> streamPromise =
+        new StreamPromise<>(new CompletableFuture<>(), new CompletableFuture<>());
+    final IdentifyOuterClass.Identify identify =
+        IdentifyOuterClass.Identify.newBuilder().setAgentVersion("Lighthouse/v8.1.3").build();
+    when(connection.muxerSession()).thenReturn(muxerSession);
+    when(muxerSession.createStream((ProtocolBinding<IdentifyController>) any()))
+        .thenReturn(streamPromise);
+    when(identifyController.id()).thenReturn(CompletableFuture.completedFuture(identify));
+
+    libP2PPeer.checkPeerIdentity();
+    streamPromise.getController().complete(identifyController);
+
+    assertThat(libP2PPeer.getAgentVersion()).contains("Lighthouse/v8.1.3");
   }
 
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored", "rawtypes"})
@@ -137,5 +190,46 @@ public class LibP2PPeerTest {
     assertThat(disconnectionReason.get()).contains(DisconnectReason.IRRELEVANT_NETWORK);
     assertThat(disconnectionLocallyInitiated.get()).isTrue();
     assertThat(disconnectionCount.get()).isEqualTo(1);
+  }
+
+  @Test
+  public void adjustReputation_shouldDisconnectWithBadScoreWhenThresholdIsReached() {
+    final ReputationManager reputationManager = mock(ReputationManager.class);
+    final LibP2PPeer peer =
+        new LibP2PPeer(connection, List.of(rpcHandler), reputationManager, p -> 0.0);
+    final AtomicReference<DisconnectReason> disconnectReason = new AtomicReference<>();
+    peer.setDisconnectRequestHandler(
+        reason -> {
+          disconnectReason.set(reason);
+          return SafeFuture.COMPLETE;
+        });
+    when(reputationManager.adjustReputation(any(PeerAddress.class), eq(LARGE_PENALTY)))
+        .thenReturn(true);
+
+    peer.adjustReputation(LARGE_PENALTY);
+
+    assertThat(disconnectReason).hasValue(DisconnectReason.BAD_SCORE);
+  }
+
+  @Test
+  public void getTransport_returnsTcpForTcpMultiaddr() {
+    assertThat(libP2PPeer.getTransport()).isEqualTo(Transport.TCP);
+  }
+
+  @Test
+  public void getTransport_returnsQuicForQuicMultiaddr() {
+    when(connection.remoteAddress())
+        .thenReturn(Multiaddr.fromString("/ip4/127.0.0.1/udp/9000/quic-v1/"));
+    final LibP2PPeer peer =
+        new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, p -> 0.0);
+    assertThat(peer.getTransport()).isEqualTo(Transport.QUIC);
+  }
+
+  @Test
+  public void getTransport_returnsUnknownForNonTcpQuicMultiaddr() {
+    when(connection.remoteAddress()).thenReturn(Multiaddr.fromString("/ip4/127.0.0.1/udp/9000/"));
+    final LibP2PPeer peer =
+        new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, p -> 0.0);
+    assertThat(peer.getTransport()).isEqualTo(Transport.UNKNOWN);
   }
 }

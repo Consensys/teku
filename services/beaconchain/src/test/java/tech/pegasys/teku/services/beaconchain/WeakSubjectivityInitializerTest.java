@@ -131,7 +131,6 @@ public class WeakSubjectivityInitializerTest {
             .specProvider(spec)
             .weakSubjectivityCheckpoint(cliCheckpoint)
             .suppressWSPeriodChecksUntilEpoch(UInt64.valueOf(123))
-            .safetyDecay(UInt64.valueOf(5))
             .build();
 
     // Setup storage
@@ -342,8 +341,6 @@ public class WeakSubjectivityInitializerTest {
   }
 
   private WeakSubjectivityCalculator createWSCalculator() {
-    final WeakSubjectivityConfig wsConfig =
-        WeakSubjectivityConfig.builder().specProvider(spec).build();
-    return WeakSubjectivityCalculator.create(wsConfig);
+    return WeakSubjectivityCalculator.create(spec);
   }
 }

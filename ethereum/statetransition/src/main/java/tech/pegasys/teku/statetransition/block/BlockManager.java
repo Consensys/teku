@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,27 +31,35 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlockEventsListener;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadEventsListener;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockManager extends Service
-    implements SlotEventsChannel, BlockImportChannel, ReceivedBlockEventsChannel {
+    implements SlotEventsChannel,
+        BlockImportChannel,
+        ReceivedBlockEventsChannel,
+        ReceivedExecutionPayloadEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final BlockEventsListener blockEventsListener;
-  private final PendingPool<SignedBeaconBlock> pendingBlocks;
+  private final Supplier<ExecutionPayloadEventsListener> executionPayloadEventsListenerSupplier;
+  private final PendingBlockPool pendingBlockPool;
   private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
@@ -63,6 +73,8 @@ public class BlockManager extends Service
       Subscribers.create(true);
   private final Subscribers<PreImportBlockListener> preImportBlockSubscribers =
       Subscribers.create(true);
+  private final Subscribers<RequiredParentExecutionPayloadSubscriber>
+      requiredParentExecutionPayloadSubscribers = Subscribers.create(true);
 
   private final Optional<BlockImportMetrics> blockImportMetrics;
 
@@ -70,7 +82,8 @@ public class BlockManager extends Service
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final BlockEventsListener blockEventsListener,
-      final PendingPool<SignedBeaconBlock> pendingBlocks,
+      final Supplier<ExecutionPayloadEventsListener> executionPayloadEventsListenerSupplier,
+      final PendingBlockPool pendingBlockPool,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final BlockValidator blockValidator,
@@ -80,7 +93,8 @@ public class BlockManager extends Service
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.blockEventsListener = blockEventsListener;
-    this.pendingBlocks = pendingBlocks;
+    this.executionPayloadEventsListenerSupplier = executionPayloadEventsListenerSupplier;
+    this.pendingBlockPool = pendingBlockPool;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
     this.blockValidator = blockValidator;
@@ -173,7 +187,6 @@ public class BlockManager extends Service
 
   @Override
   public void onSlot(final UInt64 slot) {
-    pendingBlocks.onSlot(slot);
     futureBlocks.onSlot(slot);
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
@@ -186,6 +199,11 @@ public class BlockManager extends Service
     preImportBlockSubscribers.subscribe(subscriber);
   }
 
+  public void subscribeRequiredParentExecutionPayload(
+      final RequiredParentExecutionPayloadSubscriber subscriber) {
+    requiredParentExecutionPayloadSubscribers.subscribe(subscriber);
+  }
+
   @Override
   public void onBlockValidated(final SignedBeaconBlock block) {
     // No-op
@@ -193,13 +211,39 @@ public class BlockManager extends Service
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
-    pendingBlocks.remove(block);
+    blockEventsListener.onBlockImported(block);
+    pendingBlockPool.remove(block);
     // Check if any pending blocks can now be imported
     final List<SignedBeaconBlock> children =
-        pendingBlocks.getItemsDependingOn(block.getRoot(), false);
-    children.forEach(pendingBlocks::remove);
+        pendingBlockPool.removeBlocksWaitingForParent(block.getRoot());
     children.forEach(this::importBlockIgnoringResult);
+  }
+
+  @Override
+  public void onExecutionPayloadValidated(final SignedExecutionPayloadEnvelope executionPayload) {
+    // No-op until the payload has been imported into fork choice.
+  }
+
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    executionPayloadEventsListenerSupplier
+        .get()
+        .onExecutionPayloadImported(executionPayload.getSlotAndBlockRoot());
+    final ParentExecutionPayloadDependency parentExecutionPayloadDependency =
+        new ParentExecutionPayloadDependency(
+            executionPayload.getBeaconBlockRoot(),
+            executionPayload.getMessage().getPayload().getBlockHash());
+    final List<SignedBeaconBlock> blocksToRetry =
+        removeBlocksPendingParentExecutionPayload(parentExecutionPayloadDependency);
+    if (!blocksToRetry.isEmpty()) {
+      LOG.debug(
+          "Retrying {} blocks waiting for parent execution payload {} for parent block {}",
+          blocksToRetry::size,
+          parentExecutionPayloadDependency::parentExecutionBlockHash,
+          parentExecutionPayloadDependency::parentBeaconBlockRoot);
+    }
+    blocksToRetry.forEach(this::importBlockIgnoringResult);
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
@@ -244,7 +288,7 @@ public class BlockManager extends Service
   }
 
   private Optional<SafeFuture<BlockImportResult>> handleKnownBlock(final SignedBeaconBlock block) {
-    if (pendingBlocks.contains(block) || futureBlocks.contains(block)) {
+    if (pendingBlockPool.contains(block) || futureBlocks.contains(block)) {
       // Pending and future blocks can't have been executed yet so must be marked optimistic
       return Optional.of(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, true)));
     }
@@ -273,16 +317,19 @@ public class BlockManager extends Service
                 switch (result.getFailureReason()) {
                   case UNKNOWN_PARENT -> {
                     // Add to the pending pool so it is triggered once the parent is imported
-                    pendingBlocks.add(block);
+                    pendingBlockPool.addForMissingParent(block);
                     // Check if the parent was imported while we were trying to import
                     // this block and if so, remove from the pendingPool again
                     // and process now We must add the block
                     // to the pending pool before this check happens to avoid race
                     // conditions between performing the check and the parent importing.
                     if (recentChainData.containsBlock(block.getParentRoot())) {
-                      pendingBlocks.remove(block);
+                      pendingBlockPool.remove(block);
                       importBlockIgnoringResult(block);
                     }
+                  }
+                  case UNKNOWN_PARENT_EXECUTION_PAYLOAD -> {
+                    addBlockPendingParentExecutionPayload(block);
                   }
                   case BLOCK_IS_FROM_FUTURE -> futureBlocks.add(block);
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING -> {
@@ -351,6 +398,63 @@ public class BlockManager extends Service
             });
   }
 
+  private void addBlockPendingParentExecutionPayload(final SignedBeaconBlock block) {
+    final ParentExecutionPayloadDependency parentExecutionPayloadDependency =
+        getRequiredParentExecutionPayloadDependency(block);
+    final boolean added =
+        pendingBlockPool.addForMissingParentExecutionPayload(
+            block, parentExecutionPayloadDependency);
+    if (!pendingBlockPool.contains(block)) {
+      return;
+    }
+
+    if (added) {
+      LOG.debug(
+          "Save block {} until parent execution payload {} for parent block {} is imported",
+          block::toLogString,
+          parentExecutionPayloadDependency::parentExecutionBlockHash,
+          parentExecutionPayloadDependency::parentBeaconBlockRoot);
+    }
+
+    if (isParentExecutionPayloadAvailable(parentExecutionPayloadDependency)) {
+      pendingBlockPool.remove(block).ifPresent(this::importBlockIgnoringResult);
+    } else if (added) {
+      requiredParentExecutionPayloadSubscribers.deliver(
+          RequiredParentExecutionPayloadSubscriber::onRequiredParentExecutionPayload,
+          parentExecutionPayloadDependency);
+    }
+  }
+
+  private ParentExecutionPayloadDependency getRequiredParentExecutionPayloadDependency(
+      final SignedBeaconBlock block) {
+    final ExecutionPayloadBid bid =
+        block
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    return new ParentExecutionPayloadDependency(block.getParentRoot(), bid.getParentBlockHash());
+  }
+
+  private boolean isParentExecutionPayloadAvailable(
+      final ParentExecutionPayloadDependency dependency) {
+    return recentChainData
+        .getExecutionBlockHashForBlockRoot(dependency.parentBeaconBlockRoot())
+        .filter(dependency.parentExecutionBlockHash()::equals)
+        .isPresent();
+  }
+
+  private List<SignedBeaconBlock> removeBlocksPendingParentExecutionPayload(
+      final ParentExecutionPayloadDependency dependency) {
+    return pendingBlockPool.removeBlocksWaitingForParentExecutionPayload(dependency);
+  }
+
+  private List<SignedBeaconBlock> removeBlocksPendingParentExecutionPayloadDependingOnParentBlock(
+      final Bytes32 parentRoot) {
+    return pendingBlockPool.removeBlocksWaitingForParentExecutionPayload(parentRoot);
+  }
+
   private boolean internalErrorToBeConsiderAsInvalidBlock(final Throwable internalError) {
     if (internalError instanceof RejectedExecutionException
         || ExceptionUtil.hasCause(internalError, RejectedExecutionException.class)) {
@@ -375,20 +479,28 @@ public class BlockManager extends Service
 
   private void dropInvalidBlock(
       final SignedBeaconBlock block, final BlockImportResult blockImportResult) {
-    invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
-    pendingBlocks.remove(block);
-    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
+    markInvalidBlock(block, blockImportResult);
+    dropDescendantsOfInvalidBlock(block.getRoot());
+  }
 
-    pendingBlocks
-        .getItemsDependingOn(block.getRoot(), true)
-        .forEach(
-            blockToDrop -> {
-              invalidBlockRoots.put(
-                  blockToDrop.getMessage().hashTreeRoot(),
-                  BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
-              pendingBlocks.remove(blockToDrop);
-              blockEventsListener.removeAllForBlock(blockToDrop.getSlotAndBlockRoot());
-            });
+  private void dropDescendantsOfInvalidBlock(final Bytes32 invalidBlockRoot) {
+    final List<SignedBeaconBlock> descendants = new ArrayList<>();
+    descendants.addAll(pendingBlockPool.removeBlocksWaitingForParent(invalidBlockRoot));
+    descendants.addAll(
+        removeBlocksPendingParentExecutionPayloadDependingOnParentBlock(invalidBlockRoot));
+
+    descendants.forEach(
+        blockToDrop -> {
+          markInvalidBlock(blockToDrop, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
+          dropDescendantsOfInvalidBlock(blockToDrop.getRoot());
+        });
+  }
+
+  private void markInvalidBlock(
+      final SignedBeaconBlock block, final BlockImportResult blockImportResult) {
+    invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
+    pendingBlockPool.remove(block);
+    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
   }
 
   private void lateBlockImportCheck(
@@ -406,5 +518,9 @@ public class BlockManager extends Service
 
   public interface PreImportBlockListener {
     void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
+  }
+
+  public interface RequiredParentExecutionPayloadSubscriber {
+    void onRequiredParentExecutionPayload(ParentExecutionPayloadDependency dependency);
   }
 }

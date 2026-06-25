@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.fulu;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -48,8 +49,10 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Attes
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity.WeakSubjectivityCalculatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.execution.ExecutionRequestsProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -65,6 +68,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
+  private final Optional<ExecutionRequestsDataCodec> executionRequestsDataCodec;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
 
   private SpecLogicFulu(
@@ -73,6 +77,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
       final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculator weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -81,6 +86,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
       final EpochProcessorElectra epochProcessor,
       final WithdrawalsHelpersElectra withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final BlockProcessorFulu blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -95,6 +101,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -110,6 +117,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
+    this.executionRequestsDataCodec = Optional.of(executionRequestsDataCodec);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
   }
 
@@ -129,6 +137,10 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculatorElectra weakSubjectivityCalculator =
+        new WeakSubjectivityCalculatorElectra(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -178,8 +190,8 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     final WithdrawalsHelpersElectra withdrawalsHelpers =
         new WithdrawalsHelpersElectra(
             schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
-    final ExecutionRequestsProcessorElectra executionRequestsProcessor =
-        new ExecutionRequestsProcessorElectra(
+    final ExecutionRequestsProcessorFulu executionRequestsProcessor =
+        new ExecutionRequestsProcessorFulu(
             schemaDefinitions,
             miscHelpers,
             config,
@@ -225,6 +237,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -233,6 +246,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         epochProcessor,
         withdrawalsHelpers,
         executionRequestsProcessor,
+        executionRequestsDataCodec,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -266,6 +280,11 @@ public class SpecLogicFulu extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return executionRequestsProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
+    return executionRequestsDataCodec;
   }
 
   @Override

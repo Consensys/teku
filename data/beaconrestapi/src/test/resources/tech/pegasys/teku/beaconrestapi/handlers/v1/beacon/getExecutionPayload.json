@@ -70,12 +70,26 @@
             "source_pubkey": "0x90b2ffa8992560bca2080afa9b3adc904ce9085a8c2cc897282f20378bdf3cdc0a74100f226ea698e07d4afe50d8ff54",
             "target_pubkey": "0xaed83e77fbc39e3b1115994cf6cffb5e12c8a60d6e5a511b8f4176f74660db30cc9acedb53d3288806420f903ab69157"
           }
+        ],
+        "builder_deposits": [
+          {
+            "pubkey": "0xb272b83b21044842822fa9d80b3aed0865c98691bf1c053f6011ec845fad96c422e2667b04ee5ce854f61b8aa8f2dd56",
+            "withdrawal_credentials": "0xe99f4b3f0a100c35d42723225a552d1a73249ce1f5f188e889bbcdabc2c93c12",
+            "amount": "4559262388392254378",
+            "signature": "0x8166b2ed13e982e6b9f05d30f42681b826099135a533d2614ef5f4f59811714245db0e1821a644859559f97ec1e614bf08b2edb294fa2edc1527f46596399534af23c98613e1b74c01871bf1dd2af9618bc0ba23ddfce8026b897cdbba8c1bce"
+          }
+        ],
+        "builder_exits": [
+          {
+            "source_address": "0x49452e3f298a688d9e7627fb7c01941b923397bb",
+            "pubkey": "0x83919971606b0afef79e35e8a49c53b213230dcdb6d04f4fd65a951060a052bd2bafa867b1f9b0258a30cda8db072831"
+          }
         ]
       },
-      "builder_index": "537496",
-      "beacon_block_root": "0x77d96e3f4a4ad0971596b71d6420b24b4d12a275af3d948b77b438faa484f0d1",
-      "parent_beacon_block_root": "0x8afa683fea95afdc0ad91e4937a9c6185315a1076506bd45a4357cc27fe5a75c"
+      "builder_index": "2383249",
+      "beacon_block_root": "0xe5ca603e08e1eff7259e45ea6bb662256d9d74b1724ee8feb0ea59f6e2ebe3be",
+      "parent_beacon_block_root": "0xf8eb5a3ea82ccf3c1be1ac153e3f77f273a07343291711b9de6b9dbebc4c9b49"
     },
-    "signature": "0x8ab48d0165e8cc8bfc6804760141896946c3be751af5f16d1a03ead456ebceab88a8168e1da194df56c512edc15ca6350c413cb819d31a7ef69b329d8cb9fa8e5d93ae66289a445f1465d57d97e72d4c0866e48a806df7f58ebcd060e2d03a72"
+    "signature": "0xa774e8ae3c67080cc333af2d9cedac9848978d30cea81cd86bd757448d8af577d85402cb167f8c2da650ab150772ef5805fb0897209b1acd7b068eba2dadabb0b5a2c06e97033f51a7c081da085a03b2da1e09e0962c04f0bafc181a2e60cf17"
   }
 }

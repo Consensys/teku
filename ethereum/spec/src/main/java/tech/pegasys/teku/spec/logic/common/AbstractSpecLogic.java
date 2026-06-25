@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 
 public abstract class AbstractSpecLogic implements SpecLogic {
@@ -43,6 +44,8 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final BeaconStateMutators beaconStateMutators;
   // Operations
   protected final OperationSignatureVerifier operationSignatureVerifier;
+  // Weak subjectivity
+  protected final WeakSubjectivityCalculator weakSubjectivityCalculator;
   // Utils
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
@@ -64,6 +67,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculator weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -80,6 +84,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.beaconStateAccessors = beaconStateAccessors;
     this.beaconStateMutators = beaconStateMutators;
     this.operationSignatureVerifier = operationSignatureVerifier;
+    this.weakSubjectivityCalculator = weakSubjectivityCalculator;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
@@ -171,6 +176,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public OperationSignatureVerifier operationSignatureVerifier() {
     return operationSignatureVerifier;
+  }
+
+  @Override
+  public WeakSubjectivityCalculator weakSubjectivityCalculator() {
+    return weakSubjectivityCalculator;
   }
 
   @Override

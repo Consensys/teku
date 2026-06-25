@@ -328,7 +328,7 @@ class Store extends CacheableStore {
     final Map<SlotAndInclusionListCommitteeRoot, Set<UInt64>> inclusionListEquivocators =
         LimitedMap.createSynchronizedNatural(config.getInclusionListCacheSize());
     final Set<Bytes32> unsatisfiedInclusionListBlocks =
-        LimitedSet.createSynchronized(config.getInclusionListCacheSize());
+        LimitedSet.createSynchronizedNatural(config.getInclusionListCacheSize());
 
     return new Store(
         metricsSystem,
@@ -452,8 +452,23 @@ class Store extends CacheableStore {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
-      forkChoiceModelFactory.rebuildBlockNodesFromMetadata(
-          protoArray, blockNodeIndex, block, spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      if (block.getBlockRoot().equals(finalizedAnchor.getRoot())) {
+        // The finalized root is the rebuild anchor, not a normal replayed block. In Gloas there is
+        // no tracked parent for this node after pruning/restart, so the anchor path must seed
+        // BASE/EMPTY execution data directly from the stored bid parent hash instead of inheriting
+        // it from a resolved parent as the common block rebuild path does.
+        forkChoiceModelFactory.rebuildAnchorBlockNodesFromMetadata(
+            protoArray,
+            blockNodeIndex,
+            block,
+            spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      } else {
+        forkChoiceModelFactory.rebuildBlockNodesFromMetadata(
+            protoArray,
+            blockNodeIndex,
+            block,
+            spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      }
     }
 
     initialCanonicalBlockRoot.ifPresent(

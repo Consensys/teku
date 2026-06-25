@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -1281,7 +1282,7 @@ class ProtoArrayTest {
         validatorIndex++) {
       ptcVoteTracker.recordVote(
           blockRoot,
-          UInt64.valueOf(validatorIndex),
+          IntSet.of(validatorIndex),
           validatorIndex < payloadPresentVoteCount,
           validatorIndex < dataAvailableVoteCount);
     }

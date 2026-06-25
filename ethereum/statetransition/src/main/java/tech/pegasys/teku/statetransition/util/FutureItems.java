@@ -117,6 +117,6 @@ public class FutureItems<T> implements SlotEventsChannel {
   }
 
   private Set<T> createNewSet() {
-    return LimitedSet.createSynchronized(MAX_ITEMS_PER_SLOT);
+    return LimitedSet.createSynchronizedLRU(MAX_ITEMS_PER_SLOT);
   }
 }

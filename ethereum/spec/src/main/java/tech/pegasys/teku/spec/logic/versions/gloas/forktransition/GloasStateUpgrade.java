@@ -13,22 +13,25 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
+import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
@@ -39,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDepos
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
+import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -55,6 +59,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
   private final PredicatesGloas predicates;
   private final BeaconStateMutatorsGloas beaconStateMutators;
   private final MiscHelpersGloas miscHelpers;
+  private final ValidatorsUtil validatorsUtil;
 
   public GloasStateUpgrade(
       final SpecConfigGloas specConfig,
@@ -62,13 +67,15 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final PredicatesGloas predicates,
       final BeaconStateMutatorsGloas beaconStateMutators,
-      final MiscHelpersGloas miscHelpers) {
+      final MiscHelpersGloas miscHelpers,
+      final ValidatorsUtil validatorsUtil) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
     this.miscHelpers = miscHelpers;
+    this.validatorsUtil = validatorsUtil;
   }
 
   @Override
@@ -96,6 +103,8 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               // New in Gloas
               final Bytes32 latestBlockHash =
                   preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
+              final UInt64 latestGasLimit =
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getGasLimit();
               state.setLatestBlockHash(latestBlockHash);
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
@@ -143,7 +152,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                           latestBlockHash,
                           Bytes32.ZERO,
                           Bytes20.ZERO,
-                          UInt64.ZERO,
+                          latestGasLimit,
                           UInt64.ZERO,
                           UInt64.ZERO,
                           UInt64.ZERO,
@@ -164,56 +173,80 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
             });
   }
 
-  /** Applies any pending deposit for builders, effectively onboarding builders at the fork. */
+  /**
+   * This one-time onboarding is the only path through the validator deposit contract that creates
+   * builders. From the fork onward, builders are created and topped up only via
+   * `BuilderDepositRequest`.
+   */
   private void onboardBuildersFromPendingDeposits(final MutableBeaconStateGloas state) {
-    final long startTimeNanos = System.nanoTime();
+    final long startTimeMillis = System.currentTimeMillis();
     LOG.debug(
-        "Starting processing builder deposits from {} pending deposits at timestampNanos={}",
-        state.getPendingDeposits().size(),
-        startTimeNanos);
-    final Set<BLSPublicKey> validatorPubkeys =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(Collectors.toSet());
-    final SszList<PendingDeposit> pendingDeposits =
-        state.getPendingDeposits().stream()
-            .filter(
-                deposit -> {
-                  if (validatorPubkeys.contains(deposit.getPublicKey())) {
-                    return true;
-                  }
-                  final Set<BLSPublicKey> builderPubkeys =
-                      state.getBuilders().stream()
-                          .map(Builder::getPublicKey)
-                          .collect(Collectors.toSet());
-                  if (builderPubkeys.contains(deposit.getPublicKey())
-                      || predicates.isBuilderWithdrawalCredential(
-                          deposit.getWithdrawalCredentials())) {
-                    beaconStateMutators.applyDepositForBuilder(
-                        state,
-                        deposit.getPublicKey(),
-                        deposit.getWithdrawalCredentials(),
-                        deposit.getAmount(),
-                        deposit.getSignature(),
-                        deposit.getSlot());
-                    return false;
-                  }
-                  if (miscHelpers.isValidDepositSignature(
-                      deposit.getPublicKey(),
-                      deposit.getWithdrawalCredentials(),
-                      deposit.getAmount(),
-                      deposit.getSignature())) {
-                    validatorPubkeys.add(deposit.getPublicKey());
-                    return true;
-                  }
-                  return false;
-                })
-            .collect(schemaDefinitions.getPendingDepositsSchema().collector());
-    state.setPendingDeposits(pendingDeposits);
-    final long finishTimeNanos = System.nanoTime();
+        "Starting onboarding builders at fork from {} pending deposits",
+        state.getPendingDeposits().size());
+    final List<PendingDeposit> pendingDeposits = new ArrayList<>();
+    // Avoids re-scanning pending deposits and re-verifying signatures for repeated pubkeys
+    final Set<BLSPublicKey> verifiedPendingValidatorPubkeys = new HashSet<>();
+
+    for (final PendingDeposit deposit : state.getPendingDeposits()) {
+      final BLSPublicKey pubkey = deposit.getPublicKey();
+      // Deposits for existing validators stay in the pending queue
+      if (validatorsUtil.getValidatorIndex(state, pubkey).isPresent()) {
+        pendingDeposits.add(deposit);
+        continue;
+      }
+      beaconStateAccessors
+          .getBuilderIndex(state, pubkey)
+          .ifPresentOrElse(
+              builderIndex -> {
+                final SszMutableList<Builder> builders = state.getBuilders();
+                final Builder builder = builders.get(builderIndex);
+                builders.set(
+                    builderIndex,
+                    builder.copyWithNewBalance(builder.getBalance().plus(deposit.getAmount())));
+              },
+              // Deposits for non-builders stay in the pending queue. If there is a valid pending
+              // deposit for a new validator with this pubkey, keep this deposit in the pending
+              // queue to be applied to that validator later.
+              () -> {
+                // Deposits without builder credentials stay in the pending queue
+                if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
+                  pendingDeposits.add(deposit);
+                  return;
+                }
+                boolean isPendingValidator;
+                if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
+                  isPendingValidator = true;
+                } else {
+                  isPendingValidator = miscHelpers.isPendingValidator(pendingDeposits, pubkey);
+                }
+                if (isPendingValidator) {
+                  verifiedPendingValidatorPubkeys.add(pubkey);
+                  pendingDeposits.add(deposit);
+                  return;
+                }
+                if (!miscHelpers.isValidDepositSignature(
+                    pubkey,
+                    deposit.getWithdrawalCredentials(),
+                    deposit.getAmount(),
+                    deposit.getSignature())) {
+                  return;
+                }
+                beaconStateMutators.addBuilderToRegistry(
+                    state,
+                    pubkey,
+                    PAYLOAD_BUILDER_VERSION,
+                    getExecutionAddressUnchecked(deposit.getWithdrawalCredentials()),
+                    deposit.getAmount(),
+                    deposit.getSlot());
+              });
+    }
+
+    state.setPendingDeposits(
+        schemaDefinitions.getPendingDepositsSchema().createFromElements(pendingDeposits));
     LOG.debug(
-        "Finished processing builder deposits at timestampNanos={}. Pending deposits remaining: {}, builders: {}, elapsedNanos={}",
-        finishTimeNanos,
+        "Finished onboarding builders at fork. Pending deposits remaining: {}, builders: {}. Took {} ms.",
         pendingDeposits.size(),
         state.getBuilders().size(),
-        finishTimeNanos - startTimeNanos);
+        System.currentTimeMillis() - startTimeMillis);
   }
 }

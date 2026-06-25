@@ -33,13 +33,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -47,6 +44,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
@@ -74,6 +72,8 @@ public class NodeDataProviderTest {
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
   private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+  private final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
@@ -110,6 +110,7 @@ public class NodeDataProviderTest {
             dataColumnSidecarManager,
             custodyGroupCountManager,
             payloadAttestationPool,
+            proposerPreferencesManager,
             spec);
   }
 
@@ -212,30 +213,6 @@ public class NodeDataProviderTest {
     verify(specMock).atSlot(eq(UInt64.ZERO));
   }
 
-  @Test
-  void shouldAcceptBuilderVoluntaryExitWithoutCheckingValidatorList()
-      throws ExecutionException, InterruptedException {
-    final BeaconState state = mock(BeaconState.class);
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
-
-    final UInt64 builderValidatorIndex =
-        UInt64.fromLongBits(
-            UInt64.valueOf(3).longValue() | SpecConfigGloas.BUILDER_INDEX_FLAG.longValue());
-    final SignedVoluntaryExit builderExit =
-        new SignedVoluntaryExit(
-            new VoluntaryExit(UInt64.ZERO, builderValidatorIndex),
-            dataStructureUtil.randomSignature());
-
-    when(voluntaryExitPool.addLocal(builderExit))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-
-    final SafeFuture<InternalValidationResult> result = provider.postVoluntaryExit(builderExit);
-
-    assertThat(result).isCompleted();
-    assertThat(result.get().isAccept()).isTrue();
-    verify(voluntaryExitPool).addLocal(builderExit);
-  }
-
   private Spec setUpMockedSpec() {
     final Spec specMock = mock(Spec.class);
     final SpecVersion specVersionMock = mock(SpecVersion.class);
@@ -261,6 +238,7 @@ public class NodeDataProviderTest {
             dataColumnSidecarManager,
             custodyGroupCountManager,
             payloadAttestationPool,
+            proposerPreferencesManager,
             specMock);
     return specMock;
   }

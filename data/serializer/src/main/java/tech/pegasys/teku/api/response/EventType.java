@@ -18,6 +18,7 @@ import java.util.List;
 @SuppressWarnings("JavaCase")
 public enum EventType {
   head,
+  head_v2,
   block,
   attestation,
   voluntary_exit,
@@ -38,6 +39,7 @@ public enum EventType {
   execution_payload_available,
   execution_payload_bid,
   payload_attestation_message,
+  proposer_preferences,
   inclusion_list;
 
   public static List<EventType> getTopics(final List<String> topics) {

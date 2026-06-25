@@ -27,8 +27,6 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -68,7 +66,6 @@ public class MultiThreadedThrottlingQueueTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   @Timeout(value = EXPECTED_MAX_TEST_DURATION_MILLIS, unit = TimeUnit.MILLISECONDS)
-  @DisabledOnOs(OS.WINDOWS)
   @SuppressWarnings("FutureReturnValueIgnored")
   public void heavyMultiThreadedTest(final boolean isPriority) throws InterruptedException {
     final ThrottlingTaskQueue limitedQueue =

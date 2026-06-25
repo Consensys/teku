@@ -67,7 +67,7 @@
       }
     },
     "parent_execution_requests" : {
-      "$ref" : "#/components/schemas/ExecutionRequestsElectra"
+      "$ref" : "#/components/schemas/ExecutionRequestsGloas"
     }
   }
 }

@@ -17,16 +17,18 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 
-public class ExecutionRequests
+public class ExecutionRequestsElectra
     extends Container3<
-        ExecutionRequests,
+        ExecutionRequestsElectra,
         SszList<DepositRequest>,
         SszList<WithdrawalRequest>,
-        SszList<ConsolidationRequest>> {
+        SszList<ConsolidationRequest>>
+    implements ExecutionRequests {
 
-  ExecutionRequests(
-      final ExecutionRequestsSchema schema,
+  ExecutionRequestsElectra(
+      final ExecutionRequestsSchemaElectra schema,
       final List<DepositRequest> deposits,
       final List<WithdrawalRequest> withdrawals,
       final List<ConsolidationRequest> consolidations) {
@@ -37,24 +39,27 @@ public class ExecutionRequests
         schema.getConsolidationRequestsSchema().createFromElements(consolidations));
   }
 
-  ExecutionRequests(final ExecutionRequestsSchema type, final TreeNode backingNode) {
+  ExecutionRequestsElectra(final ExecutionRequestsSchemaElectra type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
+  @Override
   public List<DepositRequest> getDeposits() {
     return getField0().stream().toList();
   }
 
+  @Override
   public List<WithdrawalRequest> getWithdrawals() {
     return getField1().stream().toList();
   }
 
+  @Override
   public List<ConsolidationRequest> getConsolidations() {
     return getField2().stream().toList();
   }
 
   @Override
-  public ExecutionRequestsSchema getSchema() {
-    return (ExecutionRequestsSchema) super.getSchema();
+  public ExecutionRequestsSchemaElectra getSchema() {
+    return (ExecutionRequestsSchemaElectra) super.getSchema();
   }
 }

@@ -81,8 +81,8 @@ public class ProposerPreferencesGossipValidatorTest {
     signedProposerPreferences =
         createSignedProposerPreferences(dependentRoot, proposalSlot, validatorIndex);
 
-    when(gossipValidationHelper.isSlotInCurrentEpoch(proposalSlot)).thenReturn(false);
-    when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(true);
+    when(gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot))
+        .thenReturn(true);
     when(gossipValidationHelper.isSlotFromFuture(proposalSlot)).thenReturn(true);
     when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(true);
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
@@ -99,8 +99,9 @@ public class ProposerPreferencesGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenSlotNotInCurrentOrNextEpoch() {
-    when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(false);
+  void shouldIgnore_whenSlotNotInCurrentEpochWithMinSeedLookaheadTolerance() {
+    when(gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot))
+        .thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
@@ -121,6 +122,48 @@ public class ProposerPreferencesGossipValidatorTest {
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
+  }
+
+  @TestTemplate
+  void shouldReject_whenDependentRootBlockIsNotBeforeCheckpointBoundary() {
+    final UInt64 checkpointBoundarySlot =
+        spec.computeStartSlotAtEpoch(
+            spec.computeEpochAtSlot(proposalSlot)
+                .minusMinZero(spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead()));
+    when(recentChainData.getSlotForBlockRoot(dependentRoot))
+        .thenReturn(Optional.of(checkpointBoundarySlot));
+
+    assertThatSafeFuture(validator.validate(signedProposerPreferences))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .filter(
+                            description ->
+                                description.contains("but must be before checkpoint boundary slot"))
+                        .isPresent());
+    verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
+  }
+
+  @TestTemplate
+  void shouldReject_whenCheckpointStateRetrievalFails() {
+    when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("checkpoint state failed")));
+
+    assertThatSafeFuture(validator.validate(signedProposerPreferences))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .filter(
+                            description ->
+                                description.contains(
+                                    "Unable to generate proposer preferences checkpoint state"))
+                        .isPresent());
+    verify(gossipValidationHelper, never())
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
   }
 
   @TestTemplate

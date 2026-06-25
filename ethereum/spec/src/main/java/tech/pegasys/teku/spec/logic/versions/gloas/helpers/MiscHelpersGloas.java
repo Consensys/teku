@@ -43,9 +43,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -69,7 +71,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  private final PredicatesGloas predicates;
   private final SpecConfigGloas specConfigGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
 
@@ -78,7 +79,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final PredicatesGloas predicates,
       final SchemaDefinitionsGloas schemaDefinitionsGloas) {
     super(specConfig, predicates, schemaDefinitionsGloas);
-    this.predicates = predicates;
     this.specConfigGloas = specConfig;
     this.schemaDefinitionsGloas = schemaDefinitionsGloas;
   }
@@ -95,6 +95,10 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final UInt64 currentEpoch, final UInt64 epoch) {
     return false;
+  }
+
+  public boolean isExecutionPayloadEnvelopeAvailable() {
+    return true;
   }
 
   /**
@@ -237,14 +241,28 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         extendedMatrix);
   }
 
-  public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
-    return predicates.isActiveBuilder(state, builderIndex);
+  public boolean isBidBuildingOnEmptyParent(
+      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
+    return bid.getParentBlockHash().equals(state.getLatestBlockHash())
+        && !bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
+  }
+
+  public boolean isBidBuildingOnFullParent(
+      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
+    return bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
+  }
+
+  public boolean isExecutionRequestsRootMatchingLatestBid(
+      final BeaconStateGloas state, final ExecutionRequests executionRequests) {
+    return executionRequests
+        .hashTreeRoot()
+        .equals(state.getLatestExecutionPayloadBid().getExecutionRequestsRoot());
   }
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
-  public boolean isPendingValidator(final BeaconState state, final BLSPublicKey pubkey) {
-    for (final PendingDeposit pendingDeposit :
-        BeaconStateGloas.required(state).getPendingDeposits()) {
+  public boolean isPendingValidator(
+      final List<PendingDeposit> pendingDeposits, final BLSPublicKey pubkey) {
+    for (final PendingDeposit pendingDeposit : pendingDeposits) {
       if (!pendingDeposit.getPublicKey().equals(pubkey)) {
         continue;
       }
@@ -317,6 +335,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
    * @param kzgCommitments the KZG commitments from the execution payload bid
    * @return true if the KZG proofs are valid
    */
+  @Override
   public boolean verifyDataColumnSidecarKzgProofs(
       final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
 

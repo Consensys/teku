@@ -55,8 +55,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -106,6 +108,17 @@ public class EventSubscriptionManagerTest {
           true,
           data.randomBytes32(),
           data.randomBytes32());
+  private final HeadV2Event headV2Event =
+      HeadV2Event.create(
+          SpecMilestone.HEZE,
+          slot,
+          headEvent.getData().getBlock(),
+          headEvent.getData().getState(),
+          false,
+          true,
+          headEvent.getData().getPreviousDutyDependentRoot(),
+          headEvent.getData().getCurrentDutyDependentRoot(),
+          ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
   private final SignedContributionAndProof contributionAndProof =
       data.randomSignedContributionAndProof(0L);
 
@@ -166,6 +179,8 @@ public class EventSubscriptionManagerTest {
       data.randomSignedExecutionPayloadBid();
   private final PayloadAttestationMessage samplePayloadAttestationMessage =
       data.randomPayloadAttestationMessage();
+  private final SignedProposerPreferences sampleProposerPreferences =
+      data.randomSignedProposerPreferences();
   private final SignedInclusionList signedInclusionList = data.randomSignedInclusionList();
 
   private final AsyncContext async = mock(AsyncContext.class);
@@ -215,6 +230,19 @@ public class EventSubscriptionManagerTest {
 
     triggerHeadEvent();
     checkEvent("head", headEvent);
+  }
+
+  @Test
+  void shouldPropagateHeadV2Event() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head_v2");
+    manager.registerClient(client1);
+
+    triggerHeadV2Event();
+    checkEvent("head_v2", headV2Event);
+    assertThat(outputStream.getString()).contains("\"version\":\"heze\"");
+    assertThat(outputStream.getString()).contains("\"payload_status\":\"full\"");
+    assertThat(outputStream.getString()).contains("\"current_epoch_dependent_root\"");
+    assertThat(outputStream.getString()).contains("\"next_epoch_dependent_root\"");
   }
 
   @Test
@@ -514,6 +542,16 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateProposerPreferences() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=proposer_preferences");
+    manager.registerClient(client1);
+
+    triggerProposerPreferencesEvent();
+    checkEvent("proposer_preferences", new ProposerPreferencesEvent(sampleProposerPreferences));
+    assertThat(outputStream.getString()).contains("\"version\":\"gloas\"");
+  }
+
+  @Test
   void shouldPropagateInclusionList() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=inclusion_list");
     manager.registerClient(client1);
@@ -604,6 +642,7 @@ public class EventSubscriptionManagerTest {
         false,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
+        Optional.empty(),
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.getData().getOldHeadBlock(),
@@ -623,6 +662,21 @@ public class EventSubscriptionManagerTest {
         true,
         headEvent.getData().getPreviousDutyDependentRoot(),
         headEvent.getData().getCurrentDutyDependentRoot(),
+        Optional.empty(),
+        Optional.empty());
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerHeadV2Event() {
+    manager.chainHeadUpdated(
+        headV2Event.getData().data().slot(),
+        headV2Event.getData().data().state(),
+        headV2Event.getData().data().block(),
+        false,
+        true,
+        headV2Event.getData().data().currentEpochDependentRoot(),
+        headV2Event.getData().data().nextEpochDependentRoot(),
+        Optional.of(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL),
         Optional.empty());
     asyncRunner.executeQueuedActions();
   }
@@ -655,6 +709,12 @@ public class EventSubscriptionManagerTest {
   private void triggerPayloadAttestationMessageEvent() {
     manager.onNewPayloadAttestationMessage(
         samplePayloadAttestationMessage, InternalValidationResult.ACCEPT, true);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerProposerPreferencesEvent() {
+    manager.onNewProposerPreferences(
+        sampleProposerPreferences, InternalValidationResult.ACCEPT, true);
     asyncRunner.executeQueuedActions();
   }
 

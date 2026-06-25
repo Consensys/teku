@@ -17,6 +17,8 @@ import com.google.common.base.Throwables;
 import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
+import io.netty.channel.socket.ChannelOutputShutdownException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -83,6 +85,13 @@ public class GossipFailureLogger {
               "Failed to publish {}{} because no active outbound stream for the required gossip topic",
               messageType,
               slotLog);
+      // a closed/half-closed stream is expected peer churn (e.g. a disconnecting peer, or one that
+      // sent STOP_SENDING); ChannelOutputShutdownException is not a ClosedChannelException so it
+      // must be handled separately.
+      case ClosedChannelException ignored ->
+          LOG.debug("Failed to publish {}{} because the stream was closed", messageType, slotLog);
+      case ChannelOutputShutdownException ignored ->
+          LOG.debug("Failed to publish {}{} because the stream was closed", messageType, slotLog);
       default ->
           LOG.log(
               suppress ? Level.DEBUG : Level.ERROR,

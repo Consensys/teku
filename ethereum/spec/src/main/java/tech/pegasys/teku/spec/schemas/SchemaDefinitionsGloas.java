@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_DEPOSIT_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_EXIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
@@ -63,6 +65,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
@@ -73,6 +77,8 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
+  private final BuilderDepositRequestSchema builderDepositRequestSchema;
+  private final BuilderExitRequestSchema builderExitRequestSchema;
   private final BuilderPendingPaymentSchema builderPendingPaymentSchema;
   private final BuilderPendingWithdrawalSchema builderPendingWithdrawalSchema;
   private final PayloadAttestationDataSchema payloadAttestationDataSchema;
@@ -97,6 +103,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SchemaDefinitionsGloas(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
+    this.builderDepositRequestSchema = schemaRegistry.get(BUILDER_DEPOSIT_REQUEST_SCHEMA);
+    this.builderExitRequestSchema = schemaRegistry.get(BUILDER_EXIT_REQUEST_SCHEMA);
     this.builderPendingPaymentSchema = schemaRegistry.get(BUILDER_PENDING_PAYMENT_SCHEMA);
     this.builderPendingWithdrawalSchema = schemaRegistry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA);
     this.payloadAttestationDataSchema = schemaRegistry.get(PAYLOAD_ATTESTATION_DATA_SCHEMA);
@@ -163,6 +171,14 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
     return new BeaconBlockBodyBuilderGloas(
         getBeaconBlockBodySchema().toVersionGloas().orElseThrow());
+  }
+
+  public BuilderDepositRequestSchema getBuilderDepositRequestSchema() {
+    return builderDepositRequestSchema;
+  }
+
+  public BuilderExitRequestSchema getBuilderExitRequestSchema() {
+    return builderExitRequestSchema;
   }
 
   public BuilderPendingPaymentSchema getBuilderPendingPaymentSchema() {

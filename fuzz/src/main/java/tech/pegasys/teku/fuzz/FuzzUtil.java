@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
@@ -60,10 +59,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
@@ -97,18 +92,8 @@ public class FuzzUtil {
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disableBls);
     this.signatureVerifier = disableBls ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
-
-    final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
-    final SchemaDefinitionsFulu schemaDefinitionsFulu =
-        SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
-    final SpecConfigFulu specConfig = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
-    final MiscHelpersFulu miscHelpersFulu =
-        new MiscHelpersFulu(specConfig, predicates, schemaDefinitionsFulu);
-    final BeaconStateAccessorsFulu stateAccessorsFulu =
-        new BeaconStateAccessorsFulu(specConfig, predicates, miscHelpersFulu);
     this.stateMutatorsElectra =
-        new BeaconStateMutatorsElectra(
-            specConfig, miscHelpersFulu, stateAccessorsFulu, schemaDefinitionsFulu);
+        BeaconStateMutatorsElectra.required(spec.getGenesisSpec().beaconStateMutators());
   }
 
   public static void initialize(final boolean disableBls) {

@@ -22,6 +22,8 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int aggregateDueBps;
   private final int attestationDueBps;
   private final int contributionDueBps;
+  private final int maxBuilderDepositRequestsPerPayload;
+  private final int maxBuilderExitRequestsPerPayload;
   private final long builderRegistryLimit;
   private final long builderPendingWithdrawalsLimit;
   private final int maxBuildersPerWithdrawalsSweep;
@@ -29,6 +31,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int maxRequestPayloads;
   private final int minBuilderWithdrawabilityDelay;
   private final int payloadAttestationDueBps;
+  private final int payloadDueBps;
   private final int ptcSize;
   private final int syncMessageDueBps;
   private final int churnLimitQuotientGloas;
@@ -40,6 +43,8 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int aggregateDueBps,
       final int attestationDueBps,
       final int contributionDueBps,
+      final int maxBuilderDepositRequestsPerPayload,
+      final int maxBuilderExitRequestsPerPayload,
       final long builderRegistryLimit,
       final long builderPendingWithdrawalsLimit,
       final int maxBuildersPerWithdrawalsSweep,
@@ -47,6 +52,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int maxRequestPayloads,
       final int minBuilderWithdrawabilityDelay,
       final int payloadAttestationDueBps,
+      final int payloadDueBps,
       final int ptcSize,
       final int syncMessageDueBps,
       final int churnLimitQuotientGloas,
@@ -56,6 +62,8 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.aggregateDueBps = aggregateDueBps;
     this.attestationDueBps = attestationDueBps;
     this.contributionDueBps = contributionDueBps;
+    this.maxBuilderDepositRequestsPerPayload = maxBuilderDepositRequestsPerPayload;
+    this.maxBuilderExitRequestsPerPayload = maxBuilderExitRequestsPerPayload;
     this.builderRegistryLimit = builderRegistryLimit;
     this.builderPendingWithdrawalsLimit = builderPendingWithdrawalsLimit;
     this.maxBuildersPerWithdrawalsSweep = maxBuildersPerWithdrawalsSweep;
@@ -64,6 +72,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.ptcSize = ptcSize;
     this.minBuilderWithdrawabilityDelay = minBuilderWithdrawabilityDelay;
     this.payloadAttestationDueBps = payloadAttestationDueBps;
+    this.payloadDueBps = payloadDueBps;
     this.syncMessageDueBps = syncMessageDueBps;
     this.churnLimitQuotientGloas = churnLimitQuotientGloas;
     this.consolidationChurnLimitQuotient = consolidationChurnLimitQuotient;
@@ -101,6 +110,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
+  public int getPayloadDueBps() {
+    return payloadDueBps;
+  }
+
+  @Override
   public int getPtcSize() {
     return ptcSize;
   }
@@ -108,6 +122,16 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   @Override
   public int getMaxPayloadAttestations() {
     return maxPayloadAttestations;
+  }
+
+  @Override
+  public int getMaxBuilderDepositRequestsPerPayload() {
+    return maxBuilderDepositRequestsPerPayload;
+  }
+
+  @Override
+  public int getMaxBuilderExitRequestsPerPayload() {
+    return maxBuilderExitRequestsPerPayload;
   }
 
   @Override
@@ -171,8 +195,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && maxRequestPayloads == that.maxRequestPayloads
         && minBuilderWithdrawabilityDelay == that.minBuilderWithdrawabilityDelay
         && payloadAttestationDueBps == that.payloadAttestationDueBps
+        && payloadDueBps == that.payloadDueBps
         && ptcSize == that.ptcSize
         && syncMessageDueBps == that.syncMessageDueBps
+        && maxBuilderDepositRequestsPerPayload == that.maxBuilderDepositRequestsPerPayload
+        && maxBuilderExitRequestsPerPayload == that.maxBuilderExitRequestsPerPayload
         && builderRegistryLimit == that.builderRegistryLimit
         && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit
         && maxBuildersPerWithdrawalsSweep == that.maxBuildersPerWithdrawalsSweep
@@ -189,6 +216,8 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         aggregateDueBps,
         attestationDueBps,
         contributionDueBps,
+        maxBuilderDepositRequestsPerPayload,
+        maxBuilderExitRequestsPerPayload,
         builderRegistryLimit,
         builderPendingWithdrawalsLimit,
         maxBuildersPerWithdrawalsSweep,
@@ -196,6 +225,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         maxRequestPayloads,
         minBuilderWithdrawabilityDelay,
         payloadAttestationDueBps,
+        payloadDueBps,
         ptcSize,
         syncMessageDueBps,
         churnLimitQuotientGloas,

@@ -274,17 +274,17 @@ public class EventLogger {
   public void slotPayloadEvent(
       final UInt64 nodeSlot,
       final UInt64 headSlot,
-      final Bytes32 bestExecutionBlockHash,
+      final Optional<Bytes32> maybeExecutionBlockHash,
       final int numPeers) {
     String executionBlockHash = "                                                       ... empty";
-    if (nodeSlot.equals(headSlot)) {
-      executionBlockHash = LogFormatter.formatHashRoot(bestExecutionBlockHash);
+    if (nodeSlot.equals(headSlot) && maybeExecutionBlockHash.isPresent()) {
+      executionBlockHash = LogFormatter.formatHashRoot(maybeExecutionBlockHash.get());
     }
     final String slotPayloadEventLog =
         String.format(
-            "Slot Payload Event  *** Slot: %s, Execution Block: %s, Peers: %d",
+            "PTC Event   *** Slot: %s, Execution Block: %s, Peers: %d",
             nodeSlot, executionBlockHash, numPeers);
-    info(slotPayloadEventLog, Color.WHITE);
+    info(slotPayloadEventLog, Color.GRAY);
   }
 
   public void reorgEvent(

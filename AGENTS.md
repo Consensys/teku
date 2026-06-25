@@ -46,11 +46,26 @@ Teku is an open-source Ethereum consensus client written in Java, implementing a
 # Run reference tests (consensus spec tests)
 ./gradlew referenceTest
 
+# Run one reference suite manually (example)
+ENV_TEST_TYPE=fork_choice/on_attestation ENV_SPEC=minimal ENV_MILESTONE=gloas ./gradlew --no-daemon :eth-reference-tests:referenceTest --tests tech.pegasys.teku.reference.ManualReferenceTestRunner -x generateReferenceTestClasses
+
 # Run acceptance tests
 ./gradlew acceptanceTest
 
 # Run property tests
 ./gradlew propertyTest
+```
+
+### Specrefs
+Spec references live in `specrefs/` and reference the [Ethereum consensus specs](https://github.com/ethereum/consensus-specs/) or the user's local checkout of that repository. Run from the repository root:
+```bash
+ethspecify process --path=specrefs
+ethspecify check --path=specrefs
+```
+
+When updating specrefs, keep exceptions only for references that are genuinely unimplemented, unnecessary, or intentionally implemented differently in Teku. If a reference has a real implementation source, remove it from exceptions and add stable `sources` anchors. After large generated diffs, check for duplicate entries:
+```bash
+rg '^- name:' specrefs/*.yml | sed 's/.*:- name: //' | sort | uniq -d
 ```
 
 ### Distribution
@@ -338,7 +353,7 @@ When implementing features that vary across Ethereum consensus forks:
 
 1. **Add convenience methods to `Spec.java`** for fork-specific helpers to avoid repetitive `Optional.orElseThrow()` boilerplate. See: `getExecutionRequestsProcessor()`, `getDataColumnSidecarUtil()`
 
-2. **Use abstract test base classes** for components with significantly different behavior across forks, instead of `@TestSpecContext`. Each fork gets its own test class that extends the abstract base and implements `createSpec()`. See: `AbstractDataColumnSidecarGossipValidatorTest`, `AbstractAttestationValidatorTest`
+2. **Prefer `@TestSpecContext` for fork-parametrized tests.** Annotate the class with `@TestSpecContext(milestone = {...})`, use `@TestTemplate` on methods, and inject `SpecContext` in `@BeforeEach` to access fork-specific `Spec` and `DataStructureUtil`. See: `AttestationProductionDutyTest`, `AggregationDutyTest`, `PayloadAttestationProductionDutyTest`. Fall back to **abstract test base classes** (e.g. `AbstractDataColumnSidecarGossipValidatorTest`, `AbstractAttestationValidatorTest`) when fork behavior is too divergent to parametrize within a single class — each fork gets its own subclass implementing `createSpec()`. Use **separate test files with fully independent setup** only as a last resort.
 
 3. **Pass `SpecLogic` to validation helpers** instead of fork-specific implementations. Let each helper extract what it needs internally (e.g., casting to `MiscHelpersFulu`). This keeps generic validators fork-agnostic. See: `DataColumnSidecarUtil` hierarchy
 

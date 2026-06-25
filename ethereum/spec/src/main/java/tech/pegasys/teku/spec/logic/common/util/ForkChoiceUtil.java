@@ -197,16 +197,16 @@ public class ForkChoiceUtil {
   }
 
   /** Spec reference: get_proposer_head. */
-  public Bytes32 getProposerHead(
-      final ForkChoiceReorgContext context, final Bytes32 headRoot, final UInt64 slot) {
+  public ForkChoiceNode getProposerHead(
+      final ForkChoiceReorgContext context, final ForkChoiceNode headNode, final UInt64 slot) {
     LOG.debug("start getProposerHead");
     final ReadOnlyStore store = context.getStore();
-    final boolean isProposerBoostActive = isProposerBoostActive(store, headRoot);
+    final boolean isProposerBoostActive = isProposerBoostActive(store, headNode.blockRoot());
     final boolean isShufflingStableAndForkChoiceOk =
         isForkChoiceStableAndFinalizationOk(store, slot);
     final boolean isProposingOnTime = isProposingOnTime(store, slot);
-    final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headRoot));
-    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
+    final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headNode.blockRoot()));
+    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headNode.blockRoot());
     if (!isHeadLate
         || !isShufflingStableAndForkChoiceOk
         || !isProposingOnTime
@@ -219,32 +219,37 @@ public class ForkChoiceUtil {
           isProposingOnTime,
           isProposerBoostActive,
           maybeHead.isEmpty());
-      return headRoot;
+      return headNode;
     }
 
     final SignedBeaconBlock head = maybeHead.orElseThrow();
-    final boolean isFfgCompetitive = isFfgCompetitive(store, headRoot, head.getParentRoot());
+    final boolean isFfgCompetitive =
+        isFfgCompetitive(store, headNode.blockRoot(), head.getParentRoot());
     final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, slot);
     if (!isFfgCompetitive || !isSingleSlotReorg) {
       LOG.debug(
           "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
           isFfgCompetitive,
           isSingleSlotReorg);
-      return headRoot;
+      return headNode;
     }
 
-    final boolean isHeadWeak = isHeadWeak(store, headRoot, store.getReorgThreshold());
+    final boolean isHeadWeak = isHeadWeak(store, headNode.blockRoot(), store.getReorgThreshold());
     final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
     if (isHeadWeak && isParentStrong) {
       LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
-      return head.getParentRoot();
+      return context
+          .getStore()
+          .getForkChoiceStrategy()
+          .getParentBeaconBlockNode(headNode)
+          .orElse(headNode);
     }
 
     LOG.debug(
         "getProposerHead - return headRoot - isHeadWeak {}, isParentStrong {}",
         isHeadWeak,
         isParentStrong);
-    return headRoot;
+    return headNode;
   }
 
   /** Spec reference: should_override_forkchoice_update. */
@@ -794,6 +799,11 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
+  // get_payload_due_ms
+  public Optional<Integer> getPayloadDueMillis() {
+    return Optional.empty();
+  }
+
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
     final BeaconBlockBody body = block.getMessage().getBody();
@@ -884,8 +894,12 @@ public class ForkChoiceUtil {
   }
 
   public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope signedEnvelope) {
     return AvailabilityChecker.NOOP;
+  }
+
+  public boolean isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope() {
+    return false;
   }
 
   // Used for computing committee indices when producing attestations.

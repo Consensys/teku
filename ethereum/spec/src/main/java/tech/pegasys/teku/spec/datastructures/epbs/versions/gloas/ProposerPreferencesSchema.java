@@ -36,7 +36,7 @@ public class ProposerPreferencesSchema
         namedSchema("proposal_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("fee_recipient", SszByteVectorSchema.create(Bytes20.SIZE)),
-        namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema("target_gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   public ProposerPreferences create(
@@ -44,9 +44,9 @@ public class ProposerPreferencesSchema
       final UInt64 proposalSlot,
       final UInt64 validatorIndex,
       final Eth1Address feeRecipient,
-      final UInt64 gasLimit) {
+      final UInt64 targetGasLimit) {
     return new ProposerPreferences(
-        this, dependentRoot, proposalSlot, validatorIndex, feeRecipient, gasLimit);
+        this, dependentRoot, proposalSlot, validatorIndex, feeRecipient, targetGasLimit);
   }
 
   @Override

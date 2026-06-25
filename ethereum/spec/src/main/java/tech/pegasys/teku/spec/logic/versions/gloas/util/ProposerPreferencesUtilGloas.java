@@ -37,11 +37,11 @@ public class ProposerPreferencesUtilGloas implements ProposerPreferencesUtil {
       final UInt64 slot,
       final UInt64 validatorIndex,
       final Eth1Address feeRecipient,
-      final UInt64 gasLimit) {
+      final UInt64 targetGasLimit) {
     return Optional.of(
         schemaDefinitions
             .getProposerPreferencesSchema()
-            .create(dependentRoot, slot, validatorIndex, feeRecipient, gasLimit));
+            .create(dependentRoot, slot, validatorIndex, feeRecipient, targetGasLimit));
   }
 
   @Override

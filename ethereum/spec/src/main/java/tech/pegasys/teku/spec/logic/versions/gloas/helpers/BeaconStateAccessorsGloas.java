@@ -26,7 +26,6 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
@@ -77,6 +76,22 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     this.configGloas = config;
     this.miscHelpersGloas = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  /**
+   * EIP-8045: `get_beacon_proposer_indices` is modified to exclude slashed validators from the
+   * candidate pool before invoking `compute_proposer_indices`, so the `proposer_lookahead` only
+   * contains active and unslashed validators.
+   */
+  @Override
+  public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
+    final IntList indices =
+        getActiveValidatorIndices(state, epoch)
+            .intStream()
+            .filter(index -> !state.getValidators().get(index).isSlashed())
+            .collect(IntArrayList::new, IntList::add, IntList::addAll);
+    final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
+    return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
   }
 
   /**
@@ -384,21 +399,8 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
 
   @Override
   public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
-    final SszList<Builder> builders = BeaconStateGloas.required(state).getBuilders();
-    final Cache<BLSPublicKey, Integer> builderIndexCache =
-        BeaconStateCache.getTransitionCaches(state).getBuilderIndexCache();
-    return builderIndexCache
-        .getCached(publicKey)
-        .or(
-            () -> {
-              for (int i = 0; i < builders.size(); i++) {
-                final BLSPublicKey builderPubKey = builders.get(i).getPublicKey();
-                if (builderPubKey.equals(publicKey)) {
-                  builderIndexCache.invalidateWithNewValue(builderPubKey, i);
-                  return Optional.of(i);
-                }
-              }
-              return Optional.empty();
-            });
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBuilderIndexCache()
+        .getBuilderIndex(state, publicKey);
   }
 }

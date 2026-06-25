@@ -122,6 +122,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -280,6 +281,8 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
             new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+        final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider =
+            new BlobKzgCommitmentsProvider(spec, combinedChainDataClient, 128);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
@@ -326,6 +329,7 @@ public class Eth2P2PNetworkFactory {
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
+                blobKzgCommitmentsProvider,
                 () -> custodyGroupCountManager,
                 metadataMessagesFactory,
                 inclusionListManager,
@@ -680,14 +684,16 @@ public class Eth2P2PNetworkFactory {
           peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
 
       final Random random = new Random();
-      final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      final int tcpPort = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT - 1);
+      final int quicPort = tcpPort + 1;
 
       return P2PConfig.builder()
           .specProvider(spec)
           .targetSubnetSubscriberCount(2)
           .network(
               b ->
-                  b.listenPort(port)
+                  b.listenPort(tcpPort)
+                      .listenQuicPort(quicPort)
                       .networkInterface("127.0.0.1")
                       .wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
