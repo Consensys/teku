@@ -13,25 +13,34 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
+
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.logic.versions.fulu.execution.ExecutionRequestsProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorElectra {
-  private final MiscHelpersGloas miscHelpersGloas;
+public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorFulu {
+
+  private final SpecConfigGloas specConfigGloas;
   private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
@@ -41,7 +50,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       final MiscHelpersGloas miscHelpers,
       final SpecConfigGloas specConfig,
       final PredicatesGloas predicates,
-      final ValidatorsUtil validatorsUtil,
+      final ValidatorsUtilGloas validatorsUtil,
       final BeaconStateMutatorsGloas beaconStateMutators,
       final BeaconStateAccessorsGloas beaconStateAccessors) {
     super(
@@ -52,46 +61,95 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
         validatorsUtil,
         beaconStateMutators,
         beaconStateAccessors);
-    this.miscHelpersGloas = miscHelpers;
+    this.specConfigGloas = specConfig;
     this.predicatesGloas = predicates;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.beaconStateAccessorsGloas = beaconStateAccessors;
   }
 
   @Override
-  protected void processDepositRequest(
-      final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
-    // Regardless of the withdrawal credentials prefix, if a builder/validator already exists with
-    // this pubkey, apply the deposit to their balance
-    final boolean isBuilder =
-        beaconStateAccessorsGloas.getBuilderIndex(state, depositRequest.getPubkey()).isPresent();
-    final boolean isValidator =
-        validatorsUtil.getValidatorIndex(state, depositRequest.getPubkey()).isPresent();
-    if (isBuilder
-        || (predicatesGloas.isBuilderWithdrawalCredential(depositRequest.getWithdrawalCredentials())
-            && !isValidator
-            && !miscHelpersGloas.isPendingValidator(state, depositRequest.getPubkey()))) {
-      // Apply builder deposits immediately
-      beaconStateMutatorsGloas.applyDepositForBuilder(
-          state,
-          depositRequest.getPubkey(),
-          depositRequest.getWithdrawalCredentials(),
-          depositRequest.getAmount(),
-          depositRequest.getSignature(),
-          state.getSlot());
-      return;
-    }
-    // Add validator deposits to the queue
-    final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
-    final PendingDeposit deposit =
-        schemaDefinitions
-            .getPendingDepositSchema()
-            .create(
-                new SszPublicKey(depositRequest.getPubkey()),
-                SszBytes32.of(depositRequest.getWithdrawalCredentials()),
-                SszUInt64.of(depositRequest.getAmount()),
-                new SszSignature(depositRequest.getSignature()),
-                SszUInt64.of(state.getSlot()));
-    pendingDeposits.append(deposit);
+  public void processBuilderDepositRequests(
+      final MutableBeaconState state, final List<BuilderDepositRequest> builderDepositRequests) {
+    builderDepositRequests.forEach(
+        request -> {
+          // process_builder_deposit_request
+          final BLSPublicKey pubkey = request.getPubkey();
+          beaconStateAccessorsGloas
+              .getBuilderIndex(state, pubkey)
+              .ifPresentOrElse(
+                  builderIndex -> {
+                    final SszMutableList<Builder> builders =
+                        MutableBeaconStateGloas.required(state).getBuilders();
+                    final Builder builder = builders.get(builderIndex);
+                    //  Increase balance by deposit amount
+                    Builder modifiedBuilder =
+                        builder.copyWithNewBalance(builder.getBalance().plus(request.getAmount()));
+                    // If exited, reset the withdrawable epoch
+                    if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+                      final UInt64 epoch = beaconStateAccessorsGloas.getCurrentEpoch(state);
+                      modifiedBuilder =
+                          modifiedBuilder.copyWithNewWithdrawableEpoch(
+                              epoch.plus(specConfigGloas.getMinBuilderWithdrawabilityDelay()));
+                    }
+                    builders.set(builderIndex, modifiedBuilder);
+                  },
+                  () -> {
+                    if (isValidBuilderDepositSignature(request)) {
+                      beaconStateMutatorsGloas.addBuilderToRegistry(
+                          state,
+                          pubkey,
+                          request.getWithdrawalCredentials().get(0),
+                          getExecutionAddressUnchecked(request.getWithdrawalCredentials()),
+                          request.getAmount(),
+                          state.getSlot());
+                    }
+                  });
+        });
+  }
+
+  // is_valid_builder_deposit_signature
+  private boolean isValidBuilderDepositSignature(final BuilderDepositRequest request) {
+    final DepositMessage depositMessage =
+        new DepositMessage(
+            request.getPubkey(), request.getWithdrawalCredentials(), request.getAmount());
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.BUILDER_DEPOSIT);
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(depositMessage, domain);
+    return specConfig
+        .getBLSSignatureVerifier()
+        .verify(request.getPubkey(), signingRoot, request.getSignature());
+  }
+
+  @Override
+  public void processBuilderExitRequests(
+      final MutableBeaconState state, final List<BuilderExitRequest> builderExitRequests) {
+    builderExitRequests.forEach(
+        request -> {
+          // process_builder_exit_request
+          final BLSPublicKey pubkey = request.getPubkey();
+          beaconStateAccessorsGloas
+              .getBuilderIndex(state, pubkey)
+              .map(UInt64::valueOf)
+              .ifPresent(
+                  builderIndex -> {
+                    final SszMutableList<Builder> builders =
+                        MutableBeaconStateGloas.required(state).getBuilders();
+                    final Builder builder = builders.get(builderIndex.intValue());
+                    if (!predicatesGloas.isActiveBuilder(state, builderIndex)) {
+                      return;
+                    }
+                    if (!builder
+                        .getExecutionAddress()
+                        .getWrappedBytes()
+                        .equals(request.getSourceAddress().getWrappedBytes())) {
+                      return;
+                    }
+                    if (!beaconStateAccessorsGloas
+                        .getPendingBalanceToWithdrawForBuilder(state, builderIndex)
+                        .isZero()) {
+                      return;
+                    }
+                    beaconStateMutatorsGloas.initiateBuilderExit(state, builderIndex);
+                  });
+        });
   }
 }

@@ -105,6 +105,23 @@ class AggregatingPayloadAttestationPoolTest {
   }
 
   @Test
+  public void addingLocallyAcceptedMessageNotifiesValidatedSubscribers() {
+    final List<ValidatablePayloadAttestationMessage> addedMessages = new ArrayList<>();
+
+    payloadAttestationPool.subscribeValidatedOperationAdded(
+        (message, validationStatus, fromNetwork) -> addedMessages.add(message));
+
+    final PayloadAttestationMessage payloadAttestationMessage =
+        dataStructureUtil.randomPayloadAttestationMessage();
+
+    SafeFutureAssert.safeJoin(payloadAttestationPool.addLocal(payloadAttestationMessage));
+
+    assertThat(getPoolSizeFromMetric()).isOne();
+    assertThat(addedMessages).hasSize(1);
+    assertThat(addedMessages.get(0).getMessage()).isEqualTo(payloadAttestationMessage);
+  }
+
+  @Test
   public void addingSaveForFutureMessageAddsToPendingPoolAndProcessesItOnBlockImported() {
 
     when(validator.validate(any()))

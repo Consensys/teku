@@ -20,10 +20,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
 
 public class ForkChoiceUtilHeze extends ForkChoiceUtilGloas {
@@ -31,10 +34,21 @@ public class ForkChoiceUtilHeze extends ForkChoiceUtilGloas {
   public ForkChoiceUtilHeze(
       final SpecConfigHeze specConfig,
       final BeaconStateAccessorsHeze beaconStateAccessors,
+      final BeaconStateMutatorsGloas beaconStateMutators,
       final EpochProcessorGloas epochProcessor,
       final AttestationUtilGloas attestationUtil,
-      final MiscHelpersGloas miscHelpers) {
-    super(specConfig, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+      final MiscHelpersGloas miscHelpers,
+      final WithdrawalsHelpersGloas withdrawalsHelpers,
+      final BlockProcessorGloas blockProcessor) {
+    super(
+        specConfig,
+        beaconStateAccessors,
+        beaconStateMutators,
+        epochProcessor,
+        attestationUtil,
+        miscHelpers,
+        withdrawalsHelpers,
+        blockProcessor);
   }
 
   @Override

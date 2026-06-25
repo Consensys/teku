@@ -14,6 +14,9 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
@@ -21,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
@@ -28,10 +32,13 @@ import tech.pegasys.teku.validator.client.duties.attestations.AttestationProduct
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutyDefaultSchedulingStrategy
-    extends AbstractAttestationDutySchedulingStrategy {
+    extends AbstractAttestationDutySchedulingStrategy implements ValidatorTimingChannel {
 
   private final ValidatorApiChannel validatorApiChannel;
   private final boolean useDvtEndpoint;
+  private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(UInt64.ZERO);
+  private final ConcurrentMap<UInt64, DvtAttestationAggregations> pendingDvtAggregationsByEpoch =
+      new ConcurrentHashMap<>();
 
   public AttestationDutyDefaultSchedulingStrategy(
       final Spec spec,
@@ -48,19 +55,67 @@ public class AttestationDutyDefaultSchedulingStrategy
   }
 
   @Override
+  public void onSlot(final UInt64 slot) {
+    currentSlot.set(slot);
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+    pendingDvtAggregationsByEpoch.forEach(
+        (epoch, dvtAttestationAggregations) -> {
+          if (epoch.isLessThanOrEqualTo(currentEpoch)) {
+            dvtAttestationAggregations.activate();
+          }
+        });
+    pendingDvtAggregationsByEpoch
+        .entrySet()
+        .removeIf(entry -> entry.getKey().isLessThan(currentEpoch));
+  }
+
+  @Override
   public SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
       final UInt64 epoch, final AttesterDuties duties) {
     final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         getScheduledDuties(duties);
 
     final Optional<DvtAttestationAggregations> dvtAttestationAggregations =
-        useDvtEndpoint
-            ? Optional.of(
-                new DvtAttestationAggregations(validatorApiChannel, duties.getDuties().size()))
-            : Optional.empty();
+        createDvtAttestationAggregations(epoch, duties.getDuties().size());
 
-    return scheduleDuties(scheduledDuties, duties.getDuties(), dvtAttestationAggregations)
-        .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
-        .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
+    final SafeFuture<Void> dutiesScheduling =
+        scheduleDuties(scheduledDuties, duties.getDuties(), dvtAttestationAggregations)
+            .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
+    if (dvtAttestationAggregations.isPresent()) {
+      dutiesScheduling.finishStackTrace();
+      return SafeFuture.completedFuture(scheduledDuties);
+    }
+    return dutiesScheduling.<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties);
+  }
+
+  private Optional<DvtAttestationAggregations> createDvtAttestationAggregations(
+      final UInt64 epoch, final int expectedDutiesCount) {
+    if (!useDvtEndpoint || expectedDutiesCount == 0) {
+      cancelPendingDvtAttestationAggregations(epoch);
+      return Optional.empty();
+    }
+
+    final DvtAttestationAggregations dvtAttestationAggregations =
+        new DvtAttestationAggregations(validatorApiChannel, epoch, expectedDutiesCount);
+    final DvtAttestationAggregations previous =
+        pendingDvtAggregationsByEpoch.put(epoch, dvtAttestationAggregations);
+    if (previous != null) {
+      previous.cancel();
+    }
+    if (isCurrentOrPastEpoch(epoch)) {
+      dvtAttestationAggregations.activate();
+    }
+    return Optional.of(dvtAttestationAggregations);
+  }
+
+  private void cancelPendingDvtAttestationAggregations(final UInt64 epoch) {
+    final DvtAttestationAggregations previous = pendingDvtAggregationsByEpoch.remove(epoch);
+    if (previous != null) {
+      previous.cancel();
+    }
+  }
+
+  private boolean isCurrentOrPastEpoch(final UInt64 epoch) {
+    return epoch.isLessThanOrEqualTo(spec.computeEpochAtSlot(currentSlot.get()));
   }
 }

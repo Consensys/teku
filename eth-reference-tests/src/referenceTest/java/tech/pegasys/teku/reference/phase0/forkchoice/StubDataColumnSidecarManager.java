@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -94,6 +95,8 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
                     spec,
                     new ConcurrentHashMap<>(),
                     new GossipValidationHelper(spec, recentChainData, metricsSystem),
+                    new BlobKzgCommitmentsProvider(
+                        spec, recentChainData::retrieveSignedBlockByRoot, 128),
                     metricsSystem,
                     recentChainData.getStore());
             validationResult.complete(validateDataColumnSidecar());

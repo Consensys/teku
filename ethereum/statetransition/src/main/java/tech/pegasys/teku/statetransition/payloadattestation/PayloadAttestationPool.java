@@ -34,6 +34,10 @@ public interface PayloadAttestationPool {
             final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {}
 
         @Override
+        public void subscribeValidatedOperationAdded(
+            final OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber) {}
+
+        @Override
         public SafeFuture<InternalValidationResult> addLocal(
             final PayloadAttestationMessage payloadAttestationMessage) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
@@ -59,6 +63,9 @@ public interface PayloadAttestationPool {
       };
 
   void subscribeOperationAdded(OperationAddedSubscriber<PayloadAttestationMessage> subscriber);
+
+  void subscribeValidatedOperationAdded(
+      OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber);
 
   SafeFuture<InternalValidationResult> addLocal(
       PayloadAttestationMessage payloadAttestationMessage);

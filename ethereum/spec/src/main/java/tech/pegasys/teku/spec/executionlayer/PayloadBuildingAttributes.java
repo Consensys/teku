@@ -30,10 +30,33 @@ public record PayloadBuildingAttributes(
     UInt64 timestamp,
     Bytes32 prevRandao,
     Eth1Address feeRecipient,
+    UInt64 targetGasLimit,
     Optional<SignedValidatorRegistration> validatorRegistration,
     Optional<List<Withdrawal>> withdrawals,
     ForkChoiceNode parentBeaconBlock,
     List<Bytes> inclusionListTransactions) {
+
+  public PayloadBuildingAttributes(
+      final UInt64 proposerIndex,
+      final UInt64 proposalSlot,
+      final UInt64 timestamp,
+      final Bytes32 prevRandao,
+      final Eth1Address feeRecipient,
+      final Optional<SignedValidatorRegistration> validatorRegistration,
+      final Optional<List<Withdrawal>> withdrawals,
+      final ForkChoiceNode parentBeaconBlock) {
+    this(
+        proposerIndex,
+        proposalSlot,
+        timestamp,
+        prevRandao,
+        feeRecipient,
+        UInt64.ZERO,
+        validatorRegistration,
+        withdrawals,
+        parentBeaconBlock,
+        List.of());
+  }
 
   public Optional<BLSPublicKey> getValidatorRegistrationPublicKey() {
     return validatorRegistration.map(

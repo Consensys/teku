@@ -7,7 +7,7 @@
       "$ref" : "#/components/schemas/ExecutionPayloadGloas"
     },
     "execution_requests" : {
-      "$ref" : "#/components/schemas/ExecutionRequestsElectra"
+      "$ref" : "#/components/schemas/ExecutionRequestsGloas"
     },
     "builder_index" : {
       "type" : "string",

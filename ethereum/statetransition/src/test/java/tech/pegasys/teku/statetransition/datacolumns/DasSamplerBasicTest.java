@@ -35,11 +35,14 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -58,6 +62,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.Sam
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
@@ -66,6 +71,7 @@ public class DasSamplerBasicTest {
   private static final UInt64 SAMPLING_INDEX_5 = UInt64.valueOf(5);
   private static final Set<UInt64> SAMPLING_INDICES =
       Set.of(SAMPLING_INDEX_0, SAMPLING_INDEX_2, SAMPLING_INDEX_5);
+  private static final int MAX_RECENTLY_SAMPLED_BLOCKS = 64;
 
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
@@ -76,19 +82,22 @@ public class DasSamplerBasicTest {
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
   private BlockImportChannel blockImportChannel;
+  private CustodyGroupCountManager custodyGroupCountManager;
+  private StubMetricsSystem metricsSystem;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
-  private DasSamplerBasic sampler;
+  private DasSamplerBasicImpl sampler;
 
   @BeforeEach
   public void setUp() {
-    final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+    custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
     recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
     blockImportChannel = mock(BlockImportChannel.class);
+    metricsSystem = new StubMetricsSystem();
 
     when(retriever.retrieve(any()))
         .thenReturn(SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
@@ -96,18 +105,24 @@ public class DasSamplerBasicTest {
     when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
-    sampler =
-        new DasSamplerBasic(
-            SPEC,
-            asyncRunner,
-            currentSlotProvider,
-            rpcFetchDelayProvider,
-            custody,
-            retriever,
-            custodyGroupCountManager,
-            recentChainData,
-            true,
-            blockImportChannel);
+    sampler = createSampler(MAX_RECENTLY_SAMPLED_BLOCKS, metricsSystem);
+  }
+
+  private DasSamplerBasicImpl createSampler(
+      final int maxRecentlySampledBlocks, final StubMetricsSystem metricsSystem) {
+    return new DasSamplerBasicImpl(
+        SPEC,
+        asyncRunner,
+        currentSlotProvider,
+        rpcFetchDelayProvider,
+        custody,
+        retriever,
+        custodyGroupCountManager,
+        recentChainData,
+        true,
+        metricsSystem,
+        maxRecentlySampledBlocks,
+        blockImportChannel);
   }
 
   @Test
@@ -229,7 +244,7 @@ public class DasSamplerBasicTest {
     // verify RPC fetch schedule is reset
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), false);
 
-    // verify we never called custody for the late arrived sidecar
+    // verify we never called custody for the late sidecar arrival
     verify(custody, never()).onNewValidatedDataColumnSidecar(eq(lateArrivedSidecar), any());
 
     // verify we call custody for all the retrieved sidecars
@@ -300,7 +315,7 @@ public class DasSamplerBasicTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
-  void shouldHandleMultipleTrackersFromMultipleEntrypoints() {
+  void shouldHandleMultipleTrackersFromMultipleEntryPoints() {
     final DataColumnSlotAndIdentifier source1 =
         new DataColumnSlotAndIdentifier(
             dataStructureUtil.randomSlot(),
@@ -523,6 +538,75 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  void onBlockImported_shouldRemoveTrackerWhenDataAvailabilityCheckedOnBlock() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(blockWithBlobs.getRoot());
+
+    sampler.onBlockImported(blockWithBlobs);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+  }
+
+  @Test
+  void onBlockImported_shouldRetainTrackerWhenDataAvailabilityDeferredToExecutionPayload() {
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+
+    gloasSampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+
+    gloasSampler.onBlockImported(blockWithBlobs);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+
+    gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+  }
+
+  @Test
+  void onSlot_shouldRetainGloasImportedBlockTrackerUntilExecutionPayloadImported() {
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot())).thenReturn(Duration.ZERO);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
+    when(recentChainData.containsBlock(blockWithBlobs.getRoot())).thenReturn(true);
+
+    gloasSampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    final SafeFuture<List<UInt64>> completionFuture =
+        gloasSampler
+            .getRecentlySampledColumnsByRoot()
+            .get(blockWithBlobs.getRoot())
+            .completionFuture();
+
+    gloasSampler.onSlot(UInt64.valueOf(2));
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(blockWithBlobs.getRoot());
+    assertThat(completionFuture).isNotDone();
+
+    // Data availability is deferred to the payload, so the tracker is pruned now.
+    gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithBlobs.getRoot());
+    assertThat(completionFuture).isCancelled();
+  }
+
+  @Test
   void enableBlockImportOnCompletion_shouldImportOnlyOnceWhenCalledMultipleTimes() {
     final SignedBeaconBlock blockWithBlobs =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
@@ -548,6 +632,246 @@ public class DasSamplerBasicTest {
                 RemoteOrigin.GOSSIP));
 
     verify(blockImportChannel, times(1)).importBlock(blockWithBlobs);
+  }
+
+  @Test
+  void getBlock_shouldReturnEmptyWhenNoTrackerExists() {
+    assertThat(sampler.getBlock(dataStructureUtil.randomBytes32())).isEmpty();
+    assertThat(sampler.containsBlock(dataStructureUtil.randomBytes32())).isFalse();
+  }
+
+  @Test
+  void getBlock_shouldReturnEmptyWhenTrackerHasNoBlockYet() {
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
+
+    sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(sidecar.getBeaconBlockRoot());
+    assertThat(sampler.getBlock(sidecar.getBeaconBlockRoot())).isEmpty();
+    assertThat(sampler.containsBlock(sidecar.getBeaconBlockRoot())).isFalse();
+  }
+
+  @Test
+  void onNewBlock_shouldStoreBlockOnTrackerWhenBlockHasBlobs() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.containsBlock(blockWithBlobs.getRoot())).isTrue();
+    assertThat(sampler.getBlock(blockWithBlobs.getRoot())).contains(blockWithBlobs);
+  }
+
+  @Test
+  void onNewBlock_shouldNotStoreBlockWhenBlockHasNoBlobs() {
+    final SignedBeaconBlock blockWithoutBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 0);
+
+    sampler.onNewBlock(blockWithoutBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.containsBlock(blockWithoutBlobs.getRoot())).isFalse();
+    assertThat(sampler.getBlock(blockWithoutBlobs.getRoot())).isEmpty();
+  }
+
+  @Test
+  void getOrCreateTracker_shouldEvictOldestCompletedTrackerAtSoftLimit() {
+    final DasSamplerBasicImpl smallSampler = createSampler(3, new StubMetricsSystem());
+
+    final DataColumnSamplingTracker oldestCompleted =
+        completedMockTracker(dataStructureUtil.randomBytes32(), 100L);
+    final DataColumnSamplingTracker newerCompleted =
+        completedMockTracker(dataStructureUtil.randomBytes32(), 200L);
+    final DataColumnSamplingTracker incomplete =
+        incompleteMockTracker(dataStructureUtil.randomBytes32(), 150L);
+
+    smallSampler
+        .getRecentlySampledColumnsByRoot()
+        .put(oldestCompleted.blockRoot(), oldestCompleted);
+    smallSampler.getRecentlySampledColumnsByRoot().put(newerCompleted.blockRoot(), newerCompleted);
+    smallSampler.getRecentlySampledColumnsByRoot().put(incomplete.blockRoot(), incomplete);
+
+    // Trigger insertion of a new tracker, which calls makeRoomForNewTracker
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
+
+    smallSampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
+
+    // softExcess = 4 - 3 + 1 = 2 → both completed evicted, incomplete and new remain
+    assertThat(smallSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(oldestCompleted.blockRoot())
+        .doesNotContainKey(newerCompleted.blockRoot())
+        .containsKey(incomplete.blockRoot())
+        .containsKey(sidecar.getBeaconBlockRoot());
+  }
+
+  @Test
+  void getOrCreateTracker_shouldPreferOldestCompletedWhenSoftEvicting() {
+    final DasSamplerBasicImpl smallSampler = createSampler(3, new StubMetricsSystem());
+
+    final DataColumnSamplingTracker oldestCompleted =
+        completedMockTracker(dataStructureUtil.randomBytes32(), 100L);
+    final DataColumnSamplingTracker newerCompleted =
+        completedMockTracker(dataStructureUtil.randomBytes32(), 200L);
+
+    smallSampler
+        .getRecentlySampledColumnsByRoot()
+        .put(oldestCompleted.blockRoot(), oldestCompleted);
+    smallSampler.getRecentlySampledColumnsByRoot().put(newerCompleted.blockRoot(), newerCompleted);
+
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
+
+    smallSampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
+
+    // size after insertion = 3 → softExcess = 1 → only the oldest completed is evicted
+    assertThat(smallSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(oldestCompleted.blockRoot())
+        .containsKey(newerCompleted.blockRoot())
+        .containsKey(sidecar.getBeaconBlockRoot());
+  }
+
+  @Test
+  void getOrCreateTracker_shouldForceEvictOldestIncompleteAtHardLimit() {
+    // hardLimit = maxRecentlySampledBlocks * 4 = 8
+    final DasSamplerBasicImpl smallSampler = createSampler(2, new StubMetricsSystem());
+
+    final List<DataColumnSamplingTracker> incompleteTrackers =
+        IntStream.range(0, 8)
+            .mapToObj(i -> incompleteMockTracker(dataStructureUtil.randomBytes32(), 1_000L + i))
+            .toList();
+    incompleteTrackers.forEach(
+        t -> smallSampler.getRecentlySampledColumnsByRoot().put(t.blockRoot(), t));
+
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
+
+    smallSampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
+
+    // After insertion: size = 9, hardLimit = 8 → 1 oldest incomplete force-evicted
+    final DataColumnSamplingTracker oldestIncomplete = incompleteTrackers.getFirst();
+    assertThat(smallSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(oldestIncomplete.blockRoot())
+        .containsKey(sidecar.getBeaconBlockRoot());
+    assertThat(oldestIncomplete.completionFuture()).isCompletedExceptionally();
+    // Newer incomplete trackers are preserved
+    for (int i = 1; i < incompleteTrackers.size(); i++) {
+      assertThat(smallSampler.getRecentlySampledColumnsByRoot())
+          .containsKey(incompleteTrackers.get(i).blockRoot());
+      assertThat(incompleteTrackers.get(i).completionFuture()).isNotDone();
+    }
+  }
+
+  @Test
+  void metrics_shouldExposeRecentlySampledBlocksGauge() {
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.BEACON, "das_recently_sampled_blocks_size")
+                .getValue())
+        .isZero();
+
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.BEACON, "das_recently_sampled_blocks_size")
+                .getValue())
+        .isEqualTo(1.0);
+  }
+
+  private DataColumnSamplingTracker completedMockTracker(
+      final Bytes32 blockRoot, final long createdAtNanos) {
+    final DataColumnSamplingTracker tracker = mock(DataColumnSamplingTracker.class);
+    when(tracker.blockRoot()).thenReturn(blockRoot);
+    when(tracker.slot()).thenReturn(UInt64.ONE);
+    when(tracker.completionFuture()).thenReturn(SafeFuture.completedFuture(List.of()));
+    when(tracker.createdAtNanos()).thenReturn(createdAtNanos);
+    when(tracker.fullySampled()).thenReturn(new AtomicBoolean(true));
+    return tracker;
+  }
+
+  private DataColumnSamplingTracker incompleteMockTracker(
+      final Bytes32 blockRoot, final long createdAtNanos) {
+    final DataColumnSamplingTracker tracker = mock(DataColumnSamplingTracker.class);
+    when(tracker.blockRoot()).thenReturn(blockRoot);
+    when(tracker.slot()).thenReturn(UInt64.ONE);
+    when(tracker.completionFuture()).thenReturn(new SafeFuture<>());
+    when(tracker.createdAtNanos()).thenReturn(createdAtNanos);
+    when(tracker.fullySampled()).thenReturn(new AtomicBoolean(false));
+    return tracker;
+  }
+
+  @Test
+  void delayedRpcFetch_shouldSkipRemovedTracker() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+    when(rpcFetchDelayProvider.calculate(blockWithBlobs.getSlot()))
+        .thenReturn(Duration.ofMillis(10));
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+    sampler.removeAllForBlock(blockWithBlobs.getSlotAndBlockRoot());
+
+    stubTimeProvider.advanceTimeByMillis(10);
+    asyncRunner.executeDueActions();
+
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+    verify(retriever, never()).retrieve(any());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreWhenPreGloasBlockAlreadyImported() {
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+
+    sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).doesNotContainKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldTrackGloasBlockUntilPayloadImported() {
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot())).thenReturn(Optional.empty());
+    when(rpcFetchDelayProvider.calculate(columnId.slot())).thenReturn(Duration.ZERO);
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot()).containsKey(columnId.blockRoot());
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldIgnoreGloasBlockAfterPayloadImported() {
+    final DasSamplerBasicImpl gloasSampler = createGloasSampler();
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), SAMPLING_INDEX_0);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.containsBlock(columnId.blockRoot())).thenReturn(true);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(columnId.blockRoot()))
+        .thenReturn(Optional.of(mock(SignedExecutionPayloadEnvelope.class)));
+
+    gloasSampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.GOSSIP);
+
+    assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(columnId.blockRoot());
   }
 
   private void assertSamplerTracker(
@@ -591,7 +915,7 @@ public class DasSamplerBasicTest {
       asyncRunner.executeDueActions();
       assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
 
-      // than advance to the due
+      // then advance to the due
       stubTimeProvider.advanceTimeByMillis(1);
 
       // due time arrived
@@ -606,5 +930,21 @@ public class DasSamplerBasicTest {
     for (final UInt64 missingColumn : missingColumns) {
       verify(retriever).retrieve(new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn));
     }
+  }
+
+  private DasSamplerBasicImpl createGloasSampler() {
+    return new DasSamplerBasicImpl(
+        TestSpecFactory.createMinimalGloas(),
+        asyncRunner,
+        currentSlotProvider,
+        rpcFetchDelayProvider,
+        custody,
+        retriever,
+        custodyGroupCountManager,
+        recentChainData,
+        true,
+        new StubMetricsSystem(),
+        MAX_RECENTLY_SAMPLED_BLOCKS,
+        blockImportChannel);
   }
 }

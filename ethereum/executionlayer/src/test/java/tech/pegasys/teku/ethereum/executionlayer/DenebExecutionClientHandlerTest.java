@@ -124,6 +124,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
+            dataStructureUtil.randomUInt64(),
             Optional.empty(),
             Optional.of(List.of()),
             ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),

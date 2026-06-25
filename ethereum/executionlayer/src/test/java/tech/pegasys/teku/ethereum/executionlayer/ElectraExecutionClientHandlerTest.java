@@ -89,9 +89,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final BlobSchema blobSchema = schemaDefinitionElectra.getBlobSchema();
     final GetPayloadResponse expectedGetPayloadResponse =
         responseData.asInternalGetPayloadResponse(
-            executionPayloadSchema,
-            blobSchema,
-            schemaDefinitionElectra.getExecutionRequestsSchema());
+            executionPayloadSchema, blobSchema, spec.getExecutionRequestsDataCodec(slot));
     assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 
@@ -141,6 +139,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
+            dataStructureUtil.randomUInt64(),
             Optional.empty(),
             Optional.of(List.of()),
             ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),

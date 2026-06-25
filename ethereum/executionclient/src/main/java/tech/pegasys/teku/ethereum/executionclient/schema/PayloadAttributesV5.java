@@ -35,6 +35,7 @@ public class PayloadAttributesV5 extends PayloadAttributesV4 {
       final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       final @JsonProperty("parentBeaconBlockRoot") Bytes32 parentBeaconBlockRoot,
       final @JsonProperty("slotNumber") UInt64 slotNumber,
+      final @JsonProperty("targetGasLimit") UInt64 targetGasLimit,
       final @JsonProperty("inclusionListTransactions") List<String> inclusionListTransactions) {
     super(
         timestamp,
@@ -42,7 +43,8 @@ public class PayloadAttributesV5 extends PayloadAttributesV4 {
         suggestedFeeRecipient,
         withdrawals,
         parentBeaconBlockRoot,
-        slotNumber);
+        slotNumber,
+        targetGasLimit);
     this.inclusionListTransactions = inclusionListTransactions;
   }
 
@@ -59,6 +61,7 @@ public class PayloadAttributesV5 extends PayloadAttributesV4 {
         getWithdrawals(payloadBuildingAttributes),
         payloadBuildingAttributes.parentBeaconBlock().blockRoot(),
         payloadBuildingAttributes.proposalSlot(),
+        payloadBuildingAttributes.targetGasLimit(),
         inclusionListTransactionHexes);
   }
 
@@ -91,6 +94,7 @@ public class PayloadAttributesV5 extends PayloadAttributesV4 {
         .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .add("slotNumber", slotNumber)
+        .add("targetGasLimit", targetGasLimit)
         .add("inclusionListTransactions", inclusionListTransactions)
         .toString();
   }

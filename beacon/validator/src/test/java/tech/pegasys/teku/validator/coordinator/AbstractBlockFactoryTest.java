@@ -211,7 +211,8 @@ public abstract class AbstractBlockFactoryTest {
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
     when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
-        .thenAnswer(__ -> SafeFuture.completedFuture(dataStructureUtil.emptyExecutionRequests()));
+        .thenAnswer(
+            __ -> SafeFuture.completedFuture(dataStructureUtil.emptyExecutionRequests(newSlot)));
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -250,7 +251,8 @@ public abstract class AbstractBlockFactoryTest {
       blockProposerRewards = UInt64.ZERO;
     }
 
-    setupExecutionLayerBlockAndBlobsProduction(spec, dataStructureUtil, blockExecutionValue);
+    setupExecutionLayerBlockAndBlobsProduction(
+        UInt64.valueOf(blockSlot), spec, dataStructureUtil, blockExecutionValue);
 
     executionPayloadBuilder.accept(blockSlotState);
 
@@ -523,7 +525,10 @@ public abstract class AbstractBlockFactoryTest {
   }
 
   private void setupExecutionLayerBlockAndBlobsProduction(
-      final Spec spec, final DataStructureUtil dataStructureUtil, final UInt256 value) {
+      final UInt64 blockSlot,
+      final Spec spec,
+      final DataStructureUtil dataStructureUtil,
+      final UInt256 value) {
     // non-blinded
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
@@ -538,7 +543,7 @@ public abstract class AbstractBlockFactoryTest {
                           value,
                           blobsBundle.get(),
                           false,
-                          dataStructureUtil.emptyExecutionRequests());
+                          dataStructureUtil.emptyExecutionRequests(blockSlot));
                 } else {
                   getPayloadResponse =
                       new GetPayloadResponse(executionPayload, value, blobsBundle.get(), false);
@@ -567,7 +572,8 @@ public abstract class AbstractBlockFactoryTest {
                             builder.value(value);
                             builder.publicKey(BLSPublicKey.empty());
                             if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
-                              builder.executionRequests(dataStructureUtil.emptyExecutionRequests());
+                              builder.executionRequests(
+                                  dataStructureUtil.emptyExecutionRequests(blockSlot));
                             }
                           });
               final ExecutionPayloadResult executionPayloadResult =
@@ -613,7 +619,7 @@ public abstract class AbstractBlockFactoryTest {
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
                               .orElse(blobKzgCommitmentsSchema.of()),
-                          dataStructureUtil.emptyExecutionRequests().hashTreeRoot());
+                          dataStructureUtil.emptyExecutionRequests(slot).hashTreeRoot());
               return SafeFuture.completedFuture(
                   schemaDefinitions
                       .getSignedExecutionPayloadBidSchema()

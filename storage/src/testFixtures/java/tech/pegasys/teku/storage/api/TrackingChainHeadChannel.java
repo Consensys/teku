@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 
 public class TrackingChainHeadChannel implements ChainHeadChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
@@ -34,6 +35,7 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
     headEvents.add(
         new HeadEvent(

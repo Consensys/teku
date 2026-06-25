@@ -717,15 +717,40 @@
         withdrawable_epoch: Epoch
     </spec>
 
+- name: BuilderDepositRequest#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderDepositRequest.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderDepositRequestSchema.java
+  spec: |
+    <spec container="BuilderDepositRequest" fork="gloas" hash="428c4c71">
+    class BuilderDepositRequest(Container):
+        pubkey: BLSPubkey
+        withdrawal_credentials: Bytes32
+        amount: Gwei
+        signature: BLSSignature
+    </spec>
+
+- name: BuilderExitRequest#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderExitRequest.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderExitRequestSchema.java
+  spec: |
+    <spec container="BuilderExitRequest" fork="gloas" hash="85c60f61">
+    class BuilderExitRequest(Container):
+        source_address: ExecutionAddress
+        pubkey: BLSPubkey
+    </spec>
+
 - name: BuilderPendingPayment#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPayment.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPaymentSchema.java
   spec: |
-    <spec container="BuilderPendingPayment" fork="gloas" hash="73cf1649">
+    <spec container="BuilderPendingPayment" fork="gloas" hash="835a8ae6">
     class BuilderPendingPayment(Container):
         weight: Gwei
         withdrawal: BuilderPendingWithdrawal
+        proposer_index: ValidatorIndex
     </spec>
 
 - name: BuilderPendingWithdrawal#gloas
@@ -971,7 +996,11 @@
     </spec>
 
 - name: ExecutionPayload#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadGloasImpl.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadBuilderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadSchemaGloas.java
   spec: |
     <spec container="ExecutionPayload" fork="gloas" hash="d399d858">
     class ExecutionPayload(Container):
@@ -1116,9 +1145,9 @@
 
 - name: ExecutionRequests#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequests.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsBuilderElectra.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsSchemaElectra.java
   spec: |
     <spec container="ExecutionRequests" fork="electra" hash="048c4a44">
     class ExecutionRequests(Container):
@@ -1130,6 +1159,23 @@
         consolidations: List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD]
     </spec>
 
+- name: ExecutionRequests#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionRequestsGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionRequestsBuilderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionRequestsSchemaGloas.java
+  spec: |
+    <spec container="ExecutionRequests" fork="gloas" hash="977acaf4">
+    class ExecutionRequests(Container):
+        deposits: List[DepositRequest, MAX_DEPOSIT_REQUESTS_PER_PAYLOAD]
+        withdrawals: List[WithdrawalRequest, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]
+        consolidations: List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD]
+        # [New in Gloas:EIP8282]
+        builder_deposits: List[BuilderDepositRequest, MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD]
+        # [New in Gloas:EIP8282]
+        builder_exits: List[BuilderExitRequest, MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD]
+    </spec>
+
 - name: Fork#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Fork.java
@@ -1139,15 +1185,6 @@
         previous_version: Version
         current_version: Version
         epoch: Epoch
-    </spec>
-
-- name: ForkChoiceNode#gloas
-  sources: []
-  spec: |
-    <spec container="ForkChoiceNode" fork="gloas" hash="755a4b34">
-    class ForkChoiceNode(Container):
-        root: Root
-        payload_status: PayloadStatus  # One of PAYLOAD_STATUS_* values
     </spec>
 
 - name: ForkData#phase0
@@ -1298,20 +1335,6 @@
     +    execution_branch: ExecutionBranch
     </spec>
 
-- name: LightClientHeader#gloas
-  sources: []
-  spec: |
-    <spec container="LightClientHeader" fork="gloas" hash="b0387ab2">
-    class LightClientHeader(Container):
-        beacon: BeaconBlockHeader
-        # [Modified in Gloas:EIP7732]
-        # Removed `execution`
-        # [New in Gloas:EIP7732]
-        execution_block_hash: Hash32
-        # [Modified in Gloas:EIP7732]
-        execution_branch: ExecutionBranch
-    </spec>
-
 - name: LightClientOptimisticUpdate#altair
   sources: []
   spec: |
@@ -1370,25 +1393,6 @@
         kzg_proof: KZGProof
         column_index: ColumnIndex
         row_index: RowIndex
-    </spec>
-
-- name: PartialDataColumnGroupID#gloas
-  sources: []
-  spec: |
-    <spec container="PartialDataColumnGroupID" fork="gloas" hash="9e8865b1">
-    class PartialDataColumnGroupID(Container):
-        slot: Slot
-        beacon_block_root: Root
-    </spec>
-
-- name: PartialDataColumnSidecar#gloas
-  sources: []
-  spec: |
-    <spec container="PartialDataColumnSidecar" fork="gloas" hash="57b4ad2a">
-    class PartialDataColumnSidecar(Container):
-        cells_present_bitmap: Bitlist[MAX_BLOB_COMMITMENTS_PER_BLOCK]
-        partial_column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
-        kzg_proofs: List[KZGProof, MAX_BLOB_COMMITMENTS_PER_BLOCK]
     </spec>
 
 - name: PayloadAttestation#gloas
@@ -1486,15 +1490,17 @@
     </spec>
 
 - name: ProposerPreferences#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ProposerPreferences.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ProposerPreferencesSchema.java
   spec: |
-    <spec container="ProposerPreferences" fork="gloas" hash="5ef93db5">
+    <spec container="ProposerPreferences" fork="gloas" hash="305cd154">
     class ProposerPreferences(Container):
         dependent_root: Root
         proposal_slot: Slot
         validator_index: ValidatorIndex
         fee_recipient: ExecutionAddress
-        gas_limit: uint64
+        target_gas_limit: uint64
     </spec>
 
 - name: ProposerSlashing#phase0
@@ -1605,7 +1611,9 @@
     </spec>
 
 - name: SignedProposerPreferences#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedProposerPreferences.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedProposerPreferencesSchema.java
   spec: |
     <spec container="SignedProposerPreferences" fork="gloas" hash="2142774c">
     class SignedProposerPreferences(Container):

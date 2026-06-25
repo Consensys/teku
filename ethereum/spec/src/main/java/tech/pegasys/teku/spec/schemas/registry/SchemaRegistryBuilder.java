@@ -44,6 +44,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_DEPOSIT_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_EXIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
@@ -177,10 +179,13 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -299,6 +304,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
 
         // GLOAS
+        .addProvider(createBuilderDepositRequestSchemaProvider())
+        .addProvider(createBuilderExitRequestSchemaProvider())
         .addProvider(createBuilderPendingWithdrawalSchemaProvider())
         .addProvider(createBuilderPendingPaymentSchemaProvider())
         .addProvider(createPayloadAttestationDataSchemaProvider())
@@ -529,8 +536,25 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                new ExecutionRequestsSchema(
+                new ExecutionRequestsSchemaElectra(
                     SpecConfigElectra.required(specConfig), registry, schemaName))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionRequestsSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderDepositRequestSchemaProvider() {
+    return providerBuilder(BUILDER_DEPOSIT_REQUEST_SCHEMA)
+        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new BuilderDepositRequestSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderExitRequestSchemaProvider() {
+    return providerBuilder(BUILDER_EXIT_REQUEST_SCHEMA)
+        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new BuilderExitRequestSchema())
         .build();
   }
 

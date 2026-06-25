@@ -22,6 +22,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFa
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class Eth2PeerFactory {
@@ -32,6 +33,7 @@ public class Eth2PeerFactory {
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final MetricsSystem metricsSystem;
   private final CombinedChainDataClient chainDataClient;
+  private final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
   private final TimeProvider timeProvider;
   private final Optional<Checkpoint> requiredCheckpoint;
   private final int peerBlocksRateLimit;
@@ -45,6 +47,7 @@ public class Eth2PeerFactory {
       final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient chainDataClient,
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
@@ -57,6 +60,7 @@ public class Eth2PeerFactory {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.chainDataClient = chainDataClient;
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
     this.timeProvider = timeProvider;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
@@ -93,6 +97,6 @@ public class Eth2PeerFactory {
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "request_tracker"),
         metricsSystem,
         timeProvider,
-        chainDataClient);
+        blobKzgCommitmentsProvider);
   }
 }

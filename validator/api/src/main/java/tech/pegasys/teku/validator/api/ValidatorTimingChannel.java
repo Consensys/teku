@@ -23,38 +23,39 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
-  void onSlot(UInt64 slot);
+  default void onSlot(final UInt64 slot) {}
 
-  void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot);
+  default void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
 
-  void onPossibleMissedEvents();
+  default void onPossibleMissedEvents() {}
 
-  void onValidatorsAdded();
+  default void onValidatorsAdded() {}
 
-  void onBlockProductionDue(UInt64 slot);
+  default void onBlockProductionDue(final UInt64 slot) {}
 
-  void onAttestationCreationDue(UInt64 slot);
+  default void onAttestationCreationDue(final UInt64 slot) {}
 
-  void onAttestationAggregationDue(UInt64 slot);
+  default void onAttestationAggregationDue(final UInt64 slot) {}
 
-  void onSyncCommitteeCreationDue(UInt64 slot);
+  default void onSyncCommitteeCreationDue(final UInt64 slot) {}
 
-  void onContributionCreationDue(UInt64 slot);
+  default void onContributionCreationDue(final UInt64 slot) {}
 
-  void onPayloadAttestationCreationDue(UInt64 slot);
+  default void onPayloadAttestationCreationDue(final UInt64 slot) {}
 
   default void onInclusionListCreationDue(final UInt64 slot) {}
 
-  void onInclusionListDue(UInt64 slot);
+  default void onInclusionListDue(final UInt64 slot) {}
 
-  void onAttesterSlashing(AttesterSlashing attesterSlashing);
+  default void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
-  void onProposerSlashing(ProposerSlashing proposerSlashing);
+  default void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
-  void onUpdatedValidatorStatuses(
-      Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses, boolean possibleMissingEvents);
+  default void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {}
 }

@@ -144,14 +144,6 @@ public class MathHelpers {
     return Bytes32.leftPad(intBytes);
   }
 
-  public static int intPlusMaxIntCapped(final int a, final int b) {
-    final UInt64 sum = UInt64.valueOf(a).plus(b);
-    if (sum.isLessThanOrEqualTo(UInt64.valueOf(Integer.MAX_VALUE))) {
-      return sum.intValue();
-    }
-    return Integer.MAX_VALUE;
-  }
-
   public static int floorLog2(final int n) {
     checkArgument(n >= 0, "Cannot calculate floorLog2 of negative number");
     return 31 - Integer.numberOfLeadingZeros(n);

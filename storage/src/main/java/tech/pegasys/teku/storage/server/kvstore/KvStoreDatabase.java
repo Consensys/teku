@@ -385,11 +385,16 @@ public class KvStoreDatabase implements Database {
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
+            final Optional<SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayload =
+                Optional.ofNullable(blindedExecutionPayloads.get(block.getRoot()));
+            blindedExecutionPayload.ifPresent(
+                envelope -> updater.addBlindedExecutionPayloadEnvelope(block.getRoot(), envelope));
             // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
             // availability period
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
@@ -752,6 +757,7 @@ public class KvStoreDatabase implements Database {
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
@@ -777,7 +783,8 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
+    storeFinalizedBlocksToDao(
+        blocks, blobSidecarsBySlot, blindedExecutionPayloads, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
@@ -1223,8 +1230,16 @@ public class KvStoreDatabase implements Database {
     if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
       return Optional.empty();
     }
+    // Start the scan just above the last pruned slot rather than at the first slot with data column
+    // sidecar support. Everything up to and including the watermark has been deleted, so seeking to
+    // watermark + 1 lands directly on live data instead of crossing the band of deletion tombstones
+    // left below it - a forward scan over those tombstones can take minutes on a backlogged node.
+    final UInt64 fromSlot =
+        dao.getLastDataColumnSidecarPrunedSlot()
+            .map(lastPruned -> lastPruned.plus(1))
+            .orElse(maybeFirstDataColumnSidecarSlot.get());
     try (final Stream<DataColumnSlotAndIdentifier> identifiers =
-        streamDataColumnIdentifiers(maybeFirstDataColumnSidecarSlot.get(), UInt64.MAX_VALUE)) {
+        streamDataColumnIdentifiers(fromSlot, UInt64.MAX_VALUE)) {
       return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
     }
   }
@@ -1282,99 +1297,135 @@ public class KvStoreDatabase implements Database {
     LOG.debug(
         "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-    if (pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL)) {
-      LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
-    }
-
-    if (pruneDataColumnSidecars(
-        pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL)) {
-      LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
-    }
+    pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL);
+    pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL);
 
     LOG.debug(
         "Data column sidecars pruning completed in {} ms", System.currentTimeMillis() - startTime);
   }
 
   /**
-   * Prunes data column sidecars from newest to oldest. The sidecar column can be large, so pruning
-   * uses a floor lookup to jump directly to the newest stored slot at or before the cutoff, streams
-   * only that slot, removes it, then seeks to the previous eligible slot for the next batch item.
+   * Prunes data column sidecars oldest-first: each run removes the oldest (up to) {@code
+   * pruneSlotLimit} distinct populated slots at or before the cutoff, in a single committed
+   * transaction. Pruning oldest-first keeps the earliest retained slot advancing and prevents a gap
+   * from forming when sidecars are stored faster than they can be pruned.
+   *
+   * <p>For canonical sidecars the forward scan resumes from the persisted prune watermark ({@link
+   * KvStoreCombinedDao#getLastDataColumnSidecarPrunedSlot()}) rather than the fixed first slot with
+   * data column sidecar support, so the opening seek lands directly on live data instead of
+   * crossing the deletion tombstones left below it - including across restarts. The watermark is
+   * advanced atomically with the deletions. Non-canonical sidecars are sparse, so they always scan
+   * from the first supported slot. Gaps between populated slots are skipped, so the batch always
+   * spans {@code pruneSlotLimit} populated slots regardless of how far apart they are.
    */
-  boolean pruneDataColumnSidecars(
+  void pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final UInt64 tillSlotInclusive,
       final DataColumnSidecarType sidecarType) {
 
     final long startTime = System.currentTimeMillis();
-    int prunedSlots = 0;
 
     if (pruneSlotLimit <= 0) {
-      return true;
+      return;
     }
 
     final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
-    if (maybeFirstDataColumnSidecarSlot.isEmpty()
-        || maybeFirstDataColumnSidecarSlot.get().isGreaterThan(tillSlotInclusive)) {
-      return false;
+    if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
+      return;
     }
 
-    Optional<UInt64> maybeSlot =
-        findPreviousDataColumnSidecarSlot(
-            tillSlotInclusive, maybeFirstDataColumnSidecarSlot.get(), sidecarType);
-    while (prunedSlots < pruneSlotLimit && maybeSlot.isPresent()) {
-      final UInt64 slot = maybeSlot.get();
-      final List<DataColumnSlotAndIdentifier> keys =
-          getDataColumnIdentifiersForSlot(sidecarType, slot);
-
-      if (keys.isEmpty()) {
-        LOG.warn(
-            "No {} data column sidecars found for sidecar slot {}",
-            sidecarType.displayName(),
-            slot);
-        break;
-      }
-
-      try (final FinalizedUpdater updater = finalizedUpdater()) {
-        for (final DataColumnSlotAndIdentifier key : keys) {
-          removeDataColumnSidecar(sidecarType, updater, key);
-        }
-        updater.commit();
-      }
-
-      ++prunedSlots;
-      if (prunedSlots >= pruneSlotLimit || slot.equals(maybeFirstDataColumnSidecarSlot.get())) {
-        break;
-      }
-      maybeSlot =
-          findPreviousDataColumnSidecarSlot(
-              slot.minus(1), maybeFirstDataColumnSidecarSlot.get(), sidecarType);
+    final UInt64 firstSupportedSlot = maybeFirstDataColumnSidecarSlot.get();
+    final UInt64 fromSlot =
+        sidecarType == DataColumnSidecarType.CANONICAL
+            ? dao.getLastDataColumnSidecarPrunedSlot()
+                .map(lastPruned -> lastPruned.plus(1))
+                .orElse(firstSupportedSlot)
+            : firstSupportedSlot;
+    if (fromSlot.isGreaterThan(tillSlotInclusive)) {
+      return;
     }
 
+    final DataColumnSidecarsToPrune toPrune =
+        collectOldestSidecarsToPrune(pruneSlotLimit, fromSlot, tillSlotInclusive, sidecarType);
+
+    if (toPrune.keys().isEmpty()) {
+      LOG.debug("No {} data column sidecars to prune", sidecarType.displayName());
+      return;
+    }
+
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      for (final DataColumnSlotAndIdentifier key : toPrune.keys()) {
+        removeDataColumnSidecar(sidecarType, updater, key);
+      }
+      // Persist the canonical prune watermark atomically with the deletions so the next run (and
+      // any
+      // run after a restart) can resume above the tombstones rather than rescanning from the first
+      // supported slot.
+      if (sidecarType == DataColumnSidecarType.CANONICAL) {
+        updater.setLastDataColumnSidecarPrunedSlot(toPrune.keys().getLast().slot());
+      }
+      updater.commit();
+    }
+
+    if (toPrune.distinctSlots() >= pruneSlotLimit) {
+      LOG.debug(
+          "{} data column sidecars pruning reached the limit of {}",
+          sidecarType.displayName(),
+          pruneSlotLimit);
+    }
     LOG.debug(
-        "Pruned {} data column sidecars in {} slots in {} ms",
+        "Pruned {} {} data column sidecars across {} slots ({},{}) in {} ms",
+        toPrune.keys().size(),
         sidecarType.displayName(),
-        prunedSlots,
+        toPrune.distinctSlots(),
+        toPrune.keys().getFirst().slot(),
+        toPrune.keys().getLast().slot(),
         System.currentTimeMillis() - startTime);
-    return prunedSlots >= pruneSlotLimit;
   }
 
-  private List<DataColumnSlotAndIdentifier> getDataColumnIdentifiersForSlot(
-      final DataColumnSidecarType sidecarType, final UInt64 slot) {
-    return switch (sidecarType) {
-      case CANONICAL -> {
-        try (final Stream<DataColumnSlotAndIdentifier> identifiersForSlot =
-            streamDataColumnIdentifiers(slot)) {
-          yield identifiersForSlot.toList();
+  /**
+   * Collects the keys for the oldest (up to) {@code pruneSlotLimit} distinct populated slots in
+   * {@code [fromSlot, tillSlotInclusive]} in a single forward scan, stopping as soon as the limit
+   * is reached. The stream is consumed lazily, so the iterator only advances as far as the slots
+   * being pruned.
+   */
+  private DataColumnSidecarsToPrune collectOldestSidecarsToPrune(
+      final int pruneSlotLimit,
+      final UInt64 fromSlot,
+      final UInt64 tillSlotInclusive,
+      final DataColumnSidecarType sidecarType) {
+    final List<DataColumnSlotAndIdentifier> keys = new ArrayList<>();
+    int distinctSlots = 0;
+    try (final Stream<DataColumnSlotAndIdentifier> forwardStream =
+        streamDataColumnIdentifiersForward(sidecarType, fromSlot, tillSlotInclusive)) {
+      final Iterator<DataColumnSlotAndIdentifier> iterator = forwardStream.iterator();
+      UInt64 currentSlot = null;
+      while (iterator.hasNext()) {
+        final DataColumnSlotAndIdentifier key = iterator.next();
+        if (!key.slot().equals(currentSlot)) {
+          if (distinctSlots == pruneSlotLimit) {
+            break;
+          }
+          currentSlot = key.slot();
+          ++distinctSlots;
         }
+        keys.add(key);
       }
-      case NON_CANONICAL -> {
-        try (final Stream<DataColumnSlotAndIdentifier> identifiersForSlot =
-            streamNonCanonicalDataColumnIdentifiers(slot)) {
-          yield identifiersForSlot.toList();
-        }
-      }
-    };
+    }
+    return new DataColumnSidecarsToPrune(keys, distinctSlots);
   }
+
+  @MustBeClosed
+  private Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersForward(
+      final DataColumnSidecarType sidecarType, final UInt64 fromSlot, final UInt64 toSlot) {
+    if (sidecarType == DataColumnSidecarType.CANONICAL) {
+      return streamDataColumnIdentifiers(fromSlot, toSlot);
+    }
+    return streamNonCanonicalDataColumnIdentifiers(fromSlot, toSlot);
+  }
+
+  private record DataColumnSidecarsToPrune(
+      List<DataColumnSlotAndIdentifier> keys, int distinctSlots) {}
 
   private void removeDataColumnSidecar(
       final DataColumnSidecarType sidecarType,
@@ -1386,21 +1437,13 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private Optional<UInt64> findPreviousDataColumnSidecarSlot(
-      final UInt64 latestSlot,
-      final UInt64 firstDataColumnSidecarSlot,
-      final DataColumnSidecarType sidecarType) {
-    final Optional<UInt64> maybeSlot =
-        switch (sidecarType) {
-          case CANONICAL -> dao.getPreviousDataColumnSidecarSlotAtOrBefore(latestSlot);
-          case NON_CANONICAL ->
-              dao.getPreviousNonCanonicalDataColumnSidecarSlotAtOrBefore(latestSlot);
-        };
-    return maybeSlot.filter(slot -> slot.isGreaterThanOrEqualTo(firstDataColumnSidecarSlot));
-  }
-
   private Optional<UInt64> getFirstDataColumnSidecarSlot() {
     return spec.computeFirstSlotWithDataColumnSidecarSupport();
+  }
+
+  @Override
+  public void compactStorage() {
+    dao.compact();
   }
 
   @Override

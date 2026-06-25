@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.CreatePayloadAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetInclusionListRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
@@ -177,6 +179,12 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final CreateAttestationDataRequest createAttestationDataRequest =
         new CreateAttestationDataRequest(getBaseEndpoint(), getOkHttpClient());
     return createAttestationDataRequest.submit(slot, committeeIndex);
+  }
+
+  public Optional<PayloadAttestationData> createPayloadAttestationData(final UInt64 slot) {
+    final CreatePayloadAttestationDataRequest createPayloadAttestationDataRequest =
+        new CreatePayloadAttestationDataRequest(getBaseEndpoint(), getOkHttpClient(), spec);
+    return createPayloadAttestationDataRequest.submit(slot);
   }
 
   public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(

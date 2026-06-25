@@ -87,7 +87,7 @@ class ExecutionPayloadFactoryGloasTest {
             dataStructureUtil.randomUInt256(),
             blobsBundle,
             false,
-            dataStructureUtil.randomExecutionRequests());
+            dataStructureUtil.randomExecutionRequests(slot));
 
     setupCachingOfThePayloadResult(slot, getPayloadResponse);
 
@@ -169,7 +169,7 @@ class ExecutionPayloadFactoryGloasTest {
             dataStructureUtil.randomUInt256(),
             blobsBundle,
             false,
-            dataStructureUtil.randomExecutionRequests());
+            dataStructureUtil.randomExecutionRequests(state.getSlot()));
   }
 
   private ExecutionPayloadBid getBidFromBlock(final BeaconBlock block) {

@@ -57,6 +57,8 @@ public class PoolFactory {
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
+  private static final int DEFAULT_MAX_BLOCKS_PENDING_PARENT_EXECUTION_PAYLOAD = 1024;
+  private static final int DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER = 10;
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
@@ -111,9 +113,68 @@ public class PoolFactory {
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
+        getMaxPendingBlockBytes(spec),
+        block -> block.getSchema().getSszSize(block.getBackingNode()),
         block -> block.getMessage().hashTreeRoot(),
         block -> Collections.singleton(block.getParentRoot()),
         SignedBeaconBlock::getSlot);
+  }
+
+  public PendingBlockPool createPendingBlockPool(final Spec spec) {
+    return createPendingBlockPool(
+        spec,
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_BLOCKS,
+        DEFAULT_MAX_BLOCKS_PENDING_PARENT_EXECUTION_PAYLOAD);
+  }
+
+  public PendingBlockPool createPendingBlockPool(
+      final Spec spec,
+      final UInt64 historicalBlockTolerance,
+      final UInt64 futureBlockTolerance,
+      final int maxItems) {
+    return createPendingBlockPool(
+        spec, historicalBlockTolerance, futureBlockTolerance, maxItems, maxItems);
+  }
+
+  public PendingBlockPool createPendingBlockPool(
+      final Spec spec,
+      final UInt64 historicalBlockTolerance,
+      final UInt64 futureBlockTolerance,
+      final int maxBlocksWaitingForParent,
+      final int maxBlocksWaitingForParentExecutionPayload) {
+    return new PendingBlockPool(
+        pendingPoolsSizeGauge,
+        spec,
+        historicalBlockTolerance,
+        futureBlockTolerance,
+        maxBlocksWaitingForParent,
+        maxBlocksWaitingForParentExecutionPayload,
+        getMaxPendingBlockBytes(spec));
+  }
+
+  private long getMaxPendingBlockBytes(final Spec spec) {
+    return (long) spec.getNetworkingConfig().getMaxPayloadSize()
+        * DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER;
+  }
+
+  public PendingAttestationPool createPendingAttestationPool(
+      final Spec spec, final int maxQueueSize) {
+    return createPendingAttestationPool(spec, maxQueueSize, maxQueueSize);
+  }
+
+  public PendingAttestationPool createPendingAttestationPool(
+      final Spec spec,
+      final int maxAttestationsWaitingForBlock,
+      final int maxAttestationsWaitingForFullPayload) {
+    return new PendingAttestationPool(
+        pendingPoolsSizeGauge,
+        spec,
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        maxAttestationsWaitingForBlock,
+        maxAttestationsWaitingForFullPayload);
   }
 
   public PendingPool<ValidatableAttestation> createPendingPoolForAttestations(

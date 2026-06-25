@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,12 +36,12 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -75,6 +76,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final AttestationUtilGloas attestationUtilGloas;
+  private final ExecutionRequestsProcessorGloas executionRequestsProcessorGloas;
 
   public BlockProcessorGloas(
       final SpecConfigGloas specConfig,
@@ -114,31 +116,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     this.beaconStateAccessorsGloas = beaconStateAccessors;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.attestationUtilGloas = attestationUtil;
-  }
-
-  @Override
-  public void processBlock(
-      final MutableBeaconState genericState,
-      final BeaconBlock block,
-      final IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Optional<List<InclusionList>> inclusionLists)
-      throws BlockProcessingException {
-    final MutableBeaconStateGloas state = MutableBeaconStateGloas.required(genericState);
-    final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
-    final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier =
-        getValidatorExitContextSupplier(state);
-
-    processParentExecutionPayload(state, block, validatorExitContextSupplier);
-    processBlockHeader(state, block);
-    processWithdrawals(state, Optional.empty());
-    processExecutionPayloadBid(state, block);
-    processRandaoNoValidation(state, blockBody);
-    processEth1Data(state, blockBody);
-    processOperationsNoValidation(
-        state, blockBody, indexedAttestationCache, validatorExitContextSupplier);
-    processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
+    this.executionRequestsProcessorGloas = executionRequestsProcessor;
   }
 
   @Override
@@ -166,12 +144,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(beaconBlock.getBody());
     final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
-    final ExecutionPayloadBid parentBid = stateGloas.getLatestExecutionPayloadBid();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    if (!bid.getParentBlockHash().equals(parentBid.getBlockHash())) {
+    if (!miscHelpersGloas.isBidBuildingOnFullParent(stateGloas, bid)) {
       // Parent was EMPTY -- no execution requests expected
-      if (!requests.equals(schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault())) {
+      if (!requests.isDefault()) {
         throw new BlockProcessingException(
             "No execution requests were expected for an EMPTY parent");
       }
@@ -179,16 +156,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Parent was FULL -- verify the bid commitment and apply the payload
-    if (!requests.hashTreeRoot().equals(parentBid.getExecutionRequestsRoot())) {
+    if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestBid(stateGloas, requests)) {
       throw new BlockProcessingException(
           "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
     }
-
     applyParentExecutionPayload(stateGloas, requests, validatorExitContextSupplier);
   }
 
   // apply_parent_execution_payload
-  protected void applyParentExecutionPayload(
+  public void applyParentExecutionPayload(
       final MutableBeaconStateGloas state,
       final ExecutionRequests requests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
@@ -198,29 +174,31 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
     // Process execution requests from parent's payload. The execution requests are processed at
     // state.slot (child's slot), not the parent's slot.
-    final long startTimeNanos = System.nanoTime();
+    final long startTimeMillis = System.currentTimeMillis();
+    LOG.debug("Starting processing {} deposit requests", requests.getDeposits().size());
+    executionRequestsProcessorGloas.processDepositRequests(state, requests.getDeposits());
     LOG.debug(
-        "Starting processing builder deposits from {} execution request deposits at timestampNanos={}",
+        "Finished processing {} deposit requests. Pending deposits: {}, builders: {}. Took {} ms.",
         requests.getDeposits().size(),
-        startTimeNanos);
-    executionRequestsProcessor.processDepositRequests(state, requests.getDeposits());
-    final long finishTimeNanos = System.nanoTime();
-    LOG.debug(
-        "Finished processing builder deposits at timestampNanos={}. Pending deposits: {}, builders: {}, elapsedNanos={}",
-        finishTimeNanos,
         state.getPendingDeposits().size(),
         state.getBuilders().size(),
-        finishTimeNanos - startTimeNanos);
-    executionRequestsProcessor.processWithdrawalRequests(
+        System.currentTimeMillis() - startTimeMillis);
+    executionRequestsProcessorGloas.processWithdrawalRequests(
         state, requests.getWithdrawals(), validatorExitContextSupplier);
-    executionRequestsProcessor.processConsolidationRequests(state, requests.getConsolidations());
+    executionRequestsProcessorGloas.processConsolidationRequests(
+        state, requests.getConsolidations());
+    final ExecutionRequestsGloas requestsGloas = ExecutionRequestsGloas.required(requests);
+    executionRequestsProcessorGloas.processBuilderDepositRequests(
+        state, requestsGloas.getBuilderDeposits());
+    executionRequestsProcessorGloas.processBuilderExitRequests(
+        state, requestsGloas.getBuilderExits());
 
     // Settle the builder payment
-    if (parentEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
+    if (parentEpoch.equals(beaconStateAccessorsGloas.getCurrentEpoch(state))) {
       final UInt64 paymentIndex =
           parentSlot.mod(specConfig.getSlotsPerEpoch()).plus(specConfig.getSlotsPerEpoch());
       beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
-    } else if (parentEpoch.equals(beaconStateAccessors.getPreviousEpoch(state))) {
+    } else if (parentEpoch.equals(beaconStateAccessorsGloas.getPreviousEpoch(state))) {
       final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
       beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
     } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
@@ -256,22 +234,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   // process_execution_payload_bid
   @Override
   public void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
-    final SignedExecutionPayloadBid signedBid =
-        beaconBlock
-            .getBody()
-            .getOptionalSignedExecutionPayloadBid()
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "Signed Execution Payload Bid expected as part of body"));
-
     final ExecutionPayloadBid bid = signedBid.getMessage();
 
     final UInt64 builderIndex = bid.getBuilderIndex();
 
     final UInt64 amount = bid.getValue();
+
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
 
     if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
       // For self-builds, amount must be zero regardless of withdrawal credential prefix
@@ -286,6 +257,11 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       // Verify that the builder is active
       if (!predicatesGloas.isActiveBuilder(state, builderIndex)) {
         throw new BlockProcessingException("Builder is not active");
+      }
+      // Verify that the builder is a payload builder
+      if (stateGloas.getBuilders().get(builderIndex.intValue()).getVersion()
+          != PAYLOAD_BUILDER_VERSION) {
+        throw new BlockProcessingException("Builder is not a payload builder");
       }
       // Verify that the builder has funds to cover the bid
       if (!beaconStateAccessorsGloas.canBuilderCoverBid(state, builderIndex, amount)) {
@@ -307,15 +283,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Verify that the bid is for the current slot
-    if (!bid.getSlot().equals(beaconBlock.getSlot())) {
+    if (!bid.getSlot().equals(state.getSlot())) {
       throw new BlockProcessingException("Bid is not for the current slot");
     }
 
-    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
-
     // Verify that the bid is for the right parent block
     if (!bid.getParentBlockHash().equals(stateGloas.getLatestBlockHash())
-        || !bid.getParentBlockRoot().equals(beaconBlock.getParentRoot())) {
+        || !bid.getParentBlockRoot()
+            .equals(
+                beaconStateAccessors.getBlockRootAtSlot(state, state.getSlot().minusMinZero(1)))) {
       throw new BlockProcessingException("Bid is not for the right parent block");
     }
     if (!bid.getPrevRandao()
@@ -334,7 +310,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                   UInt64.ZERO,
                   schemaDefinitionsGloas
                       .getBuilderPendingWithdrawalSchema()
-                      .create(bid.getFeeRecipient(), amount, builderIndex));
+                      .create(bid.getFeeRecipient(), amount, builderIndex),
+                  UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
 
       stateGloas
           .getBuilderPendingPayments()
@@ -360,11 +337,13 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   // Remove the BuilderPendingPayment corresponding to this proposal if it is still in the 2-epoch
-  // window.
+  // window. Only clear it when the slashed validator is the proposer associated with the payment;
+  // otherwise an unrelated same-slot equivocation could grief an honest proposer's payment.
   @Override
   protected void removeBuilderPendingPayment(
       final ProposerSlashing proposerSlashing, final MutableBeaconState state) {
     final UInt64 slot = proposerSlashing.getHeader1().getMessage().getSlot();
+    final UInt64 proposerIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
     final UInt64 proposalEpoch = miscHelpers.computeEpochAtSlot(slot);
     OptionalInt paymentIndex = OptionalInt.empty();
     if (proposalEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
@@ -375,10 +354,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       paymentIndex = OptionalInt.of(slot.mod(specConfig.getSlotsPerEpoch()).intValue());
     }
     paymentIndex.ifPresent(
-        index ->
-            MutableBeaconStateGloas.required(state)
+        index -> {
+          final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+          final BuilderPendingPayment payment = stateGloas.getBuilderPendingPayments().get(index);
+          if (payment.getProposerIndex().equals(proposerIndex)) {
+            stateGloas
                 .getBuilderPendingPayments()
-                .set(index, schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault()));
+                .set(index, schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault());
+          }
+        });
   }
 
   @Override
@@ -452,23 +436,6 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                         () ->
                             new BlockProcessingException(
                                 "Payload attestations expected as part of the body"))));
-  }
-
-  @Override
-  protected void initiateExit(
-      final MutableBeaconState state,
-      final SignedVoluntaryExit signedExit,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    final UInt64 validatorIndex = signedExit.getMessage().getValidatorIndex();
-    if (predicatesGloas.isBuilderIndex(validatorIndex)) {
-      // - Run initiate_builder_exit(state, builder_index)
-      beaconStateMutatorsGloas.initiateBuilderExit(
-          state, miscHelpersGloas.convertValidatorIndexToBuilderIndex(validatorIndex));
-    } else {
-      // - Run initiate_validator_exit(state, exit.validator_index)
-      beaconStateMutators.initiateValidatorExit(
-          state, validatorIndex.intValue(), validatorExitContextSupplier);
-    }
   }
 
   @Override

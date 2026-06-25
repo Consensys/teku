@@ -64,6 +64,7 @@ public class NoOpDatabase implements Database {
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {}
 
   @Override
@@ -443,6 +444,9 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {}
+
+  @Override
+  public void compactStorage() {}
 
   @Override
   public void close() {}

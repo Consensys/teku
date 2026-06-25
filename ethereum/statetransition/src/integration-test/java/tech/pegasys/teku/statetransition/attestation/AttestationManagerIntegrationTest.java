@@ -15,10 +15,13 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +49,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
@@ -82,6 +85,9 @@ class AttestationManagerIntegrationTest {
           AggregatingAttestationPoolProfiler.NOOP,
           Integer.MAX_VALUE,
           Integer.MAX_VALUE);
+  private final PendingAttestationPool pendingAttestationPool =
+      new PoolFactory(storageSystem.getMetricsSystem())
+          .createPendingAttestationPool(spec, DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);
   private final ForkChoice forkChoice =
@@ -92,10 +98,6 @@ class AttestationManagerIntegrationTest {
           new NoopForkChoiceNotifier(),
           transitionBlockValidator,
           storageSystem.getMetricsSystem());
-
-  private final PendingPool<ValidatableAttestation> pendingAttestations =
-      new PoolFactory(storageSystem.getMetricsSystem())
-          .createPendingPoolForAttestations(spec, 10000);
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
@@ -106,13 +108,18 @@ class AttestationManagerIntegrationTest {
   private final GossipValidationHelper gossipValidationHelper =
       new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   private final AttestationValidator attestationValidator =
-      new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
+      new AttestationValidator(
+          spec,
+          signatureVerificationService,
+          gossipValidationHelper,
+          new ConcurrentHashMap<>(),
+          Set.of());
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =
       new AttestationManager(
           forkChoice,
-          pendingAttestations,
+          pendingAttestationPool,
           futureAttestations,
           attestationPool,
           attestationValidator,
