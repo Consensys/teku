@@ -43,7 +43,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.benchmarks.CompressionMetrics;
+import tech.pegasys.teku.benchmarks.metric.CompressionMetrics;
 import tech.pegasys.teku.benchmarks.gen.BeaconBlockFixtureGenerator;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.spec.Spec;
