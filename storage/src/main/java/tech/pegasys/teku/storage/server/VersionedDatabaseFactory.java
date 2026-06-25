@@ -424,35 +424,44 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   }
 
   /**
-   * Determines whether the RocksDB BlobDB feature should be used for static-data columns.
+   * Determines whether the RocksDB BlobDB feature should be used for static-data columns and
+   * persists that decision so it remains fixed for the lifetime of the database.
    *
-   * <p>BlobDB is an opt-in, sticky choice. By default static-data columns are persisted as SST. The
-   * first time a user enables {@code --Xdata-storage-rocksdb-blob-db-enabled}, the decision is
-   * recorded in {@code blob-db-mode.txt} and BlobDB is used from then on for the lifetime of the
-   * database, regardless of whether the flag is supplied on subsequent restarts.
+   * <p>BlobDB may only be enabled when creating a fresh database. An already populated database
+   * must keep persisting those columns as SST so the on-disk format never changes underneath it.
+   * Whether a real database already exists is determined by the presence of RocksDB's {@code
+   * CURRENT} file in the database directory rather than by side files such as {@code db.version},
+   * so that wiping the database directory (while leaving metadata behind) is correctly treated as a
+   * fresh start.
    *
    * <ul>
-   *   <li>A recorded mode is present: it is authoritative and the configured flag is ignored, so a
-   *       database never switches its on-disk format underneath the user.
-   *   <li>No recorded mode and the flag is enabled: the user is switching to BlobDB, so the
-   *       decision is recorded and BlobDB is used from now on.
-   *   <li>No recorded mode and the flag is disabled: static-data columns stay as SST and nothing is
-   *       recorded.
+   *   <li>Existing database with a recorded mode: the recorded value is authoritative (the mode was
+   *       fixed when the database was created) and the configured flag is ignored.
+   *   <li>Existing database without a recorded mode: it predates this tracking, so BlobDB stays
+   *       disabled (SST).
+   *   <li>Fresh database: the configured flag is honoured, replacing any stale recorded mode left
+   *       behind by a previous database in the same directory.
    * </ul>
    *
    * @return the effective BlobDB mode to apply
    */
   private boolean resolveAndPersistBlobDbMode() {
-    final Optional<Boolean> persistedMode = readBlobDbMode();
-    if (persistedMode.isPresent()) {
-      return persistedMode.get();
-    }
-    if (rocksdbBlobDbEnabled) {
-      saveBlobDbMode(true);
-      LOG.info("RocksDB BlobDB for static data columns has been enabled for this database");
-      return true;
-    }
-    return false;
+    final boolean databaseExists = rocksDbDataExists();
+    final boolean blobDbEnabled =
+        databaseExists ? readBlobDbMode().orElse(false) : rocksdbBlobDbEnabled;
+    saveBlobDbMode(blobDbEnabled);
+    LOG.info(
+        "RocksDB BlobDB for static data columns is {} for this database",
+        blobDbEnabled ? "enabled" : "disabled");
+    return blobDbEnabled;
+  }
+
+  /**
+   * @return whether the RocksDB database directory already contains a database, detected via the
+   *     presence of RocksDB's {@code CURRENT} pointer file
+   */
+  private boolean rocksDbDataExists() {
+    return dbDirectory.toPath().resolve("CURRENT").toFile().exists();
   }
 
   private Optional<Boolean> readBlobDbMode() {
