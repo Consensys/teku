@@ -31,9 +31,10 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-  private final ExecutionRequestsSchema executionRequestsSchema;
+  private final ExecutionRequestsSchema<? extends ExecutionRequests> executionRequestsSchema;
   private final DepositRequestSchema depositRequestSchema;
   private final WithdrawalRequestSchema withdrawalRequestSchema;
   private final ConsolidationRequestSchema consolidationRequestSchema;
@@ -105,7 +106,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
   }
 
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+  public ExecutionRequestsSchema<? extends ExecutionRequests> getExecutionRequestsSchema() {
     return executionRequestsSchema;
   }
 

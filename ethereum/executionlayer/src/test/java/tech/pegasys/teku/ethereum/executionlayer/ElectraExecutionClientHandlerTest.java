@@ -89,9 +89,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final BlobSchema blobSchema = schemaDefinitionElectra.getBlobSchema();
     final GetPayloadResponse expectedGetPayloadResponse =
         responseData.asInternalGetPayloadResponse(
-            executionPayloadSchema,
-            blobSchema,
-            schemaDefinitionElectra.getExecutionRequestsSchema());
+            executionPayloadSchema, blobSchema, spec.getExecutionRequestsDataCodec(slot));
     assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 

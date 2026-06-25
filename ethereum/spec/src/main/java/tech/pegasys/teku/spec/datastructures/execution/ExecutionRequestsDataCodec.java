@@ -11,21 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
+package tech.pegasys.teku.spec.datastructures.execution;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsSchemaGloas;
 
 /*
  Implement the rules for decoding and hashing execution requests according to https://eips.ethereum.org/EIPS/eip-7685
 */
 public class ExecutionRequestsDataCodec {
 
-  private final ExecutionRequestsSchema executionRequestsSchema;
+  private final ExecutionRequestsSchema<?> executionRequestsSchema;
 
-  public ExecutionRequestsDataCodec(final ExecutionRequestsSchema executionRequestsSchema) {
+  public ExecutionRequestsDataCodec(final ExecutionRequestsSchema<?> executionRequestsSchema) {
     this.executionRequestsSchema = executionRequestsSchema;
   }
 
@@ -37,7 +42,7 @@ public class ExecutionRequestsDataCodec {
    */
   public ExecutionRequests decode(final List<Bytes> executionRequests) {
     final ExecutionRequestsBuilder executionRequestsBuilder =
-        new ExecutionRequestsBuilderElectra(executionRequestsSchema);
+        executionRequestsSchema.createBuilder();
 
     byte previousRequestType = -1;
     for (final Bytes request : executionRequests) {
@@ -75,6 +80,20 @@ public class ExecutionRequestsDataCodec {
                     .getConsolidationRequestsSchema()
                     .sszDeserialize(requestData)
                     .asList());
+        case BuilderDepositRequest.REQUEST_TYPE ->
+            executionRequestsBuilder.builderDeposits(
+                () ->
+                    ExecutionRequestsSchemaGloas.required(executionRequestsSchema)
+                        .getBuilderDepositRequestsSchema()
+                        .sszDeserialize(requestData)
+                        .asList());
+        case BuilderExitRequest.REQUEST_TYPE ->
+            executionRequestsBuilder.builderExits(
+                () ->
+                    ExecutionRequestsSchemaGloas.required(executionRequestsSchema)
+                        .getBuilderExitRequestsSchema()
+                        .sszDeserialize(requestData)
+                        .asList());
         default ->
             throw new IllegalArgumentException("Invalid execution request type: " + requestType);
       }
@@ -122,6 +141,37 @@ public class ExecutionRequestsDataCodec {
       executionRequestsData.add(
           Bytes.concatenate(ConsolidationRequest.REQUEST_TYPE_PREFIX, consolidationRequestsData));
     }
+    executionRequests
+        .toVersionGloas()
+        .ifPresent(
+            executionRequestsGloas -> {
+              final ExecutionRequestsSchemaGloas executionRequestsSchemaGloas =
+                  ExecutionRequestsSchemaGloas.required(executionRequestsSchema);
+              final List<BuilderDepositRequest> builderDeposits =
+                  executionRequestsGloas.getBuilderDeposits();
+              if (!builderDeposits.isEmpty()) {
+                final Bytes builderDepositRequestsData =
+                    executionRequestsSchemaGloas
+                        .getBuilderDepositRequestsSchema()
+                        .createFromElements(builderDeposits)
+                        .sszSerialize();
+                executionRequestsData.add(
+                    Bytes.concatenate(
+                        BuilderDepositRequest.REQUEST_TYPE_PREFIX, builderDepositRequestsData));
+              }
+              final List<BuilderExitRequest> builderExits =
+                  executionRequestsGloas.getBuilderExits();
+              if (!builderExits.isEmpty()) {
+                final Bytes builderExitRequestsData =
+                    executionRequestsSchemaGloas
+                        .getBuilderExitRequestsSchema()
+                        .createFromElements(builderExits)
+                        .sszSerialize();
+                executionRequestsData.add(
+                    Bytes.concatenate(
+                        BuilderExitRequest.REQUEST_TYPE_PREFIX, builderExitRequestsData));
+              }
+            });
     return executionRequestsData;
   }
 }

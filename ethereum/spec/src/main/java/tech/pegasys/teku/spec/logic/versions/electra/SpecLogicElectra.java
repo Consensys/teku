@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -62,6 +62,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
+  private final Optional<ExecutionRequestsDataCodec> executionRequestsDataCodec;
 
   private SpecLogicElectra(
       final Predicates predicates,
@@ -78,6 +79,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final EpochProcessorElectra epochProcessor,
       final WithdrawalsHelpersElectra withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final BlockProcessorElectra blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -107,6 +109,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
+    this.executionRequestsDataCodec = Optional.of(executionRequestsDataCodec);
   }
 
   public static SpecLogicElectra create(
@@ -233,6 +236,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         epochProcessor,
         withdrawalsHelpers,
         executionRequestsProcessor,
+        executionRequestsDataCodec,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -265,6 +269,11 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return executionRequestsProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
+    return executionRequestsDataCodec;
   }
 
   @Override

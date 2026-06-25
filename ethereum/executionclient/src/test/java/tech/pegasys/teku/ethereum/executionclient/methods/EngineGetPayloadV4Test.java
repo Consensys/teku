@@ -39,16 +39,13 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV4Test {
@@ -56,11 +53,6 @@ class EngineGetPayloadV4Test {
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
-  private final ExecutionRequestsDataCodec executionRequestsDataCodec =
-      new ExecutionRequestsDataCodec(
-          SchemaDefinitionsElectra.required(
-                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
-              .getExecutionRequestsSchema());
   private EngineGetPayloadV4 jsonRpcMethod;
 
   @BeforeEach
@@ -130,7 +122,7 @@ class EngineGetPayloadV4Test {
     final ExecutionPayload executionPayloadElectra = dataStructureUtil.randomExecutionPayload();
     final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
     final List<Bytes> encodedExecutionRequests =
-        executionRequestsDataCodec.encode(executionRequests);
+        spec.getExecutionRequestsDataCodec(UInt64.ZERO).encode(executionRequests);
     assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV4(eq(executionPayloadContext.getPayloadId())))

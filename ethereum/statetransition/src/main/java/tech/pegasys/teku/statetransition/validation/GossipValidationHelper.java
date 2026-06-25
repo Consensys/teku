@@ -27,18 +27,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -243,14 +243,19 @@ public class GossipValidationHelper {
     return recentChainData.retrieveBlockByRoot(root);
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlockByRoot(final Bytes32 root) {
-    return recentChainData.retrieveSignedBlockByRoot(root);
-  }
-
   public boolean isActiveBuilder(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
+    return PredicatesGloas.required(spec.atSlot(slot).predicates())
         .isActiveBuilder(state, builderIndex);
+  }
+
+  /**
+   * Returns the RANDAO mix of the given state at the state's current epoch -- i.e.
+   * get_randao_mix(state, get_current_epoch(state)).
+   */
+  public Bytes32 getRandaoMixForCurrentEpoch(final BeaconState state, final UInt64 slot) {
+    final BeaconStateAccessors beaconStateAccessors = spec.atSlot(slot).beaconStateAccessors();
+    return beaconStateAccessors.getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state));
   }
 
   public boolean isSlotCurrentOrNext(final UInt64 slot) {
