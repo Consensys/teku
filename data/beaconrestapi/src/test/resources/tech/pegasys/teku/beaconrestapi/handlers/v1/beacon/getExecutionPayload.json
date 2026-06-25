@@ -73,23 +73,23 @@
         ],
         "builder_deposits": [
           {
-            "pubkey": "0xb94235fc2765496162b52009ab14fa6d0d0ed1debc25fbbd1fa6da8c64b58e5edaf39419489b556cb563cdd1d08c2eb0",
-            "withdrawal_credentials": "0x8afa683fea95afdc0ad91e4937a9c6185315a1076506bd45a4357cc27fe5a75c",
-            "amount": "4560914871608938506",
-            "signature": "0x81f173b724a40d8b729570158524a2726ac3bfe244452b6d22f3ad25183de08172ebd10cbaee58393db7d74d95b1a1ec02fe9de1487a744ba3d5d9ba01359c4050fc5d6eec7672662b703d6035100800a3952f4e4b2d9e4143ab0d9f044e5aed"
+            "pubkey": "0xb272b83b21044842822fa9d80b3aed0865c98691bf1c053f6011ec845fad96c422e2667b04ee5ce854f61b8aa8f2dd56",
+            "withdrawal_credentials": "0xe99f4b3f0a100c35d42723225a552d1a73249ce1f5f188e889bbcdabc2c93c12",
+            "amount": "4559262388392254378",
+            "signature": "0x8166b2ed13e982e6b9f05d30f42681b826099135a533d2614ef5f4f59811714245db0e1821a644859559f97ec1e614bf08b2edb294fa2edc1527f46596399534af23c98613e1b74c01871bf1dd2af9618bc0ba23ddfce8026b897cdbba8c1bce"
           }
         ],
         "builder_exits": [
           {
-            "source_address": "0xd67e513f6ac42cf0dfe4bbf686cc184d6c219d4f",
-            "pubkey": "0x83b9036200e9e907c86ede7f98b23297389e8af19d403466e00f1946867db735d8620019e28aa42739f49c65b78a2806"
+            "source_address": "0x49452e3f298a688d9e7627fb7c01941b923397bb",
+            "pubkey": "0x83919971606b0afef79e35e8a49c53b213230dcdb6d04f4fd65a951060a052bd2bafa867b1f9b0258a30cda8db072831"
           }
         ]
       },
-      "builder_index": "1998500",
-      "beacon_block_root": "0x10e23f3f49a7cabebfadf178016756b47f2a9a056183da5ce5bd543c778bab27",
-      "parent_beacon_block_root": "0x23033a3fe9f2a903b4f058a4d4ef6a81852d9997184c0317133f980452ec62b2"
+      "builder_index": "2383249",
+      "beacon_block_root": "0xe5ca603e08e1eff7259e45ea6bb662256d9d74b1724ee8feb0ea59f6e2ebe3be",
+      "parent_beacon_block_root": "0xf8eb5a3ea82ccf3c1be1ac153e3f77f273a07343291711b9de6b9dbebc4c9b49"
     },
-    "signature": "0xaacffaf60c8253477ecad70de8589f2ef7670d0b0dc446d4baac3b465a901d3e64bb6d2c3d8bdb58aed45ac30466261416d152d5ae242204201bf6decfddde697ae0c5d44cf31ca3d43aa18f2799461fc1ee14dbf905b1e31f242fd31c083c5a"
+    "signature": "0xa774e8ae3c67080cc333af2d9cedac9848978d30cea81cd86bd757448d8af577d85402cb167f8c2da650ab150772ef5805fb0897209b1acd7b068eba2dadabb0b5a2c06e97033f51a7c081da085a03b2da1e09e0962c04f0bafc181a2e60cf17"
   }
 }

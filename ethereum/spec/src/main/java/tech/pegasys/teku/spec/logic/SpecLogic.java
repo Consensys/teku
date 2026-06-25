@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
@@ -85,6 +86,8 @@ public interface SpecLogic {
   Optional<WithdrawalsHelpers> getWithdrawalsHelpers();
 
   Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor();
+
+  Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec();
 
   Optional<ExecutionPayloadVerifier> getExecutionPayloadVerifier();
 
