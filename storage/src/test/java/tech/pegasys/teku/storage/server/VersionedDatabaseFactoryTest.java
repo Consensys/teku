@@ -19,13 +19,10 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -149,61 +146,47 @@ public class VersionedDatabaseFactoryTest {
   }
 
   @Test
-  public void createDatabase_freshDbWithBlobDbEnabled_persistsEnabledMode() throws Exception {
+  public void createDatabase_flagEnabled_enablesBlobDbAndRecordsIt() throws Exception {
     createAndCloseDatabase(blobDbFactory(true));
     assertBlobDbModeSaved(dataDir, true);
   }
 
   @Test
-  public void createDatabase_freshDbWithBlobDbDisabled_persistsDisabledMode() throws Exception {
+  public void createDatabase_flagDisabled_usesSstAndRecordsNothing() throws Exception {
     createAndCloseDatabase(blobDbFactory(false));
-    assertBlobDbModeSaved(dataDir, false);
+    assertBlobDbModeNotSaved(dataDir);
   }
 
   @Test
-  public void createDatabase_existingBlobDbDatabase_staysEnabledWhenFlagDisabled()
-      throws Exception {
+  public void createDatabase_blobDbMode_isStickyOnceEnabled() throws Exception {
     createAndCloseDatabase(blobDbFactory(true));
     assertBlobDbModeSaved(dataDir, true);
 
-    // Re-opening an existing BlobDB database must keep using BlobDB regardless of the flag.
+    // Once enabled, BlobDB stays enabled even when the flag is no longer supplied.
     createAndCloseDatabase(blobDbFactory(false));
     assertBlobDbModeSaved(dataDir, true);
   }
 
   @Test
-  public void createDatabase_existingSstDatabase_staysDisabledWhenFlagEnabled() throws Exception {
+  public void createDatabase_enablingFlag_switchesExistingSstDatabaseToBlobDb() throws Exception {
+    // A database that has only ever used SST records nothing.
     createAndCloseDatabase(blobDbFactory(false));
-    assertBlobDbModeSaved(dataDir, false);
+    assertBlobDbModeNotSaved(dataDir);
 
-    // Re-opening an existing SST database must keep using SST regardless of the flag.
-    createAndCloseDatabase(blobDbFactory(true));
-    assertBlobDbModeSaved(dataDir, false);
-  }
-
-  @Test
-  public void createDatabase_existingDatabaseWithoutModeFile_keepsSst() throws Exception {
-    // Simulate a database created before blob-db mode tracking existed: real data on disk but no
-    // recorded mode.
-    createAndCloseDatabase(blobDbFactory(true));
-    Files.delete(dataDir.resolve(VersionedDatabaseFactory.BLOB_DB_MODE_FILENAME));
-
-    createAndCloseDatabase(blobDbFactory(true));
-    assertBlobDbModeSaved(dataDir, false);
-  }
-
-  @Test
-  public void createDatabase_wipedDbDirectory_isTreatedAsFresh() throws Exception {
-    // A populated SST database, recorded as such.
-    createAndCloseDatabase(blobDbFactory(false));
-    assertBlobDbModeSaved(dataDir, false);
-
-    // The user wipes the db directory but leaves the side files (db.version, blob-db-mode.txt)
-    // behind. The recorded mode is now stale and must not govern the fresh database.
-    deleteRecursively(dataDir.resolve(VersionedDatabaseFactory.DB_PATH));
-
+    // The user opts into BlobDB: the decision is recorded and used from now on.
     createAndCloseDatabase(blobDbFactory(true));
     assertBlobDbModeSaved(dataDir, true);
+  }
+
+  @Test
+  public void createDatabase_corruptedModeFile_failsFast() throws Exception {
+    createAndCloseDatabase(blobDbFactory(true));
+    Files.writeString(
+        dataDir.resolve(VersionedDatabaseFactory.BLOB_DB_MODE_FILENAME), "not-a-boolean");
+
+    assertThatThrownBy(() -> createAndCloseDatabase(blobDbFactory(true)))
+        .isInstanceOf(DatabaseStorageException.class)
+        .hasMessageContaining("Unrecognized blob db mode");
   }
 
   private VersionedDatabaseFactory blobDbFactory(final boolean blobDbEnabled) {
@@ -221,23 +204,6 @@ public class VersionedDatabaseFactoryTest {
   private void createAndCloseDatabase(final DatabaseFactory dbFactory) throws Exception {
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
-    }
-  }
-
-  private static void deleteRecursively(final Path path) throws IOException {
-    if (!Files.exists(path)) {
-      return;
-    }
-    try (final Stream<Path> walk = Files.walk(path)) {
-      walk.sorted(Comparator.reverseOrder())
-          .forEach(
-              p -> {
-                try {
-                  Files.delete(p);
-                } catch (final IOException e) {
-                  throw new UncheckedIOException(e);
-                }
-              });
     }
   }
 
@@ -278,5 +244,10 @@ public class VersionedDatabaseFactoryTest {
     final String blobDbModeValue =
         Files.readString(dataDirectory.resolve(VersionedDatabaseFactory.BLOB_DB_MODE_FILENAME));
     assertThat(Boolean.parseBoolean(blobDbModeValue.trim())).isEqualTo(expectedBlobDbEnabled);
+  }
+
+  private void assertBlobDbModeNotSaved(final Path dataDirectory) {
+    assertThat(dataDirectory.resolve(VersionedDatabaseFactory.BLOB_DB_MODE_FILENAME))
+        .doesNotExist();
   }
 }
