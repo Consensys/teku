@@ -217,7 +217,8 @@ public class SnappyCompressionBenchmark {
       case SYNC_COMMITTEE_MESSAGE ->
           singlePayload(data.randomSyncCommitteeMessage().sszSerialize());
       case BEACON_BLOCK -> singlePayload(data.randomSignedBeaconBlock().sszSerialize());
-      case BEACON_BLOCKS_FIXTURE_CHUNK_32K -> splitIntoChunks(loadResourceBeaconBlocks(), CHUNK_SIZE);
+      case BEACON_BLOCKS_FIXTURE_CHUNK_32K ->
+          splitIntoChunks(loadResourceBeaconBlocks(), CHUNK_SIZE);
       case DATA_COLUMN_SIDECAR -> singlePayload(data.randomDataColumnSidecar().sszSerialize());
       case DATA_COLUMN_SIDECARS_CHUNK_32K ->
           splitIntoChunks(randomDataColumnSidecars(data), CHUNK_SIZE);
