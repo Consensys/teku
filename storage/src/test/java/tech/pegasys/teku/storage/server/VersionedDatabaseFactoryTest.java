@@ -19,10 +19,13 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -145,6 +148,99 @@ public class VersionedDatabaseFactoryTest {
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }
 
+  @Test
+  public void createDatabase_freshDbWithBlobDbEnabled_persistsEnabledMode() throws Exception {
+    createAndCloseDatabase(blobDbFactory(true));
+    assertBlobDbModeSaved(dataDir, true);
+  }
+
+  @Test
+  public void createDatabase_freshDbWithBlobDbDisabled_persistsDisabledMode() throws Exception {
+    createAndCloseDatabase(blobDbFactory(false));
+    assertBlobDbModeSaved(dataDir, false);
+  }
+
+  @Test
+  public void createDatabase_existingBlobDbDatabase_staysEnabledWhenFlagDisabled()
+      throws Exception {
+    createAndCloseDatabase(blobDbFactory(true));
+    assertBlobDbModeSaved(dataDir, true);
+
+    // Re-opening an existing BlobDB database must keep using BlobDB regardless of the flag.
+    createAndCloseDatabase(blobDbFactory(false));
+    assertBlobDbModeSaved(dataDir, true);
+  }
+
+  @Test
+  public void createDatabase_existingSstDatabase_staysDisabledWhenFlagEnabled() throws Exception {
+    createAndCloseDatabase(blobDbFactory(false));
+    assertBlobDbModeSaved(dataDir, false);
+
+    // Re-opening an existing SST database must keep using SST regardless of the flag.
+    createAndCloseDatabase(blobDbFactory(true));
+    assertBlobDbModeSaved(dataDir, false);
+  }
+
+  @Test
+  public void createDatabase_existingDatabaseWithoutModeFile_keepsSst() throws Exception {
+    // Simulate a database created before blob-db mode tracking existed: real data on disk but no
+    // recorded mode.
+    createAndCloseDatabase(blobDbFactory(true));
+    Files.delete(dataDir.resolve(VersionedDatabaseFactory.BLOB_DB_MODE_FILENAME));
+
+    createAndCloseDatabase(blobDbFactory(true));
+    assertBlobDbModeSaved(dataDir, false);
+  }
+
+  @Test
+  public void createDatabase_wipedDbDirectory_isTreatedAsFresh() throws Exception {
+    // A populated SST database, recorded as such.
+    createAndCloseDatabase(blobDbFactory(false));
+    assertBlobDbModeSaved(dataDir, false);
+
+    // The user wipes the db directory but leaves the side files (db.version, blob-db-mode.txt)
+    // behind. The recorded mode is now stale and must not govern the fresh database.
+    deleteRecursively(dataDir.resolve(VersionedDatabaseFactory.DB_PATH));
+
+    createAndCloseDatabase(blobDbFactory(true));
+    assertBlobDbModeSaved(dataDir, true);
+  }
+
+  private VersionedDatabaseFactory blobDbFactory(final boolean blobDbEnabled) {
+    return new VersionedDatabaseFactory(
+        new StubMetricsSystem(),
+        dataDir,
+        StorageConfiguration.builder()
+            .specProvider(spec)
+            .eth1DepositContract(eth1Address)
+            .rocksdbBlobDbEnabled(blobDbEnabled)
+            .build(),
+        Optional.empty());
+  }
+
+  private void createAndCloseDatabase(final DatabaseFactory dbFactory) throws Exception {
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
+    }
+  }
+
+  private static void deleteRecursively(final Path path) throws IOException {
+    if (!Files.exists(path)) {
+      return;
+    }
+    try (final Stream<Path> walk = Files.walk(path)) {
+      walk.sorted(Comparator.reverseOrder())
+          .forEach(
+              p -> {
+                try {
+                  Files.delete(p);
+                } catch (final IOException e) {
+                  throw new UncheckedIOException(e);
+                }
+              });
+    }
+  }
+
   private void createDbDirectory(final Path dataPath) {
     final File dbDirectory =
         Paths.get(dataPath.toAbsolutePath().toString(), VersionedDatabaseFactory.DB_PATH).toFile();
@@ -175,5 +271,12 @@ public class VersionedDatabaseFactoryTest {
     final String storageModeValue =
         Files.readString(dataDirectory.resolve(VersionedDatabaseFactory.STORAGE_MODE_FILENAME));
     assertThat(storageModeValue).isEqualTo(expectedStorageMode.toString());
+  }
+
+  private void assertBlobDbModeSaved(final Path dataDirectory, final boolean expectedBlobDbEnabled)
+      throws IOException {
+    final String blobDbModeValue =
+        Files.readString(dataDirectory.resolve(VersionedDatabaseFactory.BLOB_DB_MODE_FILENAME));
+    assertThat(Boolean.parseBoolean(blobDbModeValue.trim())).isEqualTo(expectedBlobDbEnabled);
   }
 }
