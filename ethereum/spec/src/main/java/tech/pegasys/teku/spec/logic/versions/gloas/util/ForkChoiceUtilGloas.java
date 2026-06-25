@@ -312,7 +312,34 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   @Override
   public Optional<ForkChoiceNode> getAncestorNode(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
-    return forkChoiceStrategy.getAncestorNode(root, slot);
+    return forkChoiceStrategy.getAncestorNode(ForkChoiceNode.createBase(root), slot);
+  }
+
+  /**
+   * is_ancestor
+   *
+   * <p>[Modified in Gloas:EIP7732] In addition to matching the ancestor block root, the resolved
+   * ancestor's payload status must equal {@code ancestor}'s, unless {@code ancestor} is PENDING
+   * (which matches any payload status).
+   */
+  @Override
+  public boolean isAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final ForkChoiceNode node,
+      final ForkChoiceNode ancestor) {
+    final Optional<UInt64> ancestorSlot = forkChoiceStrategy.blockSlot(ancestor.blockRoot());
+    if (ancestorSlot.isEmpty()) {
+      return false;
+    }
+    final Optional<ForkChoiceNode> maybeNodeAncestor =
+        forkChoiceStrategy.getAncestorNode(node, ancestorSlot.get());
+    if (maybeNodeAncestor.isEmpty()) {
+      return false;
+    }
+    final ForkChoiceNode nodeAncestor = maybeNodeAncestor.get();
+    return nodeAncestor.blockRoot().equals(ancestor.blockRoot())
+        && (nodeAncestor.payloadStatus() == ancestor.payloadStatus()
+            || ancestor.payloadStatus() == PAYLOAD_STATUS_PENDING);
   }
 
   /**
@@ -359,12 +386,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final Bytes32 nodeRoot,
       final ForkChoicePayloadStatus nodePayloadStatus,
       final Bytes32 proposerBoostRoot) {
-    return forkChoiceStrategy
-        .blockSlot(nodeRoot)
-        .flatMap(nodeSlot -> getAncestorNode(forkChoiceStrategy, proposerBoostRoot, nodeSlot))
-        .filter(
-            ancestorNode -> ancestorNode.equals(new ForkChoiceNode(nodeRoot, nodePayloadStatus)))
-        .isPresent();
+    // Spec mapping: get_weight applies proposer boost to ``node`` when ``node`` is an ancestor of
+    // the PENDING proposer-boost node.
+    return isAncestor(
+        forkChoiceStrategy,
+        ForkChoiceNode.createBase(proposerBoostRoot),
+        new ForkChoiceNode(nodeRoot, nodePayloadStatus));
   }
 
   /**

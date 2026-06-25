@@ -262,13 +262,6 @@ specrefs:
       - get_proposer_dependent_root#gloas
       - get_proposer_head#gloas
 
-      # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
-      - get_supported_node#phase0
-      - get_supported_node#gloas
-      - is_ancestor#phase0
-      - is_ancestor#gloas
-      - is_epoch_boundary#phase0
-
       # Not implemented: heze
       - get_forkchoice_store#heze
       - get_inclusion_list_committee#heze

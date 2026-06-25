@@ -428,7 +428,7 @@ class ForkChoiceUtilGloasTest {
     when(strategy.getBlockData(headRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING))
         .thenReturn(Optional.of(headNode));
     when(strategy.blockSlot(headRoot)).thenReturn(Optional.of(gloasSlot));
-    when(strategy.getAncestorNode(boostRoot, gloasSlot))
+    when(strategy.getAncestorNode(ForkChoiceNode.createBase(boostRoot), gloasSlot))
         .thenReturn(Optional.of(ForkChoiceNode.createBase(headRoot)));
 
     assertThat(forkChoiceUtil.isHeadWeak(store, headRoot, UInt64.ONE)).isTrue();
@@ -475,7 +475,7 @@ class ForkChoiceUtilGloasTest {
     when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL))
         .thenReturn(Optional.of(parentNode));
     when(strategy.blockSlot(parentRoot)).thenReturn(Optional.of(gloasSlot));
-    when(strategy.getAncestorNode(boostRoot, gloasSlot))
+    when(strategy.getAncestorNode(ForkChoiceNode.createBase(boostRoot), gloasSlot))
         .thenReturn(
             Optional.of(
                 new ForkChoiceNode(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)));
@@ -553,7 +553,7 @@ class ForkChoiceUtilGloasTest {
     when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY))
         .thenReturn(Optional.of(parentNode));
     when(strategy.blockSlot(parentRoot)).thenReturn(Optional.of(gloasSlot));
-    when(strategy.getAncestorNode(parentRoot, gloasSlot))
+    when(strategy.getAncestorNode(ForkChoiceNode.createBase(parentRoot), gloasSlot))
         .thenReturn(Optional.of(ForkChoiceNode.createBase(parentRoot)));
 
     assertThat(forkChoiceUtil.isParentStrong(store, signedHead, proposerBoostAmount)).isTrue();

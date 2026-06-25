@@ -32,13 +32,15 @@ public interface ReadOnlyForkChoiceStrategy {
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
   /**
-   * Walks the parent chain from blockRoot to find the ancestor node at the given slot.
+   * Walks the parent chain from {@code node} to find the ancestor node at the given slot.
    *
-   * <p>This mirrors the Gloas {@code get_ancestor(...)} helper, which returns a full {@link
-   * ForkChoiceNode} identity.
+   * <p>This mirrors the {@code get_ancestor(store, node, slot)} helper, which takes and returns a
+   * {@link ForkChoiceNode} identity. The starting node's payload status selects which parent
+   * variant to follow, and the node itself is returned once its block slot is at or before {@code
+   * slot}.
    */
-  default Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
-    return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
+  default Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
+    return getAncestor(node.blockRoot(), slot).map(ForkChoiceNode::createBase);
   }
 
   Optional<ForkChoiceNode> getParentBeaconBlockNode(ForkChoiceNode node);
