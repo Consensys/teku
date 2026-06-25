@@ -217,13 +217,33 @@ public class VersionedDatabaseFactoryTest {
     assertBlobDbModeSaved(dataDir, true);
   }
 
+  @Test
+  public void createDatabase_v5WithOnlyHotDirectoryWiped_isTreatedAsExisting() throws Exception {
+    // V4/V5 use a separate hot and archive RocksDB. A populated SST database, recorded as such.
+    createAndCloseDatabase(blobDbFactory(false, DatabaseVersion.V5));
+    assertBlobDbModeSaved(dataDir, false);
+
+    // Only the hot db directory is wiped; the archive RocksDB still exists, so this is not a fresh
+    // database and BlobDB must not be enabled on the surviving SST archive.
+    deleteRecursively(dataDir.resolve(VersionedDatabaseFactory.DB_PATH));
+
+    createAndCloseDatabase(blobDbFactory(true, DatabaseVersion.V5));
+    assertBlobDbModeSaved(dataDir, false);
+  }
+
   private VersionedDatabaseFactory blobDbFactory(final boolean blobDbEnabled) {
+    return blobDbFactory(blobDbEnabled, DatabaseVersion.DEFAULT_VERSION);
+  }
+
+  private VersionedDatabaseFactory blobDbFactory(
+      final boolean blobDbEnabled, final DatabaseVersion createDbVersion) {
     return new VersionedDatabaseFactory(
         new StubMetricsSystem(),
         dataDir,
         StorageConfiguration.builder()
             .specProvider(spec)
             .eth1DepositContract(eth1Address)
+            .dataStorageCreateDbVersion(createDbVersion)
             .rocksdbBlobDbEnabled(blobDbEnabled)
             .build(),
         Optional.empty());

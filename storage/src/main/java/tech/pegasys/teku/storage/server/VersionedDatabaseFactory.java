@@ -457,11 +457,18 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   }
 
   /**
-   * @return whether the RocksDB database directory already contains a database, detected via the
-   *     presence of RocksDB's {@code CURRENT} pointer file
+   * @return whether a RocksDB database already exists, detected via the presence of RocksDB's
+   *     {@code CURRENT} pointer file. The archive directory is also checked so that V4/V5 databases
+   *     (which use a separate hot and archive RocksDB) are still treated as existing if only the
+   *     hot directory was wiped. For V6 the archive directory is never created, so that check is a
+   *     no-op.
    */
   private boolean rocksDbDataExists() {
-    return dbDirectory.toPath().resolve("CURRENT").toFile().exists();
+    return rocksDbDataExists(dbDirectory) || rocksDbDataExists(v5ArchiveDirectory);
+  }
+
+  private static boolean rocksDbDataExists(final File directory) {
+    return directory.toPath().resolve("CURRENT").toFile().exists();
   }
 
   private Optional<Boolean> readBlobDbMode() {
