@@ -16,7 +16,7 @@
 - QUIC enabled by default (uses UDP port 9001 by default)
 - New Engine API client with better performance enabled by default
 - Quic port command arguments `p2p-quic-port` (default 9001) and `p2p-quic-port-ipv6` (default 9091) were unhidden. Users will need to update firewall rules to allow incoming connections for QUIC (UDP).
-- Quick advertised-port command arguments `p2p-advertised-quic-port` and `p2p-advertised-quic-port-ipv6` have been unhidden.
+- Quic advertised-port command arguments `p2p-advertised-quic-port` and `p2p-advertised-quic-port-ipv6` have been unhidden.
 
 ### Bug Fixes
 
