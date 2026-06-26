@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BuilderCircuitBreakerUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
@@ -1220,6 +1221,10 @@ public class Spec {
         .getDataColumnSidecarUtil()
         .orElseThrow(
             () -> new IllegalStateException("DataColumnSidecarUtil not available at slot " + slot));
+  }
+
+  public BuilderCircuitBreakerUtil getBuilderCircuitBreakerUtil(final UInt64 slot) {
+    return atSlot(slot).getBuilderCircuitBreakerUtil();
   }
 
   // Proposer Preferences Util

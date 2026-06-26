@@ -14,13 +14,24 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -177,6 +188,36 @@ public class BuilderCircuitBreakerImplTest {
     assertCounters(state, 0, 10);
   }
 
+  @Nested
+  @TestSpecContext(
+      allMilestones = true,
+      ignoredMilestones = {PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU},
+      signatureVerifierNoop = true)
+  class PostGloasBuilderCircuitBreakerTest {
+    @TestTemplate
+    void shouldNotEngage(final SpecContext specContext)
+        throws SlotProcessingException, EpochProcessingException {
+      assertCircuitBreakerDoesNotEngage(specContext.getSpec());
+    }
+  }
+
+  private void assertCircuitBreakerDoesNotEngage(final Spec spec)
+      throws SlotProcessingException, EpochProcessingException {
+    final UInt64 blockBuildingSlot = UInt64.valueOf(69);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final BuilderCircuitBreakerImpl builderCircuitBreaker =
+        new BuilderCircuitBreakerImpl(
+            spec, INSPECTION_WINDOW, ALLOWED_FAULTS, ALLOWED_CONSECUTIVE_FAULTS);
+
+    chainBuilder.generateGenesis();
+    chainBuilder.generateBlocksUpToSlot(58);
+
+    final BeaconState state =
+        spec.processSlots(chainBuilder.getLatestBlockAndState().getState(), blockBuildingSlot);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isFalse();
+  }
+
   private BeaconState advance(final long toSlot, final boolean missing) {
     if (missing) {
       chainBuilder.generateBlockAtSlot(toSlot);
@@ -192,10 +233,10 @@ public class BuilderCircuitBreakerImplTest {
       final int lastConsecutiveIdenticalBlockRoots) {
     assertThat(builderCircuitBreaker.getInspectionWindowCounters(state))
         .matches(
-            counters -> counters.uniqueBlockRootsCount == uniqueBlockRootsCount,
+            counters -> counters.uniqueBlockRootsCount() == uniqueBlockRootsCount,
             "uniqueBlockRootsCount must match")
         .matches(
-            counters -> counters.lastConsecutiveEmptySlots == lastConsecutiveIdenticalBlockRoots,
+            counters -> counters.lastConsecutiveEmptySlots() == lastConsecutiveIdenticalBlockRoots,
             "lastConsecutiveIdenticalBlockRoots must match");
   }
 }

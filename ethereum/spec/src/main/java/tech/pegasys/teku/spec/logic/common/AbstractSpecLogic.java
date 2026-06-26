@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.BuilderCircuitBreakerUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
@@ -55,6 +56,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final BlockProcessor blockProcessor;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
+  protected final BuilderCircuitBreakerUtil builderCircuitBreakerUtil;
   protected final Optional<BlindBlockUtil> blockConversionUtil;
 
   // State upgrade
@@ -92,6 +94,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.blockProcessor = blockProcessor;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
+    this.builderCircuitBreakerUtil = BuilderCircuitBreakerUtil.BLOCK_ROOT;
     this.blockConversionUtil = blockConversionUtil;
     this.operationValidator = operationValidator;
     this.stateUpgrade = stateUpgrade;
@@ -140,6 +143,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BlockProposalUtil getBlockProposalUtil() {
     return blockProposalUtil;
+  }
+
+  @Override
+  public BuilderCircuitBreakerUtil getBuilderCircuitBreakerUtil() {
+    return builderCircuitBreakerUtil;
   }
 
   @Override
