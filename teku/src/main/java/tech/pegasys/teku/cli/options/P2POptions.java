@@ -182,6 +182,7 @@ public class P2POptions {
       arity = "1")
   private Integer p2pAdvertisedPortIpv6;
 
+
   @Option(
       names = {"--p2p-advertised-udp-port"},
       paramLabel = "<INTEGER>",
@@ -201,22 +202,20 @@ public class P2POptions {
   private Integer p2pAdvertisedUdpPortIpv6;
 
   @Option(
-      names = {"--Xp2p-advertised-quic-port"},
+      names = {"--p2p-advertised-quic-port"},
       paramLabel = "<INTEGER>",
       description =
           "P2P advertised QUIC port. The default is the port specified in --p2p-quic-port",
-      hidden = true,
       arity = "1")
   private Integer p2pAdvertisedQuicPort;
 
   @Option(
-      names = {"--Xp2p-advertised-quic-port-ipv6"},
+      names = {"--p2p-advertised-quic-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
           """
                       P2P advertised IPv6 QUIC port. This port is only used when advertising both IPv4 and IPv6 addresses.
                       The default is the port specified in --p2p-quic-port-ipv6.""",
-      hidden = true,
       arity = "1")
   private Integer p2pAdvertisedQuicPortIpv6;
 

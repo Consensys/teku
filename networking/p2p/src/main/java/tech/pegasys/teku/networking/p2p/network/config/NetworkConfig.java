@@ -430,7 +430,7 @@ public class NetworkConfig {
 
     public Builder advertisedQuicPort(final OptionalInt advertisedQuicPort) {
       checkNotNull(advertisedQuicPort);
-      advertisedQuicPort.ifPresent(port -> validatePort(port, "--Xp2p-advertised-quic-port"));
+      advertisedQuicPort.ifPresent(port -> validatePort(port, "--p2p-advertised-quic-port"));
       this.advertisedQuicPort = advertisedQuicPort;
       return this;
     }
@@ -438,7 +438,7 @@ public class NetworkConfig {
     public Builder advertisedQuicPortIpv6(final OptionalInt advertisedQuicPortIpv6) {
       checkNotNull(advertisedQuicPortIpv6);
       advertisedQuicPortIpv6.ifPresent(
-          port -> validatePort(port, "--Xp2p-advertised-quic-port-ipv6"));
+          port -> validatePort(port, "--p2p-advertised-quic-port-ipv6"));
       this.advertisedQuicPortIpv6 = advertisedQuicPortIpv6;
       return this;
     }
