@@ -182,7 +182,6 @@ public class P2POptions {
       arity = "1")
   private Integer p2pAdvertisedPortIpv6;
 
-
   @Option(
       names = {"--p2p-advertised-udp-port"},
       paramLabel = "<INTEGER>",
