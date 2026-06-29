@@ -207,6 +207,7 @@ import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidCircuitBreaker;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -981,10 +982,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
               eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
+      final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker =
+          beaconConfig
+              .executionPayloadBidCircuitBreakerFactory()
+              .create(recentChainData::getForkChoiceStrategy);
       final DefaultExecutionPayloadBidManager defaultExecutionPayloadBidManager =
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
+              executionPayloadBidCircuitBreaker,
               receivedExecutionPayloadBidEventsChannelPublisher);
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
       executionPayloadBidManager = defaultExecutionPayloadBidManager;

@@ -14,14 +14,19 @@
 package tech.pegasys.teku.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.BeaconNodeFacade;
 import tech.pegasys.teku.TekuFacade;
 import tech.pegasys.teku.cli.TempDirUtils;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
@@ -32,6 +37,8 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidCircuitBreaker;
 
 public class TekuConfigurationTest {
 
@@ -40,6 +47,33 @@ public class TekuConfigurationTest {
   @AfterEach
   void cleanup() {
     TempDirUtils.deleteDirLenient(tempDir, 10, true);
+  }
+
+  @Test
+  void shouldConfigureExecutionPayloadBidCircuitBreakerFactoryFromExecutionLayerConfig() {
+    final TekuConfiguration disabledConfig =
+        TekuConfiguration.builder()
+            .executionLayer(builder -> builder.isBuilderCircuitBreakerEnabled(false))
+            .build();
+    final ExecutionPayloadBidCircuitBreaker disabledCircuitBreaker =
+        disabledConfig
+            .beaconChain()
+            .executionPayloadBidCircuitBreakerFactory()
+            .create(Optional::empty);
+
+    assertThat(disabledCircuitBreaker.isEngaged(Bytes32.ZERO, stateAtSlot(10))).isFalse();
+
+    final TekuConfiguration enabledConfig =
+        TekuConfiguration.builder()
+            .executionLayer(builder -> builder.isBuilderCircuitBreakerEnabled(true))
+            .build();
+    final ExecutionPayloadBidCircuitBreaker enabledCircuitBreaker =
+        enabledConfig
+            .beaconChain()
+            .executionPayloadBidCircuitBreakerFactory()
+            .create(Optional::empty);
+
+    assertThat(enabledCircuitBreaker.isEngaged(Bytes32.ZERO, stateAtSlot(10))).isTrue();
   }
 
   @Test
@@ -116,5 +150,11 @@ public class TekuConfigurationTest {
       assertThat(customLibP2PBuilderMethodCalled).isTrue();
       assertThat(customGossipNetworkBuilderCalled).isTrue();
     }
+  }
+
+  private BeaconState stateAtSlot(final long slot) {
+    final BeaconState state = mock(BeaconState.class);
+    when(state.getSlot()).thenReturn(UInt64.valueOf(slot));
+    return state;
   }
 }

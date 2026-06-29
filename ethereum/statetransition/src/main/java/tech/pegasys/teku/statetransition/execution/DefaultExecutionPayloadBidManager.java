@@ -60,6 +60,7 @@ public class DefaultExecutionPayloadBidManager
 
   private final Spec spec;
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
+  private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
 
@@ -71,10 +72,12 @@ public class DefaultExecutionPayloadBidManager
   public DefaultExecutionPayloadBidManager(
       final Spec spec,
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator,
+      final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker,
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher) {
     this.spec = spec;
     this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
+    this.executionPayloadBidCircuitBreaker = executionPayloadBidCircuitBreaker;
     this.receivedExecutionPayloadBidEventsChannelPublisher =
         receivedExecutionPayloadBidEventsChannelPublisher;
   }
@@ -120,6 +123,11 @@ public class DefaultExecutionPayloadBidManager
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
+    if (executionPayloadBidCircuitBreaker.isEngaged(parentRoot, state)) {
+      LOG.info("Builder circuit breaker engaged for Gloas block at slot {}; self-building", slot);
+      return getLocalSelfBuiltBid(parentRoot, parentBlockHash, slot, getPayloadResponseFuture);
+    }
+
     return findBestRemoteBid(slot, parentRoot, parentBlockHash)
         .map(
             bestRemoteBid -> {

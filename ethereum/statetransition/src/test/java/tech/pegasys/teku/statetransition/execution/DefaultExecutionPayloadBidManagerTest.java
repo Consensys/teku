@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -57,6 +59,8 @@ public class DefaultExecutionPayloadBidManagerTest {
 
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
       mock(ExecutionPayloadBidGossipValidator.class);
+  private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker =
+      mock(ExecutionPayloadBidCircuitBreaker.class);
 
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher =
@@ -66,7 +70,13 @@ public class DefaultExecutionPayloadBidManagerTest {
       new DefaultExecutionPayloadBidManager(
           spec,
           executionPayloadBidGossipValidator,
+          executionPayloadBidCircuitBreaker,
           receivedExecutionPayloadBidEventsChannelPublisher);
+
+  @BeforeEach
+  public void setup() {
+    when(executionPayloadBidCircuitBreaker.isEngaged(any(), any())).thenReturn(false);
+  }
 
   @Test
   public void createsLocalBidForBlock() {
@@ -247,6 +257,31 @@ public class DefaultExecutionPayloadBidManagerTest {
                 blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(higherBid);
+  }
+
+  @Test
+  public void fallsBackToLocalSelfBuiltBidWhenCircuitBreakerIsEngaged() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+    final BeaconStateGloas state = stateAtSlot(slot);
+    final SignedExecutionPayloadBid remoteBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500));
+
+    addAcceptedBid(remoteBid);
+    when(executionPayloadBidCircuitBreaker.isEngaged(parentRoot, state)).thenReturn(true);
+
+    final SignedExecutionPayloadBid signedBid =
+        SafeFutureAssert.safeJoin(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                parentBlockHash,
+                state,
+                SafeFuture.completedFuture(randomGetPayloadResponse(slot, parentBlockHash)),
+                blockProductionPerformance));
+
+    assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
+    verify(blockProductionPerformance, never()).builderBidValidated();
   }
 
   @Test
