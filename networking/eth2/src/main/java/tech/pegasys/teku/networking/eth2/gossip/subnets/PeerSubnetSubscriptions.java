@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -33,9 +35,11 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
@@ -65,7 +69,7 @@ public class PeerSubnetSubscriptions {
   public static PeerSubnetSubscriptions create(
       final SpecVersion currentVersion,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
-      final GossipNetwork network,
+      final P2PNetwork<?> network,
       final AttestationSubnetTopicProvider attestationTopicProvider,
       final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -74,6 +78,17 @@ public class PeerSubnetSubscriptions {
       final int targetSubnetSubscriberCount,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
+    // Peers without a derivable discovery node id (e.g. non-secp256k1 identities) cannot be mapped
+    // to DAS custody columns, so they provide no data column sidecar value and are excluded from
+    // data column subnet scoring below.
+    final Set<NodeId> peersWithoutDiscoveryNodeId =
+        network
+            .streamPeers()
+            .filter(
+                peer ->
+                    peer instanceof Eth2Peer eth2Peer && eth2Peer.getDiscoveryNodeId().isEmpty())
+            .map(Peer::getId)
+            .collect(Collectors.toSet());
 
     final SchemaDefinitionsSupplier currentSchemaDefinitions = currentVersion::getSchemaDefinitions;
     final int dataColumnSidecarSubnetCount =
@@ -131,6 +146,10 @@ public class PeerSubnetSubscriptions {
                                       dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(
                                           columnSubnet),
                                       Collections.emptySet())
+                                  .stream()
+                                  .filter(
+                                      subscriber ->
+                                          !peersWithoutDiscoveryNodeId.contains(subscriber))
                                   .forEach(subscriber -> b.addSubscriber(columnSubnet, subscriber));
                             }))
             .build();
@@ -270,10 +289,10 @@ public class PeerSubnetSubscriptions {
      * Creates a new PeerSubnetSubscriptions which reports the subscriptions from the supplied
      * network at time of creation.
      *
-     * @param gossipNetwork the network to load subscriptions from
+     * @param network the network to load subscriptions from
      * @return the new PeerSubnetSubscriptions
      */
-    PeerSubnetSubscriptions create(GossipNetwork gossipNetwork);
+    PeerSubnetSubscriptions create(P2PNetwork<?> network);
   }
 
   public static class SubnetSubscriptions {

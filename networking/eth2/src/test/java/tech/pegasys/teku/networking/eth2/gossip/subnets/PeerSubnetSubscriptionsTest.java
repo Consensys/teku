@@ -30,16 +30,21 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -62,7 +67,10 @@ class PeerSubnetSubscriptionsTest {
   final Supplier<SpecVersion> currentSpecVersionSupplier = spec::getGenesisSpec;
   private final SchemaDefinitionsSupplier currentSchemaDefinitions =
       spec::getGenesisSchemaDefinitions;
-  private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
+
+  @SuppressWarnings("unchecked")
+  private final P2PNetwork<Peer> gossipNetwork = mock(P2PNetwork.class);
+
   private final AttestationSubnetTopicProvider attestationTopicProvider =
       mock(AttestationSubnetTopicProvider.class);
   private final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
@@ -81,6 +89,7 @@ class PeerSubnetSubscriptionsTest {
     when(dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(anyInt()))
         .thenAnswer(
             invocation -> DATA_COLUMN_SIDECAR_SUBNET_TOPIC_PREFIX + invocation.getArgument(0));
+    when(gossipNetwork.streamPeers()).thenAnswer(invocation -> Stream.empty());
   }
 
   @Test
@@ -132,6 +141,48 @@ class PeerSubnetSubscriptionsTest {
         .isEqualTo(createAttnetsBitvector());
     assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER1))
         .isEqualTo(createSyncnetsBitvector());
+  }
+
+  @Test
+  public void create_shouldExcludePeersWithoutDiscoveryNodeIdFromDataColumnSubnets() {
+    dataColumnSubscriptions.setSubscriptions(IntList.of(0));
+
+    final NodeId peerWithDiscoveryNodeId = new MockNodeId(1);
+    final NodeId peerWithoutDiscoveryNodeId = new MockNodeId(2);
+    when(gossipNetwork.streamPeers())
+        .thenAnswer(
+            __ ->
+                Stream.of(
+                    mockEth2Peer(peerWithDiscoveryNodeId, Optional.of(UInt256.ONE)),
+                    mockEth2Peer(peerWithoutDiscoveryNodeId, Optional.empty())));
+
+    when(gossipNetwork.getSubscribersByTopic())
+        .thenReturn(
+            Map.of(
+                DATA_COLUMN_SIDECAR_SUBNET_TOPIC_PREFIX + "0",
+                Set.of(peerWithDiscoveryNodeId, peerWithoutDiscoveryNodeId)));
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    // The peer without a derivable discovery node id is not credited as a data column subscriber.
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isEqualTo(1);
+    assertThat(
+            subscriptions
+                .getDataColumnSidecarSubnetSubscriptions(peerWithDiscoveryNodeId)
+                .getBitCount())
+        .isEqualTo(1);
+    assertThat(
+            subscriptions
+                .getDataColumnSidecarSubnetSubscriptions(peerWithoutDiscoveryNodeId)
+                .getBitCount())
+        .isZero();
+  }
+
+  private Eth2Peer mockEth2Peer(final NodeId nodeId, final Optional<UInt256> discoveryNodeId) {
+    final Eth2Peer peer = mock(Eth2Peer.class);
+    when(peer.getId()).thenReturn(nodeId);
+    when(peer.getDiscoveryNodeId()).thenReturn(discoveryNodeId);
+    return peer;
   }
 
   @Test
