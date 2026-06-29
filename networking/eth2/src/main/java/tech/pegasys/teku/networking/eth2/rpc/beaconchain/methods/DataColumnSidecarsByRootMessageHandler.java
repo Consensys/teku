@@ -103,8 +103,8 @@ public class DataColumnSidecarsByRootMessageHandler
         dasLogger
             .getDataColumnSidecarsByRootLogger()
             .onInboundRequest(
-                LoggingPeerId.fromPeerAndNodeId(
-                    peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
+                LoggingPeerId.fromPeerAndMaybeNodeId(
+                    peer.getId().toBase58(), peer.getDiscoveryNodeId()),
                 message.asList());
 
     final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
