@@ -86,7 +86,7 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
             ETH_CONSENSUS_HEADER_TYPE)
         .withNotFoundResponse()
         .withInternalErrorResponse()
-        .withNotAcceptedResponse()
+        .withNotAcceptableResponse()
         .build();
   }
 

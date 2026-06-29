@@ -37,6 +37,8 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
@@ -60,7 +63,9 @@ import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.UnblindingExecutionPayloadProvider;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -75,6 +80,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
@@ -138,7 +144,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -166,14 +171,15 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyBackfiller;
-import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
@@ -204,6 +210,7 @@ import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesMan
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.FailedExecutionPayloadPool;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
@@ -234,6 +241,8 @@ import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingAttestationPool;
+import tech.pegasys.teku.statetransition.util.PendingBlockPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
@@ -262,7 +271,6 @@ import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -353,12 +361,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
-  protected volatile AggregatingAttestationPool attestationPool;
+  protected volatile AggregatingAttestationPool aggregatingAttestationPool;
   protected volatile DepositProvider depositProvider;
   protected volatile SyncService syncService;
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
   protected volatile OperationsReOrgManager operationsReOrgManager;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
@@ -372,11 +381,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
-  protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
+  protected volatile PendingBlockPool pendingBlockPool;
+  protected volatile PendingAttestationPool pendingAttestationPool;
   protected volatile PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile DataColumnSidecarELManager dataColumnSidecarELManager;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
+  protected volatile Set<Bytes32> blockRootsWithInvalidExecutionPayload;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
@@ -397,11 +408,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionProofManager executionProofManager;
   protected volatile Optional<DataColumnSidecarDB> sidecarDB = Optional.empty();
   protected volatile Optional<DasCustodyBackfiller> dasCustodyBackfiller = Optional.empty();
-  protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> simpleSidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
+  protected volatile DasSamplerBasic dasSamplerBasic = DasSamplerBasic.NOOP;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
@@ -494,11 +505,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
-        block ->
-            blockManager
-                .importBlock(block, RemoteOrigin.RPC)
-                .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
-                .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
+        block -> {
+          // Make RPC-fetched block commitments visible before import can trigger sidecar
+          // validation.
+          blobKzgCommitmentsProvider.onNewBlock(block);
+          blockManager
+              .importBlock(block, RemoteOrigin.RPC)
+              .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
+              .finish(err -> LOG.error("Failed to process recently fetched block.", err));
+        });
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
@@ -517,10 +532,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentExecutionPayloadsFetcher.subscribeExecutionPayloadFetched(
         executionPayload ->
             executionPayloadManager
-                .importExecutionPayload(executionPayload)
+                .importExecutionPayload(executionPayload, false)
                 .finish(
                     err ->
                         LOG.error("Failed to process recently fetched execution payload.", err)));
+    pendingAttestationPool.subscribeRequiredFullPayload(
+        recentExecutionPayloadsFetcher::requestRecentExecutionPayload);
+    blockManager.subscribeRequiredParentExecutionPayload(
+        parentExecutionPayloadDependency ->
+            recentExecutionPayloadsFetcher.requestRecentExecutionPayload(
+                parentExecutionPayloadDependency.parentBeaconBlockRoot()));
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
 
@@ -540,7 +561,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
-                  dasCustodySync.ifPresent(DasCustodySync::start);
                   recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::start);
                 }))
         .finish(
@@ -580,7 +600,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
-                  dasCustodySync.ifPresent(DasCustodySync::stop);
                   recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::stop);
                 }))
         .thenRun(forkChoiceExecutor::stop);
@@ -605,8 +624,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorIsConnectedProvider validatorIsConnectedProvider =
         new ValidatorIsConnectedProviderReference(() -> proposersDataManager);
 
+    final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider =
+        createBlindedExecutionPayloadProvider(storageQueryChannel);
+
     final ExecutionPayloadProvider executionPayloadProvider =
-        createExecutionPayloadProvider(storageQueryChannel);
+        createExecutionPayloadProvider(blindedExecutionPayloadProvider);
+
+    // Used to optimize the case where we receive a block and are still importing its blobs/data
+    // columns,
+    // in the meantime we can serve the block if we receive an RPC request
+    final SingleBlockProvider singleBlockProviderResolver =
+        new SingleBlockProviderResolver(
+            (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+            (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -616,10 +646,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     metricsSystem,
                     storeConfig,
                     beaconAsyncRunner,
-                    (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+                    singleBlockProviderResolver,
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
                     executionPayloadProvider,
+                    blindedExecutionPayloadProvider,
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
@@ -674,10 +705,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void validateWeakSubjectivityPeriod(final RecentChainData client) {
     final AnchorPoint latestFinalizedAnchor = client.getStore().getLatestFinalized();
     final UInt64 currentSlot = getCurrentSlot(client.getGenesisTime());
-    final WeakSubjectivityCalculator wsCalculator =
-        WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity());
     wsInitializer.validateAnchorIsWithinWeakSubjectivityPeriod(
-        latestFinalizedAnchor, currentSlot, spec, wsCalculator);
+        latestFinalizedAnchor, currentSlot, spec, WeakSubjectivityCalculator.create(spec));
   }
 
   public void initAll() {
@@ -686,7 +715,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initExecutionLayerBlockProductionManager();
     initRewardCalculator();
     initGossipValidationHelper();
-    initBlockPoolsAndCaches();
+    initPendingPoolsAndCaches();
     initKzg();
     initBlockBlobSidecarsTrackersPool();
     initBlobSidecarManager();
@@ -694,13 +723,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initDataColumnSidecarManager();
     initZkChain();
     initForkChoiceStateProvider();
+    initProposerPreferencesManager();
     initForkChoiceNotifier();
     initMergeMonitors();
     initSignatureVerificationService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
-    initAttestationPool();
+    initBlobKzgCommitmentsProvider();
+    initAggregatingAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
@@ -711,7 +742,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
-    initProposerPreferencesManager();
     initExecutionPayloadBidManager();
     initExecutionPayloadManager();
     initSyncCommitteePools();
@@ -744,14 +774,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
   }
 
-  protected ExecutionPayloadProvider createExecutionPayloadProvider(
+  protected BlindedExecutionPayloadProvider createBlindedExecutionPayloadProvider(
       final StorageQueryChannel storageQueryChannel) {
+    if (!spec.supportsExecutionPayloadEnvelopes()) {
+      return BlindedExecutionPayloadProvider.NOOP;
+    }
+    return storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot;
+  }
+
+  protected ExecutionPayloadProvider createExecutionPayloadProvider(
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider) {
     if (!spec.supportsExecutionPayloadEnvelopes()) {
       return ExecutionPayloadProvider.NOOP;
     }
     return new UnblindingExecutionPayloadProvider(
         spec,
-        storageQueryChannel::getBlindedExecutionPayloadEnvelopesByBlockRoot,
+        blindedExecutionPayloadProvider,
         blockHashes -> executionLayer.engineGetPayloadBodiesByHash(blockHashes));
   }
 
@@ -895,7 +933,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void initDasSamplerManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Activated DAS Sampler Manager for Fulu");
-      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, spec);
+      this.dasSamplerManager =
+          new DasSamplerManager(() -> dataAvailabilitySampler, spec, recentChainData);
     } else {
       LOG.info("Using NOOP DAS Sampler Manager");
       this.dasSamplerManager = DasSamplerManager.NOOP;
@@ -906,7 +945,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
-              spec, invalidBlockRoots, gossipValidationHelper, metricsSystem, timeProvider);
+              spec,
+              invalidBlockRoots,
+              gossipValidationHelper,
+              () -> blobKzgCommitmentsProvider,
+              metricsSystem,
+              timeProvider);
       dataColumnSidecarManager =
           new DataColumnSidecarManagerImpl(
               dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);
@@ -937,11 +981,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
               eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
-      executionPayloadBidManager =
+      final DefaultExecutionPayloadBidManager defaultExecutionPayloadBidManager =
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
               receivedExecutionPayloadBidEventsChannelPublisher);
+      eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
+      executionPayloadBidManager = defaultExecutionPayloadBidManager;
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -953,13 +999,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
           eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
+          eventChannels.getPublisher(ExecutionPayloadGossipChannel.class, beaconAsyncRunner);
       final DefaultExecutionPayloadManager executionPayloadManager =
           new DefaultExecutionPayloadManager(
+              spec,
               beaconAsyncRunner,
               executionPayloadGossipValidator,
               forkChoice,
               executionLayer,
-              receivedExecutionPayloadEventsChannelPublisher);
+              receivedExecutionPayloadEventsChannelPublisher,
+              recentChainData,
+              blockRootsWithInvalidExecutionPayload,
+              executionPayloadGossipChannel::publishExecutionPayload);
+      final FailedExecutionPayloadPool failedExecutionPayloadPool =
+          new FailedExecutionPayloadPool(executionPayloadManager, beaconAsyncRunner);
+      executionPayloadManager.subscribeFailedPayloadExecution(
+          failedExecutionPayloadPool::addFailedExecutionPayload);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
       this.executionPayloadManager = executionPayloadManager;
     } else {
@@ -990,8 +1046,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .getBlockAtSlotExact(slot)
                 .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
 
-    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(specVersionFulu.miscHelpers());
-
     final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
     final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
 
@@ -1005,12 +1059,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
 
-    if (!beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
-      // during finalization DataColumnSidecarCustody maintains FirstIncompleteSlot variable, which
-      // is not needed on reworked custody backfiller
-      eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
-    }
-
     final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
         eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
@@ -1019,7 +1067,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnSidecarCustodyImpl,
             dasAsyncRunner,
             spec,
-            miscHelpersFulu,
             dataColumnSidecarGossipChannel::publishDataColumnSidecar,
             custodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
@@ -1071,43 +1118,33 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnSidecarRetriever recoveringSidecarRetriever =
         new SidecarRetriever(
             sidecarRetriever,
-            miscHelpersFulu,
+            spec,
             dbAccessor,
             dasAsyncRunner,
-            Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
-            Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
+            Duration.ofMillis(beaconConfig.p2pConfig().getSidecarRecoveryTimeout()),
+            Duration.ofMillis(beaconConfig.p2pConfig().getSidecarDownloadTimeout()),
             Duration.ofSeconds(15),
             timeProvider,
             specConfigFulu.getNumberOfColumns(),
             custodyGroupCountManager,
             metricsSystem);
 
-    if (beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
-      final DasCustodyBackfiller custodyBackfiller =
-          new DasCustodyBackfiller(
-              combinedChainDataClient,
-              Duration.ofSeconds(beaconConfig.p2pConfig().getReworkedSidecarSyncPollPeriod()),
-              dataColumnSidecarRecoveringCustody,
-              custodyGroupCountManager,
-              recoveringSidecarRetriever,
-              minCustodyPeriodSlotCalculator,
-              dasAsyncRunner,
-              sidecarDB::getEarliestAvailableDataColumnSlot,
-              sidecarDB::setEarliestAvailableDataColumnSlot,
-              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize(),
-              spec);
-      eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);
-      eventChannels.subscribe(FinalizedCheckpointChannel.class, custodyBackfiller);
-      dasCustodyBackfiller = Optional.of(custodyBackfiller);
-    } else {
-      final DasCustodySync custodySync =
-          new DasCustodySync(
-              dataColumnSidecarRecoveringCustody,
-              recoveringSidecarRetriever,
-              minCustodyPeriodSlotCalculator);
-      dasCustodySync = Optional.of(custodySync);
-      eventChannels.subscribe(SlotEventsChannel.class, custodySync);
-    }
+    final DasCustodyBackfiller custodyBackfiller =
+        new DasCustodyBackfiller(
+            combinedChainDataClient,
+            Duration.ofSeconds(beaconConfig.p2pConfig().getSidecarSyncPollPeriod()),
+            dataColumnSidecarRecoveringCustody,
+            custodyGroupCountManager,
+            recoveringSidecarRetriever,
+            minCustodyPeriodSlotCalculator,
+            dasAsyncRunner,
+            sidecarDB::getEarliestAvailableDataColumnSlot,
+            sidecarDB::setEarliestAvailableDataColumnSlot,
+            beaconConfig.p2pConfig().getSidecarSyncBatchSize(),
+            spec);
+    eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, custodyBackfiller);
+    dasCustodyBackfiller = Optional.of(custodyBackfiller);
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
@@ -1121,8 +1158,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             DEFAULT_MIN_WAIT_MILLIS,
             DEFAULT_TARGET_WAIT_MILLIS);
 
-    final DasSamplerBasic dasSampler =
-        new DasSamplerBasic(
+    final BlockImportChannel dasBlockImportChannel =
+        eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
+
+    final DasSamplerBasicImpl dasSampler =
+        new DasSamplerBasicImpl(
             spec,
             beaconAsyncRunner,
             currentSlotProvider,
@@ -1131,12 +1171,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recoveringSidecarRetriever,
             custodyGroupCountManager,
             recentChainData,
-            beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled());
+            beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled(),
+            metricsSystem,
+            beaconConfig.syncConfig().getMaxRecentlySampledBlocks(),
+            dasBlockImportChannel);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
     eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
 
+    this.dasSamplerBasic = dasSampler;
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
@@ -1147,7 +1191,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DasPreSampler(
               this.dataAvailabilitySampler,
               this.dataColumnSidecarCustodyRef.get(),
-              custodyGroupCountManager);
+              custodyGroupCountManager,
+              blobKzgCommitmentsProvider);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }
@@ -1284,11 +1329,20 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
-  protected void initBlockPoolsAndCaches() {
-    LOG.debug("BeaconChainController.initBlockPoolsAndCaches()");
-    pendingBlocks = poolFactory.createPendingPoolForBlocks(spec);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+  protected void initPendingPoolsAndCaches() {
+    LOG.debug("BeaconChainController.initPendingPoolsAndCaches()");
+    pendingBlockPool = poolFactory.createPendingBlockPool(spec);
+    pendingBlocks = pendingBlockPool.getBlocksWaitingForParent();
+    pendingAttestationPool =
+        poolFactory.createPendingAttestationPool(
+            spec, beaconConfig.eth2NetworkConfig().getPendingAttestationsMaxQueue());
+    eventChannels
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlockPool)
+        .subscribe(SlotEventsChannel.class, pendingBlockPool)
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestationPool)
+        .subscribe(SlotEventsChannel.class, pendingAttestationPool);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
+    blockRootsWithInvalidExecutionPayload = LimitedSet.createSynchronizedLRU(500);
   }
 
   protected void initBlockBlobSidecarsTrackersPool() {
@@ -1472,6 +1526,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           .subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool)
           .subscribe(ReceivedBlockEventsChannel.class, aggregatingPayloadAttestationPool)
           .subscribe(FinalizedCheckpointChannel.class, pendingPayloadAttestations);
+      payloadAttestationPool.subscribeValidatedOperationAdded(
+          forkChoice::onPayloadAttestationMessage);
     } else {
       pendingPayloadAttestations = poolFactory.createNoOpPendingPool(spec);
       payloadAttestationPool = PayloadAttestationPool.NOOP;
@@ -1517,7 +1573,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .syncService(syncService)
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
-            .attestationPool(attestationPool)
+            .attestationPool(aggregatingAttestationPool)
             .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
@@ -1534,6 +1590,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
             .payloadAttestationPool(payloadAttestationPool)
+            .proposerPreferencesManager(proposerPreferencesManager)
             .build();
   }
 
@@ -1545,14 +1602,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            storageQueryChannel,
-            spec,
-            (slot, blockRoot) ->
-                beaconAsyncRunner.runAsync(
-                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
-            beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled());
+        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+  }
+
+  protected void initBlobKzgCommitmentsProvider() {
+    LOG.debug("BeaconChainController.initBlobKzgCommitmentsProvider()");
+    final SyncConfig syncConfig = beaconConfig.syncConfig();
+    // Keep one extra batch for overlap between feeding a new forward-sync batch and validating data
+    // column responses for batches already in flight.
+    final int maxCacheSize =
+        Math.max(
+            128,
+            syncConfig.getForwardSyncBatchSize()
+                * (syncConfig.getForwardSyncMaxPendingBatches() + 1));
+    blobKzgCommitmentsProvider =
+        new BlobKzgCommitmentsProvider(spec, combinedChainDataClient, maxCacheSize);
+    eventChannels
+        .subscribe(ReceivedBlockEventsChannel.class, blobKzgCommitmentsProvider)
+        .subscribe(FinalizedCheckpointChannel.class, blobKzgCommitmentsProvider);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1576,6 +1643,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
+            (slot, blockRoot) ->
+                beaconAsyncRunner.runAsync(
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
             debugDataDumper,
             metricsSystem,
             signatureVerificationService);
@@ -1584,6 +1654,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoice,
             beaconConfig.eth2NetworkConfig().getAttestationWaitLimitMillis(),
             timeProvider);
+    // Only required for Gloas genesis, so skip it fast in all other cases
+    if (spec.getGenesisSpecConfig().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      try {
+        forkChoice.applyGenesisExecutionPayloadForGloas().get(1, TimeUnit.MINUTES);
+      } catch (Exception e) {
+        throw new InvalidConfigurationException(
+            "Failed to apply genesis execution payload for Gloas", e);
+      }
+    }
   }
 
   public void initMetrics() {
@@ -1704,7 +1783,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             new BlockOperationSelectorFactory(
                 spec,
-                attestationPool,
+                aggregatingAttestationPool,
                 attesterSlashingPool,
                 proposerSlashingPool,
                 voluntaryExitPool,
@@ -1717,6 +1796,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 forkChoiceNotifier,
                 executionLayerBlockProductionManager,
                 executionPayloadBidManager,
+                executionPayloadManager,
                 metricsSystem,
                 timeProvider));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
@@ -1802,7 +1882,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             combinedChainDataClient,
             syncService,
             blockFactory,
-            attestationPool,
+            aggregatingAttestationPool,
             attestationManager,
             attestationTopicSubscriber,
             activeValidatorTracker,
@@ -1852,7 +1932,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(
-        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, spec));
+        Eth1EventsChannel.class,
+        new GenesisHandler(recentChainData, forkChoice, timeProvider, spec));
   }
 
   protected void initSignatureVerificationService() {
@@ -1869,9 +1950,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(
-            spec, beaconConfig.eth2NetworkConfig().getPendingAttestationsMaxQueue());
     final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
             ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
@@ -1879,7 +1957,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             futureItemsMetric,
             "attestations");
     AttestationValidator attestationValidator =
-        new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
+        new AttestationValidator(
+            spec,
+            signatureVerificationService,
+            gossipValidationHelper,
+            invalidBlockRoots,
+            blockRootsWithInvalidExecutionPayload);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -1890,10 +1973,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
                         ValidatableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
-            pendingAttestations,
+            pendingAttestationPool,
             futureAttestations,
             forkChoice,
-            attestationPool,
+            aggregatingAttestationPool,
             attestationValidator,
             aggregateValidator,
             signatureVerificationService,
@@ -1901,7 +1984,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(ReceivedBlockEventsChannel.class, attestationManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
+        .subscribe(ReceivedExecutionPayloadEventsChannel.class, attestationManager);
   }
 
   protected void initSyncCommitteePools() {
@@ -1959,12 +2042,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(
-                  recentChainData,
-                  throttlingStorageQueryChannel,
-                  spec,
-                  LateBlockReorgPreparationHandler.NOOP,
-                  beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
+              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
     }
 
     final SuperNodeSupplier isSuperNodeSupplier =
@@ -1980,6 +2058,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
+            .blobKzgCommitmentsProvider(blobKzgCommitmentsProvider)
             .custodyGroupCountManagerSupplier(() -> custodyGroupCountManager)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
@@ -2089,8 +2168,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new EpochCachePrimer(spec, recentChainData, beaconAsyncRunner));
   }
 
-  public void initAttestationPool() {
-    LOG.debug("BeaconChainController.initAttestationPool()");
+  public void initAggregatingAttestationPool() {
+    LOG.debug("BeaconChainController.initAggregatingAttestationPool()");
     final Eth2NetworkConfiguration eth2NetworkConfiguration = beaconConfig.eth2NetworkConfig();
 
     final AggregatingAttestationPoolProfiler profiler =
@@ -2098,7 +2177,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             ? new AggregatingAttestationPoolProfilerCSV(debugDataDirectory)
             : AggregatingAttestationPoolProfiler.NOOP;
 
-    attestationPool =
+    aggregatingAttestationPool =
         new AggregatingAttestationPoolV2(
             spec,
             recentChainData,
@@ -2109,9 +2188,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth2NetworkConfiguration
                 .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit());
 
-    eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
+    eventChannels.subscribe(SlotEventsChannel.class, aggregatingAttestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
-        attestationPool::onAttestationsIncludedInBlock);
+        aggregatingAttestationPool::onAttestationsIncludedInBlock);
   }
 
   public void initRestAPI() {
@@ -2180,7 +2259,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockEventsListenerRouter,
-            pendingBlocks,
+            () -> dataAvailabilitySampler,
+            pendingBlockPool,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
@@ -2195,7 +2275,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(ReceivedBlockEventsChannel.class, blockManager);
+        .subscribe(ReceivedBlockEventsChannel.class, blockManager)
+        .subscribe(ReceivedExecutionPayloadEventsChannel.class, blockManager);
   }
 
   protected SyncServiceFactory createSyncServiceFactory() {
@@ -2215,10 +2296,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blockImporter,
         blobSidecarManager,
         executionPayloadManager,
+        payloadAttestationPool,
         pendingBlocks,
-        pendingAttestations,
+        pendingAttestationPool.getAttestationsWaitingForBlock(),
         pendingPayloadAttestations,
         blockBlobSidecarsTrackersPool,
+        dasSamplerBasic,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
@@ -2273,7 +2356,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             proposerSlashingPool,
             attesterSlashingPool,
             voluntaryExitPool,
-            attestationPool,
+            aggregatingAttestationPool,
             attestationManager,
             blsToExecutionChangePool,
             recentChainData);
@@ -2306,11 +2389,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayer,
             recentChainData,
             getProposerDefaultFeeRecipient(),
-            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes());
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes(),
+            proposerPreferencesManager);
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
-            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -2353,8 +2436,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (isAllowSyncOutsideWeakSubjectivityPeriod()) {
       maybeWsCalculator = Optional.empty();
     } else {
-      maybeWsCalculator =
-          Optional.of(WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity()));
+      maybeWsCalculator = Optional.of(WeakSubjectivityCalculator.create(spec));
     }
 
     // Validate

@@ -26,7 +26,6 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
@@ -42,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
@@ -76,6 +76,70 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     this.configGloas = config;
     this.miscHelpersGloas = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  /**
+   * EIP-8045: `get_beacon_proposer_indices` is modified to exclude slashed validators from the
+   * candidate pool before invoking `compute_proposer_indices`, so the `proposer_lookahead` only
+   * contains active and unslashed validators.
+   */
+  @Override
+  public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
+    final IntList indices =
+        getActiveValidatorIndices(state, epoch)
+            .intStream()
+            .filter(index -> !state.getValidators().get(index).isSlashed())
+            .collect(IntArrayList::new, IntList::add, IntList::addAll);
+    final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
+    return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
+  }
+
+  /**
+   * EIP-8061: scaled balance churn limit using the supplied quotient. Returns
+   * max(MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA, total_active_balance // quotient), rounded down to
+   * EFFECTIVE_BALANCE_INCREMENT.
+   */
+  private UInt64 computeBalanceChurnLimit(final BeaconStateElectra state, final UInt64 quotient) {
+    final UInt64 churn =
+        configElectra
+            .getMinPerEpochChurnLimitElectra()
+            .max(getTotalActiveBalance(state).dividedBy(quotient));
+    return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
+  }
+
+  /**
+   * get_activation_churn_limit
+   *
+   * <p>EIP-8061: capped activation-only churn limit. Used when admitting validators from the
+   * pending-deposit queue.
+   */
+  public UInt64 getActivationChurnLimit(final BeaconStateElectra state) {
+    return computeBalanceChurnLimit(state, UInt64.valueOf(configGloas.getChurnLimitQuotientGloas()))
+        .min(configGloas.getMaxPerEpochActivationChurnLimitGloas());
+  }
+
+  /**
+   * get_exit_churn_limit
+   *
+   * <p>EIP-8061: uncapped exit churn limit. Used when scheduling validator exits.
+   */
+  public UInt64 getExitChurnLimit(final BeaconStateElectra state) {
+    return computeBalanceChurnLimit(
+        state, UInt64.valueOf(configGloas.getChurnLimitQuotientGloas()));
+  }
+
+  /**
+   * get_consolidation_churn_limit
+   *
+   * <p>EIP-8061: consolidation churn is now derived independently from the activation/exit churn
+   * via {@code CONSOLIDATION_CHURN_LIMIT_QUOTIENT}. Unlike the activation/exit churn limits, no
+   * {@code MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA} floor is applied.
+   */
+  @Override
+  public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
+    final UInt64 churn =
+        getTotalActiveBalance(state).dividedBy(configGloas.getConsolidationChurnLimitQuotient());
+    return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
   }
 
   public UInt64 getPendingBalanceToWithdrawForBuilder(
@@ -173,6 +237,7 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    *
    * <p>*Note*: `get_ptc` uses the cached `ptc_window` for lookups.
    */
+  @Override
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
@@ -194,7 +259,11 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
           epoch.minusMinZero(stateEpoch).plus(1).times(config.getSlotsPerEpoch()).intValue();
       cacheIndex = slot.mod(config.getSlotsPerEpoch()).plus(offset).intValue();
     }
-    return BeaconStateGloas.required(state).getPtcWindow().get(cacheIndex).toIntList();
+    return state
+        .toVersionGloas()
+        .map(stateGloas -> stateGloas.getPtcWindow().get(cacheIndex).toIntList())
+        // Fork boundary edge case
+        .orElseGet(() -> computePtc(state, slot).toIntList());
   }
 
   /**
@@ -330,21 +399,8 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
 
   @Override
   public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
-    final SszList<Builder> builders = BeaconStateGloas.required(state).getBuilders();
-    final Cache<BLSPublicKey, Integer> builderIndexCache =
-        BeaconStateCache.getTransitionCaches(state).getBuilderIndexCache();
-    return builderIndexCache
-        .getCached(publicKey)
-        .or(
-            () -> {
-              for (int i = 0; i < builders.size(); i++) {
-                final BLSPublicKey builderPubKey = builders.get(i).getPublicKey();
-                if (builderPubKey.equals(publicKey)) {
-                  builderIndexCache.invalidateWithNewValue(builderPubKey, i);
-                  return Optional.of(i);
-                }
-              }
-              return Optional.empty();
-            });
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBuilderIndexCache()
+        .getBuilderIndex(state, publicKey);
   }
 }

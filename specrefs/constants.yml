@@ -39,6 +39,24 @@
     BLS_WITHDRAWAL_PREFIX: Bytes1 = '0x00'
     </spec>
 
+- name: BUILDER_DEPOSIT_REQUEST_TYPE#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderDepositRequest.java
+      search: REQUEST_TYPE =
+  spec: |
+    <spec constant_var="BUILDER_DEPOSIT_REQUEST_TYPE" fork="gloas" hash="08333b0e">
+    BUILDER_DEPOSIT_REQUEST_TYPE: Bytes1 = '0x03'
+    </spec>
+
+- name: BUILDER_EXIT_REQUEST_TYPE#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/BuilderExitRequest.java
+      search: REQUEST_TYPE =
+  spec: |
+    <spec constant_var="BUILDER_EXIT_REQUEST_TYPE" fork="gloas" hash="cf4cdfb6">
+    BUILDER_EXIT_REQUEST_TYPE: Bytes1 = '0x04'
+    </spec>
+
 - name: BUILDER_INDEX_FLAG#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
@@ -105,6 +123,13 @@
   spec: |
     <spec constant_var="BYTES_PER_PROOF" fork="deneb" hash="7fec794e">
     BYTES_PER_PROOF: uint64 = 48
+    </spec>
+
+- name: COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR#phase0
+  sources: []
+  spec: |
+    <spec constant_var="COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR" fork="phase0" hash="e8e1efcf">
+    COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR: uint64 = 5
     </spec>
 
 - name: COMPOUNDING_WITHDRAWAL_PREFIX#electra
@@ -197,6 +222,15 @@
     DOMAIN_BLS_TO_EXECUTION_CHANGE: DomainType = '0x0A000000'
     </spec>
 
+- name: DOMAIN_BUILDER_DEPOSIT#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: BUILDER_DEPOSIT =
+  spec: |
+    <spec constant_var="DOMAIN_BUILDER_DEPOSIT" fork="gloas" hash="e0a71135">
+    DOMAIN_BUILDER_DEPOSIT: DomainType = '0x0E000000'
+    </spec>
+
 - name: DOMAIN_CONTRIBUTION_AND_PROOF#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
@@ -209,7 +243,7 @@
 - name: DOMAIN_DEPOSIT#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
-      search: DEPOSIT =
+      search: Bytes4 DEPOSIT =
   spec: |
     <spec constant_var="DOMAIN_DEPOSIT" fork="phase0" hash="eab99f9f">
     DOMAIN_DEPOSIT: DomainType = '0x03000000'
@@ -220,8 +254,8 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
       search: INCLUSION_LIST_COMMITTEE =
   spec: |
-    <spec constant_var="DOMAIN_INCLUSION_LIST_COMMITTEE" fork="heze" hash="95ea05fa">
-    DOMAIN_INCLUSION_LIST_COMMITTEE: DomainType = '0x0E000000'
+    <spec constant_var="DOMAIN_INCLUSION_LIST_COMMITTEE" fork="heze" hash="01403930">
+    DOMAIN_INCLUSION_LIST_COMMITTEE: DomainType = '0x10000000'
     </spec>
 
 - name: DOMAIN_PROPOSER_PREFERENCES#gloas
@@ -285,6 +319,13 @@
   spec: |
     <spec constant_var="DOMAIN_VOLUNTARY_EXIT" fork="phase0" hash="6abf51b5">
     DOMAIN_VOLUNTARY_EXIT: DomainType = '0x04000000'
+    </spec>
+
+- name: EMPTY_BLOCK_HASH#bellatrix
+  sources: []
+  spec: |
+    <spec constant_var="EMPTY_BLOCK_HASH" fork="bellatrix" hash="23cdf402">
+    EMPTY_BLOCK_HASH: Hash32 =
     </spec>
 
 - name: ENDIANNESS#phase0
@@ -440,6 +481,15 @@
     PARTICIPATION_FLAG_WEIGHTS = [TIMELY_SOURCE_WEIGHT, TIMELY_TARGET_WEIGHT, TIMELY_HEAD_WEIGHT]
     </spec>
 
+- name: PAYLOAD_BUILDER_VERSION#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: PAYLOAD_BUILDER_VERSION = 0
+  spec: |
+    <spec constant_var="PAYLOAD_BUILDER_VERSION" fork="gloas" hash="96275869">
+    PAYLOAD_BUILDER_VERSION: uint8 = 0
+    </spec>
+
 - name: PAYLOAD_STATUS_EMPTY#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/PayloadStatus.java
@@ -458,6 +508,26 @@
     PAYLOAD_STATUS_FULL: PayloadStatus = 1
     </spec>
 
+- name: PAYLOAD_STATUS_INVALIDATED#bellatrix
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionPayloadStatus.java
+      search: ^\s+INVALID$
+      regex: true
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_INVALIDATED" fork="bellatrix" hash="573428af">
+    PAYLOAD_STATUS_INVALIDATED: PayloadValidationStatus = 1
+    </spec>
+
+- name: PAYLOAD_STATUS_NOT_VALIDATED#bellatrix
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionPayloadStatus.java
+      search: ^\s+NOT_VALIDATED,$
+      regex: true
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_NOT_VALIDATED" fork="bellatrix" hash="d15db48c">
+    PAYLOAD_STATUS_NOT_VALIDATED: PayloadValidationStatus = 2
+    </spec>
+
 - name: PAYLOAD_STATUS_PENDING#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/PayloadStatus.java
@@ -465,6 +535,16 @@
   spec: |
     <spec constant_var="PAYLOAD_STATUS_PENDING" fork="gloas" hash="6a0d6cbf">
     PAYLOAD_STATUS_PENDING: PayloadStatus = 2
+    </spec>
+
+- name: PAYLOAD_STATUS_VALID#bellatrix
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/executionlayer/ExecutionPayloadStatus.java
+      search: ^\s+VALID,$
+      regex: true
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_VALID" fork="bellatrix" hash="1e190907">
+    PAYLOAD_STATUS_VALID: PayloadValidationStatus = 0
     </spec>
 
 - name: PRIMITIVE_ROOT_OF_UNITY#deneb
@@ -506,8 +586,8 @@
 
 - name: SAFETY_DECAY#phase0
   sources:
-    - file: ethereum/weaksubjectivity/src/main/java/tech/pegasys/teku/weaksubjectivity/config/WeakSubjectivityConfig.java
-      search: SAFETY_DECAY =
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/weaksubjectivity/WeakSubjectivityCalculator.java
+      search: public static final UInt64 SAFETY_DECAY =
   spec: |
     <spec constant_var="SAFETY_DECAY" fork="phase0" hash="298e03fe">
     SAFETY_DECAY: uint64 = 10
@@ -613,21 +693,27 @@
     </spec>
 
 - name: UINT256_MAX#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+      search: UInt256.MAX_VALUE
   spec: |
     <spec constant_var="UINT256_MAX" fork="fulu" hash="57a47f45">
     UINT256_MAX: uint256 = 2**256 - 1
     </spec>
 
 - name: UINT64_MAX#phase0
-  sources: []
+  sources:
+    - file: infrastructure/unsigned/src/main/java/tech/pegasys/teku/infrastructure/unsigned/UInt64.java
+      search: MAX_VALUE = new UInt64(-1L)
   spec: |
     <spec constant_var="UINT64_MAX" fork="phase0" hash="0efe6bd6">
     UINT64_MAX: uint64 = 2**64 - 1
     </spec>
 
 - name: UINT64_MAX_SQRT#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MathHelpers.java
+      search: UInt64 MAX_SQRT = UInt64.valueOf(4294967295L);
   spec: |
     <spec constant_var="UINT64_MAX_SQRT" fork="phase0" hash="28d7e92a">
     UINT64_MAX_SQRT: uint64 = 4294967295

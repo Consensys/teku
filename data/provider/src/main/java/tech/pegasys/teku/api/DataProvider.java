@@ -29,6 +29,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
@@ -126,6 +127,7 @@ public class DataProvider {
     private DataColumnSidecarManager dataColumnSidecarManager;
     private CustodyGroupCountManager custodyGroupCountManager;
     private PayloadAttestationPool payloadAttestationPool;
+    private ProposerPreferencesManager proposerPreferencesManager = ProposerPreferencesManager.NOOP;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -266,6 +268,7 @@ public class DataProvider {
               dataColumnSidecarManager,
               custodyGroupCountManager,
               payloadAttestationPool,
+              proposerPreferencesManager,
               spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(
@@ -311,6 +314,12 @@ public class DataProvider {
 
     public Builder payloadAttestationPool(final PayloadAttestationPool payloadAttestationPool) {
       this.payloadAttestationPool = payloadAttestationPool;
+      return this;
+    }
+
+    public Builder proposerPreferencesManager(
+        final ProposerPreferencesManager proposerPreferencesManager) {
+      this.proposerPreferencesManager = proposerPreferencesManager;
       return this;
     }
   }

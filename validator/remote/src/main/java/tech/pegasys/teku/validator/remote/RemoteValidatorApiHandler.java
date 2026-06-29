@@ -312,7 +312,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
       final UInt64 slot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(() -> typeDefClient.createPayloadAttestationData(slot));
   }
 
   @Override

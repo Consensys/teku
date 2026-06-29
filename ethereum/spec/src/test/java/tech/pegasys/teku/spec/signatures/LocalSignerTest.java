@@ -226,7 +226,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "ivzppJTgsLoYr2byZQhMYq2YERVTauYhx38mzUe9qhHRZhvOLxprM0wi3JRT9y3+DK3rNc3Yj39d2TlHiZOlf0+ozeHBbg11aaoSZzH7ixzRP+23A4iw4cEmpyT0DMKG"));
+                "rKmmvOv04zBQ4E7Tbp50HV9OvuY+DBt7R5U+zdHuDlCo+leP4PHuEFkmb894VckBF1GCpUA4CWtylxeNc6JnhrvHm+nI1IATR4/BF7r9PCsZCocu33dSa2T6qrre0zsI"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadBid(bid, fork);
     asyncRunner.executeQueuedActions();
@@ -246,7 +246,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "hu8ykyX9hSY5eBSnmwDrGsbb4kyzc2IZj0SzOmixZ3L/69McGy0akhT6hIn9W29zFLJO6E+KuS8x8giLtasgGXpjhaxq2cA0Scj4WNhMAWO4XsCzKMcQ3Oe7eF0WArYM"));
+                "jzKiAGsIdRaQBZu3BuDrZ0KODt5hZXgqLCT+7Ti8EzjCaO4GIezBOHvI5TD4+PY7FDHmq+Sc1AJqmHZ8D587uSiUMQsV5m6z9OFdYn+jhUfshGVhCNZIztsBEhXA0LM0"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadEnvelope(envelope, fork);
     asyncRunner.executeQueuedActions();
@@ -266,7 +266,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "tvf+z4784dw1b8XIDKuCBIAeGGQimNn0a6rH5s0NK3H8jKMgIKKadvR5Ui02bBtCGJwR7iLDGMF3KdzkMspzyVb1D+hdL600LttoSBp+HM+NJ0xsT5ajwNk1yO0RzajH"));
+                "qF7VPrbIcUkkpqELL9mhI2qOG85VXWPuf5SvCwIts/G5VIzaKr/i6pWlwKie9ijiEfHvudvljVvYpiT3NH41fb+k28mMPT3EUDGVqnfhk5vZyzDPbsN61xnjYOX797DD"));
 
     final SafeFuture<BLSSignature> result =
         signer.signPayloadAttestationData(payloadAttestationData, fork);
@@ -287,7 +287,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "oPcTkYS7MhABHPLzvC18A9Nt7eo4ZlVf2kKFKx/Ofh58tCECwt6fFgRw2C4fTsvnDlVgJV/+kH9UFPBJWt9Rzawa4Qp07CzsDTOy2dO5zeiEjn2n6JKNTXlnMKnqkjzH"));
+                "r663P2XmrOu3LmXCAJfeG46UmQMcmjLOhiL+A6SQ51xEtaHTuaZKtMNHvgFks/QgCQYsWxW1/imKbEjKNc/Ld0ivWCrtBuWzQSORDsulFDRT3RdOYp0hTce7XOwt1d8K"));
 
     final SafeFuture<BLSSignature> result =
         signer.signProposerPreferences(proposerPreferences, fork);

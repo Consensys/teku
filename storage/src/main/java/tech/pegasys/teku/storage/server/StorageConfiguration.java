@@ -49,7 +49,7 @@ public class StorageConfiguration {
   // This value prunes blobs by slots, using 12 to allow for catch up.
   public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 12;
 
-  public static final int DEFAULT_DATA_COLUMN_PRUNING_LIMIT = 12;
+  public static final int DEFAULT_DATA_COLUMN_PRUNING_LIMIT = 64;
 
   // Max limit we have tested so far without seeing perf degradation
   public static final int MAX_STATE_PRUNE_LIMIT = 100;

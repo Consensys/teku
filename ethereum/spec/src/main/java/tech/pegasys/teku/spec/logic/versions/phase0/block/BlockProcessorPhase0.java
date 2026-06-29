@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -156,6 +158,14 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
+  public void processParentExecutionPayload(
+      final MutableBeaconState state,
+      final BeaconBlock beaconBlock,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier) {
+    throw new UnsupportedOperationException("No process_parent_execution_payload until Gloas");
+  }
+
+  @Override
   public void processWithdrawals(
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
@@ -164,7 +174,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock) {
+      final MutableBeaconState state, final SignedExecutionPayloadBid signedBid) {
     throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
   }
 

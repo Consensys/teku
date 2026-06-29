@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 @SuppressWarnings("ClassInitializationDeadlock")
@@ -23,13 +24,9 @@ public interface ExecutionPayloadImportResult {
       new FailedExecutionPayloadImportResult(
           FailureReason.UNKNOWN_BEACON_BLOCK_ROOT, Optional.empty());
 
-  ExecutionPayloadImportResult FAILED_EXECUTION_SYNCING =
-      new FailedExecutionPayloadImportResult(
-          FailureReason.FAILED_EXECUTION_SYNCING, Optional.empty());
-
-  static ExecutionPayloadImportResult failedStateTransition(final Exception cause) {
+  static ExecutionPayloadImportResult failedVerification(final Exception cause) {
     return new FailedExecutionPayloadImportResult(
-        FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
+        FailureReason.FAILED_VERIFICATION, Optional.of(cause));
   }
 
   static ExecutionPayloadImportResult failedExecution(final Throwable cause) {
@@ -58,11 +55,15 @@ public interface ExecutionPayloadImportResult {
     return new SuccessfulExecutionPayloadImportResult(executionPayload);
   }
 
+  static ExecutionPayloadImportResult optimisticallySuccessful(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    return new OptimisticSuccessfulExecutionPayloadImportResult(executionPayload);
+  }
+
   enum FailureReason {
     UNKNOWN_BEACON_BLOCK_ROOT,
-    FAILED_STATE_TRANSITION,
+    FAILED_VERIFICATION,
     FAILED_EXECUTION,
-    FAILED_EXECUTION_SYNCING,
     FAILED_DATA_AVAILABILITY_CHECK_INVALID,
     FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
@@ -76,6 +77,19 @@ public interface ExecutionPayloadImportResult {
 
   default boolean isDataNotAvailable() {
     return false;
+  }
+
+  default boolean isImportedOptimistically() {
+    return false;
+  }
+
+  default String toLogString() {
+    return getFailureReason()
+        + getFailureCause()
+            .map(ExceptionUtil::getRootCauseMessage)
+            .filter(causeMessage -> !causeMessage.isBlank())
+            .map(causeMessage -> " (" + causeMessage + ")")
+            .orElse("");
   }
 
   /**

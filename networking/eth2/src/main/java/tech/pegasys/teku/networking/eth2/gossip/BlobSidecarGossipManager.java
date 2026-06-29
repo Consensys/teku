@@ -191,7 +191,8 @@ public class BlobSidecarGossipManager implements GossipManager {
         debugDataDumper);
   }
 
-  private record TopicSubnetIdAwareOperationProcessor(
+  @VisibleForTesting
+  public record TopicSubnetIdAwareOperationProcessor(
       Spec spec, int subnetId, OperationProcessor<BlobSidecar> delegate)
       implements OperationProcessor<BlobSidecar> {
 

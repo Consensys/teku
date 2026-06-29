@@ -24,15 +24,14 @@ import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAl
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -42,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -168,10 +168,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     UInt64 builderPaymentWeightDelta = UInt64.ZERO;
 
     UInt64 proposerRewardNumerator = UInt64.ZERO;
-    final SszUInt64List attestingIndices =
-        indexedAttestationProvider.getIndexedAttestation(attestation).getAttestingIndices();
-    for (SszUInt64 attestingIndex : attestingIndices) {
-      final int index = attestingIndex.get().intValue();
+    final List<UInt64> attestingIndices =
+        indexedAttestationProvider.getIndexedAttestation(attestation).attestingIndices();
+    for (final UInt64 attestingIndex : attestingIndices) {
+      final int index = attestingIndex.intValue();
       final byte previousParticipationFlags = epochParticipation.get(index).get();
       byte newParticipationFlags = 0;
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);
@@ -364,6 +364,15 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
+  public void processParentExecutionPayload(
+      final MutableBeaconState state,
+      final BeaconBlock beaconBlock,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No process_parent_execution_payload until Gloas");
+  }
+
+  @Override
   public void processWithdrawals(
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
@@ -372,7 +381,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
   }

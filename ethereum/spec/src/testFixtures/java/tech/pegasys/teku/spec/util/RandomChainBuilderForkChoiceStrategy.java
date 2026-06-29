@@ -27,10 +27,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
 
@@ -76,6 +78,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
       return Optional.empty();
     }
     return getBlock(slot).map(SignedBeaconBlock::getRoot);
+  }
+
+  @Override
+  public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
+    return Optional.empty();
   }
 
   @Override
@@ -148,6 +155,18 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return chainBuilder
         .getBlockAndState(blockRoot)
         .map(RandomChainBuilderForkChoiceStrategy::asProtoNodeData);
+  }
+
+  @Override
+  public boolean shouldExtendPayload(
+      final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
+    return store.getExecutionPayloadIfAvailable(slotAndBlockRoot.getBlockRoot()).isPresent();
+  }
+
+  @Override
+  public boolean shouldBuildOnFull(
+      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
+    return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
   }
 
   @Override

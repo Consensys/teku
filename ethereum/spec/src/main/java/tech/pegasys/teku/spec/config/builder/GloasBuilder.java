@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -31,14 +32,22 @@ public class GloasBuilder extends BaseForkBuilder
   private Integer maxRequestPayloads;
   private Integer minBuilderWithdrawabilityDelay;
   private Integer payloadAttestationDueBps;
+  private Integer payloadDueBps;
   private Integer syncMessageDueBpsGloas;
 
   // gloas preset
   private Integer ptcSize;
   private Integer maxPayloadAttestations;
+  private Integer maxBuilderDepositRequestsPerPayload;
+  private Integer maxBuilderExitRequestsPerPayload;
   private Long builderRegistryLimit;
   private Long builderPendingWithdrawalsLimit;
   private Integer maxBuildersPerWithdrawalsSweep;
+
+  // EIP-8061: Increase exit and consolidation churn
+  private Integer churnLimitQuotientGloas;
+  private Integer consolidationChurnLimitQuotient;
+  private UInt64 maxPerEpochActivationChurnLimitGloas;
 
   GloasBuilder() {}
 
@@ -51,6 +60,8 @@ public class GloasBuilder extends BaseForkBuilder
             aggregateDueBpsGloas,
             attestationDueBpsGloas,
             contributionDueBpsGloas,
+            maxBuilderDepositRequestsPerPayload,
+            maxBuilderExitRequestsPerPayload,
             builderRegistryLimit,
             builderPendingWithdrawalsLimit,
             maxBuildersPerWithdrawalsSweep,
@@ -58,8 +69,12 @@ public class GloasBuilder extends BaseForkBuilder
             maxRequestPayloads,
             minBuilderWithdrawabilityDelay,
             payloadAttestationDueBps,
+            payloadDueBps,
             ptcSize,
-            syncMessageDueBpsGloas),
+            syncMessageDueBpsGloas,
+            churnLimitQuotientGloas,
+            consolidationChurnLimitQuotient,
+            maxPerEpochActivationChurnLimitGloas),
         specConfigAndParent);
   }
 
@@ -99,6 +114,12 @@ public class GloasBuilder extends BaseForkBuilder
     return this;
   }
 
+  public GloasBuilder payloadDueBps(final Integer payloadDueBps) {
+    checkNotNull(payloadDueBps);
+    this.payloadDueBps = payloadDueBps;
+    return this;
+  }
+
   public GloasBuilder syncMessageDueBpsGloas(final Integer syncMessageDueBpsGloas) {
     checkNotNull(syncMessageDueBpsGloas);
     this.syncMessageDueBpsGloas = syncMessageDueBpsGloas;
@@ -135,6 +156,40 @@ public class GloasBuilder extends BaseForkBuilder
     return this;
   }
 
+  public GloasBuilder maxBuilderDepositRequestsPerPayload(
+      final Integer maxBuilderDepositRequestsPerPayload) {
+    checkNotNull(maxBuilderDepositRequestsPerPayload);
+    this.maxBuilderDepositRequestsPerPayload = maxBuilderDepositRequestsPerPayload;
+    return this;
+  }
+
+  public GloasBuilder maxBuilderExitRequestsPerPayload(
+      final Integer maxBuilderExitRequestsPerPayload) {
+    checkNotNull(maxBuilderExitRequestsPerPayload);
+    this.maxBuilderExitRequestsPerPayload = maxBuilderExitRequestsPerPayload;
+    return this;
+  }
+
+  public GloasBuilder churnLimitQuotientGloas(final Integer churnLimitQuotientGloas) {
+    checkNotNull(churnLimitQuotientGloas);
+    this.churnLimitQuotientGloas = churnLimitQuotientGloas;
+    return this;
+  }
+
+  public GloasBuilder consolidationChurnLimitQuotient(
+      final Integer consolidationChurnLimitQuotient) {
+    checkNotNull(consolidationChurnLimitQuotient);
+    this.consolidationChurnLimitQuotient = consolidationChurnLimitQuotient;
+    return this;
+  }
+
+  public GloasBuilder maxPerEpochActivationChurnLimitGloas(
+      final UInt64 maxPerEpochActivationChurnLimitGloas) {
+    checkNotNull(maxPerEpochActivationChurnLimitGloas);
+    this.maxPerEpochActivationChurnLimitGloas = maxPerEpochActivationChurnLimitGloas;
+    return this;
+  }
+
   @Override
   public void validate() {
     defaultValuesIfRequired(this);
@@ -150,13 +205,19 @@ public class GloasBuilder extends BaseForkBuilder
     constants.put("maxRequestPayloads", maxRequestPayloads);
     constants.put("minBuilderWithdrawabilityDelay", minBuilderWithdrawabilityDelay);
     constants.put("payloadAttestationDueBps", payloadAttestationDueBps);
+    constants.put("payloadDueBps", payloadDueBps);
     constants.put("syncMessageDueBpsGloas", syncMessageDueBpsGloas);
 
     constants.put("builderRegistryLimit", builderRegistryLimit);
     constants.put("builderPendingWithdrawalsLimit", builderPendingWithdrawalsLimit);
     constants.put("maxBuildersPerWithdrawalsSweep", maxBuildersPerWithdrawalsSweep);
+    constants.put("maxBuilderDepositRequestsPerPayload", maxBuilderDepositRequestsPerPayload);
+    constants.put("maxBuilderExitRequestsPerPayload", maxBuilderExitRequestsPerPayload);
     constants.put("ptcSize", ptcSize);
     constants.put("maxPayloadAttestations", maxPayloadAttestations);
+    constants.put("churnLimitQuotientGloas", churnLimitQuotientGloas);
+    constants.put("consolidationChurnLimitQuotient", consolidationChurnLimitQuotient);
+    constants.put("maxPerEpochActivationChurnLimitGloas", maxPerEpochActivationChurnLimitGloas);
 
     return constants;
   }

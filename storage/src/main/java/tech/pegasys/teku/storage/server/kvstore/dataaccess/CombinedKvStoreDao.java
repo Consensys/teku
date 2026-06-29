@@ -314,6 +314,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public void compact() {
+    db.compact();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     try (final OperationTimer.TimingContext ignored =
         getFinalizedBlockTimer.labels().startTimer()) {
@@ -500,6 +505,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getLastDataColumnSidecarPrunedSlot() {
+    return db.get(schema.getVariableLastDataColumnSidecarPrunedSlot());
+  }
+
+  @Override
   public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
     schema
@@ -545,7 +555,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString))
         .put(
             "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
-            getEarliestAvailableDataColumnSlot().map(Objects::toString));
+            getEarliestAvailableDataColumnSlot().map(Objects::toString))
+        .put(
+            "LAST_DATA_COLUMN_SLOT_PRUNED",
+            getLastDataColumnSidecarPrunedSlot().map(Objects::toString));
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
@@ -727,13 +740,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
-  @Override
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
     return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
   }
@@ -892,6 +898,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+    }
+
+    @Override
+    public void setLastDataColumnSidecarPrunedSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableLastDataColumnSidecarPrunedSlot(), slot);
     }
 
     @Override

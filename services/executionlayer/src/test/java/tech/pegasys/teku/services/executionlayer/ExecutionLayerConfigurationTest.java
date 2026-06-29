@@ -91,6 +91,19 @@ public class ExecutionLayerConfigurationTest {
   }
 
   @Test
+  public void shouldUseNewEngineApiClientByDefault() {
+    final ExecutionLayerConfiguration config = configBuilder.specProvider(bellatrixSpec).build();
+    assertThat(config.isUseNewEngineApiClient()).isTrue();
+  }
+
+  @Test
+  public void shouldAllowDisablingNewEngineApiClient() {
+    final ExecutionLayerConfiguration config =
+        configBuilder.specProvider(bellatrixSpec).useNewEngineApiClient(false).build();
+    assertThat(config.isUseNewEngineApiClient()).isFalse();
+  }
+
+  @Test
   public void noExceptionThrownIfEeEndpointSpecified() {
     final ExecutionLayerConfiguration config =
         configBuilder.specProvider(bellatrixSpec).engineEndpoint("someEndpoint").build();

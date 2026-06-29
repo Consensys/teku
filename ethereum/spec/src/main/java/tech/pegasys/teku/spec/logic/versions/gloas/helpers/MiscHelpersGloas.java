@@ -43,9 +43,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -69,7 +71,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  private final PredicatesGloas predicates;
   private final SpecConfigGloas specConfigGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
 
@@ -78,7 +79,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final PredicatesGloas predicates,
       final SchemaDefinitionsGloas schemaDefinitionsGloas) {
     super(specConfig, predicates, schemaDefinitionsGloas);
-    this.predicates = predicates;
     this.specConfigGloas = specConfig;
     this.schemaDefinitionsGloas = schemaDefinitionsGloas;
   }
@@ -95,6 +95,10 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final UInt64 currentEpoch, final UInt64 epoch) {
     return false;
+  }
+
+  public boolean isExecutionPayloadEnvelopeAvailable() {
+    return true;
   }
 
   /**
@@ -139,38 +143,26 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         indices.intStream().mapToObj(index -> validators.get(index).getEffectiveBalance()).toList();
     final IntList selected = new IntArrayList();
     int i = 0;
+    Bytes32 randomBytes = Bytes32.ZERO;
     while (selected.size() < size) {
+      final int offset = (i % 16) * 2;
+      if (offset == 0) {
+        randomBytes = Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
+      }
       int nextIndex = i % total;
       if (shuffleIndices) {
         nextIndex = computeShuffledIndex(nextIndex, total, seed);
       }
-      final int candidateIndex = indices.getInt(nextIndex);
-      if (computeBalanceWeightedAcceptance(effectiveBalances.get(nextIndex), seed, i)) {
-        selected.add(candidateIndex);
+      final UInt64 weight = effectiveBalances.get(nextIndex).times(MAX_RANDOM_VALUE);
+      final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
+      final UInt64 threshold =
+          SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra().times(randomValue);
+      if (weight.isGreaterThanOrEqualTo(threshold)) {
+        selected.add(indices.getInt(nextIndex));
       }
       i++;
     }
     return selected;
-  }
-
-  /**
-   * compute_balance_weighted_acceptance
-   *
-   * <p>Return whether to accept the selection of a validator with the given ``effective_balance``,
-   * with probability proportional to its balance, and randomness given by ``seed`` and ``i``.
-   */
-  public boolean computeBalanceWeightedAcceptance(
-      final UInt64 effectiveBalance, final Bytes32 seed, final int i) {
-    final Bytes32 randomBytes =
-        Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
-    final int offset = (i % 16) * 2;
-    final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
-    return effectiveBalance
-        .times(MAX_RANDOM_VALUE)
-        .isGreaterThanOrEqualTo(
-            SpecConfigElectra.required(specConfig)
-                .getMaxEffectiveBalanceElectra()
-                .times(randomValue));
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
@@ -249,14 +241,28 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         extendedMatrix);
   }
 
-  public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
-    return predicates.isActiveBuilder(state, builderIndex);
+  public boolean isBidBuildingOnEmptyParent(
+      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
+    return bid.getParentBlockHash().equals(state.getLatestBlockHash())
+        && !bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
+  }
+
+  public boolean isBidBuildingOnFullParent(
+      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
+    return bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
+  }
+
+  public boolean isExecutionRequestsRootMatchingLatestBid(
+      final BeaconStateGloas state, final ExecutionRequests executionRequests) {
+    return executionRequests
+        .hashTreeRoot()
+        .equals(state.getLatestExecutionPayloadBid().getExecutionRequestsRoot());
   }
 
   // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
-  public boolean isPendingValidator(final BeaconState state, final BLSPublicKey pubkey) {
-    for (final PendingDeposit pendingDeposit :
-        BeaconStateGloas.required(state).getPendingDeposits()) {
+  public boolean isPendingValidator(
+      final List<PendingDeposit> pendingDeposits, final BLSPublicKey pubkey) {
+    for (final PendingDeposit pendingDeposit : pendingDeposits) {
       if (!pendingDeposit.getPublicKey().equals(pubkey)) {
         continue;
       }
@@ -329,6 +335,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
    * @param kzgCommitments the KZG commitments from the execution payload bid
    * @return true if the KZG proofs are valid
    */
+  @Override
   public boolean verifyDataColumnSidecarKzgProofs(
       final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
 

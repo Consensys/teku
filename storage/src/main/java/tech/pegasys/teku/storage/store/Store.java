@@ -19,6 +19,7 @@ import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMa
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,7 +28,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -43,6 +43,7 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -76,9 +78,10 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.protoarray.BlockNodeVariantsIndex;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceModelFactory;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.protoarray.ProtoArray;
-import tech.pegasys.teku.storage.protoarray.ProtoNode;
 
 class Store extends CacheableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -105,6 +108,7 @@ class Store extends CacheableStore {
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private final ForkChoiceStrategy forkChoiceStrategy;
   private final ExecutionPayloadProvider executionPayloadProvider;
+  private final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider;
 
   private final Optional<Checkpoint> initialCheckpoint;
   private final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates;
@@ -132,6 +136,7 @@ class Store extends CacheableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates,
@@ -203,10 +208,19 @@ class Store extends CacheableStore {
 
     this.executionPayloads = executionPayloads;
 
+    // Set up execution payload providers to draw from in-memory execution payloads
     this.executionPayloadProvider =
         ExecutionPayloadProvider.combined(
             createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
             executionPayloadProvider);
+    // Derive blinded payloads from the hot unblinded payload map so both lookup paths see the same
+    // in-memory Gloas payloads before falling back to the backing provider.
+    this.blindedExecutionPayloadProvider =
+        BlindedExecutionPayloadProvider.combined(
+            createBlindedExecutionPayloadProviderFromMapWhileLocked(
+                Maps.transformValues(
+                    this.executionPayloads, executionPayload -> executionPayload.blind(spec))),
+            blindedExecutionPayloadProvider);
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -239,12 +253,28 @@ class Store extends CacheableStore {
     };
   }
 
+  private BlindedExecutionPayloadProvider createBlindedExecutionPayloadProviderFromMapWhileLocked(
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloadMap) {
+    return (roots) -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            roots.stream()
+                .filter(blindedExecutionPayloadMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blindedExecutionPayloadMap::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
+  }
+
   static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -284,6 +314,7 @@ class Store extends CacheableStore {
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
         executionPayloadProvider,
+        blindedExecutionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         blockStateTaskQueue,
@@ -310,6 +341,7 @@ class Store extends CacheableStore {
       final Spec spec,
       final BlockProvider blockProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -342,6 +374,7 @@ class Store extends CacheableStore {
         spec,
         blockProvider,
         executionPayloadProvider,
+        blindedExecutionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         initialCheckpoint,
@@ -369,7 +402,6 @@ class Store extends CacheableStore {
     return initialCanonicalBlockRoot;
   }
 
-  @SuppressWarnings("UnusedVariable")
   private static ProtoArray buildProtoArray(
       final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -380,6 +412,8 @@ class Store extends CacheableStore {
       final Optional<Bytes32> initialCanonicalBlockRoot) {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
+    final ForkChoiceModelFactory forkChoiceModelFactory = new ForkChoiceModelFactory(spec);
+    final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
     final ProtoArray protoArray =
         ProtoArray.builder()
             .spec(spec)
@@ -393,19 +427,31 @@ class Store extends CacheableStore {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
-
-      protoArray.onBlock(
-          block.getBlockSlot(),
-          block.getBlockRoot(),
-          block.getParentRoot(),
-          block.getStateRoot(),
-          block.getCheckpointEpochs().get(),
-          block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
-          block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
-          spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      if (block.getBlockRoot().equals(finalizedAnchor.getRoot())) {
+        // The finalized root is the rebuild anchor, not a normal replayed block. In Gloas there is
+        // no tracked parent for this node after pruning/restart, so the anchor path must seed
+        // BASE/EMPTY execution data directly from the stored bid parent hash instead of inheriting
+        // it from a resolved parent as the common block rebuild path does.
+        forkChoiceModelFactory.rebuildAnchorBlockNodesFromMetadata(
+            protoArray,
+            blockNodeIndex,
+            block,
+            spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      } else {
+        forkChoiceModelFactory.rebuildBlockNodesFromMetadata(
+            protoArray,
+            blockNodeIndex,
+            block,
+            spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      }
     }
 
-    initialCanonicalBlockRoot.ifPresent(protoArray::setInitialCanonicalBlockRoot);
+    initialCanonicalBlockRoot.ifPresent(
+        blockRoot ->
+            protoArray.setInitialCanonicalBlockRoot(
+                blockRoot,
+                forkChoiceModelFactory.createHeadSelectionContext(
+                    spec.computeStartSlotAtEpoch(currentEpoch), blockNodeIndex, Optional.empty())));
 
     return protoArray;
   }
@@ -611,7 +657,8 @@ class Store extends CacheableStore {
     readLock.lock();
     try {
       final List<Bytes32> blockRoots = new ArrayList<>();
-      forkChoiceStrategy.processAllInOrder((root, slot, parent) -> blockRoots.add(root));
+      forkChoiceStrategy.processAllBeaconBlocksInOrder(
+          (root, slot, parent) -> blockRoots.add(root));
       return blockRoots;
     } finally {
       readLock.unlock();
@@ -645,44 +692,13 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean isHeadWeak(final Bytes32 root) {
-    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
-    return maybeBlockData
-        .map(
-            blockData -> {
-              final UInt64 headWeight = blockData.getWeight();
-
-              final boolean result = headWeight.isLessThan(reorgThreshold);
-
-              LOG.trace(
-                  "isHeadWeak {}: headWeight: {}, reorgThreshold: {}, result: {}",
-                  root,
-                  headWeight,
-                  reorgThreshold,
-                  result);
-              return result;
-            })
-        .orElse(false);
+  public UInt64 getReorgThreshold() {
+    return reorgThreshold;
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(parentRoot);
-    return maybeBlockData
-        .map(
-            blockData -> {
-              final UInt64 parentWeight = blockData.getWeight();
-              final boolean result = parentWeight.isGreaterThan(parentThreshold);
-
-              LOG.debug(
-                  "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
-                  parentRoot,
-                  parentWeight,
-                  parentThreshold,
-                  result);
-              return result;
-            })
-        .orElse(true);
+  public UInt64 getParentThreshold() {
+    return parentThreshold;
   }
 
   @Override
@@ -695,6 +711,16 @@ class Store extends CacheableStore {
     parentThreshold =
         beaconStateAccessors.calculateCommitteeFraction(
             justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
+  }
+
+  @Override
+  public Optional<BeaconState> getJustifiedStateIfAvailable() {
+    return getCheckpointStateIfAvailable(getJustifiedCheckpoint());
+  }
+
+  @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return checkpointStates.getIfAvailable(checkpoint.toSlotAndBlockRoot(spec));
   }
 
   @Override
@@ -762,9 +788,19 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
-    return executionPayloadProvider
-        .getExecutionPayloads(Set.of(blockRoot))
-        .thenApply(result -> Optional.ofNullable(result.get(blockRoot)));
+    if (!containsBlock(blockRoot)) {
+      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return executionPayloadProvider.getExecutionPayload(blockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
+    if (!containsBlock(blockRoot)) {
+      return EmptyStoreResults.EMPTY_SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return blindedExecutionPayloadProvider.getBlindedExecutionPayload(blockRoot);
   }
 
   @Override
@@ -921,13 +957,15 @@ class Store extends CacheableStore {
     }
   }
 
-  VoteTracker getVote(final UInt64 validatorIndex) {
+  @Override
+  public VoteTracker getVote(final UInt64 validatorIndex) {
     readVotesLock.lock();
     try {
       if (validatorIndex.intValue() >= votes.length) {
-        return null;
+        return VoteTracker.DEFAULT;
       }
-      return votes[validatorIndex.intValue()];
+      final VoteTracker vote = votes[validatorIndex.intValue()];
+      return vote != null ? vote : VoteTracker.DEFAULT;
     } finally {
       readVotesLock.unlock();
     }
@@ -1040,7 +1078,7 @@ class Store extends CacheableStore {
     final AtomicReference<SlotAndBlockRoot> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
-      forkChoiceStrategy.processHashesInChain(
+      forkChoiceStrategy.processBeaconBlockChain(
           blockRoot,
           (root, slot, parent) -> {
             treeBuilder.childAndParentRoots(root, parent);
@@ -1082,9 +1120,9 @@ class Store extends CacheableStore {
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
     readLock.lock();
     try {
-      forkChoiceStrategy.processHashesInChainWhile(
+      forkChoiceStrategy.processBeaconBlockChainWhile(
           blockRoot,
-          (root, slot, parent, executionHash) -> {
+          (root, slot, parent) -> {
             treeBuilder.childAndParentRoots(root, parent);
             final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
             blockState.ifPresent(

@@ -64,13 +64,12 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -230,17 +229,17 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   payloadIdToHeadAndAttrsCache.invalidateWithNewValue(
                       payloadId,
                       new HeadAndAttributes(
-                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes));
+                          forkChoiceState.headExecutionBlockHash(), payloadAttributes));
                   return payloadId;
                 }));
 
     if (!LOG.isDebugEnabled()) {
       LOG.info(
           "EL Stub FCU head: {}:{}, payload: {}:{}",
-          forkChoiceState.getHeadBlockSlot(),
-          forkChoiceState.getHeadBlockRoot(),
-          forkChoiceState.getHeadExecutionBlockNumber(),
-          forkChoiceState.getHeadExecutionBlockHash());
+          forkChoiceState.headBlockSlot(),
+          forkChoiceState.headBlock(),
+          forkChoiceState.headExecutionBlockNumber(),
+          forkChoiceState.headExecutionBlockHash());
     }
     LOG.debug(
         "forkChoiceUpdated: forkChoiceState: {} payloadBuildingAttributes: {} -> forkChoiceUpdatedResult: {}",
@@ -287,22 +286,24 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                 builder ->
                     builder
                         .parentHash(headAndAttrs.head)
-                        .feeRecipient(payloadAttributes.getFeeRecipient())
+                        .feeRecipient(payloadAttributes.feeRecipient())
                         .stateRoot(Bytes32.ZERO)
                         .receiptsRoot(Bytes32.ZERO)
                         .logsBloom(Bytes.random(256))
-                        .prevRandao(payloadAttributes.getPrevRandao())
+                        .prevRandao(payloadAttributes.prevRandao())
                         .blockNumber(UInt64.valueOf(payloadIdCounter.get()))
                         .gasLimit(UInt64.ONE)
                         .gasUsed(UInt64.ZERO)
-                        .timestamp(payloadAttributes.getTimestamp())
+                        .timestamp(payloadAttributes.timestamp())
                         .extraData(Bytes.EMPTY)
                         .baseFeePerGas(UInt256.ONE)
                         .blockHash(Bytes32.random())
                         .transactions(transactions)
-                        .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
+                        .withdrawals(() -> payloadAttributes.withdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
-                        .excessBlobGas(() -> UInt64.ZERO));
+                        .excessBlobGas(() -> UInt64.ZERO)
+                        .blockAccessList(() -> Bytes32.ZERO)
+                        .slotNumber(() -> slot));
 
     // we assume all blocks are produced locally
     lastValidBlock =
@@ -310,7 +311,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             new PowBlock(
                 executionPayload.getBlockHash(),
                 executionPayload.getParentHash(),
-                payloadAttributes.getTimestamp()));
+                payloadAttributes.timestamp()));
 
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
 
@@ -352,11 +353,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   private Optional<ExecutionRequests> getExecutionRequests(final UInt64 slot) {
     if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      final ExecutionRequestsSchema executionRequestsSchema =
-          SchemaDefinitionsElectra.required(
-                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+      final ExecutionRequestsSchema<?> executionRequestsSchema =
+          SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions())
               .getExecutionRequestsSchema();
-      return Optional.of(new ExecutionRequestsBuilderElectra(executionRequestsSchema).build());
+      return Optional.of(executionRequestsSchema.createBuilder().build());
     } else {
       return Optional.empty();
     }
@@ -472,7 +472,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                       .map(SchemaDefinitionsElectra::getExecutionRequestsSchema)
                       .map(
                           executionRequestsSchema ->
-                              new ExecutionRequestsBuilderElectra(executionRequestsSchema).build());
+                              executionRequestsSchema.createBuilder().build());
 
               final BuilderBid builderBid =
                   schemaDefinitions

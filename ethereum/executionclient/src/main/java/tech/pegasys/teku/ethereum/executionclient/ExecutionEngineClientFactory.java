@@ -17,7 +17,6 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang3.SystemUtils;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -34,7 +33,7 @@ public class ExecutionEngineClientFactory {
    * <ul>
    *   <li>{@code http://}, {@code https://} — HTTP JSON-RPC client
    *   <li>{@code ws://}, {@code wss://} — WebSocket JSON-RPC client
-   *   <li>{@code file://} — IPC client over Unix domain socket (not available on Windows)
+   *   <li>{@code file://} — IPC client over Unix domain socket
    * </ul>
    *
    * <p>The {@code httpClient} and {@code asyncRunnerSupplier} are lazily evaluated and only invoked
@@ -59,24 +58,6 @@ public class ExecutionEngineClientFactory {
       final ExecutionClientEventsChannel executionClientEventsPublisher,
       final Supplier<OkHttpClient> httpClient,
       final Supplier<AsyncRunner> asyncRunnerSupplier) {
-    return create(
-        endpoint,
-        timeProvider,
-        eventLog,
-        executionClientEventsPublisher,
-        httpClient,
-        asyncRunnerSupplier,
-        SystemUtils.IS_OS_UNIX);
-  }
-
-  static ExecutionEngineClient create(
-      final String endpoint,
-      final TimeProvider timeProvider,
-      final EventLogger eventLog,
-      final ExecutionClientEventsChannel executionClientEventsPublisher,
-      final Supplier<OkHttpClient> httpClient,
-      final Supplier<AsyncRunner> asyncRunnerSupplier,
-      final boolean isUnix) {
     final URI uri = URI.create(endpoint);
     final String scheme = uri.getScheme();
     if (scheme == null) {
@@ -89,18 +70,13 @@ public class ExecutionEngineClientFactory {
       case "ws", "wss" ->
           new OkHttpWebSocketExecutionEngineClient(
               httpClient.get(), endpoint, eventLog, timeProvider, executionClientEventsPublisher);
-      case "file" -> {
-        if (!isUnix) {
-          throw new InvalidConfigurationException(
-              "IPC via Unix domain sockets (file://) is not supported on Windows");
-        }
-        yield new IpcSocketExecutionEngineClient(
-            asyncRunnerSupplier.get(),
-            Path.of(uri.getPath()),
-            eventLog,
-            timeProvider,
-            executionClientEventsPublisher);
-      }
+      case "file" ->
+          new IpcSocketExecutionEngineClient(
+              asyncRunnerSupplier.get(),
+              Path.of(uri.getPath()),
+              eventLog,
+              timeProvider,
+              executionClientEventsPublisher);
       default -> throw invalidConfigurationException(endpoint);
     };
   }

@@ -41,6 +41,8 @@ public interface ReadOnlyForkChoiceStrategy {
     return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
   }
 
+  Optional<ForkChoiceNode> getParentBeaconBlockNode(ForkChoiceNode node);
+
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 
   List<Bytes32> getBlockRootsAtSlot(UInt64 slot);
@@ -92,6 +94,49 @@ public interface ReadOnlyForkChoiceStrategy {
   default Optional<ProtoNodeData> getBlockData(
       final Bytes32 blockRoot, final ForkChoicePayloadStatus payloadStatus) {
     return getBlockData(blockRoot);
+  }
+
+  /**
+   * Returns whether block production should extend the parent execution payload branch or fall back
+   * to the EMPTY path.
+   *
+   * <p>This is a forkchoice-owned decision. Pre-Gloas follows the current master behavior based on
+   * local payload availability, while Gloas can override it with the model-specific EMPTY/FULL
+   * selection rules. The slotAndBlockRoot slot is supplied with the root so implementations can
+   * select fork-aware logic without resolving the slot from the root.
+   */
+  boolean shouldExtendPayload(ReadOnlyStore store, SlotAndBlockRoot slotAndBlockRoot);
+
+  /**
+   * Returns whether block production should build on the FULL variant of {@code head}.
+   *
+   * <p>Pre-Gloas follows the existing {@link #shouldExtendPayload(ReadOnlyStore, SlotAndBlockRoot)}
+   * decision. Gloas overrides this to account for PTC votes that signal data unavailability or an
+   * untimely payload.
+   */
+  boolean shouldBuildOnFull(
+      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head);
+
+  default Optional<Boolean> getPayloadTimelinessVote(
+      final Bytes32 blockRoot, final int ptcPosition) {
+    return Optional.empty();
+  }
+
+  default Optional<Boolean> getPayloadDataAvailabilityVote(
+      final Bytes32 blockRoot, final int ptcPosition) {
+    return Optional.empty();
+  }
+
+  default UInt64 getPayloadAttesterCount(final Bytes32 blockRoot) {
+    return UInt64.ZERO;
+  }
+
+  default UInt64 getPayloadAvailabilityYesCount(final Bytes32 blockRoot) {
+    return UInt64.ZERO;
+  }
+
+  default UInt64 getPayloadDataAvailabilityYesCount(final Bytes32 blockRoot) {
+    return UInt64.ZERO;
   }
 
   Optional<UInt64> getWeight(Bytes32 blockRoot);

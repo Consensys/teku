@@ -40,6 +40,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -72,6 +73,7 @@ public class HistoricalBlockSyncService extends Service {
 
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private volatile BeaconBlockSummary earliestBlock;
+  private volatile Optional<SignedBeaconBlock> earliestFullBlock = Optional.empty();
   final Set<NodeId> badPeerCache;
 
   private final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService;
@@ -181,11 +183,16 @@ public class HistoricalBlockSyncService extends Service {
   private SafeFuture<Void> initialize() {
     return chainData
         .getEarliestAvailableBlockSummary()
-        .thenAccept(
+        .thenCompose(
             beaconBlockSummary -> {
               this.earliestBlock =
                   beaconBlockSummary.orElseThrow(
                       () -> new IllegalStateException("Unable to retrieve earliest block"));
+              return chainData.getBlockByBlockRoot(earliestBlock.getRoot());
+            })
+        .thenAccept(
+            earliestFullBlock -> {
+              this.earliestFullBlock = earliestFullBlock;
               final UInt64 terminalSlot = getTerminalSlot();
               if (earliestBlock.getSlot().isGreaterThan(terminalSlot)) {
                 LOG.info(
@@ -275,6 +282,7 @@ public class HistoricalBlockSyncService extends Service {
               if (newValue != null && newValue.getSlot().isLessThanOrEqualTo(params.maxSlot())) {
                 LOG.trace("Synced historical blocks to slot {}", newValue.getSlot());
                 earliestBlock = newValue;
+                earliestFullBlock = Optional.of(newValue);
                 updateSyncMetrics();
                 if (isSyncDone()) {
                   LOG.info("Historical block sync is complete");
@@ -294,7 +302,8 @@ public class HistoricalBlockSyncService extends Service {
         peer,
         params.maxSlot(),
         params.blockRoot(),
-        batchSize);
+        batchSize,
+        earliestFullBlock);
   }
 
   private boolean isSyncDone() {

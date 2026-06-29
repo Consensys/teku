@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -29,17 +27,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 public interface ExecutionPayloadProvider {
 
   ExecutionPayloadProvider NOOP = roots -> SafeFuture.completedFuture(Collections.emptyMap());
-
-  static ExecutionPayloadProvider fromDynamicMap(
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadMap) {
-    return roots ->
-        SafeFuture.completedFuture(
-            roots.stream()
-                .flatMap(root -> Optional.ofNullable(executionPayloadMap.get(root)).stream())
-                .collect(
-                    Collectors.toMap(
-                        SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity())));
-  }
 
   /**
    * Combines multiple providers, querying the primary first and falling back to secondary providers
@@ -76,4 +63,10 @@ public interface ExecutionPayloadProvider {
 
   SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getExecutionPayloads(
       Set<Bytes32> blockRoots);
+
+  default SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayload(
+      final Bytes32 blockRoot) {
+    return getExecutionPayloads(Set.of(blockRoot))
+        .thenApply(executionPayloads -> Optional.ofNullable(executionPayloads.get(blockRoot)));
+  }
 }

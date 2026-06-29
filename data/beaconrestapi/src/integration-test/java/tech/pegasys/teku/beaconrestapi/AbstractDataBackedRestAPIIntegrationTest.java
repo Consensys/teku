@@ -292,6 +292,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .rewardCalculator(rewardCalculator)
             .dataColumnSidecarManager(dataColumnSidecarManager)
             .payloadAttestationPool(payloadAttestationPool)
+            .proposerPreferencesManager(proposerPreferencesManager)
             .build();
 
     beaconRestApi =

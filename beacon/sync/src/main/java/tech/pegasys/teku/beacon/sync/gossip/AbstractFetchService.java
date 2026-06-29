@@ -37,6 +37,8 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
 
   private static final Logger LOG = LogManager.getLogger();
 
+  public static final int DEFAULT_MAX_CONCURRENT_BLOCKS_REQUESTS = 3;
+
   private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
   private static final RetryDelayFunction RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));

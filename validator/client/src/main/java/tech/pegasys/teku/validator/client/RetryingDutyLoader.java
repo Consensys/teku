@@ -65,21 +65,21 @@ public class RetryingDutyLoader<S extends ScheduledDuties> implements DutyLoader
         .exceptionallyCompose(
             error -> {
               if (cancellable.isCancelled()) {
-                LOG.debug("Request for duties for epoch {} cancelled.", epoch);
+                LOG.trace("Request for duties for epoch {} cancelled.", epoch);
                 return SafeFuture.failedFuture(error);
               }
               final Throwable rootCause = Throwables.getRootCause(error);
               switch (rootCause) {
                 case NodeSyncingException ignored ->
-                    LOG.debug(
+                    LOG.trace(
                         "Unable to schedule duties for epoch {} because node was syncing. Retrying.",
                         epoch);
                 case NodeDataUnavailableException ignored ->
-                    LOG.debug(
+                    LOG.trace(
                         "Unable to schedule duties for epoch {} because required state was not yet available. Retrying.",
                         epoch);
                 case RemoteServiceNotAvailableException ignored ->
-                    LOG.debug(
+                    LOG.trace(
                         "Unable to schedule duties for epoch {} - service not available. Retrying.",
                         epoch);
                 default ->

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -138,6 +139,14 @@ public class ValidatorDataProvider {
   public SafeFuture<List<SubmitDataError>> submitPayloadAttestationMessages(
       final List<PayloadAttestationMessage> messages) {
     return validatorApiChannel.sendPayloadAttestationMessages(messages);
+  }
+
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    if (!isStoreAvailable()) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    }
+    return validatorApiChannel.createPayloadAttestationData(slot);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlock(

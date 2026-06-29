@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -24,17 +24,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionPayloadEnvelope
-    extends Container6<
+    extends Container5<
         ExecutionPayloadEnvelope,
         ExecutionPayload,
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
-        SszUInt64,
         SszBytes32> {
 
   ExecutionPayloadEnvelope(
@@ -43,16 +43,14 @@ public class ExecutionPayloadEnvelope
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
-      final UInt64 slot,
-      final Bytes32 stateRoot) {
+      final Bytes32 parentBeaconBlockRoot) {
     super(
         schema,
         payload,
         executionRequests,
         SszUInt64.of(builderIndex),
         SszBytes32.of(beaconBlockRoot),
-        SszUInt64.of(slot),
-        SszBytes32.of(stateRoot));
+        SszBytes32.of(parentBeaconBlockRoot));
   }
 
   ExecutionPayloadEnvelope(final ExecutionPayloadEnvelopeSchema type, final TreeNode backingNode) {
@@ -75,12 +73,12 @@ public class ExecutionPayloadEnvelope
     return getField3().get();
   }
 
-  public UInt64 getSlot() {
+  public Bytes32 getParentBeaconBlockRoot() {
     return getField4().get();
   }
 
-  public Bytes32 getStateRoot() {
-    return getField5().get();
+  public UInt64 getSlot() {
+    return ExecutionPayloadGloas.required(getPayload()).getSlotNumber();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
@@ -96,17 +94,6 @@ public class ExecutionPayloadEnvelope
     return (ExecutionPayloadEnvelopeSchema) super.getSchema();
   }
 
-  public ExecutionPayloadEnvelope copyWithNewStateRoot(final Bytes32 stateRoot) {
-    return new ExecutionPayloadEnvelope(
-        getSchema(),
-        getPayload(),
-        getExecutionRequests(),
-        getBuilderIndex(),
-        getBeaconBlockRoot(),
-        getSlot(),
-        stateRoot);
-  }
-
   public BlindedExecutionPayloadEnvelope blind(final SchemaDefinitionsGloas schemaDefinitions) {
     final BlindedExecutionPayloadEnvelope blinded =
         schemaDefinitions
@@ -118,11 +105,10 @@ public class ExecutionPayloadEnvelope
                 getExecutionRequests(),
                 getBuilderIndex(),
                 getBeaconBlockRoot(),
-                getSlot(),
-                getStateRoot());
+                getParentBeaconBlockRoot());
     checkState(
         blinded.hashTreeRoot().equals(hashTreeRoot()),
-        "Blinded root does not match the unblinded root");
+        "The blinded root does not match the unblinded root");
     return blinded;
   }
 }

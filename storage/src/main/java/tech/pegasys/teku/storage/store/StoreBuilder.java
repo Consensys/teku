@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
@@ -43,6 +44,8 @@ public class StoreBuilder {
   private Spec spec;
   private BlockProvider blockProvider;
   private ExecutionPayloadProvider executionPayloadProvider = ExecutionPayloadProvider.NOOP;
+  private BlindedExecutionPayloadProvider blindedExecutionPayloadProvider =
+      BlindedExecutionPayloadProvider.NOOP;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private Optional<Bytes32> latestCanonicalBlockRoot;
@@ -70,23 +73,24 @@ public class StoreBuilder {
   public static OnDiskStoreData forkChoiceStoreBuilder(
       final Spec spec, final AnchorPoint anchor, final UInt64 currentTime) {
     final UInt64 genesisTime = anchor.getState().getGenesisTime();
-    final UInt64 slot = anchor.getState().getSlot();
-    final UInt64 time = spec.computeTimeAtSlot(slot, genesisTime).max(currentTime);
+    final UInt64 blockSlot = anchor.getBlockSlot();
+    final UInt64 blockTime = spec.computeTimeAtSlot(blockSlot, genesisTime).max(currentTime);
 
     Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
     blockInfo.put(
         anchor.getRoot(),
         new StoredBlockMetadata(
-            slot,
+            blockSlot,
             anchor.getRoot(),
             anchor.getParentRoot(),
             anchor.getState().hashTreeRoot(),
             anchor.getExecutionBlockNumber(),
             anchor.getExecutionBlockHash(),
-            Optional.of(spec.calculateBlockCheckpoints(anchor.getState()))));
+            Optional.of(spec.calculateBlockCheckpoints(anchor.getState())),
+            StoredBlockMetadata.extractGloasForkChoiceRebuildData(anchor)));
 
     return new OnDiskStoreData(
-        time,
+        blockTime,
         Optional.of(anchor.getCheckpoint()),
         genesisTime,
         anchor,
@@ -123,6 +127,7 @@ public class StoreBuilder {
           spec,
           blockProvider,
           executionPayloadProvider,
+          blindedExecutionPayloadProvider,
           stateAndBlockProvider,
           earliestBlobSidecarSlotProvider,
           anchor,
@@ -143,6 +148,7 @@ public class StoreBuilder {
         spec,
         blockProvider,
         executionPayloadProvider,
+        blindedExecutionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         anchor,
@@ -207,6 +213,13 @@ public class StoreBuilder {
       final ExecutionPayloadProvider executionPayloadProvider) {
     checkNotNull(executionPayloadProvider);
     this.executionPayloadProvider = executionPayloadProvider;
+    return this;
+  }
+
+  public StoreBuilder blindedExecutionPayloadProvider(
+      final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider) {
+    checkNotNull(blindedExecutionPayloadProvider);
+    this.blindedExecutionPayloadProvider = blindedExecutionPayloadProvider;
     return this;
   }
 

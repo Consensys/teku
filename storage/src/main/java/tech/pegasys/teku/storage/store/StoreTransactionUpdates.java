@@ -27,11 +27,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransactionUpdates {
   private final StoreTransaction tx;
@@ -52,7 +52,7 @@ class StoreTransactionUpdates {
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
   private final boolean executionPayloadEnvelopesEnabled;
-  private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads;
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads;
 
   StoreTransactionUpdates(
@@ -72,7 +72,7 @@ class StoreTransactionUpdates {
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled,
       final boolean executionPayloadEnvelopesEnabled,
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads,
+      final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads,
       final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
@@ -166,15 +166,20 @@ class StoreTransactionUpdates {
       store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
 
-    store.cacheExecutionPayloads(hotExecutionPayloads);
+    store.cacheExecutionPayloads(
+        Maps.transformValues(hotExecutionPayloads, ExecutionPayloadUpdate::executionPayload));
 
+    final Optional<BlockAndCheckpoints> finalizedExecutionPayloadBoundaryBlock =
+        finalizedChainData.flatMap(FinalizedChainData::getFinalizedExecutionPayloadBoundaryBlock);
     store
         .getForkChoiceStrategy()
         .applyUpdate(
             hotBlocks.values(),
+            hotExecutionPayloads,
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
-            store.getFinalizedCheckpoint());
+            store.getFinalizedCheckpoint(),
+            finalizedExecutionPayloadBoundaryBlock);
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

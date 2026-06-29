@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -818,21 +818,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.isEmpty(),
                 "process_voluntary_exits: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
-
-            initiateExit(state, signedExit, validatorExitContextSupplier);
+            // - Run initiate_validator_exit(state, exit.validator_index)
+            beaconStateMutators.initiateValidatorExit(
+                state,
+                signedExit.getMessage().getValidatorIndex().intValue(),
+                validatorExitContextSupplier);
           }
         });
-  }
-
-  protected void initiateExit(
-      final MutableBeaconState state,
-      final SignedVoluntaryExit signedExit,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // - Run initiate_validator_exit(state, exit.validator_index)
-    beaconStateMutators.initiateValidatorExit(
-        state,
-        signedExit.getMessage().getValidatorIndex().intValue(),
-        validatorExitContextSupplier);
   }
 
   protected BlockValidationResult verifyVoluntaryExits(
@@ -866,7 +858,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   public interface IndexedAttestationProvider {
 
-    IndexedAttestation getIndexedAttestation(final Attestation attestation);
+    IndexedAttestationLight getIndexedAttestation(final Attestation attestation);
   }
 
   protected interface BlockProcessingAction {

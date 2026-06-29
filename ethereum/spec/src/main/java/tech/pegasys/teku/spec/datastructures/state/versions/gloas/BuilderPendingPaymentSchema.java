@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.versions.gloas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWAL_SCHEMA;
 
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -23,18 +23,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BuilderPendingPaymentSchema
-    extends ContainerSchema2<BuilderPendingPayment, SszUInt64, BuilderPendingWithdrawal> {
+    extends ContainerSchema3<
+        BuilderPendingPayment, SszUInt64, BuilderPendingWithdrawal, SszUInt64> {
 
   public BuilderPendingPaymentSchema(final SchemaRegistry schemaRegistry) {
     super(
         "BuilderPendingPayment",
         namedSchema("weight", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("withdrawal", schemaRegistry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA)));
+        namedSchema("withdrawal", schemaRegistry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA)),
+        namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   public BuilderPendingPayment create(
-      final UInt64 weight, final BuilderPendingWithdrawal withdrawal) {
-    return new BuilderPendingPayment(this, weight, withdrawal);
+      final UInt64 weight, final BuilderPendingWithdrawal withdrawal, final UInt64 proposerIndex) {
+    return new BuilderPendingPayment(this, weight, withdrawal, proposerIndex);
   }
 
   @Override

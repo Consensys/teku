@@ -1,5 +1,13 @@
 name: Check Spec References
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'specrefs/**'
+      - 'build.gradle'
+  pull_request:
+    paths:
+      - 'specrefs/**'
+      - 'build.gradle'
 
 permissions:
   contents: read
@@ -10,7 +18,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
     - name: Check version consistency
       run: |

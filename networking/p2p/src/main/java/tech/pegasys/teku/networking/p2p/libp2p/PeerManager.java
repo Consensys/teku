@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.peer.Transport;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class PeerManager implements ConnectionHandler {
@@ -85,14 +87,29 @@ public class PeerManager implements ConnectionHandler {
         metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.LIBP2P,
             "peers_direction_current",
-            "The number of peers by direction including inbound and outbound",
-            "direction");
-    peerDirectionLabelledGauge.labels(
-        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedRemotely).count(),
-        "inbound");
-    peerDirectionLabelledGauge.labels(
-        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedLocally).count(),
-        "outbound");
+            "The number of peers by direction and transport",
+            "direction",
+            "transport");
+    registerPeersByDirectionAndTransport(
+        peerDirectionLabelledGauge, "inbound", Peer::connectionInitiatedRemotely);
+    registerPeersByDirectionAndTransport(
+        peerDirectionLabelledGauge, "outbound", Peer::connectionInitiatedLocally);
+  }
+
+  private void registerPeersByDirectionAndTransport(
+      final LabelledSuppliedMetric gauge,
+      final String direction,
+      final Predicate<Peer> directionPredicate) {
+    for (final Transport transport : List.of(Transport.TCP, Transport.QUIC)) {
+      gauge.labels(
+          () ->
+              connectedPeerMap.values().stream()
+                  .filter(directionPredicate)
+                  .filter(peer -> peer.getTransport() == transport)
+                  .count(),
+          direction,
+          transport.getLabel());
+    }
   }
 
   @Override
@@ -167,10 +184,14 @@ public class PeerManager implements ConnectionHandler {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
       LOG.debug("onConnectedPeer() {}", peer.getId());
-      peerHandlers.forEach(h -> h.onConnect(peer));
-      connectSubscribers.forEach(c -> c.onConnected(peer));
       peer.subscribeDisconnect(
           (reason, locallyInitiated) -> onDisconnectedPeer(peer, reason, locallyInitiated));
+      // Eth2PeerManager installs the clean-disconnect handler used to send goodbye messages.
+      peerHandlers.forEach(h -> h.onConnect(peer));
+      if (rejectUnsuitableInboundConnection(peer)) {
+        return;
+      }
+      connectSubscribers.forEach(c -> c.onConnected(peer));
     } else {
       LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
       peer.disconnectImmediately(Optional.of(DisconnectReason.DUPLICATE_CONNECTION), true);
@@ -186,6 +207,21 @@ public class PeerManager implements ConnectionHandler {
       reputationManager.reportDisconnection(peer.getAddress(), reason, locallyInitiated);
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
+  }
+
+  private boolean rejectUnsuitableInboundConnection(final Peer peer) {
+    if (peer.connectionInitiatedLocally()) {
+      return false;
+    }
+    return reputationManager
+        .getInboundConnectionRejectionReason(peer.getAddress())
+        .map(
+            reason -> {
+              LOG.debug("Rejecting inbound connection from {} because {}", peer.getId(), reason);
+              peer.disconnectCleanly(reason).finishTrace(LOG);
+              return true;
+            })
+        .orElse(false);
   }
 
   public Stream<Peer> streamPeers() {

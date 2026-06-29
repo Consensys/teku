@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 public abstract class AbstractDataColumnSidecarValidator {
 
@@ -32,17 +32,17 @@ public abstract class AbstractDataColumnSidecarValidator {
   private final Spec spec;
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
   final Peer peer;
-  final CombinedChainDataClient combinedChainDataClient;
+  final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
 
   public AbstractDataColumnSidecarValidator(
       final Peer peer,
       final Spec spec,
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
     this.peer = peer;
     this.spec = spec;
     this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
-    this.combinedChainDataClient = combinedChainDataClient;
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
   }
 
   boolean verifyValidity(final DataColumnSidecar dataColumnSidecar) {
@@ -55,8 +55,8 @@ public abstract class AbstractDataColumnSidecarValidator {
       final DataColumnSidecar dataColumnSidecar) {
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
-    return dataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(
-        dataColumnSidecar, combinedChainDataClient::getBlockByBlockRoot);
+    return dataColumnSidecarUtil.validateAndVerifyKzgProofs(
+        dataColumnSidecar, blobKzgCommitmentsProvider::getBlobKzgCommitments);
   }
 
   boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {

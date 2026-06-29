@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -162,11 +163,17 @@ public interface BlockProcessor {
       MutableBeaconState state, SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException;
 
+  void processParentExecutionPayload(
+      MutableBeaconState state,
+      BeaconBlock beaconBlock,
+      Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException;
+
   void processWithdrawals(
       MutableBeaconState state, Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException;
 
-  void processExecutionPayloadBid(MutableBeaconState state, BeaconBlock beaconBlock)
+  void processExecutionPayloadBid(MutableBeaconState state, SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException;
 
   void processPayloadAttestations(

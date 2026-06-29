@@ -133,8 +133,6 @@ public class SystemMetricData extends BaseMetricData {
     String currentVersionInfo = VersionProvider.VERSION;
     if (currentVersionInfo.contains("linux")) {
       return "lin";
-    } else if (currentVersionInfo.contains("windows")) {
-      return "win";
     } else if (currentVersionInfo.contains("osx")) {
       return "mac";
     }

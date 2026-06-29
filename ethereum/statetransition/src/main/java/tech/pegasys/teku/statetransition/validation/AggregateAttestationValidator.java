@@ -20,6 +20,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -50,7 +51,7 @@ import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
-      LimitedSet.createSynchronized(VALID_AGGREGATE_SET_SIZE);
+      LimitedSet.createSynchronizedLRU(VALID_AGGREGATE_SET_SIZE);
   private final SeenAggregatesCache<DataHashAndCommitteeIndex> seenAggregationBits =
       new SeenAggregatesCache<>(VALID_ATTESTATION_DATA_SET_SIZE);
   private final AttestationValidator attestationValidator;
@@ -78,6 +79,15 @@ public class AggregateAttestationValidator {
     final Attestation aggregate = aggregateAndProof.getAggregate();
     final UInt64 aggregateSlot = aggregate.getData().getSlot();
     final SpecVersion specVersion = spec.atSlot(aggregateSlot);
+
+    if (aggregate.requiresCommitteeBits()) {
+      // [REJECT] len(committee_indices) == 1, where committee_indices =
+      // get_committee_indices(aggregate)
+      if (aggregate.getCommitteeBitsRequired().getBitCount() != 1) {
+        return completedFuture(
+            reject("Rejecting attestation because committee bits count is not 1"));
+      }
+    }
 
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
@@ -143,7 +153,7 @@ public class AggregateAttestationValidator {
               final BeaconState state = maybeState.get();
 
               // [REJECT] The aggregate attestation has participants
-              final IntList attestingIndices = spec.getAttestingIndices(state, aggregate);
+              final List<UInt64> attestingIndices = spec.getAttestingIndices(state, aggregate);
               if (attestingIndices.isEmpty()) {
                 return SafeFuture.completedFuture(
                     reject(

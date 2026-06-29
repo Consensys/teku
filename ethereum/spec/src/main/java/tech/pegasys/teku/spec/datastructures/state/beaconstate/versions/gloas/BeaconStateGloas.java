@@ -73,14 +73,14 @@ public interface BeaconStateGloas extends BeaconStateFulu {
   static void describeCustomGloasFields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateGloas state) {
     BeaconStateFulu.describeCustomFuluFields(stringBuilder, state);
-    stringBuilder.add("latest_execution_payload_bid", state.getLatestExecutionPayloadBid());
+    stringBuilder.add("latest_block_hash", state.getLatestBlockHash());
     addItems(stringBuilder, "builders", state.getBuilders());
     stringBuilder.add("next_withdrawal_builder_index", state.getNextWithdrawalBuilderIndex());
     addItems(
         stringBuilder, "execution_payload_availability", state.getExecutionPayloadAvailability());
     addItems(stringBuilder, "builder_pending_payments", state.getBuilderPendingPayments());
     addItems(stringBuilder, "builder_pending_withdrawals", state.getBuilderPendingWithdrawals());
-    stringBuilder.add("latest_block_hash", state.getLatestBlockHash());
+    stringBuilder.add("latest_execution_payload_bid", state.getLatestExecutionPayloadBid());
     stringBuilder.add("payload_expected_withdrawals", state.getPayloadExpectedWithdrawals());
     stringBuilder.add("ptc_window", state.getPtcWindow());
   }

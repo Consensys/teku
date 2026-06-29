@@ -113,6 +113,7 @@ public class BeaconBlockBuilder {
     if (attestations == null) {
       attestations = bodySchema.getAttestationsSchema().getDefault();
     }
+    final UInt64 blockSlot = slot != null ? slot : dataStructureUtil.randomUInt64();
     return bodySchema
         .createBlockBody(
             builder -> {
@@ -138,7 +139,7 @@ public class BeaconBlockBuilder {
                 builder.blobKzgCommitments(dataStructureUtil.randomBlobKzgCommitments());
               }
               if (builder.supportsExecutionRequests()) {
-                builder.executionRequests(dataStructureUtil.randomExecutionRequests());
+                builder.executionRequests(dataStructureUtil.randomExecutionRequests(blockSlot));
               }
               return SafeFuture.COMPLETE;
             })
@@ -147,7 +148,7 @@ public class BeaconBlockBuilder {
                 spec.getSchemaDefinitions()
                     .getBeaconBlockSchema()
                     .create(
-                        slot != null ? slot : dataStructureUtil.randomUInt64(),
+                        blockSlot,
                         dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32(),

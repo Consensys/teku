@@ -4,15 +4,14 @@ name: ci
 ## RUNNERS
 # https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 # ubuntu-24.04 = 4cpu, 16GB
-# ubuntu-latest-128= 32, 128GB
-# windows-2025 = 4 cpu, 16GB
+# ubuntu-latest-128 = 32, 128GB
 # ubuntu-24.04-arm = 4cpu, 16GB
 # macos-13 = 4cpu, 14GB
 # macos-15 = 3cpu(M1), 7GB
-# gha-runner-scale-set-ubuntu-22.04-amd64-med   = 4 , 16G 
-# gha-runner-scale-set-ubuntu-22.04-amd64-large = 8 , 32G 
-# gha-runner-scale-set-ubuntu-22.04-amd64-xl = 16 , 64G 
-# gha-runner-scale-set-ubuntu-22.04-amd64-xxl = 32 , 128G 
+# gha-runner-scale-set-ubuntu-24-amd64-med   = 4 , 16G
+# gha-runner-scale-set-ubuntu-24-amd64-large = 8 , 32G
+# gha-runner-scale-set-ubuntu-24-amd64-xl = 16 , 64G
+# gha-runner-scale-set-ubuntu-24-amd64-xxl = 32 , 128G
 
 on:
   push:
@@ -23,6 +22,8 @@ on:
   pull_request:
     branches:
       - master
+      - '**prototype**'
+      - '**devnet**'
   workflow_dispatch:
     inputs:
       include_hash_in_docker:
@@ -52,11 +53,119 @@ permissions: read-all
 
 jobs:
 
+  # ============================================================================
+  # ** DOCS-ONLY SHORT-CIRCUIT (the `changes` gate) **
+  # ----------------------------------------------------------------------------
+  # WHAT: Skip the heavy CI pipeline when a PR/push changes ONLY docs-type files
+  # (see the path list in the `changes` job below), while still satisfying the
+  # required status checks on branch protection.
+  #
+  # HOW: `changes` diffs the PR/push and sets the output `code`, which every
+  # gated job reads as needs.changes.outputs.code:
+  #
+  #     code == "true"   ->  FULL pipeline runs  (all gated jobs execute)
+  #     code == "false"  ->  heavy jobs are SKIPPED  (docs-only short-circuit);
+  #                          the test aggregators report success, so the required
+  #                          checks (spotless, moduleChecks, assemble, unitTests,
+  #                          integrationTests, propertyTests, referenceTests) go
+  #                          green in seconds.
+  #
+  # code is "true" when any non-doc file changed, OR it's a tag build, OR a manual
+  # (workflow_dispatch) run. It is "false" only for a docs-only push/PR.
+  #
+  # WHY ONE GATE (and not two workflows): this replaces the old
+  # ci.yml + ci-skipped.yml pair. On a mixed (code + docs) PR BOTH of those fired,
+  # emitting two status checks per required name and racing -- the no-op stub could
+  # flip auto-merge green before the real CI finished. One gate => one check per
+  # name => no race.
+  #
+  # IMPORTANT: ci.yml must NOT use `paths-ignore`. A job skipped via `if:` counts
+  # as a PASSING required check, but a whole workflow skipped by a path filter
+  # leaves its required checks stuck on "Expected" forever and blocks merge.
+  # ============================================================================
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+      - name: Detect non-doc changes
+        id: detect
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+          FORCE_FULL_CI: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -uo pipefail
+
+          emit() { echo "code=$1" >> "$GITHUB_OUTPUT"; echo "Result: code=$1"; exit 0; }
+
+          is_doc_path() {
+            local f="$1"
+            # List of doc-classified changes
+            case "$f" in
+              *.md | \
+              CODEOWNERS | \
+              .gitignore | \
+              .gitattributes | \
+              .codespell/* | \
+              specrefs/* | \
+              mlc_config.json) return 0 ;;
+              LICENSE* | \
+              NOTICE* | \
+              CHANGELOG*) [[ "$f" != */* ]] ;;
+              *) return 1 ;;
+            esac
+          }
+
+          if [ "$FORCE_FULL_CI" = "true" ]; then
+            echo "Tag or manual run; running full pipeline."
+            emit true
+          fi
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE_SHA"
+            head="$PR_HEAD_SHA"
+            diff_args=("$base...$head")
+          else
+            base="$BEFORE_SHA"
+            head="$CURRENT_SHA"
+            diff_args=("$base" "$head")
+          fi
+          # Without a usable base (new branch/tag, force-push) we cannot diff: run full.
+          if [ -z "${base:-}" ] || [ -z "${head:-}" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No usable base/head ('${base:-}'/'${head:-}'); running full pipeline."
+            emit true
+          fi
+          if ! changed="$(git diff --name-only "${diff_args[@]}")"; then
+            echo "git diff failed for base '$base' and head '$head'; running full pipeline."
+            emit true
+          fi
+          echo "Changed files:"
+          echo "$changed"
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! is_doc_path "$f"; then
+              echo "Non-doc file changed: $f"
+              emit true
+            fi
+          done <<< "$changed"
+          emit false
+
   spotless:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -66,10 +175,12 @@ jobs:
           ./gradlew spotlessCheck
 
   moduleChecks:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -78,45 +189,17 @@ jobs:
         run: |
           ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
-  windowsBuild:
-    continue-on-error: true
-    needs: [spotless, moduleChecks ]
-    runs-on: windows-2022
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          submodules: 'recursive'
-      - name: Prepare
-        uses: ./.github/actions/prepare-windows
-      - name: Build
-        shell: powershell
-        run: |
-          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
-          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
-      - name: Collect test results
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Force build\test-results
-          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
-      - name: Publish Windows Test Results and Reports
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          if-no-files-found: ignore
-          retention-days: 3
-          path: |
-            build/test-results/
-
   assemble:
-    runs-on: ubuntu-24.04
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    # assemble is in our critical path so we want it to finish as quick as possible
+    runs-on: ubuntu-latest-128
     outputs:
       workflow-run-id: ${{ steps.workflowdetails.outputs.run_id }}
       publish-version: ${{ steps.projectDetails.outputs.publish-version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: get workflow_details
@@ -126,31 +209,31 @@ jobs:
           echo "run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
           echo "vcs_ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+      - name: Prepare
+        uses: ./.github/actions/prepare
       - name: Determine Teku version
         id: projectDetails
         uses: ./.github/actions/get-project-version
-      - name: Prepare
-        uses: ./.github/actions/prepare
       - name: Assemble
-        shell: bash      
+        shell: bash
         run: |
-          ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
+          ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava resolveCiJacocoDependencies assemble
       - name: Upload distribution tar
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: distribution-tar
           path: |
             build/distributions/*.tar.gz
           retention-days: 14
       - name: Upload distribution zip
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: distribution-zip
           path: |
             build/distributions/*.zip
-          retention-days: 7          
+          retention-days: 7
       - name: Upload workspace build
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: assemble-output
           path: |
@@ -165,19 +248,19 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: assemble-output
-          merge-multiple: true            
+          merge-multiple: true
       - name: Build runnable Teku binaries
         shell: bash
         run: |
@@ -199,7 +282,7 @@ jobs:
           kill $TEKU_PID
           exit $EXIT_CODE
       - name: Upload openapi spec
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: openapi-spec
           path: |
@@ -217,13 +300,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download openapi spec
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: openapi-spec
           path: ${{ github.workspace }}/.openapidoc/spec
@@ -231,10 +314,10 @@ jobs:
         run: |
           ls -R .openapidoc/spec/
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
-          cache-dependency-path: .openapidoc/package-lock.json 
+          cache-dependency-path: .openapidoc/package-lock.json
           cache: 'npm'
       - name: Setup Git identity
         run: |
@@ -251,7 +334,7 @@ jobs:
           OA_GH_PAGES_BRANCH="gh-pages" \
           node publish.js
 
-  ## Tests 
+  ## Tests
   unitTests:
     needs: assemble
     permissions:
@@ -265,32 +348,37 @@ jobs:
       gradle_task: test
       src_pattern: "*/src/test/java/*"
       src_root: "src/test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      runner: "gha-runner-scale-set-ubuntu-24-amd64-large"
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   unitTestsResult:
+    name: unitTests
     runs-on: ubuntu-24.04
-    needs: unitTests
+    needs: [changes, unitTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; unitTests not required."
+            exit 0
+          fi
           echo "unitTests result: ${{ needs.unitTests.result }}"
           if [ "${{ needs.unitTests.result }}" != "success" ]; then
             echo "❌ One or more unitTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All unitTests matrix jobs passed."   
+          echo "✅ All unitTests matrix jobs passed."
 
   unitTestsReport:
     runs-on: ubuntu-24.04
-    needs: unitTests
-    if: always()
+    needs: [changes, unitTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -310,15 +398,20 @@ jobs:
       gradle_task: integrationTest
       src_pattern: "*/src/integration-test/java/*"
       src_root: "src/integration-test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      runner: "gha-runner-scale-set-ubuntu-24-amd64-large"
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   integrationTestsResult:
+    name: integrationTests
     runs-on: ubuntu-24.04
-    needs: integrationTests
+    needs: [changes, integrationTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; integrationTests not required."
+            exit 0
+          fi
           echo "integrationTests result: ${{ needs.integrationTests.result }}"
           if [ "${{ needs.integrationTests.result }}" != "success" ]; then
             echo "❌ One or more integrationTests matrix jobs failed."
@@ -328,14 +421,14 @@ jobs:
 
   integrationTestsReport:
     runs-on: ubuntu-24.04
-    needs: integrationTests
-    if: always()
+    needs: [changes, integrationTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -355,35 +448,40 @@ jobs:
       gradle_task: propertyTest
       src_pattern: "*/src/property-test/java/*"
       src_root: "src/property-test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+      runner: "gha-runner-scale-set-ubuntu-24-amd64-xl"
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   propertyTestsResult:
+    name: propertyTests
     runs-on: ubuntu-24.04
-    needs: propertyTests
+    needs: [changes, propertyTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; propertyTests not required."
+            exit 0
+          fi
           echo "propertyTests result: ${{ needs.propertyTests.result }}"
           if [ "${{ needs.propertyTests.result }}" != "success" ]; then
             echo "❌ One or more propertyTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All propertyTests matrix jobs passed."    
+          echo "✅ All propertyTests matrix jobs passed."
 
   propertyTestsReport:
     runs-on: ubuntu-24.04
-    needs: propertyTests
-    if: always()
+    needs: [changes, propertyTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
-        if: always()       
+        if: always()
         with:
           stage_key: property
 
@@ -404,57 +502,77 @@ jobs:
       gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   acceptanceTestsResult:
+    name: acceptanceTests
     runs-on: ubuntu-24.04
-    needs: acceptanceTests
+    needs: [changes, acceptanceTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; acceptanceTests not required."
+            exit 0
+          fi
           echo "acceptanceTests result: ${{ needs.acceptanceTests.result }}"
           if [ "${{ needs.acceptanceTests.result }}" != "success" ]; then
             echo "❌ One or more acceptanceTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All acceptanceTests matrix jobs passed."    
+          echo "✅ All acceptanceTests matrix jobs passed."
 
   acceptanceTestsReport:
     runs-on: ubuntu-24.04
-    needs: acceptanceTests
-    if: always()
+    needs: [changes, acceptanceTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
-        if: always()          
+        if: always()
         with:
           stage_key: acceptance
 
   referenceTestsPrep:
     needs: assemble
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-128
+    outputs:
+      cache-key: ${{ steps.ref-cache-key.outputs.key }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: assemble-output
           merge-multiple: true
-          path: ${{ github.workspace }}          
-      - uses: actions/cache/restore@v5
+          path: ${{ github.workspace }}
+      - name: Compute reference test cache key
+        id: ref-cache-key
+        shell: bash
+        run: |
+          # Derive the cache key from the refTestVersion definition only, so unrelated
+          # build.gradle edits don't bust the consensus-spec-tests fixtures cache.
+          LINE=$(grep -E '^def refTestVersion' build.gradle)
+          if [ -z "$LINE" ]; then
+            echo "Could not find refTestVersion definition in build.gradle" >&2
+            exit 1
+          fi
+          HASH=$(echo -n "$LINE" | sha256sum | cut -c1-16)
+          echo "key=reftests-$HASH" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+          key: ${{ steps.ref-cache-key.outputs.key }}
       - shell: bash
         run: |
           ls -R ./eth-reference-tests/
@@ -468,18 +586,18 @@ jobs:
       - name: CompileReferenceTests
         shell: bash
         run: |
-          ./gradlew --no-daemon --parallel compileReferenceTestJava
-      - name: Caching reference tests 
-        uses: actions/cache/save@v5
+          ./gradlew --no-daemon --parallel compileReferenceTestJava resolveCiJacocoDependencies
+      - name: Caching reference tests
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+          key: ${{ steps.ref-cache-key.outputs.key }}
       - name: Compress reftests
         shell: bash
         run: |
           tar -cf reftests.tar ./eth-reference-tests/
       - name: Upload reftests
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: reftests
           path: reftests.tar
@@ -487,7 +605,7 @@ jobs:
 
   referenceTests:
     needs: referenceTestsPrep
-    runs-on: "gha-runner-scale-set-ubuntu-22.04-amd64-xxl"
+    runs-on: "gha-runner-scale-set-ubuntu-24-amd64-xxl"
     strategy:
       fail-fast: false
       matrix:
@@ -495,13 +613,15 @@ jobs:
         total: [8]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
+        with:
+          gradle-cache-read-only: 'true'
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -509,12 +629,12 @@ jobs:
           name: assemble-output
           merge-multiple: true
           path: ${{ github.workspace }}
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+          key: ${{ needs.referenceTestsPrep.outputs.cache-key }}
       - name: Download reftests
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -535,7 +655,8 @@ jobs:
           CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
             | sed "s@.*/$SRC_ROOT/@@" \
             | sed 's@/@.@g' \
-            | sed 's/.\{5\}$//')
+            | sed 's/.\{5\}$//' \
+            | sort)
           # 2) Modulo split
           CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
             | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
@@ -558,7 +679,7 @@ jobs:
             referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
       - name: Upload JUnit XML + HTML for ReferenceTests
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: reference-reports-${{ matrix.shard }}
           path: |
@@ -568,51 +689,41 @@ jobs:
           retention-days: 1
 
   referenceTestsResult:
+    name: referenceTests
     runs-on: ubuntu-24.04
-    needs: referenceTests
+    needs: [changes, referenceTests]
     if: always()
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" = "success" ] && [ "${{ needs.changes.outputs.code }}" = "false" ]; then
+            echo "⏭️ Docs-only change; referenceTests not required."
+            exit 0
+          fi
           echo "referenceTests result: ${{ needs.referenceTests.result }}"
           if [ "${{ needs.referenceTests.result }}" != "success" ]; then
             echo "❌ One or more referenceTests matrix jobs failed."
             exit 1
           fi
-          echo "✅ All referenceTests matrix jobs passed."    
+          echo "✅ All referenceTests matrix jobs passed."
 
   referenceTestsReport:
     runs-on: ubuntu-24.04
-    needs: referenceTests
-    if: always()
+    needs: [changes, referenceTests]
+    if: always() && needs.changes.outputs.code == 'true'
     permissions:
       contents: read
       actions: read
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
-        if: always()    
+        if: always()
         with:
           stage_key: reference
 
   # DockerTags
-  # everything is a standard develop-jdk25/21; but we also add 'develop' to develop-jdk21
-  # develop = develop-jdk21
-  # develop-jdk25
-  publishDockerJDK21:
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
-    permissions:
-      actions: read
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/publish-docker.yml
-    with:
-      assemble_run_id: ${{ github.run_id }}
-      jdk_version: jdk21
-      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
-    secrets: inherit
+  # develop = develop-jdk25
 
   publishDockerJDK25:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
@@ -625,6 +736,20 @@ jobs:
     with:
       assemble_run_id: ${{ github.run_id }}
       jdk_version: jdk25
+      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+    secrets: inherit
+
+  publishDockerJDK26:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      jdk_version: jdk26
       include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
     secrets: inherit
 

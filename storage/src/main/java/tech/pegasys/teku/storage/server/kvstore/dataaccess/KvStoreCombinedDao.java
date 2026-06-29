@@ -192,13 +192,16 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
-  Optional<UInt64> getEarliestDataSidecarColumnSlot();
-
   Optional<UInt64> getEarliestAvailableDataColumnSlot();
+
+  Optional<UInt64> getLastDataColumnSidecarPrunedSlot();
 
   Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
   Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
+
+  /** Triggers a full, blocking compaction of the underlying storage to reclaim freed space. */
+  void compact();
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -310,6 +313,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void setEarliestBlockSlot(UInt64 slot);
 
     void setEarliestAvailableDataColumnSlot(UInt64 slot);
+
+    void setLastDataColumnSidecarPrunedSlot(UInt64 slot);
 
     void deleteEarliestBlockSlot();
 

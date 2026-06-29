@@ -21,9 +21,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public interface RecentExecutionPayloadsFetcher
     extends ServiceFacade, ReceivedExecutionPayloadEventsChannel {
@@ -55,8 +58,13 @@ public interface RecentExecutionPayloadsFetcher
         }
 
         @Override
-        public void onExecutionPayloadImported(
+        public void onExecutionPayloadValidated(
             final SignedExecutionPayloadEnvelope executionPayload) {}
+
+        @Override
+        public void onExecutionPayloadImported(
+            final SignedExecutionPayloadEnvelope executionPayload,
+            final boolean executionOptimistic) {}
       };
 
   static RecentExecutionPayloadsFetcher create(
@@ -64,12 +72,19 @@ public interface RecentExecutionPayloadsFetcher
       final AsyncRunner asyncRunner,
       final ForwardSyncService forwardSyncService,
       final FetchTaskFactory fetchTaskFactory,
-      final ExecutionPayloadManager executionPayloadManager) {
+      final ExecutionPayloadManager executionPayloadManager,
+      final PayloadAttestationPool payloadAttestationPool,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool) {
     final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher;
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       recentExecutionPayloadsFetcher =
           RecentExecutionPayloadsFetchService.create(
-              asyncRunner, forwardSyncService, fetchTaskFactory, executionPayloadManager);
+              asyncRunner,
+              forwardSyncService,
+              fetchTaskFactory,
+              executionPayloadManager,
+              payloadAttestationPool,
+              pendingPayloadAttestationsPool);
     } else {
       recentExecutionPayloadsFetcher = RecentExecutionPayloadsFetcher.NOOP;
     }

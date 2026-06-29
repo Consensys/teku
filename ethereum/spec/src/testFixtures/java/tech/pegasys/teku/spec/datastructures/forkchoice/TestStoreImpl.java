@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
@@ -257,6 +258,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(
+        getExecutionPayloadIfAvailable(blockRoot)
+            .map(executionPayload -> executionPayload.blind(spec)));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
@@ -279,13 +288,23 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public boolean isHeadWeak(final Bytes32 root) {
-    return false;
+  public Optional<BeaconState> getJustifiedStateIfAvailable() {
+    return Optional.ofNullable(checkpointStates.get(justifiedCheckpoint));
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    return false;
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return Optional.ofNullable(checkpointStates.get(checkpoint));
+  }
+
+  @Override
+  public UInt64 getReorgThreshold() {
+    return UInt64.ZERO;
+  }
+
+  @Override
+  public UInt64 getParentThreshold() {
+    return UInt64.ZERO;
   }
 
   @Override
@@ -326,9 +345,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
-    final Bytes32 beaconBlockRoot = executionPayload.getBeaconBlockRoot();
-    executionPayloads.put(beaconBlockRoot, executionPayload);
+  public void putExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    executionPayloads.put(executionPayload.getBeaconBlockRoot(), executionPayload);
   }
 
   @Override
@@ -409,7 +428,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public void commit() {}
 
   @Override
-  public Bytes32 applyForkChoiceScoreChanges(
+  public SlotAndForkChoiceNode applyForkChoiceScoreChanges(
+      final UInt64 currentSlot,
       final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
@@ -444,6 +464,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     @Override
     public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
       return Optional.empty();
+    }
+
+    @Override
+    public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
+      throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -515,6 +540,18 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     @Override
     public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public boolean shouldExtendPayload(
+        final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
+      return store.getExecutionPayloadIfAvailable(slotAndBlockRoot.getBlockRoot()).isPresent();
+    }
+
+    @Override
+    public boolean shouldBuildOnFull(
+        final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
+      return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
     }
 
     @Override

@@ -2,16 +2,23 @@
 
 ## Upcoming Breaking Changes
 
- * Teku will be moving to Java JDK 25 in a future release.
-
 ## Current Releases
 
 ## Unreleased Changes
 
 ### Breaking Changes
 
+ * Dropped Windows support. Teku is no longer built, tested, or distributed for Windows. The `gradlew.bat` wrapper, Windows CI job, and Windows-specific native dependencies (LevelDB JNI) have been removed.
+
 ### Additions and Improvements
 
+- Added some extra fields to the peers output for beacon-apis #606. Consumers of the peers endpoint should be aware of this new optional data.
+- QUIC enabled by default (uses UDP port 9001 by default)
+- New Engine API client with better performance enabled by default
+- QUIC port command arguments `p2p-quic-port` (default 9001) and `p2p-quic-port-ipv6` (default 9091) were unhidden. Users will need to update firewall rules to allow incoming connections for QUIC (UDP).
+- QUIC advertised-port command arguments `p2p-advertised-quic-port` and `p2p-advertised-quic-port-ipv6` have been unhidden.
+
 ### Bug Fixes
- - Fixed a scenario where keys added via validator-api that rely on external signer are not slashing protected locally until the node is restarted. 
-   To work around this issue, users should either keep slashing protection enabled on the external signer or restart the node after calling the add api. 
+
+- Prevent RPC rate-limited peers from immediately reconnecting inbound.
+- Fixed missing `process_cpu_seconds_total` metric in the Docker images by adding the `jdk.management` module to the custom Java runtime.

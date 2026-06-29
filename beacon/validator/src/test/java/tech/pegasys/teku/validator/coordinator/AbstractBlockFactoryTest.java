@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
+import static tech.pegasys.teku.validator.coordinator.BlockProductionTestUtil.blockProductionContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -70,8 +71,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -91,13 +90,13 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -123,6 +122,8 @@ public abstract class AbstractBlockFactoryTest {
       mock(ExecutionLayerBlockProductionManager.class);
   protected final ExecutionPayloadBidManager executionPayloadBidManager =
       mock(ExecutionPayloadBidManager.class);
+  protected final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final PayloadAttestationPool payloadAttestationPool =
@@ -209,6 +210,9 @@ public abstract class AbstractBlockFactoryTest {
     when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
+    when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
+        .thenAnswer(
+            __ -> SafeFuture.completedFuture(dataStructureUtil.emptyExecutionRequests(newSlot)));
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -247,19 +251,22 @@ public abstract class AbstractBlockFactoryTest {
       blockProposerRewards = UInt64.ZERO;
     }
 
-    setupExecutionLayerBlockAndBlobsProduction(spec, blockExecutionValue);
+    setupExecutionLayerBlockAndBlobsProduction(
+        UInt64.valueOf(blockSlot), spec, dataStructureUtil, blockExecutionValue);
 
     executionPayloadBuilder.accept(blockSlotState);
 
     final BlockContainerAndMetaData blockContainerAndMetaData =
         safeJoin(
             blockFactory.createUnsignedBlock(
-                blockSlotState,
-                newSlot,
-                randaoReveal,
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP));
+                blockProductionContext(
+                    spec,
+                    newSlot,
+                    blockSlotState,
+                    randaoReveal,
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP)));
 
     final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
 
@@ -517,7 +524,11 @@ public abstract class AbstractBlockFactoryTest {
     return builderPayload;
   }
 
-  private void setupExecutionLayerBlockAndBlobsProduction(final Spec spec, final UInt256 value) {
+  private void setupExecutionLayerBlockAndBlobsProduction(
+      final UInt64 blockSlot,
+      final Spec spec,
+      final DataStructureUtil dataStructureUtil,
+      final UInt256 value) {
     // non-blinded
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
@@ -526,14 +537,13 @@ public abstract class AbstractBlockFactoryTest {
 
               if (blobsBundle.isPresent()) {
                 if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
-                  final ExecutionRequestsSchema executionRequestsSchema =
-                      SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
-                          .getExecutionRequestsSchema();
-                  final ExecutionRequests executionRequests =
-                      executionRequestsSchema.create(List.of(), List.of(), List.of());
                   getPayloadResponse =
                       new GetPayloadResponse(
-                          executionPayload, value, blobsBundle.get(), false, executionRequests);
+                          executionPayload,
+                          value,
+                          blobsBundle.get(),
+                          false,
+                          dataStructureUtil.emptyExecutionRequests(blockSlot));
                 } else {
                   getPayloadResponse =
                       new GetPayloadResponse(executionPayload, value, blobsBundle.get(), false);
@@ -562,12 +572,8 @@ public abstract class AbstractBlockFactoryTest {
                             builder.value(value);
                             builder.publicKey(BLSPublicKey.empty());
                             if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
-                              final ExecutionRequestsSchema executionRequestsSchema =
-                                  SchemaDefinitionsElectra.required(
-                                          spec.getGenesisSchemaDefinitions())
-                                      .getExecutionRequestsSchema();
                               builder.executionRequests(
-                                  executionRequestsSchema.create(List.of(), List.of(), List.of()));
+                                  dataStructureUtil.emptyExecutionRequests(blockSlot));
                             }
                           });
               final ExecutionPayloadResult executionPayloadResult =
@@ -578,15 +584,18 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // simulate a bid
-    when(executionPayloadBidManager.getBidForBlock(any(), any(), any()))
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any(), any()))
         .thenAnswer(
             args -> {
-              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(0));
-              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(1);
+              final Bytes32 parentRoot = args.getArgument(0);
+              final Bytes32 parentBlockHash = args.getArgument(1);
+              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(2));
+              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(3);
               // verify we pass the correct future to the bid manager
               assertThat(getPayloadResponseFuture)
                   .isEqualTo(
                       cachedExecutionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired());
+              assertThat(parentBlockHash).isEqualTo(executionPayload.getParentHash());
               final UInt64 slot = state.getSlot();
               final SchemaDefinitionsGloas schemaDefinitions =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
@@ -597,7 +606,7 @@ public abstract class AbstractBlockFactoryTest {
                       .getExecutionPayloadBidSchema()
                       .create(
                           executionPayload.getParentHash(),
-                          state.getLatestBlockHeader().getRoot(),
+                          parentRoot,
                           executionPayload.getBlockHash(),
                           executionPayload.getPrevRandao(),
                           executionPayload.getFeeRecipient(),
@@ -609,12 +618,12 @@ public abstract class AbstractBlockFactoryTest {
                           ZERO,
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
-                              .orElse(blobKzgCommitmentsSchema.of()));
+                              .orElse(blobKzgCommitmentsSchema.of()),
+                          dataStructureUtil.emptyExecutionRequests(slot).hashTreeRoot());
               return SafeFuture.completedFuture(
-                  Optional.of(
-                      schemaDefinitions
-                          .getSignedExecutionPayloadBidSchema()
-                          .create(executionPayloadBid, BLSSignature.infinity())));
+                  schemaDefinitions
+                      .getSignedExecutionPayloadBidSchema()
+                      .create(executionPayloadBid, BLSSignature.infinity()));
             });
     // simulate caching of the payload result
     when(executionLayer.getCachedPayloadResult(any()))

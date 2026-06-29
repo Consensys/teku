@@ -39,16 +39,13 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV6Test {
@@ -56,11 +53,6 @@ class EngineGetPayloadV6Test {
   private final Spec spec = TestSpecFactory.createMinimalGloas();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
-  private final ExecutionRequestsDataCodec executionRequestsDataCodec =
-      new ExecutionRequestsDataCodec(
-          SchemaDefinitionsFulu.required(
-                  spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions())
-              .getExecutionRequestsSchema());
   private EngineGetPayloadV6 jsonRpcMethod;
 
   @BeforeEach
@@ -129,15 +121,15 @@ class EngineGetPayloadV6Test {
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final UInt64 slot = UInt64.ONE;
     final ExecutionPayload executionPayloadFulu = dataStructureUtil.randomExecutionPayload(slot);
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests(slot);
     final List<Bytes> encodedExecutionRequests =
-        executionRequestsDataCodec.encode(executionRequests);
+        spec.getExecutionRequestsDataCodec(slot).encode(executionRequests);
     assertThat(executionPayloadFulu).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV6(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(
             dummySuccessfulResponse(
-                executionPayloadFulu, blockValue, blobsBundle, encodedExecutionRequests, slot));
+                executionPayloadFulu, blockValue, blobsBundle, encodedExecutionRequests));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -157,12 +149,11 @@ class EngineGetPayloadV6Test {
       final ExecutionPayload executionPayload,
       final UInt256 blockValue,
       final BlobsBundle blobsBundle,
-      final List<Bytes> encodedExecutionRequests,
-      final UInt64 slot) {
+      final List<Bytes> encodedExecutionRequests) {
     return SafeFuture.completedFuture(
         Response.fromPayloadReceivedAsJson(
             new GetPayloadV6Response(
-                ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload, slot),
+                ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload),
                 blockValue,
                 BlobsBundleV2.fromInternalBlobsBundle(blobsBundle),
                 false,

@@ -61,7 +61,6 @@ public class ReferenceTestFinder {
               if (!testsPath.toFile().exists()) {
                 return Stream.empty();
               }
-
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
@@ -71,11 +70,12 @@ public class ReferenceTestFinder {
                       new PyspecTestFinder(
                           List.of(),
                           List.of(
-                              // TODO-GLOAS: Limit what tests we run for Gloas while it is
-                              // under development. This is temporary and should be removed once we
-                              // are up-to-date with Gloas specs (see
-                              // https://github.com/Consensys/teku-internal/issues/221)
-                              "gloas - mainnet - fork_choice", "gloas - minimal - fork_choice")),
+                              // TODO-GLOAS: the following tests require equivocation
+                              // see https://github.com/Consensys/teku/issues/10608
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_previous_epoch",
+                              "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes",
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_current_epoch",
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

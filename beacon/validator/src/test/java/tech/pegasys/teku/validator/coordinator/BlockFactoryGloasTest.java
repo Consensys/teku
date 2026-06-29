@@ -88,6 +88,7 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
             forkChoiceNotifier,
             executionLayer,
             executionPayloadBidManager,
+            executionPayloadManager,
             metricsSystem,
             timeProvider));
   }

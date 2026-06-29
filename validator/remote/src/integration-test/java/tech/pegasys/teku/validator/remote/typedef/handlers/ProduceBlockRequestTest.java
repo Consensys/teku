@@ -43,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -84,6 +85,11 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
 
+    LOG.debug(
+        "Expected block in JSON: {}",
+        JsonUtil.serialize(
+            beaconBlock, schemaDefinitions.getBeaconBlockSchema().getJsonTypeDefinition()));
+
     final String mockResponse = readExpectedJsonResource(specMilestone, false, false);
 
     mockWebServer.enqueue(
@@ -99,8 +105,10 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainerAndMetaData.get().blockContainer().getBlock())
-        .isEqualTo(blockResponse.getData());
+    final BeaconBlock actualBlock =
+        maybeBlockContainerAndMetaData.get().blockContainer().getBlock();
+    final BeaconBlock expectedBlock = blockResponse.getData().getBlock();
+    assertThat(actualBlock).isEqualTo(expectedBlock);
 
     assertThat(maybeBlockContainerAndMetaData.get().consensusBlockValue())
         .isEqualTo(UInt256.valueOf(123000000000L));

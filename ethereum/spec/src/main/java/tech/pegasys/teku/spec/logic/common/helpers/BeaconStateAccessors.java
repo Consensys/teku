@@ -244,7 +244,7 @@ public abstract class BeaconStateAccessors {
   }
 
   public UInt64 getFinalityDelay(final BeaconState state) {
-    return getPreviousEpoch(state).minus(state.getFinalizedCheckpoint().getEpoch());
+    return getPreviousEpoch(state).minusMinZero(state.getFinalizedCheckpoint().getEpoch());
   }
 
   public boolean isInactivityLeak(final UInt64 finalityDelay) {
@@ -369,6 +369,11 @@ public abstract class BeaconStateAccessors {
   public Bytes32 getVoluntaryExitDomain(
       final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
     return getDomain(Domain.VOLUNTARY_EXIT, epoch, fork, genesisValidatorsRoot);
+  }
+
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    // NO-OP
+    return IntList.of();
   }
 
   public Optional<BLSPublicKey> getBuilderPubKey(

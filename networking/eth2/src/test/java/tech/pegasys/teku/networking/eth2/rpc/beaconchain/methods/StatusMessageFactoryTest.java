@@ -101,7 +101,7 @@ class StatusMessageFactoryTest {
   public void shouldOnlyUpdateEarliestSlotAvailableAtBeginningOfEpoch() {
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
-    when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
 
     final UInt64 currentEpoch = UInt64.ONE;
@@ -172,7 +172,7 @@ class StatusMessageFactoryTest {
 
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(SafeFuture.completedFuture(blockEarliestAvailableSlot));
-    when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlot())
         .thenReturn(SafeFuture.completedFuture(dataColumnEarliestAvailableSlot));
     factoryWithMockedCalculator.onSlot(currentSlot);
 
@@ -266,13 +266,13 @@ class StatusMessageFactoryTest {
     preFuluFactory.onSlot(UInt64.ZERO);
 
     verify(combinedChainDataClient, never()).getEarliestAvailableBlockSlot();
-    verify(combinedChainDataClient, never()).getEarliestAvailableDataColumnSlotWithFallback();
+    verify(combinedChainDataClient, never()).getEarliestAvailableDataColumnSlot();
   }
 
   private void tickOnSlotAndUpdatedEarliestSlotAvailable(final UInt64 earliestAvailableSlot) {
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(earliestAvailableSlot)));
-    when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(earliestAvailableSlot)));
     statusMessageFactory.onSlot(UInt64.ZERO);
   }

@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -101,6 +101,10 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<SszList<PayloadAttestation>> getOptionalPayloadAttestations() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionRequests> getOptionalParentExecutionRequests() {
     return Optional.empty();
   }
 

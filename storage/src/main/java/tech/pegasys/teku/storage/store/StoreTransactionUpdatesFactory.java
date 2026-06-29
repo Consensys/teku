@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -37,8 +38,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransactionUpdatesFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -56,7 +57,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
-  private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -119,6 +120,8 @@ class StoreTransactionUpdatesFactory {
     final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads =
         createBlindedExecutionPayloads();
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
+    createFinalizedExecutionPayloadBoundaryBlock()
+        .ifPresent(finalizedChainDataBuilder::finalizedExecutionPayloadBoundaryBlock);
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
     if (tx.clearFinalizedOptimisticTransitionPayload) {
@@ -200,7 +203,7 @@ class StoreTransactionUpdatesFactory {
     if (baseStore.getForkChoiceStrategy().contains(finalizedChainHeadRoot)) {
       baseStore
           .getForkChoiceStrategy()
-          .processHashesInChain(
+          .processBeaconBlockChain(
               finalizedChainHeadRoot,
               (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
     }
@@ -239,7 +242,7 @@ class StoreTransactionUpdatesFactory {
     final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
     baseStore
         .getForkChoiceStrategy()
-        .processAllInOrder(
+        .processAllBeaconBlocksInOrder(
             (blockRoot, slot, parentRoot) -> {
               if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
                 prunedHotBlockRoots.put(blockRoot, slot);
@@ -291,13 +294,19 @@ class StoreTransactionUpdatesFactory {
     return hotExecutionPayloads.entrySet().stream()
         .map(
             entry -> {
-              final SignedExecutionPayloadEnvelope executionPayload = entry.getValue();
-              return Map.entry(
-                  entry.getKey(),
-                  executionPayload.blind(
-                      SchemaDefinitionsGloas.required(
-                          spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
+              final SignedExecutionPayloadEnvelope executionPayload =
+                  entry.getValue().executionPayload();
+              return Map.entry(entry.getKey(), executionPayload.blind(spec));
             })
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private Optional<BlockAndCheckpoints> createFinalizedExecutionPayloadBoundaryBlock() {
+    if (!spec.atSlot(latestFinalized.getBlockSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(hotBlocks.get(latestFinalized.getRoot()));
   }
 }
