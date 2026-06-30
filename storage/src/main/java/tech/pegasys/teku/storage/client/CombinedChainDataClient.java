@@ -581,7 +581,10 @@ public class CombinedChainDataClient {
                     .getNonCanonicalBlockByRoot(blockRoot)
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
               }
-              return SafeFuture.completedFuture(Optional.empty());
+              // 4. Canonical-only fallback: consult the recently-validated index for blocks that
+              //    have been gossip-validated but not yet imported (non-canonical path skipped).
+              return SafeFuture.completedFuture(
+                  recentChainData.getRecentlyValidatedSlotByBlockRoot(blockRoot));
             });
   }
 

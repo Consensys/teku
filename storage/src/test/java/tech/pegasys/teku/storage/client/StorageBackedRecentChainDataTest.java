@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -88,6 +89,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedSlotProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
             BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
@@ -137,6 +139,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedSlotProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
             BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
@@ -190,6 +193,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedSlotProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
             BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
@@ -245,6 +249,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedSlotProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
             BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
@@ -296,6 +301,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedSlotProvider.NOOP,
             ExecutionPayloadProvider.NOOP,
             BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,

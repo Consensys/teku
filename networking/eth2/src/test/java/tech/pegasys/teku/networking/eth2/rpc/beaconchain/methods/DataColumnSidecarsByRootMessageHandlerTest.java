@@ -449,6 +449,29 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
+  public void shouldServeSidecarWhenSlotResolvesViaRecentlyValidatedFallback() {
+    // Regression guard: the by-root handler must serve a sidecar when the block's slot is
+    // resolved via the recently-validated fallback (i.e. block not yet imported but already
+    // gossip-validated). The setup stubs getSlotByBlockRoot to return a slot, simulating that
+    // fallback path. Assert the sidecar is responded with.
+    final DataColumnsByRootIdentifier identifier =
+        identifierSchema.create(dataStructureUtil.randomBytes32(), List.of(UInt64.valueOf(0)));
+    final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
+
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        messageSchema.of(new DataColumnsByRootIdentifier[] {identifier}),
+        callback);
+
+    verify(callback, times(1)).respond(sidecar);
+    verify(callback).completeSuccessfully();
+  }
+
+  @TestTemplate
   public void shouldCacheBlockRootSlotResolutionAcrossRequests() {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final DataColumnsByRootIdentifier[] identifiers = {

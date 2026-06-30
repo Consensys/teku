@@ -313,6 +313,29 @@ class CombinedChainDataClientTest {
     assertThat(result).isEmpty();
   }
 
+  @Test
+  void getSlotByBlockRoot_fallsBackToRecentlyValidatedSlotWhenNotInForkChoiceOrDb() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 slot = UInt64.valueOf(99);
+    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedSlotByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(recentChainData.getRecentlyValidatedSlotByBlockRoot(blockRoot))
+        .thenReturn(Optional.of(slot));
+
+    assertThat(client.getSlotByBlockRoot(blockRoot)).isCompletedWithValue(Optional.of(slot));
+  }
+
+  @Test
+  void getSlotByBlockRoot_prefersForkChoiceOverRecentlyValidated() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 hotSlot = UInt64.valueOf(7);
+    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(hotSlot));
+
+    assertThat(client.getSlotByBlockRoot(blockRoot)).isCompletedWithValue(Optional.of(hotSlot));
+    verify(recentChainData, never()).getRecentlyValidatedSlotByBlockRoot(any());
+  }
+
   private void setupGetBlobSidecar(
       final SlotAndBlockRootAndBlobIndex key, final BlobSidecar result) {
     when(historicalChainData.getBlobSidecar(any()))
