@@ -57,34 +57,37 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
   @Test
   public void shouldNotEngageWhenAncestorPayloadsAreAvailable() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 1);
-    setAncestor(6, availablePayload());
-    setAncestor(7, availablePayload());
-    setAncestor(8, availablePayload());
-    setAncestor(9, availablePayload());
+    setAncestor(circuitBreaker, 6, availablePayload(), 1);
+    setAncestor(circuitBreaker, 7, availablePayload(), 1);
+    setAncestor(circuitBreaker, 8, availablePayload(), 1);
+    setAncestor(circuitBreaker, 9, availablePayload(), 1);
 
     assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
   }
 
   @Test
-  public void shouldEngageWhenUnavailablePayloadsExceedAllowedFaults() {
+  public void shouldBanBuilderWhenUnavailablePayloadsExceedAllowedFaults() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 3);
-    setAncestor(6, availablePayload());
-    setAncestor(7, unavailablePayload());
-    setAncestor(8, optimisticPayload());
-    setAncestor(9, availablePayload());
+    setAncestor(circuitBreaker, 6, availablePayload(), 12);
+    setAncestor(circuitBreaker, 7, unavailablePayload(), 12);
+    setAncestor(circuitBreaker, 8, optimisticPayload(), 12);
+    setAncestor(circuitBreaker, 9, availablePayload(), 13);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isTrue();
+    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(13), UInt64.valueOf(10))).isTrue();
   }
 
   @Test
-  public void shouldEngageWhenConsecutiveUnavailablePayloadsExceedAllowedFaults() {
+  public void shouldBanBuilderWhenConsecutiveUnavailablePayloadsExceedAllowedFaults() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 3, 1);
-    setAncestor(6, availablePayload());
-    setAncestor(7, availablePayload());
-    setAncestor(8, unavailablePayload());
-    setAncestor(9, unavailablePayload());
+    setAncestor(circuitBreaker, 6, availablePayload(), 12);
+    setAncestor(circuitBreaker, 7, availablePayload(), 12);
+    setAncestor(circuitBreaker, 8, unavailablePayload(), 12);
+    setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isTrue();
+    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isFalse();
   }
 
   @Test
@@ -100,10 +103,11 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
         .thenReturn(Optional.of(blockAtSlot7));
     when(forkChoiceStrategy.getAncestor(parentRoot, UInt64.valueOf(9)))
         .thenReturn(Optional.of(blockAtSlot9));
-    setBlockSlot(blockAtSlot7, 7);
-    setBlockSlot(blockAtSlot9, 9);
+    setBlockSlot(circuitBreaker, blockAtSlot7, 7, 12);
+    setBlockSlot(circuitBreaker, blockAtSlot9, 9, 12);
 
     assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isTrue();
   }
 
   @Test
@@ -115,6 +119,40 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     when(forkChoiceStrategy.blockSlot(blockAtSlot9)).thenReturn(Optional.empty());
 
     assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isTrue();
+  }
+
+  @Test
+  public void shouldExpireBuilderBanAfterSlotTtl() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 0, 0);
+    setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
+
+    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(13))).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(14))).isTrue();
+  }
+
+  @Test
+  public void shouldResetBuilderConsecutiveFaultsWhenPayloadBecomesAvailable() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 3, 1);
+    setAncestor(circuitBreaker, 7, unavailablePayload(), 12);
+    setAncestor(circuitBreaker, 8, availablePayload(), 12);
+    setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
+
+    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isTrue();
+  }
+
+  @Test
+  public void shouldNotCountSameUnavailablePayloadMoreThanOnce() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 3);
+    setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
+
+    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isTrue();
   }
 
   private GloasExecutionPayloadBidCircuitBreaker createCircuitBreaker(
@@ -166,9 +204,23 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
         PAYLOAD_STATUS_FULL);
   }
 
-  private void setAncestor(final int slot, final Bytes32 blockRoot) {
+  private void setAncestor(
+      final GloasExecutionPayloadBidCircuitBreaker circuitBreaker,
+      final int slot,
+      final Bytes32 blockRoot,
+      final int builderIndex) {
     when(forkChoiceStrategy.getAncestor(parentRoot, UInt64.valueOf(slot)))
         .thenReturn(Optional.of(blockRoot));
+    setBlockSlot(circuitBreaker, blockRoot, slot, builderIndex);
+  }
+
+  private void setBlockSlot(
+      final GloasExecutionPayloadBidCircuitBreaker circuitBreaker,
+      final Bytes32 blockRoot,
+      final int slot,
+      final int builderIndex) {
+    circuitBreaker.recordBlockBuilder(
+        blockRoot, UInt64.valueOf(slot), UInt64.valueOf(builderIndex));
     setBlockSlot(blockRoot, slot);
   }
 

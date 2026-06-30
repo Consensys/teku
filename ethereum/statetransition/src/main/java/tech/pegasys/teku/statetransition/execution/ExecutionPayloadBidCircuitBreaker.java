@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionPayloadBidCircuitBreaker {
@@ -21,4 +23,10 @@ public interface ExecutionPayloadBidCircuitBreaker {
   ExecutionPayloadBidCircuitBreaker NOOP = (parentRoot, state) -> false;
 
   boolean isEngaged(Bytes32 parentRoot, BeaconState state);
+
+  default boolean isBuilderAllowed(final UInt64 builderIndex, final UInt64 currentSlot) {
+    return true;
+  }
+
+  default void observeBlock(final SignedBeaconBlock block) {}
 }

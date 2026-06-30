@@ -993,6 +993,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadBidCircuitBreaker,
               receivedExecutionPayloadBidEventsChannelPublisher);
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
+      eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultExecutionPayloadBidManager);
       executionPayloadBidManager = defaultExecutionPayloadBidManager;
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
