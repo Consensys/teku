@@ -15,7 +15,9 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
@@ -23,10 +25,34 @@ import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 public interface ExecutionPayloadPublisher {
 
   ExecutionPayloadPublisher NOOP =
-      (signedExecutionPayload, broadcastValidationLevel) ->
-          SafeFuture.completedFuture(
+      new ExecutionPayloadPublisher() {
+        @Override
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+            final SignedExecutionPayloadEnvelope signedExecutionPayload,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
               PublishSignedExecutionPayloadResult.success(
                   signedExecutionPayload.getBeaconBlockRoot()));
+        }
+
+        @Override
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+            final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot()));
+        }
+
+        @Override
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+            final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedBlindedExecutionPayload.getBeaconBlockRoot()));
+        }
+      };
 
   default SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
@@ -35,5 +61,13 @@ public interface ExecutionPayloadPublisher {
 
   SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
+
+  SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
+
+  SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
       Optional<BroadcastValidationLevel> broadcastValidationLevel);
 }
