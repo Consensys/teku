@@ -83,7 +83,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateFulu preStateFulu = BeaconStateFulu.required(preState);
 
-    return BeaconStateGloas.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
+    final BeaconStateSchemaGloas targetStateSchema =
+        BeaconStateSchemaGloas.required(schemaDefinitions.getBeaconStateSchema());
+
+    return targetStateSchema
+        .createEmptyWithTransitionCachesFrom(preState)
         .updatedGloas(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
