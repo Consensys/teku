@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -449,19 +450,44 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
-  public void shouldServeSidecarWhenSlotResolvesViaRecentlyValidatedFallback() {
-    // Regression guard: the by-root handler must serve a sidecar when the block's slot is
-    // resolved via the recently-validated fallback (i.e. block not yet imported but already
-    // gossip-validated). The setup stubs getSlotByBlockRoot to return a slot, simulating that
-    // fallback path. Assert the sidecar is responded with.
+  public void shouldServeSidecarForNotYetImportedBlockViaRecentlyValidatedSlotFallback() {
+    // End-to-end exercise of the new slot-resolution fallback: the block is gossip-validated but
+    // not yet imported, so fork choice and the finalized DB return no slot; only the
+    // recently-validated index does. Use a real CombinedChainDataClient (over mocked
+    // recentChainData
+    // and historicalChainData) so the actual getSlotByBlockRoot fallback runs, then assert the
+    // handler serves the custody column the DB returns.
+    final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+    final CombinedChainDataClient realClient =
+        new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+    final DataColumnSidecarsByRootMessageHandler handlerWithRealClient =
+        new DataColumnSidecarsByRootMessageHandler(
+            spec,
+            metricsSystem,
+            realClient,
+            custodyGroupCountManagerSupplier,
+            dataColumnSidecarArchiveReconstructor,
+            DasReqRespLogger.NOOP);
+
+    final UInt64 currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final DataColumnsByRootIdentifier identifier =
-        identifierSchema.create(dataStructureUtil.randomBytes32(), List.of(UInt64.valueOf(0)));
+        identifierSchema.create(blockRoot, List.of(UInt64.valueOf(0)));
     final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
 
-    when(combinedChainDataClient.getSidecar(any()))
+    // Not imported: fork choice and the finalized DB miss.
+    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedSlotByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // Only the recently-validated index can supply the slot.
+    when(recentChainData.getRecentlyValidatedSlotByBlockRoot(blockRoot))
+        .thenReturn(Optional.of(currentForkFirstSlot));
+    when(recentChainData.getStore()).thenReturn(store);
+    // Custody already persisted the column to the DB, keyed by the resolved slot.
+    when(historicalChainData.getSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar)));
 
-    handler.onIncomingMessage(
+    handlerWithRealClient.onIncomingMessage(
         protocolId,
         peer,
         messageSchema.of(new DataColumnsByRootIdentifier[] {identifier}),
