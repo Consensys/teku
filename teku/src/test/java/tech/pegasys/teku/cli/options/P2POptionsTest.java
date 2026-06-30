@@ -378,6 +378,44 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void advertisedUdpPort_shouldUseListenUdpPortWhenUdpPortSetAndNoAdvertisedUdpPort() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--p2p-port=9000", "--p2p-udp-port=9001");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort()).isEqualTo(9001);
+    assertThat(tekuConfig.discovery().getListenUdpPort()).isEqualTo(9001);
+    assertThat(tekuConfig.network().getListenPort()).isEqualTo(9000);
+  }
+
+  @Test
+  void advertisedUdpPort_shouldUseExplicitAdvertisedUdpPortOverListenUdpPort() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments(
+            "--p2p-port=9000", "--p2p-udp-port=9001", "--p2p-advertised-udp-port=9002");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort()).isEqualTo(9002);
+    assertThat(tekuConfig.discovery().getListenUdpPort()).isEqualTo(9001);
+    assertThat(tekuConfig.network().getListenPort()).isEqualTo(9000);
+  }
+
+  @Test
+  void advertisedUdpPortIpv6_shouldUseListenUdpPortIpv6WhenUdpPortIpv6SetAndNoAdvertisedUdpPort() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--p2p-port-ipv6=9090", "--p2p-udp-port-ipv6=9091");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPortIpv6()).isEqualTo(9091);
+    assertThat(tekuConfig.network().getListenPortIpv6()).isEqualTo(9090);
+  }
+
+  @Test
+  void advertisedUdpPortIpv6_shouldUseExplicitAdvertisedUdpPortIpv6OverListenUdpPortIpv6() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments(
+            "--p2p-port-ipv6=9090",
+            "--p2p-udp-port-ipv6=9091",
+            "--p2p-advertised-udp-port-ipv6=9092");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPortIpv6()).isEqualTo(9092);
+    assertThat(tekuConfig.network().getListenPortIpv6()).isEqualTo(9090);
+  }
+
+  @Test
   void advertisedUdpPortIpv6_shouldUseUdpPortIpv6Value() {
     final TekuConfiguration tekuConfig =
         getTekuConfigurationFromArguments(

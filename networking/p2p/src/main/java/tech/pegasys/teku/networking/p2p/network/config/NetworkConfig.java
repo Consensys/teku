@@ -157,8 +157,16 @@ public class NetworkConfig {
     return advertisedPort.orElse(listenPort);
   }
 
+  public OptionalInt getOptionalAdvertisedPort() {
+    return advertisedPort;
+  }
+
   public int getAdvertisedPortIpv6() {
     return advertisedPortIpv6.orElse(listenPortIpv6);
+  }
+
+  public OptionalInt getOptionalAdvertisedPortIpv6() {
+    return advertisedPortIpv6;
   }
 
   public int getAdvertisedQuicPort() {

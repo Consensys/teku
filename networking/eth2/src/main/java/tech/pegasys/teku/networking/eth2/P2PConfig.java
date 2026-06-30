@@ -358,9 +358,8 @@ public class P2PConfig {
       final NetworkConfig networkConfig = this.networkConfig.build();
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
       discoveryConfig.listenUdpPortIpv6Default(networkConfig.getListenPortIpv6());
-      discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
-      discoveryConfig.advertisedUdpPortIpv6Default(
-          OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
+      discoveryConfig.advertisedUdpPortDefault(networkConfig.getOptionalAdvertisedPort());
+      discoveryConfig.advertisedUdpPortIpv6Default(networkConfig.getOptionalAdvertisedPortIpv6());
 
       if (subscribeAllCustodySubnetsEnabled) {
         custodyGroupCountOverride = Integer.MAX_VALUE;
