@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -70,6 +70,7 @@ public class PeerSubnetSubscriptions {
       final SpecVersion currentVersion,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final P2PNetwork<?> network,
+      final PeerLookup peerLookup,
       final AttestationSubnetTopicProvider attestationTopicProvider,
       final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -84,10 +85,13 @@ public class PeerSubnetSubscriptions {
     final Set<NodeId> peersWithoutDiscoveryNodeId =
         network
             .streamPeers()
-            .filter(
-                peer ->
-                    peer instanceof Eth2Peer eth2Peer && eth2Peer.getDiscoveryNodeId().isEmpty())
             .map(Peer::getId)
+            .filter(
+                nodeId ->
+                    peerLookup
+                        .getConnectedPeer(nodeId)
+                        .map(peer -> peer.getDiscoveryNodeId().isEmpty())
+                        .orElse(false))
             .collect(Collectors.toSet());
 
     final SchemaDefinitionsSupplier currentSchemaDefinitions = currentVersion::getSchemaDefinitions;

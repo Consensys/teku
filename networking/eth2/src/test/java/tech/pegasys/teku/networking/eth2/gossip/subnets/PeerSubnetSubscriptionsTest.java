@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -70,6 +71,8 @@ class PeerSubnetSubscriptionsTest {
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> gossipNetwork = mock(P2PNetwork.class);
+
+  private final PeerLookup peerLookup = mock(PeerLookup.class);
 
   private final AttestationSubnetTopicProvider attestationTopicProvider =
       mock(AttestationSubnetTopicProvider.class);
@@ -149,12 +152,18 @@ class PeerSubnetSubscriptionsTest {
 
     final NodeId peerWithDiscoveryNodeId = new MockNodeId(1);
     final NodeId peerWithoutDiscoveryNodeId = new MockNodeId(2);
+    // streamPeers() yields raw libp2p peers (as in production), not Eth2Peers; discovery node id
+    // presence is resolved via the Eth2 peer lookup.
     when(gossipNetwork.streamPeers())
         .thenAnswer(
             __ ->
-                Stream.of(
-                    mockEth2Peer(peerWithDiscoveryNodeId, Optional.of(UInt256.ONE)),
-                    mockEth2Peer(peerWithoutDiscoveryNodeId, Optional.empty())));
+                Stream.of(mockPeer(peerWithDiscoveryNodeId), mockPeer(peerWithoutDiscoveryNodeId)));
+    final Eth2Peer eth2PeerWithNodeId = mockEth2Peer(Optional.of(UInt256.ONE));
+    final Eth2Peer eth2PeerWithoutNodeId = mockEth2Peer(Optional.empty());
+    when(peerLookup.getConnectedPeer(peerWithDiscoveryNodeId))
+        .thenReturn(Optional.of(eth2PeerWithNodeId));
+    when(peerLookup.getConnectedPeer(peerWithoutDiscoveryNodeId))
+        .thenReturn(Optional.of(eth2PeerWithoutNodeId));
 
     when(gossipNetwork.getSubscribersByTopic())
         .thenReturn(
@@ -178,9 +187,14 @@ class PeerSubnetSubscriptionsTest {
         .isZero();
   }
 
-  private Eth2Peer mockEth2Peer(final NodeId nodeId, final Optional<UInt256> discoveryNodeId) {
-    final Eth2Peer peer = mock(Eth2Peer.class);
+  private Peer mockPeer(final NodeId nodeId) {
+    final Peer peer = mock(Peer.class);
     when(peer.getId()).thenReturn(nodeId);
+    return peer;
+  }
+
+  private Eth2Peer mockEth2Peer(final Optional<UInt256> discoveryNodeId) {
+    final Eth2Peer peer = mock(Eth2Peer.class);
     when(peer.getDiscoveryNodeId()).thenReturn(discoveryNodeId);
     return peer;
   }
@@ -302,6 +316,7 @@ class PeerSubnetSubscriptionsTest {
         currentSpecVersionSupplier.get(),
         NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
         gossipNetwork,
+        peerLookup,
         attestationTopicProvider,
         syncCommitteeTopicProvider,
         syncnetSubscriptions,
