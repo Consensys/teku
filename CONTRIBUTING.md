@@ -35,7 +35,7 @@ Start by looking through the 'good first issue' and 'help wanted' issues:
 
 Please reach out in discord if you're looking to help out, and we can assist you in finding a good candidate ticket to work on, or discuss the idea you have. 
 
-We have a [Teku](https://discord.com/channels/697535391594446898/697539289042649190) channel, and also a [Teku Contributors](https://discord.com/channels/697535391594446898/1050616638497640548) channel.
+We have a [Teku](https://discord.gg/teku) channel, and also a [Teku Contributors](https://discord.gg/teku) channel.
 
 Due to the prevalence of 'airdrop farming' type practices, this unfortunately puts heightened scrutiny on first time contributors, but if you're genuinely looking to help out, we'd really love to assist you in any way we can.
 This does mean however that we will generally reject 'random' fixes such as 'TODO' fixes, typos, and generally things that add no value that we haven't identified as something we need. These are likely to be rejected with 'due to contribution guidelines' type responses.
@@ -141,5 +141,5 @@ We have a set of [coding conventions](https://wiki.hyperledger.org/display/BESU/
 * Reference issues and pull requests liberally
 
 [private-quorum@consensys.net]: mailto:private-quorum@consensys.net
-[Discord]: https://discord.gg/7hPv2T6
+[Discord]: https://discord.gg/teku
 [CLA.md]: CLA.md

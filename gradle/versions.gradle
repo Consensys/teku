@@ -129,6 +129,7 @@ dependencyManagement {
 		}
 
 		dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
+		dependency 'io.airlift:aircompressor-v3:3.6'
 
 		dependency 'io.airlift:aircompressor-v3:3.5'
 
