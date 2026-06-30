@@ -24,7 +24,7 @@ public interface ExecutionPayloadBidCircuitBreaker {
 
   boolean isEngaged(Bytes32 parentRoot, BeaconState state);
 
-  default boolean isBuilderAllowed(final UInt64 builderIndex, final UInt64 currentSlot) {
+  default boolean isBuilderAllowed(final UInt64 builderIndex, final BeaconState state) {
     return true;
   }
 

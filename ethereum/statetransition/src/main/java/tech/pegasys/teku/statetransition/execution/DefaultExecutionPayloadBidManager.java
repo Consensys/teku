@@ -138,7 +138,7 @@ public class DefaultExecutionPayloadBidManager
       return getLocalSelfBuiltBid(parentRoot, parentBlockHash, slot, getPayloadResponseFuture);
     }
 
-    return findBestRemoteBid(slot, parentRoot, parentBlockHash)
+    return findBestRemoteBid(slot, parentRoot, parentBlockHash, state)
         .map(
             bestRemoteBid -> {
               final ExecutionPayloadBid bid = bestRemoteBid.getMessage();
@@ -166,7 +166,10 @@ public class DefaultExecutionPayloadBidManager
   }
 
   private Optional<SignedExecutionPayloadBid> findBestRemoteBid(
-      final UInt64 slot, final Bytes32 parentRoot, final Bytes32 parentBlockHash) {
+      final UInt64 slot,
+      final Bytes32 parentRoot,
+      final Bytes32 parentBlockHash,
+      final BeaconState state) {
     final NavigableSet<SignedExecutionPayloadBid> bids = bidsBySlot.get(slot);
     if (bids == null) {
       return Optional.empty();
@@ -178,7 +181,7 @@ public class DefaultExecutionPayloadBidManager
         .filter(
             bid ->
                 executionPayloadBidCircuitBreaker.isBuilderAllowed(
-                    bid.getMessage().getBuilderIndex(), slot))
+                    bid.getMessage().getBuilderIndex(), state))
         .findFirst();
   }
 

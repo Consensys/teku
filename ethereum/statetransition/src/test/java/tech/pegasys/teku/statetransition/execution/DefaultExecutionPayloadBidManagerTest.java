@@ -271,10 +271,11 @@ public class DefaultExecutionPayloadBidManagerTest {
         createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(1_000), UInt64.valueOf(12));
     final SignedExecutionPayloadBid allowedLowerBid =
         createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500), UInt64.valueOf(13));
+    final BeaconStateGloas state = stateAtSlot(slot);
 
     addAcceptedBid(bannedHigherBid);
     addAcceptedBid(allowedLowerBid);
-    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(12), slot))
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state))
         .thenReturn(false);
 
     final SignedExecutionPayloadBid signedBid =
@@ -282,7 +283,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
                 parentBlockHash,
-                stateAtSlot(slot),
+                state,
                 new SafeFuture<>(),
                 blockProductionPerformance));
 
@@ -299,12 +300,13 @@ public class DefaultExecutionPayloadBidManagerTest {
         createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(1_000), UInt64.valueOf(12));
     final SignedExecutionPayloadBid secondBannedBid =
         createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500), UInt64.valueOf(13));
+    final BeaconStateGloas state = stateAtSlot(slot);
 
     addAcceptedBid(firstBannedBid);
     addAcceptedBid(secondBannedBid);
-    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(12), slot))
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state))
         .thenReturn(false);
-    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(13), slot))
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(13), state))
         .thenReturn(false);
 
     final SignedExecutionPayloadBid signedBid =
@@ -312,7 +314,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             executionPayloadBidManager.getBidForBlock(
                 parentRoot,
                 parentBlockHash,
-                stateAtSlot(slot),
+                state,
                 SafeFuture.completedFuture(randomGetPayloadResponse(slot, parentBlockHash)),
                 blockProductionPerformance));
 

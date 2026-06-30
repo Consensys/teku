@@ -21,27 +21,31 @@ import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayload
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GloasExecutionPayloadBidCircuitBreakerTest {
 
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMainnetGloas());
+  private final Spec spec = TestSpecFactory.createMainnetGloas();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
       mock(ReadOnlyForkChoiceStrategy.class);
   private final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+  private final UInt64 builderIndex = UInt64.valueOf(12);
 
   @Test
   public void shouldEngageWhenForkChoiceStrategyIsUnavailable() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker =
-        new GloasExecutionPayloadBidCircuitBreaker(4, 1, 1, Optional::empty);
+        new GloasExecutionPayloadBidCircuitBreaker(spec, 4, 1, 1, Optional::empty);
 
     assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isTrue();
   }
@@ -73,9 +77,10 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     setAncestor(circuitBreaker, 8, optimisticPayload(), 12);
     setAncestor(circuitBreaker, 9, availablePayload(), 13);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isFalse();
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(13), UInt64.valueOf(10))).isTrue();
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(13), state)).isTrue();
   }
 
   @Test
@@ -86,8 +91,9 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     setAncestor(circuitBreaker, 8, unavailablePayload(), 12);
     setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isFalse();
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isFalse();
   }
 
   @Test
@@ -106,8 +112,9 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     setBlockSlot(circuitBreaker, blockAtSlot7, 7, 12);
     setBlockSlot(circuitBreaker, blockAtSlot9, 9, 12);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isTrue();
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isTrue();
   }
 
   @Test
@@ -124,12 +131,21 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
   @Test
   public void shouldExpireBuilderBanAfterSlotTtl() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 0, 0);
+    final BLSPublicKey builderPubkey = dataStructureUtil.randomPublicKey();
     setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    assertThat(
+            circuitBreaker.isEngaged(parentRoot, stateAtSlotWithBuilderPubkey(10, builderPubkey)))
+        .isFalse();
 
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(13))).isFalse();
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(14))).isTrue();
+    assertThat(
+            circuitBreaker.isBuilderAllowed(
+                UInt64.valueOf(12), stateAtSlotWithBuilderPubkey(13, builderPubkey)))
+        .isFalse();
+    assertThat(
+            circuitBreaker.isBuilderAllowed(
+                UInt64.valueOf(12), stateAtSlotWithBuilderPubkey(14, builderPubkey)))
+        .isTrue();
   }
 
   @Test
@@ -139,9 +155,10 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     setAncestor(circuitBreaker, 8, availablePayload(), 12);
     setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
 
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isTrue();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isTrue();
   }
 
   @Test
@@ -149,10 +166,28 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 3);
     setAncestor(circuitBreaker, 9, unavailablePayload(), 12);
 
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
-    assertThat(circuitBreaker.isEngaged(parentRoot, stateAtSlot(10))).isFalse();
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
 
-    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), UInt64.valueOf(10))).isTrue();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isTrue();
+  }
+
+  @Test
+  public void shouldIgnoreBanWhenBuilderIndexIsReusedForDifferentPubkey() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 0, 0);
+    final BLSPublicKey originalBuilderPubkey = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey replacementBuilderPubkey = dataStructureUtil.randomPublicKey();
+    final BeaconState originalBuilderState =
+        stateAtSlotWithBuilderPubkey(10, originalBuilderPubkey);
+    final BeaconState replacementBuilderState =
+        stateAtSlotWithBuilderPubkey(10, replacementBuilderPubkey);
+    setAncestor(circuitBreaker, 9, unavailablePayload(), builderIndex.intValue());
+
+    assertThat(circuitBreaker.isEngaged(parentRoot, originalBuilderState)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(builderIndex, originalBuilderState)).isFalse();
+
+    assertThat(circuitBreaker.isBuilderAllowed(builderIndex, replacementBuilderState)).isTrue();
   }
 
   private GloasExecutionPayloadBidCircuitBreaker createCircuitBreaker(
@@ -161,6 +196,7 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
       final int consecutiveAllowedFaults) {
     when(forkChoiceStrategy.contains(parentRoot)).thenReturn(true);
     return new GloasExecutionPayloadBidCircuitBreaker(
+        spec,
         faultInspectionWindow,
         allowedFaults,
         consecutiveAllowedFaults,
@@ -229,8 +265,18 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
   }
 
   private BeaconState stateAtSlot(final int slot) {
-    final BeaconState state = mock(BeaconState.class);
-    when(state.getSlot()).thenReturn(UInt64.valueOf(slot));
-    return state;
+    return dataStructureUtil.stateBuilderGloas(10, 13, 10).slot(UInt64.valueOf(slot)).build();
+  }
+
+  private BeaconState stateAtSlotWithBuilderPubkey(
+      final int slot, final BLSPublicKey builderPubkey) {
+    return stateAtSlot(slot)
+        .updated(
+            state ->
+                MutableBeaconStateGloas.required(state)
+                    .getBuilders()
+                    .set(
+                        builderIndex.intValue(),
+                        dataStructureUtil.builderBuilder().publicKey(builderPubkey).build()));
   }
 }

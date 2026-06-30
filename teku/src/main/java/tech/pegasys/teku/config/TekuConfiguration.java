@@ -98,7 +98,7 @@ public class TekuConfiguration {
             syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
-            createExecutionPayloadBidCircuitBreakerFactory(executionLayerConfiguration),
+            createExecutionPayloadBidCircuitBreakerFactory(spec, executionLayerConfiguration),
             storeConfig,
             spec,
             beaconChainControllerFactory,
@@ -119,11 +119,12 @@ public class TekuConfiguration {
 
   private static ExecutionPayloadBidCircuitBreakerFactory
       createExecutionPayloadBidCircuitBreakerFactory(
-          final ExecutionLayerConfiguration executionLayerConfiguration) {
+          final Spec spec, final ExecutionLayerConfiguration executionLayerConfiguration) {
     if (!executionLayerConfiguration.isBuilderCircuitBreakerEnabled()) {
       return ExecutionPayloadBidCircuitBreakerFactory.NOOP;
     }
     return ExecutionPayloadBidCircuitBreakerFactory.create(
+        spec,
         executionLayerConfiguration.getBuilderCircuitBreakerWindow(),
         executionLayerConfiguration.getBuilderCircuitBreakerAllowedFaults(),
         executionLayerConfiguration.getBuilderCircuitBreakerAllowedConsecutiveFaults());

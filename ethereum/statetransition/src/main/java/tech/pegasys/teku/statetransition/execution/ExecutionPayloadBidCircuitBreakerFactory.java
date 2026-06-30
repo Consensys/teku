@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 
 @FunctionalInterface
@@ -24,11 +25,13 @@ public interface ExecutionPayloadBidCircuitBreakerFactory {
       forkChoiceStrategySupplier -> ExecutionPayloadBidCircuitBreaker.NOOP;
 
   static ExecutionPayloadBidCircuitBreakerFactory create(
+      final Spec spec,
       final int faultInspectionWindow,
       final int allowedFaults,
       final int consecutiveAllowedFaults) {
     return forkChoiceStrategySupplier ->
         new GloasExecutionPayloadBidCircuitBreaker(
+            spec,
             faultInspectionWindow,
             allowedFaults,
             consecutiveAllowedFaults,

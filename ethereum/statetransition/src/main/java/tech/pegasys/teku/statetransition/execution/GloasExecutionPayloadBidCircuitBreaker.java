@@ -31,7 +31,9 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -40,14 +42,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadBidCircuitBreaker {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final int faultInspectionWindow;
   private final int allowedFaults;
   private final int consecutiveAllowedFaults;
   private final Supplier<Optional<ReadOnlyForkChoiceStrategy>> forkChoiceStrategySupplier;
-  private final Map<Bytes32, RecentBlock> recentBlocksByRoot = new HashMap<>();
+  private final Map<Bytes32, BlockPayloadStatus> blockPayloadStatusByRoot = new HashMap<>();
   private final Map<UInt64, BuilderCircuitBreakerStatus> builderStatusByIndex = new HashMap<>();
 
   public GloasExecutionPayloadBidCircuitBreaker(
+      final Spec spec,
       final int faultInspectionWindow,
       final int allowedFaults,
       final int consecutiveAllowedFaults,
@@ -55,6 +59,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
     checkArgument(
         faultInspectionWindow > allowedFaults,
         "FaultInspectionWindow must be greater than AllowedFaults");
+    this.spec = spec;
     this.faultInspectionWindow = faultInspectionWindow;
     this.allowedFaults = allowedFaults;
     this.consecutiveAllowedFaults = consecutiveAllowedFaults;
@@ -73,7 +78,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
       return true;
     }
 
-    if (inspectPayloadAvailability(maybeForkChoiceStrategy.get(), parentRoot, state.getSlot())) {
+    if (inspectPayloadAvailability(maybeForkChoiceStrategy.get(), parentRoot, state)) {
       LOG.debug(
           "Gloas builder circuit breaker engaged because fork choice data is incomplete for parent root {} at slot {}",
           parentRoot,
@@ -86,11 +91,11 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
   }
 
   @Override
-  public synchronized boolean isBuilderAllowed(
-      final UInt64 builderIndex, final UInt64 currentSlot) {
-    prune(currentSlot);
-    final BuilderCircuitBreakerStatus builderStatus = builderStatusByIndex.get(builderIndex);
-    return builderStatus == null || builderStatus.banUntilSlot().isLessThanOrEqualTo(currentSlot);
+  public synchronized boolean isBuilderAllowed(final UInt64 builderIndex, final BeaconState state) {
+    prune(state.getSlot());
+    return getCurrentBuilderStatus(builderIndex, state)
+        .map(builderStatus -> builderStatus.banUntilSlot().isLessThanOrEqualTo(state.getSlot()))
+        .orElse(true);
   }
 
   @Override
@@ -107,13 +112,13 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
 
   @VisibleForTesting
   void recordBlockBuilder(final Bytes32 blockRoot, final UInt64 slot, final UInt64 builderIndex) {
-    recentBlocksByRoot.put(blockRoot, new RecentBlock(slot, builderIndex));
+    blockPayloadStatusByRoot.put(blockRoot, new BlockPayloadStatus(slot, builderIndex));
   }
 
   private boolean inspectPayloadAvailability(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Bytes32 parentRoot,
-      final UInt64 slot) {
+      final BeaconState state) {
     if (!forkChoiceStrategy.contains(parentRoot)) {
       return true;
     }
@@ -121,6 +126,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
     final List<ObservedBlock> observedBlocks = new ArrayList<>();
     final Set<Bytes32> inspectedBlockRoots = new HashSet<>();
 
+    final UInt64 slot = state.getSlot();
     final UInt64 firstSlotOfInspectionWindow = slot.minusMinZero(faultInspectionWindow);
     UInt64 currentSlot = slot.minusMinZero(1);
     while (currentSlot.isGreaterThanOrEqualTo(firstSlotOfInspectionWindow)) {
@@ -133,12 +139,10 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
           return true;
         }
         if (maybeAncestorSlot.get().isGreaterThanOrEqualTo(firstSlotOfInspectionWindow)) {
-          final RecentBlock recentBlock = recentBlocksByRoot.get(ancestorRoot);
-          if (recentBlock != null) {
-            observedBlocks.add(
-                new ObservedBlock(
-                    ancestorRoot, maybeAncestorSlot.get(), recentBlock.builderIndex()));
-          }
+          getBlockPayloadStatus(ancestorRoot)
+              .ifPresent(
+                  blockPayloadStatus ->
+                      observedBlocks.add(new ObservedBlock(ancestorRoot, blockPayloadStatus)));
         }
       }
       if (currentSlot.isZero()) {
@@ -152,9 +156,9 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
         .forEach(
             observedBlock -> {
               if (hasAvailablePayload(forkChoiceStrategy, observedBlock.blockRoot())) {
-                recordAvailablePayload(observedBlock);
+                recordAvailablePayload(observedBlock, state);
               } else {
-                recordUnavailablePayload(observedBlock, slot);
+                recordUnavailablePayload(observedBlock, state);
               }
             });
 
@@ -169,43 +173,51 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
         .orElse(false);
   }
 
-  private void recordAvailablePayload(final ObservedBlock observedBlock) {
-    final RecentBlock recentBlock = recentBlocksByRoot.get(observedBlock.blockRoot());
-    final BuilderCircuitBreakerStatus builderStatus =
-        builderStatusByIndex.get(observedBlock.builderIndex());
-    if (recentBlock == null || builderStatus == null) {
-      return;
-    }
-
-    final PayloadFault existingFault = recentBlock.clearPayloadFault();
-    if (existingFault != null) {
-      builderStatus.payloadFaults().remove(existingFault);
-    }
-    builderStatus.resetConsecutiveUnavailablePayloads();
-    builderStatus.clearBan();
+  private void recordAvailablePayload(final ObservedBlock observedBlock, final BeaconState state) {
+    final boolean payloadFaultWasRecorded =
+        observedBlock.blockPayloadStatus().markPayloadAvailable();
+    getCurrentBuilderStatus(observedBlock.builderIndex(), state)
+        .ifPresent(
+            builderStatus -> {
+              if (payloadFaultWasRecorded) {
+                builderStatus.payloadFaults().remove(observedBlock.toPayloadFault());
+              }
+              builderStatus.resetConsecutiveUnavailablePayloads();
+              builderStatus.clearBan();
+            });
   }
 
   private void recordUnavailablePayload(
-      final ObservedBlock observedBlock, final UInt64 currentSlot) {
-    final RecentBlock recentBlock = recentBlocksByRoot.get(observedBlock.blockRoot());
-    if (recentBlock == null || recentBlock.hasPayloadFault()) {
+      final ObservedBlock observedBlock, final BeaconState state) {
+    final BlockPayloadStatus blockPayloadStatus = observedBlock.blockPayloadStatus();
+    final Optional<BLSPublicKey> maybeBuilderPubKey =
+        spec.getBuilderPubKey(state, observedBlock.builderIndex());
+    if (maybeBuilderPubKey.isEmpty()) {
       return;
     }
 
-    final PayloadFault payloadFault =
-        new PayloadFault(
-            observedBlock.blockRoot(), observedBlock.slot(), observedBlock.builderIndex());
-    recentBlock.recordPayloadFault(payloadFault);
+    if (!blockPayloadStatus.markPayloadUnavailable()) {
+      return;
+    }
+
+    final PayloadFault payloadFault = observedBlock.toPayloadFault();
 
     final BuilderCircuitBreakerStatus builderStatus =
-        builderStatusByIndex.computeIfAbsent(
-            observedBlock.builderIndex(), __ -> new BuilderCircuitBreakerStatus());
+        builderStatusByIndex.compute(
+            observedBlock.builderIndex(),
+            (__, existingStatus) -> {
+              if (existingStatus == null
+                  || !existingStatus.isForBuilder(maybeBuilderPubKey.get())) {
+                return new BuilderCircuitBreakerStatus(maybeBuilderPubKey.get());
+              }
+              return existingStatus;
+            });
     builderStatus.payloadFaults().addLast(payloadFault);
     builderStatus.incrementConsecutiveUnavailablePayloads();
 
     if (builderStatus.payloadFaults().size() > allowedFaults
         || builderStatus.consecutiveUnavailablePayloads() > consecutiveAllowedFaults) {
-      builderStatus.banUntilSlot(currentSlot.plus(faultInspectionWindow));
+      builderStatus.banUntilSlot(state.getSlot().plus(faultInspectionWindow));
       LOG.debug(
           "Banning Gloas builder index {} until slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads",
           observedBlock.builderIndex(),
@@ -215,9 +227,31 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
     }
   }
 
+  private Optional<BuilderCircuitBreakerStatus> getCurrentBuilderStatus(
+      final UInt64 builderIndex, final BeaconState state) {
+    final BuilderCircuitBreakerStatus builderStatus = builderStatusByIndex.get(builderIndex);
+    if (builderStatus == null) {
+      return Optional.empty();
+    }
+
+    final Optional<BLSPublicKey> maybeCurrentBuilderPubKey =
+        spec.getBuilderPubKey(state, builderIndex);
+    if (maybeCurrentBuilderPubKey.isEmpty()
+        || !builderStatus.isForBuilder(maybeCurrentBuilderPubKey.get())) {
+      builderStatusByIndex.remove(builderIndex);
+      return Optional.empty();
+    }
+
+    return Optional.of(builderStatus);
+  }
+
+  private Optional<BlockPayloadStatus> getBlockPayloadStatus(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blockPayloadStatusByRoot.get(blockRoot));
+  }
+
   private void prune(final UInt64 currentSlot) {
     final UInt64 firstSlotOfInspectionWindow = currentSlot.minusMinZero(faultInspectionWindow);
-    recentBlocksByRoot
+    blockPayloadStatusByRoot
         .entrySet()
         .removeIf(entry -> entry.getValue().slot().isLessThan(firstSlotOfInspectionWindow));
 
@@ -244,16 +278,28 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
             });
   }
 
-  private record ObservedBlock(Bytes32 blockRoot, UInt64 slot, UInt64 builderIndex) {}
+  private record ObservedBlock(Bytes32 blockRoot, BlockPayloadStatus blockPayloadStatus) {
+    private UInt64 slot() {
+      return blockPayloadStatus.slot();
+    }
+
+    private UInt64 builderIndex() {
+      return blockPayloadStatus.builderIndex();
+    }
+
+    private PayloadFault toPayloadFault() {
+      return new PayloadFault(blockRoot, slot(), builderIndex());
+    }
+  }
 
   private record PayloadFault(Bytes32 blockRoot, UInt64 slot, UInt64 builderIndex) {}
 
-  private static class RecentBlock {
+  private static class BlockPayloadStatus {
     private final UInt64 slot;
     private final UInt64 builderIndex;
-    private PayloadFault payloadFault;
+    private boolean payloadFaultRecorded;
 
-    private RecentBlock(final UInt64 slot, final UInt64 builderIndex) {
+    private BlockPayloadStatus(final UInt64 slot, final UInt64 builderIndex) {
       this.slot = slot;
       this.builderIndex = builderIndex;
     }
@@ -266,25 +312,34 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
       return builderIndex;
     }
 
-    private boolean hasPayloadFault() {
-      return payloadFault != null;
+    private boolean markPayloadUnavailable() {
+      if (payloadFaultRecorded) {
+        return false;
+      }
+      payloadFaultRecorded = true;
+      return true;
     }
 
-    private void recordPayloadFault(final PayloadFault payloadFault) {
-      this.payloadFault = payloadFault;
-    }
-
-    private PayloadFault clearPayloadFault() {
-      final PayloadFault previousPayloadFault = payloadFault;
-      payloadFault = null;
-      return previousPayloadFault;
+    private boolean markPayloadAvailable() {
+      final boolean wasUnavailable = payloadFaultRecorded;
+      payloadFaultRecorded = false;
+      return wasUnavailable;
     }
   }
 
   private static class BuilderCircuitBreakerStatus {
+    private final BLSPublicKey builderPubKey;
     private final Deque<PayloadFault> payloadFaults = new ArrayDeque<>();
     private int consecutiveUnavailablePayloads = 0;
     private UInt64 banUntilSlot = UInt64.ZERO;
+
+    private BuilderCircuitBreakerStatus(final BLSPublicKey builderPubKey) {
+      this.builderPubKey = builderPubKey;
+    }
+
+    private boolean isForBuilder(final BLSPublicKey builderPubKey) {
+      return this.builderPubKey.equals(builderPubKey);
+    }
 
     private Deque<PayloadFault> payloadFaults() {
       return payloadFaults;
