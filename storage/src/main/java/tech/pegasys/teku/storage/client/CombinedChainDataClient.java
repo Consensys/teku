@@ -575,14 +575,21 @@ public class CombinedChainDataClient {
               if (maybeSlot.isPresent()) {
                 return SafeFuture.completedFuture(maybeSlot);
               }
-              // 3. historical nonCanonical only: get block and extract slot
+              // 3. historical nonCanonical (optional): get block and extract slot, then fall back
+              //    to the recently-validated index if still not found.
               if (includeFinalizedNonCanonical) {
                 return historicalChainData
                     .getNonCanonicalBlockByRoot(blockRoot)
-                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
+                    .thenApply(
+                        nonCanonicalSlot ->
+                            nonCanonicalSlot.or(
+                                () ->
+                                    recentChainData.getRecentlyValidatedSlotByBlockRoot(
+                                        blockRoot)));
               }
-              // 4. Canonical-only fallback: consult the recently-validated index for blocks that
-              //    have been gossip-validated but not yet imported (non-canonical path skipped).
+              // 4. recently-validated fallback: consult the recently-validated index for blocks
+              //    that have been gossip-validated but not yet imported.
               return SafeFuture.completedFuture(
                   recentChainData.getRecentlyValidatedSlotByBlockRoot(blockRoot));
             });
