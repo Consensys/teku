@@ -39,7 +39,7 @@ import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
 public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
 
-  public static final String ROUTE = "/eth/v1/beacon/execution_payload_envelope";
+  public static final String ROUTE = "/eth/v1/beacon/execution_payload_envelopes";
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostExecutionPayloadEnvelope(
