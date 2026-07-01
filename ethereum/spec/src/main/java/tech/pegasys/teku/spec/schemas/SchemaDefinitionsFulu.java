@@ -25,10 +25,10 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKA
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;

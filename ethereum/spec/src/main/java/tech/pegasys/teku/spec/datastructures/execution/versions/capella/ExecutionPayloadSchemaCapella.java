@@ -28,6 +28,8 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTION_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -50,7 +52,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadSchemaCapella
     extends ContainerSchema15<
@@ -73,8 +75,10 @@ public class ExecutionPayloadSchemaCapella
     implements ExecutionPayloadSchema<ExecutionPayloadCapellaImpl> {
 
   private final ExecutionPayloadCapellaImpl defaultExecutionPayload;
+  private final SszByteListSchema<Transaction> transactionSchema;
 
-  public ExecutionPayloadSchemaCapella(final SpecConfigCapella specConfig) {
+  public ExecutionPayloadSchemaCapella(
+      final SpecConfigCapella specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadCapella",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -90,15 +94,11 @@ public class ExecutionPayloadSchemaCapella
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(
-            TRANSACTIONS,
-            SszListSchema.create(
-                new TransactionSchema(specConfig),
-                specConfig.getMaxTransactionsPerPayload(),
-                SszSchemaHints.sszPackedByteLists())),
+        namedSchema(TRANSACTIONS, schemaRegistry.get(TRANSACTIONS_SCHEMA)),
         namedSchema(
             WITHDRAWALS,
             SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())));
+    this.transactionSchema = schemaRegistry.get(TRANSACTION_SCHEMA);
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -108,8 +108,8 @@ public class ExecutionPayloadSchemaCapella
   }
 
   @Override
-  public TransactionSchema getTransactionSchema() {
-    return (TransactionSchema) getTransactionsSchema().getElementSchema();
+  public SszByteListSchema<Transaction> getTransactionSchema() {
+    return transactionSchema;
   }
 
   @Override
