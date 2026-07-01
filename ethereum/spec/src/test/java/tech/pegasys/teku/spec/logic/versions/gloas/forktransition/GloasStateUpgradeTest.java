@@ -14,10 +14,14 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -28,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.ValidatorIndexCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -63,6 +68,45 @@ class GloasStateUpgradeTest {
 
     assertThat(BeaconStateCache.getTransitionCaches(postState).getValidatorIndexCache())
         .isSameAs(preStateValidatorIndexCache);
+  }
+
+  @Test
+  void shouldRematerializeEpochParticipationWithUInt8Schemas() {
+    final BeaconStateFulu preState =
+        BeaconStateFulu.required(
+            dataStructureUtil
+                .stateBuilder(SpecMilestone.FULU, 64, 0)
+                .setSlotToStartOfEpoch(GLOAS_EPOCH)
+                .build()
+                .updated(this::activateAllValidators)
+                .updated(
+                    state -> {
+                      final MutableBeaconStateAltair altairState = (MutableBeaconStateAltair) state;
+                      altairState.getPreviousEpochParticipation().set(0, SszByte.asUInt8(1));
+                      altairState.getCurrentEpochParticipation().set(0, SszByte.asUInt8(2));
+                    }));
+
+    final BeaconStateGloas postState =
+        BeaconStateGloas.required(createStateUpgrade().upgrade(preState));
+
+    assertThat(postState.getPreviousEpochParticipation()).isInstanceOf(SszByteList.class);
+    assertThat(postState.getCurrentEpochParticipation()).isInstanceOf(SszByteList.class);
+    assertThat(postState.getPreviousEpochParticipation().get(0).getSchema())
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA);
+    assertThat(postState.getCurrentEpochParticipation().get(0).getSchema())
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA);
+    assertThatSszData(postState.getPreviousEpochParticipation())
+        .isEqualByGettersTo(
+            postState
+                .getPreviousEpochParticipation()
+                .getSchema()
+                .sszDeserialize(postState.getPreviousEpochParticipation().sszSerialize()));
+    assertThatSszData(postState.getCurrentEpochParticipation())
+        .isEqualByGettersTo(
+            postState
+                .getCurrentEpochParticipation()
+                .getSchema()
+                .sszDeserialize(postState.getCurrentEpochParticipation().sszSerialize()));
   }
 
   private GloasStateUpgrade createStateUpgrade() {

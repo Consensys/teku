@@ -408,10 +408,12 @@ public class SchemaRegistryBuilder {
                 new SszListSchemaImpl<>(
                     registry.get(TRANSACTION_SCHEMA),
                     SpecConfigBellatrix.required(specConfig).getMaxTransactionsPerPayload(),
-                    SszSchemaHints.none()))
+                    SszSchemaHints.sszPackedByteLists()))
         .withCreator(
             GLOAS,
-            (registry, _, _) -> SszProgressiveListSchema.create(registry.get(TRANSACTION_SCHEMA)))
+            (registry, _, _) ->
+                SszProgressiveListSchema.create(
+                    registry.get(TRANSACTION_SCHEMA), SszSchemaHints.sszPackedByteLists()))
         .build();
   }
 
@@ -661,8 +663,7 @@ public class SchemaRegistryBuilder {
                 new SignedBeaconBlockSchema(
                     registry.get(BEACON_BLOCK_SCHEMA),
                     schemaName,
-                    OptionalLong.of(
-                        SpecConfigGloas.required(specConfig).getMaxSignedBeaconBlockSize())))
+                    OptionalLong.of(specConfig.getMaxPayloadSize())))
         .build();
   }
 

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateListFieldMigration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
@@ -90,7 +91,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         .createEmptyWithTransitionCachesFrom(preState)
         .updatedGloas(
             state -> {
-              BeaconStateFields.copyCommonFieldsFromSource(state, preState);
+              BeaconStateFields.copyCommonFieldsFromSourceUsingTargetSchemas(state, preState);
 
               state.setFork(
                   new Fork(
@@ -98,9 +99,23 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
-              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
-              state.setInactivityScores(preStateFulu.getInactivityScores());
+              // These source lists are bounded in Fulu but progressive in Gloas, so rebuild them
+              // through the target (progressive) field schemas.
+              state.setPreviousEpochParticipation(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
+                      preStateFulu.getPreviousEpochParticipation()));
+              state.setCurrentEpochParticipation(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
+                      preStateFulu.getCurrentEpochParticipation()));
+              state.setInactivityScores(
+                  BeaconStateListFieldMigration.rematerializeUInt64(
+                      targetStateSchema,
+                      BeaconStateFields.INACTIVITY_SCORES,
+                      preStateFulu.getInactivityScores()));
               state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
               state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
 
@@ -113,7 +128,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
-              state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
+              state.setHistoricalSummaries(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.HISTORICAL_SUMMARIES,
+                      preStateFulu.getHistoricalSummaries()));
               state.setDepositRequestsStartIndex(preStateFulu.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(preStateFulu.getDepositBalanceToConsume());
               state.setExitBalanceToConsume(preStateFulu.getExitBalanceToConsume());
@@ -121,9 +140,21 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setConsolidationBalanceToConsume(
                   preStateFulu.getConsolidationBalanceToConsume());
               state.setEarliestConsolidationEpoch(preStateFulu.getEarliestConsolidationEpoch());
-              state.setPendingDeposits(preStateFulu.getPendingDeposits());
-              state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
-              state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
+              state.setPendingDeposits(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PENDING_DEPOSITS,
+                      preStateFulu.getPendingDeposits()));
+              state.setPendingPartialWithdrawals(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
+                      preStateFulu.getPendingPartialWithdrawals()));
+              state.setPendingConsolidations(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PENDING_CONSOLIDATIONS,
+                      preStateFulu.getPendingConsolidations()));
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
 
               // New in Gloas
