@@ -240,7 +240,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SignedExecutionPayloadEnvelopeContentsSchema
       getSignedExecutionPayloadEnvelopeContentsSchema() {
-    return signedExecutionPayloadEnvelgopeContentsSchema;
+    return signedExecutionPayloadEnvelopeContentsSchema;
   }
 
   public SignedBlindedExecutionPayloadEnvelopeSchema

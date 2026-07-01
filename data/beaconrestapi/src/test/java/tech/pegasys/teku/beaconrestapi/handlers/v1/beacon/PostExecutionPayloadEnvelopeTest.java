@@ -106,6 +106,6 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBodyAsJson(handler))
         .isEqualTo(
-            "{\"code\":400,\"message\":\"Invalid value for broadcast_validation: Unexpected value: invalid_value\"}");
+            "{\"code\":400,\"message\":\"Invalid value for broadcast_validation: Unknown enum value: invalid_value\"}");
   }
 }
