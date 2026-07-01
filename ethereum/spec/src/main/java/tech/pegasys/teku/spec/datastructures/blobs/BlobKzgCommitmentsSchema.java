@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.blobs;
 
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
-public class Transaction extends SszByteListImpl {
-
-  Transaction(final SszByteListSchema<?> schema, final TreeNode backingNode) {
-    super(schema, backingNode);
-  }
+public interface BlobKzgCommitmentsSchema
+    extends SszListSchema<SszKZGCommitment, SszList<SszKZGCommitment>> {
+  SszList<SszKZGCommitment> createFromBlobsBundle(final BlobsBundle blobsBundle);
 }

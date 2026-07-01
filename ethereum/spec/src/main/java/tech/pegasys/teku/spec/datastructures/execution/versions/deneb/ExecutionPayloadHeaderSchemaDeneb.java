@@ -30,6 +30,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadHeaderSchemaDeneb
     extends ContainerSchema17<
@@ -75,7 +77,8 @@ public class ExecutionPayloadHeaderSchemaDeneb
   private final ExecutionPayloadHeaderDenebImpl defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderDenebImpl executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaDeneb(final SpecConfigDeneb specConfig) {
+  public ExecutionPayloadHeaderSchemaDeneb(
+      final SpecConfigDeneb specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadHeaderDeneb",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -96,9 +99,8 @@ public class ExecutionPayloadHeaderSchemaDeneb
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
 
-    final ExecutionPayloadDenebImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaDeneb(specConfig).getDefault();
-
+    final ExecutionPayload defaultExecutionPayload =
+        schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).toVersionDenebRequired().getDefault();
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
 
