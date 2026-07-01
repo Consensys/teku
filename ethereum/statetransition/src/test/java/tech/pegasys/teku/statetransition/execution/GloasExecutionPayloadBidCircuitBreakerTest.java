@@ -84,6 +84,18 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
   }
 
   @Test
+  public void shouldKeepBuilderBanWhenLaterPayloadIsAvailable() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 3);
+    setAncestor(circuitBreaker, 7, unavailablePayload(), 12);
+    setAncestor(circuitBreaker, 8, unavailablePayload(), 12);
+    setAncestor(circuitBreaker, 9, availablePayload(), 12);
+
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isFalse();
+  }
+
+  @Test
   public void shouldBanBuilderWhenConsecutiveUnavailablePayloadsExceedAllowedFaults() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 3, 1);
     setAncestor(circuitBreaker, 6, availablePayload(), 12);

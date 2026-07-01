@@ -183,7 +183,6 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
                 builderStatus.payloadFaults().remove(observedBlock.toPayloadFault());
               }
               builderStatus.resetConsecutiveUnavailablePayloads();
-              builderStatus.clearBan();
             });
   }
 
