@@ -457,7 +457,7 @@ public class ChainDataProvider {
                     gloasState.getBuilders().get(index)))
         .filter(
             builderData ->
-                builderStatuses.isEmpty()
+                builderStatusFilter.isEmpty()
                     || builderStatusFilter.contains(builderData.builderStatus()))
         .toList();
   }
