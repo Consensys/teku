@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
@@ -24,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -36,6 +39,11 @@ import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class PublishSignedExecutionPayloadRequest extends AbstractTypeDefRequest {
+
+  private final ResponseHandler<Boolean> responseHandler =
+      new ResponseHandler<Boolean>()
+          .withHandler(SC_OK, (request, response) -> Optional.of(true))
+          .withHandler(SC_ACCEPTED, (request, response) -> Optional.of(false));
 
   private final Spec spec;
 
@@ -65,22 +73,16 @@ public class PublishSignedExecutionPayloadRequest extends AbstractTypeDefRequest
             .getSignedExecutionPayloadEnvelopeContentsSchema()
             .getJsonTypeDefinition();
 
-    return postJson(
+    return createResult(
+        postJson(
             SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE,
             emptyMap(),
             queryParams,
             getHeaders(signedExecutionPayloadEnvelopeContents.getSlot(), false),
             signedExecutionPayloadEnvelopeContents,
             typeDefinition,
-            new ResponseHandler<>())
-        .map(
-            __ ->
-                PublishSignedExecutionPayloadResult.success(
-                    signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot()))
-        .orElseGet(
-            () ->
-                PublishSignedExecutionPayloadResult.notImported(
-                    signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot(), "UNKNOWN"));
+            responseHandler),
+        signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot());
   }
 
   public PublishSignedExecutionPayloadResult submit(
@@ -97,22 +99,28 @@ public class PublishSignedExecutionPayloadRequest extends AbstractTypeDefRequest
             .getSignedBlindedExecutionPayloadEnvelopeSchema()
             .getJsonTypeDefinition();
 
-    return postJson(
+    return createResult(
+        postJson(
             SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE,
             emptyMap(),
             queryParams,
             getHeaders(signedBlindedExecutionPayload.getSlot(), true),
             signedBlindedExecutionPayload,
             typeDefinition,
-            new ResponseHandler<>())
+            responseHandler),
+        signedBlindedExecutionPayload.getBeaconBlockRoot());
+  }
+
+  private PublishSignedExecutionPayloadResult createResult(
+      final Optional<Boolean> maybePublishedAndImported, final Bytes32 beaconBlockRoot) {
+    return maybePublishedAndImported
         .map(
-            __ ->
-                PublishSignedExecutionPayloadResult.success(
-                    signedBlindedExecutionPayload.getBeaconBlockRoot()))
+            publishedAndImported ->
+                publishedAndImported
+                    ? PublishSignedExecutionPayloadResult.success(beaconBlockRoot)
+                    : PublishSignedExecutionPayloadResult.notImported(beaconBlockRoot, "UNKNOWN"))
         .orElseGet(
-            () ->
-                PublishSignedExecutionPayloadResult.notImported(
-                    signedBlindedExecutionPayload.getBeaconBlockRoot(), "UNKNOWN"));
+            () -> PublishSignedExecutionPayloadResult.notImported(beaconBlockRoot, "UNKNOWN"));
   }
 
   private Map<String, String> getHeaders(final UInt64 slot, final boolean blinded) {

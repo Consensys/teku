@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
@@ -54,7 +55,10 @@ public class PublishSignedExecutionPayloadRequestTest extends AbstractTypeDefReq
     final PublishSignedExecutionPayloadResult result =
         request.submit(signedExecutionPayload, Optional.of(BroadcastValidationLevel.GOSSIP));
 
-    assertThat(result.isPublished()).isTrue();
+    assertThat(result)
+        .isEqualTo(
+            PublishSignedExecutionPayloadResult.success(
+                signedExecutionPayload.getBeaconBlockRoot()));
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
@@ -63,5 +67,18 @@ public class PublishSignedExecutionPayloadRequestTest extends AbstractTypeDefReq
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(recordedRequest.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("true");
+  }
+
+  @TestTemplate
+  public void shouldHandle202AcceptedAsPublishedButNotImported() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
+
+    final PublishSignedExecutionPayloadResult result =
+        request.submit(signedExecutionPayload, Optional.of(BroadcastValidationLevel.GOSSIP));
+
+    assertThat(result)
+        .isEqualTo(
+            PublishSignedExecutionPayloadResult.notImported(
+                signedExecutionPayload.getBeaconBlockRoot(), "UNKNOWN"));
   }
 }
