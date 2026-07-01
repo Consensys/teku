@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
@@ -43,8 +44,9 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
     final PublishSignedExecutionPayloadResult successResult =
         PublishSignedExecutionPayloadResult.success(envelope.getBeaconBlockRoot());
 
-    request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+    request.setRequestBody(envelope.blind(spec));
+    when(validatorDataProvider.publishSignedExecutionPayload(
+            any(SignedBlindedExecutionPayloadEnvelope.class), any()))
         .thenReturn(SafeFuture.completedFuture(successResult));
 
     handler.handleRequest(request);
@@ -61,8 +63,9 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
         PublishSignedExecutionPayloadResult.notImported(
             envelope.getBeaconBlockRoot(), "Invalid payload");
 
-    request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+    request.setRequestBody(envelope.blind(spec));
+    when(validatorDataProvider.publishSignedExecutionPayload(
+            any(SignedBlindedExecutionPayloadEnvelope.class), any()))
         .thenReturn(SafeFuture.completedFuture(failResult));
 
     handler.handleRequest(request);
@@ -78,8 +81,9 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
     final PublishSignedExecutionPayloadResult failResult =
         PublishSignedExecutionPayloadResult.rejected(envelope.getBeaconBlockRoot(), "oopsy");
 
-    request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+    request.setRequestBody(envelope.blind(spec));
+    when(validatorDataProvider.publishSignedExecutionPayload(
+            any(SignedBlindedExecutionPayloadEnvelope.class), any()))
         .thenReturn(SafeFuture.completedFuture(failResult));
 
     handler.handleRequest(request);
@@ -94,7 +98,7 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
     final SignedExecutionPayloadEnvelope envelope =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
 
-    request.setRequestBody(envelope);
+    request.setRequestBody(envelope.blind(spec));
     request.setOptionalQueryParameter("broadcast_validation", "invalid_value");
 
     handler.handleRequest(request);

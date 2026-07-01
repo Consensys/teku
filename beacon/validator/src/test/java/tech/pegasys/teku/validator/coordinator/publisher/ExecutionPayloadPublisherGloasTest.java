@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
@@ -53,13 +54,16 @@ class ExecutionPayloadPublisherGloasTest {
       mock(DataColumnSidecarGossipChannel.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   private final ExecutionPayloadPublisherGloas executionPayloadPublisher =
       new ExecutionPayloadPublisherGloas(
           executionPayloadFactory,
           executionPayloadGossipChannel,
           dataColumnSidecarGossipChannel,
-          executionPayloadManager);
+          executionPayloadManager,
+          combinedChainDataClient);
 
   final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);

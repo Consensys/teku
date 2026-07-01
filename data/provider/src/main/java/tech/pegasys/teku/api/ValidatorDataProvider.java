@@ -35,8 +35,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -259,6 +261,20 @@ public class ValidatorDataProvider {
       final SignedExecutionPayloadEnvelope envelope,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return validatorApiChannel.publishSignedExecutionPayload(envelope, broadcastValidationLevel);
+  }
+
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents envelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.publishSignedExecutionPayload(
+        envelopeContents, broadcastValidationLevel);
+  }
+
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope blindedEnvelope,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.publishSignedExecutionPayload(
+        blindedEnvelope, broadcastValidationLevel);
   }
 
   public SafeFuture<Void> registerValidators(

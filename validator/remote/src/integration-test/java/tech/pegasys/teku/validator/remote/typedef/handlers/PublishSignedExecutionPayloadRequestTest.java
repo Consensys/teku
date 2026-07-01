@@ -17,6 +17,7 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -61,5 +62,6 @@ public class PublishSignedExecutionPayloadRequestTest extends AbstractTypeDefReq
         .contains(ValidatorApiMethod.SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE.getPath(emptyMap()));
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(recordedRequest.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("true");
   }
 }
