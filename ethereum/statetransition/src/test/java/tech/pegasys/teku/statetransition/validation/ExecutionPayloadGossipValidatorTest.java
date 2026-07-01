@@ -279,4 +279,26 @@ public class ExecutionPayloadGossipValidatorTest {
             validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.GOSSIP)))
         .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
   }
+
+  @TestTemplate
+  void shouldRejectUnsupportedConsensusBroadcastValidationLevel() {
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.CONSENSUS)))
+        .isCompletedWithValue(
+            reject(
+                "Broadcast validation level %s is not supported for execution payload envelopes",
+                BroadcastValidationLevel.CONSENSUS));
+  }
+
+  @TestTemplate
+  void shouldRejectUnsupportedConsensusAndEquivocationBroadcastValidationLevel() {
+    assertThatSafeFuture(
+            validator.validate(
+                signedEnvelope,
+                Optional.of(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION)))
+        .isCompletedWithValue(
+            reject(
+                "Broadcast validation level %s is not supported for execution payload envelopes",
+                BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION));
+  }
 }

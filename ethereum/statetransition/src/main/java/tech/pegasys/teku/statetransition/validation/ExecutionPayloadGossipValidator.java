@@ -75,6 +75,17 @@ public class ExecutionPayloadGossipValidator {
         && broadcastValidationLevel.get().equals(BroadcastValidationLevel.NOT_REQUIRED)) {
       return SafeFuture.completedFuture(ACCEPT);
     }
+    if (broadcastValidationLevel
+        .filter(
+            level ->
+                level.equals(BroadcastValidationLevel.CONSENSUS)
+                    || level.equals(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
+        .isPresent()) {
+      return SafeFuture.completedFuture(
+          reject(
+              "Broadcast validation level %s is not supported for execution payload envelopes",
+              broadcastValidationLevel.orElseThrow()));
+    }
     final ExecutionPayloadEnvelope envelope = signedExecutionPayloadEnvelope.getMessage();
 
     final Optional<InternalValidationResult> preBlockValidationResult =
@@ -86,8 +97,6 @@ public class ExecutionPayloadGossipValidator {
     return performWithBlockValidation(envelope)
         .thenCompose(
             maybeResult -> {
-              // TODO GLOAS - do extra gossip validation for consensus or consensus_and_equiv
-              // ocation
               if (maybeResult.isPresent()) {
                 return SafeFuture.completedFuture(maybeResult.get());
               }
