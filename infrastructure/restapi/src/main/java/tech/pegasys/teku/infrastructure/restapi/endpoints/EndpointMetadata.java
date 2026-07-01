@@ -621,6 +621,18 @@ public class EndpointMetadata {
     public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector,
+        final RequestContentTypeDefinition<T> octetStreamRequestContentTypeDefinition) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      this.requestBodyTypes.put(
+          ContentTypes.OCTET_STREAM, octetStreamRequestContentTypeDefinition);
+      return withUnsupportedMediaTypeResponse();
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableOneOfTypeDefinition<T> requestBodyType,
+        final BodyTypeSelector<T> bodyTypeSelector,
         final BiFunction<Bytes, Optional<String>, T> milestoneSpecificOctetStreamParser) {
       this.requestBodyTypes.put(
           ContentTypes.JSON,
