@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -67,6 +69,8 @@ class ExecutionPayloadPublisherGloasTest {
 
   final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
+  final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload =
+      signedExecutionPayload.blind(spec);
   final List<DataColumnSidecar> dataColumnSidecars =
       List.of(dataStructureUtil.randomDataColumnSidecar());
 
@@ -89,6 +93,28 @@ class ExecutionPayloadPublisherGloasTest {
             PublishSignedExecutionPayloadResult.success(
                 signedExecutionPayload.getBeaconBlockRoot()));
 
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
+  }
+
+  @Test
+  public void publishSignedBlindedExecutionPayload_shouldPublishSidecarsFromChainData() {
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(
+            signedBlindedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedExecutionPayload)));
+    when(combinedChainDataClient.getDataColumnSidecars(
+            signedExecutionPayload.getSlotAndBlockRoot(), List.of()))
+        .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(
+                signedBlindedExecutionPayload, Optional.empty()))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.success(
+                signedBlindedExecutionPayload.getBeaconBlockRoot()));
+
+    verify(executionPayloadFactory, never()).createDataColumnSidecars(signedExecutionPayload);
     verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
     verify(dataColumnSidecarGossipChannel)
         .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);

@@ -258,6 +258,19 @@ public class CombinedChainDataClient {
         .thenCompose(this::getDataColumnSidecars);
   }
 
+  public SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    return historicalChainData
+        .getDataColumnIdentifiers(slotAndBlockRoot.getSlot())
+        .thenApply(
+            identifiers ->
+                filterDataColumnSidecarKeys(identifiers, indices)
+                    .filter(
+                        identifier ->
+                            identifier.blockRoot().equals(slotAndBlockRoot.getBlockRoot())))
+        .thenCompose(this::getDataColumnSidecars);
+  }
+
   private Stream<DataColumnSlotAndIdentifier> filterDataColumnSidecarKeys(
       final List<DataColumnSlotAndIdentifier> identifiers, final List<UInt64> indices) {
     if (indices.isEmpty()) {

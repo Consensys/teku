@@ -95,7 +95,10 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                                     "Cached execution payload envelope does not match blinded envelope"));
                           }
                           return publishSignedExecutionPayload(
-                              signedExecutionPayload, broadcastValidationLevel);
+                              signedExecutionPayload,
+                              combinedChainDataClient.getDataColumnSidecars(
+                                  signedExecutionPayload.getSlotAndBlockRoot(), List.of()),
+                              broadcastValidationLevel);
                         })
                     .orElseGet(
                         () ->
