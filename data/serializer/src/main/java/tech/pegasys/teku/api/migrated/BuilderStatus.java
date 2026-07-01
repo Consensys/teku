@@ -13,11 +13,24 @@
 
 package tech.pegasys.teku.api.migrated;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import java.util.Locale;
 
-public record StateBuilderData(UInt64 index, BuilderStatus builderStatus, Builder builder) {
-  public String getStatusName() {
-    return builderStatus.getValue();
+public enum BuilderStatus {
+  PENDING("pending"),
+  ACTIVE("active"),
+  EXITED("exited");
+
+  private final String value;
+
+  BuilderStatus(final String value) {
+    this.value = value;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  public static BuilderStatus parse(final String value) {
+    return BuilderStatus.valueOf(value.toUpperCase(Locale.ROOT));
   }
 }
