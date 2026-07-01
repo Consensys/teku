@@ -52,6 +52,22 @@ public class SszSchemaHints {
     public int getDepth() {
       return depth;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof SszSuperNodeHint that)) {
+        return false;
+      }
+      return depth == that.depth;
+    }
+
+    @Override
+    public int hashCode() {
+      return Integer.hashCode(depth);
+    }
   }
 
   public static SszSchemaHints of(final SszSchemaHint... hints) {
@@ -75,5 +91,21 @@ public class SszSchemaHints {
   @SuppressWarnings("unchecked")
   public <C extends SszSchemaHint> Optional<C> getHint(final Class<C> hintClass) {
     return (Optional<C>) hints.stream().filter(h -> h.getClass() == hintClass).findFirst();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SszSchemaHints that)) {
+      return false;
+    }
+    return hints.equals(that.hints);
+  }
+
+  @Override
+  public int hashCode() {
+    return hints.hashCode();
   }
 }
