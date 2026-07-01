@@ -32,6 +32,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadHeaderSchemaGloas
     extends ContainerSchema19<
@@ -76,12 +79,16 @@ public class ExecutionPayloadHeaderSchemaGloas
         SszUInt64>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderGloasImpl> {
 
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(19);
+
   private final ExecutionPayloadHeaderGloasImpl defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderGloasImpl executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaGloas(final SpecConfigGloas specConfig) {
+  public ExecutionPayloadHeaderSchemaGloas(
+      final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadHeaderGloas",
+        ACTIVE_FIELDS,
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(FEE_RECIPIENT, SszByteVectorSchema.create(Bytes20.SIZE)),
         namedSchema(STATE_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -102,9 +109,8 @@ public class ExecutionPayloadHeaderSchemaGloas
         namedSchema(BLOCK_ACCESS_LIST_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(SLOT_NUMBER, SszPrimitiveSchemas.UINT64_SCHEMA));
 
-    final ExecutionPayloadGloasImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaGloas(specConfig).getDefault();
-
+    final ExecutionPayload defaultExecutionPayload =
+        schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).toVersionGloasRequired().getDefault();
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
 
