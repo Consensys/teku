@@ -1096,8 +1096,7 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<?>
-      createSignedExecutionPayloadEnvelopeContentsSchemaProvider() {
+  private static SchemaProvider<?> createSignedExecutionPayloadEnvelopeContentsSchemaProvider() {
     return providerBuilder(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA)
         .withCreator(
             GLOAS,

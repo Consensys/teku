@@ -38,8 +38,7 @@ public class HeaderBasedOctetStreamRequestContentTypeDefinition<T>
   }
 
   @Override
-  public T deserialize(final InputStream in, final Map<String, String> headers)
-      throws IOException {
+  public T deserialize(final InputStream in, final Map<String, String> headers) throws IOException {
     return parser.apply(Bytes.wrap(in.readAllBytes()), headers);
   }
 

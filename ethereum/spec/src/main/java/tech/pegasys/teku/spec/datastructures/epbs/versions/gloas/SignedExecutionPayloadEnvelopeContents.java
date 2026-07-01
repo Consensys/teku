@@ -40,21 +40,13 @@ public class SignedExecutionPayloadEnvelopeContents
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
-    this(
+    super(
         schema,
         signedExecutionPayloadEnvelope,
         schema
             .getKzgProofsSchema()
             .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
         schema.getBlobsSchema().createFromElements(blobs));
-  }
-
-  public SignedExecutionPayloadEnvelopeContents(
-      final SignedExecutionPayloadEnvelopeContentsSchema schema,
-      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
-      final SszList<SszKZGProof> kzgProofs,
-      final SszList<Blob> blobs) {
-    super(schema, signedExecutionPayloadEnvelope, kzgProofs, blobs);
   }
 
   public SignedExecutionPayloadEnvelope getSignedExecutionPayloadEnvelope() {

@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -63,7 +64,9 @@ public class PublishSignedExecutionPayloadRequestTest extends AbstractTypeDefReq
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE.getPath(emptyMap()));
+        .isEqualTo(
+            ValidatorApiMethod.SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE.getPath(
+                Map.of(PARAM_BROADCAST_VALIDATION, "gossip")));
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(recordedRequest.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("true");

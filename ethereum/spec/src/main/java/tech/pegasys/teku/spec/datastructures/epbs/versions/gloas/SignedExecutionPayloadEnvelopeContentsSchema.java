@@ -37,8 +37,6 @@ public class SignedExecutionPayloadEnvelopeContentsSchema
         SszList<SszKZGProof>,
         SszList<Blob>> {
 
-  private static final SszFieldName FIELD_SIGNED_EXECUTION_PAYLOAD_ENVELOPE =
-      () -> "signed_execution_payload_envelope";
   private static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   private static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
@@ -47,7 +45,7 @@ public class SignedExecutionPayloadEnvelopeContentsSchema
     super(
         "SignedExecutionPayloadEnvelopeContents",
         namedSchema(
-            FIELD_SIGNED_EXECUTION_PAYLOAD_ENVELOPE,
+            "signed_execution_payload_envelope",
             schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
@@ -68,21 +66,9 @@ public class SignedExecutionPayloadEnvelopeContentsSchema
         this, signedExecutionPayloadEnvelope, kzgProofs, blobs);
   }
 
-  public SignedExecutionPayloadEnvelopeContents create(
-      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
-      final SszList<SszKZGProof> kzgProofs,
-      final SszList<Blob> blobs) {
-    return new SignedExecutionPayloadEnvelopeContents(
-        this, signedExecutionPayloadEnvelope, kzgProofs, blobs);
-  }
-
   @Override
   public SignedExecutionPayloadEnvelopeContents createFromBackingNode(final TreeNode node) {
     return new SignedExecutionPayloadEnvelopeContents(this, node);
-  }
-
-  public SignedExecutionPayloadEnvelopeSchema getSignedExecutionPayloadEnvelopeSchema() {
-    return (SignedExecutionPayloadEnvelopeSchema) getFieldSchema0();
   }
 
   @SuppressWarnings("unchecked")

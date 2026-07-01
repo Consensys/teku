@@ -625,8 +625,7 @@ public class EndpointMetadata {
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
-      this.requestBodyTypes.put(
-          ContentTypes.OCTET_STREAM, octetStreamRequestContentTypeDefinition);
+      this.requestBodyTypes.put(ContentTypes.OCTET_STREAM, octetStreamRequestContentTypeDefinition);
       return withUnsupportedMediaTypeResponse();
     }
 

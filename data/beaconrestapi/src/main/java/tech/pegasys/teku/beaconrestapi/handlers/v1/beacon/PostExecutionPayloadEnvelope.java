@@ -91,10 +91,9 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
         .summary("Publish signed execution payload envelope")
         .description(
             """
-            Instructs the beacon node to broadcast a signed execution payload envelope to the network, \
-            to be gossiped for payload validation. The request body is selected by the \
-            Eth-Execution-Payload-Blinded header: false submits SignedExecutionPayloadEnvelopeContents \
-            and true submits SignedBlindedExecutionPayloadEnvelope.""")
+            Instructs the beacon node to broadcast a signed execution payload envelope to the network. \
+            The request body is selected by the Eth-Execution-Payload-Blinded header: false submits \
+            SignedExecutionPayloadEnvelopeContents and true submits SignedBlindedExecutionPayloadEnvelope.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .queryParam(PARAMETER_BROADCAST_VALIDATION)
         .headerRequired(
@@ -119,7 +118,9 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
             "The envelope could not be integrated into the beacon node's database as it failed validation, but was successfully broadcast.")
         .response(
             SC_BAD_REQUEST,
-            "The signed envelope object is invalid, broadcast validation failed, or a blinded envelope could not be reconstructed from cache",
+            """
+            The signed envelope object is invalid, broadcast validation failed, or a blinded \
+            envelope could not be reconstructed from cache.""",
             HTTP_ERROR_RESPONSE_TYPE)
         .response(415, "Unsupported media type", HTTP_ERROR_RESPONSE_TYPE)
         .withInternalErrorResponse()
@@ -191,8 +192,7 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
     if (!headerValue.equalsIgnoreCase("true") && !headerValue.equalsIgnoreCase("false")) {
       throw new BadRequestException(
           String.format(
-              "Invalid value for (%s) header: %s",
-              HEADER_EXECUTION_PAYLOAD_BLINDED, headerValue));
+              "Invalid value for (%s) header: %s", HEADER_EXECUTION_PAYLOAD_BLINDED, headerValue));
     }
     return Boolean.parseBoolean(headerValue);
   }
