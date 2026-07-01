@@ -86,7 +86,10 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
       return true;
     }
 
-    LOG.debug("Gloas builder circuit breaker has not engaged.");
+    LOG.debug(
+        "Gloas builder circuit breaker has not engaged for parent root {} at slot {}",
+        parentRoot,
+        state.getSlot());
     return false;
   }
 
@@ -94,7 +97,19 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
   public synchronized boolean isBuilderAllowed(final UInt64 builderIndex, final BeaconState state) {
     prune(state.getSlot());
     return getCurrentBuilderStatus(builderIndex, state)
-        .map(builderStatus -> builderStatus.banUntilSlot().isLessThanOrEqualTo(state.getSlot()))
+        .map(
+            builderStatus -> {
+              final boolean builderAllowed =
+                  builderStatus.banUntilSlot().isLessThanOrEqualTo(state.getSlot());
+              if (!builderAllowed) {
+                LOG.debug(
+                    "Rejecting Gloas builder index {} because it is banned until slot {} at slot {}",
+                    builderIndex,
+                    builderStatus.banUntilSlot(),
+                    state.getSlot());
+              }
+              return builderAllowed;
+            })
         .orElse(true);
   }
 
@@ -218,11 +233,13 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
         || builderStatus.consecutiveUnavailablePayloads() > consecutiveAllowedFaults) {
       builderStatus.banUntilSlot(state.getSlot().plus(faultInspectionWindow));
       LOG.debug(
-          "Banning Gloas builder index {} until slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads",
+          "Banning Gloas builder index {} until slot {} at slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads; previous ban until slot {}",
           observedBlock.builderIndex(),
           builderStatus.banUntilSlot(),
+          state.getSlot(),
           builderStatus.payloadFaults().size(),
-          builderStatus.consecutiveUnavailablePayloads());
+          builderStatus.consecutiveUnavailablePayloads(),
+          builderStatus.banUntilSlot());
     }
   }
 
@@ -237,6 +254,10 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
         spec.getBuilderPubKey(state, builderIndex);
     if (maybeCurrentBuilderPubKey.isEmpty()
         || !builderStatus.isForBuilder(maybeCurrentBuilderPubKey.get())) {
+      LOG.debug(
+          "Clearing Gloas builder circuit breaker status for builder index {} at slot {} because the index is no longer associated with the tracked builder public key",
+          builderIndex,
+          state.getSlot());
       builderStatusByIndex.remove(builderIndex);
       return Optional.empty();
     }
@@ -268,7 +289,13 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
               if (builderStatus.payloadFaults().isEmpty()) {
                 builderStatus.resetConsecutiveUnavailablePayloads();
               }
-              if (builderStatus.banUntilSlot().isLessThanOrEqualTo(currentSlot)) {
+              if (!builderStatus.banUntilSlot().isZero()
+                  && builderStatus.banUntilSlot().isLessThanOrEqualTo(currentSlot)) {
+                LOG.debug(
+                    "Unbanning Gloas builder index {} at slot {}; ban expired at slot {}",
+                    entry.getKey(),
+                    currentSlot,
+                    builderStatus.banUntilSlot());
                 builderStatus.clearBan();
               }
               return builderStatus.payloadFaults().isEmpty()
