@@ -1406,6 +1406,10 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public Optional<Integer> getNumberOfCustodyGroups() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getNumberOfCustodyGroups);
+  }
+
   public int getNumberOfCustodyGroups(final UInt64 slot) {
     return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
   }
