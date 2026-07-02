@@ -231,15 +231,16 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
 
     if (builderStatus.payloadFaults().size() > allowedFaults
         || builderStatus.consecutiveUnavailablePayloads() > consecutiveAllowedFaults) {
+      final UInt64 previousBanUntilSlot = builderStatus.banUntilSlot();
       builderStatus.banUntilSlot(state.getSlot().plus(faultInspectionWindow));
       LOG.debug(
-          "Banning Gloas builder index {} until slot {} at slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads; previous ban until slot {}",
+          "Banning Gloas builder index {} until slot {} at slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads. Previous ban until slot {}",
           observedBlock.builderIndex(),
           builderStatus.banUntilSlot(),
           state.getSlot(),
           builderStatus.payloadFaults().size(),
           builderStatus.consecutiveUnavailablePayloads(),
-          builderStatus.banUntilSlot());
+          previousBanUntilSlot);
     }
   }
 
@@ -292,7 +293,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
               if (!builderStatus.banUntilSlot().isZero()
                   && builderStatus.banUntilSlot().isLessThanOrEqualTo(currentSlot)) {
                 LOG.debug(
-                    "Unbanning Gloas builder index {} at slot {}; ban expired at slot {}",
+                    "Unbanning Gloas builder index {} at slot {}. Ban expired at slot {}",
                     entry.getKey(),
                     currentSlot,
                     builderStatus.banUntilSlot());
