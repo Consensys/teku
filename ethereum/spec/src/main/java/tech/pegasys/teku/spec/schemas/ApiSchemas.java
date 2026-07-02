@@ -21,11 +21,15 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPrefe
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuthSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuthSchema;
+import tech.pegasys.teku.spec.schemas.api.StateValidatorBalanceDataSchema;
 
 public class ApiSchemas {
 
   public static final ValidatorRegistrationSchema VALIDATOR_REGISTRATION_SCHEMA =
       new ValidatorRegistrationSchema();
+
+  public static final StateValidatorBalanceDataSchema VALIDATOR_BALANCE_DATA_SCHEMA =
+      new StateValidatorBalanceDataSchema();
 
   public static final SignedValidatorRegistrationSchema SIGNED_VALIDATOR_REGISTRATION_SCHEMA =
       new SignedValidatorRegistrationSchema(VALIDATOR_REGISTRATION_SCHEMA);

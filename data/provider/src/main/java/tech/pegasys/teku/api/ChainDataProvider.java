@@ -47,7 +47,6 @@ import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateBuilderData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
-import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.provider.GenesisData;
@@ -94,6 +93,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.schemas.api.StateValidatorBalanceData;
 import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -378,18 +378,19 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>>
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<StateValidatorBalanceData>>>>
       getStateValidatorBalances(final String stateIdParam, final List<String> validators) {
     return fromState(stateIdParam, state -> getValidatorBalancesFromState(state, validators));
   }
 
   @VisibleForTesting
-  List<StateValidatorBalanceData> getValidatorBalancesFromState(
+  SszList<StateValidatorBalanceData> getValidatorBalancesFromState(
       final BeaconState state, final List<String> validators) {
-    return getValidatorSelector(state, validators)
-        .mapToObj(index -> StateValidatorBalanceData.fromState(state, index))
-        .flatMap(Optional::stream)
-        .toList();
+    return StateValidatorBalanceData.SSZ_LIST_SCHEMA.createFromElements(
+        getValidatorSelector(state, validators)
+            .mapToObj(index -> StateValidatorBalanceData.fromState(state, index))
+            .flatMap(Optional::stream)
+            .toList());
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SszList<StateValidatorIdentity>>>>
