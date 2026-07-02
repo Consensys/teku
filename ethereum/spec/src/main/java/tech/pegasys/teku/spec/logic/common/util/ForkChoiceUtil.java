@@ -112,6 +112,23 @@ public class ForkChoiceUtil {
     return getAncestor(forkChoiceStrategy, root, slot).map(ForkChoiceNode::createBase);
   }
 
+  /**
+   * is_ancestor
+   *
+   * <p>Returns whether {@code ancestor} is an ancestor of {@code node}, i.e. {@code ancestor} lies
+   * on the chain from {@code node} at {@code ancestor}'s block slot.
+   */
+  public boolean isAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final ForkChoiceNode node,
+      final ForkChoiceNode ancestor) {
+    return forkChoiceStrategy
+        .blockSlot(ancestor.blockRoot())
+        .flatMap(ancestorSlot -> forkChoiceStrategy.getAncestorNode(node, ancestorSlot))
+        .map(ancestor::equals)
+        .orElse(false);
+  }
+
   public NavigableMap<UInt64, Bytes32> getAncestors(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Bytes32 root,
@@ -155,14 +172,11 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * is_shuffling_stable
+   * is_epoch_boundary
    *
-   * <p>Refer to fork-choice specification.
-   *
-   * @param slot
-   * @return
+   * @return {@code true} when {@code slot} is NOT at an epoch boundary.
    */
-  public boolean isShufflingStable(final UInt64 slot) {
+  public boolean isEpochBoundary(final UInt64 slot) {
     return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
   }
 
@@ -359,7 +373,7 @@ public class ForkChoiceUtil {
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
-    return isShufflingStable(slot) && isFinalizationOk(store, slot);
+    return isEpochBoundary(slot) && isFinalizationOk(store, slot);
   }
 
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {
