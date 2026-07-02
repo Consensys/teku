@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -424,6 +425,7 @@ public class Eth2P2PNetworkFactory {
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
                                 config.getTargetSubnetSubscriberCount(),
+                                OptionalInt.empty(),
                                 subnetPeerCountGauge),
                         reputationManager,
                         Collections::shuffle))
