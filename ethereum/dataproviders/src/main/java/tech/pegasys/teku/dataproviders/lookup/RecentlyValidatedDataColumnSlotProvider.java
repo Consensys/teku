@@ -18,8 +18,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @FunctionalInterface
-public interface RecentlyValidatedSlotProvider {
-  RecentlyValidatedSlotProvider NOOP = blockRoot -> Optional.empty();
+public interface RecentlyValidatedDataColumnSlotProvider {
+  RecentlyValidatedDataColumnSlotProvider NOOP = blockRoot -> Optional.empty();
 
   Optional<UInt64> getSlot(Bytes32 blockRoot);
 }

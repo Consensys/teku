@@ -18,10 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
-class RecentlyValidatedSlotProviderTest {
+class RecentlyValidatedDataColumnSlotProviderTest {
 
   @Test
   void noopReturnsEmpty() {
-    assertThat(RecentlyValidatedSlotProvider.NOOP.getSlot(Bytes32.ZERO)).isEmpty();
+    assertThat(RecentlyValidatedDataColumnSlotProvider.NOOP.getSlot(Bytes32.ZERO)).isEmpty();
   }
 }

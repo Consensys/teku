@@ -33,7 +33,7 @@ import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
-import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedDataColumnSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -124,7 +124,7 @@ public abstract class RecentChainData
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
-  private final RecentlyValidatedSlotProvider validatedSlotProvider;
+  private final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider;
   private final BlockTimelinessTracker blockTimelinessTracker;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
@@ -138,7 +138,7 @@ public abstract class RecentChainData
       final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
-      final RecentlyValidatedSlotProvider validatedSlotProvider,
+      final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
