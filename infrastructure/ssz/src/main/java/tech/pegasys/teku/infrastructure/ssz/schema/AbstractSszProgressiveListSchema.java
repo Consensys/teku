@@ -317,8 +317,9 @@ public abstract class AbstractSszProgressiveListSchema<
     final List<TreeNode> childNodes = new ArrayList<>();
     if (endOffset > 0) {
       final int firstElementOffset = SszType.sszBytesToLength(reader.read(SszType.SSZ_LENGTH_SIZE));
-      if (firstElementOffset % SszType.SSZ_LENGTH_SIZE != 0) {
-        throw new SszDeserializeException("Invalid first element offset");
+      if (firstElementOffset % SszType.SSZ_LENGTH_SIZE != 0
+          || firstElementOffset < SszType.SSZ_LENGTH_SIZE) {
+        throw new SszDeserializeException("Invalid first element offset: " + firstElementOffset);
       }
       if (firstElementOffset > endOffset) {
         throw new SszDeserializeException(

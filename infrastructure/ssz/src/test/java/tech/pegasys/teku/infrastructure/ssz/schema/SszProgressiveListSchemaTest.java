@@ -306,6 +306,32 @@ public class SszProgressiveListSchemaTest {
         .isInstanceOf(SszDeserializeException.class);
   }
 
+  @Test
+  void invalidSsz_zeroFirstOffset_shouldThrow() {
+    final SszListSchema<SszUInt64, ?> innerListSchema =
+        SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10);
+    final SszProgressiveListSchema<SszList<SszUInt64>> varListSchema =
+        createProgressiveListSchema(innerListSchema);
+
+    // An empty list must serialize to zero bytes; a zero first offset is invalid
+    final Bytes zeroOffset = Bytes.of(0x00, 0x00, 0x00, 0x00);
+    assertThatThrownBy(() -> varListSchema.sszDeserialize(zeroOffset))
+        .isInstanceOf(SszDeserializeException.class);
+  }
+
+  @Test
+  void invalidSsz_zeroFirstOffsetWithTrailingBytes_shouldThrow() {
+    final SszListSchema<SszUInt64, ?> innerListSchema =
+        SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10);
+    final SszProgressiveListSchema<SszList<SszUInt64>> varListSchema =
+        createProgressiveListSchema(innerListSchema);
+
+    // Zero first offset followed by garbage must not decode as an empty list
+    final Bytes invalidSsz = Bytes.of(0x00, 0x00, 0x00, 0x00, 0xDE, 0xAD, 0xBE, 0xEF);
+    assertThatThrownBy(() -> varListSchema.sszDeserialize(invalidSsz))
+        .isInstanceOf(SszDeserializeException.class);
+  }
+
   // ===== SszLengthBounds overflow tests =====
 
   @Test
