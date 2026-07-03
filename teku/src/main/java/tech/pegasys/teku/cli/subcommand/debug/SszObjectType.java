@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
-import tech.pegasys.teku.spec.schemas.api.StateValidatorBalanceDataSchema;
+import tech.pegasys.teku.spec.schemas.api.StateValidatorBalanceData;
 
 @SuppressWarnings("JavaCase")
 public enum SszObjectType {
@@ -102,7 +102,7 @@ public enum SszObjectType {
       denebSchemas(SchemaDefinitionsDeneb::getExecutionPayloadAndBlobsBundleSchema)),
   DataColumn(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSchema)),
   DataColumnSidecar(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSidecarSchema)),
-  StateValidatorBalances(new StateValidatorBalanceDataSchema());
+  StateValidatorBalances(StateValidatorBalanceData.SSZ_LIST_SCHEMA);
 
   private final Function<SpecVersion, SszSchema<?>> getSchema;
 
