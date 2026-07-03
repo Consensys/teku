@@ -309,12 +309,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return true;
   }
 
-  @Override
-  public Optional<ForkChoiceNode> getAncestorNode(
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
-    return forkChoiceStrategy.getAncestorNode(ForkChoiceNode.createBase(root), slot);
-  }
-
   /**
    * is_ancestor
    *

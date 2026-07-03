@@ -107,11 +107,6 @@ public class ForkChoiceUtil {
     return forkChoiceStrategy.getAncestor(root, slot);
   }
 
-  public Optional<ForkChoiceNode> getAncestorNode(
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
-    return getAncestor(forkChoiceStrategy, root, slot).map(ForkChoiceNode::createBase);
-  }
-
   /**
    * is_ancestor
    *

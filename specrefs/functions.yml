@@ -2981,7 +2981,7 @@
 
 - name: get_ancestor#gloas
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
       search: public Optional<ForkChoiceNode> getAncestorNode(
   spec: |
     <spec fn="get_ancestor" fork="gloas" hash="31a66ff1">
