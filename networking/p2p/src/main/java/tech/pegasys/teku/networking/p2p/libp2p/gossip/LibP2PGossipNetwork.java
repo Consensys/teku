@@ -25,7 +25,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class LibP2PGossipNetwork implements GossipNetwork {
 
@@ -52,6 +55,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
   private final GossipTopicHandlers topicHandlers;
+  private Function<NodeId, Optional<Peer>> peerLookup = __ -> Optional.empty();
 
   public LibP2PGossipNetwork(
       final MetricsSystem metricsSystem,
@@ -76,7 +80,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
     topicHandlers.add(topic, topicHandler);
     final Topic libP2PTopic = new Topic(topic);
     final GossipHandler gossipHandler =
-        new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler);
+        new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler, peerLookup);
     PubsubSubscription subscription = gossip.subscribe(gossipHandler, libP2PTopic);
     return new LibP2PTopicChannel(gossipHandler, subscription);
   }
@@ -112,5 +116,9 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   public Gossip getGossip() {
     return gossip;
+  }
+
+  public void peerLookup(final Function<NodeId, Optional<Peer>> peerLookup) {
+    this.peerLookup = peerLookup;
   }
 }

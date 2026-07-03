@@ -105,6 +105,7 @@ public class LibP2PNetworkBuilder {
     rpcHandlers = createRpcHandlers();
     // Setup peers
     peerManager = createPeerManager();
+    gossipNetwork.peerLookup(peerManager::getPeer);
 
     final PrivKey privKey = privateKeyProvider.get();
     final NodeId nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
