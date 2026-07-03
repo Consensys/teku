@@ -268,19 +268,19 @@ class ForkChoiceUtilTest {
   }
 
   @ParameterizedTest
-  @MethodSource("isEpochBoundaryConditions")
-  void isEpochBoundary(final int slot, final boolean expectedResult) {
-    assertThat(forkChoiceUtil.isEpochBoundary(UInt64.valueOf(slot))).isEqualTo(expectedResult);
+  @MethodSource("isNotEpochBoundaryConditions")
+  void isNotEpochBoundary(final int slot, final boolean expectedResult) {
+    assertThat(forkChoiceUtil.isNotEpochBoundary(UInt64.valueOf(slot))).isEqualTo(expectedResult);
   }
 
-  public static Stream<Arguments> isEpochBoundaryConditions() {
+  public static Stream<Arguments> isNotEpochBoundaryConditions() {
     // 8 slots per epoch for test conditions
     final int epochStart = 10240 * 8;
     final int nextEpochStart = 10241 * 8;
     // slot , expectedResult
     final ArrayList<Arguments> args = new ArrayList<>();
 
-    // is_epoch_boundary returns false at any epoch boundary
+    // is_not_epoch_boundary returns false at any epoch boundary
     args.add(Arguments.of(0, false));
     args.add(Arguments.of(epochStart, false));
     args.add(Arguments.of(nextEpochStart, false));

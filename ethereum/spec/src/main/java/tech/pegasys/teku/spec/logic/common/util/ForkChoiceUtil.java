@@ -172,11 +172,11 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * is_epoch_boundary
+   * is_not_epoch_boundary
    *
    * @return {@code true} when {@code slot} is NOT at an epoch boundary.
    */
-  public boolean isEpochBoundary(final UInt64 slot) {
+  public boolean isNotEpochBoundary(final UInt64 slot) {
     return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
   }
 
@@ -373,7 +373,7 @@ public class ForkChoiceUtil {
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
-    return isEpochBoundary(slot) && isFinalizationOk(store, slot);
+    return isNotEpochBoundary(slot) && isFinalizationOk(store, slot);
   }
 
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {
