@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,9 +22,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
@@ -35,23 +40,81 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
   private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
   private final ExecutionPayloadManager executionPayloadManager;
+  private final CombinedChainDataClient combinedChainDataClient;
 
   public ExecutionPayloadPublisherGloas(
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
-      final ExecutionPayloadManager executionPayloadManager) {
+      final ExecutionPayloadManager executionPayloadManager,
+      final CombinedChainDataClient combinedChainDataClient) {
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadGossipChannel = executionPayloadGossipChannel;
     this.dataColumnSidecarGossipChannel = dataColumnSidecarGossipChannel;
     this.executionPayloadManager = executionPayloadManager;
+    this.combinedChainDataClient = combinedChainDataClient;
   }
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return publishSignedExecutionPayload(
+        signedExecutionPayload,
+        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload),
+        broadcastValidationLevel);
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return publishSignedExecutionPayload(
+        signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
+        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayloadEnvelopeContents),
+        broadcastValidationLevel);
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return combinedChainDataClient
+        .getExecutionPayloadByBlockRoot(signedBlindedExecutionPayload.getBeaconBlockRoot())
+        .thenCompose(
+            maybeSignedExecutionPayload ->
+                maybeSignedExecutionPayload
+                    .map(
+                        signedExecutionPayload -> {
+                          if (!signedExecutionPayload
+                              .hashTreeRoot()
+                              .equals(signedBlindedExecutionPayload.hashTreeRoot())) {
+                            return SafeFuture.completedFuture(
+                                PublishSignedExecutionPayloadResult.rejected(
+                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                                    "Cached execution payload envelope does not match blinded envelope"));
+                          }
+                          return publishSignedExecutionPayload(
+                              signedExecutionPayload,
+                              combinedChainDataClient.getDataColumnSidecars(
+                                  signedExecutionPayload.getSlotAndBlockRoot(), List.of()),
+                              broadcastValidationLevel);
+                        })
+                    .orElseGet(
+                        () ->
+                            SafeFuture.completedFuture(
+                                PublishSignedExecutionPayloadResult.rejected(
+                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                                    "No cached execution payload envelope found for blinded envelope"))));
+  }
+
+  private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return executionPayloadManager
-        .validateAndImportExecutionPayload(signedExecutionPayload)
+        .validateAndImportExecutionPayload(
+            signedExecutionPayload, Optional.empty(), broadcastValidationLevel)
         .thenApply(
             result -> {
               final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
@@ -59,8 +122,7 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                 // we publish the execution payload (and data column sidecars) after passing gossip
                 // validation
                 publishExecutionPayloadAndDataColumnSidecars(
-                    signedExecutionPayload,
-                    executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload));
+                    signedExecutionPayload, dataColumnSidecarsFuture);
                 return PublishSignedExecutionPayloadResult.success(beaconBlockRoot);
               }
               return PublishSignedExecutionPayloadResult.rejected(

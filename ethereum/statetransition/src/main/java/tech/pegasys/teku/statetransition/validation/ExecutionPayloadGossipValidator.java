@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 
@@ -64,6 +65,16 @@ public class ExecutionPayloadGossipValidator {
 
   public SafeFuture<InternalValidationResult> validate(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    return validate(signedExecutionPayloadEnvelope, Optional.empty());
+  }
+
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    if (broadcastValidationLevel.isPresent()
+        && broadcastValidationLevel.get().equals(BroadcastValidationLevel.NOT_REQUIRED)) {
+      return SafeFuture.completedFuture(ACCEPT);
+    }
     final ExecutionPayloadEnvelope envelope = signedExecutionPayloadEnvelope.getMessage();
 
     final Optional<InternalValidationResult> preBlockValidationResult =
@@ -74,13 +85,24 @@ public class ExecutionPayloadGossipValidator {
 
     return performWithBlockValidation(envelope)
         .thenCompose(
-            maybeResult ->
-                maybeResult
-                    .map(SafeFuture::completedFuture)
-                    .orElseGet(
-                        () ->
-                            performWithStateValidation(signedExecutionPayloadEnvelope)
-                                .thenApply(result -> markAsSeen(result, envelope))));
+            maybeResult -> {
+              if (maybeResult.isPresent()) {
+                return SafeFuture.completedFuture(maybeResult.get());
+              }
+
+              return performWithStateValidation(signedExecutionPayloadEnvelope)
+                  .thenApply(
+                      result -> {
+                        if (broadcastValidationLevel.isPresent()
+                            && broadcastValidationLevel
+                                .get()
+                                .equals(BroadcastValidationLevel.GOSSIP)
+                            && result.isAccept()) {
+                          return markAsSeen(ACCEPT, envelope);
+                        }
+                        return markAsSeen(result, envelope);
+                      });
+            });
   }
 
   public boolean isPayloadSeen(final Bytes32 beaconBlockRoot) {

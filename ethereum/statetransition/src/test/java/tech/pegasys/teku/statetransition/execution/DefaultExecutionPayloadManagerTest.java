@@ -327,7 +327,7 @@ class DefaultExecutionPayloadManagerTest {
   private void givenValidationResult(
       final SignedExecutionPayloadEnvelope executionPayload,
       final InternalValidationResult validationResult) {
-    when(executionPayloadGossipValidator.validate(executionPayload))
+    when(executionPayloadGossipValidator.validate(executionPayload, Optional.empty()))
         .thenReturn(completedFuture(validationResult));
   }
 

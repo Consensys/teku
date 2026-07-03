@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -110,15 +111,23 @@ public class DefaultExecutionPayloadManager
     return executionPayloadsSeenBeforePayloadDue.contains(beaconBlockRoot);
   }
 
+  @Override
+  public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return validateAndImportExecutionPayload(
+        signedExecutionPayload, Optional.empty(), Optional.empty());
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
-      final Optional<UInt64> maybeArrivalTimestamp) {
+      final Optional<UInt64> maybeArrivalTimestamp,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final UInt64 arrivalTimestamp =
         maybeArrivalTimestamp.orElseGet(() -> recentChainData.getStore().getTimeInMillis());
     final SafeFuture<InternalValidationResult> validationResult =
-        executionPayloadGossipValidator.validate(signedExecutionPayload);
+        executionPayloadGossipValidator.validate(signedExecutionPayload, broadcastValidationLevel);
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
@@ -136,7 +145,9 @@ public class DefaultExecutionPayloadManager
                     .runAfterDelay(
                         () ->
                             validateAndImportExecutionPayload(
-                                    signedExecutionPayload, Optional.of(arrivalTimestamp))
+                                    signedExecutionPayload,
+                                    Optional.of(arrivalTimestamp),
+                                    broadcastValidationLevel)
                                 .thenCompose(r -> publishPayload(r, signedExecutionPayload)),
                         Duration.ofMillis(100))
                     .finishError(LOG);
