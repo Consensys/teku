@@ -38,10 +38,17 @@ public interface ReadOnlyForkChoiceStrategy {
    * {@link ForkChoiceNode} identity. The starting node's payload status selects which parent
    * variant to follow, and the node itself is returned once its block slot is at or before {@code
    * slot}.
+   *
+   * <p>This is the payload-status-aware counterpart of {@link #getAncestor(Bytes32, UInt64)} and is
+   * intentionally abstract: unlike a block-root walk it cannot be derived from {@link
+   * #getAncestor(Bytes32, UInt64)}, because that would discard each ancestor's payload status and
+   * always yield {@linkplain ForkChoiceNode#createBase(Bytes32) base (PENDING)} nodes — which
+   * silently breaks the Gloas ancestry checks in {@code ForkChoiceUtilGloas.isAncestor}. Every
+   * implementation must therefore resolve payload status explicitly. Implementations that do not
+   * model the Gloas three-state tree may resolve ancestry by block root and return base (PENDING)
+   * nodes.
    */
-  default Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
-    return getAncestor(node.blockRoot(), slot).map(ForkChoiceNode::createBase);
-  }
+  Optional<ForkChoiceNode> getAncestorNode(ForkChoiceNode node, UInt64 slot);
 
   Optional<ForkChoiceNode> getParentBeaconBlockNode(ForkChoiceNode node);
 
