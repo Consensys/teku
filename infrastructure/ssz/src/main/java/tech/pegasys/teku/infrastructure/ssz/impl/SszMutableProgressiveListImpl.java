@@ -80,7 +80,8 @@ public class SszMutableProgressiveListImpl<
         elementsPerChunk > 1 ? (size() + elementsPerChunk - 1) / elementsPerChunk : size();
 
     final TreeNode updatedDataTree =
-        ProgressiveTreeUtil.updateProgressiveTree(dataTree, chunkUpdates, totalChunks);
+        ProgressiveTreeUtil.updateProgressiveTree(
+            dataTree, chunkUpdates, totalChunks, getSchema()::getLevelDefaultSubtree);
 
     return BranchNode.create(updatedDataTree, PackedChunkUpdateUtil.createSizeNode(size()));
   }

@@ -109,6 +109,57 @@ public class SszProgressiveListSuperNodeTest {
     assertLevelsAreSuperNodeBacked(hintedFromSsz(size).getBackingNode(), size);
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {2, 5, 21, 85})
+  void mutation_setPreservesSuperNodesAndHash(final int size) {
+    // start from a deserialize-built (packed) list — createFromElements builds plain trees
+    final SszList<SszContainer> hinted = hintedFromSsz(size);
+    final var mutable = hinted.createWritableCopy();
+    mutable.set(0, element(1000));
+    mutable.set(size - 1, element(2000));
+    final SszList<SszContainer> committed = mutable.commitChanges();
+
+    // plain reference — compare both hash and serialization: serialization exercises
+    // the per-element get() path over supernodes, which the hash check doesn't cover
+    final List<SszContainer> expected = new ArrayList<>(elements(size));
+    expected.set(0, element(1000));
+    expected.set(size - 1, element(2000));
+    final SszList<SszContainer> plainReference = PLAIN_SCHEMA.createFromElements(expected);
+    assertThat(committed.hashTreeRoot()).isEqualTo(plainReference.hashTreeRoot());
+    assertThat(committed.sszSerialize()).isEqualTo(plainReference.sszSerialize());
+    assertLevelsAreSuperNodeBacked(committed.getBackingNode(), size);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      ints = {1, 4, 5, 16, 20, 21, 84}) // appends that stay in-level and cross into new levels
+  void mutation_appendPreservesSuperNodesAndHash(final int initialSize) {
+    final SszList<SszContainer> hinted = hintedFromSsz(initialSize);
+    final var mutable = hinted.createWritableCopy();
+    mutable.set(initialSize, element(initialSize)); // append
+    mutable.set(initialSize + 1, element(initialSize + 1)); // append
+    final SszList<SszContainer> committed = mutable.commitChanges();
+
+    final SszList<SszContainer> plainReference =
+        PLAIN_SCHEMA.createFromElements(elements(initialSize + 2));
+    assertThat(committed.hashTreeRoot()).isEqualTo(plainReference.hashTreeRoot());
+    assertThat(committed.sszSerialize()).isEqualTo(plainReference.sszSerialize());
+    assertLevelsAreSuperNodeBacked(committed.getBackingNode(), initialSize + 2);
+  }
+
+  @Test
+  void mutation_appendFromEmptyBuildsSuperNodes() {
+    final var mutable = HINTED_SCHEMA.getDefault().createWritableCopy();
+    for (int i = 0; i < 30; i++) {
+      mutable.set(i, element(i));
+    }
+    final SszList<SszContainer> committed = mutable.commitChanges();
+    final SszList<SszContainer> plainReference = PLAIN_SCHEMA.createFromElements(elements(30));
+    assertThat(committed.hashTreeRoot()).isEqualTo(plainReference.hashTreeRoot());
+    assertThat(committed.sszSerialize()).isEqualTo(plainReference.sszSerialize());
+    assertLevelsAreSuperNodeBacked(committed.getBackingNode(), 30);
+  }
+
   @Test
   void hintIgnoredForPrimitiveElements() {
     final SszProgressiveListSchema<SszUInt64> hintedPrimitive =
