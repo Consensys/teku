@@ -301,6 +301,12 @@ public abstract class AbstractSszProgressiveListSchema<
     } else {
       // Fixed-size composite elements: one per chunk
       final int elementsCount = bytesSize / elementSchema.getSszFixedPartSize();
+      final int superNodeDepth = getSuperNodeDepth();
+      if (superNodeDepth > 0) {
+        final TreeNode progressiveTree =
+            createSuperNodeDataTree(reader.read(bytesSize), elementsCount, superNodeDepth);
+        return BranchNode.create(progressiveTree, toLengthNode(elementsCount));
+      }
       final List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
         try (SszReader sszReader = reader.slice(elementSchema.getSszFixedPartSize())) {
@@ -420,6 +426,10 @@ public abstract class AbstractSszProgressiveListSchema<
   // ===== Store/Load helpers =====
 
   private int getSuperNodeDepth() {
+    if (elementSchema.isPrimitive() || !elementSchema.isFixedSize()) {
+      // SuperNodes only apply to fixed-size composite elements; hint is ignored otherwise
+      return 0;
+    }
     return hints.getHint(SszSuperNodeHint.class).map(SszSuperNodeHint::getDepth).orElse(0);
   }
 
@@ -578,6 +588,97 @@ public abstract class AbstractSszProgressiveListSchema<
     } else {
       return elementSchema.loadBackingNodes(nodeSource, chunkHash, chunkGIndex);
     }
+  }
+
+  // ===== SuperNode packing (SszSuperNodeHint) =====
+  //
+  // With a SszSuperNodeHint of depth s, each progressive level L >= 1 stores its elements in
+  // SszSuperNodes of depth min(2L, s) at the bottom of the level subtree, with a plain binary
+  // tree of depth max(2L - s, 0) above. The supernode depth is capped per level: a fixed
+  // depth-s supernode on a shallow level (2L < s) would hash as a 2^s-chunk subtree instead of
+  // the level's 2^2L chunks and mis-slice update gIndices. Level 0 is always a plain element
+  // node (store/load routes depth-0 levels through the element schema). Packed and plain trees
+  // produce identical hashTreeRoot and serialization.
+  //
+  // The packed representation is only BUILT by SSZ deserialization (sszDeserializeFixed) and
+  // PRESERVED by mutations (via getLevelDefaultSubtree) and by store/load.
+  // createTreeFromElements intentionally builds a plain tree: all at-scale production paths
+  // enter via SSZ deserialization, store/load or mutation, and fork upgrades must
+  // rematerialize lists via serialize -> deserialize rather than createFromElements to keep
+  // packing. Consequently only JSON-parsed lists (whose type definition is backed by
+  // createFromElements) are unpacked, and such plain trees must not be persisted through
+  // storeBackingNodes: the supernode store branches require supernode-backed level subtrees
+  // (TreeNodeStore.storeLeafNode rejects branch nodes).
+
+  /**
+   * Default (all-zero) balanced subtree for a progressive level, used when mutations materialize a
+   * level that doesn't exist yet. For hinted schemas the subtree's bottom nodes are empty {@link
+   * SszSuperNode}s so updates keep the packed representation.
+   */
+  public TreeNode getLevelDefaultSubtree(final int level) {
+    final int depth = ProgressiveTreeUtil.levelDepth(level);
+    final int superNodeDepth = getSuperNodeDepth();
+    if (superNodeDepth == 0 || depth == 0) {
+      return TreeUtil.ZERO_TREES[depth];
+    }
+    final int levelSuperNodeDepth = Math.min(depth, superNodeDepth);
+    return TreeUtil.createTree(
+        List.of(),
+        new SszSuperNode(levelSuperNodeDepth, elementSszSupernodeTemplate.get(), Bytes.EMPTY),
+        depth - levelSuperNodeDepth);
+  }
+
+  /** Builds the progressive data tree from packed element SSZ, with SszSuperNode leaves. */
+  private TreeNode createSuperNodeDataTree(
+      final Bytes elementsSsz, final int elementsCount, final int superNodeDepth) {
+    if (elementsCount == 0) {
+      return LeafNode.EMPTY_LEAF;
+    }
+    final int elementSize = elementSchema.getSszFixedPartSize();
+    final int maxLevel = ProgressiveTreeUtil.levelForIndex(elementsCount - 1);
+    TreeNode spine = LeafNode.EMPTY_LEAF;
+    for (int level = maxLevel; level >= 0; level--) {
+      final int from =
+          level > 0 ? Math.toIntExact(ProgressiveTreeUtil.cumulativeCapacity(level - 1)) : 0;
+      final int to =
+          Math.toIntExact(Math.min(elementsCount, ProgressiveTreeUtil.cumulativeCapacity(level)));
+      final TreeNode levelSubtree =
+          packLevelSubtree(elementsSsz, from, to, level, superNodeDepth, elementSize);
+      spine = BranchNode.create(levelSubtree, spine);
+    }
+    return spine;
+  }
+
+  private TreeNode packLevelSubtree(
+      final Bytes elementsSsz,
+      final int from,
+      final int to,
+      final int level,
+      final int superNodeDepth,
+      final int elementSize) {
+    final int depth = ProgressiveTreeUtil.levelDepth(level);
+    if (depth == 0) {
+      // Level 0 is always a plain element node (matches store/load's depth == 0 routing)
+      try (SszReader elementReader =
+          SszReader.fromBytes(elementsSsz.slice(from * elementSize, elementSize))) {
+        return elementSchema.sszDeserializeTree(elementReader);
+      }
+    }
+    final int levelSuperNodeDepth = Math.min(depth, superNodeDepth);
+    final int elementsPerSuperNode = 1 << levelSuperNodeDepth;
+    final List<TreeNode> superNodes = new ArrayList<>();
+    for (int i = from; i < to; i += elementsPerSuperNode) {
+      final int count = Math.min(elementsPerSuperNode, to - i);
+      superNodes.add(
+          new SszSuperNode(
+              levelSuperNodeDepth,
+              elementSszSupernodeTemplate.get(),
+              elementsSsz.slice(i * elementSize, count * elementSize)));
+    }
+    return TreeUtil.createTree(
+        superNodes,
+        new SszSuperNode(levelSuperNodeDepth, elementSszSupernodeTemplate.get(), Bytes.EMPTY),
+        depth - levelSuperNodeDepth);
   }
 
   // ===== Internal helpers =====
