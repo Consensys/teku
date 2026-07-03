@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,6 +69,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private final AsyncRunner asyncRunner;
   private final Signer localNodeSigner;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
+  private final Optional<Integer> maxDasCustodyGroupCount;
   private final NodeRecordConverter nodeRecordConverter;
 
   private final DiscoverySystem discoverySystem;
@@ -84,11 +86,13 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final KeyValueStore<String, Bytes> kvStore,
       final Bytes privateKey,
       final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier,
+      final Optional<Integer> maxDasCustodyGroupCount,
       final DiscoverySystemBuilder discoverySystemBuilder,
       final NodeRecordConverter nodeRecordConverter) {
     this.asyncRunner = asyncRunner;
     this.localNodeSigner = new DefaultSigner(SecretKeyParser.fromLibP2pPrivKey(privateKey));
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
+    this.maxDasCustodyGroupCount = maxDasCustodyGroupCount;
     this.nodeRecordConverter = nodeRecordConverter;
     final List<String> networkInterfaces = p2pConfig.getNetworkInterfaces();
     Preconditions.checkState(
@@ -256,12 +260,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   public Stream<DiscoveryPeer> streamKnownPeers() {
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
-    return activeNodes()
-        .flatMap(
-            node ->
-                nodeRecordConverter
-                    .convertToDiscoveryPeer(node, supportsIpv6, schemaDefinitions)
-                    .stream());
+    return activeNodes().flatMap(nodeRecordToDiscoveryPeer(schemaDefinitions));
   }
 
   @Override
@@ -276,13 +275,16 @@ public class DiscV5Service extends Service implements DiscoveryService {
     LOG.debug("Found {} nodes prior to filtering", foundNodes.size());
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
-    return foundNodes.stream()
-        .flatMap(
-            nodeRecord ->
-                nodeRecordConverter
-                    .convertToDiscoveryPeer(nodeRecord, supportsIpv6, schemaDefinitions)
-                    .stream())
-        .toList();
+    return foundNodes.stream().flatMap(nodeRecordToDiscoveryPeer(schemaDefinitions)).toList();
+  }
+
+  private Function<NodeRecord, Stream<DiscoveryPeer>> nodeRecordToDiscoveryPeer(
+      final SchemaDefinitions schemaDefinitions) {
+    return nodeRecord ->
+        nodeRecordConverter
+            .convertToDiscoveryPeer(
+                nodeRecord, supportsIpv6, schemaDefinitions, maxDasCustodyGroupCount)
+            .stream();
   }
 
   @Override
