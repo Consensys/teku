@@ -38,9 +38,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -220,6 +223,13 @@ public class BeaconStateSchemaGloas
   @Override
   public BeaconStateGloas createEmpty() {
     return createEmptyBeaconStateImpl();
+  }
+
+  public BeaconStateGloas createEmptyWithTransitionCachesFrom(final BeaconState sourceState) {
+    return new BeaconStateGloasImpl(
+        this,
+        BeaconStateCache.getTransitionCaches(sourceState).copy(),
+        SlotCaches.createNewEmpty());
   }
 
   private BeaconStateGloasImpl createEmptyBeaconStateImpl() {
