@@ -137,8 +137,8 @@ public class DataColumnSidecarsByRangeMessageHandler
         dasLogger
             .getDataColumnSidecarsByRangeLogger()
             .onInboundRequest(
-                LoggingPeerId.fromPeerAndNodeId(
-                    peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
+                LoggingPeerId.fromPeerAndMaybeNodeId(
+                    peer.getId().toBase58(), peer.getDiscoveryNodeId()),
                 new DasReqRespLogger.ByRangeRequest(
                     message.getStartSlot(), message.getCount().intValue(), message.getColumns()));
     final LoggingResponseCallback<DataColumnSidecar> callbackWithLogging =
