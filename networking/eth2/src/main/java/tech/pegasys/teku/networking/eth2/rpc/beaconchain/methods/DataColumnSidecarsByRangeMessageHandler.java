@@ -92,11 +92,19 @@ public class DataColumnSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRangeRequestMessage request) {
+    final UInt64 maxSlot;
+    try {
+      maxSlot = request.getMaxSlot();
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
+
     final int requestedCount = calculateRequestedCount(request);
     final int maxRequestDataColumnSidecars;
     try {
       maxRequestDataColumnSidecars =
-          spec.atSlot(request.getMaxSlot()).miscHelpers().getMaxRequestDataColumnSidecars();
+          spec.atSlot(maxSlot).miscHelpers().getMaxRequestDataColumnSidecars();
     } catch (final UnsupportedOperationException __) {
       return Optional.of(
           new RpcException(

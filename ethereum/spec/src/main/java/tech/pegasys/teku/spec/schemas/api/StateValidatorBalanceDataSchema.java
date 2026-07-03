@@ -11,30 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.migrated;
+package tech.pegasys.teku.spec.schemas.api;
 
 import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas.UINT64_SCHEMA;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas.UINT8_SCHEMA;
 
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 
-public class StateBuilderDataSchema
-    extends ContainerSchema3<StateBuilderData, SszUInt64, SszByte, Builder> {
+public class StateValidatorBalanceDataSchema
+    extends ContainerSchema2<StateValidatorBalanceData, SszUInt64, SszUInt64> {
 
-  public StateBuilderDataSchema() {
+  public StateValidatorBalanceDataSchema() {
     super(
-        "BuilderResponse",
+        "ValidatorBalanceResponse",
         namedSchema("index", UINT64_SCHEMA),
-        namedSchema("status", UINT8_SCHEMA),
-        namedSchema("builder", Builder.SSZ_SCHEMA));
+        namedSchema("balance", UINT64_SCHEMA));
   }
 
   @Override
-  public StateBuilderData createFromBackingNode(final TreeNode node) {
-    return new StateBuilderData(this, node);
+  public StateValidatorBalanceData createFromBackingNode(final TreeNode node) {
+    return new StateValidatorBalanceData(this, node);
   }
 }

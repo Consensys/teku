@@ -33,6 +33,7 @@ import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedDataColumnSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -123,6 +124,7 @@ public abstract class RecentChainData
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
+  private final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider;
   private final BlockTimelinessTracker blockTimelinessTracker;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
@@ -136,6 +138,7 @@ public abstract class RecentChainData
       final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
@@ -153,6 +156,7 @@ public abstract class RecentChainData
     this.stateProvider = stateProvider;
     this.validatedBlockProvider = validatedBlockProvider;
     this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
+    this.validatedSlotProvider = validatedSlotProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
@@ -669,6 +673,10 @@ public abstract class RecentChainData
 
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 root) {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
+  }
+
+  public Optional<UInt64> getRecentlyValidatedSlotByBlockRoot(final Bytes32 root) {
+    return validatedSlotProvider.getSlot(root);
   }
 
   public Optional<Bytes32> getExecutionBlockHashForBlockRoot(final Bytes32 root) {

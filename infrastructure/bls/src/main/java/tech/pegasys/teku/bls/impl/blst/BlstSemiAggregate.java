@@ -48,13 +48,14 @@ public final class BlstSemiAggregate implements BatchSemiAggregate {
   }
 
   void mergeWith(final BlstSemiAggregate other) {
-    if (other.isValid()) {
-      BLST_ERROR ret = getCtx().merge(other.getCtx());
-      if (ret != BLST_ERROR.BLST_SUCCESS) {
-        throw new IllegalStateException("Error merging Blst pairing contexts: " + ret);
-      }
-    } else {
+    if (!isValid() || !other.isValid()) {
       ctx = null;
+      return;
+    }
+
+    BLST_ERROR ret = getCtx().merge(other.getCtx());
+    if (ret != BLST_ERROR.BLST_SUCCESS) {
+      throw new IllegalStateException("Error merging Blst pairing contexts: " + ret);
     }
   }
 }
