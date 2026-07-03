@@ -139,6 +139,28 @@ public class ProgressiveTreeUtil {
       final TreeNode dataTree,
       final Int2ObjectMap<TreeNode> chunkUpdates,
       final int newTotalChunks) {
+    return updateProgressiveTree(dataTree, chunkUpdates, newTotalChunks, ZERO_LEVEL_DEFAULTS);
+  }
+
+  /**
+   * Applies chunk-level updates to a progressive data tree, growing it if needed.
+   *
+   * <p>This method walks the progressive tree's right spine level-by-level. Changes are grouped by
+   * level and applied as batched {@link TreeUpdates} to each level's balanced subtree (where all
+   * changes share the same depth). New levels are created as needed for appends beyond existing
+   * capacity. Unchanged subtrees are reused for structural sharing.
+   *
+   * @param dataTree existing progressive data tree (left child of the list/container root)
+   * @param chunkUpdates map from chunk index to new TreeNode for that chunk
+   * @param newTotalChunks total number of chunks after updates
+   * @param levelDefaults supplier for default subtrees at each level
+   * @return updated progressive data tree with structural sharing
+   */
+  public static TreeNode updateProgressiveTree(
+      final TreeNode dataTree,
+      final Int2ObjectMap<TreeNode> chunkUpdates,
+      final int newTotalChunks,
+      final LevelDefaultSupplier levelDefaults) {
     if (newTotalChunks == 0) {
       return LeafNode.EMPTY_LEAF;
     }
@@ -167,14 +189,15 @@ public class ProgressiveTreeUtil {
           .add(new TreeUpdates.Update(gIdx, entry.getValue()));
     }
 
-    return updateLevel(dataTree, 0, maxLevel, updatesByLevel);
+    return updateLevel(dataTree, 0, maxLevel, updatesByLevel, levelDefaults);
   }
 
   private static TreeNode updateLevel(
       final TreeNode node,
       final int level,
       final int maxLevel,
-      final Int2ObjectMap<List<TreeUpdates.Update>> updatesByLevel) {
+      final Int2ObjectMap<List<TreeUpdates.Update>> updatesByLevel,
+      final LevelDefaultSupplier levelDefaults) {
     if (level > maxLevel) {
       return LeafNode.EMPTY_LEAF;
     }
@@ -185,8 +208,8 @@ public class ProgressiveTreeUtil {
       left = branch.left();
       right = branch.right();
     } else {
-      // Node doesn't exist yet (EMPTY_LEAF) - create zero-filled balanced subtree
-      left = TreeUtil.ZERO_TREES[levelDepth(level)];
+      // Node doesn't exist yet (EMPTY_LEAF) - create default balanced subtree
+      left = levelDefaults.defaultLevelSubtree(level);
       right = LeafNode.EMPTY_LEAF;
     }
 
@@ -200,7 +223,8 @@ public class ProgressiveTreeUtil {
       left = left.updated(treeUpdates);
     }
 
-    final TreeNode newRight = updateLevel(right, level + 1, maxLevel, updatesByLevel);
+    final TreeNode newRight =
+        updateLevel(right, level + 1, maxLevel, updatesByLevel, levelDefaults);
 
     @SuppressWarnings("ReferenceComparison")
     boolean unchanged = left == originalLeft && newRight == right;
@@ -252,6 +276,16 @@ public class ProgressiveTreeUtil {
   public interface LevelLoader {
     TreeNode loadLevel(Bytes32 levelHash, long levelGIndex, int chunksInLevel, int depth);
   }
+
+  /** Supplies the default (all-zero) balanced subtree for a level that does not exist yet. */
+  @FunctionalInterface
+  public interface LevelDefaultSupplier {
+    TreeNode defaultLevelSubtree(int level);
+  }
+
+  /** Plain default: zero tree of the level's depth. */
+  public static final LevelDefaultSupplier ZERO_LEVEL_DEFAULTS =
+      level -> TreeUtil.ZERO_TREES[levelDepth(level)];
 
   /**
    * Walks the progressive data tree's right spine level-by-level, storing each level's balanced

@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
@@ -266,5 +267,49 @@ class ProgressiveTreeUtilUpdateTest {
     final TreeNode expectedTree = ProgressiveTreeUtil.createProgressiveTree(expected);
 
     assertThat(result.hashTreeRoot()).isEqualTo(expectedTree.hashTreeRoot());
+  }
+
+  @Test
+  void updateProgressiveTree_usesLevelDefaultSupplierForNewLevels() {
+    // Marker default subtree so we can detect which base the new level was built from.
+    // Must be a real depth-2 subtree: updateLevel applies TreeUpdates with depth-2
+    // gIndices against it, and LeafNode.updated throws on any non-SELF gIndex.
+    final TreeNode markerLeaf =
+        LeafNode.create(
+            Bytes32.fromHexString(
+                "0xabababababababababababababababababababababababababababababababab"));
+    final TreeNode marker = TreeUtil.createTree(List.of(), markerLeaf, 2);
+    final ProgressiveTreeUtil.LevelDefaultSupplier markerDefaults =
+        level -> level == 1 ? marker : TreeUtil.ZERO_TREES[ProgressiveTreeUtil.levelDepth(level)];
+
+    // Start from a tree with 1 chunk (level 0 only), append chunk index 1 (first chunk of level 1)
+    final TreeNode initialTree =
+        ProgressiveTreeUtil.createProgressiveTree(List.of(LeafNode.create(Bytes32.ZERO)));
+    final Int2ObjectMap<TreeNode> updates = new Int2ObjectOpenHashMap<>();
+    updates.put(1, LeafNode.create(Bytes32.leftPad(Bytes.of(1))));
+
+    final TreeNode updated =
+        ProgressiveTreeUtil.updateProgressiveTree(initialTree, updates, 2, markerDefaults);
+
+    // The chunk update landed at level-1 position 0; the other three level-1 slots keep
+    // the marker leaves instead of zero leaves, so the root differs from the plain
+    // supplier's result iff the supplier's subtree was used as the update base.
+    final TreeNode plainUpdated =
+        ProgressiveTreeUtil.updateProgressiveTree(initialTree, updates, 2);
+    assertThat(updated.hashTreeRoot()).isNotEqualTo(plainUpdated.hashTreeRoot());
+  }
+
+  @Test
+  void updateProgressiveTree_zeroLevelDefaultsMatchesLegacyOverload() {
+    final TreeNode initialTree =
+        ProgressiveTreeUtil.createProgressiveTree(List.of(LeafNode.create(Bytes32.ZERO)));
+    final Int2ObjectMap<TreeNode> updates = new Int2ObjectOpenHashMap<>();
+    updates.put(1, LeafNode.create(Bytes32.leftPad(Bytes.of(1))));
+
+    final TreeNode viaOverload =
+        ProgressiveTreeUtil.updateProgressiveTree(
+            initialTree, updates, 2, ProgressiveTreeUtil.ZERO_LEVEL_DEFAULTS);
+    final TreeNode viaLegacy = ProgressiveTreeUtil.updateProgressiveTree(initialTree, updates, 2);
+    assertThat(viaOverload.hashTreeRoot()).isEqualTo(viaLegacy.hashTreeRoot());
   }
 }
