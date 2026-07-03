@@ -147,6 +147,19 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BlobSidecarsByRangeRequestMessage(
+                UInt64.MAX_VALUE, UInt64.valueOf(10), maxBlobsPerBlock));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+  }
+
+  @TestTemplate
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(

@@ -114,6 +114,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
         .flatMap(DataColumnSamplingTracker::getBlock);
   }
 
+  @Override
+  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
+    return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
+        .map(DataColumnSamplingTracker::slot);
+  }
+
   /**
    * When syncing or backfilling always make sure to call this method with known DataColumn *before*
    * calling {@link DasSamplerBasic#checkDataAvailability(UInt64, Bytes32)} so that RPC fetch won't
