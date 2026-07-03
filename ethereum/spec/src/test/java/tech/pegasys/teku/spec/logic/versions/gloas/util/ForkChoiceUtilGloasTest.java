@@ -559,6 +559,76 @@ class ForkChoiceUtilGloasTest {
     assertThat(forkChoiceUtil.isParentStrong(store, signedHead, proposerBoostAmount)).isTrue();
   }
 
+  @Test
+  void isAncestor_returnsTrueWhenRootAndPayloadStatusMatch() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createFull(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createFull(ancestorRoot)));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsTrueWhenAncestorIsPendingWildcard() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    // A PENDING ancestor matches any resolved payload status for the same block root.
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createFull(ancestorRoot)));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenPayloadStatusDiffersAndAncestorIsNotPending() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createFull(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createEmpty(ancestorRoot)));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenResolvedRootDiffers() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(dataStructureUtil.randomBytes32())));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenAncestorNodeCannotBeResolved() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot)).thenReturn(Optional.empty());
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
   // Helper methods to create blocks with specific properties
   private BeaconBlock createBlockWithBlockHash(final Bytes32 blockHash) {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(gloasSlot);

@@ -80,6 +80,47 @@ class ForkChoiceUtilTest {
   }
 
   @Test
+  void isAncestor_returnsTrueWhenResolvedAncestorMatches() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+    final UInt64 ancestorSlot = UInt64.valueOf(3);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(ancestorSlot));
+    when(strategy.getAncestorNode(node, ancestorSlot)).thenReturn(Optional.of(ancestor));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenResolvedAncestorDiffers() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+    final UInt64 ancestorSlot = UInt64.valueOf(3);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(ancestorSlot));
+    when(strategy.getAncestorNode(node, ancestorSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(dataStructureUtil.randomBytes32())));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenAncestorSlotUnknown() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.empty());
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
     chainBuilder.generateBlocksUpToSlot(10);
 
