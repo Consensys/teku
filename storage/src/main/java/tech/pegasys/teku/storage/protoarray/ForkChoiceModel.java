@@ -82,8 +82,12 @@ interface ForkChoiceModel {
     rebuildBlockNodesFromMetadata(protoArray, blockNodeIndex, block, optimisticallyProcessed);
   }
 
-  /** Resolves a latest-message vote onto a concrete node identity. */
-  Optional<ForkChoiceNode> resolveVoteNode(
+  /**
+   * Resolves a latest-message vote onto a concrete node identity.
+   *
+   * <p>Spec mapping: {@code get_supported_node(store, message)}.
+   */
+  Optional<ForkChoiceNode> getSupportedNode(
       Bytes32 voteRoot,
       UInt64 voteSlot,
       boolean payloadPresent,
