@@ -177,12 +177,47 @@ class LibP2PNetworkBuilderTest {
   }
 
   @Test
+  void buildListenAddresses_dualStackSpecificIpv4SameTcpPortUsesIpv6WildcardTcpSocket() {
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .networkInterfaces(List.of("127.0.0.1", "::"))
+            .listenPort(9000)
+            .listenPortIpv6(9000)
+            .quicEnabled(false)
+            .build();
+
+    assertThat(List.of(LibP2PNetworkBuilder.buildListenAddresses(config)))
+        .containsExactly("/ip6/::/tcp/9000");
+  }
+
+  @Test
   void start_dualStackSameTcpPortDoesNotBindTcpPortTwice() throws Exception {
     Assumptions.assumeTrue(canBindIpv6Wildcard());
     final int listenPort = findAvailablePort();
     final NetworkConfig config =
         NetworkConfig.builder()
             .networkInterfaces(List.of("0.0.0.0", "::"))
+            .advertisedIps(Optional.of(List.of("127.0.0.1", "::1")))
+            .listenPort(listenPort)
+            .listenPortIpv6(listenPort)
+            .quicEnabled(false)
+            .build();
+    final P2PNetwork<Peer> network = createNetwork(config);
+
+    try {
+      assertThatCode(() -> Waiter.waitFor(network.start())).doesNotThrowAnyException();
+    } finally {
+      Waiter.waitFor(network.stop());
+    }
+  }
+
+  @Test
+  void start_dualStackSpecificIpv4SameTcpPortDoesNotBindTcpPortTwice() throws Exception {
+    Assumptions.assumeTrue(canBindIpv6Wildcard());
+    final int listenPort = findAvailablePort();
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .networkInterfaces(List.of("127.0.0.1", "::"))
             .advertisedIps(Optional.of(List.of("127.0.0.1", "::1")))
             .listenPort(listenPort)
             .listenPortIpv6(listenPort)

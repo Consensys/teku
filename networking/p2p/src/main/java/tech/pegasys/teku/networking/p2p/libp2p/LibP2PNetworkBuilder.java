@@ -177,7 +177,7 @@ public class LibP2PNetworkBuilder {
         .flatMap(
             networkInterface -> {
               final List<String> addresses = new ArrayList<>();
-              if (shouldListenOnTcp(config, networkInterface, singleStack)) {
+              if (shouldListenOnTcp(config, networkInterface)) {
                 addresses.add(
                     MultiaddrUtil.fromInetSocketAddress(
                             new InetSocketAddress(
@@ -185,7 +185,7 @@ public class LibP2PNetworkBuilder {
                                 listenTcpPort(config, networkInterface, singleStack)))
                         .toString());
               }
-              if (shouldListenOnQuic(config, networkInterface, singleStack)) {
+              if (shouldListenOnQuic(config, networkInterface)) {
                 addresses.add(
                     MultiaddrUtil.fromInetSocketAddressAsQuic(
                             new InetSocketAddress(
@@ -213,10 +213,10 @@ public class LibP2PNetworkBuilder {
         .flatMap(
             networkInterface -> {
               final List<Integer> ports = new ArrayList<>();
-              if (shouldListenOnTcp(config, networkInterface, singleStack)) {
+              if (shouldListenOnTcp(config, networkInterface)) {
                 ports.add(listenTcpPort(config, networkInterface, singleStack));
               }
-              if (shouldListenOnQuic(config, networkInterface, singleStack)) {
+              if (shouldListenOnQuic(config, networkInterface)) {
                 ports.add(listenQuicPort(config, networkInterface, singleStack));
               }
               return ports.stream();
@@ -269,36 +269,23 @@ public class LibP2PNetworkBuilder {
   }
 
   private static boolean shouldListenOnTcp(
-      final NetworkConfig config, final String networkInterface, final boolean singleStack) {
+      final NetworkConfig config, final String networkInterface) {
     return config.isTcpEnabled()
-        && shouldListenOnAddress(
-            config,
+        && DualStackPortBindings.shouldListenOnAddress(
+            config.getNetworkInterfaces(),
             networkInterface,
-            singleStack,
             config.getListenPort(),
             config.getListenPortIpv6());
   }
 
   private static boolean shouldListenOnQuic(
-      final NetworkConfig config, final String networkInterface, final boolean singleStack) {
+      final NetworkConfig config, final String networkInterface) {
     return config.isQuicEnabled()
-        && shouldListenOnAddress(
-            config,
+        && DualStackPortBindings.shouldListenOnAddress(
+            config.getNetworkInterfaces(),
             networkInterface,
-            singleStack,
             config.getListenQuicPort(),
             config.getListenQuicPortIpv6());
-  }
-
-  private static boolean shouldListenOnAddress(
-      final NetworkConfig config,
-      final String networkInterface,
-      final boolean singleStack,
-      final int listenPort,
-      final int listenPortIpv6) {
-    return singleStack
-        || DualStackPortBindings.shouldListenOnAddress(
-            config.getNetworkInterfaces(), networkInterface, listenPort, listenPortIpv6);
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {

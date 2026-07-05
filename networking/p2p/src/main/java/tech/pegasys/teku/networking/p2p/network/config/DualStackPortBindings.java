@@ -29,10 +29,12 @@ public final class DualStackPortBindings {
       final String networkInterface,
       final int listenPort,
       final int listenPortIpv6) {
+    // A wildcard IPv6 socket is used as the single dual-stack listener for the same port. This
+    // may broaden a specific IPv4 bind to all IPv4 interfaces, but avoids a double-bind failure
+    // when the IPv6 wildcard socket already owns the IPv4 port.
     return networkInterfaces.size() == 1
         || IPVersionResolver.resolve(networkInterface) == IPVersion.IP_V6
-        || !hasIpv6AnyLocalAddressOnSamePort(networkInterfaces, listenPort, listenPortIpv6)
-        || !isAnyLocalAddress(networkInterface);
+        || !hasIpv6AnyLocalAddressOnSamePort(networkInterfaces, listenPort, listenPortIpv6);
   }
 
   private static boolean hasIpv6AnyLocalAddressOnSamePort(

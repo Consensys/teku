@@ -56,6 +56,27 @@ class DiscV5ServiceTest {
         .isEqualTo(IPVersion.IP_V6);
   }
 
+  @Test
+  void dualStackSpecificIpv4SameUdpPortUsesSingleIpv6WildcardListenAddress() {
+    final CapturingDiscoverySystemBuilder discoverySystemBuilder =
+        new CapturingDiscoverySystemBuilder();
+    final DiscoveryConfig discoveryConfig =
+        DiscoveryConfig.builder().listenUdpPort(9000).listenUdpPortIpv6(9000).build();
+    final NetworkConfig networkConfig =
+        NetworkConfig.builder()
+            .networkInterfaces(List.of("127.0.0.1", "::"))
+            .advertisedIps(Optional.of(List.of("127.0.0.1", "::1")))
+            .build();
+
+    createService(discoveryConfig, networkConfig, discoverySystemBuilder);
+
+    assertThat(discoverySystemBuilder.listenAddresses).hasSize(1);
+    assertThat(discoverySystemBuilder.listenAddresses[0].getPort()).isEqualTo(9000);
+    assertThat(discoverySystemBuilder.listenAddresses[0].getAddress().isAnyLocalAddress()).isTrue();
+    assertThat(IPVersionResolver.resolve(discoverySystemBuilder.listenAddresses[0]))
+        .isEqualTo(IPVersion.IP_V6);
+  }
+
   private static void createService(
       final DiscoveryConfig discoveryConfig,
       final NetworkConfig networkConfig,
