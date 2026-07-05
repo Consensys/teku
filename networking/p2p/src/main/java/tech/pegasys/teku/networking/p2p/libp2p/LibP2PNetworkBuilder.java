@@ -52,6 +52,7 @@ import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.network.config.DualStackPortBindings;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -176,7 +177,7 @@ public class LibP2PNetworkBuilder {
         .flatMap(
             networkInterface -> {
               final List<String> addresses = new ArrayList<>();
-              if (config.isTcpEnabled()) {
+              if (shouldListenOnTcp(config, networkInterface, singleStack)) {
                 addresses.add(
                     MultiaddrUtil.fromInetSocketAddress(
                             new InetSocketAddress(
@@ -184,7 +185,7 @@ public class LibP2PNetworkBuilder {
                                 listenTcpPort(config, networkInterface, singleStack)))
                         .toString());
               }
-              if (config.isQuicEnabled()) {
+              if (shouldListenOnQuic(config, networkInterface, singleStack)) {
                 addresses.add(
                     MultiaddrUtil.fromInetSocketAddressAsQuic(
                             new InetSocketAddress(
@@ -212,10 +213,10 @@ public class LibP2PNetworkBuilder {
         .flatMap(
             networkInterface -> {
               final List<Integer> ports = new ArrayList<>();
-              if (config.isTcpEnabled()) {
+              if (shouldListenOnTcp(config, networkInterface, singleStack)) {
                 ports.add(listenTcpPort(config, networkInterface, singleStack));
               }
-              if (config.isQuicEnabled()) {
+              if (shouldListenOnQuic(config, networkInterface, singleStack)) {
                 ports.add(listenQuicPort(config, networkInterface, singleStack));
               }
               return ports.stream();
@@ -265,6 +266,39 @@ public class LibP2PNetworkBuilder {
       case IP_V4 -> config.getListenQuicPort();
       case IP_V6 -> config.getListenQuicPortIpv6();
     };
+  }
+
+  private static boolean shouldListenOnTcp(
+      final NetworkConfig config, final String networkInterface, final boolean singleStack) {
+    return config.isTcpEnabled()
+        && shouldListenOnAddress(
+            config,
+            networkInterface,
+            singleStack,
+            config.getListenPort(),
+            config.getListenPortIpv6());
+  }
+
+  private static boolean shouldListenOnQuic(
+      final NetworkConfig config, final String networkInterface, final boolean singleStack) {
+    return config.isQuicEnabled()
+        && shouldListenOnAddress(
+            config,
+            networkInterface,
+            singleStack,
+            config.getListenQuicPort(),
+            config.getListenQuicPortIpv6());
+  }
+
+  private static boolean shouldListenOnAddress(
+      final NetworkConfig config,
+      final String networkInterface,
+      final boolean singleStack,
+      final int listenPort,
+      final int listenPortIpv6) {
+    return singleStack
+        || DualStackPortBindings.shouldListenOnAddress(
+            config.getNetworkInterfaces(), networkInterface, listenPort, listenPortIpv6);
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
