@@ -163,4 +163,23 @@ public class SszPackedByteListsSchemaTest {
     assertThat(HINTED.createFromElements(List.of()).hashTreeRoot())
         .isEqualTo(UNHINTED.createFromElements(List.of()).hashTreeRoot());
   }
+
+  @Test
+  public void storeLoad_shouldRoundTripViaMaterializedForm() {
+    final Bytes bytes = serialized(1, 0, 33, 100);
+    final SszList<SszByteList> hinted = (SszList<SszByteList>) HINTED.sszDeserialize(bytes);
+    final InMemoryStoringTreeNodeStore nodeStore = new InMemoryStoringTreeNodeStore();
+    final TreeNode node = hinted.getBackingNode();
+    HINTED.storeBackingNodes(nodeStore, 100, GIndexUtil.SELF_G_INDEX, node);
+    final TreeNode loaded =
+        HINTED.loadBackingNodes(nodeStore, node.hashTreeRoot(), GIndexUtil.SELF_G_INDEX);
+    assertThat(loaded.hashTreeRoot()).isEqualTo(node.hashTreeRoot());
+    final SszList<SszByteList> reloaded =
+        (SszList<SszByteList>) HINTED.createFromBackingNode(loaded);
+    for (int i = 0; i < hinted.size(); i++) {
+      assertThat(reloaded.get(i).getBytes()).isEqualTo(hinted.get(i).getBytes());
+    }
+    // packed form is intentionally NOT preserved across store/load
+    assertThat(vectorNode(reloaded)).isNotInstanceOf(SszPackedByteListsNode.class);
+  }
 }

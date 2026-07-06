@@ -475,6 +475,10 @@ public abstract class AbstractSszProgressiveListSchema<
       elementSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, levelGIndex, levelSubtree);
     } else if (childDepth == 0) {
       // SuperNode covers entire level subtree
+      // NOTE: storing SszSuperNodes via storeLeafNode is unsound for payloads <= 32 bytes: stores
+      // assume a leaf's root equals rightPad(data) and skip persisting them (see
+      // KvStoreTreeNodeStore.storeLeafNode), which does not hold for computed-root data nodes.
+      // Left as-is: no production schema currently stores supernode-hinted structures.
       nodeStore.storeLeafNode(levelSubtree, levelGIndex);
     } else {
       final long lastUsefulGIndex =

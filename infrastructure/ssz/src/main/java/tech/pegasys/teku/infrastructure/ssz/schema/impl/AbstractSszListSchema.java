@@ -309,6 +309,10 @@ public abstract class AbstractSszListSchema<
       return;
     }
     final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length, superNodeDepth);
+    // NOTE: storing SszSuperNodes via storeLeafNode is unsound for payloads <= 32 bytes: stores
+    // assume a leaf's root equals rightPad(data) and skip persisting them (see
+    // KvStoreTreeNodeStore.storeLeafNode), which does not hold for computed-root data nodes.
+    // Left as-is: no production schema currently stores supernode-hinted structures.
     final TargetDepthNodeHandler targetDepthNodeHandler =
         superNodeDepth == 0
             ? (targetDepthNode, targetDepthGIndex) ->
