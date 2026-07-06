@@ -189,6 +189,7 @@ public abstract class AbstractSszListSchema<
 
   private int[] parsePackedOffsets(final Bytes bytes) {
     final int endOffset = bytes.size();
+    checkSsz(endOffset >= SSZ_LENGTH_SIZE, "Invalid SSZ: trying to read more bytes than available");
     final int firstElementOffset = SszType.sszBytesToLength(bytes.slice(0, SSZ_LENGTH_SIZE));
     checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
     checkSsz(firstElementOffset > 0, "Invalid first element offset");

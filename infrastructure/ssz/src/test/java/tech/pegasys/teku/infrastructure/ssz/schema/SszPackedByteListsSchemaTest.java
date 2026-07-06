@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNodeTest.elementsOfSizes;
 import static tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNodeTest.serializeElements;
 
+import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -121,5 +122,14 @@ public class SszPackedByteListsSchemaTest {
     final Bytes zeroFirstOffset = Bytes.of(0, 0, 0, 0);
     assertThatThrownBy(() -> HINTED.sszDeserialize(zeroFirstOffset))
         .isInstanceOf(SszDeserializeException.class);
+    // truncated input shorter than a single offset (1-3 bytes)
+    for (final Bytes truncated : List.of(Bytes.of(1), Bytes.of(1, 2), Bytes.of(1, 2, 3))) {
+      assertThatThrownBy(() -> HINTED.sszDeserialize(truncated))
+          .describedAs("hinted, %s bytes", truncated.size())
+          .isInstanceOf(SszDeserializeException.class);
+      assertThatThrownBy(() -> UNHINTED.sszDeserialize(truncated))
+          .describedAs("unhinted, %s bytes", truncated.size())
+          .isInstanceOf(SszDeserializeException.class);
+    }
   }
 }
