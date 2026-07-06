@@ -88,8 +88,6 @@ public class HistoricalBatchFetcher {
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlotToImport =
       new ConcurrentHashMap<>();
-  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRootToImport =
-      new ConcurrentHashMap<>();
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
       blindedExecutionPayloadsByBlockRootToImport = new ConcurrentHashMap<>();
   private Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
@@ -303,8 +301,9 @@ public class HistoricalBatchFetcher {
   void processExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
     validateExecutionPayloadBlockHash(signedExecutionPayloadEnvelope);
-    executionPayloadsByBlockRootToImport.put(
-        signedExecutionPayloadEnvelope.getBeaconBlockRoot(), signedExecutionPayloadEnvelope);
+    blindedExecutionPayloadsByBlockRootToImport.put(
+        signedExecutionPayloadEnvelope.getBeaconBlockRoot(),
+        blindExecutionPayloadEnvelope(signedExecutionPayloadEnvelope));
   }
 
   private void validateExecutionPayloadBlockHash(
@@ -422,7 +421,6 @@ public class HistoricalBatchFetcher {
               validateExecutionPayloadEnvelopes(blocksToImport);
 
               final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
-              blindExecutionPayloadsForImport();
               return storageUpdateChannel
                   .onFinalizedBlocks(
                       blocksToImport,
@@ -439,7 +437,6 @@ public class HistoricalBatchFetcher {
         .alwaysRun(
             () -> {
               blobSidecarsBySlotToImport.clear();
-              executionPayloadsByBlockRootToImport.clear();
               blindedExecutionPayloadsByBlockRootToImport.clear();
               maybeEarliestBlobSidecarSlot = Optional.empty();
             });
@@ -488,24 +485,24 @@ public class HistoricalBatchFetcher {
   }
 
   private void pruneExecutionPayloadsNotInBatch() {
-    if (executionPayloadsByBlockRootToImport.isEmpty()) {
+    if (blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
       return;
     }
     final Set<Bytes32> blockRoots =
         blocksToImport.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toSet());
-    executionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
+    blindedExecutionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
   }
 
   private void validateExecutionPayloadEnvelopes(final Collection<SignedBeaconBlock> blocks) {
-    if (!executionPayloadsByBlockRootToImport.isEmpty()) {
+    if (!blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
       LOG.trace("Validating execution payload envelopes for a batch");
       final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
           blocks.stream()
               .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
-      executionPayloadsByBlockRootToImport.forEach(
+      blindedExecutionPayloadsByBlockRootToImport.forEach(
           (blockRoot, signedEnvelope) ->
               validateExecutionPayloadEnvelope(
-                  blindExecutionPayloadEnvelope(signedEnvelope),
+                  signedEnvelope,
                   Optional.ofNullable(blocksByRoot.get(blockRoot))
                       .orElseThrow(
                           () ->
@@ -516,14 +513,6 @@ public class HistoricalBatchFetcher {
     }
 
     validateExecutionPayloadEnvelopesPresence(blocks);
-  }
-
-  private void blindExecutionPayloadsForImport() {
-    blindedExecutionPayloadsByBlockRootToImport.clear();
-    executionPayloadsByBlockRootToImport.forEach(
-        (blockRoot, signedEnvelope) ->
-            blindedExecutionPayloadsByBlockRootToImport.put(
-                blockRoot, blindExecutionPayloadEnvelope(signedEnvelope)));
   }
 
   private SignedBlindedExecutionPayloadEnvelope blindExecutionPayloadEnvelope(
@@ -591,7 +580,7 @@ public class HistoricalBatchFetcher {
       // Execution chain did not advance, so previous block's payload was not delivered
       return;
     }
-    if (executionPayloadsByBlockRootToImport.containsKey(previousBlock.getRoot())) {
+    if (blindedExecutionPayloadsByBlockRootToImport.containsKey(previousBlock.getRoot())) {
       return;
     }
     throw new IllegalArgumentException(
