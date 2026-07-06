@@ -1366,6 +1366,74 @@ class ForkChoiceTest {
     verifyNoInteractions(forkChoiceNotifier);
   }
 
+  @Test
+  void prepareForBlockProduction_shouldNotifyForkChoiceUpdatedWhenProposerHeadUnchanged() {
+    final UInt64 proposalSlot = UInt64.valueOf(2);
+    final SignedBlockAndState canonicalHead = storageSystem.chainUpdater().advanceChain(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(proposalSlot);
+
+    final ChainHead blockProductionHead =
+        safeJoin(
+            forkChoice.prepareForBlockProduction(proposalSlot, BlockProductionPerformance.NOOP));
+
+    assertThat(blockProductionHead.getRoot()).isEqualTo(canonicalHead.getRoot());
+
+    final ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
+        ArgumentCaptor.forClass(ForkChoiceState.class);
+    verify(forkChoiceNotifier)
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), eq(Optional.of(proposalSlot)));
+    assertThat(forkChoiceStateCaptor.getValue().headBlock().blockRoot())
+        .isEqualTo(canonicalHead.getRoot());
+    assertThat(forkChoiceStateCaptor.getValue().headBlockSlot()).isEqualTo(canonicalHead.getSlot());
+  }
+
+  @Test
+  void prepareForBlockProduction_shouldUseProposerHeadAndWaitForLateBlockReorgPreparation() {
+    final SignedBlockAndState proposerHead = storageSystem.chainUpdater().advanceChain(ONE);
+    final SignedBlockAndState canonicalHead = storageSystem.chainUpdater().advanceChain(2);
+    final UInt64 proposalSlot = UInt64.valueOf(3);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(proposalSlot);
+    final ForkChoiceNode proposerHeadNode =
+        recentChainData
+            .getStore()
+            .getForkChoiceStrategy()
+            .getParentBeaconBlockNode(ForkChoiceNode.createBase(canonicalHead.getRoot()))
+            .orElseThrow();
+    assertThat(proposerHeadNode.blockRoot()).isEqualTo(proposerHead.getRoot());
+
+    final RecentChainData recentChainDataSpy = spy(recentChainData);
+    doReturn(proposerHeadNode).when(recentChainDataSpy).getProposerHead(any(), eq(proposalSlot));
+    recentChainData = recentChainDataSpy;
+
+    final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler =
+        mock(LateBlockReorgPreparationHandler.class);
+    final SafeFuture<Void> preparationFuture = new SafeFuture<>();
+    when(lateBlockReorgPreparationHandler.onLateBlockReorgPreparation(
+            proposerHead.getSlot(), canonicalHead.getRoot()))
+        .thenReturn(preparationFuture);
+    recreateForkChoice(lateBlockReorgPreparationHandler);
+
+    final SafeFuture<ChainHead> result =
+        forkChoice.prepareForBlockProduction(proposalSlot, BlockProductionPerformance.NOOP);
+
+    assertThatSafeFuture(result).isNotCompleted();
+    verify(lateBlockReorgPreparationHandler)
+        .onLateBlockReorgPreparation(proposerHead.getSlot(), canonicalHead.getRoot());
+
+    final ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
+        ArgumentCaptor.forClass(ForkChoiceState.class);
+    verify(forkChoiceNotifier)
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), eq(Optional.of(proposalSlot)));
+    assertThat(forkChoiceStateCaptor.getValue().headBlock()).isEqualTo(proposerHeadNode);
+    assertThat(forkChoiceStateCaptor.getValue().headBlockSlot()).isEqualTo(proposerHead.getSlot());
+
+    preparationFuture.complete(null);
+
+    final ChainHead blockProductionHead = safeJoin(result);
+    assertThat(blockProductionHead.getRoot()).isEqualTo(proposerHead.getRoot());
+    assertThat(blockProductionHead.getForkChoiceNode()).isEqualTo(proposerHeadNode);
+  }
+
   private static Stream<ForkChoiceUpdatedResult> getForkChoiceUpdatedResults() {
     Set<PayloadStatus> statuses =
         Set.of(
@@ -1816,6 +1884,24 @@ class ForkChoiceTest {
 
   private void processHead(final UInt64 slot) {
     assertThat(forkChoice.processHead(slot)).isCompleted();
+  }
+
+  private void recreateForkChoice(
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
+    forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            lateBlockReorgPreparationHandler,
+            debugDataDumper,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
   }
 
   private IntSet ptcPositions(final int count) {
