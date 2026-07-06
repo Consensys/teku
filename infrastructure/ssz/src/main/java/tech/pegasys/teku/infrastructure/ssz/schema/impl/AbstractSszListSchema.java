@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszPackedByteListsHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszSuperNodeHint;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil.TargetDepthNodeHandler;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
@@ -160,9 +162,57 @@ public abstract class AbstractSszListSchema<
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl deserialization is only supported by SszBitlistSchema");
-    } else {
-      DeserializedData data = sszDeserializeVector(reader);
-      return createTree(data.getDataTree(), data.getChildrenCount());
+    }
+    if (packedByteListElementSchema != null) {
+      return sszDeserializePacked(reader);
+    }
+    DeserializedData data = sszDeserializeVector(reader);
+    return createTree(data.getDataTree(), data.getChildrenCount());
+  }
+
+  private TreeNode sszDeserializePacked(final SszReader reader) {
+    final int endOffset = reader.getAvailableBytes();
+    if (endOffset == 0) {
+      return createDefaultTree();
+    }
+    final Bytes bytes = reader.read(endOffset);
+    final int[] offsets = parsePackedOffsets(bytes);
+    final SszPackedByteListsNode packedNode =
+        new SszPackedByteListsNode(
+            bytes,
+            offsets,
+            packedByteListElementSchema.treeDepth(),
+            treeDepth(),
+            this::materializePackedElement);
+    return createTree(packedNode, packedNode.getElementCount());
+  }
+
+  private int[] parsePackedOffsets(final Bytes bytes) {
+    final int endOffset = bytes.size();
+    final int firstElementOffset = SszType.sszBytesToLength(bytes.slice(0, SSZ_LENGTH_SIZE));
+    checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
+    checkSsz(firstElementOffset > 0, "Invalid first element offset");
+    checkSsz(firstElementOffset <= endOffset, "Invalid first element offset");
+    final int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
+    checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
+    final long elementMaxSize = packedByteListElementSchema.getMaxLength();
+    final int[] offsets = new int[elementsCount + 1];
+    offsets[0] = firstElementOffset;
+    for (int i = 1; i < elementsCount; i++) {
+      offsets[i] = SszType.sszBytesToLength(bytes.slice(i * SSZ_LENGTH_SIZE, SSZ_LENGTH_SIZE));
+    }
+    offsets[elementsCount] = endOffset;
+    for (int i = 0; i < elementsCount; i++) {
+      final int size = offsets[i + 1] - offsets[i];
+      checkSsz(size >= 0, "Invalid SSZ: wrong child offsets");
+      checkSsz(size <= elementMaxSize, "SSZ element length exceeds max element type length");
+    }
+    return offsets;
+  }
+
+  private TreeNode materializePackedElement(final Bytes elementSsz) {
+    try (SszReader elementReader = SszReader.fromBytes(elementSsz)) {
+      return getElementSchema().sszDeserializeTree(elementReader);
     }
   }
 
