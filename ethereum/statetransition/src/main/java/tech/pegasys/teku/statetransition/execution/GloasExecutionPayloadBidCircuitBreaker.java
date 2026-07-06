@@ -134,6 +134,11 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
     prune(latestObservedBlockSlot);
   }
 
+  @VisibleForTesting
+  int getTrackedBlockPayloadStatusCount() {
+    return blockPayloadStatusByRoot.size();
+  }
+
   private boolean inspectPayloadAvailability(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Bytes32 parentRoot,
