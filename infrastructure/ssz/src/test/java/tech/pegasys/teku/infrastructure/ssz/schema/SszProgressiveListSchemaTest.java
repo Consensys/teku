@@ -27,13 +27,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.RandomSszDataGenerator;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszContainerImpl;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
@@ -44,6 +49,62 @@ public class SszProgressiveListSchemaTest {
 
   private static final SszProgressiveListSchema<SszUInt64> UINT64_LIST_SCHEMA =
       SszProgressiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA);
+
+  @Test
+  void createProgressive_shouldSpecializeByteSchema() throws Exception {
+    final SszListSchema<SszByte, ? extends SszList<SszByte>> schema =
+        SszListSchema.createProgressive(SszPrimitiveSchemas.BYTE_SCHEMA);
+
+    assertThat(schema).isInstanceOf(SszProgressiveByteListSchema.class);
+    assertThat(schema.getDefault()).isInstanceOf(SszByteList.class);
+
+    final SszList<?> jsonResult = JsonUtil.parse("\"0x010203\"", schema.getJsonTypeDefinition());
+    assertThat(jsonResult).isInstanceOf(SszByteList.class);
+    assertThat(((SszByteList) jsonResult).getBytes()).isEqualTo(Bytes.fromHexString("0x010203"));
+  }
+
+  @Test
+  void createProgressive_shouldSpecializeUInt8Schema() {
+    final SszListSchema<SszByte, ? extends SszList<SszByte>> schema =
+        SszListSchema.createProgressive(SszPrimitiveSchemas.UINT8_SCHEMA);
+
+    assertThat(schema).isInstanceOf(SszProgressiveByteListSchema.class);
+    assertThat(schema).isInstanceOf(SszByteListSchema.class);
+    assertThat(schema.getDefault()).isInstanceOf(SszByteList.class);
+  }
+
+  @Test
+  void createProgressive_shouldPreserveHintsForByteSchema() {
+    final SszSchemaHints hints = SszSchemaHints.sszSuperNode(4);
+    final SszListSchema<SszByte, ? extends SszList<SszByte>> schema =
+        SszListSchema.createProgressive(SszPrimitiveSchemas.BYTE_SCHEMA, hints);
+
+    assertThat(schema).isInstanceOf(SszProgressiveByteListSchema.class);
+    assertThat(((SszProgressiveByteListSchema<?>) schema).getHints()).isEqualTo(hints);
+  }
+
+  @Test
+  void createProgressive_shouldSpecializeUInt64Schema() {
+    final SszListSchema<SszUInt64, ? extends SszList<SszUInt64>> schema =
+        SszListSchema.createProgressive(SszPrimitiveSchemas.UINT64_SCHEMA);
+
+    assertThat(schema).isInstanceOf(SszProgressiveUInt64ListSchema.class);
+    assertThat(schema.getDefault()).isInstanceOf(SszUInt64List.class);
+  }
+
+  @Test
+  void createProgressive_shouldUseGenericSchemaForCompositeElements() {
+    final SszContainerSchema<? extends SszContainer> elementSchema =
+        SszContainerSchema.createProgressive(
+            "Element",
+            new boolean[] {true},
+            List.of(NamedSchema.of("a", SszPrimitiveSchemas.UINT64_SCHEMA)));
+
+    final SszListSchema<? extends SszContainer, ? extends SszList<? extends SszContainer>> schema =
+        SszListSchema.createProgressive(elementSchema);
+
+    assertThat(schema).isInstanceOf(SszProgressiveListSchema.class);
+  }
 
   @Test
   void primitiveListRoundtrip() {

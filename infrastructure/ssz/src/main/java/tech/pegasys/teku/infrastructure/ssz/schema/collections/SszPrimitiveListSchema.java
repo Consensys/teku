@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveByteListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszPrimitiveListSchemaImpl;
 
@@ -32,6 +37,12 @@ public interface SszPrimitiveListSchema<
       SszPrimitiveListSchema<ElementT, SszElementT, ?> create(
           final SszPrimitiveSchema<ElementT, SszElementT> elementSchema, final int maxLength) {
     return create(elementSchema, maxLength, SszSchemaHints.none());
+  }
+
+  static <ElementT, SszElementT extends SszPrimitive<ElementT>>
+      SszListSchema<SszElementT, ? extends SszList<SszElementT>> createProgressive(
+          final SszPrimitiveSchema<ElementT, SszElementT> elementSchema) {
+    return createProgressive(elementSchema, SszSchemaHints.none());
   }
 
   @SuppressWarnings("unchecked")
@@ -52,6 +63,25 @@ public interface SszPrimitiveListSchema<
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBooleanListSchema.create(maxLength);
     } else {
       return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  static <PrimT, SszPrimT extends SszPrimitive<PrimT>>
+      SszListSchema<SszPrimT, ? extends SszList<SszPrimT>> createProgressive(
+          final SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, final SszSchemaHints hints) {
+    if (elementSchema.equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
+      return (SszListSchema<SszPrimT, ?>) new SszProgressiveBitlistSchema();
+    } else if (elementSchema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
+      return (SszListSchema<SszPrimT, ?>) SszProgressiveUInt64ListSchema.create(hints);
+    } else if (elementSchema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)) {
+      return (SszListSchema<SszPrimT, ?>)
+          new SszProgressiveByteListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, hints);
+    } else if (elementSchema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
+      return (SszListSchema<SszPrimT, ?>)
+          new SszProgressiveByteListSchema<>(SszPrimitiveSchemas.UINT8_SCHEMA, hints);
+    } else {
+      return new SszProgressiveListSchema<>(elementSchema, hints);
     }
   }
 }
