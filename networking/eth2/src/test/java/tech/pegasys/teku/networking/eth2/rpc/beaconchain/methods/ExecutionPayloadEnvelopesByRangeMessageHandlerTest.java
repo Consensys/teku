@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
 import java.util.Optional;
@@ -124,6 +125,20 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
             new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(128)));
     assertThat(response).isEmpty();
     assertThat(getLabelledCounterValue("count_too_big")).isEqualTo(0);
+  }
+
+  @Test
+  void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> response =
+        handler.validateRequest(
+            PROTOCOL_ID,
+            new ExecutionPayloadEnvelopesByRangeRequestMessage(
+                UInt64.MAX_VALUE, UInt64.valueOf(10)));
+
+    assertThat(response)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    verifyNoInteractions(combinedChainDataClient);
   }
 
   @Test

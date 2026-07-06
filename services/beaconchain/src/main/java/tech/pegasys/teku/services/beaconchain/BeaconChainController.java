@@ -650,6 +650,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     singleBlockProviderResolver,
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
+                    blockRoot -> dasSamplerBasic.getSlotForBlockRoot(blockRoot),
                     executionPayloadProvider,
                     blindedExecutionPayloadProvider,
                     storageQueryChannel,

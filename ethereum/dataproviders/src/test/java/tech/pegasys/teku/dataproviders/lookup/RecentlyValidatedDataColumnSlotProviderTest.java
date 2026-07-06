@@ -11,13 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.migrated;
+package tech.pegasys.teku.dataproviders.lookup;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public record StateBuilderData(UInt64 index, BuilderStatus builderStatus, Builder builder) {
-  public String getStatusName() {
-    return builderStatus.getValue();
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Test;
+
+class RecentlyValidatedDataColumnSlotProviderTest {
+
+  @Test
+  void noopReturnsEmpty() {
+    assertThat(RecentlyValidatedDataColumnSlotProvider.NOOP.getSlot(Bytes32.ZERO)).isEmpty();
   }
 }

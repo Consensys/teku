@@ -557,12 +557,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   @Override
   public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
-    return getAncestorProtoNode(blockRoot, slot).map(ProtoNode::getBlockRoot);
+    return getAncestorProtoNode(ForkChoiceNode.createBase(blockRoot), slot)
+        .map(ProtoNode::getBlockRoot);
   }
 
   @Override
-  public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
-    return getAncestorProtoNode(blockRoot, slot).map(ProtoNode::getForkChoiceNode);
+  public Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
+    return getAncestorProtoNode(node, slot).map(ProtoNode::getForkChoiceNode);
   }
 
   @Override
@@ -643,15 +644,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  private Optional<ProtoNode> getAncestorProtoNode(final Bytes32 blockRoot, final UInt64 slot) {
+  private Optional<ProtoNode> getAncestorProtoNode(
+      final ForkChoiceNode startNode, final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {
       // Note: This code could be more succinct if currentNode were an Optional and we used flatMap
       // and map but during long periods of finality this becomes a massive hot spot in the code and
       // our performance is dominated by the time taken to create Optional instances within the map
       // calls.
-      final Optional<ProtoNode> startingNode =
-          blockNodeIndex.getBaseNode(blockRoot).flatMap(protoArray::getNode);
+      final Optional<ProtoNode> startingNode = protoArray.getNode(startNode);
       if (startingNode.isEmpty()) {
         return Optional.empty();
       }

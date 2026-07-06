@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.migrated;
+package tech.pegasys.teku.dataproviders.lookup;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 
-public record StateBuilderData(UInt64 index, BuilderStatus builderStatus, Builder builder) {
-  public String getStatusName() {
-    return builderStatus.getValue();
-  }
+@FunctionalInterface
+public interface RecentlyValidatedDataColumnSlotProvider {
+  RecentlyValidatedDataColumnSlotProvider NOOP = blockRoot -> Optional.empty();
+
+  Optional<UInt64> getSlot(Bytes32 blockRoot);
 }
