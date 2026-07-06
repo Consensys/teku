@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 /**
@@ -45,22 +43,17 @@ public class ProgressiveTestStructSchema
   public ProgressiveTestStructSchema() {
     super(
         ProgressiveTestStruct.class.getSimpleName(),
-        NamedSchema.of("A", createProgressiveListSchema(SszPrimitiveSchemas.BYTE_SCHEMA)),
-        NamedSchema.of("B", createProgressiveListSchema(SszPrimitiveSchemas.UINT64_SCHEMA)),
-        NamedSchema.of("C", createProgressiveListSchema(new SmallTestStructSchema())),
+        NamedSchema.of("A", SszProgressiveListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA)),
+        NamedSchema.of("B", SszProgressiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA)),
+        NamedSchema.of("C", SszProgressiveListSchema.create(new SmallTestStructSchema())),
         NamedSchema.of(
             "D",
-            createProgressiveListSchema(createProgressiveListSchema(new VarTestStructSchema()))));
+            SszProgressiveListSchema.create(
+                SszProgressiveListSchema.create(new VarTestStructSchema()))));
   }
 
   @Override
   public ProgressiveTestStruct createFromBackingNode(final TreeNode node) {
     return new ProgressiveTestStruct(this, node);
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T extends SszData> SszSchema<SszList<T>> createProgressiveListSchema(
-      final SszSchema<T> elementSchema) {
-    return (SszSchema<SszList<T>>) (SszSchema<?>) SszListSchema.createProgressive(elementSchema);
   }
 }

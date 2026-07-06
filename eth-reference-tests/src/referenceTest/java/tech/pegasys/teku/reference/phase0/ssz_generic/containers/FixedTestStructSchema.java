@@ -13,23 +13,22 @@
 
 package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 
-import static tech.pegasys.teku.reference.phase0.ssz_generic.containers.UInt32PrimitiveSchema.UINT32_SCHEMA;
-
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class FixedTestStructSchema
-    extends ContainerSchema3<FixedTestStruct, SszByte, SszUInt64, SszUInt32> {
+    extends ContainerSchema3<FixedTestStruct, SszByte, SszUInt64, SszBytes4> {
 
   public FixedTestStructSchema() {
     super(
         FixedTestStruct.class.getSimpleName(),
-        NamedSchema.of("A", SszPrimitiveSchemas.UINT8_SCHEMA),
+        NamedSchema.of("A", SszPrimitiveSchemas.BYTE_SCHEMA),
         NamedSchema.of("B", SszPrimitiveSchemas.UINT64_SCHEMA),
-        NamedSchema.of("C", UINT32_SCHEMA));
+        NamedSchema.of("C", SszPrimitiveSchemas.BYTES4_SCHEMA));
   }
 
   @Override

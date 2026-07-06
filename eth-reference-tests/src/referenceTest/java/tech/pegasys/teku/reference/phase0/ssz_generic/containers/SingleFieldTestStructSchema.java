@@ -23,7 +23,7 @@ public class SingleFieldTestStructSchema extends ContainerSchema1<SingleFieldTes
   public SingleFieldTestStructSchema() {
     super(
         SingleFieldTestStructSchema.class.getSimpleName(),
-        NamedSchema.of("A", SszPrimitiveSchemas.UINT8_SCHEMA));
+        NamedSchema.of("A", SszPrimitiveSchemas.BYTE_SCHEMA));
   }
 
   @Override

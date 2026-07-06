@@ -16,13 +16,14 @@ package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class FixedTestStruct extends Container3<FixedTestStruct, SszByte, SszUInt64, SszUInt32> {
+public class FixedTestStruct extends Container3<FixedTestStruct, SszByte, SszUInt64, SszBytes4> {
 
   protected FixedTestStruct(
-      final ContainerSchema3<FixedTestStruct, SszByte, SszUInt64, SszUInt32> schema,
+      final ContainerSchema3<FixedTestStruct, SszByte, SszUInt64, SszBytes4> schema,
       final TreeNode backingNode) {
     super(schema, backingNode);
   }

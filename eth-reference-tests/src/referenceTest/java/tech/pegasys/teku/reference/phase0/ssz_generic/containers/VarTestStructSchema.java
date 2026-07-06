@@ -30,7 +30,7 @@ public class VarTestStructSchema
         VarTestStructSchema.class.getSimpleName(),
         NamedSchema.of("A", UINT16_SCHEMA),
         NamedSchema.of("B", SszListSchema.create(UINT16_SCHEMA, 1024)),
-        NamedSchema.of("C", SszPrimitiveSchemas.UINT8_SCHEMA));
+        NamedSchema.of("C", SszPrimitiveSchemas.BYTE_SCHEMA));
   }
 
   @Override

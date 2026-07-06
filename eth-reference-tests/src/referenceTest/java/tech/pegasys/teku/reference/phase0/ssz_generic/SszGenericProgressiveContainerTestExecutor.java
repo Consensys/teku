@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.reference.TestDataUtils;
@@ -129,15 +130,15 @@ public class SszGenericProgressiveContainerTestExecutor extends AbstractSszGener
             NamedSchema.of("A", SszPrimitiveSchemas.BYTE_SCHEMA),
             NamedSchema.of("B", SszListSchema.create(UINT16_SCHEMA, 123)),
             NamedSchema.of("C", new SszProgressiveBitlistSchema()),
-            NamedSchema.of("D", SszListSchema.createProgressive(SszPrimitiveSchemas.UINT64_SCHEMA)),
-            NamedSchema.of("E", SszListSchema.createProgressive(new SmallTestStructSchema())),
+            NamedSchema.of("D", SszProgressiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA)),
+            NamedSchema.of("E", SszProgressiveListSchema.create(new SmallTestStructSchema())),
             NamedSchema.of(
                 "F",
-                SszListSchema.createProgressive(
-                    SszListSchema.createProgressive(new VarTestStructSchema()))),
+                SszProgressiveListSchema.create(
+                    SszProgressiveListSchema.create(new VarTestStructSchema()))),
             NamedSchema.of("G", SszListSchema.create(singleFieldSchema, 10)),
             NamedSchema.of(
-                "H", SszListSchema.createProgressive(createProgressiveVarTestStructSchema()))));
+                "H", SszProgressiveListSchema.create(createProgressiveVarTestStructSchema()))));
   }
 
   private Map<String, String> formatSszContainer(final SszContainer container) {
