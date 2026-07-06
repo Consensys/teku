@@ -142,4 +142,25 @@ public class SszPackedByteListsSchemaTest {
     final SszList<SszByteList> unhinted = (SszList<SszByteList>) UNHINTED.sszDeserialize(bytes);
     assertThat(hinted.sszSerialize()).isEqualTo(unhinted.sszSerialize());
   }
+
+  @Test
+  public void createFromElements_shouldProducePackedNodeAndMatchOracle() {
+    final List<SszByteList> elements =
+        List.of(
+            ELEMENT_SCHEMA.fromBytes(Bytes.of(1)),
+            ELEMENT_SCHEMA.fromBytes(Bytes.EMPTY),
+            ELEMENT_SCHEMA.fromBytes(Bytes.wrap(new byte[100])));
+    final SszList<SszByteList> hinted = (SszList<SszByteList>) HINTED.createFromElements(elements);
+    final SszList<SszByteList> unhinted =
+        (SszList<SszByteList>) UNHINTED.createFromElements(elements);
+    assertThat(vectorNode(hinted)).isInstanceOf(SszPackedByteListsNode.class);
+    assertThat(hinted.hashTreeRoot()).isEqualTo(unhinted.hashTreeRoot());
+    assertThat(hinted.sszSerialize()).isEqualTo(unhinted.sszSerialize());
+  }
+
+  @Test
+  public void createFromElements_shouldHandleEmptyList() {
+    assertThat(HINTED.createFromElements(List.of()).hashTreeRoot())
+        .isEqualTo(UNHINTED.createFromElements(List.of()).hashTreeRoot());
+  }
 }

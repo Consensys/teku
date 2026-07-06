@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengt
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
@@ -85,6 +86,43 @@ public abstract class AbstractSszListSchema<
     this.jsonTypeDefinition =
         new DeserializableArrayTypeDefinition<>(
             getElementSchema().getJsonTypeDefinition(), this::createFromElements);
+  }
+
+  @Override
+  public TreeNode createTreeFromElements(final List<? extends ElementDataT> elements) {
+    if (packedByteListElementSchema == null || elements.isEmpty()) {
+      return SszListSchema.super.createTreeFromElements(elements);
+    }
+    checkArgument(
+        elements.size() <= getMaxLength(),
+        "Too many elements for this collection type (max length %s, size %s)",
+        getMaxLength(),
+        elements.size());
+    final int count = elements.size();
+    final byte[] offsetBytes = new byte[count * SSZ_LENGTH_SIZE];
+    final int[] offsets = new int[count + 1];
+    final Bytes[] parts = new Bytes[count + 1];
+    int offset = count * SSZ_LENGTH_SIZE;
+    for (int i = 0; i < count; i++) {
+      final Bytes elementSsz = elements.get(i).sszSerialize();
+      offsets[i] = offset;
+      offsetBytes[i * SSZ_LENGTH_SIZE] = (byte) offset;
+      offsetBytes[i * SSZ_LENGTH_SIZE + 1] = (byte) (offset >>> 8);
+      offsetBytes[i * SSZ_LENGTH_SIZE + 2] = (byte) (offset >>> 16);
+      offsetBytes[i * SSZ_LENGTH_SIZE + 3] = (byte) (offset >>> 24);
+      parts[i + 1] = elementSsz;
+      offset += elementSsz.size();
+    }
+    offsets[count] = offset;
+    parts[0] = Bytes.wrap(offsetBytes);
+    final SszPackedByteListsNode packedNode =
+        new SszPackedByteListsNode(
+            Bytes.wrap(parts),
+            offsets,
+            packedByteListElementSchema.treeDepth(),
+            treeDepth(),
+            this::materializePackedElement);
+    return createTree(packedNode, count);
   }
 
   @Override
