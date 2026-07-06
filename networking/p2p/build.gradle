@@ -21,7 +21,7 @@ dependencies {
 	implementation 'io.netty:netty-handler'
 	implementation 'io.consensys.tuweni:tuweni-units'
 	implementation 'io.consensys.tuweni:tuweni-crypto'
-	implementation 'tech.pegasys.discovery:discovery'
+	implementation 'io.consensys.protocols:discovery'
 
 	testImplementation testFixtures(project(':ethereum:statetransition'))
 	testImplementation testFixtures(project(':ethereum:spec'))
@@ -41,6 +41,7 @@ dependencies {
 	testFixturesImplementation testFixtures(project(':infrastructure:async'))
 	testFixturesImplementation testFixtures(project(':infrastructure:crypto'))
 	testFixturesImplementation testFixtures(project(':infrastructure:time'))
+	testFixturesImplementation project(':infrastructure:exceptions')
 	testFixturesImplementation project(':infrastructure:subscribers')
 
 	testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'

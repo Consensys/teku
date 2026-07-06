@@ -27,9 +27,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +65,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -76,10 +83,13 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -87,10 +97,15 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -106,12 +121,17 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/ex_ante", new ForkChoiceTestExecutor())
           .put("fork_choice/reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_attestation", new ForkChoiceTestExecutor())
           .put("fork_choice/on_merge_block", IGNORE_TESTS) // TTD Logic is deprecated
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
-          .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
-          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
+          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor())
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
+          .put("fork_choice/get_parent_payload_status", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_execution_payload_envelope", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_payload_attestation_message", new ForkChoiceTestExecutor())
+          .put("fork_choice/payload_data_availability", new ForkChoiceTestExecutor())
+          .put("fork_choice/payload_timeliness", new ForkChoiceTestExecutor())
           // Fork choice generated test types
           .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
           .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())
@@ -161,8 +181,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
-    final DasSamplerBasic dasSampler =
-        new DasSamplerBasic(
+    final DasSamplerBasicImpl dasSampler =
+        new DasSamplerBasicImpl(
             spec,
             asyncRunnerFactory.create("das", 1),
             currentSlotProvider,
@@ -173,12 +193,16 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // and fetching from the config would break when not in fulu
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
             recentChainData,
-            false);
+            false,
+            new StubMetricsSystem(),
+            64,
+            (block, level, origin) -> new SafeFuture<>());
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
-    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
-    // executor
     spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);
+    final AsyncBLSSignatureVerifier signatureVerifier =
+        AsyncBLSSignatureVerifier.wrap(
+            blsDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -188,12 +212,28 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            // forkChoiceLateBlockReorgEnabled is true here always because this is the reference
+            // test executor
             true,
+            LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem(),
-            AsyncBLSSignatureVerifier.wrap(
-                blsDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE));
+            signatureVerifier);
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
+    final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
+    final Set<Bytes32> blockRootsWithInvalidExecutionPayload = new HashSet<>();
+    final GossipValidationHelper gossipValidationHelper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
+    final Optional<AttestationValidator> maybeAttestationValidator =
+        testDefinition.getTestType().equals("fork_choice/on_attestation")
+            ? Optional.of(
+                new AttestationValidator(
+                    spec,
+                    signatureVerifier,
+                    gossipValidationHelper,
+                    invalidBlockRoots,
+                    blockRootsWithInvalidExecutionPayload))
+            : Optional.empty();
 
     try {
       runSteps(
@@ -203,7 +243,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           blobSidecarManager,
           dataColumnSidecarManager,
           forkChoice,
-          executionLayer);
+          executionLayer,
+          maybeAttestationValidator,
+          gossipValidationHelper,
+          invalidBlockRoots,
+          blockRootsWithInvalidExecutionPayload);
     } catch (final AssertionError e) {
       final String protoArrayData =
           recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
@@ -245,7 +289,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final StubBlobSidecarManager blobSidecarManager,
       final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
-      final ExecutionLayerChannelStub executionLayer)
+      final ExecutionLayerChannelStub executionLayer,
+      final Optional<AttestationValidator> maybeAttestationValidator,
+      final GossipValidationHelper gossipValidationHelper,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload)
       throws IOException {
     final List<Map<String, Object>> steps = loadSteps(testDefinition);
     for (Map<String, Object> step : steps) {
@@ -266,10 +314,17 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             dataColumnSidecarManager,
             forkChoice,
             step,
-            executionLayer);
+            executionLayer,
+            invalidBlockRoots);
 
       } else if (step.containsKey("attestation")) {
-        applyAttestation(testDefinition, forkChoice, step);
+        applyAttestation(
+            testDefinition,
+            forkChoice,
+            step,
+            maybeAttestationValidator,
+            gossipValidationHelper,
+            blockRootsWithInvalidExecutionPayload);
 
       } else if (step.containsKey("pow_block")) {
         applyPowBlock(testDefinition, step, executionLayer);
@@ -279,6 +334,18 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
       } else if (step.containsKey("block_hash")) {
         applyPosBlock(step, executionLayer);
+
+      } else if (step.containsKey("payload_attestation")
+          || step.containsKey("payload_attestation_message")) {
+        applyPayloadAttestation(testDefinition, spec, recentChainData, forkChoice, step);
+
+      } else if (step.containsKey("execution_payload")) {
+        applyExecutionPayloadEnvelope(
+            testDefinition,
+            forkChoice,
+            executionLayer,
+            step,
+            blockRootsWithInvalidExecutionPayload);
 
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
@@ -330,7 +397,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private void applyAttestation(
       final TestDefinition testDefinition,
       final ForkChoice forkChoice,
-      final Map<String, Object> step) {
+      final Map<String, Object> step,
+      final Optional<AttestationValidator> maybeAttestationValidator,
+      final GossipValidationHelper gossipValidationHelper,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload) {
     final String attestationName = get(step, "attestation");
     final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final Attestation attestation =
@@ -339,8 +409,45 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             attestationName + SSZ_SNAPPY_EXTENSION,
             testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
     final Spec spec = testDefinition.getSpec();
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestation);
+    if (maybeAttestationValidator.isPresent()) {
+      final SafeFuture<InternalValidationResult> validationResult =
+          maybeAttestationValidator
+              .get()
+              .validateSingleOrAggregateAttestation(validatableAttestation);
+      assertThat(validationResult).isCompleted();
+      final InternalValidationResult internalValidationResult = safeJoin(validationResult);
+      // Reject/ignore gossip validation results do not reach fork choice in production.
+      if (internalValidationResult.isNotProcessable()) {
+        assertThat(valid)
+            .withFailMessage(
+                "Expected attestation to be valid but gossip validation returned %s",
+                internalValidationResult)
+            .isFalse();
+        return;
+      }
+      // SAVE_FOR_FUTURE normally still reaches fork choice. Re-check just the shared payload-status
+      // validation to identify Gloas payload-status failures that should stop before fork choice.
+      if (internalValidationResult.isSaveForFuture()) {
+        final AttestationUtil attestationUtil =
+            spec.atSlot(attestation.getData().getSlot()).getAttestationUtil();
+        final InternalValidationResult payloadStatusValidationResult =
+            gossipValidationHelper.validatePayloadStatus(
+                attestationUtil, attestation.getData(), blockRootsWithInvalidExecutionPayload);
+        // A payload-status failure means the fixture's attestation is invalid before fork choice.
+        if (!payloadStatusValidationResult.isAccept()) {
+          assertThat(valid)
+              .withFailMessage(
+                  "Expected attestation to be valid but payload status validation returned %s",
+                  payloadStatusValidationResult)
+              .isFalse();
+          return;
+        }
+      }
+    }
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
+        forkChoice.onAttestation(validatableAttestation);
     assertThat(result).isCompleted();
     AttestationProcessingResult processingResult = safeJoin(result);
     assertThat(processingResult.isSuccessful())
@@ -363,6 +470,77 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             forkChoice.onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
   }
 
+  private void applyPayloadAttestation(
+      final TestDefinition testDefinition,
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
+      final Map<String, Object> step) {
+    final String payloadAttestationName =
+        ForkChoiceTestExecutor.<String>getOptionally(step, "payload_attestation")
+            .orElseGet(
+                () -> ForkChoiceTestExecutor.<String>get(step, "payload_attestation_message"));
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
+    final PayloadAttestationMessage payloadAttestationMessage =
+        TestDataUtils.loadSsz(
+            testDefinition,
+            payloadAttestationName + SSZ_SNAPPY_EXTENSION,
+            SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
+                .getPayloadAttestationMessageSchema());
+    final ValidatablePayloadAttestationMessage validatablePayloadAttestationMessage =
+        ValidatablePayloadAttestationMessage.fromNetwork(payloadAttestationMessage);
+    if (valid) {
+      final BeaconState state =
+          safeJoin(
+                  recentChainData.retrieveBlockState(
+                      new SlotAndBlockRoot(
+                          payloadAttestationMessage.getData().getSlot(),
+                          payloadAttestationMessage.getData().getBeaconBlockRoot())))
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "State is unavailable for payload attestation slot "
+                              + payloadAttestationMessage.getData().getSlot()
+                              + " and block root "
+                              + payloadAttestationMessage.getData().getBeaconBlockRoot()));
+      validatablePayloadAttestationMessage.calculatePtcPositions(spec, state);
+    }
+    assertDoesNotThrow(
+        () ->
+            forkChoice.onPayloadAttestationMessage(
+                validatablePayloadAttestationMessage,
+                valid ? InternalValidationResult.ACCEPT : InternalValidationResult.IGNORE,
+                true));
+  }
+
+  private void applyExecutionPayloadEnvelope(
+      final TestDefinition testDefinition,
+      final ForkChoice forkChoice,
+      final ExecutionLayerChannelStub executionLayer,
+      final Map<String, Object> step,
+      final Set<Bytes32> blockRootsWithInvalidExecutionPayload) {
+    final String envelopeName = get(step, "execution_payload");
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
+    final SignedExecutionPayloadEnvelope envelope =
+        TestDataUtils.loadSsz(
+            testDefinition,
+            envelopeName + SSZ_SNAPPY_EXTENSION,
+            SchemaDefinitionsGloas.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
+                .getSignedExecutionPayloadEnvelopeSchema());
+    final SafeFuture<ExecutionPayloadImportResult> result =
+        forkChoice.onExecutionPayloadEnvelope(envelope, executionLayer);
+    assertThat(result).isCompleted();
+    final ExecutionPayloadImportResult importResult = safeJoin(result);
+    if (!importResult.isSuccessful() && isInvalidExecutionPayload(importResult)) {
+      blockRootsWithInvalidExecutionPayload.add(envelope.getBeaconBlockRoot());
+    }
+    assertThat(importResult.isSuccessful())
+        .withFailMessage(
+            "Expected valid=%s but got isSuccessful=%s (reason: %s)",
+            valid, importResult.isSuccessful(), importResult.getFailureReason())
+        .isEqualTo(valid);
+  }
+
   private void applyBlock(
       final TestDefinition testDefinition,
       final Spec spec,
@@ -371,7 +549,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
-      final ExecutionLayerChannelStub executionLayer) {
+      final ExecutionLayerChannelStub executionLayer,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
     final String blockName = get(step, "block");
     final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final SignedBeaconBlock block =
@@ -430,6 +609,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         forkChoice.onBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = safeJoin(result);
+    if (!importResult.isSuccessful()) {
+      invalidBlockRoots.put(block.getRoot(), importResult);
+    }
     assertThat(importResult)
         .describedAs("Incorrect block import result for block %s", block)
         .has(new Condition<>(r -> r.isSuccessful() == valid, "isSuccessful matching " + valid));
@@ -548,24 +730,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
           case "get_proposer_head" -> {
             final Bytes32 expectedProposerHead = getBytes32(checks, checkType);
-            final Bytes32 root =
+            final ForkChoiceNode proposerHead =
                 recentChainData.getProposerHead(
-                    expectedProposerHead, recentChainData.getHeadSlot().increment());
-            assertThat(root).describedAs("get_proposer_head").isEqualTo(expectedProposerHead);
-          }
-
-          case "should_override_forkchoice_update" -> {
-            final Map<String, Boolean> shouldOverrideForkChoiceUpdateCheck = get(checks, checkType);
-            final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
-            final boolean expectedValidatorIsConnected =
-                shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
-            final boolean shouldOverrideChainHead =
-                recentChainData.shouldOverrideForkChoiceUpdate(
-                    recentChainData.getBestBlockRoot().orElseThrow());
-            assertThat(shouldOverrideChainHead).isEqualTo(expectedResult);
-            // We've currently only handled the validatorIsConnected 'true' case in reftests,
-            // lets validate we're dealing with that and don't have to extend tests further.
-            assertThat(expectedValidatorIsConnected).isTrue();
+                    ForkChoiceNode.createBase(expectedProposerHead),
+                    recentChainData.getHeadSlot().increment());
+            assertThat(proposerHead.blockRoot())
+                .describedAs("get_proposer_head")
+                .isEqualTo(expectedProposerHead);
           }
 
           case "viable_for_head_roots_and_weights" -> {
@@ -593,6 +764,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               assertThat(actualWeight).describedAs("block %s's weight", root).isEqualTo(weight);
             }
           }
+
+          case "head_payload_status" -> {
+            final int expectedValue = ((Number) checks.get(checkType)).intValue();
+            final ForkChoicePayloadStatus headStatus =
+                recentChainData.getChainHead().map(ChainHead::getPayloadStatus).orElseThrow();
+            assertThat(headStatus.getValue())
+                .describedAs("head_payload_status")
+                .isEqualTo(expectedValue);
+          }
+
+          case "payload_timeliness_vote" ->
+              assertPayloadVote(
+                  recentChainData,
+                  checkType,
+                  get(checks, checkType),
+                  ReadOnlyForkChoiceStrategy::getPayloadTimelinessVote);
+
+          case "payload_data_availability_vote" ->
+              assertPayloadVote(
+                  recentChainData,
+                  checkType,
+                  get(checks, checkType),
+                  ReadOnlyForkChoiceStrategy::getPayloadDataAvailabilityVote);
 
           default ->
               throw new UnsupportedOperationException("Unsupported check type: " + checkType);
@@ -622,6 +816,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         .isEqualTo(new Checkpoint(expectedEpoch, expectedRoot));
   }
 
+  private void assertPayloadVote(
+      final RecentChainData recentChainData,
+      final String checkType,
+      final Map<String, Object> expectedPayloadVote,
+      final PayloadVoteGetter payloadVoteGetter) {
+    final Bytes32 blockRoot = getBytes32(expectedPayloadVote, "block_root");
+    final List<Boolean> expectedVotes = get(expectedPayloadVote, "votes");
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    final List<Boolean> actualVotes = new ArrayList<>();
+    for (int ptcPosition = 0; ptcPosition < expectedVotes.size(); ptcPosition++) {
+      actualVotes.add(
+          payloadVoteGetter.get(forkChoiceStrategy, blockRoot, ptcPosition).orElse(null));
+    }
+    assertThat(actualVotes).describedAs(checkType).isEqualTo(expectedVotes);
+  }
+
+  @FunctionalInterface
+  private interface PayloadVoteGetter {
+    Optional<Boolean> get(
+        ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 blockRoot, int ptcPosition);
+  }
+
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private static <T> T get(final Map<String, Object> yamlData, final String key) {
     return (T) yamlData.get(key);
@@ -644,6 +861,17 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private static Optional<Bytes32> getOptionallyBytes32(
       final Map<String, Object> yamlData, final String key) {
     return ForkChoiceTestExecutor.<String>getOptionally(yamlData, key).map(Bytes32::fromHexString);
+  }
+
+  private static boolean isInvalidExecutionPayload(final ExecutionPayloadImportResult result) {
+    return switch (result.getFailureReason()) {
+      case FAILED_VERIFICATION, FAILED_DATA_AVAILABILITY_CHECK_INVALID -> true;
+      case UNKNOWN_BEACON_BLOCK_ROOT,
+          FAILED_EXECUTION,
+          FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
+          INTERNAL_ERROR ->
+          false;
+    };
   }
 
   private static ForkChoiceMetaData getMetaData(final TestDefinition testDefinition)

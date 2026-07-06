@@ -55,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
@@ -337,8 +336,7 @@ public class RespondingEth2Peer implements Eth2Peer {
             listener,
             () ->
                 chain
-                    .streamExecutionPayloadsAndStates(startSlot.longValue(), lastSlotExclusive + 1)
-                    .map(SignedExecutionPayloadAndState::executionPayload)
+                    .streamExecutionPayloads(startSlot.longValue(), lastSlotExclusive + 1)
                     .collect(Collectors.toList()));
     return createPendingExecutionPayloadEnvelopeRequest(handler);
   }

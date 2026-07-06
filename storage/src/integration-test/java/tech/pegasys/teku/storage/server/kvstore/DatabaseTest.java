@@ -76,6 +76,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -92,8 +96,11 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.FinalizedChainData;
+import tech.pegasys.teku.storage.api.GloasForkChoiceRebuildData;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
+import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -146,9 +153,14 @@ public class DatabaseTest {
   }
 
   private void setupWithSpec(final Spec spec) throws IOException {
+    setupWithSpec(spec, VALIDATOR_KEYS);
+  }
+
+  private void setupWithSpec(final Spec spec, final List<BLSKeyPair> validatorKeys)
+      throws IOException {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
-    this.chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    this.chainBuilder = ChainBuilder.create(spec, validatorKeys);
     this.chainProperties = new ChainProperties(spec);
     final Path blobsArchive = Files.createTempDirectory("blobs");
     tmpDirectories.add(blobsArchive.toFile());
@@ -252,6 +264,7 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
+            Map.of(),
             Optional.of(block1Sidecar0.getSlot()),
             Map.of(),
             Map.of(),
@@ -260,6 +273,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             true,
+            false,
             false));
     database.update(
         new StorageUpdate(
@@ -267,6 +281,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Map.of(),
             Map.of(),
             Map.of(),
             Map.of(),
@@ -278,6 +293,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             true,
+            false,
             false));
     // Will not be overridden from Database interface, only initial set
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
@@ -418,6 +434,7 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
+            Map.of(),
             Optional.empty(),
             Map.of(block1Sidecar0.getBlockRoot(), block1Sidecar0.getSlot()),
             Map.of(),
@@ -426,6 +443,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             true,
+            false,
             false));
     database.update(
         new StorageUpdate(
@@ -433,6 +451,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Map.of(),
             Map.of(),
             Map.of(),
             Map.of(),
@@ -444,6 +463,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             true,
+            false,
             false));
 
     // check all non-canonical blobs are present
@@ -594,8 +614,314 @@ public class DatabaseTest {
     assertThat(database.getSignedBlock(block2.getRoot())).contains(block2.getBlock());
   }
 
+  @TestTemplate
+  public void shouldStoreBlindedExecutionPayloadEnvelope(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+        getSignedBlindedExecutionPayloadEnvelope(blockAndState);
+
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+        .contains(signedBlindedExecutionPayloadEnvelope);
+  }
+
+  @TestTemplate
+  public void shouldPopulateGloasForkChoiceRebuildDataFromBlindedExecutionPayloadEnvelope(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.putBlockAndState(
+        blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+    transaction.putExecutionPayload(executionPayload, false);
+
+    commit(transaction);
+
+    final ExecutionPayloadBid bid = getExecutionPayloadBid(blockAndState);
+    assertThat(getHotBlockMetadata(blockAndState).getGloasForkChoiceRebuildData())
+        .contains(
+            new GloasForkChoiceRebuildData(
+                bid.getParentBlockHash(),
+                bid.getBlockHash(),
+                Optional.of(executionPayload.getMessage().getPayload().getBlockNumber())));
+  }
+
+  @TestTemplate
+  public void shouldLeaveGloasPayloadBlockNumberEmptyWhenBlindedExecutionPayloadEnvelopeIsMissing(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.putBlockAndState(
+        blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+
+    commit(transaction);
+
+    final ExecutionPayloadBid bid = getExecutionPayloadBid(blockAndState);
+    assertThat(getHotBlockMetadata(blockAndState).getGloasForkChoiceRebuildData())
+        .contains(
+            new GloasForkChoiceRebuildData(
+                bid.getParentBlockHash(), bid.getBlockHash(), Optional.empty()));
+  }
+
+  @TestTemplate
+  public void shouldRejectMismatchedBlindedExecutionPayloadEnvelopeForGloasRebuildData(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.putBlockAndState(
+        blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+    final SignedBlindedExecutionPayloadEnvelope mismatchedEnvelope =
+        dataStructureUtil
+            .randomSignedExecutionPayloadEnvelopeForBlock(blockAndState.getBlock())
+            .blind(spec);
+
+    commit(transaction);
+    storeBlindedExecutionPayloadEnvelope(blockAndState.getRoot(), mismatchedEnvelope);
+
+    assertThatThrownBy(() -> getHotBlockMetadata(blockAndState))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("does not match GLOAS block bid");
+  }
+
+  @TestTemplate
+  public void shouldRetainBlindedExecutionPayloadEnvelopeAfterFinalization(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+        getSignedBlindedExecutionPayloadEnvelope(blockAndState);
+    final FinalizedChainData finalizedChainData =
+        FinalizedChainData.builder()
+            .latestFinalized(AnchorPoint.fromInitialBlockAndState(spec, blockAndState))
+            .finalizedChildAndParent(
+                genesisBlockAndState.getRoot(), genesisBlockAndState.getParentRoot())
+            .build();
+
+    // Store envelope
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    // Finalize. Envelope must not be deleted for canonical blocks.
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.of(finalizedChainData),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.empty(),
+            Map.of(genesisBlockAndState.getRoot(), genesisBlockAndState.getSlot()),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    // Envelope should still be present — canonical finalized blocks are not pruned
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+        .contains(signedBlindedExecutionPayloadEnvelope);
+  }
+
+  @TestTemplate
+  public void shouldSkipMissingBlindedExecutionPayloadEnvelope(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final FinalizedChainData finalizedChainData =
+        FinalizedChainData.builder()
+            .latestFinalized(AnchorPoint.fromInitialBlockAndState(spec, blockAndState))
+            .finalizedChildAndParent(
+                genesisBlockAndState.getRoot(), genesisBlockAndState.getParentRoot())
+            .build();
+
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.of(finalizedChainData),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot())).isEmpty();
+  }
+
+  @TestTemplate
+  public void shouldDeleteBlindedExecutionPayloadEnvelopeWhenBlockIsPruned(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+        getSignedBlindedExecutionPayloadEnvelope(blockAndState);
+
+    // Store envelope
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    // Verify it's stored
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+        .contains(signedBlindedExecutionPayloadEnvelope);
+
+    // Delete the block (simulates non-canonical pruning)
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.empty(),
+            Map.of(blockAndState.getRoot(), blockAndState.getSlot()),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    // Verify envelope was removed
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot())).isEmpty();
+  }
+
   private void commit(final StoreTransaction transaction) {
     assertThat(transaction.commit()).isCompleted();
+  }
+
+  private StoredBlockMetadata getHotBlockMetadata(final SignedBlockAndState blockAndState) {
+    return ((KvStoreDatabase) database).buildHotBlockMetadata().get(blockAndState.getRoot());
+  }
+
+  private ExecutionPayloadBid getExecutionPayloadBid(final SignedBlockAndState blockAndState) {
+    return blockAndState
+        .getBlock()
+        .getMessage()
+        .getBody()
+        .getOptionalSignedExecutionPayloadBid()
+        .map(SignedExecutionPayloadBid::getMessage)
+        .orElseThrow();
+  }
+
+  private void storeBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot, final SignedBlindedExecutionPayloadEnvelope envelope) {
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(blockRoot, envelope),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+  }
+
+  private SignedBlindedExecutionPayloadEnvelope getSignedBlindedExecutionPayloadEnvelope(
+      final SignedBlockAndState blockAndState) {
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
+    return executionPayload.blind(spec);
   }
 
   @TestTemplate
@@ -2469,6 +2795,80 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void getEarliestDataColumnSidecarSlot_tracksPruneWatermark(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSidecar block1Sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+
+    // no data column sidecars have been stored yet
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block2Sidecar0);
+
+    // before any pruning the earliest slot is the first stored slot
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block1Sidecar0.getSlot());
+
+    // pruning the oldest slot advances the watermark; the earliest slot follows it
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
+
+    // the watermark is persisted, so the next run resumes above the pruned slots rather than
+    // rescanning from the first supported slot
+    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+  }
+
+  @TestTemplate
+  public void compactStorage_isOperativeAndPreservesData(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block2Sidecar0);
+
+    // prune the oldest slot so there are tombstones for compaction to reclaim
+    database.pruneAllSidecars(block1Sidecar0.getSlot(), 10);
+
+    // compaction must run without error and leave the surviving data intact
+    database.compactStorage();
+
+    assertThat(database.getSidecar(block1Column0)).isEmpty();
+    assertThat(database.getSidecar(block2Column0)).contains(block2Sidecar0);
+    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(block2Sidecar0.getSlot());
+  }
+
+  @TestTemplate
   public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
@@ -2517,9 +2917,9 @@ public class DatabaseTest {
               block1Column0, block1Column1, block1Column2, block2Column0, block3Column0);
     }
 
-    // prune sidecars passing 2 as the limit should prune sidecars from the first 2 slots that it
-    // can find,
-    // leaving the sidecar from block header 3
+    // prune sidecars passing 2 as the limit should prune sidecars from the oldest 2 slots at or
+    // before the cutoff,
+    // leaving the sidecars from block header 3
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
@@ -2591,9 +2991,9 @@ public class DatabaseTest {
           .containsExactly(block2Column0, block3Column0);
     }
 
-    // prune sidecars passing 1 as the limit should prune sidecars from the first 2 slots that it
-    // can find, one canonical and one non-canonical, limit is passed separately.
-    // So leaving only the sidecar from block header 3
+    // prune sidecars passing 1 as the limit should prune the oldest eligible canonical slot and
+    // non-canonical slot. The limit is applied separately to canonical and non-canonical sidecars.
+    // So leaving only the non-canonical sidecar from block header 3
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =

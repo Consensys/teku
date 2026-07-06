@@ -65,6 +65,7 @@ class NodeRecordConverterTest {
   private static final SszBitvector SYNCNETS = SYNCNETS_SCHEMA.getDefault();
   private static final NodeRecordConverter CONVERTER = new NodeRecordConverter();
   private static final Bytes NODE_ID = CONVERTER.convertPublicKeyToNodeId(PUB_KEY);
+  private static final int MAX_CUSTODY_GROUP_COUNT = 128;
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -81,6 +82,7 @@ class NodeRecordConverterTest {
             pubKey,
             nodeId,
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+            Optional.empty(),
             Optional.empty(),
             ATTNETS,
             SYNCNETS,
@@ -125,6 +127,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 30303),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -161,6 +164,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("129.24.31.22", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -191,6 +195,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -213,6 +218,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("127.0.0.1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -236,6 +242,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 persistentSubnets,
                 SYNCNETS,
@@ -259,6 +266,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATT_SUBNET_SCHEMA.getDefault(),
                 SYNCNETS,
@@ -282,6 +290,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 syncnets,
@@ -307,6 +316,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
@@ -330,6 +340,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
+                Optional.empty(),
                 Optional.of(enrForkId),
                 ATTNETS,
                 SYNCNETS,
@@ -353,6 +364,7 @@ class NodeRecordConverterTest {
                 NODE_ID,
                 new InetSocketAddress("::1", 1234),
                 Optional.empty(),
+                Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
                 Optional.empty(),
@@ -361,7 +373,8 @@ class NodeRecordConverterTest {
 
   @ParameterizedTest
   @MethodSource("getCgcFixtures")
-  public void shouldDecodeCgcCorrectly(final String hexString, final Integer cgc) {
+  public void shouldDecodeCgcCorrectly(
+      final String hexString, final Optional<Integer> maybeCustodyGroupCount) {
     assertThat(
             convertNodeRecordWithFields(
                 false,
@@ -374,9 +387,10 @@ class NodeRecordConverterTest {
                 NODE_ID,
                 new InetSocketAddress("127.0.0.1", 1234),
                 Optional.empty(),
+                Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
-                Optional.of(cgc),
+                maybeCustodyGroupCount,
                 Optional.empty()));
   }
 
@@ -395,16 +409,56 @@ class NodeRecordConverterTest {
                 NODE_ID,
                 new InetSocketAddress("127.0.0.1", 1234),
                 Optional.empty(),
+                Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
                 Optional.empty(),
                 Optional.of(nfd)));
   }
 
+  @Test
+  public void shouldExtractQuicAddressFromEnr() {
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            false,
+            new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+            new EnrField(EnrField.TCP, 9000),
+            new EnrField(EnrField.QUIC, 9100));
+    assertThat(result).isPresent();
+    assertThat(result.get().getQuicAddress()).contains(new InetSocketAddress("127.0.0.1", 9100));
+    assertThat(result.get().getNodeAddress()).isEqualTo(new InetSocketAddress("127.0.0.1", 9000));
+  }
+
+  @Test
+  public void shouldExtractQuicV6AddressFromEnrWhenIpv6Supported() {
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            true,
+            new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
+            new EnrField(EnrField.TCP_V6, 9000),
+            new EnrField(EnrField.QUIC_V6, 9100));
+    assertThat(result).isPresent();
+    assertThat(result.get().getQuicAddress()).contains(new InetSocketAddress("::1", 9100));
+  }
+
+  @Test
+  public void shouldHaveEmptyQuicAddressWhenNotAdvertised() {
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            false,
+            new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+            new EnrField(EnrField.TCP, 9000));
+    assertThat(result).isPresent();
+    assertThat(result.get().getQuicAddress()).isEmpty();
+  }
+
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(
       final boolean supportsIpv6, final EnrField... fields) {
     return CONVERTER.convertToDiscoveryPeer(
-        createNodeRecord(fields), supportsIpv6, SCHEMA_DEFINITIONS);
+        createNodeRecord(fields),
+        supportsIpv6,
+        SCHEMA_DEFINITIONS,
+        Optional.of(MAX_CUSTODY_GROUP_COUNT));
   }
 
   private NodeRecord createNodeRecord(final EnrField... fields) {
@@ -416,10 +470,11 @@ class NodeRecordConverterTest {
 
   private static Stream<Arguments> getCgcFixtures() {
     return Stream.of(
-        Arguments.of("0x00", 0),
-        Arguments.of("0x", 0),
-        Arguments.of("0x80", 128),
-        Arguments.of("0x8c", 140),
-        Arguments.of("0x0190", 400));
+        Arguments.of("0x00", Optional.of(0)),
+        Arguments.of("0x", Optional.of(0)),
+        Arguments.of("0x80", Optional.of(128)),
+        Arguments.of("0x8c", Optional.empty()),
+        Arguments.of("0x0190", Optional.empty()),
+        Arguments.of("0x0100000000", Optional.empty()));
   }
 }

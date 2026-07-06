@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +70,23 @@ public class SlashingProtectedValidatorSourceTest {
     when(provider.isReadOnly()).thenReturn(true);
     doReturn(List.of(provider)).when(delegate).getAvailableValidators();
     assertThat(validatorSource.getAvailableValidators().get(0).isReadOnly()).isTrue();
+  }
+
+  @Test
+  void addValidatorWithSignerUrl_shouldWrapWithSlashingProtectedSigner() {
+    final Signer signer = mock(Signer.class);
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    when(signer.signBlock(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+    when(delegate.addValidator(publicKey, Optional.<URL>empty()))
+        .thenReturn(new AddValidatorResult(PostKeyResult.success(), Optional.of(signer)));
+
+    final AddValidatorResult result = validatorSource.addValidator(publicKey, Optional.empty());
+    final Signer slashingSigner = result.getSigner().orElseThrow();
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1234);
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    assertThat(slashingSigner.signBlock(block, forkInfo)).isCompleted();
+    assertThat(slashingSigner.signBlock(block, forkInfo)).isCompletedExceptionally();
   }
 
   @Test

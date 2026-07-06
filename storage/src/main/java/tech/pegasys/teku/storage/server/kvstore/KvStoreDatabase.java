@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -68,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.storage.api.GloasForkChoiceRebuildData;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -104,6 +106,21 @@ public class KvStoreDatabase implements Database {
   protected final boolean storeNonCanonicalBlocks;
   @VisibleForTesting final KvStoreCombinedDao dao;
   private final StateStorageMode stateStorageMode;
+
+  enum DataColumnSidecarType {
+    CANONICAL("canonical"),
+    NON_CANONICAL("non-canonical");
+
+    private final String displayName;
+
+    DataColumnSidecarType(final String displayName) {
+      this.displayName = displayName;
+    }
+
+    String displayName() {
+      return displayName;
+    }
+  }
 
   KvStoreDatabase(
       final KvStoreCombinedDao dao,
@@ -280,6 +297,28 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return dao.getBlindedExecutionPayloadEnvelope(blockRoot);
+  }
+
+  @Override
+  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelopes(
+      final Set<Bytes32> blockRoots) {
+    return blockRoots.stream()
+        .flatMap(root -> dao.getBlindedExecutionPayloadEnvelope(root).stream())
+        .collect(
+            Collectors.toMap(
+                SignedBlindedExecutionPayloadEnvelope::getBeaconBlockRoot,
+                Function.identity(),
+                (existing, duplicate) -> {
+                  throw new IllegalStateException(
+                      "Duplicate blinded execution payload envelope in DB for block root "
+                          + existing.getBeaconBlockRoot());
+                }));
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return dao.streamHotBlocksAsSsz();
   }
@@ -300,6 +339,9 @@ public class KvStoreDatabase implements Database {
                 dao.getHotBlockCheckpointEpochs(b.getRoot());
             final Optional<ExecutionPayload> executionPayload =
                 b.getMessage().getBody().getOptionalExecutionPayload();
+            final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData =
+                StoredBlockMetadata.extractGloasForkChoiceRebuildData(
+                    b, dao.getBlindedExecutionPayloadEnvelope(b.getRoot()));
             blockInformation.put(
                 b.getRoot(),
                 new StoredBlockMetadata(
@@ -309,7 +351,8 @@ public class KvStoreDatabase implements Database {
                     b.getStateRoot(),
                     executionPayload.map(ExecutionPayload::getBlockNumber),
                     executionPayload.map(ExecutionPayload::getBlockHash),
-                    checkpointEpochs));
+                    checkpointEpochs,
+                    gloasForkChoiceRebuildData));
           });
     }
     return blockInformation;
@@ -342,11 +385,16 @@ public class KvStoreDatabase implements Database {
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
+            final Optional<SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayload =
+                Optional.ofNullable(blindedExecutionPayloads.get(block.getRoot()));
+            blindedExecutionPayload.ifPresent(
+                envelope -> updater.addBlindedExecutionPayloadEnvelope(block.getRoot(), envelope));
             // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
             // availability period
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
@@ -709,6 +757,7 @@ public class KvStoreDatabase implements Database {
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
@@ -734,7 +783,8 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
+    storeFinalizedBlocksToDao(
+        blocks, blobSidecarsBySlot, blindedExecutionPayloads, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
@@ -1176,7 +1226,22 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
-    return dao.getEarliestDataSidecarColumnSlot();
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
+    if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
+      return Optional.empty();
+    }
+    // Start the scan just above the last pruned slot rather than at the first slot with data column
+    // sidecar support. Everything up to and including the watermark has been deleted, so seeking to
+    // watermark + 1 lands directly on live data instead of crossing the band of deletion tombstones
+    // left below it - a forward scan over those tombstones can take minutes on a backlogged node.
+    final UInt64 fromSlot =
+        dao.getLastDataColumnSidecarPrunedSlot()
+            .map(lastPruned -> lastPruned.plus(1))
+            .orElse(maybeFirstDataColumnSidecarSlot.get());
+    try (final Stream<DataColumnSlotAndIdentifier> identifiers =
+        streamDataColumnIdentifiers(fromSlot, UInt64.MAX_VALUE)) {
+      return identifiers.findFirst().map(DataColumnSlotAndIdentifier::slot);
+    }
   }
 
   @Override
@@ -1228,62 +1293,157 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
-    try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
-            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
-        final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
-            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
+    final long startTime = System.currentTimeMillis();
+    LOG.debug(
+        "Pruning data column sidecars up to slot {}, limit {}", tillSlotInclusive, pruneLimit);
 
-      if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
-        LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
+    pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.CANONICAL);
+    pruneDataColumnSidecars(pruneLimit, tillSlotInclusive, DataColumnSidecarType.NON_CANONICAL);
+
+    LOG.debug(
+        "Data column sidecars pruning completed in {} ms", System.currentTimeMillis() - startTime);
+  }
+
+  /**
+   * Prunes data column sidecars oldest-first: each run removes the oldest (up to) {@code
+   * pruneSlotLimit} distinct populated slots at or before the cutoff, in a single committed
+   * transaction. Pruning oldest-first keeps the earliest retained slot advancing and prevents a gap
+   * from forming when sidecars are stored faster than they can be pruned.
+   *
+   * <p>For canonical sidecars the forward scan resumes from the persisted prune watermark ({@link
+   * KvStoreCombinedDao#getLastDataColumnSidecarPrunedSlot()}) rather than the fixed first slot with
+   * data column sidecar support, so the opening seek lands directly on live data instead of
+   * crossing the deletion tombstones left below it - including across restarts. The watermark is
+   * advanced atomically with the deletions. Non-canonical sidecars are sparse, so they always scan
+   * from the first supported slot. Gaps between populated slots are skipped, so the batch always
+   * spans {@code pruneSlotLimit} populated slots regardless of how far apart they are.
+   */
+  void pruneDataColumnSidecars(
+      final int pruneSlotLimit,
+      final UInt64 tillSlotInclusive,
+      final DataColumnSidecarType sidecarType) {
+
+    final long startTime = System.currentTimeMillis();
+
+    if (pruneSlotLimit <= 0) {
+      return;
+    }
+
+    final Optional<UInt64> maybeFirstDataColumnSidecarSlot = getFirstDataColumnSidecarSlot();
+    if (maybeFirstDataColumnSidecarSlot.isEmpty()) {
+      return;
+    }
+
+    final UInt64 firstSupportedSlot = maybeFirstDataColumnSidecarSlot.get();
+    final UInt64 fromSlot =
+        sidecarType == DataColumnSidecarType.CANONICAL
+            ? dao.getLastDataColumnSidecarPrunedSlot()
+                .map(lastPruned -> lastPruned.plus(1))
+                .orElse(firstSupportedSlot)
+            : firstSupportedSlot;
+    if (fromSlot.isGreaterThan(tillSlotInclusive)) {
+      return;
+    }
+
+    final DataColumnSidecarsToPrune toPrune =
+        collectOldestSidecarsToPrune(pruneSlotLimit, fromSlot, tillSlotInclusive, sidecarType);
+
+    if (toPrune.keys().isEmpty()) {
+      LOG.debug("No {} data column sidecars to prune", sidecarType.displayName());
+      return;
+    }
+
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      for (final DataColumnSlotAndIdentifier key : toPrune.keys()) {
+        removeDataColumnSidecar(sidecarType, updater, key);
       }
-      if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
-        LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
+      // Persist the canonical prune watermark atomically with the deletions so the next run (and
+      // any
+      // run after a restart) can resume above the tombstones rather than rescanning from the first
+      // supported slot.
+      if (sidecarType == DataColumnSidecarType.CANONICAL) {
+        updater.setLastDataColumnSidecarPrunedSlot(toPrune.keys().getLast().slot());
       }
+      updater.commit();
+    }
+
+    if (toPrune.distinctSlots() >= pruneSlotLimit) {
+      LOG.debug(
+          "{} data column sidecars pruning reached the limit of {}",
+          sidecarType.displayName(),
+          pruneSlotLimit);
+    }
+    LOG.debug(
+        "Pruned {} {} data column sidecars across {} slots ({},{}) in {} ms",
+        toPrune.keys().size(),
+        sidecarType.displayName(),
+        toPrune.distinctSlots(),
+        toPrune.keys().getFirst().slot(),
+        toPrune.keys().getLast().slot(),
+        System.currentTimeMillis() - startTime);
+  }
+
+  /**
+   * Collects the keys for the oldest (up to) {@code pruneSlotLimit} distinct populated slots in
+   * {@code [fromSlot, tillSlotInclusive]} in a single forward scan, stopping as soon as the limit
+   * is reached. The stream is consumed lazily, so the iterator only advances as far as the slots
+   * being pruned.
+   */
+  private DataColumnSidecarsToPrune collectOldestSidecarsToPrune(
+      final int pruneSlotLimit,
+      final UInt64 fromSlot,
+      final UInt64 tillSlotInclusive,
+      final DataColumnSidecarType sidecarType) {
+    final List<DataColumnSlotAndIdentifier> keys = new ArrayList<>();
+    int distinctSlots = 0;
+    try (final Stream<DataColumnSlotAndIdentifier> forwardStream =
+        streamDataColumnIdentifiersForward(sidecarType, fromSlot, tillSlotInclusive)) {
+      final Iterator<DataColumnSlotAndIdentifier> iterator = forwardStream.iterator();
+      UInt64 currentSlot = null;
+      while (iterator.hasNext()) {
+        final DataColumnSlotAndIdentifier key = iterator.next();
+        if (!key.slot().equals(currentSlot)) {
+          if (distinctSlots == pruneSlotLimit) {
+            break;
+          }
+          currentSlot = key.slot();
+          ++distinctSlots;
+        }
+        keys.add(key);
+      }
+    }
+    return new DataColumnSidecarsToPrune(keys, distinctSlots);
+  }
+
+  @MustBeClosed
+  private Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiersForward(
+      final DataColumnSidecarType sidecarType, final UInt64 fromSlot, final UInt64 toSlot) {
+    if (sidecarType == DataColumnSidecarType.CANONICAL) {
+      return streamDataColumnIdentifiers(fromSlot, toSlot);
+    }
+    return streamNonCanonicalDataColumnIdentifiers(fromSlot, toSlot);
+  }
+
+  private record DataColumnSidecarsToPrune(
+      List<DataColumnSlotAndIdentifier> keys, int distinctSlots) {}
+
+  private void removeDataColumnSidecar(
+      final DataColumnSidecarType sidecarType,
+      final FinalizedUpdater updater,
+      final DataColumnSlotAndIdentifier key) {
+    switch (sidecarType) {
+      case CANONICAL -> updater.removeSidecar(key);
+      case NON_CANONICAL -> updater.removeNonCanonicalSidecar(key);
     }
   }
 
-  boolean pruneDataColumnSidecars(
-      final int pruneSlotLimit,
-      final Stream<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifierStream,
-      final boolean nonCanonicalBlobSidecars) {
+  private Optional<UInt64> getFirstDataColumnSidecarSlot() {
+    return spec.computeFirstSlotWithDataColumnSidecarSupport();
+  }
 
-    int prunedSlots = 0;
-
-    final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
-
-    dataColumnSlotAndIdentifierStream
-        .takeWhile(
-            item -> prunableMap.size() < pruneSlotLimit || prunableMap.containsKey(item.slot()))
-        .forEach(
-            item -> prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
-
-    final List<UInt64> slots = prunableMap.keySet().stream().sorted().toList();
-
-    if (!slots.isEmpty()) {
-      LOG.debug(
-          "Pruning data column sidecars from slots {} to {}", slots.getFirst(), slots.getLast());
-      try (final FinalizedUpdater updater = finalizedUpdater()) {
-        for (final UInt64 slot : slots) {
-          final List<DataColumnSlotAndIdentifier> keys = prunableMap.get(slot);
-
-          for (final DataColumnSlotAndIdentifier key : keys) {
-            if (nonCanonicalBlobSidecars) {
-              updater.removeNonCanonicalSidecar(key);
-            } else {
-              updater.removeSidecar(key);
-            }
-          }
-
-          ++prunedSlots;
-        }
-        updater.commit();
-      }
-      LOG.debug("Pruned data column sidecars in {} slots", prunedSlots);
-    }
-
-    // `pruned` will be greater when we reach pruneLimit not on the latest DataColumnSidecar in a
-    // slot
-    return prunedSlots >= pruneSlotLimit;
+  @Override
+  public void compactStorage() {
+    dao.compact();
   }
 
   @Override
@@ -1303,6 +1463,14 @@ public class KvStoreDatabase implements Database {
             update.getDeletedHotBlocks(),
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
+
+    if (update.isExecutionPayloadEnvelopesEnabled()) {
+      final Set<Bytes32> nonCanonicalPrunedRoots =
+          update.getDeletedHotBlocks().keySet().stream()
+              .filter(root -> !update.getFinalizedChildToParentMap().containsKey(root))
+              .collect(Collectors.toSet());
+      updateBlindedExecutionPayloads(update.getBlindedExecutionPayloads(), nonCanonicalPrunedRoots);
+    }
 
     if (update.isBlobSidecarsEnabled()) {
       removeNonCanonicalBlobSidecars(
@@ -1637,6 +1805,19 @@ public class KvStoreDatabase implements Database {
     }
 
     return Optional.empty();
+  }
+
+  private void updateBlindedExecutionPayloads(
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
+      final Set<Bytes32> prunedBlockRoots) {
+    if (blindedExecutionPayloads.isEmpty() && prunedBlockRoots.isEmpty()) {
+      return;
+    }
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      blindedExecutionPayloads.forEach(updater::addBlindedExecutionPayloadEnvelope);
+      prunedBlockRoots.forEach(updater::deleteBlindedExecutionPayloadEnvelope);
+      updater.commit();
+    }
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {

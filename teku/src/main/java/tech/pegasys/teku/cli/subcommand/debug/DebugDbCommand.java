@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -337,7 +338,10 @@ public class DebugDbCommand implements Runnable {
           final String filter)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
-      database.getColumnCounts(Optional.ofNullable(filter)).forEach(this::printColumn);
+      final Map<String, Long> counts = database.getColumnCounts(Optional.ofNullable(filter));
+      final int width = counts.keySet().stream().mapToInt(String::length).max().orElse(1);
+      final String fmt = String.format("%%%ds: %%d%%n", width);
+      new TreeMap<>(counts).forEach((label, count) -> System.out.printf(fmt, label, count));
     }
     return 0;
   }
@@ -996,6 +1000,35 @@ public class DebugDbCommand implements Runnable {
     return 0;
   }
 
+  @Command(
+      name = "compact-db",
+      description =
+          "Trigger a full compaction of the database to reclaim disk space left behind by pruning. "
+              + "This is an expensive, I/O-heavy operation and must only be run while the node is "
+              + "stopped.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int compactDb(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    final long startTime = System.currentTimeMillis();
+    System.out.println("Compacting database. This may take a long time...");
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      database.compactStorage();
+    }
+    System.out.printf(
+        "Database compaction completed in %d ms%n", System.currentTimeMillis() - startTime);
+    return 0;
+  }
+
   private boolean canParseBlock(final Spec spec, final Bytes blockData) {
     try {
       spec.deserializeSignedBeaconBlock(blockData);
@@ -1039,10 +1072,6 @@ public class DebugDbCommand implements Runnable {
           "Finalized block index for root %s reports slot %s, expected slot %s%n",
           parentBlock.getRoot(), (indexSlot.isPresent() ? indexSlot.get() : "BLANK"), parentSlot);
     }
-  }
-
-  private void printColumn(final String label, final long count) {
-    System.out.printf("%40s: %d%n", label, count);
   }
 
   private Database createDatabase(

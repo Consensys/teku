@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -225,7 +226,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "ivzppJTgsLoYr2byZQhMYq2YERVTauYhx38mzUe9qhHRZhvOLxprM0wi3JRT9y3+DK3rNc3Yj39d2TlHiZOlf0+ozeHBbg11aaoSZzH7ixzRP+23A4iw4cEmpyT0DMKG"));
+                "rKmmvOv04zBQ4E7Tbp50HV9OvuY+DBt7R5U+zdHuDlCo+leP4PHuEFkmb894VckBF1GCpUA4CWtylxeNc6JnhrvHm+nI1IATR4/BF7r9PCsZCocu33dSa2T6qrre0zsI"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadBid(bid, fork);
     asyncRunner.executeQueuedActions();
@@ -245,7 +246,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "hu8ykyX9hSY5eBSnmwDrGsbb4kyzc2IZj0SzOmixZ3L/69McGy0akhT6hIn9W29zFLJO6E+KuS8x8giLtasgGXpjhaxq2cA0Scj4WNhMAWO4XsCzKMcQ3Oe7eF0WArYM"));
+                "jzKiAGsIdRaQBZu3BuDrZ0KODt5hZXgqLCT+7Ti8EzjCaO4GIezBOHvI5TD4+PY7FDHmq+Sc1AJqmHZ8D587uSiUMQsV5m6z9OFdYn+jhUfshGVhCNZIztsBEhXA0LM0"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadEnvelope(envelope, fork);
     asyncRunner.executeQueuedActions();
@@ -265,10 +266,31 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "tvf+z4784dw1b8XIDKuCBIAeGGQimNn0a6rH5s0NK3H8jKMgIKKadvR5Ui02bBtCGJwR7iLDGMF3KdzkMspzyVb1D+hdL600LttoSBp+HM+NJ0xsT5ajwNk1yO0RzajH"));
+                "qF7VPrbIcUkkpqELL9mhI2qOG85VXWPuf5SvCwIts/G5VIzaKr/i6pWlwKie9ijiEfHvudvljVvYpiT3NH41fb+k28mMPT3EUDGVqnfhk5vZyzDPbsN61xnjYOX797DD"));
 
     final SafeFuture<BLSSignature> result =
         signer.signPayloadAttestationData(payloadAttestationData, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignProposerPreferences() {
+    final ProposerPreferences proposerPreferences =
+        dataStructureUtilGloas.randomProposerPreferences();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "r663P2XmrOu3LmXCAJfeG46UmQMcmjLOhiL+A6SQ51xEtaHTuaZKtMNHvgFks/QgCQYsWxW1/imKbEjKNc/Ld0ivWCrtBuWzQSORDsulFDRT3RdOYp0hTce7XOwt1d8K"));
+
+    final SafeFuture<BLSSignature> result =
+        signer.signProposerPreferences(proposerPreferences, fork);
     asyncRunner.executeQueuedActions();
 
     assertThat(result)

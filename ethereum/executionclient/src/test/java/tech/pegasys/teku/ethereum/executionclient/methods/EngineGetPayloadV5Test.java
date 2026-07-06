@@ -39,16 +39,13 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV5Test {
@@ -56,11 +53,6 @@ class EngineGetPayloadV5Test {
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
-  private final ExecutionRequestsDataCodec executionRequestsDataCodec =
-      new ExecutionRequestsDataCodec(
-          SchemaDefinitionsFulu.required(
-                  spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
-              .getExecutionRequestsSchema());
   private EngineGetPayloadV5 jsonRpcMethod;
 
   @BeforeEach
@@ -130,7 +122,7 @@ class EngineGetPayloadV5Test {
     final ExecutionPayload executionPayloadFulu = dataStructureUtil.randomExecutionPayload();
     final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
     final List<Bytes> encodedExecutionRequests =
-        executionRequestsDataCodec.encode(executionRequests);
+        spec.getExecutionRequestsDataCodec(UInt64.ZERO).encode(executionRequests);
     assertThat(executionPayloadFulu).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV5(eq(executionPayloadContext.getPayloadId())))

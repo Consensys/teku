@@ -17,21 +17,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
-import java.util.List;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,11 +41,22 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -75,11 +87,34 @@ public class BlockGossipValidatorTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
+    seedGenesisExecutionPayloadForGloas();
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
             receivedBlockEventsChannelPublisher);
+  }
+
+  private void seedGenesisExecutionPayloadForGloas() {
+    if (spec.getGenesisSpecConfig().getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      return;
+    }
+    final InlineEventThread eventThread = new InlineEventThread();
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            new NoopForkChoiceNotifier(),
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            mock(MergeTransitionBlockValidator.class),
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            LateBlockReorgPreparationHandler.NOOP,
+            mock(DebugDataDumper.class),
+            storageSystem.getMetricsSystem(),
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    forkChoice.applyGenesisExecutionPayloadForGloas().join();
   }
 
   @TestTemplate
@@ -181,7 +216,12 @@ public class BlockGossipValidatorTest {
     final SignedBeaconBlock signedBlock =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    final UInt64 invalidProposerIndex = signedBlock.getMessage().getProposerIndex().plus(ONE);
+    final UInt64 invalidProposerIndex =
+        signedBlock
+            .getMessage()
+            .getProposerIndex()
+            .plus(ONE)
+            .mod(storageSystem.chainBuilder().getValidatorKeys().size());
 
     final BeaconBlock block =
         new BeaconBlock(
@@ -231,11 +271,10 @@ public class BlockGossipValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
-    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final RecentChainData localRecentChainData = storageSystem.recentChainData();
-    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final BlockGossipValidator blockValidator =
@@ -281,6 +320,7 @@ public class BlockGossipValidatorTest {
         .initializeGenesisWithPayload(
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
+    seedGenesisExecutionPayloadForGloas();
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
@@ -392,14 +432,15 @@ public class BlockGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldRejectBlockWithIncorrectExecutionPayloadBidParentHash(final SpecContext specContext) {
+  void shouldRejectBlockWithNotValidatedExecutionPayloadBidParentHash(
+      final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     final SignedBlockAndState signedBlockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    final Bytes32 badParentBlockHash = Bytes32.random();
+    final Bytes32 notValidatedParentBlockHash = Bytes32.random();
 
     final SignedBeaconBlock invalidBlock =
         createBlockWithModifiedExecutionPayloadBid(
@@ -408,7 +449,7 @@ public class BlockGossipValidatorTest {
                 originalExecutionPayloadBid
                     .getSchema()
                     .create(
-                        badParentBlockHash,
+                        notValidatedParentBlockHash,
                         originalExecutionPayloadBid.getParentBlockRoot(),
                         originalExecutionPayloadBid.getBlockHash(),
                         originalExecutionPayloadBid.getPrevRandao(),
@@ -418,17 +459,286 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitments()));
-    final BeaconStateGloas parentState =
-        BeaconStateGloas.required(storageSystem.chainBuilder().getStateAtSlot(nextSlot.minus(ONE)));
-    final Bytes32 expectedParentBlockHash = parentState.getLatestBlockHash();
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        originalExecutionPayloadBid.getExecutionRequestsRoot()));
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(
             result ->
                 result.equals(
                     InternalValidationResult.reject(
-                        "Execution payload bid has invalid parent block hash %s, expecting %s",
-                        badParentBlockHash, expectedParentBlockHash)));
+                        "The parent block hash %s from the bid is not present or hasn't been passed validation",
+                        notValidatedParentBlockHash)));
+  }
+
+  @TestTemplate
+  void shouldAcceptFirstGloasBlockWithPreGloasParent(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final Spec forkTransitionSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(ONE);
+    final StorageSystem forkTransitionStorageSystem =
+        InMemoryStorageSystemBuilder.buildDefault(forkTransitionSpec);
+    forkTransitionStorageSystem.chainUpdater().initializeGenesis();
+    final ReceivedBlockEventsChannel forkTransitionReceivedBlockEventsChannelPublisher =
+        mock(ReceivedBlockEventsChannel.class);
+    final GossipValidationHelper forkTransitionGossipValidationHelper =
+        new GossipValidationHelper(
+            forkTransitionSpec,
+            forkTransitionStorageSystem.recentChainData(),
+            forkTransitionStorageSystem.getMetricsSystem());
+    final BlockGossipValidator forkTransitionBlockGossipValidator =
+        new BlockGossipValidator(
+            forkTransitionSpec,
+            forkTransitionGossipValidationHelper,
+            forkTransitionReceivedBlockEventsChannelPublisher);
+
+    final UInt64 firstGloasSlot = forkTransitionSpec.computeStartSlotAtEpoch(ONE);
+    final UInt64 preGloasParentSlot = firstGloasSlot.minus(ONE);
+    final SignedBlockAndState preGloasParentBlockAndState =
+        forkTransitionStorageSystem.chainUpdater().advanceChain(preGloasParentSlot);
+    final SignedBlockAndState firstGloasBlockAndState =
+        forkTransitionStorageSystem.chainBuilder().generateBlockAtSlot(firstGloasSlot);
+    final SignedBeaconBlock firstGloasBlock = firstGloasBlockAndState.getBlock();
+    forkTransitionStorageSystem.chainUpdater().setCurrentSlot(firstGloasSlot);
+
+    assertThat(
+            forkTransitionSpec
+                .atSlot(preGloasParentBlockAndState.getSlot())
+                .getMilestone()
+                .isLessThan(SpecMilestone.GLOAS))
+        .isTrue();
+    assertThat(forkTransitionSpec.atSlot(firstGloasBlock.getSlot()).getMilestone())
+        .isEqualTo(SpecMilestone.GLOAS);
+    assertThat(
+            forkTransitionGossipValidationHelper
+                .getParentStateInBlockEpoch(
+                    preGloasParentSlot, firstGloasBlock.getParentRoot(), firstGloasSlot)
+                .join()
+                .orElseThrow()
+                .toVersionGloas())
+        .isPresent();
+    assertThat(forkTransitionBlockGossipValidator.validate(firstGloasBlock, true))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(forkTransitionReceivedBlockEventsChannelPublisher).onBlockValidated(firstGloasBlock);
+  }
+
+  @TestTemplate
+  void shouldSaveForFutureWhenParentFullPayloadIsNotAvailable(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(parentSlot);
+    storageSystem.chainUpdater().saveBlock(parentBlockAndState);
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(blockGossipValidator.validate(childBlockAndState.getBlock(), true))
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+  }
+
+  @TestTemplate
+  void shouldSaveForFutureWhenParentFullPayloadHashAlsoMatchesLatestBlockHash(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(parentSlot);
+    final ExecutionPayloadBid parentBid =
+        parentBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    final SignedBlockAndState parentBlockAndStateWithOverlappingPayloadHashes =
+        new SignedBlockAndState(
+            parentBlockAndState.getBlock(),
+            parentBlockAndState
+                .getState()
+                .updated(
+                    state ->
+                        MutableBeaconStateGloas.required(state)
+                            .setLatestBlockHash(parentBid.getBlockHash())));
+    storageSystem.chainUpdater().saveBlock(parentBlockAndStateWithOverlappingPayloadHashes);
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    final ExecutionPayloadBid childBid =
+        childBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    final ExecutionRequests parentExecutionRequests =
+        childBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalParentExecutionRequests()
+            .orElseThrow();
+    final ExecutionRequests defaultParentExecutionRequests =
+        SchemaDefinitionsGloas.required(spec.atSlot(childSlot).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getDefault();
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(childBid.getParentBlockHash()).isEqualTo(parentBid.getBlockHash());
+    assertThat(
+            BeaconStateGloas.required(parentBlockAndStateWithOverlappingPayloadHashes.getState())
+                .getLatestBlockHash())
+        .isEqualTo(parentBid.getBlockHash());
+    assertThat(parentExecutionRequests.hashTreeRoot())
+        .isEqualTo(parentBid.getExecutionRequestsRoot());
+    assertThat(parentExecutionRequests).isNotEqualTo(defaultParentExecutionRequests);
+    assertThat(blockGossipValidator.validate(childBlockAndState.getBlock(), true))
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+  }
+
+  @TestTemplate
+  void shouldAcceptGloasBlockBuildingOnEmptyParentWhenParentFullPayloadIsAvailable(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainUpdater().advanceChain(parentSlot);
+    final ExecutionPayloadBid parentBid =
+        parentBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    final Bytes32 parentEmptyExecutionBlockHash =
+        BeaconStateGloas.required(parentBlockAndState.getState()).getLatestBlockHash();
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    final ExecutionRequests defaultParentExecutionRequests =
+        SchemaDefinitionsGloas.required(spec.atSlot(childSlot).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getDefault();
+    final SignedBeaconBlock emptyParentChildBlock =
+        createBlockWithModifiedExecutionPayloadBid(
+            childBlockAndState,
+            originalExecutionPayloadBid ->
+                originalExecutionPayloadBid
+                    .getSchema()
+                    .create(
+                        parentEmptyExecutionBlockHash,
+                        originalExecutionPayloadBid.getParentBlockRoot(),
+                        originalExecutionPayloadBid.getBlockHash(),
+                        originalExecutionPayloadBid.getPrevRandao(),
+                        originalExecutionPayloadBid.getFeeRecipient(),
+                        originalExecutionPayloadBid.getGasLimit(),
+                        originalExecutionPayloadBid.getBuilderIndex(),
+                        originalExecutionPayloadBid.getSlot(),
+                        originalExecutionPayloadBid.getValue(),
+                        originalExecutionPayloadBid.getExecutionPayment(),
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        defaultParentExecutionRequests.hashTreeRoot()),
+            defaultParentExecutionRequests);
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(parentBid.getBlockHash()).isNotEqualTo(parentEmptyExecutionBlockHash);
+    assertResultIsAccept(
+        emptyParentChildBlock, blockGossipValidator.validate(emptyParentChildBlock, true));
+  }
+
+  @TestTemplate
+  void shouldRejectGloasBlockBuildingOnEmptyParentWithParentExecutionRequests(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainUpdater().advanceChain(parentSlot);
+    final Bytes32 parentEmptyExecutionBlockHash =
+        BeaconStateGloas.required(parentBlockAndState.getState()).getLatestBlockHash();
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    final ExecutionRequests parentExecutionRequests =
+        specContext.getDataStructureUtil().randomExecutionRequests(parentSlot);
+    final SignedBeaconBlock invalidEmptyParentChildBlock =
+        createBlockWithModifiedExecutionPayloadBid(
+            childBlockAndState,
+            originalExecutionPayloadBid ->
+                originalExecutionPayloadBid
+                    .getSchema()
+                    .create(
+                        parentEmptyExecutionBlockHash,
+                        originalExecutionPayloadBid.getParentBlockRoot(),
+                        originalExecutionPayloadBid.getBlockHash(),
+                        originalExecutionPayloadBid.getPrevRandao(),
+                        originalExecutionPayloadBid.getFeeRecipient(),
+                        originalExecutionPayloadBid.getGasLimit(),
+                        originalExecutionPayloadBid.getBuilderIndex(),
+                        originalExecutionPayloadBid.getSlot(),
+                        originalExecutionPayloadBid.getValue(),
+                        originalExecutionPayloadBid.getExecutionPayment(),
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        parentExecutionRequests.hashTreeRoot()),
+            parentExecutionRequests);
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(blockGossipValidator.validate(invalidEmptyParentChildBlock, true))
+        .isCompletedWithValueMatching(
+            result ->
+                result.equals(
+                    InternalValidationResult.reject(
+                        "No execution requests were expected for an EMPTY parent")));
+  }
+
+  @TestTemplate
+  void shouldRejectGloasBlockBuildingOnFullParentWithIncorrectParentExecutionRequests(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final UInt64 parentSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState parentBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(parentSlot);
+    storageSystem.chainUpdater().saveBlock(parentBlockAndState);
+    final ExecutionPayloadBid parentBid =
+        parentBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+
+    final UInt64 childSlot = parentSlot.plus(ONE);
+    final SignedBlockAndState childBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(childSlot);
+    final ExecutionRequests incorrectParentExecutionRequests =
+        SchemaDefinitionsGloas.required(spec.atSlot(childSlot).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getDefault();
+    final SignedBeaconBlock invalidFullParentChildBlock =
+        createBlockWithModifiedExecutionPayloadBid(
+            childBlockAndState, Function.identity(), incorrectParentExecutionRequests);
+    storageSystem.chainUpdater().setCurrentSlot(childSlot);
+
+    assertThat(incorrectParentExecutionRequests.hashTreeRoot())
+        .isNotEqualTo(parentBid.getExecutionRequestsRoot());
+    assertThat(blockGossipValidator.validate(invalidFullParentChildBlock, true))
+        .isCompletedWithValueMatching(
+            result ->
+                result.equals(
+                    InternalValidationResult.reject(
+                        "The execution requests root in the latest committed bid does not match the parent execution requests in the block")));
   }
 
   @TestTemplate
@@ -458,7 +768,8 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitments()));
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        originalExecutionPayloadBid.getExecutionRequestsRoot()));
 
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(
@@ -472,6 +783,21 @@ public class BlockGossipValidatorTest {
   private SignedBeaconBlock createBlockWithModifiedExecutionPayloadBid(
       final SignedBlockAndState baseBlockAndState,
       final Function<ExecutionPayloadBid, ExecutionPayloadBid> bidModifier) {
+    return createBlockWithModifiedExecutionPayloadBid(
+        baseBlockAndState,
+        bidModifier,
+        baseBlockAndState
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalParentExecutionRequests()
+            .orElseThrow());
+  }
+
+  private SignedBeaconBlock createBlockWithModifiedExecutionPayloadBid(
+      final SignedBlockAndState baseBlockAndState,
+      final Function<ExecutionPayloadBid, ExecutionPayloadBid> bidModifier,
+      final ExecutionRequests parentExecutionRequests) {
     final SignedBeaconBlock originalSignedBeaconBlock = baseBlockAndState.getBlock();
     final BeaconBlockBody originalBeaconBlockBody =
         originalSignedBeaconBlock.getMessage().getBody();
@@ -499,6 +825,7 @@ public class BlockGossipValidatorTest {
                 originalBeaconBlockBody.getOptionalBlsToExecutionChanges().orElseThrow())
             .payloadAttestations(
                 originalBeaconBlockBody.getOptionalPayloadAttestations().orElseThrow())
+            .parentExecutionRequests(parentExecutionRequests)
             .signedExecutionPayloadBid(modifiedSignedBid)
             .build();
 

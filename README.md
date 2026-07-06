@@ -4,7 +4,7 @@
  [![GitHub License](https://img.shields.io/github/license/Consensys/teku.svg?logo=apache)](https://github.com/Consensys/teku/blob/master/LICENSE)
  [![Documentation](https://img.shields.io/badge/docs-readme-blue?logo=readme&logoColor=white)](https://docs.teku.consensys.io/)
  [![consensus-specs](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FConsensys%2Fteku%2Frefs%2Fheads%2Fmaster%2Fbuild.gradle&search=refTestVersion.*%22(v%5B%5E%22%5D%2B)%22&replace=%241&label=consensus-specs)](https://github.com/ethereum/consensus-specs/releases)
- [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/7hPv2T6)
+ [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/teku)
  [![Twitter Follow](https://img.shields.io/twitter/follow/Teku_Consensys)](https://twitter.com/Teku_Consensys)
  [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/ConsenSys/teku/badge)](https://www.gitpoap.io/gh/ConsenSys/teku)
 
@@ -15,7 +15,7 @@ See the [Changelog](https://github.com/Consensys/teku/releases) for details of t
 ## Useful links
 
 * [Ethereum Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/beacon-chain.md)
-* [Teku user documentation](https://docs.teku.consensys.net/)
+* [Teku user documentation](https://docs.teku.consensys.io/)
 * [Teku REST API reference documentation](https://consensys.github.io/teku/)
 * [Teku issues](https://github.com/Consensys/teku/issues)
 * [Contribution guidelines](CONTRIBUTING.md)
@@ -23,10 +23,10 @@ See the [Changelog](https://github.com/Consensys/teku/releases) for details of t
 
 ## Teku users
 
-See our [user documentation](https://docs.teku.consensys.net/).
+See our [user documentation](https://docs.teku.consensys.io/).
 
 Raise a [documentation issue](https://github.com/Consensys/doc.teku/issues) or get in touch in
-the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questions or feedback.
+the #teku channel on [Discord](https://discord.gg/teku) if you've got questions or feedback.
 
 ## Teku developers
 
@@ -47,16 +47,16 @@ the latest changes on testnets.
 Release notifications are available via:
 * Sign up to our [release announcements](https://pages.consensys.net/teku-sign-up) email list (release and important announcements only, no marketing)
 * Follow us on [Twitter](https://twitter.com/Teku_Consensys)
-* `teku` in [Consensys Discord](https://discord.gg/7hPv2T6),
+* `teku` in [Consensys Discord](https://discord.gg/teku),
 * Subscribe to release notifications on github for [teku](https://github.com/Consensys/teku)
 
 ## Build Instructions
 
 ### Install Prerequisites
 
-* Java 21+
+* Java 25+
 
-Note: Official builds of Teku are performed with Java 21.
+Note: Official builds of Teku are performed with Java 25.
 Building on a more recent version of Java is supported, but the resulting build will not work on earlier versions of Java.
 
 

@@ -26,7 +26,7 @@ on:
       runner:
         type: string
         required: false
-        default: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+        default: gha-runner-scale-set-ubuntu-24-amd64-xxl
       gradle_args:
         type: string
         required: false
@@ -42,19 +42,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0,1,2,3,4,5,6,7]   # parallel shards
-        total: [8]
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]   # parallel shards
+        total: [12]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: 'recursive'
           fetch-depth: 0  # Full history
           fetch-tags: true
 
       - name: Download assemble-output
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -65,6 +65,8 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
+        with:
+          gradle-cache-read-only: 'true'
 
       # only acceptance tests need the docker login
       # 4.0.0
@@ -75,15 +77,7 @@ jobs:
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
           # Second reason we're doing this is so that forked PRs from external contributors works ie env vars aren't visible to forked PRs from within contexts
           username: "cddockeruser"
-          password: "fa8651f2-88be-48b7-98ce-e711bd376252"          
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          password: "fa8651f2-88be-48b7-98ce-e711bd376252"
 
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ${{ inputs.stage_name }}
         id: shard
@@ -115,7 +109,7 @@ jobs:
 
       - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ inputs.stage_key }}-reports-${{ matrix.shard }}
           path: |
@@ -123,4 +117,3 @@ jobs:
             **/build/reports/tests/**
           if-no-files-found: ignore
           retention-days: 1
-      

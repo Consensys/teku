@@ -47,32 +47,78 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class CompatibilityTestData {
 
   public static final int MAX_SLOT = 128;
+  // Legacy on-disk test data stores epoch=1 for all votes. With minimal spec (SLOTS_PER_EPOCH=8),
+  // epoch 1 converts to nextSlot=8.
+  private static final UInt64 LEGACY_NEXT_SLOT = UInt64.valueOf(8);
+
   public static final ImmutableMap<UInt64, VoteTracker> EXPECTED_VOTES =
       ImmutableMap.<UInt64, VoteTracker>builder()
           .put(
               UInt64.ZERO,
               new VoteTracker(
-                  Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02"), UInt64.ONE))
+                  Bytes32.fromHexString("0x01"),
+                  Bytes32.fromHexString("0x02"),
+                  false,
+                  false,
+                  LEGACY_NEXT_SLOT,
+                  false,
+                  UInt64.ZERO,
+                  false))
           .put(
               UInt64.ONE,
               new VoteTracker(
-                  Bytes32.fromHexString("0x03"), Bytes32.fromHexString("0x04"), UInt64.ONE))
+                  Bytes32.fromHexString("0x03"),
+                  Bytes32.fromHexString("0x04"),
+                  false,
+                  false,
+                  LEGACY_NEXT_SLOT,
+                  false,
+                  UInt64.ZERO,
+                  false))
           .put(
               UInt64.valueOf(2),
               new VoteTracker(
-                  Bytes32.fromHexString("0x05"), Bytes32.fromHexString("0x06"), UInt64.ONE))
+                  Bytes32.fromHexString("0x05"),
+                  Bytes32.fromHexString("0x06"),
+                  false,
+                  false,
+                  LEGACY_NEXT_SLOT,
+                  false,
+                  UInt64.ZERO,
+                  false))
           .put(
               UInt64.valueOf(3),
               new VoteTracker(
-                  Bytes32.fromHexString("0x07"), Bytes32.fromHexString("0x08"), UInt64.ONE))
+                  Bytes32.fromHexString("0x07"),
+                  Bytes32.fromHexString("0x08"),
+                  false,
+                  false,
+                  LEGACY_NEXT_SLOT,
+                  false,
+                  UInt64.ZERO,
+                  false))
           .put(
               UInt64.valueOf(4),
               new VoteTracker(
-                  Bytes32.fromHexString("0x09"), Bytes32.fromHexString("0x10"), UInt64.ONE))
+                  Bytes32.fromHexString("0x09"),
+                  Bytes32.fromHexString("0x10"),
+                  false,
+                  false,
+                  LEGACY_NEXT_SLOT,
+                  false,
+                  UInt64.ZERO,
+                  false))
           .put(
               UInt64.valueOf(5),
               new VoteTracker(
-                  Bytes32.fromHexString("0x11"), Bytes32.fromHexString("0x12"), UInt64.ONE))
+                  Bytes32.fromHexString("0x11"),
+                  Bytes32.fromHexString("0x12"),
+                  false,
+                  false,
+                  LEGACY_NEXT_SLOT,
+                  false,
+                  UInt64.ZERO,
+                  false))
           .build();
 
   public static final List<BLSPublicKey> PUBLIC_KEYS =

@@ -33,11 +33,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransactionUpdatesFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -55,7 +57,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
-  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -78,7 +80,7 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
-    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
+    hotExecutionPayloads = new ConcurrentHashMap<>(tx.executionPayloadData);
   }
 
   public static StoreTransactionUpdates create(
@@ -103,7 +105,8 @@ class StoreTransactionUpdatesFactory {
                 createStoreTransactionUpdates(
                     Optional.empty(),
                     tx.clearFinalizedOptimisticTransitionPayload,
-                    Optional.empty()));
+                    Optional.empty(),
+                    createBlindedExecutionPayloads()));
   }
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
@@ -113,8 +116,12 @@ class StoreTransactionUpdatesFactory {
         collectFinalizedBlocks(tx, finalizedChildToParent);
     final Map<Bytes32, BeaconState> finalizedStates =
         collectFinalizedStates(tx, finalizedChildToParent);
-
+    // Collect blinded execution payloads before pruning
+    final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads =
+        createBlindedExecutionPayloads();
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
+    createFinalizedExecutionPayloadBoundaryBlock()
+        .ifPresent(finalizedChainDataBuilder::finalizedExecutionPayloadBoundaryBlock);
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
     if (tx.clearFinalizedOptimisticTransitionPayload) {
@@ -141,7 +148,7 @@ class StoreTransactionUpdatesFactory {
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
-              hotExecutionPayloadAndStates.remove(blockRoot);
+              hotExecutionPayloads.remove(blockRoot);
             });
 
     final Optional<FinalizedChainData> finalizedChainData =
@@ -154,7 +161,10 @@ class StoreTransactionUpdatesFactory {
                 .build());
 
     return createStoreTransactionUpdates(
-        finalizedChainData, optimisticTransitionBlockRootSet, optimisticTransitionBlockRoot);
+        finalizedChainData,
+        optimisticTransitionBlockRootSet,
+        optimisticTransitionBlockRoot,
+        blindedExecutionPayloads);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -193,7 +203,7 @@ class StoreTransactionUpdatesFactory {
     if (baseStore.getForkChoiceStrategy().contains(finalizedChainHeadRoot)) {
       baseStore
           .getForkChoiceStrategy()
-          .processHashesInChain(
+          .processBeaconBlockChain(
               finalizedChainHeadRoot,
               (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
     }
@@ -232,7 +242,7 @@ class StoreTransactionUpdatesFactory {
     final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
     baseStore
         .getForkChoiceStrategy()
-        .processAllInOrder(
+        .processAllBeaconBlocksInOrder(
             (blockRoot, slot, parentRoot) -> {
               if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
                 prunedHotBlockRoots.put(blockRoot, slot);
@@ -257,7 +267,8 @@ class StoreTransactionUpdatesFactory {
   private StoreTransactionUpdates createStoreTransactionUpdates(
       final Optional<FinalizedChainData> finalizedChainData,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -272,8 +283,30 @@ class StoreTransactionUpdatesFactory {
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,
         maybeCustodyGroupCount,
-        spec.isMilestoneSupported(SpecMilestone.DENEB),
-        spec.isMilestoneSupported(SpecMilestone.FULU),
-        hotExecutionPayloadAndStates);
+        spec.supportsBlobSidecars(),
+        spec.supportsDataColumnSidecars(),
+        spec.supportsExecutionPayloadEnvelopes(),
+        hotExecutionPayloads,
+        blindedExecutionPayloads);
+  }
+
+  private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> createBlindedExecutionPayloads() {
+    return hotExecutionPayloads.entrySet().stream()
+        .map(
+            entry -> {
+              final SignedExecutionPayloadEnvelope executionPayload =
+                  entry.getValue().executionPayload();
+              return Map.entry(entry.getKey(), executionPayload.blind(spec));
+            })
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private Optional<BlockAndCheckpoints> createFinalizedExecutionPayloadBoundaryBlock() {
+    if (!spec.atSlot(latestFinalized.getBlockSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(hotBlocks.get(latestFinalized.getRoot()));
   }
 }

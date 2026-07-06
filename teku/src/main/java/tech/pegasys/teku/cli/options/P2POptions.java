@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
@@ -97,6 +96,41 @@ public class P2POptions {
   private Integer p2pUdpPortIpv6;
 
   @Option(
+      names = {"--Xp2p-quic-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables QUIC transport",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean p2pQuicEnabled = NetworkConfig.DEFAULT_QUIC_ENABLED;
+
+  @Option(
+      names = {"--Xp2p-tcp-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables TCP transport",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean p2pTcpEnabled = NetworkConfig.DEFAULT_TCP_ENABLED;
+
+  @Option(
+      names = {"--p2p-quic-port"},
+      paramLabel = "<INTEGER>",
+      description = "P2P QUIC port",
+      arity = "1")
+  private Integer p2pQuicPort = NetworkConfig.DEFAULT_P2P_QUIC_PORT;
+
+  @Option(
+      names = {"--p2p-quic-port-ipv6"},
+      paramLabel = "<INTEGER>",
+      description =
+          "P2P IPv6 QUIC port. This port is only used when listening over both IPv4 and IPv6.",
+      arity = "1")
+  private int p2pQuicPortIpv6 = NetworkConfig.DEFAULT_P2P_QUIC_PORT_IPV6;
+
+  @Option(
       names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -167,6 +201,24 @@ public class P2POptions {
   private Integer p2pAdvertisedUdpPortIpv6;
 
   @Option(
+      names = {"--p2p-advertised-quic-port"},
+      paramLabel = "<INTEGER>",
+      description =
+          "P2P advertised QUIC port. The default is the port specified in --p2p-quic-port",
+      arity = "1")
+  private Integer p2pAdvertisedQuicPort;
+
+  @Option(
+      names = {"--p2p-advertised-quic-port-ipv6"},
+      paramLabel = "<INTEGER>",
+      description =
+          """
+                      P2P advertised IPv6 QUIC port. This port is only used when advertising both IPv4 and IPv6 addresses.
+                      The default is the port specified in --p2p-quic-port-ipv6.""",
+      arity = "1")
+  private Integer p2pAdvertisedQuicPortIpv6;
+
+  @Option(
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
@@ -221,7 +273,7 @@ public class P2POptions {
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
       paramLabel = "<INTEGER>",
       description =
-          "Number of peers that should be selected randomly (default 20%% of lower-bound target)",
+          "Number of peers that should be selected randomly (default 30%% of lower-bound target)",
       arity = "1",
       hidden = true)
   private Integer minimumRandomlySelectedPeerCount;
@@ -322,6 +374,16 @@ public class P2POptions {
   private Integer forwardSyncMaxDistanceFromHead;
 
   @Option(
+      names = {"--Xp2p-max-concurrently-sampled-blocks"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Maximum number of recent blocks we keep in the temporary cache to serve requests of recent blocks that have not being fully imported.",
+      hidden = true,
+      arity = "1")
+  private Integer maxConcurrentlySampledBlocks = SyncConfig.DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
+
+  @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
@@ -332,33 +394,28 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-custody-sync-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "",
-      arity = "0..1",
-      hidden = true,
-      fallbackValue = "true")
-  private boolean reworkedSidecarCustodySyncEnabled = DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
-
-  @Option(
-      names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},
+      names = {
+        "--Xp2p-sidecar-custody-sync-batch-size",
+        "--Xp2p-reworked-sidecar-custody-sync-batch-size"
+      },
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Backfill sync custody batch size in slots",
       arity = "1",
       hidden = true)
-  private Integer reworkedSidecarCustodySyncBatchSize =
-      DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
+  private Integer sidecarCustodySyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-custody-sync-poll-period-seconds"},
+      names = {
+        "--Xp2p-sidecar-custody-sync-poll-period-seconds",
+        "--Xp2p-reworked-sidecar-custody-sync-poll-period-seconds"
+      },
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Backfill sync custody poll period",
       arity = "1",
       hidden = true)
-  private Integer reworkedSidecarCustodySyncPollPeriodSeconds =
+  private Integer sidecarCustodySyncPollPeriodSeconds =
       DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 
   @Option(
@@ -437,6 +494,17 @@ public class P2POptions {
       arity = "0..1",
       fallbackValue = "true")
   private boolean gossipBlobsAfterBlockEnabled = P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
+
+  @Option(
+      names = {"--Xp2p-gossip-snappy-aircompressor-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Use aircompressor-v3 for gossip snappy encoding and decoding",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean gossipSnappyAircompressorEnabled =
+      P2PConfig.DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED;
 
   @Option(
       names = {"--Xpeer-all-topics-filter-enabled"},
@@ -704,17 +772,17 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
+                  .gossipSnappyAircompressorEnabled(gossipSnappyAircompressorEnabled)
                   .custodyGroupCountOverride(custodyGroupCountOverride)
                   .dasPublishWithholdColumnsEverySlots(dasPublishWithholdColumnsEverySlots)
                   .dasDisableElRecovery(dasDisableElRecovery)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)
-                  .reworkedSidecarRecoveryTimeout(sidecarCancelTimeoutMs)
-                  .reworkedSidecarDownloadTimeout(sidecarDownloadTimeoutMs)
-                  .reworkedSidecarSyncPollPeriod(reworkedSidecarCustodySyncPollPeriodSeconds)
-                  .reworkedSidecarSyncBatchSize(reworkedSidecarCustodySyncBatchSize)
-                  .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled)
+                  .sidecarRecoveryTimeout(sidecarCancelTimeoutMs)
+                  .sidecarDownloadTimeout(sidecarDownloadTimeoutMs)
+                  .sidecarSyncPollPeriod(sidecarCustodySyncPollPeriodSeconds)
+                  .sidecarSyncBatchSize(sidecarCustodySyncBatchSize)
                   .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled)
                   .minBidIncrementPercentage(minBidIncrementPercentage);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
@@ -749,7 +817,7 @@ public class P2POptions {
                           ? DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS
                           : DEFAULT_P2P_PEERS_UPPER_BOUND));
               if (p2pAdvertisedUdpPortIpv6 != null) {
-                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
+                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedUdpPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(getStaticPeersList())
@@ -773,6 +841,12 @@ public class P2POptions {
               if (p2pAdvertisedPortIpv6 != null) {
                 n.advertisedPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
+              if (p2pAdvertisedQuicPort != null) {
+                n.advertisedQuicPort(OptionalInt.of(p2pAdvertisedQuicPort));
+              }
+              if (p2pAdvertisedQuicPortIpv6 != null) {
+                n.advertisedQuicPortIpv6(OptionalInt.of(p2pAdvertisedQuicPortIpv6));
+              }
               if (!p2pDirectPeers.isEmpty()) {
                 n.directPeers(
                     p2pDirectPeers.stream()
@@ -784,8 +858,12 @@ public class P2POptions {
                   .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
                   .listenPortIpv6(p2pPortIpv6)
+                  .listenQuicPort(p2pQuicPort)
+                  .listenQuicPortIpv6(p2pQuicPortIpv6)
                   .advertisedIps(Optional.ofNullable(p2pAdvertisedIps))
-                  .yamuxEnabled(yamuxEnabled);
+                  .yamuxEnabled(yamuxEnabled)
+                  .quicEnabled(p2pQuicEnabled)
+                  .tcpEnabled(p2pTcpEnabled);
             })
         .sync(
             s ->
@@ -795,7 +873,8 @@ public class P2POptions {
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
-                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead)
+                    .maxRecentlySampledBlocks(maxConcurrentlySampledBlocks));
 
     if (subscribeAllSubnetsEnabled) {
       builder

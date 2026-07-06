@@ -92,11 +92,19 @@ public class DataColumnSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRangeRequestMessage request) {
+    final UInt64 maxSlot;
+    try {
+      maxSlot = request.getMaxSlot();
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
+
     final int requestedCount = calculateRequestedCount(request);
     final int maxRequestDataColumnSidecars;
     try {
       maxRequestDataColumnSidecars =
-          spec.atSlot(request.getMaxSlot()).miscHelpers().getMaxRequestDataColumnSidecars();
+          spec.atSlot(maxSlot).miscHelpers().getMaxRequestDataColumnSidecars();
     } catch (final UnsupportedOperationException __) {
       return Optional.of(
           new RpcException(
@@ -129,8 +137,8 @@ public class DataColumnSidecarsByRangeMessageHandler
         dasLogger
             .getDataColumnSidecarsByRangeLogger()
             .onInboundRequest(
-                LoggingPeerId.fromPeerAndNodeId(
-                    peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
+                LoggingPeerId.fromPeerAndMaybeNodeId(
+                    peer.getId().toBase58(), peer.getDiscoveryNodeId()),
                 new DasReqRespLogger.ByRangeRequest(
                     message.getStartSlot(), message.getCount().intValue(), message.getColumns()));
     final LoggingResponseCallback<DataColumnSidecar> callbackWithLogging =
@@ -209,21 +217,40 @@ public class DataColumnSidecarsByRangeMessageHandler
   }
 
   private SafeFuture<RequestState> sendDataColumnSidecars(final RequestState requestState) {
+    SafeFuture<Boolean> dataColumnSidecarFuture = processNextDataColumnSidecar(requestState);
+    // Avoid risk of StackOverflowException by iterating when the sidecar future is already
+    // complete. Using thenCompose on the completed future would execute immediately and recurse
+    // back into this method to send the next sidecar. When not already complete, thenCompose is
+    // executed on a separate thread so doesn't recurse on the same stack.
+    while (dataColumnSidecarFuture.isDone()
+        && !dataColumnSidecarFuture.isCompletedExceptionally()) {
+      if (dataColumnSidecarFuture.join()) {
+        return SafeFuture.completedFuture(requestState);
+      }
+      dataColumnSidecarFuture = processNextDataColumnSidecar(requestState);
+    }
+    return dataColumnSidecarFuture.thenCompose(
+        complete ->
+            complete
+                ? SafeFuture.completedFuture(requestState)
+                : sendDataColumnSidecars(requestState));
+  }
+
+  private SafeFuture<Boolean> processNextDataColumnSidecar(final RequestState requestState) {
     return requestState
         .loadNextDataColumnSidecar()
         .thenCompose(
             maybeDataColumnSidecar ->
-                maybeDataColumnSidecar
-                    .map(requestState::sendDataColumnSidecar)
-                    .orElse(SafeFuture.COMPLETE))
-        .thenCompose(
-            __ -> {
-              if (requestState.isComplete()) {
-                return SafeFuture.completedFuture(requestState);
-              } else {
-                return sendDataColumnSidecars(requestState);
-              }
-            });
+                handleLoadedDataColumnSidecar(requestState, maybeDataColumnSidecar));
+  }
+
+  /** Sends the data column sidecar and returns true if the request is now complete. */
+  private SafeFuture<Boolean> handleLoadedDataColumnSidecar(
+      final RequestState requestState, final Optional<DataColumnSidecar> maybeDataColumnSidecar) {
+    return maybeDataColumnSidecar
+        .map(requestState::sendDataColumnSidecar)
+        .orElse(SafeFuture.COMPLETE)
+        .thenApply(__ -> requestState.isComplete());
   }
 
   @VisibleForTesting

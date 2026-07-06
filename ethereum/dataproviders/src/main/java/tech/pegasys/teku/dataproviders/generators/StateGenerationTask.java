@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.dataproviders.generators;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -21,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
-import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -32,7 +30,6 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
   private final Spec spec;
   private final HashTree tree;
   private final BlockProvider blockProvider;
-  private final ExecutionPayloadProvider executionPayloadProvider;
   private final Bytes32 blockRoot;
   private final StateRegenerationBaseSelector baseSelector;
 
@@ -41,12 +38,10 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
       final Bytes32 blockRoot,
       final HashTree tree,
       final BlockProvider blockProvider,
-      final ExecutionPayloadProvider executionPayloadProvider,
       final StateRegenerationBaseSelector baseSelector) {
     this.spec = spec;
     this.tree = tree;
     this.blockProvider = blockProvider;
-    this.executionPayloadProvider = executionPayloadProvider;
     this.blockRoot = blockRoot;
     this.baseSelector = baseSelector;
   }
@@ -84,7 +79,6 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
         blockRoot,
         tree,
         blockProvider,
-        executionPayloadProvider,
         baseSelector.withRebasedStartingPoint(newBaseBlockAndState));
   }
 
@@ -100,12 +94,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
     }
     final StateAndBlockSummary base = maybeBase.get();
     return StateGenerator.create(
-            spec,
-            tree.withRoot(base.getRoot()).block(base).build(),
-            base,
-            blockProvider,
-            executionPayloadProvider,
-            Collections.emptyMap())
+            spec, tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider)
         .regenerateStateForBlock(blockRoot)
         .thenApply(Optional::of);
   }

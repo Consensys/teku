@@ -22,11 +22,12 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -207,7 +208,7 @@ public class ChainUpdater {
             block -> {
               saveBlock(block);
               otherChain
-                  .getExecutionPayloadAndStateAtSlot(block.getSlot())
+                  .getExecutionPayloadAtSlot(block.getSlot())
                   .ifPresent(this::saveExecutionPayload);
             });
     updateBestBlock(otherChain.getLatestBlockAndState());
@@ -220,7 +221,7 @@ public class ChainUpdater {
             block -> {
               saveBlock(block);
               otherChain
-                  .getExecutionPayloadAndStateAtSlot(block.getSlot())
+                  .getExecutionPayloadAtSlot(block.getSlot())
                   .ifPresent(this::saveExecutionPayload);
             });
     updateBestBlock(otherChain.getLatestBlockAndStateAtSlot(slot));
@@ -292,23 +293,39 @@ public class ChainUpdater {
       saveBlock(block, blobSidecars);
     }
     chainBuilder.getDataColumnSidecars(block.getRoot()).forEach(dataColumnSidecarPersister);
-    chainBuilder.getExecutionPayloadAndStateAtSlot(slot).ifPresent(this::saveExecutionPayload);
+    chainBuilder.getExecutionPayloadAtSlot(slot).ifPresent(this::saveExecutionPayload);
     return block;
   }
 
   public void saveBlock(final SignedBlockAndState block) {
+    saveBlock(block, Optional.empty(), Optional.empty());
+  }
+
+  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
+    saveBlock(block, Optional.of(blobSidecars), Optional.of(block.getSlot()));
+  }
+
+  public void saveBlock(
+      final SignedBlockAndState block,
+      final Optional<List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> earliestBlobSidecarSlot) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        Optional.empty(),
-        Optional.empty());
+        blobSidecars,
+        earliestBlobSidecarSlot);
     assertThat(tx.commit()).isCompleted();
-    recentChainData
-        .getUpdatableForkChoiceStrategy()
-        .orElseThrow()
-        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
+    // Pre-Gloas blocks have a single fork-choice node, so direct block insertion must also mark
+    // that node as execution-valid. Gloas block insertion only creates the BASE/EMPTY nodes; the
+    // FULL payload node is created and marked when the execution payload envelope is saved.
+    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      recentChainData
+          .getUpdatableForkChoiceStrategy()
+          .orElseThrow()
+          .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
+    }
     saveBlockTime(block);
   }
 
@@ -327,29 +344,6 @@ public class ChainUpdater {
     saveBlockTime(block);
   }
 
-  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
-    saveBlock(block, blobSidecars, block.getSlot());
-  }
-
-  public void saveBlock(
-      final SignedBlockAndState block,
-      final List<BlobSidecar> blobSidecars,
-      final UInt64 earliestBlobSidecarSlot) {
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(
-        block.getBlock(),
-        block.getState(),
-        spec.calculateBlockCheckpoints(block.getState()),
-        Optional.of(blobSidecars),
-        Optional.of(earliestBlobSidecarSlot));
-    assertThat(tx.commit()).isCompleted();
-    recentChainData
-        .getUpdatableForkChoiceStrategy()
-        .orElseThrow()
-        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
-    saveBlockTime(block);
-  }
-
   public void saveBlockTime(final SignedBlockAndState block) {
     // Make sure time is consistent with block
     final UInt64 blockTime = getSlotTime(block.getSlot());
@@ -358,10 +352,15 @@ public class ChainUpdater {
     }
   }
 
-  public void saveExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
+  public void saveExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putExecutionPayloadAndState(executionPayload.executionPayload(), executionPayload.state());
+    tx.putExecutionPayload(executionPayload, false);
     assertThat(tx.commit()).isCompleted();
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .orElseThrow()
+        .onExecutionPayloadResult(
+            executionPayload.getBeaconBlockRoot(), PayloadStatus.VALID, false);
   }
 
   protected UInt64 getSlotTime(final UInt64 slot) {

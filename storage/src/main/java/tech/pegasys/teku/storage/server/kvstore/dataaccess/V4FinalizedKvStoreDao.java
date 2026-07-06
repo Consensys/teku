@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -63,6 +64,10 @@ public class V4FinalizedKvStoreDao {
 
   public void close() throws Exception {
     db.close();
+  }
+
+  public void compact() {
+    db.compact();
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
@@ -249,14 +254,12 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
     return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
+  }
+
+  public Optional<UInt64> getLastDataColumnSidecarPrunedSlot() {
+    return db.get(schema.getVariableLastDataColumnSidecarPrunedSlot());
   }
 
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
@@ -280,6 +283,11 @@ public class V4FinalizedKvStoreDao {
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(schema.getColumnSlotsByFinalizedRoot(), root)
         .flatMap(this::getFinalizedBlockAtSlot);
+  }
+
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @MustBeClosed
@@ -392,6 +400,16 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      transaction.put(
+          schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -400,6 +418,12 @@ public class V4FinalizedKvStoreDao {
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+      deleteBlindedExecutionPayloadEnvelope(blockRoot);
+    }
+
+    @Override
+    public void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override
@@ -495,6 +519,11 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+    }
+
+    @Override
+    public void setLastDataColumnSidecarPrunedSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableLastDataColumnSidecarPrunedSlot(), slot);
     }
 
     @Override

@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.logic.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Attes
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.weaksubjectivity.WeakSubjectivityCalculatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProposalUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -61,6 +62,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
+  private final Optional<ExecutionRequestsDataCodec> executionRequestsDataCodec;
 
   private SpecLogicElectra(
       final Predicates predicates,
@@ -68,6 +70,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
+      final WeakSubjectivityCalculatorElectra weakSubjectivityCalculator,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -76,6 +79,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final EpochProcessorElectra epochProcessor,
       final WithdrawalsHelpersElectra withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final BlockProcessorElectra blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -89,6 +93,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -104,6 +109,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
+    this.executionRequestsDataCodec = Optional.of(executionRequestsDataCodec);
   }
 
   public static SpecLogicElectra create(
@@ -123,6 +129,10 @@ public class SpecLogicElectra extends AbstractSpecLogic {
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
+
+    // Weak subjectivity
+    final WeakSubjectivityCalculatorElectra weakSubjectivityCalculator =
+        new WeakSubjectivityCalculatorElectra(config, beaconStateAccessors, miscHelpers);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -217,6 +227,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
+        weakSubjectivityCalculator,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -225,6 +236,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         epochProcessor,
         withdrawalsHelpers,
         executionRequestsProcessor,
+        executionRequestsDataCodec,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -260,7 +272,12 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   }
 
   @Override
-  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
+  public Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec() {
+    return executionRequestsDataCodec;
+  }
+
+  @Override
+  public Optional<ExecutionPayloadVerifier> getExecutionPayloadVerifier() {
     return Optional.empty();
   }
 

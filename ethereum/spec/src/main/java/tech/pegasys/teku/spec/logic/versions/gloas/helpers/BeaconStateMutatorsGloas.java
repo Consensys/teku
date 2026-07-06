@@ -15,21 +15,21 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -61,6 +61,42 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
   }
 
   /**
+   * compute_exit_epoch_and_update_churn
+   *
+   * <p>EIP-8061 (Gloas): exits use the uncapped {@code get_exit_churn_limit} instead of the
+   * activation/exit churn shared in Electra.
+   */
+  @Override
+  public UInt64 computeExitEpochAndUpdateChurn(
+      final MutableBeaconStateElectra state, final UInt64 exitBalance) {
+    final UInt64 earliestExitEpoch =
+        miscHelpers
+            .computeActivationExitEpoch(beaconStateAccessorsGloas.getCurrentEpoch(state))
+            .max(state.getEarliestExitEpoch());
+    final UInt64 perEpochChurn = beaconStateAccessorsGloas.getExitChurnLimit(state);
+    final UInt64 exitBalanceToConsume =
+        state.getEarliestExitEpoch().isLessThan(earliestExitEpoch)
+            ? perEpochChurn
+            : state.getExitBalanceToConsume();
+
+    if (exitBalance.isGreaterThan(exitBalanceToConsume)) {
+      final UInt64 balanceToProcess = exitBalance.minusMinZero(exitBalanceToConsume);
+      final UInt64 additionalEpochs =
+          balanceToProcess.minusMinZero(1).dividedBy(perEpochChurn).increment();
+      state.setExitBalanceToConsume(
+          exitBalanceToConsume
+              .plus(additionalEpochs.times(perEpochChurn))
+              .minusMinZero(exitBalance));
+      state.setEarliestExitEpoch(earliestExitEpoch.plus(additionalEpochs));
+    } else {
+      state.setExitBalanceToConsume(exitBalanceToConsume.minusMinZero(exitBalance));
+      state.setEarliestExitEpoch(earliestExitEpoch);
+    }
+
+    return state.getEarliestExitEpoch();
+  }
+
+  /**
    * initiate_builder_exit
    *
    * <p>Initiate the exit of the builder with index ``index``.
@@ -68,10 +104,6 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
   public void initiateBuilderExit(final MutableBeaconState state, final UInt64 builderIndex) {
     final SszMutableList<Builder> builders = MutableBeaconStateGloas.required(state).getBuilders();
     final Builder builder = builders.get(builderIndex.intValue());
-    // Return if builder already initiated exit
-    if (!builder.getWithdrawableEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return;
-    }
     // Set builder exit epoch
     final UInt64 exitEpoch =
         beaconStateAccessorsGloas
@@ -80,19 +112,35 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
     builders.set(builderIndex.intValue(), builder.copyWithNewWithdrawableEpoch(exitEpoch));
   }
 
+  /** settle_builder_payment */
+  public void settleBuilderPayment(final MutableBeaconState state, final UInt64 paymentIndex) {
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+    checkArgument(
+        paymentIndex.isLessThan(stateGloas.getBuilderPendingPayments().size()),
+        "Payment index out of bounds");
+    final BuilderPendingPayment payment =
+        stateGloas.getBuilderPendingPayments().get(paymentIndex.intValue());
+    if (payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
+      stateGloas.getBuilderPendingWithdrawals().append(payment.getWithdrawal());
+    }
+    stateGloas
+        .getBuilderPendingPayments()
+        .set(paymentIndex.intValue(), payment.getSchema().getDefault());
+  }
+
   public void addBuilderToRegistry(
       final MutableBeaconState state,
       final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
+      final int version,
+      final Eth1Address executionAddress,
       final UInt64 amount,
       final UInt64 slot) {
     final UInt64 index = beaconStateAccessorsGloas.getIndexForNewBuilder(state);
-    final int version = withdrawalCredentials.get(0);
     final Builder builder =
         new Builder(
             pubkey,
             version,
-            getExecutionAddressUnchecked(withdrawalCredentials),
+            executionAddress,
             amount,
             miscHelpers.computeEpochAtSlot(slot),
             FAR_FUTURE_EPOCH);
@@ -112,33 +160,5 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
           index.intValue());
       builders.set(index.intValue(), builder);
     }
-  }
-
-  public void applyDepositForBuilder(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount,
-      final BLSSignature signature,
-      final UInt64 slot) {
-    beaconStateAccessorsGloas
-        .getBuilderIndex(state, pubkey)
-        .ifPresentOrElse(
-            builderIndex -> {
-              // Increase balance by deposit amount
-              final SszMutableList<Builder> builders =
-                  MutableBeaconStateGloas.required(state).getBuilders();
-              final Builder builder = builders.get(builderIndex);
-              builders.set(
-                  builderIndex, builder.copyWithNewBalance(builder.getBalance().plus(amount)));
-            },
-            () -> {
-              // Verify the deposit signature (proof of possession) which is not checked by the
-              // deposit contract
-              if (miscHelpers.isValidDepositSignature(
-                  pubkey, withdrawalCredentials, amount, signature)) {
-                addBuilderToRegistry(state, pubkey, withdrawalCredentials, amount, slot);
-              }
-            });
   }
 }

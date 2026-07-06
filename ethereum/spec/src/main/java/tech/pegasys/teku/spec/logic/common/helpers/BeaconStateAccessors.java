@@ -244,7 +244,7 @@ public abstract class BeaconStateAccessors {
   }
 
   public UInt64 getFinalityDelay(final BeaconState state) {
-    return getPreviousEpoch(state).minus(state.getFinalizedCheckpoint().getEpoch());
+    return getPreviousEpoch(state).minusMinZero(state.getFinalizedCheckpoint().getEpoch());
   }
 
   public boolean isInactivityLeak(final UInt64 finalityDelay) {
@@ -296,7 +296,11 @@ public abstract class BeaconStateAccessors {
       final BeaconState state, final UInt64 slot, final UInt64 index) {
     // Make sure state is within range of the slot being queried
     validateStateForCommitteeQuery(state, slot);
+    return getBeaconCommitteeNoValidation(state, slot, index);
+  }
 
+  protected IntList getBeaconCommitteeNoValidation(
+      final BeaconState state, final UInt64 slot, final UInt64 index) {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
@@ -341,7 +345,7 @@ public abstract class BeaconStateAccessors {
   public void validateStateForCommitteeQuery(final BeaconState state, final UInt64 slot) {
     final UInt64 oldestQueryableSlot =
         miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
-    if (state.getSlot().compareTo(oldestQueryableSlot) < 0) {
+    if (state.getSlot().isLessThan(oldestQueryableSlot)) {
       throw new StateTooOldException(state.getSlot(), oldestQueryableSlot);
     }
   }
@@ -365,6 +369,11 @@ public abstract class BeaconStateAccessors {
   public Bytes32 getVoluntaryExitDomain(
       final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
     return getDomain(Domain.VOLUNTARY_EXIT, epoch, fork, genesisValidatorsRoot);
+  }
+
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    // NO-OP
+    return IntList.of();
   }
 
   public Optional<BLSPublicKey> getBuilderPubKey(

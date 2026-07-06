@@ -22,7 +22,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
@@ -95,6 +94,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   private final KvStoreVariable<UInt64> earliestBlockSlot;
   private final KvStoreVariable<UInt64> firstCustodyIncompleteSlot;
   private final KvStoreVariable<UInt64> earliestAvailableDataColumnSlot;
+  private final KvStoreVariable<UInt64> lastDataColumnSidecarPrunedSlot;
 
   private final List<Bytes> deletedVariableIds;
 
@@ -109,7 +109,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
     latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
 
-    votes = KvStoreColumn.create(3, UINT64_SERIALIZER, VOTE_TRACKER_SERIALIZER);
+    votes =
+        KvStoreColumn.create(
+            3, UINT64_SERIALIZER, KvStoreSerializer.createVoteTrackerSerializer(spec));
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
@@ -118,6 +120,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     // finalizedOffset + 5 has been deleted
     earliestAvailableDataColumnSlot =
         KvStoreVariable.create(finalizedOffset + 6, UINT64_SERIALIZER);
+    lastDataColumnSidecarPrunedSlot =
+        KvStoreVariable.create(finalizedOffset + 7, UINT64_SERIALIZER);
 
     deletedVariableIds = List.of(asVariableId(finalizedOffset + 5));
   }
@@ -218,6 +222,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<UInt64> getVariableLastDataColumnSidecarPrunedSlot() {
+    return lastDataColumnSidecarPrunedSlot;
+  }
+
+  @Override
   public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
     return LATEST_CANONICAL_BLOCK_ROOT;
   }
@@ -249,6 +258,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnBlindedExecutionPayloadEnvelopesByRoot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
@@ -277,6 +289,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
         .put("EARLIEST_AVAILABLE_DATA_COLUMN_SLOT", getVariableEarliestAvailableDataColumnSlot())
+        .put("LAST_DATA_COLUMN_SLOT_PRUNED", getVariableLastDataColumnSidecarPrunedSlot())
         .build();
   }
 

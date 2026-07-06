@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
-import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromExecutionPayloadAndState;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,10 +41,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.UpdateResult;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
@@ -78,7 +79,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
-  Map<Bytes32, SignedExecutionPayloadAndState> executionPayloadData = new HashMap<>();
+  Map<Bytes32, ExecutionPayloadUpdate> executionPayloadData = new HashMap<>();
 
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
@@ -112,11 +113,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void putExecutionPayloadAndState(
-      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+  public void putExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     executionPayloadData.put(
         executionPayload.getBeaconBlockRoot(),
-        new SignedExecutionPayloadAndState(executionPayload, state));
+        new ExecutionPayloadUpdate(executionPayload, executionOptimistic));
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -291,6 +292,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public VoteTracker getVote(final UInt64 validatorIndex) {
+    return store.getVote(validatorIndex);
+  }
+
+  @Override
   public AnchorPoint getLatestFinalized() {
     if (finalizedCheckpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're
@@ -360,7 +366,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
       store
           .getForkChoiceStrategy()
-          .processAllInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
+          .processAllBeaconBlocksInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
       this.blockData
           .values()
           .forEach(
@@ -377,30 +383,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getState)
         .or(() -> store.getBlockStateIfAvailable(blockRoot));
-  }
-
-  @Override
-  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    final SignedExecutionPayloadAndState inMemoryExecutionPayloadAndState =
-        executionPayloadData.get(slotAndBlockRoot.getBlockRoot());
-    if (inMemoryExecutionPayloadAndState != null) {
-      // Not executing the task via the task queue to avoid caching the result before the tx is
-      // committed
-      return new StateAtSlotTask(
-              spec,
-              slotAndBlockRoot,
-              fromExecutionPayloadAndState(inMemoryExecutionPayloadAndState))
-          .performTask();
-    }
-    return store.retrieveExecutionPayloadState(slotAndBlockRoot);
-  }
-
-  @Override
-  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
-    return Optional.ofNullable(executionPayloadData.get(blockRoot))
-        .map(SignedExecutionPayloadAndState::state)
-        .or(() -> store.getExecutionPayloadStateIfAvailable(blockRoot));
   }
 
   @Override
@@ -459,9 +441,21 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (executionPayloadData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
           Optional.of(executionPayloadData.get(blockRoot))
-              .map(SignedExecutionPayloadAndState::executionPayload));
+              .map(ExecutionPayloadUpdate::executionPayload));
     }
     return store.retrieveSignedExecutionPayload(blockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
+      retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
+    if (executionPayloadData.containsKey(blockRoot)) {
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloadData.get(blockRoot))
+              .map(
+                  executionPayloadUpdate -> executionPayloadUpdate.executionPayload().blind(spec)));
+    }
+    return store.retrieveSignedBlindedExecutionPayload(blockRoot);
   }
 
   @Override
@@ -512,13 +506,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public boolean isHeadWeak(final Bytes32 root) {
-    return store.isHeadWeak(root);
+  public UInt64 getReorgThreshold() {
+    return store.getReorgThreshold();
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    return store.isParentStrong(parentRoot);
+  public UInt64 getParentThreshold() {
+    return store.getParentThreshold();
   }
 
   @Override
@@ -539,10 +533,23 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<BeaconState> getJustifiedStateIfAvailable() {
+    if (justifiedCheckpoint.isEmpty()) {
+      return store.getJustifiedStateIfAvailable();
+    }
+    return store.getCheckpointStateIfAvailable(justifiedCheckpoint.get());
+  }
+
+  @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return store.getCheckpointStateIfAvailable(checkpoint);
+  }
+
+  @Override
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
       final Bytes32 blockRoot) {
     return Optional.ofNullable(executionPayloadData.get(blockRoot))
-        .map(SignedExecutionPayloadAndState::executionPayload)
+        .map(ExecutionPayloadUpdate::executionPayload)
         .or(() -> store.getExecutionPayloadIfAvailable(blockRoot));
   }
 

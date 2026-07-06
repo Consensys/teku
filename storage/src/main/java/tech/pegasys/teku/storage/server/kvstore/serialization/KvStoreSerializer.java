@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -51,7 +52,10 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<Set<Bytes32>> BLOCK_ROOTS_SERIALIZER = new Bytes32SetSerializer();
   KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
       new CompressedBranchInfoSerializer();
-  KvStoreSerializer<VoteTracker> VOTE_TRACKER_SERIALIZER = new VoteTrackerSerializer();
+
+  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(final Spec spec) {
+    return new VoteTrackerSerializer(spec);
+  }
 
   KvStoreSerializer<Void> VOID_SERIALIZER = new VoidSerializer();
   KvStoreSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER =
@@ -70,6 +74,11 @@ public interface KvStoreSerializer<T> {
 
   static KvStoreSerializer<SignedBeaconBlock> createSignedBlockSerializer(final Spec spec) {
     return new SignedBeaconBlockSerializer(spec);
+  }
+
+  static KvStoreSerializer<SignedBlindedExecutionPayloadEnvelope>
+      createSignedBlindedExecutionPayloadEnvelopeSerializer(final Spec spec) {
+    return new SignedBlindedExecutionPayloadEnvelopeSerializer(spec);
   }
 
   T deserialize(final byte[] data);

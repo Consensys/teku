@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDIN
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -37,9 +38,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -47,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.PtcWindowSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaGloas
@@ -57,8 +62,9 @@ public class BeaconStateSchemaGloas
   public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 40;
   public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 41;
   public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 42;
-  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 43;
+  public static final int LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX = 43;
   public static final int PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX = 44;
+  public static final int PTC_WINDOW_INDEX = 45;
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
@@ -93,25 +99,29 @@ public class BeaconStateSchemaGloas
                 BeaconStateFields.BUILDER_PENDING_WITHDRAWALS,
                 () -> schemaRegistry.get(BUILDER_PENDING_WITHDRAWALS_SCHEMA)),
             new SszField(
-                LATEST_BLOCK_HASH_FIELD_INDEX,
-                BeaconStateFields.LATEST_BLOCK_HASH,
-                () -> SszPrimitiveSchemas.BYTES32_SCHEMA),
+                LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
             new SszField(
                 PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX,
                 BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS,
-                () -> schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).getWithdrawalsSchemaRequired()));
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).getWithdrawalsSchemaRequired()),
+            new SszField(
+                PTC_WINDOW_INDEX,
+                BeaconStateFields.PTC_WINDOW,
+                () -> schemaRegistry.get(PTC_WINDOW_SCHEMA)));
 
     return Stream.concat(
             BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry).stream()
                 .map(
                     field -> {
                       // replacing the old `latest_execution_payload_header` with the new
-                      // `latest_execution_payload_bid`
+                      // `latest_block_hash`
                       if (field.getIndex() == LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX) {
                         return new SszField(
                             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-                            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
-                            () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA));
+                            BeaconStateFields.LATEST_BLOCK_HASH,
+                            () -> SszPrimitiveSchemas.BYTES32_SCHEMA);
                       } else {
                         return field;
                       }
@@ -188,6 +198,10 @@ public class BeaconStateSchemaGloas
         getChildSchema(getFieldIndex(BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS));
   }
 
+  public PtcWindowSchema getPtcWindowSchema() {
+    return (PtcWindowSchema) getChildSchema(getFieldIndex(BeaconStateFields.PTC_WINDOW));
+  }
+
   @Override
   public MutableBeaconStateGloas createBuilder() {
     return new MutableBeaconStateGloasImpl(createEmptyBeaconStateImpl(), true);
@@ -209,6 +223,13 @@ public class BeaconStateSchemaGloas
   @Override
   public BeaconStateGloas createEmpty() {
     return createEmptyBeaconStateImpl();
+  }
+
+  public BeaconStateGloas createEmptyWithTransitionCachesFrom(final BeaconState sourceState) {
+    return new BeaconStateGloasImpl(
+        this,
+        BeaconStateCache.getTransitionCaches(sourceState).copy(),
+        SlotCaches.createNewEmpty());
   }
 
   private BeaconStateGloasImpl createEmptyBeaconStateImpl() {

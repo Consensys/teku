@@ -96,7 +96,8 @@ public class EventSubscriber {
   }
 
   private void terminateSseClient() {
-    sseClient.ctx().req().getAsyncContext().complete();
+    // Closing the SseClient completes Javalin's blocking future, allowing Javalin to complete the
+    // async context itself.
     sseClient.close();
   }
 

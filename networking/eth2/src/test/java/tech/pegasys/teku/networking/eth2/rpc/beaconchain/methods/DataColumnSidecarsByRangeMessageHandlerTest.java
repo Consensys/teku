@@ -99,6 +99,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
       dataColumnSidecarsByRangeRequestMessageSchema;
   private UInt64 startSlot;
   private int slotsPerEpoch;
+  private int numberOfColumns;
   private UInt64 maxRequestDataColumnSidecars;
   private final UInt64 count = UInt64.valueOf(5);
   private final List<UInt64> columnIndices = List.of(ZERO, ONE);
@@ -116,6 +117,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     dataStructureUtil = new DataStructureUtil(spec);
     final SpecVersion specVersionFulu = spec.atEpoch(currentForkEpoch);
     final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
+    numberOfColumns = specConfigFulu.getNumberOfColumns();
     maxRequestDataColumnSidecars = UInt64.valueOf(specConfigFulu.getMaxRequestDataColumnSidecars());
     handler =
         new DataColumnSidecarsByRangeMessageHandler(
@@ -149,6 +151,19 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
             protocolId,
             dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, ONE, columnIndices));
     assertThat(result).isEmpty();
+  }
+
+  @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            dataColumnSidecarsByRangeRequestMessageSchema.create(
+                UInt64.MAX_VALUE, UInt64.valueOf(10), columnIndices));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
   }
 
   @TestTemplate
@@ -282,6 +297,36 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
     verify(listener).completeSuccessfully();
     AssertionsForInterfaceTypes.assertThat(actualSent).hasSameElementsAs(expectedSent);
+  }
+
+  @TestTemplate
+  public void shouldSendMaximumDataColumnSidecarsWhenFuturesCompleteImmediately() {
+    final List<UInt64> allColumnIndices =
+        UInt64.rangeClosed(ZERO, UInt64.valueOf(numberOfColumns - 1)).toList();
+    final UInt64 requestSlotCount =
+        UInt64.valueOf(maxRequestDataColumnSidecars.longValue() / numberOfColumns);
+    final DataColumnSidecarsByRangeRequestMessage request =
+        dataColumnSidecarsByRangeRequestMessageSchema.create(
+            startSlot, requestSlotCount, allColumnIndices);
+    final List<DataColumnSlotAndIdentifier> dataColumnIdentifiers =
+        setupDataColumnSidecarIdentifiers(startSlot, request.getMaxSlot(), allColumnIndices)
+            .stream()
+            .map(Pair::getValue)
+            .toList();
+    final DataColumnSidecar dataColumnSidecar = mock(DataColumnSidecar.class);
+
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(request.getMaxSlot()));
+    when(combinedChainDataClient.getDataColumnIdentifiers(
+            eq(startSlot), eq(request.getMaxSlot()), any(UInt64.class)))
+        .thenReturn(SafeFuture.completedFuture(dataColumnIdentifiers));
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(dataColumnSidecar)));
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    verify(listener, times(maxRequestDataColumnSidecars.intValue())).respond(dataColumnSidecar);
+    verify(listener).completeSuccessfully();
   }
 
   @TestTemplate

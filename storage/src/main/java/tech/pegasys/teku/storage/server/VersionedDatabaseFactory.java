@@ -50,6 +50,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   public static final String DB_VERSION_FILENAME = "db.version";
 
   public static final String STORAGE_MODE_FILENAME = "data-storage-mode.txt";
+  public static final String BLOB_DB_MODE_FILENAME = "blob-db-mode.txt";
   public static final String METADATA_FILENAME = "metadata.yml";
   public static final String NETWORK_FILENAME = "network.yml";
 
@@ -61,6 +62,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
   private final File dbStorageModeFile;
+  private final File dbBlobDbModeFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
@@ -93,6 +95,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_FILENAME).toFile();
     this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_FILENAME).toFile();
+    this.dbBlobDbModeFile = this.dataDirectory.toPath().resolve(BLOB_DB_MODE_FILENAME).toFile();
 
     dbSettingFileSyncDataAccessor = SyncDataAccessor.create(dataDirectory.toPath());
     this.stateStorageMode = config.getDataStorageMode();
@@ -188,6 +191,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createV4Database() {
     try {
+      final boolean blobDbEnabled = resolveAndPersistBlobDbMode();
       DatabaseNetwork.init(
           getNetworkFile(),
           spec.getGenesisSpecConfig().getGenesisForkVersion(),
@@ -196,10 +200,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
-          KvStoreConfiguration.v4Settings(dbDirectory.toPath())
-              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+          KvStoreConfiguration.v4Settings(dbDirectory.toPath()).withBlobDbEnabled(blobDbEnabled),
           KvStoreConfiguration.v4Settings(v5ArchiveDirectory.toPath())
-              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+              .withBlobDbEnabled(blobDbEnabled),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -216,6 +219,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
    */
   private Database createV5Database() {
     try {
+      final boolean blobDbEnabled = resolveAndPersistBlobDbMode();
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
@@ -229,11 +233,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metaData
               .getHotDbConfiguration()
               .withDatabaseDir(dbDirectory.toPath())
-              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+              .withBlobDbEnabled(blobDbEnabled),
           metaData
               .getArchiveDbConfiguration()
               .withDatabaseDir(v5ArchiveDirectory.toPath())
-              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+              .withBlobDbEnabled(blobDbEnabled),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -245,13 +249,13 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createV6Database() {
     try {
-
+      final boolean blobDbEnabled = resolveAndPersistBlobDbMode();
       final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
       final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
-          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()).withBlobDbEnabled(blobDbEnabled),
           schema,
           stateStorageMode,
           stateStorageFrequency,
@@ -333,10 +337,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         spec.getGenesisSpecConfig().getDepositChainId(),
         maybeNetwork);
 
-    return metaData
-        .getSingleDbConfiguration()
-        .getConfiguration()
-        .withBlobDbEnabled(rocksdbBlobDbEnabled);
+    return metaData.getSingleDbConfiguration().getConfiguration();
   }
 
   private File getMetadataFile() {
@@ -419,6 +420,92 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       throw DatabaseStorageException.unrecoverable(
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
           e);
+    }
+  }
+
+  /**
+   * Determines whether the RocksDB BlobDB feature should be used for static-data columns and
+   * persists that decision so it remains fixed for the lifetime of the database.
+   *
+   * <p>BlobDB may only be enabled when creating a fresh database. An already populated database
+   * must keep persisting those columns as SST so the on-disk format never changes underneath it.
+   * Whether a real database already exists is determined by the presence of RocksDB's {@code
+   * CURRENT} file in the database directory rather than by side files such as {@code db.version},
+   * so that wiping the database directory (while leaving metadata behind) is correctly treated as a
+   * fresh start.
+   *
+   * <ul>
+   *   <li>Existing database with a recorded mode: the recorded value is authoritative (the mode was
+   *       fixed when the database was created) and the configured flag is ignored.
+   *   <li>Existing database without a recorded mode: it predates this tracking, so BlobDB stays
+   *       disabled (SST).
+   *   <li>Fresh database: the configured flag is honoured, replacing any stale recorded mode left
+   *       behind by a previous database in the same directory.
+   * </ul>
+   *
+   * @return the effective BlobDB mode to apply
+   */
+  private boolean resolveAndPersistBlobDbMode() {
+    final boolean databaseExists = rocksDbDataExists();
+    final boolean blobDbEnabled =
+        databaseExists ? readBlobDbMode().orElse(false) : rocksdbBlobDbEnabled;
+    saveBlobDbMode(blobDbEnabled);
+    LOG.info(
+        "RocksDB BlobDB for static data columns is {} for this database",
+        blobDbEnabled ? "enabled" : "disabled");
+    return blobDbEnabled;
+  }
+
+  /**
+   * @return whether a RocksDB database already exists, detected via the presence of RocksDB's
+   *     {@code CURRENT} pointer file. The archive directory is also checked so that V4/V5 databases
+   *     (which use a separate hot and archive RocksDB) are still treated as existing if only the
+   *     hot directory was wiped. For V6 the archive directory is never created, so that check is a
+   *     no-op.
+   */
+  private boolean rocksDbDataExists() {
+    return rocksDbDataExists(dbDirectory) || rocksDbDataExists(v5ArchiveDirectory);
+  }
+
+  private static boolean rocksDbDataExists(final File directory) {
+    return directory.toPath().resolve("CURRENT").toFile().exists();
+  }
+
+  private Optional<Boolean> readBlobDbMode() {
+    try {
+      return dbSettingFileSyncDataAccessor
+          .read(dbBlobDbModeFile.toPath())
+          .map(bytes -> new String(bytes.toArrayUnsafe(), StandardCharsets.UTF_8).trim())
+          .map(this::parseBlobDbMode);
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable(
+          "Failed to read blob db mode from file " + dbBlobDbModeFile.getAbsolutePath(), e);
+    }
+  }
+
+  private boolean parseBlobDbMode(final String value) {
+    // This marker is authoritative for an existing database, so reject anything we didn't write
+    // rather than silently defaulting (which could flip an existing BlobDB database to SST).
+    if ("true".equals(value)) {
+      return true;
+    }
+    if ("false".equals(value)) {
+      return false;
+    }
+    throw DatabaseStorageException.unrecoverable(
+        String.format(
+            "Unrecognized blob db mode '%s' in file %s",
+            value, dbBlobDbModeFile.getAbsolutePath()));
+  }
+
+  private void saveBlobDbMode(final boolean blobDbEnabled) {
+    try {
+      dbSettingFileSyncDataAccessor.syncedWrite(
+          dbBlobDbModeFile.toPath(),
+          Bytes.of(Boolean.toString(blobDbEnabled).getBytes(StandardCharsets.UTF_8)));
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable(
+          "Failed to write blob db mode to file " + dbBlobDbModeFile.getAbsolutePath(), e);
     }
   }
 

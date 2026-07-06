@@ -48,6 +48,11 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
+  public Optional<String> getAgentVersion() {
+    return peer.getAgentVersion();
+  }
+
+  @Override
   public boolean isConnected() {
     return peer.isConnected();
   }

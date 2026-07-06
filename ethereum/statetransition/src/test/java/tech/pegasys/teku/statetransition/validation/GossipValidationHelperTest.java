@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
@@ -301,6 +301,41 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
+  void getGasLimitForExecutionPayload_shouldReturnGasLimitFromAvailableExecutionPayload(
+      final SpecContext specContext) {
+    assumeThat(specContext.getSpecMilestone()).isEqualTo(SpecMilestone.GLOAS);
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final Bytes32 blockRoot = executionPayload.getBeaconBlockRoot();
+
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(blockRoot)).thenReturn(Optional.of(executionPayload));
+
+    final GossipValidationHelper helper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
+    assertThat(helper.getGasLimitForExecutionPayload(blockRoot))
+        .contains(executionPayload.getMessage().getPayload().getGasLimit());
+  }
+
+  @TestTemplate
+  void getGasLimitForExecutionPayload_shouldReturnEmptyWhenExecutionPayloadIsUnavailable(
+      final SpecContext specContext) {
+    assumeThat(specContext.getSpecMilestone()).isEqualTo(SpecMilestone.GLOAS);
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getExecutionPayloadIfAvailable(blockRoot)).thenReturn(Optional.empty());
+
+    final GossipValidationHelper helper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
+    assertThat(helper.getGasLimitForExecutionPayload(blockRoot)).isEmpty();
+  }
+
+  @TestTemplate
   void getParentStateInBlockEpoch_shouldComputeCorrectly() {
     final UInt64 firstSlotAtEpoch1 = spec.computeStartSlotAtEpoch(ONE);
 
@@ -345,11 +380,9 @@ public class GossipValidationHelperTest {
   @TestTemplate
   void
       currentFinalizedCheckpointIsAncestorOfBlock_shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
-    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
-
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final RecentChainData localRecentChainData = storageSystem.recentChainData();
-    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final GossipValidationHelper gossipValidationHelper =
@@ -422,6 +455,32 @@ public class GossipValidationHelperTest {
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(ONE))).isTrue();
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.minus(ONE))).isFalse();
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(2))).isFalse();
+  }
+
+  @TestTemplate
+  void isSlotInCurrentEpochWithMinSeedLookaheadTolerance_shouldComputeCorrectly() {
+    final UInt64 currentEpoch = UInt64.valueOf(3);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+
+    final UInt64 lastToleratedEpoch =
+        currentEpoch.plus(spec.atSlot(currentSlot).getConfig().getMinSeedLookahead());
+
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(
+                spec.computeStartSlotAtEpoch(currentEpoch.minus(ONE))))
+        .isFalse();
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(currentSlot))
+        .isTrue();
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(
+                spec.computeStartSlotAtEpoch(lastToleratedEpoch)))
+        .isTrue();
+    assertThat(
+            gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(
+                spec.computeStartSlotAtEpoch(lastToleratedEpoch.plus(ONE))))
+        .isFalse();
   }
 
   @TestTemplate

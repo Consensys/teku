@@ -198,6 +198,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             forkChoiceNotifier,
             executionLayer,
             executionPayloadBidManager,
+            executionPayloadManager,
             metricsSystem,
             timeProvider));
   }

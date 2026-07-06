@@ -41,14 +41,15 @@ class GetPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void shouldReturnPayloadAttestationsInformation() throws JsonProcessingException {
+  void shouldReturnPayloadAttestationsAndMetaData() throws JsonProcessingException {
     final List<PayloadAttestation> responseData =
         List.of(
             dataStructureUtil.randomPayloadAttestation(),
             dataStructureUtil.randomPayloadAttestation());
     final ObjectAndMetaData<List<PayloadAttestation>> responseWithMetaData =
         new ObjectAndMetaData<>(responseData, SpecMilestone.GLOAS, false, false, false);
-    when(nodeDataProvider.getPayloadAttestations(any())).thenReturn(responseWithMetaData);
+    when(nodeDataProvider.getPayloadAttestationsAndMetaData(any()))
+        .thenReturn(responseWithMetaData);
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);

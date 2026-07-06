@@ -1,11 +1,12 @@
 FROM mirror.gcr.io/library/eclipse-temurin:25 AS jre-build
 
 # Create a custom Java runtime
-RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/jlink \
+RUN $JAVA_HOME/bin/jlink \
          --add-modules java.base \
          --add-modules java.se \
          --add-modules java.management \
          --add-modules java.prefs \
+         --add-modules jdk.management \
          --add-modules jdk.httpserver \
          --add-modules jdk.unsupported \
          --add-modules jdk.jdwp.agent \
@@ -49,8 +50,8 @@ ENV PATH="/opt/teku/bin:${PATH}"
 ENV MALLOC_CONF="background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000"
 
 # List Exposed Ports
-# Metrics, Rest API, LibP2P, Discv5
-EXPOSE 8008 5051 9000 9000/udp
+# Metrics, Rest API, LibP2P (TCP and QUIC), Discv5
+EXPOSE 8008 5051 9000 9001/udp 9000/udp
 
 # specify default command
 ENTRYPOINT ["/opt/teku/bin/teku"]

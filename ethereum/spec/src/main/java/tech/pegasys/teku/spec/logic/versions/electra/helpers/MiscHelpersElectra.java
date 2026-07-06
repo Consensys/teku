@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class MiscHelpersElectra extends MiscHelpersDeneb {
+  // 2**16 - 1
   public static final UInt64 MAX_RANDOM_VALUE = UInt64.valueOf(65535);
   private final SpecConfigElectra specConfigElectra;
   private final PredicatesElectra predicatesElectra;

@@ -64,11 +64,14 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -101,6 +104,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPending
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.PtcWindowSchema;
 
 public class SchemaTypes {
   // PHASE0
@@ -190,8 +194,8 @@ public class SchemaTypes {
       create("BLOBS_BUNDLE_SCHEMA");
 
   // Electra
-  public static final SchemaId<ExecutionRequestsSchema> EXECUTION_REQUESTS_SCHEMA =
-      create("EXECUTION_REQUESTS_SCHEMA");
+  public static final SchemaId<ExecutionRequestsSchema<? extends ExecutionRequests>>
+      EXECUTION_REQUESTS_SCHEMA = create("EXECUTION_REQUESTS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingPartialWithdrawal, ?>>
       PENDING_PARTIAL_WITHDRAWALS_SCHEMA = create("PENDING_PARTIAL_WITHDRAWALS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingConsolidation, ?>>
@@ -207,6 +211,10 @@ public class SchemaTypes {
       create("WITHDRAWAL_REQUEST_SCHEMA");
   public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
       create("CONSOLIDATION_REQUEST_SCHEMA");
+  public static final SchemaId<BuilderDepositRequestSchema> BUILDER_DEPOSIT_REQUEST_SCHEMA =
+      create("BUILDER_DEPOSIT_REQUEST_SCHEMA");
+  public static final SchemaId<BuilderExitRequestSchema> BUILDER_EXIT_REQUEST_SCHEMA =
+      create("BUILDER_EXIT_REQUEST_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
       create("SINGLE_ATTESTATION_SCHEMA");
   // Move this when we decide which fork this schema should be under
@@ -271,6 +279,7 @@ public class SchemaTypes {
       BUILDER_PENDING_PAYMENTS_SCHEMA = create("BUILDER_PENDING_PAYMENTS_SCHEMA");
   public static final SchemaId<SszListSchema<BuilderPendingWithdrawal, ?>>
       BUILDER_PENDING_WITHDRAWALS_SCHEMA = create("BUILDER_PENDING_WITHDRAWALS_SCHEMA");
+  public static final SchemaId<PtcWindowSchema> PTC_WINDOW_SCHEMA = create("PTC_WINDOW_SCHEMA");
   public static final SchemaId<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
       EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA");

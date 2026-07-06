@@ -22,7 +22,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -79,11 +78,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeInvariants;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -101,12 +103,13 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
@@ -120,6 +123,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -127,8 +131,10 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
@@ -143,8 +149,8 @@ public class Spec {
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
       final Map<SpecMilestone, SpecVersion> specVersions,
       final ForkSchedule forkSchedule) {
-    Preconditions.checkArgument(specVersions != null && !specVersions.isEmpty());
-    Preconditions.checkArgument(forkSchedule != null);
+    checkArgument(specVersions != null && !specVersions.isEmpty());
+    checkArgument(forkSchedule != null);
     this.specConfigAndParent = specConfigAndParent;
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
@@ -187,6 +193,9 @@ public class Spec {
             specVersion -> {
               // inject ForkChoiceUtil dependencies
               switch (specVersion.getForkChoiceUtil()) {
+                case ForkChoiceUtilGloas forkChoiceUtilGloas ->
+                    forkChoiceUtilGloas.setDataColumnSidecarAvailabilityCheckerFactory(
+                        dataColumnSidecarAvailabilityCheckerFactory);
                 case ForkChoiceUtilFulu forkChoiceUtilFulu ->
                     forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
                         dataColumnSidecarAvailabilityCheckerFactory);
@@ -334,6 +343,18 @@ public class Spec {
     return getGenesisSpec().getSchemaDefinitions();
   }
 
+  public boolean supportsBlobSidecars() {
+    return isMilestoneSupported(DENEB);
+  }
+
+  public boolean supportsDataColumnSidecars() {
+    return isMilestoneSupported(FULU);
+  }
+
+  public boolean supportsExecutionPayloadEnvelopes() {
+    return isMilestoneSupported(GLOAS);
+  }
+
   public ForkSchedule getForkSchedule() {
     return forkSchedule;
   }
@@ -450,6 +471,16 @@ public class Spec {
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope deserializeSignedBlindedExecutionPayloadEnvelope(
+      final Bytes serializedSignedBlindedExecutionPayloadEnvelope) {
+    final UInt64 slot =
+        ExecutionPayloadEnvelopeInvariants.extractSignedBlindedExecutionPayloadEnvelopeSlot(
+            serializedSignedBlindedExecutionPayloadEnvelope);
+    return SchemaDefinitionsGloas.required(atSlot(slot).getSchemaDefinitions())
+        .getSignedBlindedExecutionPayloadEnvelopeSchema()
+        .sszDeserialize(serializedSignedBlindedExecutionPayloadEnvelope);
   }
 
   public SignedBlockContainer deserializeSignedBlockContainer(
@@ -579,6 +610,20 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeTimeMillisAtSlot(genesisTimeMillis, slot);
   }
 
+  public boolean isTimeReached(final UInt64 currentTimeMillis, final UInt64 earliestTimeMillis) {
+    return currentTimeMillis.isGreaterThanOrEqualTo(earliestTimeMillis);
+  }
+
+  public boolean isBeforeTimeInSlot(
+      final UInt64 slot,
+      final UInt64 genesisTimeMillis,
+      final UInt64 currentTimeMillis,
+      final int timeInSlotMillisExclusive) {
+    return !isTimeReached(
+        currentTimeMillis,
+        computeTimeMillisAtSlot(slot, genesisTimeMillis).plus(timeInSlotMillisExclusive));
+  }
+
   public Bytes computeSigningRoot(final BeaconBlock block, final Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
@@ -696,6 +741,10 @@ public class Spec {
 
   public Optional<Integer> getPayloadAttestationDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
+  }
+
+  public Optional<Integer> getPayloadDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getPayloadDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
@@ -958,7 +1007,7 @@ public class Spec {
   }
 
   // Execution Payload Proposal
-  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+  public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
       final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
@@ -970,7 +1019,7 @@ public class Spec {
                 new IllegalStateException(
                     "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
         .createNewUnsignedExecutionPayload(
-            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
+            builderIndex, blockAndState, executionPayloadProposalDataFuture);
   }
 
   // Blind Block Utils
@@ -1015,6 +1064,37 @@ public class Spec {
         .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
   }
 
+  /**
+   * Returns the withdrawals to include in Engine API payload attributes for the supplied
+   * post-slot-processing state.
+   *
+   * <p>For pre-GLOAS parents this is the state's expected withdrawals. For a GLOAS parent with an
+   * empty payload, this is the state's payload_expected_withdrawals. For a GLOAS parent with a full
+   * payload, the parent execution requests must be applied first so the withdrawals reflect the
+   * effective state used for payload building.
+   */
+  public Optional<List<Withdrawal>> getPayloadAttributeWithdrawals(
+      final BeaconState state,
+      final ForkChoicePayloadStatus parentPayloadStatus,
+      final Optional<ExecutionRequests> parentExecutionRequests) {
+    return switch (parentPayloadStatus) {
+      case PAYLOAD_STATUS_PENDING -> getExpectedWithdrawals(state);
+      case PAYLOAD_STATUS_EMPTY ->
+          Optional.of(BeaconStateGloas.required(state).getPayloadExpectedWithdrawals().asList());
+      case PAYLOAD_STATUS_FULL -> {
+        final ExecutionRequests executionRequests =
+            parentExecutionRequests.orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Parent execution requests are required for GLOAS FULL parent payload attributes"));
+        final ForkChoiceUtilGloas forkChoiceUtilGloas =
+            ForkChoiceUtilGloas.required(atState(state).getForkChoiceUtil());
+        yield Optional.of(
+            forkChoiceUtilGloas.getPayloadAttributeWithdrawals(state, executionRequests).asList());
+      }
+    };
+  }
+
   // Block Processor Utils
 
   public BlockProcessor getBlockProcessor(final UInt64 slot) {
@@ -1055,13 +1135,6 @@ public class Spec {
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
-  }
-
-  public BeaconState replayValidatedExecutionPayload(
-      final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope)
-      throws StateTransitionException {
-    return getExecutionPayloadProcessor(blockState.getSlot())
-        .replayValidatedExecutionPayload(signedEnvelope, blockState);
   }
 
   public BlockCheckpoints calculateBlockCheckpoints(final BeaconState state) {
@@ -1131,6 +1204,15 @@ public class Spec {
                     "Attempting to use execution requests processor when spec does not have execution requests processor"));
   }
 
+  public ExecutionRequestsDataCodec getExecutionRequestsDataCodec(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionRequestsDataCodec()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution requests data codec when spec does not have execution requests data codec"));
+  }
+
   // Data Column Sidecar Util
 
   public DataColumnSidecarUtil getDataColumnSidecarUtil(final UInt64 slot) {
@@ -1140,15 +1222,21 @@ public class Spec {
             () -> new IllegalStateException("DataColumnSidecarUtil not available at slot " + slot));
   }
 
-  // Execution Payload Processor Utils
+  // Proposer Preferences Util
 
-  public ExecutionPayloadProcessor getExecutionPayloadProcessor(final UInt64 slot) {
+  public ProposerPreferencesUtil getProposerPreferencesUtil(final UInt64 epoch) {
+    return atEpoch(epoch).getProposerPreferencesUtil();
+  }
+
+  // Execution Payload Verifier Utils
+
+  public ExecutionPayloadVerifier getExecutionPayloadVerifier(final UInt64 slot) {
     return atSlot(slot)
-        .getExecutionPayloadProcessor()
+        .getExecutionPayloadVerifier()
         .orElseThrow(
             () ->
                 new IllegalStateException(
-                    "Attempting to use execution payload processor when spec does not have execution payload processor"));
+                    "Attempting to use execution payload verifier when spec does not have execution payload verifier"));
   }
 
   // Validator Utils
@@ -1186,8 +1274,7 @@ public class Spec {
 
   // get_ptc
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
-    return BeaconStateAccessorsGloas.required(atSlot(slot).beaconStateAccessors())
-        .getPtc(state, slot);
+    return atSlot(slot).beaconStateAccessors().getPtc(state, slot);
   }
 
   // Builder Utils
@@ -1201,7 +1288,7 @@ public class Spec {
   }
 
   // Attestation helpers
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()
         .getAttestingIndices(state, attestation);
@@ -1319,8 +1406,17 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public Optional<Integer> getNumberOfCustodyGroups() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getNumberOfCustodyGroups);
+  }
+
   public int getNumberOfCustodyGroups(final UInt64 slot) {
     return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
+  }
+
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtSlot(
+      final ReadOnlyStore store, final UInt64 slot) {
+    return isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(store, computeEpochAtSlot(slot));
   }
 
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
@@ -1341,9 +1437,32 @@ public class Spec {
         .map(this::computeStartSlotAtEpoch);
   }
 
+  public Optional<UInt64> computeFirstSlotWithDataColumnSidecarSupport() {
+    if (!supportsDataColumnSidecars()) {
+      return Optional.empty();
+    }
+    return getSpecConfigFulu()
+        .map(SpecConfigFulu::getFuluForkEpoch)
+        .map(this::computeStartSlotAtEpoch);
+  }
+
+  // Gloas Utils
+  public boolean isExecutionPayloadEnvelopeAvailableAtSlot(final UInt64 slot) {
+    return atSlot(slot)
+        .miscHelpers()
+        .toVersionGloas()
+        .map(MiscHelpersGloas::isExecutionPayloadEnvelopeAvailable)
+        .orElse(false);
+  }
+
   // Electra Utils
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return atState(state).miscHelpers().isFormerDepositMechanismDisabled(state);
+  }
+
+  // Gloas Utils
+  public boolean isProposerPreferencesAvailableAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).miscHelpers().toVersionGloas().isPresent();
   }
 
   // Deneb private helpers

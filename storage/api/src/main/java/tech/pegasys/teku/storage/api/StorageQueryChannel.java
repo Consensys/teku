@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -69,6 +70,9 @@ public interface StorageQueryChannel extends ChannelInterface {
    * @return A map from root too block of any found blocks
    */
   SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(Set<Bytes32> blockRoots);
+
+  SafeFuture<Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>>
+      getBlindedExecutionPayloadEnvelopesByBlockRoot(Set<Bytes32> blockRoots);
 
   SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       SlotAndBlockRoot slotAndBlockRoot);

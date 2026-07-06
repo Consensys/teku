@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.VALID_EXECUTION_PAYLOAD_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
@@ -49,7 +49,7 @@ public class ExecutionPayloadGossipValidator {
   private final SigningRootUtil signingRootUtil;
 
   private final Set<BlockRootAndBuilderIndex> seenPayloads =
-      LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+      LimitedSet.createSynchronizedLRU(VALID_EXECUTION_PAYLOAD_SET_SIZE);
 
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
 
@@ -81,6 +81,13 @@ public class ExecutionPayloadGossipValidator {
                         () ->
                             performWithStateValidation(signedExecutionPayloadEnvelope)
                                 .thenApply(result -> markAsSeen(result, envelope))));
+  }
+
+  public boolean isPayloadSeen(final Bytes32 beaconBlockRoot) {
+    return seenPayloads.stream()
+        .anyMatch(
+            blockRootAndBuilderIndex ->
+                blockRootAndBuilderIndex.blockRoot().equals(beaconBlockRoot));
   }
 
   private SafeFuture<Optional<InternalValidationResult>> performWithBlockValidation(
@@ -144,6 +151,23 @@ public class ExecutionPayloadGossipValidator {
                         "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
                         payloadBlockHash, bidBlockHash));
               }
+
+              /*
+               * [REJECT] hash_tree_root(envelope.execution_requests) == bid.execution_requests_root
+               */
+              final Bytes32 executionRequestsRoot = envelope.getExecutionRequests().hashTreeRoot();
+              final Bytes32 bidExecutionRequestsRoot = bid.getExecutionRequestsRoot();
+              if (!executionRequestsRoot.equals(bid.getExecutionRequestsRoot())) {
+                LOG.trace(
+                    "Invalid execution requests. Envelope had execution requests root of {} but bid had {}. Rejecting the execution payload envelope",
+                    executionRequestsRoot,
+                    bidExecutionRequestsRoot);
+                return Optional.of(
+                    reject(
+                        "Invalid execution requests. Execution Payload Envelope had execution requests root of %s but ExecutionPayload Bid had %s",
+                        executionRequestsRoot, bidExecutionRequestsRoot));
+              }
+
               return Optional.empty();
             });
   }

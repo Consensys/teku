@@ -65,6 +65,11 @@ public class BlockEventsListenerRouter implements BlockEventsListener {
   }
 
   @Override
+  public void onBlockImported(final SignedBeaconBlock block) {
+    lookupBlockEventsListener(block.getSlot()).onBlockImported(block);
+  }
+
+  @Override
   public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
     lookupBlockEventsListener(block.getSlot()).enableBlockImportOnCompletion(block);
   }

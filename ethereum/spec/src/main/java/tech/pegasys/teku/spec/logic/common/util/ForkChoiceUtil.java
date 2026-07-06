@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,16 +30,19 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -47,12 +53,15 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 
 public class ForkChoiceUtil {
+  private static final Logger LOG = LogManager.getLogger();
 
   protected final SpecConfig specConfig;
   protected final BeaconStateAccessors beaconStateAccessors;
@@ -73,7 +82,7 @@ public class ForkChoiceUtil {
     this.miscHelpers = miscHelpers;
   }
 
-  private UInt64 getCurrentSlot(final ReadOnlyStore store) {
+  protected UInt64 getCurrentSlot(final ReadOnlyStore store) {
     return miscHelpers.computeSlotAtTime(store.getGenesisTime(), store.getTimeSeconds());
   }
 
@@ -96,6 +105,37 @@ public class ForkChoiceUtil {
   public Optional<Bytes32> getAncestor(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
     return forkChoiceStrategy.getAncestor(root, slot);
+  }
+
+  /**
+   * is_ancestor
+   *
+   * <p>Returns whether {@code ancestor} is an ancestor of {@code node}, i.e. {@code ancestor} lies
+   * on the chain from {@code node} at {@code ancestor}'s block slot.
+   *
+   * <p>This base (phase0) form is the {@code is_ancestor#phase0} spec anchor and the default that
+   * {@code ForkChoiceUtilGloas#isAncestor} overrides. It has no pre-Gloas caller by design: in the
+   * spec, {@code is_ancestor} is consumed only by {@code get_weight}, to add proposer boost when a
+   * node is an ancestor of the proposer-boost node. Teku instead computes {@code get_weight} inside
+   * protoarray, folding the proposer-boost delta into each node's stored weight during {@code
+   * ProtoArray#applyScoreChanges}. That back-propagation realizes the ancestry condition
+   * implicitly, so the weight path needs no explicit {@code is_ancestor} call. The only explicit
+   * caller is the Gloas override, which runs the check in reverse to recover the attestation-only
+   * weight (via {@code ForkChoiceUtilGloas#getNodeAttestationWeight}); pre-Gloas {@code
+   * isHeadWeak}/{@code isParentStrong} read the already-boosted protoarray weight directly and
+   * never query ancestry. Since {@code ForkChoiceUtilGloas} overrides this method, even that
+   * reverse path dispatches to the override rather than here — so this base form is retained for
+   * spec fidelity and exercised only by its unit test.
+   */
+  public boolean isAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final ForkChoiceNode node,
+      final ForkChoiceNode ancestor) {
+    return forkChoiceStrategy
+        .blockSlot(ancestor.blockRoot())
+        .flatMap(ancestorSlot -> forkChoiceStrategy.getAncestorNode(node, ancestorSlot))
+        .map(ancestor::equals)
+        .orElse(false);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
@@ -141,14 +181,11 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * is_shuffling_stable
+   * is_not_epoch_boundary
    *
-   * <p>Refer to fork-choice specification.
-   *
-   * @param slot
-   * @return
+   * @return {@code true} when {@code slot} is NOT at an epoch boundary.
    */
-  public boolean isShufflingStable(final UInt64 slot) {
+  public boolean isNotEpochBoundary(final UInt64 slot) {
     return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
   }
 
@@ -159,6 +196,224 @@ public class ForkChoiceUtil {
             .minusMinZero(store.getFinalizedCheckpoint().getEpoch());
     return epochsSinceFinalization.isLessThanOrEqualTo(
         specConfig.getReorgMaxEpochsSinceFinalization());
+  }
+
+  /** Spec reference: is_proposing_on_time. */
+  public boolean isProposingOnTime(final ReadOnlyStore store, final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        miscHelpers.computeTimeMillisAtSlot(store.getGenesisTimeMillis(), slot);
+    final int timelinessLimit = getProposerReorgCutoffMillis();
+    final UInt64 currentTimeMillis = store.getTimeInMillis();
+    final boolean isTimely =
+        currentTimeMillis.minusMinZero(slotStartTimeMillis).isLessThanOrEqualTo(timelinessLimit);
+    LOG.debug(
+        "Check ProposingOnTime for slot {}, slot start time is {} ms and current time is {} ms, limit is {} ms result: {}",
+        slot,
+        slotStartTimeMillis,
+        currentTimeMillis,
+        timelinessLimit,
+        isTimely);
+    return isTimely;
+  }
+
+  /** Spec reference: get_proposer_head. */
+  public ForkChoiceNode getProposerHead(
+      final ForkChoiceReorgContext context, final ForkChoiceNode headNode, final UInt64 slot) {
+    LOG.debug("start getProposerHead");
+    final ReadOnlyStore store = context.getStore();
+    final boolean isProposerBoostActive = isProposerBoostActive(store, headNode.blockRoot());
+    final boolean isShufflingStableAndForkChoiceOk =
+        isForkChoiceStableAndFinalizationOk(store, slot);
+    final boolean isProposingOnTime = isProposingOnTime(store, slot);
+    final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headNode.blockRoot()));
+    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headNode.blockRoot());
+    if (!isHeadLate
+        || !isShufflingStableAndForkChoiceOk
+        || !isProposingOnTime
+        || isProposerBoostActive
+        || maybeHead.isEmpty()) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
+          isHeadLate,
+          isShufflingStableAndForkChoiceOk,
+          isProposingOnTime,
+          isProposerBoostActive,
+          maybeHead.isEmpty());
+      return headNode;
+    }
+
+    final SignedBeaconBlock head = maybeHead.orElseThrow();
+    final boolean isFfgCompetitive =
+        isFfgCompetitive(store, headNode.blockRoot(), head.getParentRoot());
+    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, slot);
+    if (!isFfgCompetitive || !isSingleSlotReorg) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
+          isFfgCompetitive,
+          isSingleSlotReorg);
+      return headNode;
+    }
+
+    final boolean isHeadWeak = isHeadWeak(store, headNode.blockRoot(), store.getReorgThreshold());
+    final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
+    if (isHeadWeak && isParentStrong) {
+      LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
+      return context
+          .getStore()
+          .getForkChoiceStrategy()
+          .getParentBeaconBlockNode(headNode)
+          .orElse(headNode);
+    }
+
+    LOG.debug(
+        "getProposerHead - return headRoot - isHeadWeak {}, isParentStrong {}",
+        isHeadWeak,
+        isParentStrong);
+    return headNode;
+  }
+
+  /** Spec reference: should_override_forkchoice_update. */
+  public boolean shouldOverrideForkChoiceUpdate(
+      final ForkChoiceReorgContext context, final Bytes32 headRoot, final UInt64 headSlot) {
+    final ReadOnlyStore store = context.getStore();
+    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
+    if (maybeHead.isEmpty()) {
+      LOG.debug("shouldOverrideForkChoiceUpdate head - maybeHead empty.");
+      return false;
+    }
+    if (!isHeadLate(context.getBlockTimeliness(headRoot))) {
+      LOG.debug("shouldOverrideForkChoiceUpdate head - is not late.");
+      return false;
+    }
+
+    final SignedBeaconBlock head = maybeHead.orElseThrow();
+    final UInt64 currentSlot = getCurrentSlot(store);
+    final UInt64 proposalSlot = headSlot.increment();
+    final boolean isShufflingStableAndForkChoiceOk =
+        isForkChoiceStableAndFinalizationOk(store, proposalSlot);
+    final boolean isFfgCompetitive = isFfgCompetitive(store, headRoot, head.getParentRoot());
+    final Optional<UInt64> maybeParentSlot =
+        store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
+    if (!isShufflingStableAndForkChoiceOk || !isFfgCompetitive || maybeParentSlot.isEmpty()) {
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isShufflingStableAndForkChoiceOk {}, isFfgCompetitive {}, maybeParentSlot {}",
+          isShufflingStableAndForkChoiceOk,
+          isFfgCompetitive,
+          maybeParentSlot);
+      return false;
+    }
+
+    if (!shouldOverrideFcuCheckWeights(context, head, headRoot, proposalSlot, currentSlot)) {
+      return false;
+    }
+
+    return shouldOverrideFcuCheckProposerPreState(context, proposalSlot, head.getParentRoot());
+  }
+
+  boolean shouldOverrideFcuCheckWeights(
+      final ForkChoiceReorgContext context,
+      final SignedBeaconBlock head,
+      final Bytes32 headRoot,
+      final UInt64 proposalSlot,
+      final UInt64 currentSlot) {
+    final ReadOnlyStore store = context.getStore();
+    final boolean isProposingOnTime = isProposingOnTime(store, proposalSlot);
+    final boolean isCurrentTimeOk =
+        head.getSlot().equals(currentSlot)
+            || (currentSlot.equals(proposalSlot) && isProposingOnTime);
+    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, proposalSlot);
+    if (!isSingleSlotReorg || !isCurrentTimeOk) {
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isCurrentTimeOk {}",
+          isSingleSlotReorg,
+          isCurrentTimeOk);
+      return false;
+    }
+    if (currentSlot.isGreaterThan(head.getSlot())) {
+      final boolean isHeadWeak = isHeadWeak(store, headRoot, store.getReorgThreshold());
+      final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
+      if (!isHeadWeak || !isParentStrong) {
+        LOG.debug(
+            "shouldOverrideForkChoiceUpdate isHeadWeak {}, isParentStrong {}",
+            isHeadWeak,
+            isParentStrong);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  boolean shouldOverrideFcuCheckProposerPreState(
+      final ForkChoiceReorgContext context, final UInt64 proposalSlot, final Bytes32 parentRoot) {
+    LOG.debug("Need parent state");
+    final Optional<BeaconState> maybeParentState =
+        context.getStore().getBlockStateIfAvailable(parentRoot);
+    if (maybeParentState.isEmpty()) {
+      LOG.debug("shouldOverrideForkChoice could not retrieve parent state from cache");
+      return false;
+    }
+
+    try {
+      final BeaconState proposerPreState =
+          context.processSlots(maybeParentState.get(), proposalSlot);
+      final int proposerIndex = getProposerIndex(proposerPreState);
+      if (!context.isValidatorConnected(proposerIndex, proposalSlot)) {
+        LOG.debug(
+            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
+        return false;
+      }
+      return true;
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      LOG.trace("Failed to process", e);
+      return false;
+    }
+  }
+
+  boolean isSingleSlotReorg(
+      final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 proposalSlot) {
+    final Optional<UInt64> maybeParentSlot =
+        store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
+    return maybeParentSlot
+        .map(
+            parentSlot ->
+                parentSlot.increment().equals(head.getSlot())
+                    && proposalSlot.equals(head.getSlot().increment()))
+        .orElse(false);
+  }
+
+  boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
+    return isNotEpochBoundary(slot) && isFinalizationOk(store, slot);
+  }
+
+  boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {
+    return store.getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
+  }
+
+  boolean isFfgCompetitive(
+      final ReadOnlyStore store, final Bytes32 headRoot, final Bytes32 parentRoot) {
+    return store.isFfgCompetitive(headRoot, parentRoot).orElse(false);
+  }
+
+  /**
+   * Computes block timeliness based on the arrival time relative to the slot start.
+   *
+   * <p>Spec reference: record_block_timeliness
+   *
+   * @param blockSlot the slot of the block
+   * @param currentSlot the current slot
+   * @param millisIntoSlot milliseconds elapsed since the slot start
+   * @return boolean array of timeliness values. Pre-Gloas: single element (attestation deadline).
+   *     Gloas: two elements (attestation deadline, PTC deadline).
+   */
+  public BlockTimeliness computeBlockTimeliness(
+      final UInt64 blockSlot, final UInt64 currentSlot, final int millisIntoSlot) {
+    final int timelinessLimit = getAttestationDueMillis();
+    final boolean isTimely = blockSlot.equals(currentSlot) && timelinessLimit > millisIntoSlot;
+    return new BlockTimeliness(isTimely, false);
+  }
+
+  public static boolean isHeadLate(final Optional<BlockTimeliness> blockTimeliness) {
+    return blockTimeliness.filter(timeliness -> !timeliness.isTimelyAttestation).isPresent();
   }
 
   private void maybeAddRoot(
@@ -416,8 +671,8 @@ public class ForkChoiceUtil {
   public void applyExecutionPayloadToStore(
       final MutableStore store,
       final SignedExecutionPayloadEnvelope signedEnvelope,
-      final BeaconState postState) {
-    // NO-OP until Gloas
+      final boolean executionOptimistic) {
+    // No-op until the runtime wiring switches to the Gloas payload path.
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
@@ -515,6 +770,7 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
+  @VisibleForTesting
   // get_slot_component_duration_ms
   protected int getSlotComponentDurationMillis(final int basisPoints) {
     return (basisPoints * specConfig.getSlotDurationMillis()) / 10_000;
@@ -547,6 +803,11 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
+  // get_payload_due_ms
+  public Optional<Integer> getPayloadDueMillis() {
+    return Optional.empty();
+  }
+
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
     final BeaconBlockBody body = block.getMessage().getBody();
@@ -558,31 +819,112 @@ public class ForkChoiceUtil {
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 
-  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+  /**
+   * Determines whether a validator's vote should be updated based on the attestation.
+   *
+   * <p>Pre-Gloas uses epoch-based comparison; Gloas overrides with slot-based comparison.
+   *
+   * @param vote the current vote tracker for the validator
+   * @param targetEpoch the target epoch of the attestation
+   * @param slot the slot of the attestation
+   * @return true if the vote should be updated
+   */
+  public boolean shouldUpdateVote(
+      final VoteTracker vote, final UInt64 targetEpoch, final UInt64 slot) {
+    return targetEpoch.isGreaterThan(miscHelpers.computeEpochAtSlot(vote.getNextSlot()))
+        || vote.equals(VoteTracker.DEFAULT);
+  }
+
+  /**
+   * Extracts the forkchoice-side FULL-node hint from attestation data.
+   *
+   * <p>Pre-Gloas forks do not carry payload-status information in attestations, so the default is
+   * always false. Gloas overrides this to interpret the attestation index as the EMPTY/FULL hint,
+   * while still leaving the final PENDING/EMPTY/FULL resolution to later forkchoice logic.
+   */
+  public boolean getFullPayloadVoteHint(final UInt64 attestationIndex) {
+    return false;
+  }
+
+  /**
+   * Determines if the head block is weak (its weight is below the reorg threshold).
+   *
+   * <p>Spec reference: is_head_weak
+   *
+   * @param store the fork choice store for accessing weights and fork-aware state
+   * @param root the root of the head block
+   * @param reorgThreshold the threshold below which a head is considered weak
+   * @return true if the head weight is less than the reorg threshold
+   */
+  public boolean isHeadWeak(
+      final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
+    return store
+        .getForkChoiceStrategy()
+        .getBlockData(root)
+        .map(blockData -> blockData.getWeight().isLessThan(reorgThreshold))
+        .orElse(false);
+  }
+
+  /**
+   * Determines if the parent block selected by {@code head} is strong.
+   *
+   * <p>Spec reference: is_parent_strong
+   *
+   * <p>Pre-Gloas forks evaluate the parent by root alone. Gloas overrides this form because the
+   * spec chooses the parent node identity from the child block's payload linkage rather than from
+   * the parent root alone.
+   *
+   * @param store the fork choice store for accessing weights and fork-aware state
+   * @param head the child block whose parent is being evaluated
+   * @param parentThreshold the threshold above which a parent is considered strong
+   * @return true if the relevant parent node weight is greater than the parent threshold
+   */
+  public boolean isParentStrong(
+      final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 parentThreshold) {
+    return store
+        .getForkChoiceStrategy()
+        .getBlockData(head.getParentRoot())
+        .map(blockData -> blockData.getWeight().isGreaterThan(parentThreshold))
+        .orElse(true);
+  }
+
+  @VisibleForTesting
+  protected int getProposerIndex(final BeaconState proposerPreState) {
+    return beaconStateAccessors.getBeaconProposerIndex(proposerPreState);
+  }
+
+  public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
     return AvailabilityChecker.NOOP;
   }
 
-  public AvailabilityChecker<?> createAvailabilityChecker(
-      final SignedExecutionPayloadEnvelope executionPayload) {
+  public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
+      final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope signedEnvelope) {
     return AvailabilityChecker.NOOP;
+  }
+
+  public boolean isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope() {
+    return false;
+  }
+
+  // Used for computing committee indices when producing attestations.
+  public int computeCommitteeIndexForAttestation(
+      final UInt64 slot,
+      final BeaconBlock block,
+      final int committeeIndex,
+      final ReadOnlyStore store) {
+    return committeeIndex;
   }
 
   public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
     return true;
   }
 
-  public SafeFuture<StateAndBlockSummary> retrieveNewChainHeadStateAndBlockSummary(
-      final Bytes32 root, final UInt64 chainHeadSlot, final ReadOnlyStore store) {
-    return store
-        .retrieveStateAndBlockSummary(root)
-        .thenApply(
-            maybeHead ->
-                maybeHead.orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            String.format(
-                                "Unable to update head block as of slot %s.  Block is unavailable: %s.",
-                                chainHeadSlot, root))));
+  public boolean shouldApplyProposerBoost(
+      final Bytes32 proposerBoostRoot,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final UInt64 reorgThreshold,
+      final BeaconState justifiedState) {
+    return true;
   }
 
   public Optional<ForkChoiceUtilDeneb> toVersionDeneb() {
@@ -596,4 +938,6 @@ public class ForkChoiceUtil {
   public Optional<ForkChoiceUtilGloas> toVersionGloas() {
     return Optional.empty();
   }
+
+  public record BlockTimeliness(boolean isTimelyAttestation, boolean isTimelyPtc) {}
 }

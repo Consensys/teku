@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
@@ -181,7 +182,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final Supplier<Optional<BeaconState>> stateSupplier) {
     return attestation
         .getIndexedAttestation()
-        .map(indexedAttestation -> indexedAttestation.getAttestingIndices().asListUnboxed())
+        .map(IndexedAttestationLight::attestingIndices)
         .or(
             () ->
                 stateSupplier
@@ -190,10 +191,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
                         state ->
                             spec.atSlot(attestation.getData().getSlot())
                                 .getAttestationUtil()
-                                .getAttestingIndices(state, attestation.getAttestation())
-                                .intStream()
-                                .mapToObj(UInt64::valueOf)
-                                .toList()));
+                                .getAttestingIndices(state, attestation.getAttestation())));
   }
 
   /**

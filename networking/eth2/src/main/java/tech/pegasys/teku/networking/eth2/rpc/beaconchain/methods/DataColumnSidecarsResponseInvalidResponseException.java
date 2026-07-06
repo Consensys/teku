@@ -15,22 +15,40 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 
 public class DataColumnSidecarsResponseInvalidResponseException extends InvalidResponseException {
 
   public DataColumnSidecarsResponseInvalidResponseException(
       final Peer peer, final InvalidResponseType invalidResponseType) {
-    super(
-        String.format(
-            "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()));
+    super(formatMessage(peer, invalidResponseType));
   }
 
   public DataColumnSidecarsResponseInvalidResponseException(
-      final Peer peer, final InvalidResponseType invalidResponseType, final Exception cause) {
-    super(
-        String.format(
-            "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()),
-        cause);
+      final Peer peer,
+      final InvalidResponseType invalidResponseType,
+      final DataColumnSidecarValidationError validationError) {
+    super(formatMessage(peer, invalidResponseType, validationError.description()));
+  }
+
+  public DataColumnSidecarsResponseInvalidResponseException(
+      final Peer peer, final InvalidResponseType invalidResponseType, final Throwable cause) {
+    super(formatMessage(peer, invalidResponseType), asException(cause));
+  }
+
+  private static String formatMessage(
+      final Peer peer, final InvalidResponseType invalidResponseType) {
+    return String.format(
+        "Received invalid response from peer %s: %s", peer, invalidResponseType.describe());
+  }
+
+  private static String formatMessage(
+      final Peer peer, final InvalidResponseType invalidResponseType, final String details) {
+    return String.format("%s: %s", formatMessage(peer, invalidResponseType), details);
+  }
+
+  private static Exception asException(final Throwable cause) {
+    return cause instanceof Exception exception ? exception : new RuntimeException(cause);
   }
 
   public enum InvalidResponseType {

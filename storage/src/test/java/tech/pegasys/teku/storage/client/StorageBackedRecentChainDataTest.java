@@ -26,7 +26,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedDataColumnSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -36,8 +39,11 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -83,6 +89,9 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedDataColumnSlotProvider.NOOP,
+            ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -119,6 +128,57 @@ public class StorageBackedRecentChainDataTest {
   }
 
   @Test
+  public void storageBackedClient_storeInitializeWithTransitionedAnchor() throws Exception {
+    SafeFuture<Optional<OnDiskStoreData>> storeRequestFuture = new SafeFuture<>();
+    when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
+
+    final SafeFuture<RecentChainData> client =
+        StorageBackedRecentChainData.create(
+            new StubMetricsSystem(),
+            StoreConfig.createDefault(),
+            asyncRunner,
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedDataColumnSlotProvider.NOOP,
+            ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
+            storageQueryChannel,
+            storageUpdateChannel,
+            voteUpdateChannel,
+            finalizedCheckpointChannel,
+            chainHeadChannel,
+            validatorIsConnectedProvider,
+            spec);
+
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    chainBuilder.generateGenesis();
+    final UInt64 checkpointStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final SignedBlockAndState anchorBlock =
+        chainBuilder.generateBlockAtSlot(checkpointStartSlot.minus(2));
+    final BeaconState anchorState = spec.processSlots(anchorBlock.getState(), checkpointStartSlot);
+    final Checkpoint checkpoint =
+        new Checkpoint(spec.computeNextEpochBoundary(anchorState.getSlot()), anchorBlock.getRoot());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.create(spec, checkpoint, anchorState, Optional.of(anchorBlock.getBlock()));
+
+    storeRequestFuture.complete(
+        Optional.of(StoreBuilder.forkChoiceStoreBuilder(spec, anchorPoint, UInt64.ZERO)));
+
+    assertThat(client).isCompleted();
+    final RecentChainData initializedClient = client.get();
+    assertThat(initializedClient.getSlotForBlockRoot(anchorBlock.getRoot()))
+        .contains(anchorBlock.getSlot());
+    assertThat(
+            initializedClient.getBlockRootInEffectBySlot(
+                anchorBlock.getSlot(), anchorBlock.getRoot()))
+        .contains(anchorBlock.getRoot());
+    assertThat(
+            initializedClient.getBlockRootInEffectBySlot(
+                anchorState.getSlot(), anchorBlock.getRoot()))
+        .contains(anchorBlock.getRoot());
+  }
+
+  @Test
   public void storageBackedClient_storeInitializeViaNewGenesisState()
       throws ExecutionException, InterruptedException {
     SafeFuture<Optional<OnDiskStoreData>> storeRequestFuture = new SafeFuture<>();
@@ -133,6 +193,9 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedDataColumnSlotProvider.NOOP,
+            ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -186,6 +249,9 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedDataColumnSlotProvider.NOOP,
+            ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -235,6 +301,9 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            RecentlyValidatedDataColumnSlotProvider.NOOP,
+            ExecutionPayloadProvider.NOOP,
+            BlindedExecutionPayloadProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

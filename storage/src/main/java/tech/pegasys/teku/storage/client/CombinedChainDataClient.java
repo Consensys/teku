@@ -54,7 +54,6 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -72,20 +71,13 @@ public class CombinedChainDataClient {
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
 
-  private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
-  private final boolean isEarliestAvailableDataColumnSlotSupported;
-
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
-      final Spec spec,
-      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
-      final boolean isEarliestAvailableDataColumnSlotSupported) {
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
-    this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
-    this.isEarliestAvailableDataColumnSlotSupported = isEarliestAvailableDataColumnSlotSupported;
   }
 
   /**
@@ -149,7 +141,6 @@ public class CombinedChainDataClient {
     if (!isStoreAvailable()) {
       return EXECUTION_PAYLOAD_NOT_AVAILABLE;
     }
-
     // Try to pull root from recent data
     return recentChainData
         .getBlockRootInEffectBySlot(slot, headBlockRoot)
@@ -159,11 +150,18 @@ public class CombinedChainDataClient {
                     .thenApply(
                         maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
         .orElseGet(
-            () -> {
-              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
-              // payload for a finalized slot from the  historical chain data
-              return SafeFuture.completedFuture(Optional.empty());
-            });
+            () ->
+                historicalChainData
+                    .getFinalizedBlockAtSlot(slot)
+                    .thenCompose(
+                        maybeBlock ->
+                            maybeBlock
+                                .map(
+                                    block ->
+                                        getExecutionPayloadByBlockRoot(block.getRoot())
+                                            .thenApply(
+                                                ep -> ep.filter(e -> e.getSlot().equals(slot))))
+                                .orElse(SafeFuture.completedFuture(Optional.empty()))));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
@@ -302,45 +300,24 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
-      final UInt64 slot,
-      final boolean isForkChoiceLateBlockReorgEnabled,
-      final Runnable onLateBlockPreparationCompleted) {
-    if (!isForkChoiceLateBlockReorgEnabled) {
-      return getStateAtSlotExact(slot);
-    }
-    final Optional<ChainHead> chainHead = getChainHead();
-    if (chainHead.isEmpty()) {
-      return getStateAtSlotExact(slot);
-    }
-    final Bytes32 headRoot = chainHead.get().getRoot();
-
-    final Bytes32 proposerHeadRoot = recentChainData.getProposerHead(headRoot, slot);
-    if (proposerHeadRoot.equals(headRoot)) {
-      return getStateAtSlotExact(slot);
-    }
-    // otherwise we're looking for the parent slot
-    return getStateByBlockRoot(proposerHeadRoot)
-        .thenCompose(
+  /**
+   * Builds the block-production beacon state from the (already proposer-head-resolved) {@link
+   * ChainHead} returned by {@code ForkChoice.prepareForBlockProduction}. The selected parent root
+   * is used as part of the cache key so block production, block import, epoch precomputation, and
+   * any in-flight state generation can reuse the same slot state.
+   */
+  public SafeFuture<BeaconState> getStateForBlockProduction(
+      final ChainHead chainHead, final UInt64 slot) {
+    return getStore()
+        .retrieveBlockState(new SlotAndBlockRoot(slot, chainHead.getRoot()))
+        .thenApply(
             maybeState ->
-                maybeState
-                    .map(
-                        beaconState -> {
-                          // let's run preparation and state generation in parallel
-                          final SafeFuture<Void> preparationCompletion =
-                              lateBlockReorgPreparationHandler
-                                  .onLateBlockReorgPreparation(
-                                      recentChainData
-                                          .getSlotForBlockRoot(proposerHeadRoot)
-                                          .orElseThrow(),
-                                      headRoot)
-                                  .thenPeek(__ -> onLateBlockPreparationCompleted.run());
-                          final Optional<BeaconState> state =
-                              regenerateBeaconState(beaconState, slot);
-
-                          return preparationCompletion.thenApply(__ -> state);
-                        })
-                    .orElseGet(() -> getStateAtSlotExact(slot)));
+                maybeState.orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            String.format(
+                                "Unable to load block production state for slot %s and parent root %s",
+                                slot, chainHead.getRoot()))));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
@@ -605,29 +582,29 @@ public class CombinedChainDataClient {
               if (maybeSlot.isPresent()) {
                 return SafeFuture.completedFuture(maybeSlot);
               }
-              // 3. historical nonCanonical only: get block and extract slot
+              // 3. historical nonCanonical (optional): get block and extract slot, then fall back
+              //    to the recently-validated index if still not found.
               if (includeFinalizedNonCanonical) {
                 return historicalChainData
                     .getNonCanonicalBlockByRoot(blockRoot)
-                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
+                    .thenApply(
+                        nonCanonicalSlot ->
+                            nonCanonicalSlot.or(
+                                () ->
+                                    recentChainData.getRecentlyValidatedSlotByBlockRoot(
+                                        blockRoot)));
               }
-              return SafeFuture.completedFuture(Optional.empty());
+              // 4. recently-validated fallback: consult the recently-validated index for blocks
+              //    that have been gossip-validated but not yet imported.
+              return SafeFuture.completedFuture(
+                  recentChainData.getRecentlyValidatedSlotByBlockRoot(blockRoot));
             });
   }
 
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
-    return recentChainData
-        .retrieveSignedExecutionPayloadEnvelopeByBlockRoot(blockRoot)
-        .thenCompose(
-            maybeExecutionPayload -> {
-              if (maybeExecutionPayload.isPresent()) {
-                return SafeFuture.completedFuture(maybeExecutionPayload);
-              }
-              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
-              // payload by block root from the historical chain data
-              return SafeFuture.completedFuture(Optional.empty());
-            });
+    return recentChainData.retrieveSignedExecutionPayloadByBlockRoot(blockRoot);
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
@@ -895,14 +872,6 @@ public class CombinedChainDataClient {
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
-  }
-
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlotWithFallback() {
-    if (isEarliestAvailableDataColumnSlotSupported) {
-      return historicalChainData.getEarliestAvailableDataColumnSlot();
-    }
-
-    return historicalChainData.getEarliestDataColumnSidecarSlot();
   }
 
   public Optional<BeaconState> regenerateBeaconState(

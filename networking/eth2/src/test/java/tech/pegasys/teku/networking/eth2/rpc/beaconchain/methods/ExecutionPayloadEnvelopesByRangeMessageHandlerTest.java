@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,10 +46,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRangeRequestMessage;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
@@ -127,6 +128,20 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
   }
 
   @Test
+  void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> response =
+        handler.validateRequest(
+            PROTOCOL_ID,
+            new ExecutionPayloadEnvelopesByRangeRequestMessage(
+                UInt64.MAX_VALUE, UInt64.valueOf(10)));
+
+    assertThat(response)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    verifyNoInteractions(combinedChainDataClient);
+  }
+
+  @Test
   void onIncomingMessage_requestNotApproved() {
     when(peer.approveRequest()).thenReturn(false);
 
@@ -194,15 +209,85 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
     assertThat(getExecutionPayloadEnvelopesRequestedCounterValue()).isEqualTo(5);
   }
 
+  @Test
+  public void onIncomingMessage_respondsFromFinalizedRange() {
+    final List<SignedExecutionPayloadEnvelope> executionPayloadEnvelopes = buildChain(5);
+    // All requested slots are finalized
+    stubFinalizedChainHeadAndBlockLookup(UInt64.valueOf(5));
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(5));
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    verify(callback, times(5)).respond(any());
+    for (final SignedExecutionPayloadEnvelope executionPayloadEnvelope :
+        executionPayloadEnvelopes) {
+      verify(callback).respond(executionPayloadEnvelope);
+      verify(combinedChainDataClient).getBlockAtSlotExact(executionPayloadEnvelope.getSlot());
+    }
+    verify(callback).completeSuccessfully();
+    assertThat(getLabelledCounterValue("ok")).isOne();
+  }
+
+  @Test
+  public void onIncomingMessage_skipsFinalizedSlotWithoutBlock() {
+    // Build 5 slots of blocks and pretend slot 3 was a skipped slot in the finalized chain
+    final List<SignedExecutionPayloadEnvelope> allEnvelopes = buildChain(5);
+    final UInt64 skippedSlot = UInt64.valueOf(3);
+
+    when(combinedChainDataClient.isFinalized(any())).thenReturn(true);
+    stubChainHead(UInt64.valueOf(5));
+    when(combinedChainDataClient.getBlockAtSlotExact(any()))
+        .thenAnswer(
+            i -> {
+              final UInt64 slot = i.getArgument(0);
+              if (slot.equals(skippedSlot)) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              return SafeFuture.completedFuture(
+                  chainBuilder.getBlock(chainBuilder.getBlockAtSlot(slot).getRoot()));
+            });
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(5));
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    // 4 envelopes served, skipped slot produces no response
+    verify(callback, times(4)).respond(any());
+    for (final SignedExecutionPayloadEnvelope envelope : allEnvelopes) {
+      if (envelope.getMessage().getSlot().equals(skippedSlot)) {
+        verify(callback, never()).respond(envelope);
+      } else {
+        verify(callback).respond(envelope);
+      }
+    }
+    verify(callback).completeSuccessfully();
+  }
+
+  private void stubFinalizedChainHeadAndBlockLookup(final UInt64 headSlot) {
+    when(combinedChainDataClient.isFinalized(any())).thenReturn(true);
+    stubChainHead(headSlot);
+    when(combinedChainDataClient.getBlockAtSlotExact(any()))
+        .thenAnswer(
+            invocationOnMock -> {
+              final UInt64 slot = invocationOnMock.getArgument(0);
+              return SafeFuture.completedFuture(
+                  chainBuilder.getBlock(chainBuilder.getBlockAtSlot(slot).getRoot()));
+            });
+  }
+
+  private void stubChainHead(final UInt64 headSlot) {
+    final ChainHead chainHead = mock(ChainHead.class);
+    when(chainHead.getSlot()).thenReturn(headSlot);
+    when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
+  }
+
   private List<SignedExecutionPayloadEnvelope> buildChain(final int chainSize) {
     // Create some blocks to request
     final UInt64 latestSlot = chainBuilder.getLatestSlot();
     chainBuilder.generateBlocksUpToSlot(latestSlot.plus(chainSize));
 
-    return chainBuilder
-        .streamExecutionPayloadsAndStates(latestSlot.plus(1))
-        .map(SignedExecutionPayloadAndState::executionPayload)
-        .toList();
+    return chainBuilder.streamExecutionPayloads(latestSlot.plus(1)).toList();
   }
 
   private long getLabelledCounterValue(final String label) {

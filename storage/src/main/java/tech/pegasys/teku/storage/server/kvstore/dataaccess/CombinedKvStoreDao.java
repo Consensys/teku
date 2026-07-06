@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -154,6 +155,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return db.get(schema.getColumnHotStatesByRoot(), root);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @Override
@@ -304,6 +311,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public void close() throws Exception {
     db.close();
+  }
+
+  @Override
+  public void compact() {
+    db.compact();
   }
 
   @Override
@@ -493,6 +505,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getLastDataColumnSidecarPrunedSlot() {
+    return db.get(schema.getVariableLastDataColumnSidecarPrunedSlot());
+  }
+
+  @Override
   public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
     schema
@@ -538,7 +555,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString))
         .put(
             "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
-            getEarliestAvailableDataColumnSlot().map(Objects::toString));
+            getEarliestAvailableDataColumnSlot().map(Objects::toString))
+        .put(
+            "LAST_DATA_COLUMN_SLOT_PRUNED",
+            getLastDataColumnSidecarPrunedSlot().map(Objects::toString));
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
@@ -720,13 +740,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
-    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
-  }
-
-  @Override
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
     return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
   }
@@ -888,6 +901,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void setLastDataColumnSidecarPrunedSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableLastDataColumnSidecarPrunedSlot(), slot);
+    }
+
+    @Override
     public void setEarliestBlockSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlockSlot(), slot);
     }
@@ -935,6 +953,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      transaction.put(
+          schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -943,6 +971,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+      deleteBlindedExecutionPayloadEnvelope(blockRoot);
+    }
+
+    @Override
+    public void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

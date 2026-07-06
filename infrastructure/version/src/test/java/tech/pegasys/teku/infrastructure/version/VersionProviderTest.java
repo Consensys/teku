@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.version;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_HOME;
-import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_LOCALAPPDATA;
 import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_XDG_DATA_HOME;
 
 import java.io.IOException;
@@ -52,14 +51,6 @@ class VersionProviderTest {
     Files.writeString(gitPropertiesFile, "git.commit.foo=3824d24e9fee209d2335780643dac7f2dc4986e1");
 
     assertThat(VersionProvider.getCommitHash(Files.newInputStream(gitPropertiesFile))).isEmpty();
-  }
-
-  @Test
-  void defaultStoragePath_shouldHandleWindowsPath() {
-    final String homeFolder = "c:\\users\\myUser\\AppData\\local";
-    final Map<String, String> env = Map.of(ENV_LOCALAPPDATA, homeFolder);
-    assertThat(VersionProvider.defaultStoragePathForNormalizedOS("windows", env))
-        .isEqualTo(homeFolder + "\\teku");
   }
 
   @Test

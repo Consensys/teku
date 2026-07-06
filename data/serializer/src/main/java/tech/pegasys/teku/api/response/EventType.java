@@ -18,6 +18,7 @@ import java.util.List;
 @SuppressWarnings("JavaCase")
 public enum EventType {
   head,
+  head_v2,
   block,
   attestation,
   voluntary_exit,
@@ -33,9 +34,12 @@ public enum EventType {
   block_gossip,
   single_attestation,
   data_column_sidecar,
+  execution_payload,
+  execution_payload_gossip,
   execution_payload_available,
   execution_payload_bid,
-  payload_attestation_message;
+  payload_attestation_message,
+  proposer_preferences;
 
   public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

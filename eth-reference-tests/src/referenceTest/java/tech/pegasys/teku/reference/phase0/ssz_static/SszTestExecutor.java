@@ -149,6 +149,12 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
 
+          // TODO: Partial messages (not yet implemented)
+          .put("ssz_static/PartialDataColumnHeader", IGNORE_TESTS)
+          .put("ssz_static/PartialDataColumnPartsMetadata", IGNORE_TESTS)
+          .put("ssz_static/PartialDataColumnSidecar", IGNORE_TESTS)
+          .put("ssz_static/PartialDataColumnGroupID", IGNORE_TESTS)
+
           // Bellatrix types
           .put(
               "ssz_static/ExecutionPayloadHeader",
@@ -313,6 +319,16 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas)
                           .getSignedProposerPreferencesSchema()))
+          .put(
+              "ssz_static/BuilderDepositRequest",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getBuilderDepositRequestSchema()))
+          .put(
+              "ssz_static/BuilderExitRequest",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getBuilderExitRequestSchema()))
           .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)

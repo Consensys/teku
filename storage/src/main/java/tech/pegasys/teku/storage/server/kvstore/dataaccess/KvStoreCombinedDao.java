@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -109,6 +110,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(Bytes32 root);
 
   Optional<BeaconState> getHotState(Bytes32 root);
+
+  Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(Bytes32 root);
 
   List<Bytes32> getStateRootsBeforeSlot(UInt64 slot);
 
@@ -189,13 +192,16 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
-  Optional<UInt64> getEarliestDataSidecarColumnSlot();
-
   Optional<UInt64> getEarliestAvailableDataColumnSlot();
+
+  Optional<UInt64> getLastDataColumnSidecarPrunedSlot();
 
   Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
   Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
+
+  /** Triggers a full, blocking compaction of the underlying storage to reclaim freed space. */
+  void compact();
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -266,9 +272,15 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
 
+    void addBlindedExecutionPayloadEnvelope(
+        Bytes32 blockRoot,
+        SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope);
+
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
     void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+
+    void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot);
 
     void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
 
@@ -301,6 +313,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void setEarliestBlockSlot(UInt64 slot);
 
     void setEarliestAvailableDataColumnSlot(UInt64 slot);
+
+    void setLastDataColumnSidecarPrunedSlot(UInt64 slot);
 
     void deleteEarliestBlockSlot();
 

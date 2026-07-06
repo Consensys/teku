@@ -31,6 +31,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
   private final ProtoNodeValidationStatus validationStatus;
   private final BlockCheckpoints checkpoints;
   private final UInt64 weight;
+  private final ForkChoicePayloadStatus payloadStatus;
 
   public ProtoNodeData(
       final UInt64 slot,
@@ -41,7 +42,8 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       final Bytes32 executionBlockHash,
       final ProtoNodeValidationStatus validationStatus,
       final BlockCheckpoints checkpoints,
-      final UInt64 weight) {
+      final UInt64 weight,
+      final ForkChoicePayloadStatus payloadStatus) {
     this.slot = slot;
     this.root = root;
     this.parentRoot = parentRoot;
@@ -51,6 +53,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
     this.validationStatus = validationStatus;
     this.checkpoints = checkpoints;
     this.weight = weight;
+    this.payloadStatus = payloadStatus;
   }
 
   @Override
@@ -97,6 +100,10 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
     return weight;
   }
 
+  public ForkChoicePayloadStatus getPayloadStatus() {
+    return payloadStatus;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -114,7 +121,8 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         && Objects.equals(executionBlockHash, that.executionBlockHash)
         && validationStatus == that.validationStatus
         && Objects.equals(checkpoints, that.checkpoints)
-        && Objects.equals(weight, that.weight);
+        && Objects.equals(weight, that.weight)
+        && payloadStatus == that.payloadStatus;
   }
 
   @Override
@@ -128,7 +136,8 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         executionBlockHash,
         validationStatus,
         checkpoints,
-        weight);
+        weight,
+        payloadStatus);
   }
 
   @Override
@@ -143,6 +152,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         .add("validationStatus", validationStatus)
         .add("checkpoints", checkpoints)
         .add("weight", weight)
+        .add("payloadStatus", payloadStatus)
         .toString();
   }
 }

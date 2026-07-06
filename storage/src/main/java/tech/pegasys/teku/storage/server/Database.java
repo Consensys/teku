@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -54,6 +55,7 @@ public interface Database extends AutoCloseable {
   void storeFinalizedBlocks(
       Collection<SignedBeaconBlock> blocks,
       Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       Optional<UInt64> maybeEarliestBlobSidecarSlot);
 
   void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot);
@@ -170,6 +172,12 @@ public interface Database extends AutoCloseable {
   Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots);
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
+
+  Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      Bytes32 blockRoot);
+
+  Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelopes(
+      Set<Bytes32> blockRoots);
 
   @MustBeClosed
   Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
@@ -299,6 +307,12 @@ public interface Database extends AutoCloseable {
 
   void addNonCanonicalSidecar(DataColumnSidecar sidecar);
 
-  // prunes both canonical and non canonical sidecars
+  // Prunes both canonical and non-canonical sidecars oldest-first. Canonical pruning resumes from
+  // the persisted prune watermark (advanced atomically with each batch) so successive runs - and
+  // runs after a restart - never rescan the deletion tombstones below already-pruned slots.
   void pruneAllSidecars(UInt64 tillSlotInclusive, int pruneLimit);
+
+  // Triggers a full, blocking compaction of the underlying storage to physically reclaim the disk
+  // space left behind by pruning. Expensive and I/O-heavy; intended for offline/CLI use.
+  void compactStorage();
 }

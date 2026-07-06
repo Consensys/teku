@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -70,6 +71,9 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnBlindedExecutionPayloadEnvelopesByRoot())
         .put("FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
@@ -112,6 +116,11 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnFinalizedBlocksBySlot();
   }
 
+  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnBlindedExecutionPayloadEnvelopesByRoot() {
+    return delegate.getColumnBlindedExecutionPayloadEnvelopesByRoot();
+  }
+
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
     return delegate.getColumnSlotsByFinalizedStateRoot();
   }
@@ -140,6 +149,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getVariableEarliestAvailableDataColumnSlot();
   }
 
+  public KvStoreVariable<UInt64> getVariableLastDataColumnSidecarPrunedSlot() {
+    return delegate.getVariableLastDataColumnSidecarPrunedSlot();
+  }
+
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return delegate.getVariableEarliestBlockSlot();
   }
@@ -159,6 +172,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "FIRST_CUSTODY_INCOMPLETE_SLOT",
         getVariableFirstCustodyIncompleteSlot(),
         "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
-        getVariableEarliestAvailableDataColumnSlot());
+        getVariableEarliestAvailableDataColumnSlot(),
+        "LAST_DATA_COLUMN_SLOT_PRUNED",
+        getVariableLastDataColumnSidecarPrunedSlot());
   }
 }

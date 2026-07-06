@@ -31,7 +31,7 @@ package tech.pegasys.teku.ethereum.performance.trackers;
  *       retrieve_state
  *    (which set slotTime too)
  *         |
- *         |        <-     validatorBlockRequested (VC triggers block production continuation,
+ *         |        &lt;-     validatorBlockRequested (VC triggers block production continuation,
  *         |                           after prepareBlockProductionInternal has been processed)
  *         |
  *         v

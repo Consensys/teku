@@ -61,7 +61,6 @@ public class ReferenceTestFinder {
               if (!testsPath.toFile().exists()) {
                 return Stream.empty();
               }
-
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
@@ -71,20 +70,12 @@ public class ReferenceTestFinder {
                       new PyspecTestFinder(
                           List.of(),
                           List.of(
-                              // TODO-GLOAS: Limit what tests we run for Gloas while it is
-                              // under development. This is temporary and should be removed once we
-                              // are up-to-date with Gloas specs (see
-                              // https://github.com/Consensys/teku-internal/issues/221)
-                              "gloas - mainnet - fork_choice/on_execution_payload",
-                              "gloas - minimal - fork_choice/on_execution_payload",
-                              "gloas - mainnet - fork_choice/on_block - proposer_boost",
-                              "gloas - minimal - fork_choice/on_block",
-                              "gloas - minimal - fork_choice/get_head",
-                              "gloas - minimal - fork_choice/withholding",
-                              "gloas - minimal - fork_choice/reorg",
-                              // this has been fixed in
-                              // https://github.com/ethereum/consensus-specs/pull/5005/changes
-                              "builder_voluntary_exit__success")),
+                              // TODO-GLOAS: the following tests require equivocation
+                              // see https://github.com/Consensys/teku/issues/10608
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_previous_epoch",
+                              "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes",
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_current_epoch",
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

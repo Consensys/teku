@@ -15,25 +15,25 @@ package tech.pegasys.teku.storage.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ProtoArrayIndicesTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final Bytes32 root1 = dataStructureUtil.randomBytes32();
-  private final Bytes32 root2 = dataStructureUtil.randomBytes32();
-  private final Bytes32 root3 = dataStructureUtil.randomBytes32();
+  private final ForkChoiceNode root1 = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+  private final ForkChoiceNode root2 = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+  private final ForkChoiceNode root3 = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
   private final ProtoArrayIndices indices = new ProtoArrayIndices();
 
   @Test
   void shouldAddNodesToMap() {
     indices.add(root1, 1);
     indices.add(root2, 2);
-    assertThat(indices.getRootIndices().keySet()).containsExactlyInAnyOrder(root1, root2);
+    assertThat(indices.getNodeIndices().keySet()).containsExactlyInAnyOrder(root1, root2);
     assertThat(indices.get(root1)).contains(1);
     assertThat(indices.get(root2)).contains(2);
   }
@@ -44,7 +44,7 @@ public class ProtoArrayIndicesTest {
     indices.add(root2, 2);
     indices.add(root3, 3);
     indices.remove(root1);
-    assertThat(indices.getRootIndices().keySet()).containsExactlyInAnyOrder(root2, root3);
+    assertThat(indices.getNodeIndices().keySet()).containsExactlyInAnyOrder(root2, root3);
     assertThat(indices.contains(root1)).isFalse();
   }
 

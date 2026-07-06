@@ -42,6 +42,7 @@ import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
@@ -82,6 +83,7 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   protected static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   protected static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
+  protected static final Duration GET_PAYLOAD_BODIES_TIMEOUT = Duration.ofSeconds(2);
 
   protected final EventLogger eventLog;
   protected final TimeProvider timeProvider;
@@ -337,6 +339,19 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
         list(versionedHashHexes),
         objectMapper.getTypeFactory().constructCollectionType(List.class, BlobAndProofV2.class),
         GET_BLOBS_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<List<ExecutionPayloadBodyV2>>> getPayloadBodiesByHashV2(
+      final List<Bytes32> blockHashes) {
+    final List<String> blockHashHexes = blockHashes.stream().map(Bytes32::toHexString).toList();
+    return doRequest(
+        "engine_getPayloadBodiesByHashV2",
+        list(blockHashHexes),
+        objectMapper
+            .getTypeFactory()
+            .constructCollectionType(List.class, ExecutionPayloadBodyV2.class),
+        GET_PAYLOAD_BODIES_TIMEOUT);
   }
 
   private SafeFuture<PowBlock> doEthBlockRequest(final String method, final List<Object> params) {

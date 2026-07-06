@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.statetransition.payloadattestation;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -34,6 +32,10 @@ public interface PayloadAttestationPool {
         @Override
         public void subscribeOperationAdded(
             final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {}
+
+        @Override
+        public void subscribeValidatedOperationAdded(
+            final OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber) {}
 
         @Override
         public SafeFuture<InternalValidationResult> addLocal(
@@ -55,18 +57,15 @@ public interface PayloadAttestationPool {
         }
 
         @Override
-        public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
-          return List.of();
-        }
-
-        @Override
-        public List<PayloadAttestation> getAggregatedPayloadAttestations(
-            final Function<UInt64, IntList> ptcProvider) {
+        public List<PayloadAttestation> getPayloadAttestations(final BeaconState state) {
           return List.of();
         }
       };
 
   void subscribeOperationAdded(OperationAddedSubscriber<PayloadAttestationMessage> subscriber);
+
+  void subscribeValidatedOperationAdded(
+      OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber);
 
   SafeFuture<InternalValidationResult> addLocal(
       PayloadAttestationMessage payloadAttestationMessage);
@@ -77,7 +76,5 @@ public interface PayloadAttestationPool {
   SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       BeaconState blockSlotState, Bytes32 parentRoot);
 
-  List<PayloadAttestationMessage> getPayloadAttestationMessages();
-
-  List<PayloadAttestation> getAggregatedPayloadAttestations(Function<UInt64, IntList> ptcProvider);
+  List<PayloadAttestation> getPayloadAttestations(BeaconState state);
 }

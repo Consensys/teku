@@ -19,10 +19,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 public class EpochProcessorGloas extends EpochProcessorFulu {
 
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
+  private final SchemaDefinitionsGloas schemaDefinitionsGloas;
 
   public EpochProcessorGloas(
       final SpecConfigGloas specConfig,
@@ -59,6 +62,16 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
         schemaDefinitions,
         timeProvider);
     this.beaconStateAccessorsGloas = beaconStateAccessors;
+    this.schemaDefinitionsGloas = schemaDefinitions;
+  }
+
+  /**
+   * EIP-8061: deposits consume the activation-only churn budget; consolidation churn is now tracked
+   * independently via {@code CONSOLIDATION_CHURN_LIMIT_QUOTIENT}.
+   */
+  @Override
+  protected UInt64 getPendingDepositsChurnLimit(final MutableBeaconStateElectra state) {
+    return beaconStateAccessorsGloas.getActivationChurnLimit(state);
   }
 
   /**
@@ -90,5 +103,34 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
             specConfig.getSlotsPerEpoch(),
             builderPendingPayments.getSchema().getElementSchema().getDefault());
     builderPendingPayments.setAll(Iterables.concat(oldPayments, newPayments));
+  }
+
+  /**
+   * process_ptc_window
+   *
+   * <p>Update the cached PTC window.
+   */
+  @Override
+  public void processPtcWindow(final MutableBeaconState state) {
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+    // Shift all epochs forward by one
+    final List<SszUInt64Vector> ptcToShiftOut =
+        stateGloas
+            .getPtcWindow()
+            .asList()
+            .subList(specConfig.getSlotsPerEpoch(), stateGloas.getPtcWindow().size());
+    // Fill in the last epoch
+    final UInt64 nextEpoch =
+        beaconStateAccessors.getCurrentEpoch(state).plus(specConfig.getMinSeedLookahead()).plus(1);
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(nextEpoch);
+    final List<SszUInt64Vector> lastEpochPtcWindow =
+        UInt64.range(startSlot, startSlot.plus(specConfig.getSlotsPerEpoch()))
+            .map(slot -> beaconStateAccessorsGloas.computePtc(state, slot))
+            .toList();
+    final List<SszUInt64Vector> ptcWindow = new ArrayList<>(ptcToShiftOut);
+    ptcWindow.addAll(lastEpochPtcWindow);
+
+    stateGloas.setPtcWindow(
+        schemaDefinitionsGloas.getPtcWindowSchema().createFromElements(ptcWindow));
   }
 }

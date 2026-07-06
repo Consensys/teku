@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -100,14 +101,6 @@ public interface ReadOnlyStore extends TimeProvider {
   Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot);
 
   /**
-   * Returns an execution payload state only if it is immediately available (not pruned).
-   *
-   * @param blockRoot The block root corresponding to the execution payload state to retrieve
-   * @return The execution payload state if available.
-   */
-  Optional<BeaconState> getExecutionPayloadStateIfAvailable(Bytes32 blockRoot);
-
-  /**
    * Returns a block only if it is immediately available (not pruned).
    *
    * @param blockRoot The block root of the block to retrieve
@@ -142,8 +135,8 @@ public interface ReadOnlyStore extends TimeProvider {
   SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       Bytes32 blockRoot);
 
-  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
-      SlotAndBlockRoot slotAndBlockRoot);
+  SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>> retrieveSignedBlindedExecutionPayload(
+      Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 
@@ -154,13 +147,17 @@ public interface ReadOnlyStore extends TimeProvider {
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       Checkpoint checkpoint, BeaconState latestStateAtEpoch);
 
-  // implements is_head_weak from fork-choice Consensus Spec
-  boolean isHeadWeak(Bytes32 root);
+  Optional<BeaconState> getJustifiedStateIfAvailable();
 
-  // implements is_parent_strong from fork-choice Consensus Spec
-  boolean isParentStrong(Bytes32 parentRoot);
+  Optional<BeaconState> getCheckpointStateIfAvailable(Checkpoint checkpoint);
+
+  VoteTracker getVote(UInt64 validatorIndex);
 
   void computeBalanceThresholds(BeaconState justifiedState);
+
+  UInt64 getReorgThreshold();
+
+  UInt64 getParentThreshold();
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
