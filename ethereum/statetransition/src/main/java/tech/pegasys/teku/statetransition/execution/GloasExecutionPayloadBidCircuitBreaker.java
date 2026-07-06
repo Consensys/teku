@@ -35,7 +35,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -207,10 +206,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
 
   private boolean hasAvailablePayload(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 ancestorRoot) {
-    return forkChoiceStrategy
-        .getBlockData(ancestorRoot, PAYLOAD_STATUS_FULL)
-        .map(nodeData -> nodeData.getValidationStatus() == ProtoNodeValidationStatus.VALID)
-        .orElse(false);
+    return forkChoiceStrategy.getBlockData(ancestorRoot, PAYLOAD_STATUS_FULL).isPresent();
   }
 
   private void recordAvailablePayload(final ObservedBlock observedBlock, final BeaconState state) {

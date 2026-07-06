@@ -74,13 +74,23 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 3);
     setAncestor(circuitBreaker, 6, availablePayload(), 12);
     setAncestor(circuitBreaker, 7, unavailablePayload(), 12);
-    setAncestor(circuitBreaker, 8, optimisticPayload(), 12);
+    setAncestor(circuitBreaker, 8, unavailablePayload(), 12);
     setAncestor(circuitBreaker, 9, availablePayload(), 13);
 
     final BeaconState state = stateAtSlot(10);
     assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
     assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state)).isFalse();
     assertThat(circuitBreaker.isBuilderAllowed(UInt64.valueOf(13), state)).isTrue();
+  }
+
+  @Test
+  public void shouldNotCountOptimisticPayloadsAsUnavailable() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 0, 0);
+    setAncestor(circuitBreaker, 9, optimisticPayload(), builderIndex.intValue());
+
+    final BeaconState state = stateAtSlot(10);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(builderIndex, state)).isTrue();
   }
 
   @Test
