@@ -81,6 +81,13 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
+    // This fixture models only the pre-Gloas (single-variant) tree, so ancestry is resolved by
+    // block root and always yields base (PENDING) nodes.
+    return getAncestor(node.blockRoot(), slot).map(ForkChoiceNode::createBase);
+  }
+
+  @Override
   public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
     return Optional.empty();
   }
