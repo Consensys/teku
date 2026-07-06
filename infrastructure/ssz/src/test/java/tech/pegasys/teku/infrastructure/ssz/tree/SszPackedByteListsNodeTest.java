@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
@@ -159,5 +160,66 @@ public class SszPackedByteListsNodeTest {
 
   static List<Integer> sparseCounts() {
     return List.of(1, 2, 33, 100);
+  }
+
+  @Test
+  public void get_shouldMatchOracleForAllPositions() {
+    final List<Bytes> elements = elementsOfSizes(1, 0, 33, 100);
+    final SszPackedByteListsNode packed = node(elements, SMALL_ELEMENT, SMALL_ORACLE);
+    final TreeNode oracle = oracleVectorNode(SMALL_ORACLE, elements);
+    final int depth = SMALL_ORACLE.treeDepth();
+    // every element slot (occupied and empty) must agree by root
+    for (int slot = 0; slot < 16; slot++) {
+      final long gIndex = GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, slot, depth);
+      assertThat(packed.get(gIndex).hashTreeRoot())
+          .describedAs("slot %s", slot)
+          .isEqualTo(oracle.get(gIndex).hashTreeRoot());
+    }
+    // navigation INSIDE an occupied element subtree (its length node)
+    final long elementGIndex = GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 2, depth);
+    final long lengthGIndex = GIndexUtil.gIdxCompose(elementGIndex, GIndexUtil.RIGHT_CHILD_G_INDEX);
+    assertThat(packed.get(lengthGIndex).hashTreeRoot())
+        .isEqualTo(oracle.get(lengthGIndex).hashTreeRoot());
+    // intermediate branch positions
+    assertThat(packed.get(GIndexUtil.LEFT_CHILD_G_INDEX).hashTreeRoot())
+        .isEqualTo(oracle.get(GIndexUtil.LEFT_CHILD_G_INDEX).hashTreeRoot());
+    assertThat(packed.get(GIndexUtil.RIGHT_CHILD_G_INDEX).hashTreeRoot())
+        .isEqualTo(oracle.get(GIndexUtil.RIGHT_CHILD_G_INDEX).hashTreeRoot());
+  }
+
+  @Test
+  public void merkleProof_shouldMatchOracle() {
+    final List<Bytes> elements = elementsOfSizes(1, 0, 33, 100);
+    final SszPackedByteListsNode packed = node(elements, SMALL_ELEMENT, SMALL_ORACLE);
+    final TreeNode oracle = oracleVectorNode(SMALL_ORACLE, elements);
+    final long gIndex =
+        GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 2, SMALL_ORACLE.treeDepth());
+    assertThat(MerkleUtil.constructMerkleProof(packed, gIndex))
+        .isEqualTo(MerkleUtil.constructMerkleProof(oracle, gIndex));
+  }
+
+  @Test
+  public void updated_shouldDecayAndMatchOracle() {
+    final List<Bytes> elements = elementsOfSizes(1, 0, 33, 100);
+    final SszPackedByteListsNode packed = node(elements, SMALL_ELEMENT, SMALL_ORACLE);
+    final TreeNode oracle = oracleVectorNode(SMALL_ORACLE, elements);
+    final int depth = SMALL_ORACLE.treeDepth();
+    // replace element 1 with a freshly materialized different element
+    final Bytes replacementSsz = Bytes.of(9, 9, 9);
+    final TreeNode replacement =
+        node(List.of(replacementSsz), SMALL_ELEMENT, SMALL_ORACLE)
+            .get(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, depth));
+    final long gIndex = GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, depth);
+    assertThat(packed.updated(gIndex, replacement).hashTreeRoot())
+        .isEqualTo(oracle.updated(gIndex, replacement).hashTreeRoot());
+  }
+
+  @Test
+  public void iterate_shouldVisitLeavesMatchingOracleData() {
+    final List<Bytes> elements = elementsOfSizes(1, 0, 33, 100);
+    final SszPackedByteListsNode packed = node(elements, SMALL_ELEMENT, SMALL_ORACLE);
+    final TreeNode oracle = oracleVectorNode(SMALL_ORACLE, elements);
+    assertThat(TreeUtil.concatenateLeavesData(packed))
+        .isEqualTo(TreeUtil.concatenateLeavesData(oracle));
   }
 }
