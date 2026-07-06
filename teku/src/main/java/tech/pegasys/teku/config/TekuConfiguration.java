@@ -120,14 +120,14 @@ public class TekuConfiguration {
   private static ExecutionPayloadBidCircuitBreakerFactory
       createExecutionPayloadBidCircuitBreakerFactory(
           final Spec spec, final ExecutionLayerConfiguration executionLayerConfiguration) {
-    if (!executionLayerConfiguration.isBuilderCircuitBreakerEnabled()) {
+    if (!executionLayerConfiguration.isExecutionPayloadCircuitBreakerEnabled()) {
       return ExecutionPayloadBidCircuitBreakerFactory.NOOP;
     }
     return ExecutionPayloadBidCircuitBreakerFactory.create(
         spec,
-        executionLayerConfiguration.getBuilderCircuitBreakerWindow(),
-        executionLayerConfiguration.getBuilderCircuitBreakerAllowedFaults(),
-        executionLayerConfiguration.getBuilderCircuitBreakerAllowedConsecutiveFaults());
+        executionLayerConfiguration.getExecutionPayloadCircuitBreakerWindow(),
+        executionLayerConfiguration.getExecutionPayloadCircuitBreakerAllowedFaults(),
+        executionLayerConfiguration.getExecutionPayloadCircuitBreakerAllowedConsecutiveFaults());
   }
 
   public Eth2NetworkConfiguration eth2NetworkConfiguration() {

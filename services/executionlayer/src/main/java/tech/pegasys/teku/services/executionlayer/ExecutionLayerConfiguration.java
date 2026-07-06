@@ -34,6 +34,10 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
+  public static final boolean DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ENABLED = true;
+  public static final int DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_WINDOW = 8;
+  public static final int DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_FAULTS = 2;
+  public static final int DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 2;
   public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = UInt64.valueOf(90);
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
   public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
@@ -50,6 +54,10 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerWindow;
   private final int builderCircuitBreakerAllowedFaults;
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
+  private final boolean isExecutionPayloadCircuitBreakerEnabled;
+  private final int executionPayloadCircuitBreakerWindow;
+  private final int executionPayloadCircuitBreakerAllowedFaults;
+  private final int executionPayloadCircuitBreakerAllowedConsecutiveFaults;
   private final UInt64 builderBidCompareFactor;
   private final boolean builderSetUserAgentHeader;
   private final boolean useShouldOverrideBuilderFlag;
@@ -66,6 +74,10 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerWindow,
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
+      final boolean isExecutionPayloadCircuitBreakerEnabled,
+      final int executionPayloadCircuitBreakerWindow,
+      final int executionPayloadCircuitBreakerAllowedFaults,
+      final int executionPayloadCircuitBreakerAllowedConsecutiveFaults,
       final UInt64 builderBidCompareFactor,
       final boolean builderSetUserAgentHeader,
       final boolean useShouldOverrideBuilderFlag,
@@ -81,6 +93,11 @@ public class ExecutionLayerConfiguration {
     this.builderCircuitBreakerAllowedFaults = builderCircuitBreakerAllowedFaults;
     this.builderCircuitBreakerAllowedConsecutiveFaults =
         builderCircuitBreakerAllowedConsecutiveFaults;
+    this.isExecutionPayloadCircuitBreakerEnabled = isExecutionPayloadCircuitBreakerEnabled;
+    this.executionPayloadCircuitBreakerWindow = executionPayloadCircuitBreakerWindow;
+    this.executionPayloadCircuitBreakerAllowedFaults = executionPayloadCircuitBreakerAllowedFaults;
+    this.executionPayloadCircuitBreakerAllowedConsecutiveFaults =
+        executionPayloadCircuitBreakerAllowedConsecutiveFaults;
     this.builderBidCompareFactor = builderBidCompareFactor;
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
@@ -135,6 +152,22 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
+  public boolean isExecutionPayloadCircuitBreakerEnabled() {
+    return isExecutionPayloadCircuitBreakerEnabled;
+  }
+
+  public int getExecutionPayloadCircuitBreakerWindow() {
+    return executionPayloadCircuitBreakerWindow;
+  }
+
+  public int getExecutionPayloadCircuitBreakerAllowedFaults() {
+    return executionPayloadCircuitBreakerAllowedFaults;
+  }
+
+  public int getExecutionPayloadCircuitBreakerAllowedConsecutiveFaults() {
+    return executionPayloadCircuitBreakerAllowedConsecutiveFaults;
+  }
+
   public UInt64 getBuilderBidCompareFactor() {
     return builderBidCompareFactor;
   }
@@ -166,6 +199,14 @@ public class ExecutionLayerConfiguration {
     private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
     private int builderCircuitBreakerAllowedConsecutiveFaults =
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
+    private boolean isExecutionPayloadCircuitBreakerEnabled =
+        DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ENABLED;
+    private int executionPayloadCircuitBreakerWindow =
+        DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_WINDOW;
+    private int executionPayloadCircuitBreakerAllowedFaults =
+        DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+    private int executionPayloadCircuitBreakerAllowedConsecutiveFaults =
+        DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
     private String builderBidCompareFactor = DEFAULT_BUILDER_BID_COMPARE_FACTOR.toString();
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
@@ -206,6 +247,10 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerWindow,
           builderCircuitBreakerAllowedFaults,
           builderCircuitBreakerAllowedConsecutiveFaults,
+          isExecutionPayloadCircuitBreakerEnabled,
+          executionPayloadCircuitBreakerWindow,
+          executionPayloadCircuitBreakerAllowedFaults,
+          executionPayloadCircuitBreakerAllowedConsecutiveFaults,
           builderBidCompareFactor,
           builderSetUserAgentHeader,
           useShouldOverrideBuilderFlag,
@@ -253,6 +298,32 @@ public class ExecutionLayerConfiguration {
         final int builderCircuitBreakerAllowedConsecutiveFaults) {
       this.builderCircuitBreakerAllowedConsecutiveFaults =
           builderCircuitBreakerAllowedConsecutiveFaults;
+      return this;
+    }
+
+    public Builder isExecutionPayloadCircuitBreakerEnabled(
+        final boolean isExecutionPayloadCircuitBreakerEnabled) {
+      this.isExecutionPayloadCircuitBreakerEnabled = isExecutionPayloadCircuitBreakerEnabled;
+      return this;
+    }
+
+    public Builder executionPayloadCircuitBreakerWindow(
+        final int executionPayloadCircuitBreakerWindow) {
+      this.executionPayloadCircuitBreakerWindow = executionPayloadCircuitBreakerWindow;
+      return this;
+    }
+
+    public Builder executionPayloadCircuitBreakerAllowedFaults(
+        final int executionPayloadCircuitBreakerAllowedFaults) {
+      this.executionPayloadCircuitBreakerAllowedFaults =
+          executionPayloadCircuitBreakerAllowedFaults;
+      return this;
+    }
+
+    public Builder executionPayloadCircuitBreakerAllowedConsecutiveFaults(
+        final int executionPayloadCircuitBreakerAllowedConsecutiveFaults) {
+      this.executionPayloadCircuitBreakerAllowedConsecutiveFaults =
+          executionPayloadCircuitBreakerAllowedConsecutiveFaults;
       return this;
     }
 

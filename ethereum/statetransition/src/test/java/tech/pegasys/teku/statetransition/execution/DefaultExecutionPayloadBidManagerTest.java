@@ -512,7 +512,7 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     executionPayloadBidManager.onBlockImported(block, false);
 
-    verify(executionPayloadBidCircuitBreaker).observeBlock(block);
+    verify(executionPayloadBidCircuitBreaker).observeImportedBlock(block);
   }
 
   private GetPayloadResponse randomGetPayloadResponse(

@@ -22,6 +22,10 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ENABLED;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_NEW_ENGINE_API;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
@@ -102,6 +106,47 @@ public class ExecutionLayerOptions {
       DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 
   @Option(
+      names = {"--Xexecution-payload-circuit-breaker-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables Circuit Breaker logic for Gloas execution payload builder usage.",
+      arity = "0..1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      hidden = true)
+  private boolean executionPayloadCircuitBreakerEnabled =
+      DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ENABLED;
+
+  @Option(
+      names = {"--Xexecution-payload-circuit-breaker-window"},
+      paramLabel = "<INTEGER>",
+      description = "Execution payload Circuit Breaker fault inspection window.",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private int executionPayloadCircuitBreakerWindow =
+      DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_WINDOW;
+
+  @Option(
+      names = {"--Xexecution-payload-circuit-breaker-allowed-faults"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Execution payload Circuit Breaker maximum allowed faults within the specified inspection window.",
+      arity = "1",
+      hidden = true)
+  private int executionPayloadCircuitBreakerAllowedFaults =
+      DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+
+  @Option(
+      names = {"--Xexecution-payload-circuit-breaker-allowed-consecutive-faults"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Execution payload Circuit Breaker maximum allowed consecutive unavailable payloads.",
+      arity = "1",
+      hidden = true)
+  private int executionPayloadCircuitBreakerAllowedConsecutiveFaults =
+      DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
+
+  @Option(
       names = {"--builder-bid-compare-factor"},
       paramLabel = "<STRING>",
       showDefaultValue = Visibility.ALWAYS,
@@ -169,6 +214,12 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults)
                 .builderCircuitBreakerAllowedConsecutiveFaults(
                     builderCircuitBreakerAllowedConsecutiveFaults)
+                .isExecutionPayloadCircuitBreakerEnabled(executionPayloadCircuitBreakerEnabled)
+                .executionPayloadCircuitBreakerWindow(executionPayloadCircuitBreakerWindow)
+                .executionPayloadCircuitBreakerAllowedFaults(
+                    executionPayloadCircuitBreakerAllowedFaults)
+                .executionPayloadCircuitBreakerAllowedConsecutiveFaults(
+                    executionPayloadCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
                 .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag)

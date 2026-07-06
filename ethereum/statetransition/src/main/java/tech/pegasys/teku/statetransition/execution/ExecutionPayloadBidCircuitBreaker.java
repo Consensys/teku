@@ -28,5 +28,5 @@ public interface ExecutionPayloadBidCircuitBreaker {
     return true;
   }
 
-  default void observeBlock(final SignedBeaconBlock block) {}
+  default void observeImportedBlock(final SignedBeaconBlock block) {}
 }

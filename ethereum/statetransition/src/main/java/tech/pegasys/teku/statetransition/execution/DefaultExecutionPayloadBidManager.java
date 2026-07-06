@@ -122,7 +122,7 @@ public class DefaultExecutionPayloadBidManager
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    executionPayloadBidCircuitBreaker.observeBlock(block);
+    executionPayloadBidCircuitBreaker.observeImportedBlock(block);
   }
 
   @Override

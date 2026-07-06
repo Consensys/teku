@@ -114,7 +114,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
   }
 
   @Override
-  public synchronized void observeBlock(final SignedBeaconBlock block) {
+  public synchronized void observeImportedBlock(final SignedBeaconBlock block) {
     block
         .getMessage()
         .getBody()
@@ -220,6 +220,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
         builderStatusByIndex.compute(
             observedBlock.builderIndex(),
             (__, existingStatus) -> {
+              // Builder indices are reusable. This check reset the builder status if the public key associated to the builder index has changed
               if (existingStatus == null
                   || !existingStatus.isForBuilder(maybeBuilderPubKey.get())) {
                 return new BuilderCircuitBreakerStatus(maybeBuilderPubKey.get());

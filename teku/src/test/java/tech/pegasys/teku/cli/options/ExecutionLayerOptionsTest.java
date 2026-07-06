@@ -19,6 +19,9 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_WINDOW;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -88,6 +91,20 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldExecutionPayloadCircuitBreakerEnabledByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.executionLayer().isExecutionPayloadCircuitBreakerEnabled()).isTrue();
+    assertThat(config.executionLayer().getExecutionPayloadCircuitBreakerWindow())
+        .isEqualTo(DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_WINDOW);
+    assertThat(config.executionLayer().getExecutionPayloadCircuitBreakerAllowedFaults())
+        .isEqualTo(DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_FAULTS);
+    assertThat(config.executionLayer().getExecutionPayloadCircuitBreakerAllowedConsecutiveFaults())
+        .isEqualTo(DEFAULT_EXECUTION_PAYLOAD_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS);
+  }
+
+  @Test
   public void shouldAcceptBuilderCircuitBreakerParams() {
     final String[] args = {
       "--Xbuilder-circuit-breaker-enabled",
@@ -106,6 +123,28 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.executionLayer().getBuilderCircuitBreakerAllowedFaults()).isEqualTo(2);
     assertThat(config.executionLayer().getBuilderCircuitBreakerAllowedConsecutiveFaults())
         .isEqualTo(20);
+  }
+
+  @Test
+  public void shouldAcceptExecutionPayloadCircuitBreakerParams() {
+    final String[] args = {
+      "--Xexecution-payload-circuit-breaker-enabled",
+      "false",
+      "--Xexecution-payload-circuit-breaker-window",
+      "12",
+      "--Xexecution-payload-circuit-breaker-allowed-faults",
+      "3",
+      "--Xexecution-payload-circuit-breaker-allowed-consecutive-faults",
+      "4"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.executionLayer().isExecutionPayloadCircuitBreakerEnabled()).isFalse();
+    assertThat(config.executionLayer().getExecutionPayloadCircuitBreakerWindow()).isEqualTo(12);
+    assertThat(config.executionLayer().getExecutionPayloadCircuitBreakerAllowedFaults())
+        .isEqualTo(3);
+    assertThat(config.executionLayer().getExecutionPayloadCircuitBreakerAllowedConsecutiveFaults())
+        .isEqualTo(4);
   }
 
   @Test
