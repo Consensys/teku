@@ -21,7 +21,7 @@ set -euo pipefail
 
 BEACON_URL="${1:-${BEACON_URL:-http://localhost:5051}}"
 
-for cmd in curl jq; do
+for cmd in curl jq xxd; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "error: '$cmd' is required" >&2; exit 1; }
 done
 
