@@ -34,7 +34,8 @@ import tech.pegasys.teku.infrastructure.crypto.Sha256;
 ///
 /// Navigation is virtual: `left()`/`right()` return lightweight range wrappers, element subtrees
 /// are materialized on demand via the supplied materializer (and come out spine-compressed).
-/// Updates decay this node into the fully materialized equivalent — the cold path by design.
+/// Both `updated` overloads decay this node into the fully materialized equivalent and apply the
+/// update there — the cold path by design.
 public class SszPackedByteListsNode implements BranchNode {
 
   private final Bytes sszBytes;
@@ -51,6 +52,10 @@ public class SszPackedByteListsNode implements BranchNode {
       final int depth,
       final Function<Bytes, TreeNode> elementMaterializer) {
     checkArgument(depth >= 1 && depth < TreeUtil.ZERO_TREES.length, "Invalid depth: %s", depth);
+    checkArgument(
+        elementDataDepth >= 0 && elementDataDepth < TreeUtil.ZERO_TREES.length,
+        "Invalid elementDataDepth: %s",
+        elementDataDepth);
     checkArgument(
         elementOffsets.length >= 2 && elementOffsets[elementOffsets.length - 1] == sszBytes.size(),
         "Offsets must include the end sentinel");
@@ -124,6 +129,15 @@ public class SszPackedByteListsNode implements BranchNode {
     } else {
       return materialize().updated(newNodes);
     }
+  }
+
+  @Override
+  public TreeNode updated(
+      final long generalizedIndex, final Function<TreeNode, TreeNode> nodeUpdater) {
+    if (GIndexUtil.gIdxIsSelf(generalizedIndex)) {
+      return nodeUpdater.apply(this);
+    }
+    return materialize().updated(generalizedIndex, nodeUpdater);
   }
 
   @Override

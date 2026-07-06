@@ -76,6 +76,8 @@ public abstract class AbstractSszListSchema<
           elementSchema instanceof SszByteListSchema,
           "SszPackedByteListsHint requires a byte list element schema but got %s",
           elementSchema);
+      checkArgument(
+          maxLength >= 2, "SszPackedByteListsHint requires maxLength >= 2 but got %s", maxLength);
       this.packedByteListElementSchema = (SszByteListSchema<?>) elementSchema;
     } else {
       this.packedByteListElementSchema = null;
@@ -144,10 +146,6 @@ public abstract class AbstractSszListSchema<
 
   protected AbstractSszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {
     return compatibleVectorSchema;
-  }
-
-  SszByteListSchema<?> getPackedByteListElementSchema() {
-    return packedByteListElementSchema;
   }
 
   @Override

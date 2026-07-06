@@ -14,21 +14,35 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+/// Covers the {@code ExecutionPayload.transactions} hinted packed-byte-lists backing across every
+/// fork that carries a transactions list. See {@code InclusionListPackedTransactionsTest} for the
+/// equivalent heze {@code InclusionList} coverage.
+@TestSpecContext(milestone = {BELLATRIX, CAPELLA, DENEB, GLOAS})
 public class ExecutionPayloadPackedTransactionsTest {
 
-  @Test
+  private DataStructureUtil dataStructureUtil;
+
+  @BeforeEach
+  void setUp(final SpecContext specContext) {
+    dataStructureUtil = specContext.getDataStructureUtil();
+  }
+
+  @TestTemplate
   public void executionPayloadTransactions_shouldRoundTripWithPackedBacking() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(1, spec);
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     assertThat(payload.getTransactions()).isNotEmpty();
 

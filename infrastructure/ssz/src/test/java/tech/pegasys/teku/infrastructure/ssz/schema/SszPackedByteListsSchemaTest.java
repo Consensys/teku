@@ -56,6 +56,16 @@ public class SszPackedByteListsSchemaTest {
         .isInstanceOf(IllegalArgumentException.class);
   }
 
+  @Test
+  public void hint_shouldBeRejectedForMaxLengthBelowTwo() {
+    // maxLength 1 gives the outer vector a tree depth of 0, which SszPackedByteListsNode cannot
+    // represent; catch it at schema construction rather than surfacing an obscure failure on the
+    // wire-decode path.
+    assertThatThrownBy(
+            () -> SszListSchema.create(ELEMENT_SCHEMA, 1, SszSchemaHints.sszPackedByteLists()))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
   private static Bytes serialized(final int... sizes) {
     return serializeElements(elementsOfSizes(sizes));
   }
@@ -138,7 +148,9 @@ public class SszPackedByteListsSchemaTest {
     final Bytes bytes = serialized(1, 0, 33, 100);
     final SszList<SszByteList> hinted = (SszList<SszByteList>) HINTED.sszDeserialize(bytes);
     assertThat(hinted.sszSerialize()).isEqualTo(bytes);
-    // a decayed (updated) list must still serialize correctly through the generic path
+    // an independently deserialized unhinted (materialized) list must serialize identically;
+    // real decay-then-serialize is covered by
+    // updated_shouldDecayThroughProductionMutationPathAndMatchUnhinted below
     final SszList<SszByteList> unhinted = (SszList<SszByteList>) UNHINTED.sszDeserialize(bytes);
     assertThat(hinted.sszSerialize()).isEqualTo(unhinted.sszSerialize());
   }
@@ -162,6 +174,33 @@ public class SszPackedByteListsSchemaTest {
   public void createFromElements_shouldHandleEmptyList() {
     assertThat(HINTED.createFromElements(List.of()).hashTreeRoot())
         .isEqualTo(UNHINTED.createFromElements(List.of()).hashTreeRoot());
+  }
+
+  @Test
+  public void updated_shouldDecayThroughProductionMutationPathAndMatchUnhinted() {
+    // Drives the production mutation flow (SszMutableList.commitChanges() ->
+    // backing.updated(TreeUpdates)) for a hinted packed list, and checks it decays to the same
+    // result as the equivalent mutation on an unhinted (already materialized) list.
+    final Bytes bytes = serialized(1, 0, 33, 100);
+    final SszList<SszByteList> committedHinted = mutateElementOne(deserializeHinted(bytes));
+    final SszList<SszByteList> committedUnhinted = mutateElementOne(deserializeUnhinted(bytes));
+
+    assertThat(committedHinted.hashTreeRoot()).isEqualTo(committedUnhinted.hashTreeRoot());
+    assertThat(committedHinted.sszSerialize()).isEqualTo(committedUnhinted.sszSerialize());
+    assertThat(committedHinted.size()).isEqualTo(committedUnhinted.size());
+    for (int i = 0; i < committedHinted.size(); i++) {
+      assertThat(committedHinted.get(i).getBytes())
+          .describedAs("element %s", i)
+          .isEqualTo(committedUnhinted.get(i).getBytes());
+    }
+    // the hinted list's vector node must have decayed into the materialized representation
+    assertThat(vectorNode(committedHinted)).isNotInstanceOf(SszPackedByteListsNode.class);
+  }
+
+  private static SszList<SszByteList> mutateElementOne(final SszList<SszByteList> list) {
+    final var mutable = list.createWritableCopy();
+    mutable.set(1, ELEMENT_SCHEMA.fromBytes(Bytes.of(9, 9, 9)));
+    return mutable.commitChanges();
   }
 
   @Test

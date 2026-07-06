@@ -215,6 +215,32 @@ public class SszPackedByteListsNodeTest {
   }
 
   @Test
+  public void updated_shouldFullyMaterializeAndNotRetainPackedNode() {
+    final List<Bytes> elements = elementsOfSizes(1, 0, 33, 100);
+    final SszPackedByteListsNode packed = node(elements, SMALL_ELEMENT, SMALL_ORACLE);
+    final TreeNode oracle = oracleVectorNode(SMALL_ORACLE, elements);
+    final int depth = SMALL_ORACLE.treeDepth();
+    // replace element 1 with a freshly materialized different element
+    final Bytes replacementSsz = Bytes.of(9, 9, 9);
+    final TreeNode replacement =
+        node(List.of(replacementSsz), SMALL_ELEMENT, SMALL_ORACLE)
+            .get(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, depth));
+    final long gIndex = GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, depth);
+
+    final TreeNode result = packed.updated(gIndex, replacement);
+    final TreeNode oracleResult = oracle.updated(gIndex, replacement);
+
+    // fully materialized: no residual SszPackedByteListsNode (or lazy wrapper over it) anywhere
+    // reachable from the returned root
+    assertThat(result).isNotInstanceOf(SszPackedByteListsNode.class);
+    assertThat(result.hashTreeRoot()).isEqualTo(oracleResult.hashTreeRoot());
+    assertThat(TreeUtil.concatenateLeavesData(result))
+        .isEqualTo(TreeUtil.concatenateLeavesData(oracleResult));
+    assertThat(result.get(GIndexUtil.RIGHT_CHILD_G_INDEX).hashTreeRoot())
+        .isEqualTo(oracleResult.get(GIndexUtil.RIGHT_CHILD_G_INDEX).hashTreeRoot());
+  }
+
+  @Test
   public void iterate_shouldVisitLeavesMatchingOracleData() {
     final List<Bytes> elements = elementsOfSizes(1, 0, 33, 100);
     final SszPackedByteListsNode packed = node(elements, SMALL_ELEMENT, SMALL_ORACLE);
