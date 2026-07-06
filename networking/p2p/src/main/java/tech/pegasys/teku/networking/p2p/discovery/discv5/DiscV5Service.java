@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
+import tech.pegasys.teku.networking.p2p.network.config.DualStackPortBindings;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -106,6 +107,13 @@ public class DiscV5Service extends Service implements DiscoveryService {
       // IPv4 and IPv6 (dual-stack)
       final InetSocketAddress[] listenAddresses =
           networkInterfaces.stream()
+              .filter(
+                  networkInterface ->
+                      DualStackPortBindings.shouldListenOnAddress(
+                          networkInterfaces,
+                          networkInterface,
+                          discoConfig.getListenUdpPort(),
+                          discoConfig.getListenUpdPortIpv6()))
               .map(
                   networkInterface -> {
                     final int listenUdpPort =
