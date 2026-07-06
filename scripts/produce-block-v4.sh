@@ -12,7 +12,9 @@
 #   ./produce-block-v4.sh [BEACON_URL]
 #
 # Env:
-#   BEACON_URL   Beacon node REST endpoint (default: http://localhost:5051)
+#   BEACON_URL        Beacon node REST endpoint (default: http://localhost:5051)
+#   INCLUDE_PAYLOAD   If set (expects 'true' or 'false'), passed as the
+#                     include_payload query param on the produceBlockV4 request.
 
 set -euo pipefail
 
@@ -55,9 +57,16 @@ echo >&2
 # 4. Call produceBlockV4 and pretty-print the response. On a non-2xx status the
 #    response body (which carries the error message) is printed so the failure
 #    is visible.
+include_payload_args=()
+if [[ -n "${INCLUDE_PAYLOAD:-}" ]]; then
+  include_payload_args+=(--data-urlencode "include_payload=${INCLUDE_PAYLOAD}")
+  echo "include_payload: ${INCLUDE_PAYLOAD}" >&2
+fi
+
 response="$(curl -sS -G "${BEACON_URL}/eth/v4/validator/blocks/${next_slot}" \
   --data-urlencode "randao_reveal=${randao_reveal}" \
   --data-urlencode "skip_randao_verification=" \
+  "${include_payload_args[@]}" \
   -w $'\n%{http_code}')"
 
 http_code="${response##*$'\n'}"
