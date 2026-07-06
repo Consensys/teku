@@ -132,4 +132,14 @@ public class SszPackedByteListsSchemaTest {
           .isInstanceOf(SszDeserializeException.class);
     }
   }
+
+  @Test
+  public void serialize_shouldRoundTripByteIdentical() {
+    final Bytes bytes = serialized(1, 0, 33, 100);
+    final SszList<SszByteList> hinted = (SszList<SszByteList>) HINTED.sszDeserialize(bytes);
+    assertThat(hinted.sszSerialize()).isEqualTo(bytes);
+    // a decayed (updated) list must still serialize correctly through the generic path
+    final SszList<SszByteList> unhinted = (SszList<SszByteList>) UNHINTED.sszDeserialize(bytes);
+    assertThat(hinted.sszSerialize()).isEqualTo(unhinted.sszSerialize());
+  }
 }

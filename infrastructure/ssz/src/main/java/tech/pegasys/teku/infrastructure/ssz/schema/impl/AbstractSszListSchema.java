@@ -125,6 +125,9 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
+    if (getVectorNode(node) instanceof SszPackedByteListsNode packedNode) {
+      return packedNode.getSszBytes().size();
+    }
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
@@ -151,10 +154,14 @@ public abstract class AbstractSszListSchema<
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl serialization is only supported by SszBitlistSchema");
-    } else {
-      return getCompatibleVectorSchema()
-          .sszSerializeVector(getVectorNode(node), writer, elementsCount);
     }
+    if (getVectorNode(node) instanceof SszPackedByteListsNode packedNode) {
+      final Bytes sszBytes = packedNode.getSszBytes();
+      writer.write(sszBytes);
+      return sszBytes.size();
+    }
+    return getCompatibleVectorSchema()
+        .sszSerializeVector(getVectorNode(node), writer, elementsCount);
   }
 
   @Override
