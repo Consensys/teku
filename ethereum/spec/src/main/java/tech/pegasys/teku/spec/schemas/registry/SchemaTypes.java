@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsAndExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsWithBlobsSchema;
@@ -276,6 +277,9 @@ public class SchemaTypes {
   public static final SchemaId<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
       EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<BlockContentsWithBlobsAndExecutionPayloadEnvelopeSchema<?>>
+      BLOCK_CONTENTS_WITH_BLOBS_AND_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
+          create("BLOCK_CONTENTS_WITH_BLOBS_AND_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
 
   // Heze
   public static final SchemaId<InclusionListSchema> INCLUSION_LIST_SCHEMA =
