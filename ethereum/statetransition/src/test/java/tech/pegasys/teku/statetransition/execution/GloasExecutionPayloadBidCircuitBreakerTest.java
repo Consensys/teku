@@ -18,6 +18,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
 
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -202,6 +204,19 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
     assertThat(circuitBreaker.isBuilderAllowed(builderIndex, replacementBuilderState)).isTrue();
   }
 
+  @Test
+  public void shouldPruneTrackedBlockPayloadStatusesWhenRecordingImportedBlocks()
+      throws ReflectiveOperationException {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 1, 1);
+
+    for (int slot = 1; slot <= 8; slot++) {
+      circuitBreaker.recordBlockBuilder(
+          dataStructureUtil.randomBytes32(), UInt64.valueOf(slot), builderIndex);
+    }
+
+    assertThat(trackedBlockPayloadStatuses(circuitBreaker)).hasSize(5);
+  }
+
   private GloasExecutionPayloadBidCircuitBreaker createCircuitBreaker(
       final int faultInspectionWindow,
       final int allowedFaults,
@@ -290,5 +305,15 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
                     .set(
                         builderIndex.intValue(),
                         dataStructureUtil.builderBuilder().publicKey(builderPubkey).build()));
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<Bytes32, ?> trackedBlockPayloadStatuses(
+      final GloasExecutionPayloadBidCircuitBreaker circuitBreaker)
+      throws ReflectiveOperationException {
+    final Field field =
+        GloasExecutionPayloadBidCircuitBreaker.class.getDeclaredField("blockPayloadStatusByRoot");
+    field.setAccessible(true);
+    return (Map<Bytes32, ?>) field.get(circuitBreaker);
   }
 }

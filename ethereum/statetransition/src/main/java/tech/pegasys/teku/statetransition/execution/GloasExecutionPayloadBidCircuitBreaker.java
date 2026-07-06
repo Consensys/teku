@@ -49,6 +49,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
   private final Supplier<Optional<ReadOnlyForkChoiceStrategy>> forkChoiceStrategySupplier;
   private final Map<Bytes32, BlockPayloadStatus> blockPayloadStatusByRoot = new HashMap<>();
   private final Map<UInt64, BuilderCircuitBreakerStatus> builderStatusByIndex = new HashMap<>();
+  private UInt64 latestObservedBlockSlot = UInt64.ZERO;
 
   public GloasExecutionPayloadBidCircuitBreaker(
       final Spec spec,
@@ -126,7 +127,11 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
 
   @VisibleForTesting
   void recordBlockBuilder(final Bytes32 blockRoot, final UInt64 slot, final UInt64 builderIndex) {
+    if (slot.isGreaterThan(latestObservedBlockSlot)) {
+      latestObservedBlockSlot = slot;
+    }
     blockPayloadStatusByRoot.put(blockRoot, new BlockPayloadStatus(slot, builderIndex));
+    prune(latestObservedBlockSlot);
   }
 
   private boolean inspectPayloadAvailability(
