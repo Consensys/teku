@@ -1697,13 +1697,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth1DataCache,
             storageUpdateChannel,
             eventChannels.getPublisher(Eth1DepositStorageChannel.class, beaconAsyncRunner),
-            spec,
-            EVENT_LOG,
-            beaconConfig.powchainConfig().useMissingDepositEventLogging());
+            spec);
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
-        .subscribe(FinalizedCheckpointChannel.class, depositProvider)
-        .subscribe(SlotEventsChannel.class, depositProvider);
+        .subscribe(FinalizedCheckpointChannel.class, depositProvider);
   }
 
   protected void initAttestationTopicSubscriber() {
@@ -2318,10 +2315,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // forkChoiceNotifier subscription
     syncService.subscribeToSyncStateChangesAndUpdate(
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
-
-    // depositProvider subscription
-    syncService.subscribeToSyncStateChangesAndUpdate(
-        syncState -> depositProvider.onSyncingStatusChanged(syncState.isInSync()));
 
     // forkChoice subscription
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(syncService.getOptimisticSyncSubscriber());
