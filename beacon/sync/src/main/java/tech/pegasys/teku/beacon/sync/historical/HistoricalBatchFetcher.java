@@ -54,8 +54,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBlockHashCalculator;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -85,6 +87,8 @@ public class HistoricalBatchFetcher {
   private final SafeFuture<SignedBeaconBlock> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlotToImport =
+      new ConcurrentHashMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRootToImport =
       new ConcurrentHashMap<>();
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
       blindedExecutionPayloadsByBlockRootToImport = new ConcurrentHashMap<>();
@@ -298,13 +302,27 @@ public class HistoricalBatchFetcher {
   @VisibleForTesting
   void processExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
-    final SchemaDefinitionsGloas schemaDefinitions =
-        SchemaDefinitionsGloas.required(
-            spec.atSlot(signedExecutionPayloadEnvelope.getMessage().getSlot())
-                .getSchemaDefinitions());
-    blindedExecutionPayloadsByBlockRootToImport.put(
-        signedExecutionPayloadEnvelope.getBeaconBlockRoot(),
-        signedExecutionPayloadEnvelope.blind(schemaDefinitions));
+    validateExecutionPayloadBlockHash(signedExecutionPayloadEnvelope);
+    executionPayloadsByBlockRootToImport.put(
+        signedExecutionPayloadEnvelope.getBeaconBlockRoot(), signedExecutionPayloadEnvelope);
+  }
+
+  private void validateExecutionPayloadBlockHash(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    final ExecutionPayloadEnvelope envelope = signedExecutionPayloadEnvelope.getMessage();
+    final Bytes32 computedBlockHash =
+        ExecutionPayloadBlockHashCalculator.computeGloasBlockHash(
+            envelope, spec.getExecutionRequestsDataCodec(envelope.getSlot()));
+    final Bytes32 payloadBlockHash = envelope.getPayload().getBlockHash();
+    if (!computedBlockHash.equals(payloadBlockHash)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Execution payload block hash mismatch for block root %s at slot %s: expected %s but computed %s",
+              signedExecutionPayloadEnvelope.getBeaconBlockRoot(),
+              envelope.getSlot(),
+              payloadBlockHash,
+              computedBlockHash));
+    }
   }
 
   private boolean shouldRetryByRangeRequest() {
@@ -404,6 +422,7 @@ public class HistoricalBatchFetcher {
               validateExecutionPayloadEnvelopes(blocksToImport);
 
               final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
+              blindExecutionPayloadsForImport();
               return storageUpdateChannel
                   .onFinalizedBlocks(
                       blocksToImport,
@@ -420,6 +439,7 @@ public class HistoricalBatchFetcher {
         .alwaysRun(
             () -> {
               blobSidecarsBySlotToImport.clear();
+              executionPayloadsByBlockRootToImport.clear();
               blindedExecutionPayloadsByBlockRootToImport.clear();
               maybeEarliestBlobSidecarSlot = Optional.empty();
             });
@@ -468,24 +488,24 @@ public class HistoricalBatchFetcher {
   }
 
   private void pruneExecutionPayloadsNotInBatch() {
-    if (blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
+    if (executionPayloadsByBlockRootToImport.isEmpty()) {
       return;
     }
     final Set<Bytes32> blockRoots =
         blocksToImport.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toSet());
-    blindedExecutionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
+    executionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
   }
 
   private void validateExecutionPayloadEnvelopes(final Collection<SignedBeaconBlock> blocks) {
-    if (!blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
+    if (!executionPayloadsByBlockRootToImport.isEmpty()) {
       LOG.trace("Validating execution payload envelopes for a batch");
       final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
           blocks.stream()
               .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
-      blindedExecutionPayloadsByBlockRootToImport.forEach(
+      executionPayloadsByBlockRootToImport.forEach(
           (blockRoot, signedEnvelope) ->
               validateExecutionPayloadEnvelope(
-                  signedEnvelope,
+                  blindExecutionPayloadEnvelope(signedEnvelope),
                   Optional.ofNullable(blocksByRoot.get(blockRoot))
                       .orElseThrow(
                           () ->
@@ -496,6 +516,23 @@ public class HistoricalBatchFetcher {
     }
 
     validateExecutionPayloadEnvelopesPresence(blocks);
+  }
+
+  private void blindExecutionPayloadsForImport() {
+    blindedExecutionPayloadsByBlockRootToImport.clear();
+    executionPayloadsByBlockRootToImport.forEach(
+        (blockRoot, signedEnvelope) ->
+            blindedExecutionPayloadsByBlockRootToImport.put(
+                blockRoot, blindExecutionPayloadEnvelope(signedEnvelope)));
+  }
+
+  private SignedBlindedExecutionPayloadEnvelope blindExecutionPayloadEnvelope(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(
+            spec.atSlot(signedExecutionPayloadEnvelope.getMessage().getSlot())
+                .getSchemaDefinitions());
+    return signedExecutionPayloadEnvelope.blind(schemaDefinitions);
   }
 
   @VisibleForTesting
@@ -554,7 +591,7 @@ public class HistoricalBatchFetcher {
       // Execution chain did not advance, so previous block's payload was not delivered
       return;
     }
-    if (blindedExecutionPayloadsByBlockRootToImport.containsKey(previousBlock.getRoot())) {
+    if (executionPayloadsByBlockRootToImport.containsKey(previousBlock.getRoot())) {
       return;
     }
     throw new IllegalArgumentException(
