@@ -161,7 +161,7 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
   }
 
   @Test
-  public void shouldResetBuilderConsecutiveFaultsWhenPayloadBecomesAvailable() {
+  public void shouldNotBanBuilderWhenUnavailablePayloadsAreNotConsecutive() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 3, 1);
     setAncestor(circuitBreaker, 7, unavailablePayload(), 12);
     setAncestor(circuitBreaker, 8, availablePayload(), 12);
