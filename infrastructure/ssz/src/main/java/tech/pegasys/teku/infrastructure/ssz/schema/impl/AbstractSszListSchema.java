@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
@@ -30,7 +31,9 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszPackedByteListsHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszSuperNodeHint;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil.TargetDepthNodeHandler;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
@@ -52,6 +55,8 @@ public abstract class AbstractSszListSchema<
   private final SszVectorSchemaImpl<ElementDataT> compatibleVectorSchema;
   private final SszLengthBounds sszLengthBounds;
   private final DeserializableTypeDefinition<SszListT> jsonTypeDefinition;
+  // null when the SszPackedByteListsHint is not present
+  private final SszByteListSchema<?> packedByteListElementSchema;
 
   protected AbstractSszListSchema(
       final SszSchema<ElementDataT> elementSchema, final long maxLength) {
@@ -63,6 +68,15 @@ public abstract class AbstractSszListSchema<
       final long maxLength,
       final SszSchemaHints hints) {
     super(maxLength, elementSchema, hints);
+    if (hints.getHint(SszPackedByteListsHint.class).isPresent()) {
+      checkArgument(
+          elementSchema instanceof SszByteListSchema,
+          "SszPackedByteListsHint requires a byte list element schema but got %s",
+          elementSchema);
+      this.packedByteListElementSchema = (SszByteListSchema<?>) elementSchema;
+    } else {
+      this.packedByteListElementSchema = null;
+    }
     this.compatibleVectorSchema =
         new SszVectorSchemaImpl<>(elementSchema, getMaxLength(), true, getHints());
     this.sszLengthBounds = computeSszLengthBounds(elementSchema, maxLength);
@@ -90,6 +104,10 @@ public abstract class AbstractSszListSchema<
 
   protected AbstractSszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {
     return compatibleVectorSchema;
+  }
+
+  SszByteListSchema<?> getPackedByteListElementSchema() {
+    return packedByteListElementSchema;
   }
 
   @Override
