@@ -13,6 +13,9 @@
 #
 # Env:
 #   BEACON_URL   Beacon node REST endpoint (default: http://localhost:5051)
+#   GRAFFITI     If set, passed as the graffiti query param. May be a plain
+#                UTF-8 string or a 0x-prefixed hex value; at most 32 bytes
+#                (bytes32).
 
 set -euo pipefail
 
@@ -21,6 +24,41 @@ BEACON_URL="${1:-${BEACON_URL:-http://localhost:5051}}"
 for cmd in curl jq; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "error: '$cmd' is required" >&2; exit 1; }
 done
+
+# 0. Validate/normalize optional GRAFFITI up front so bad input fails fast
+#    (before we block waiting for a head event).
+#    The API expects a bytes32 hex value. A 0x-prefixed value is used as-is;
+#    a plain string is UTF-8 encoded to hex. Either way it is zero-padded on the
+#    right to exactly 32 bytes.
+extra_args=()
+if [[ -n "${GRAFFITI:-}" ]]; then
+  if [[ "$GRAFFITI" == 0x* || "$GRAFFITI" == 0X* ]]; then
+    graffiti_hex="${GRAFFITI:2}"
+    if [[ ! "$graffiti_hex" =~ ^[0-9a-fA-F]*$ ]]; then
+      echo "error: GRAFFITI is 0x-prefixed but contains non-hex characters" >&2
+      exit 1
+    fi
+    if (( ${#graffiti_hex} % 2 != 0 )); then
+      echo "error: GRAFFITI hex value must have an even number of digits" >&2
+      exit 1
+    fi
+  else
+    graffiti_hex="$(printf '%s' "$GRAFFITI" | xxd -p -c 256 | tr -d '\n')"
+  fi
+  if (( ${#graffiti_hex} > 64 )); then
+    echo "error: GRAFFITI is $(( ${#graffiti_hex} / 2 )) bytes; maximum is 32 (bytes32)" >&2
+    exit 1
+  fi
+  # Right-pad with zeros to 32 bytes (64 hex chars).
+  pad=$(( 64 - ${#graffiti_hex} ))
+  if (( pad > 0 )); then
+    printf -v zeros '%*s' "$pad" ''
+    graffiti_hex="${graffiti_hex}${zeros// /0}"
+  fi
+  graffiti_value="0x${graffiti_hex}"
+  extra_args+=(--data-urlencode "graffiti=${graffiti_value}")
+  echo "graffiti:       ${GRAFFITI} -> ${graffiti_value}" >&2
+fi
 
 # 1. Subscribe to the head SSE event stream and read the first head event's slot.
 echo "waiting for head event from ${BEACON_URL}..." >&2
@@ -59,6 +97,7 @@ echo >&2
 response="$(curl -sS -G "${BEACON_URL}/eth/v3/validator/blocks/${next_slot}" \
   --data-urlencode "randao_reveal=${randao_reveal}" \
   --data-urlencode "skip_randao_verification=" \
+  "${extra_args[@]}" \
   -w $'\n%{http_code}')"
 
 http_code="${response##*$'\n'}"

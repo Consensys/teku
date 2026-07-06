@@ -15,6 +15,9 @@
 #   BEACON_URL        Beacon node REST endpoint (default: http://localhost:5051)
 #   INCLUDE_PAYLOAD   If set (expects 'true' or 'false'), passed as the
 #                     include_payload query param on the produceBlockV4 request.
+#   GRAFFITI          If set, passed as the graffiti query param. May be a plain
+#                     UTF-8 string or a 0x-prefixed hex value; at most 32 bytes
+#                     (bytes32).
 
 set -euo pipefail
 
@@ -57,16 +60,48 @@ echo >&2
 # 4. Call produceBlockV4 and pretty-print the response. On a non-2xx status the
 #    response body (which carries the error message) is printed so the failure
 #    is visible.
-include_payload_args=()
+extra_args=()
 if [[ -n "${INCLUDE_PAYLOAD:-}" ]]; then
-  include_payload_args+=(--data-urlencode "include_payload=${INCLUDE_PAYLOAD}")
+  extra_args+=(--data-urlencode "include_payload=${INCLUDE_PAYLOAD}")
   echo "include_payload: ${INCLUDE_PAYLOAD}" >&2
+fi
+
+if [[ -n "${GRAFFITI:-}" ]]; then
+  # The API expects a bytes32 hex value. A 0x-prefixed value is used as-is;
+  # a plain string is UTF-8 encoded to hex. Either way it is zero-padded on the
+  # right to exactly 32 bytes.
+  if [[ "$GRAFFITI" == 0x* || "$GRAFFITI" == 0X* ]]; then
+    graffiti_hex="${GRAFFITI:2}"
+    if [[ ! "$graffiti_hex" =~ ^[0-9a-fA-F]*$ ]]; then
+      echo "error: GRAFFITI is 0x-prefixed but contains non-hex characters" >&2
+      exit 1
+    fi
+    if (( ${#graffiti_hex} % 2 != 0 )); then
+      echo "error: GRAFFITI hex value must have an even number of digits" >&2
+      exit 1
+    fi
+  else
+    graffiti_hex="$(printf '%s' "$GRAFFITI" | xxd -p -c 256 | tr -d '\n')"
+  fi
+  if (( ${#graffiti_hex} > 64 )); then
+    echo "error: GRAFFITI is $(( ${#graffiti_hex} / 2 )) bytes; maximum is 32 (bytes32)" >&2
+    exit 1
+  fi
+  # Right-pad with zeros to 32 bytes (64 hex chars).
+  pad=$(( 64 - ${#graffiti_hex} ))
+  if (( pad > 0 )); then
+    printf -v zeros '%*s' "$pad" ''
+    graffiti_hex="${graffiti_hex}${zeros// /0}"
+  fi
+  graffiti_value="0x${graffiti_hex}"
+  extra_args+=(--data-urlencode "graffiti=${graffiti_value}")
+  echo "graffiti:       ${GRAFFITI} -> ${graffiti_value}" >&2
 fi
 
 response="$(curl -sS -G "${BEACON_URL}/eth/v4/validator/blocks/${next_slot}" \
   --data-urlencode "randao_reveal=${randao_reveal}" \
   --data-urlencode "skip_randao_verification=" \
-  "${include_payload_args[@]}" \
+  "${extra_args[@]}" \
   -w $'\n%{http_code}')"
 
 http_code="${response##*$'\n'}"
