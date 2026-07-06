@@ -109,6 +109,30 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
   }
 
   @Test
+  public void shouldBanBuilderWhenConsecutiveFaultStreakSpansMultipleInspections() {
+    final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(8, 6, 3);
+    final BLSPublicKey builderPubkey = dataStructureUtil.randomPublicKey();
+    setAncestor(circuitBreaker, 6, availablePayload(), builderIndex.intValue());
+    setAncestor(circuitBreaker, 7, unavailablePayload(), builderIndex.intValue());
+    setAncestor(circuitBreaker, 8, unavailablePayload(), builderIndex.intValue());
+    setAncestor(circuitBreaker, 9, unavailablePayload(), builderIndex.intValue());
+
+    assertThat(
+            circuitBreaker.isEngaged(parentRoot, stateAtSlotWithBuilderPubkey(10, builderPubkey)))
+        .isFalse();
+    assertThat(
+            circuitBreaker.isBuilderAllowed(
+                builderIndex, stateAtSlotWithBuilderPubkey(10, builderPubkey)))
+        .isTrue();
+
+    setAncestor(circuitBreaker, 10, unavailablePayload(), builderIndex.intValue());
+
+    final BeaconState state = stateAtSlotWithBuilderPubkey(11, builderPubkey);
+    assertThat(circuitBreaker.isEngaged(parentRoot, state)).isFalse();
+    assertThat(circuitBreaker.isBuilderAllowed(builderIndex, state)).isFalse();
+  }
+
+  @Test
   public void shouldNotCountSkippedConsensusSlotsAsPayloadFaults() {
     final GloasExecutionPayloadBidCircuitBreaker circuitBreaker = createCircuitBreaker(4, 0, 0);
     final Bytes32 blockAtSlot7 = availablePayload();
