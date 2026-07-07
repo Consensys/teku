@@ -50,33 +50,28 @@ public class TekuConfigurationTest {
   }
 
   @Test
-  void shouldConfigureExecutionPayloadBidCircuitBreakerFactoryFromExecutionPayloadConfig() {
-    final TekuConfiguration legacyBuilderCircuitBreakerDisabledConfig =
+  void shouldConfigureExecutionPayloadBidCircuitBreakerFactoryFromBuilderCircuitBreakerConfig() {
+    final TekuConfiguration builderCircuitBreakerDisabledConfig =
         TekuConfiguration.builder()
             .executionLayer(builder -> builder.isBuilderCircuitBreakerEnabled(false))
             .build();
-    final ExecutionPayloadBidCircuitBreaker circuitBreakerWithLegacyBuilderCircuitBreakerDisabled =
-        legacyBuilderCircuitBreakerDisabledConfig
-            .beaconChain()
-            .executionPayloadBidCircuitBreakerFactory()
-            .create(Optional::empty);
-
-    assertThat(
-            circuitBreakerWithLegacyBuilderCircuitBreakerDisabled.isEngaged(
-                Bytes32.ZERO, stateAtSlot(10)))
-        .isTrue();
-
-    final TekuConfiguration executionPayloadCircuitBreakerDisabledConfig =
-        TekuConfiguration.builder()
-            .executionLayer(builder -> builder.isExecutionPayloadCircuitBreakerEnabled(false))
-            .build();
     final ExecutionPayloadBidCircuitBreaker disabledCircuitBreaker =
-        executionPayloadCircuitBreakerDisabledConfig
+        builderCircuitBreakerDisabledConfig
             .beaconChain()
             .executionPayloadBidCircuitBreakerFactory()
             .create(Optional::empty);
 
     assertThat(disabledCircuitBreaker.isEngaged(Bytes32.ZERO, stateAtSlot(10))).isFalse();
+
+    final TekuConfiguration builderCircuitBreakerEnabledConfig =
+        TekuConfiguration.builder().build();
+    final ExecutionPayloadBidCircuitBreaker enabledCircuitBreaker =
+        builderCircuitBreakerEnabledConfig
+            .beaconChain()
+            .executionPayloadBidCircuitBreakerFactory()
+            .create(Optional::empty);
+
+    assertThat(enabledCircuitBreaker.isEngaged(Bytes32.ZERO, stateAtSlot(10))).isTrue();
   }
 
   @Test
