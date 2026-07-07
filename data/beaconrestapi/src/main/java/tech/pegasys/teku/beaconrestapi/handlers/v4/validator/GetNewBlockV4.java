@@ -176,10 +176,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         .withField("version", MILESTONE_TYPE, BlockContainerAndMetaData::specMilestone)
         .withField(
             CONSENSUS_BLOCK_VALUE, UINT256_TYPE, BlockContainerAndMetaData::consensusBlockValue)
-        .withOptionalField(
-            INCLUDE_EXECUTION_PAYLOAD,
-            BOOLEAN_TYPE,
-            (b) -> Optional.of(false))
+        .withOptionalField(INCLUDE_EXECUTION_PAYLOAD, BOOLEAN_TYPE, (b) -> Optional.of(false))
         .withField("data", blockContainerType, BlockContainerAndMetaData::blockContainer)
         .build();
   }
