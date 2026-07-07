@@ -54,6 +54,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
@@ -109,7 +110,7 @@ public class BlockGossipValidatorTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             mock(MergeTransitionBlockValidator.class),
-            false,
+            FastConfirmationTracker.NOOP,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             LateBlockReorgPreparationHandler.NOOP,
             mock(DebugDataDumper.class),

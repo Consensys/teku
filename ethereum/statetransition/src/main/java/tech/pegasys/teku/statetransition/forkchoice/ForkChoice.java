@@ -147,7 +147,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean fastConfirmationEnabled,
+      final FastConfirmationTracker fastConfirmationTracker,
       final boolean forkChoiceLateBlockReorgEnabled,
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final DebugDataDumper debugDataDumper,
@@ -162,7 +162,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.attestationStateSelector =
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
-    this.fastConfirmationTracker = FastConfirmationTracker.create(fastConfirmationEnabled);
+    this.fastConfirmationTracker = fastConfirmationTracker;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
@@ -196,7 +196,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        false,
+        FastConfirmationTracker.NOOP,
         false,
         LateBlockReorgPreparationHandler.NOOP,
         DebugDataDumper.NOOP,
@@ -409,9 +409,31 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
     final UInt64 currentSlot = spec.getCurrentSlot(store);
     if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
-      applyDeferredAttestations(currentSlot).finishStackTrace();
+      final SafeFuture<Void> deferredAttestationsFuture = applyDeferredAttestations(currentSlot);
+      if (fastConfirmationTracker.isEnabled()) {
+        processFastConfirmationForSlot(currentSlot, deferredAttestationsFuture);
+      } else {
+        deferredAttestationsFuture.finishStackTrace();
+      }
     }
     performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
+  }
+
+  private void processFastConfirmationForSlot(
+      final UInt64 currentSlot, final SafeFuture<Void> deferredAttestationsFuture) {
+    deferredAttestationsFuture
+        // FCR variables are defined from the post-deferred-attestation head at slot start. This is
+        // an extra early-slot fork-choice calculation when FCR is enabled, before the usual
+        // attestation-due head update path.
+        .thenCompose(__ -> processHead(currentSlot))
+        .thenCompose(
+            maybeHead ->
+                maybeHead
+                    .map(
+                        head ->
+                            fastConfirmationTracker.onSlotHeadUpdated(currentSlot, head.getRoot()))
+                    .orElse(SafeFuture.COMPLETE))
+        .finish(error -> LOG.error("Fast confirmation update failed", error));
   }
 
   private void onStoreInitialized() {

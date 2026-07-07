@@ -16,9 +16,13 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -32,7 +36,7 @@ class FastConfirmationTrackerTest {
 
   @Test
   void shouldNotInitializeStoreWhenDisabled() {
-    final FastConfirmationTracker tracker = FastConfirmationTracker.create(false);
+    final FastConfirmationTracker tracker = FastConfirmationTracker.NOOP;
 
     tracker.initialize(store);
 
@@ -43,7 +47,7 @@ class FastConfirmationTrackerTest {
   @Test
   void shouldInitializeStoreFromFinalizedCheckpointWhenEnabled() {
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
-    final FastConfirmationTracker tracker = FastConfirmationTracker.create(true);
+    final FastConfirmationTracker tracker = FastConfirmationTracker.create(Optional.empty());
 
     tracker.initialize(store);
 
@@ -60,5 +64,34 @@ class FastConfirmationTrackerTest {
         .isEqualTo(finalizedCheckpoint);
     assertThat(fastConfirmationStore.previousSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
     assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
+  }
+
+  @Test
+  void shouldNotScheduleUpdateWhenDisabled() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final FastConfirmationTracker tracker = FastConfirmationTracker.NOOP;
+
+    final SafeFuture<Void> result = tracker.onSlotHeadUpdated(UInt64.valueOf(13), Bytes32.random());
+
+    assertThatSafeFuture(result).isCompleted();
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+  }
+
+  @Test
+  void shouldScheduleUpdateOnAsyncRunnerWhenEnabledAndInitialized() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(Optional.of(asyncRunner));
+    tracker.initialize(store);
+
+    final SafeFuture<Void> result = tracker.onSlotHeadUpdated(UInt64.valueOf(13), Bytes32.random());
+
+    assertThat(result).isNotDone();
+    assertThat(asyncRunner.countDelayedActions()).isOne();
+
+    asyncRunner.executeQueuedActions();
+
+    assertThatSafeFuture(result).isCompleted();
   }
 }
