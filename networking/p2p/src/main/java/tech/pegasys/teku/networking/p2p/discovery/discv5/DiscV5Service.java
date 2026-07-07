@@ -131,7 +131,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
     final NewAddressHandler maybeUpdateNodeRecordHandler = maybeUpdateNodeRecord(p2pConfig);
     this.bootnodes =
-        discoConfig.getBootnodes().stream().map(NodeRecordFactory.DEFAULT::fromEnr).toList();
+        discoConfig.getBootnodes().stream().flatMap(enr -> parseBootnode(enr).stream()).toList();
     final NodeRecordBuilder nodeRecordBuilder =
         new NodeRecordBuilder().signer(localNodeSigner).seq(seqNo);
     final List<String> advertisedIps = p2pConfig.getAdvertisedIps();
@@ -284,6 +284,16 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
     return foundNodes.stream().flatMap(nodeRecordToDiscoveryPeer(schemaDefinitions)).toList();
+  }
+
+  private static Optional<NodeRecord> parseBootnode(final String enr) {
+    try {
+      return Optional.of(NodeRecordFactory.DEFAULT.fromEnr(enr));
+    } catch (final RuntimeException e) {
+      // One malformed bootnode must not prevent startup or discard the others.
+      LOG.warn("Ignoring malformed bootnode ENR: {}", enr, e);
+      return Optional.empty();
+    }
   }
 
   private Function<NodeRecord, Stream<DiscoveryPeer>> nodeRecordToDiscoveryPeer(
