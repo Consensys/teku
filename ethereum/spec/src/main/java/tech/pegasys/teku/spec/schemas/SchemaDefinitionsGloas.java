@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_WITH_BLOBS_AND_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsAndExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
@@ -153,11 +151,6 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   @Override
   public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
     return getBeaconBlockSchema().castTypeToBlockContainer();
-  }
-
-  public BlockContentsWithBlobsAndExecutionPayloadEnvelopeSchema<?>
-      getBlockContentsWithBlobsAndExecutionEnvelopeSchema() {
-    return schemaRegistry.get(BLOCK_CONTENTS_WITH_BLOBS_AND_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
   }
 
   @Override

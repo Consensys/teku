@@ -25,12 +25,9 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_CON
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.blockContainerAndMetaDataSszResponseType;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_INCLUDE_PAYLOAD;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INCLUDE_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
@@ -43,13 +40,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -61,6 +58,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetNewBlockV4 extends RestApiEndpoint {
+  private static final Logger LOG = LoggerFactory.getLogger(GetNewBlockV4.class);
 
   public static final String ROUTE = "/eth/v4/validator/blocks/{slot}";
 
@@ -103,7 +101,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
-        .queryParam(GRAFFITI_PARAMETER)
+        .queryParamAllowsEmpty(GRAFFITI_PARAMETER)
         .queryParamAllowsEmpty(SKIP_RANDAO_VERIFICATION_PARAMETER)
         .queryParamAllowsEmpty(INCLUDE_PAYLOAD_PARAMETER)
         .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
@@ -115,6 +113,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
             getHeaders())
         .withChainDataResponses()
         .withNotAcceptableResponse()
+        .withNotImplementedResponse()
         .build();
   }
 
@@ -128,28 +127,39 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         request.getOptionalQueryParameter(INCLUDE_PAYLOAD_PARAMETER);
     final Optional<UInt64> requestedBuilderBoostFactor =
         request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
-    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
-        validatorDataProvider.produceBlock(slot, randao, graffiti, requestedBuilderBoostFactor);
-    request.respondAsync(
-        result.thenApply(
-            maybeBlock ->
-                maybeBlock
-                    .map(
-                        blockContainerAndMetaData -> {
-                          request.header(
-                              HEADER_CONSENSUS_VERSION,
-                              blockContainerAndMetaData.specMilestone().lowerCaseName());
-                          request.header(
-                              HEADER_CONSENSUS_BLOCK_VALUE,
-                              blockContainerAndMetaData.consensusBlockValue().toDecimalString());
-                          request.header(
-                              HEADER_INCLUDE_PAYLOAD, includePayload.orElse(false).toString());
-                          return AsyncApiResponse.respondOk(blockContainerAndMetaData);
-                        })
-                    .orElseGet(
-                        () ->
-                            AsyncApiResponse.respondWithError(
-                                SC_INTERNAL_SERVER_ERROR, "Unable to produce a block"))));
+    //    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
+    //        validatorDataProvider.produceBlock(slot, randao, graffiti,
+    // requestedBuilderBoostFactor);
+    LOG.debug(
+        "Parsed parameters: slot={}, randao={}, graffiti={}, include_payload={}, builder_boost_factor={}",
+        slot,
+        randao,
+        graffiti,
+        includePayload,
+        requestedBuilderBoostFactor);
+    //    request.respondAsync(
+    //        result.thenApply(
+    //            maybeBlock ->
+    //                maybeBlock
+    //                    .map(
+    //                        blockContainerAndMetaData -> {
+    //                          request.header(
+    //                              HEADER_CONSENSUS_VERSION,
+    //                              blockContainerAndMetaData.specMilestone().lowerCaseName());
+    //                          request.header(
+    //                              HEADER_CONSENSUS_BLOCK_VALUE,
+    //
+    // blockContainerAndMetaData.consensusBlockValue().toDecimalString());
+    //                          request.header(
+    //                              HEADER_INCLUDE_PAYLOAD,
+    // includePayload.orElse(false).toString());
+    //                          return AsyncApiResponse.respondOk(blockContainerAndMetaData);
+    //                        })
+    //                    .orElseGet(
+    //                        () ->
+    //                            AsyncApiResponse.respondWithError(
+    //                                SC_INTERNAL_SERVER_ERROR, "Unable to produce a block"))));
+    request.respondError(SC_NOT_IMPLEMENTED, ROUTE + " is not implemented");
   }
 
   private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(

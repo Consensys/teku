@@ -20,13 +20,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
  * Interface used to represent both {@link BeaconBlock}, all BlockContents[Milestone] and their
  * blinded variants: <a
- * href="https://github.com/ethereum/beacon-APIs/tree/master/types/gloas">beacon-APIs/types/gloas</a>
+ * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */
 public interface BlockContainer extends SszData, SszContainer {
 
@@ -45,10 +44,6 @@ public interface BlockContainer extends SszData, SszContainer {
   }
 
   default Optional<SszList<Blob>> getBlobs() {
-    return Optional.empty();
-  }
-
-  default Optional<ExecutionPayloadEnvelope> getExecutionPayloadEnvelope() {
     return Optional.empty();
   }
 
