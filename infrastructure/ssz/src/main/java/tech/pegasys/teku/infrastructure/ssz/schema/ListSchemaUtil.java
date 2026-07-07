@@ -14,9 +14,14 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.ProgressiveTreeUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 /**
@@ -46,5 +51,35 @@ public class ListSchemaUtil {
 
   public static TreeNode getVectorNode(final TreeNode listNode) {
     return listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+  }
+
+  /**
+   * Builds the backing tree of a packed progressive list — BranchNode(progressiveDataTree,
+   * lengthNode) — by splitting the packed data into 32-byte leaf chunks.
+   *
+   * @param length the element count stored in the length node (bits for bitlists, elements
+   *     otherwise), independent of {@code packedBytes} size
+   */
+  public static TreeNode createPackedProgressiveListTree(
+      final Bytes packedBytes, final int length) {
+    return createPackedProgressiveListTree(packedBytes, LeafNode::create, length);
+  }
+
+  /**
+   * Variant of {@link #createPackedProgressiveListTree(Bytes, int)} taking a chunk factory so
+   * element schemas can validate constrained encodings while creating each leaf.
+   */
+  public static TreeNode createPackedProgressiveListTree(
+      final Bytes packedBytes, final Function<Bytes, LeafNode> chunkFactory, final int length) {
+    final int size = packedBytes.size();
+    final List<LeafNode> chunks = new ArrayList<>(size / LeafNode.MAX_BYTE_SIZE + 1);
+    int offset = 0;
+    while (offset < size) {
+      final int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, size - offset);
+      chunks.add(chunkFactory.apply(packedBytes.slice(offset, chunkSize)));
+      offset += chunkSize;
+    }
+    return BranchNode.create(
+        ProgressiveTreeUtil.createProgressiveTree(chunks), toLengthNode(length));
   }
 }

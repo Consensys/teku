@@ -15,13 +15,13 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.createPackedProgressiveListTree;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengthNode;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
@@ -241,19 +241,7 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
 
     final int length = sszGetLengthAndValidate(bytes);
     final Bytes treeBytes = sszTruncateLeadingBit(bytes, length);
-
-    // Split into 32-byte leaf chunks
-    final List<LeafNode> chunks = new ArrayList<>();
-    int off = 0;
-    final int size = treeBytes.size();
-    while (off < size) {
-      final int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, size - off);
-      chunks.add(LeafNode.create(treeBytes.slice(off, chunkSize)));
-      off += LeafNode.MAX_BYTE_SIZE;
-    }
-
-    final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
-    return BranchNode.create(progressiveTree, toLengthNode(length));
+    return createPackedProgressiveListTree(treeBytes, length);
   }
 
   @Override
@@ -411,17 +399,7 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
     final int dataByteLen = bitsCeilToBytes(size);
     final byte[] paddedBytes =
         dataByteLen == 0 ? new byte[0] : Arrays.copyOf(bitSetBytes, dataByteLen);
-
-    final List<LeafNode> chunks = new ArrayList<>();
-    int off = 0;
-    while (off < paddedBytes.length) {
-      final int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, paddedBytes.length - off);
-      chunks.add(LeafNode.create(Bytes.wrap(paddedBytes, off, chunkSize)));
-      off += LeafNode.MAX_BYTE_SIZE;
-    }
-
-    final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
-    return BranchNode.create(progressiveTree, toLengthNode(size));
+    return createPackedProgressiveListTree(Bytes.wrap(paddedBytes), size);
   }
 
   private int chunksForBitCount(final int bitCount) {

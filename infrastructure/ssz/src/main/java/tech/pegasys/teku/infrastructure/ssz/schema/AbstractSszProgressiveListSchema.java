@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.createPackedProgressiveListTree;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengthNode;
@@ -283,16 +284,9 @@ public abstract class AbstractSszProgressiveListSchema<
     if (elementSchema instanceof final AbstractSszPrimitiveSchema<?, ?> primitiveElementSchema) {
       // Primitive packing: multiple values per 32-byte leaf. The element schema validates
       // constrained encodings per chunk (e.g., booleans must be 0 or 1)
-      int bytesRemain = bytesSize;
-      final List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
-      while (bytesRemain > 0) {
-        final int toRead = Math.min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
-        bytesRemain -= toRead;
-        childNodes.add(primitiveElementSchema.createNodeFromSszBytes(reader.read(toRead)));
-      }
       final int elementsCount = (int) (bytesSize * 8L / elementBitSize);
-      final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
-      return BranchNode.create(progressiveTree, toLengthNode(elementsCount));
+      return createPackedProgressiveListTree(
+          reader.read(bytesSize), primitiveElementSchema::createNodeFromSszBytes, elementsCount);
     } else {
       // Fixed-size composite elements: one per chunk
       final int elementsCount = bytesSize / elementSchema.getSszFixedPartSize();
