@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DataColumnSidecarArchiveReconstructorImpl
     implements DataColumnSidecarArchiveReconstructor, FinalizedCheckpointChannel {
@@ -251,18 +252,18 @@ public class DataColumnSidecarArchiveReconstructorImpl
     }
 
     final UInt64 slotEpoch = spec.computeEpochAtSlot(slot);
-    if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
-        chainDataClient.getStore(), slotEpoch)) {
+    final UpdatableStore store = chainDataClient.getStore();
+    if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(store, slotEpoch)) {
       return false;
     }
 
-    if (chainDataClient.getFinalizedBlockSlot().isEmpty()) {
+    final Optional<UInt64> maybeFinalizedSlot = chainDataClient.getFinalizedBlockSlot();
+    if (maybeFinalizedSlot.isEmpty()) {
       return false;
     }
 
-    final UInt64 finalizedEpoch =
-        spec.computeEpochAtSlot(chainDataClient.getFinalizedBlockSlot().get());
-    final UInt64 currentEpoch = spec.getCurrentEpoch(chainDataClient.getStore());
+    final UInt64 finalizedEpoch = spec.computeEpochAtSlot(maybeFinalizedSlot.get());
+    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
     return slotEpoch.isLessThan(
         finalizedEpoch.min(currentEpoch.minusMinZero(dataColumnSidecarExtensionRetentionEpochs)));
   }
