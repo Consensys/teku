@@ -174,8 +174,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
     if (sidecars.size() != halfColumns || proofs.size() != halfColumns) {
       return emptyResult();
     }
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
     for (int i = 0; i < halfColumns; i++) {
-      if (!sidecars.get(i).getIndex().equals(UInt64.valueOf(i))) {
+      final DataColumnSidecar sidecar = sidecars.get(i);
+      if (!sidecar.getSlotAndBlockRoot().equals(slotAndBlockRoot)
+          || !sidecar.getIndex().equals(UInt64.valueOf(i))) {
         return emptyResult();
       }
     }
@@ -189,7 +192,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
     final List<DataColumnSidecar> allDataColumnSidecars =
         dataColumnSidecarUtil.constructDataColumnSidecars(
             Optional.of(block.asHeader()),
-            block.getSlotAndBlockRoot(),
+            slotAndBlockRoot,
             Optional.of(dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
             dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
                 block.getMessage().getBody()),

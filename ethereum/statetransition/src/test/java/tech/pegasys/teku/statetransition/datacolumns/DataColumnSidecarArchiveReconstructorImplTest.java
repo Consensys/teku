@@ -113,6 +113,28 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
   }
 
   @TestTemplate
+  public void shouldReturnEmptyWhenFirstHalfSidecarsAreForDifferentBlockRoot() {
+    final UInt64 slot = UInt64.ONE;
+    final SignedBeaconBlock block = createBlockWithBlobs(slot);
+    final SignedBeaconBlock competingBlock = createBlockWithBlobs(slot);
+    final List<DataColumnSidecar> firstHalfSidecars = createFirstHalfSidecars(competingBlock);
+    final List<List<KZGProof>> secondHalfProofs = createSecondHalfProofs(block);
+
+    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
+        .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
+    when(chainDataClient.getDataColumnSidecarProofs(any()))
+        .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
+
+    final int requestId = reconstructor.onRequest();
+    final Optional<DataColumnSidecar> result =
+        reconstructor
+            .reconstructDataColumnSidecar(block, UInt64.valueOf(halfColumns), requestId)
+            .join();
+
+    assertThat(result).isEmpty();
+  }
+
+  @TestTemplate
   public void shouldReconstructSecondHalfSidecars() {
     final Spec spiedSpec = spy(spec);
     final DataColumnSidecarUtil mockUtil = mock(DataColumnSidecarUtil.class);
