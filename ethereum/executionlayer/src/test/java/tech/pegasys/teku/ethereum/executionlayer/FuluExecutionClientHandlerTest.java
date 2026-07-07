@@ -92,7 +92,7 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
     final BlobSchema blobSchema = schemaDefinitionFulu.getBlobSchema();
     final GetPayloadResponse expectedGetPayloadResponse =
         responseData.asInternalGetPayloadResponse(
-            executionPayloadSchema, blobSchema, schemaDefinitionFulu.getExecutionRequestsSchema());
+            executionPayloadSchema, blobSchema, spec.getExecutionRequestsDataCodec(slot));
     assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 

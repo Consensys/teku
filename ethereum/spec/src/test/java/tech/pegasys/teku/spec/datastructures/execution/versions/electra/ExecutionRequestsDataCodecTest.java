@@ -27,16 +27,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 
 class ExecutionRequestsDataCodecTest {
 
   private final Spec spec = TestSpecFactory.createMinimalElectra();
-  private final ExecutionRequestsSchema executionRequestsSchema =
-      spec.forMilestone(SpecMilestone.ELECTRA)
-          .getSchemaDefinitions()
-          .toVersionElectra()
-          .orElseThrow()
-          .getExecutionRequestsSchema();
+  private final ExecutionRequestsSchemaElectra executionRequestsSchema =
+      (ExecutionRequestsSchemaElectra)
+          spec.forMilestone(SpecMilestone.ELECTRA)
+              .getSchemaDefinitions()
+              .toVersionElectra()
+              .orElseThrow()
+              .getExecutionRequestsSchema();
   private final ExecutionRequestsDataCodec codec =
       new ExecutionRequestsDataCodec(executionRequestsSchema);
 

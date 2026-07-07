@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.10
+version: v1.7.0-alpha.11
 style: full
 
 specrefs:
@@ -260,22 +260,15 @@ specrefs:
 
       # Not implemented: gloas
       - get_proposer_dependent_root#gloas
-
-      # Redesign fork choice abstractions https://github.com/Consensys/teku/issues/10773
-      - get_supported_node#phase0
-      - get_supported_node#gloas
-      - is_ancestor#phase0
-      - is_ancestor#gloas
+      - get_proposer_head#gloas
 
       # Not implemented: heze
       - get_forkchoice_store#heze
-      - get_inclusion_list_bits#heze
       - get_inclusion_list_committee#heze
       - get_inclusion_list_committee_assignment#heze
       - get_inclusion_list_signature#heze
       - get_inclusion_list_store#heze
       - get_inclusion_list_transactions#heze
-      - is_inclusion_list_bits_inclusive#heze
       - is_payload_inclusion_list_satisfied#heze
       - is_valid_inclusion_list_signature#heze
       - on_execution_payload_envelope#heze

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package teku.pegasys.teku.services.bootnode;
+package tech.pegasys.teku.services.bootnode;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -80,6 +80,7 @@ public class BootnodeService extends Service {
             kvStore,
             Bytes.wrap(privateKeyProvider.get().raw()),
             currentSchemaDefinitionsSupplier,
+            eth2NetworkConfiguration.getSpec().getNumberOfCustodyGroups(),
             DiscV5Service.createDefaultDiscoverySystemBuilder(),
             DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER);
 

@@ -116,19 +116,17 @@ public class P2POptions {
   private boolean p2pTcpEnabled = NetworkConfig.DEFAULT_TCP_ENABLED;
 
   @Option(
-      names = {"--Xp2p-quic-port"},
+      names = {"--p2p-quic-port"},
       paramLabel = "<INTEGER>",
       description = "P2P QUIC port",
-      hidden = true,
       arity = "1")
   private Integer p2pQuicPort = NetworkConfig.DEFAULT_P2P_QUIC_PORT;
 
   @Option(
-      names = {"--Xp2p-quic-port-ipv6"},
+      names = {"--p2p-quic-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
           "P2P IPv6 QUIC port. This port is only used when listening over both IPv4 and IPv6.",
-      hidden = true,
       arity = "1")
   private int p2pQuicPortIpv6 = NetworkConfig.DEFAULT_P2P_QUIC_PORT_IPV6;
 
@@ -203,22 +201,20 @@ public class P2POptions {
   private Integer p2pAdvertisedUdpPortIpv6;
 
   @Option(
-      names = {"--Xp2p-advertised-quic-port"},
+      names = {"--p2p-advertised-quic-port"},
       paramLabel = "<INTEGER>",
       description =
           "P2P advertised QUIC port. The default is the port specified in --p2p-quic-port",
-      hidden = true,
       arity = "1")
   private Integer p2pAdvertisedQuicPort;
 
   @Option(
-      names = {"--Xp2p-advertised-quic-port-ipv6"},
+      names = {"--p2p-advertised-quic-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
           """
                       P2P advertised IPv6 QUIC port. This port is only used when advertising both IPv4 and IPv6 addresses.
                       The default is the port specified in --p2p-quic-port-ipv6.""",
-      hidden = true,
       arity = "1")
   private Integer p2pAdvertisedQuicPortIpv6;
 
@@ -277,7 +273,7 @@ public class P2POptions {
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
       paramLabel = "<INTEGER>",
       description =
-          "Number of peers that should be selected randomly (default 20%% of lower-bound target)",
+          "Number of peers that should be selected randomly (default 30%% of lower-bound target)",
       arity = "1",
       hidden = true)
   private Integer minimumRandomlySelectedPeerCount;
@@ -498,6 +494,17 @@ public class P2POptions {
       arity = "0..1",
       fallbackValue = "true")
   private boolean gossipBlobsAfterBlockEnabled = P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
+
+  @Option(
+      names = {"--Xp2p-gossip-snappy-aircompressor-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Use aircompressor-v3 for gossip snappy encoding and decoding",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean gossipSnappyAircompressorEnabled =
+      P2PConfig.DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED;
 
   @Option(
       names = {"--Xpeer-all-topics-filter-enabled"},
@@ -765,6 +772,7 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
+                  .gossipSnappyAircompressorEnabled(gossipSnappyAircompressorEnabled)
                   .custodyGroupCountOverride(custodyGroupCountOverride)
                   .dasPublishWithholdColumnsEverySlots(dasPublishWithholdColumnsEverySlots)
                   .dasDisableElRecovery(dasDisableElRecovery)

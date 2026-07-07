@@ -40,8 +40,7 @@ public class BootnodeModeAcceptanceTest extends AcceptanceTestBase {
 
     // The secp256k1 public key portion of the ENR is deterministic for a fixed private key,
     // while the rest (IP, signature) can vary with the container's network environment.
-    final String expectedPubKeyEncoding =
-        "c2VjcDI1NmsxoQLAvwqYDpQL10o51b3KEd9fKM5DOOkZ8O8mpPugtCmKWI";
+    final String expectedPubKeyEncoding = "AsC_CpgOlAvXSjnVvcoR318ozkM46Rnw7yak-6C0KYpY";
 
     bootnode.start();
     bootnode.waitForDiscoveryStarted();

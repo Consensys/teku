@@ -47,6 +47,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.peer.Transport;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class PeerManagerTest {
@@ -93,7 +94,11 @@ public class PeerManagerTest {
             eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), eq("client")))
         .thenReturn(peerClientLabelledGauge);
     when(metricsSystem.createLabelledSuppliedGauge(
-            eq(TekuMetricCategory.LIBP2P), eq("peers_direction_current"), any(), eq("direction")))
+            eq(TekuMetricCategory.LIBP2P),
+            eq("peers_direction_current"),
+            any(),
+            eq("direction"),
+            eq("transport")))
         .thenReturn(peerDirectionLabelledGauge);
     new PeerManager(
         metricsSystem,
@@ -105,8 +110,10 @@ public class PeerManagerTest {
     for (PeerClientType type : PeerClientType.values()) {
       verify(peerClientLabelledGauge).labels(any(), eq(type.getDisplayName()));
     }
-    verify(peerDirectionLabelledGauge).labels(any(), eq("inbound"));
-    verify(peerDirectionLabelledGauge).labels(any(), eq("outbound"));
+    verify(peerDirectionLabelledGauge).labels(any(), eq("inbound"), eq("tcp"));
+    verify(peerDirectionLabelledGauge).labels(any(), eq("inbound"), eq("quic"));
+    verify(peerDirectionLabelledGauge).labels(any(), eq("outbound"), eq("tcp"));
+    verify(peerDirectionLabelledGauge).labels(any(), eq("outbound"), eq("quic"));
   }
 
   @Test
@@ -230,42 +237,57 @@ public class PeerManagerTest {
   }
 
   @Test
-  public void testPeerDirectionMetric() {
-    // Sanity check
-    validatePeerMetrics(0, 0);
+  public void testPeerDirectionAndTransportMetric() {
+    // Sanity check — all four series start at zero
+    validatePeerMetric("outbound", "tcp", 0);
+    validatePeerMetric("outbound", "quic", 0);
+    validatePeerMetric("inbound", "tcp", 0);
+    validatePeerMetric("inbound", "quic", 0);
 
-    // Add a peer
-    final Peer outboundPeer1 = createPeerWithDirection(1, true);
-    peerManager.onConnectedPeer(outboundPeer1);
-    validatePeerMetrics(1, 0);
+    final Peer outboundTcp = createPeer(1, true, Transport.TCP);
+    peerManager.onConnectedPeer(outboundTcp);
+    validatePeerMetric("outbound", "tcp", 1);
 
-    // Add another peer
-    final Peer inboundPeer1 = createPeerWithDirection(2, false);
-    peerManager.onConnectedPeer(inboundPeer1);
-    validatePeerMetrics(1, 1);
+    final Peer inboundQuic = createPeer(2, false, Transport.QUIC);
+    peerManager.onConnectedPeer(inboundQuic);
+    validatePeerMetric("inbound", "quic", 1);
 
-    // Disconnect a peer
-    peerManager.onDisconnectedPeer(outboundPeer1, Optional.empty(), true);
-    validatePeerMetrics(0, 1);
+    final Peer outboundQuic = createPeer(3, true, Transport.QUIC);
+    peerManager.onConnectedPeer(outboundQuic);
+    validatePeerMetric("outbound", "quic", 1);
 
-    // Add another peer
-    final Peer inboundPeer2 = createPeerWithDirection(3, false);
-    peerManager.onConnectedPeer(inboundPeer2);
-    validatePeerMetrics(0, 2);
+    final Peer inboundTcp = createPeer(4, false, Transport.TCP);
+    peerManager.onConnectedPeer(inboundTcp);
+    validatePeerMetric("inbound", "tcp", 1);
+
+    // Final state of every series
+    validatePeerMetric("outbound", "tcp", 1);
+    validatePeerMetric("outbound", "quic", 1);
+    validatePeerMetric("inbound", "tcp", 1);
+    validatePeerMetric("inbound", "quic", 1);
+
+    // Disconnect the outbound TCP peer
+    peerManager.onDisconnectedPeer(outboundTcp, Optional.empty(), true);
+    validatePeerMetric("outbound", "tcp", 0);
+
+    // Disconnect the inbound TCP peer
+    peerManager.onDisconnectedPeer(inboundTcp, Optional.empty(), true);
+    validatePeerMetric("inbound", "tcp", 0);
   }
 
-  private void validatePeerMetrics(final double expectedOutbound, final double expectedInbound) {
+  private void validatePeerMetric(
+      final String direction, final String transport, final double expected) {
     final StubLabelledGauge labelledGauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.LIBP2P, "peers_direction_current");
-    assertThat(labelledGauge.getValue("inbound")).hasValue(expectedInbound);
-    assertThat(labelledGauge.getValue("outbound")).hasValue(expectedOutbound);
+    assertThat(labelledGauge.getValue(direction, transport)).hasValue(expected);
   }
 
-  private Peer createPeerWithDirection(final int id, final boolean outbound) {
+  private Peer createPeer(final int id, final boolean outbound, final Transport transport) {
     final Peer peer = mock(Peer.class);
     when(peer.getId()).thenReturn(new MockNodeId(id));
     when(peer.connectionInitiatedLocally()).thenReturn(outbound);
     when(peer.connectionInitiatedRemotely()).thenReturn(!outbound);
+    when(peer.getTransport()).thenReturn(transport);
     return peer;
   }
 }

@@ -219,6 +219,22 @@ public class ExecutionPayloadBidGossipValidator {
               final BeaconState state = maybeState.get();
 
               /*
+               * [REJECT] bid.prev_randao is the correct RANDAO mix -- i.e. validate that
+               * bid.prev_randao == get_randao_mix(parent_state, get_current_epoch(parent_state)).
+               */
+              final Bytes32 expectedRandaoMix =
+                  gossipValidationHelper.getRandaoMixForCurrentEpoch(state, bid.getSlot());
+              if (!bid.getPrevRandao().equals(expectedRandaoMix)) {
+                LOG.trace(
+                    "Bid prev_randao {} does not match expected RANDAO mix {}",
+                    bid.getPrevRandao(),
+                    expectedRandaoMix);
+                return reject(
+                    "Bid prev_randao %s does not match expected RANDAO mix %s",
+                    bid.getPrevRandao(), expectedRandaoMix);
+              }
+
+              /*
                * [REJECT] bid.builder_index is a valid/active builder index -- i.e. is_active_builder(state, bid.builder_index) returns True
                */
               if (!gossipValidationHelper.isActiveBuilder(

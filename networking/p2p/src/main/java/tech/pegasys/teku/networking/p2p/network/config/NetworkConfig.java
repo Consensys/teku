@@ -52,7 +52,7 @@ public class NetworkConfig {
   public static final int DEFAULT_P2P_QUIC_PORT_IPV6 = 9091;
   public static final boolean DEFAULT_YAMUX_ENABLED = false;
   public static final boolean DEFAULT_STRICT_CONFIG_LOADING_ENABLED = false;
-  public static final boolean DEFAULT_QUIC_ENABLED = false;
+  public static final boolean DEFAULT_QUIC_ENABLED = true;
   public static final boolean DEFAULT_TCP_ENABLED = true;
 
   private final GossipConfig gossipConfig;
@@ -403,13 +403,13 @@ public class NetworkConfig {
     }
 
     public Builder listenQuicPort(final int listenQuicPort) {
-      validatePort(listenQuicPort, "--Xp2p-quic-port");
+      validatePort(listenQuicPort, "--p2p-quic-port");
       this.listenQuicPort = listenQuicPort;
       return this;
     }
 
     public Builder listenQuicPortIpv6(final int listenQuicPortIpv6) {
-      validatePort(listenQuicPortIpv6, "--Xp2p-quic-port-ipv6");
+      validatePort(listenQuicPortIpv6, "--p2p-quic-port-ipv6");
       this.listenQuicPortIpv6 = listenQuicPortIpv6;
       return this;
     }
@@ -430,7 +430,7 @@ public class NetworkConfig {
 
     public Builder advertisedQuicPort(final OptionalInt advertisedQuicPort) {
       checkNotNull(advertisedQuicPort);
-      advertisedQuicPort.ifPresent(port -> validatePort(port, "--Xp2p-advertised-quic-port"));
+      advertisedQuicPort.ifPresent(port -> validatePort(port, "--p2p-advertised-quic-port"));
       this.advertisedQuicPort = advertisedQuicPort;
       return this;
     }
@@ -438,7 +438,7 @@ public class NetworkConfig {
     public Builder advertisedQuicPortIpv6(final OptionalInt advertisedQuicPortIpv6) {
       checkNotNull(advertisedQuicPortIpv6);
       advertisedQuicPortIpv6.ifPresent(
-          port -> validatePort(port, "--Xp2p-advertised-quic-port-ipv6"));
+          port -> validatePort(port, "--p2p-advertised-quic-port-ipv6"));
       this.advertisedQuicPortIpv6 = advertisedQuicPortIpv6;
       return this;
     }

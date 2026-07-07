@@ -54,6 +54,7 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.fulu.ColumnCustodyAtSlot;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
+import tech.pegasys.teku.api.migrated.BuilderStatus;
 import tech.pegasys.teku.api.migrated.StateBuilderData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
@@ -72,18 +73,21 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -101,6 +105,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ProtoNode;
 
@@ -135,6 +140,63 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
                 spec.calculateBlockCheckpoints(bestBlock.getState()),
                 ZERO,
                 ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
+  }
+
+  @Test
+  public void getForkChoiceDataV2_shouldReturnGloasPayloadStatusAndPtcCounts() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Checkpoint justifiedCheckpoint =
+        new Checkpoint(UInt64.valueOf(1), Bytes32.fromHexString("0x1111"));
+    final Checkpoint finalizedCheckpoint =
+        new Checkpoint(UInt64.ZERO, Bytes32.fromHexString("0x2222"));
+    final Bytes32 blockRoot = Bytes32.fromHexString("0x3333");
+    final ProtoNodeData node =
+        new ProtoNodeData(
+            UInt64.ONE,
+            blockRoot,
+            Bytes32.fromHexString("0x4444"),
+            Bytes32.fromHexString("0x5555"),
+            UInt64.valueOf(42),
+            Bytes32.fromHexString("0x6666"),
+            ProtoNodeValidationStatus.OPTIMISTIC,
+            new BlockCheckpoints(
+                justifiedCheckpoint, finalizedCheckpoint, justifiedCheckpoint, finalizedCheckpoint),
+            UInt64.valueOf(64),
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            gloasSpec,
+            recentChainData,
+            chainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+    when(chainDataClient.isStoreAvailable()).thenReturn(true);
+    when(recentChainData.getJustifiedCheckpoint()).thenReturn(Optional.of(justifiedCheckpoint));
+    when(recentChainData.getFinalizedCheckpoint()).thenReturn(Optional.of(finalizedCheckpoint));
+    when(recentChainData.getForkChoiceStrategy()).thenReturn(Optional.of(forkChoiceStrategy));
+    when(forkChoiceStrategy.getBlockData()).thenReturn(List.of(node));
+    when(forkChoiceStrategy.getPayloadAttesterCount(blockRoot)).thenReturn(UInt64.valueOf(4));
+    when(forkChoiceStrategy.getPayloadAvailabilityYesCount(blockRoot))
+        .thenReturn(UInt64.valueOf(2));
+    when(forkChoiceStrategy.getPayloadDataAvailabilityYesCount(blockRoot))
+        .thenReturn(UInt64.valueOf(3));
+
+    final ForkChoiceDataV2 forkChoiceData = provider.getForkChoiceDataV2();
+
+    assertThat(forkChoiceData.getJustifiedCheckpoint()).isEqualTo(justifiedCheckpoint);
+    assertThat(forkChoiceData.getFinalizedCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(forkChoiceData.getNodes()).hasSize(1);
+    final ForkChoiceNodeDataV2 forkChoiceNode = forkChoiceData.getNodes().get(0);
+    assertThat(forkChoiceNode.getNode()).isEqualTo(node);
+    assertThat(forkChoiceNode.getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
+    assertThat(forkChoiceNode.getPayloadAttesterCount()).isEqualTo(UInt64.valueOf(4));
+    assertThat(forkChoiceNode.getPayloadAvailabilityYesCount()).isEqualTo(UInt64.valueOf(2));
+    assertThat(forkChoiceNode.getPayloadDataAvailabilityYesCount()).isEqualTo(UInt64.valueOf(3));
   }
 
   @Test
@@ -697,12 +759,15 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             mockBlobSidecarReconstructionProvider,
             mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(1024);
-    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
+    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList()).size())
+        .isEqualTo(1024);
 
     assertThat(
-            provider.getValidatorBalancesFromState(
-                internalState, List.of("0", "100", "1023", "1024", "1024000")))
-        .hasSize(3);
+            provider
+                .getValidatorBalancesFromState(
+                    internalState, List.of("0", "100", "1023", "1024", "1024000"))
+                .size())
+        .isEqualTo(3);
   }
 
   @Test
@@ -761,17 +826,12 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         createGloasStateWithBuilders(
             gloasData, UInt64.valueOf(3), pendingBuilder, activeBuilder, exitedBuilder);
 
-    final SszList<StateBuilderData> builders =
+    final List<StateBuilderData> builders =
         provider.getBuildersFromState(state, List.of(), List.of());
 
-    assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
+    assertThat(builders.stream().map(StateBuilderData::index).toList())
         .containsExactly(ZERO, ONE, UInt64.valueOf(2));
-    assertThat(builders.stream().map(StateBuilderData::getStatus).toList())
-        .containsExactly(
-            StateBuilderData.STATUS_PENDING,
-            StateBuilderData.STATUS_ACTIVE,
-            StateBuilderData.STATUS_EXITED);
-    assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
+    assertThat(builders.stream().map(StateBuilderData::builder).toList())
         .containsExactly(pendingBuilder, activeBuilder, exitedBuilder);
   }
 
@@ -806,17 +866,15 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         createGloasStateWithBuilders(
             gloasData, UInt64.valueOf(3), pendingBuilder, activeBuilder, exitedBuilder);
 
-    final SszList<StateBuilderData> builders =
+    final List<StateBuilderData> builders =
         provider.getBuildersFromState(
-            state,
-            List.of(),
-            List.of(StateBuilderData.STATUS_ACTIVE, StateBuilderData.STATUS_EXITED));
+            state, List.of(), List.of(BuilderStatus.ACTIVE, BuilderStatus.EXITED));
 
-    assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
+    assertThat(builders.stream().map(StateBuilderData::index).toList())
         .containsExactly(ONE, UInt64.valueOf(2));
-    assertThat(builders.stream().map(StateBuilderData::getStatus).toList())
-        .containsExactly(StateBuilderData.STATUS_ACTIVE, StateBuilderData.STATUS_EXITED);
-    assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
+    assertThat(builders.stream().map(StateBuilderData::builderStatus).toList())
+        .containsExactly(BuilderStatus.ACTIVE, BuilderStatus.EXITED);
+    assertThat(builders.stream().map(StateBuilderData::builder).toList())
         .containsExactly(activeBuilder, exitedBuilder);
   }
 
@@ -838,13 +896,13 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final BeaconStateGloas state =
         createGloasStateWithBuilders(gloasData, UInt64.valueOf(3), builder0, builder1, builder2);
 
-    final SszList<StateBuilderData> builders =
+    final List<StateBuilderData> builders =
         provider.getBuildersFromState(
             state, List.of("2", builder0.getPublicKey().toString(), "12345"), List.of());
 
-    assertThat(builders.stream().map(StateBuilderData::getIndex).toList())
+    assertThat(builders.stream().map(StateBuilderData::index).toList())
         .containsExactly(UInt64.valueOf(2), ZERO);
-    assertThat(builders.stream().map(StateBuilderData::getBuilder).toList())
+    assertThat(builders.stream().map(StateBuilderData::builder).toList())
         .containsExactly(builder2, builder0);
   }
 
@@ -867,26 +925,6 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             () -> provider.getBuildersFromState(state, List.of("not-a-builder"), List.of()))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid builder: not-a-builder");
-  }
-
-  @Test
-  public void getBuildersFromState_shouldRejectInvalidBuilderStatus() {
-    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
-    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
-    final ChainDataProvider provider =
-        new ChainDataProvider(
-            gloasSpec,
-            recentChainData,
-            combinedChainDataClient,
-            rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider,
-            mockBlobReconstructionProvider);
-    final BeaconStateGloas state =
-        createGloasStateWithBuilders(gloasData, UInt64.valueOf(3), gloasData.randomBuilder());
-
-    assertThatThrownBy(() -> provider.getBuildersFromState(state, List.of(), List.of(3)))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("Invalid builder status: 3");
   }
 
   @Test

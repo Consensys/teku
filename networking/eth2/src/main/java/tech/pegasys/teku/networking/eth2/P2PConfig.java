@@ -44,6 +44,7 @@ public class P2PConfig {
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
+  public static final boolean DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED = false;
   public static final boolean DEFAULT_DAS_DISABLE_EL_RECOVERY = false;
   public static final boolean DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED = true;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
@@ -93,6 +94,7 @@ public class P2PConfig {
   private final int batchVerifyMaxBatchSize;
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
+  private final boolean isGossipSnappyAircompressorEnabled;
   private final boolean allTopicsFilterEnabled;
   private final int sidecarRecoveryTimeout;
   private final int sidecarDownloadTimeout;
@@ -125,6 +127,7 @@ public class P2PConfig {
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
+      final boolean isGossipSnappyAircompressorEnabled,
       final int sidecarRecoveryTimeout,
       final int sidecarDownloadTimeout,
       final Integer sidecarSyncBatchSize,
@@ -155,6 +158,7 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
+    this.isGossipSnappyAircompressorEnabled = isGossipSnappyAircompressorEnabled;
     this.sidecarDownloadTimeout = sidecarDownloadTimeout;
     this.sidecarRecoveryTimeout = sidecarRecoveryTimeout;
     this.sidecarSyncBatchSize = sidecarSyncBatchSize;
@@ -265,6 +269,10 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
+  public boolean isGossipSnappyAircompressorEnabled() {
+    return isGossipSnappyAircompressorEnabled;
+  }
+
   public int getSidecarRecoveryTimeout() {
     return sidecarRecoveryTimeout;
   }
@@ -299,7 +307,7 @@ public class P2PConfig {
 
     private Spec spec;
     private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
-    private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private boolean gossipSnappyAircompressorEnabled = DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
@@ -340,6 +348,10 @@ public class P2PConfig {
           isGossipScoringEnabled
               ? GossipConfigurator.scoringEnabled(spec)
               : GossipConfigurator.NOOP;
+      final GossipEncoding gossipEncoding =
+          gossipSnappyAircompressorEnabled
+              ? GossipEncoding.SSZ_SNAPPY_AIRCOMPRESSOR
+              : GossipEncoding.SSZ_SNAPPY;
       final SpecConfig specConfig = spec.getGenesisSpecConfig();
       final Eth2Context eth2Context =
           Eth2Context.builder()
@@ -395,6 +407,7 @@ public class P2PConfig {
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
+          gossipSnappyAircompressorEnabled,
           sidecarRecoveryTimeout,
           sidecarDownloadTimeout,
           sidecarSyncBatchSize,
@@ -519,6 +532,12 @@ public class P2PConfig {
 
     public Builder gossipBlobsAfterBlockEnabled(final boolean gossipBlobsAfterBlockEnabled) {
       this.gossipBlobsAfterBlockEnabled = gossipBlobsAfterBlockEnabled;
+      return this;
+    }
+
+    public Builder gossipSnappyAircompressorEnabled(
+        final boolean gossipSnappyAircompressorEnabled) {
+      this.gossipSnappyAircompressorEnabled = gossipSnappyAircompressorEnabled;
       return this;
     }
 

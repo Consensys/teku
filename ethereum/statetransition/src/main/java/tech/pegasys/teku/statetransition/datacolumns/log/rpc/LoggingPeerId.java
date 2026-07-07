@@ -18,26 +18,32 @@ import org.apache.tuweni.units.bigints.UInt256;
 
 public class LoggingPeerId {
   public static LoggingPeerId fromNodeId(final UInt256 nodeId) {
-    return new LoggingPeerId(nodeId, Optional.empty());
+    return new LoggingPeerId(Optional.of(nodeId), Optional.empty());
   }
 
-  public static LoggingPeerId fromPeerAndNodeId(final String base58PeerId, final UInt256 nodeId) {
+  public static LoggingPeerId fromPeerAndMaybeNodeId(
+      final String base58PeerId, final Optional<UInt256> nodeId) {
     return new LoggingPeerId(nodeId, Optional.of(base58PeerId));
   }
 
-  private final UInt256 nodeId;
+  private final Optional<UInt256> nodeId;
   private final Optional<String> base58PeerId;
 
-  public LoggingPeerId(final UInt256 nodeId, final Optional<String> base58PeerId) {
+  public LoggingPeerId(final Optional<UInt256> nodeId, final Optional<String> base58PeerId) {
     this.nodeId = nodeId;
     this.base58PeerId = base58PeerId;
   }
 
   @Override
   public String toString() {
-    final String sNodeId = nodeId.toHexString();
-    final String sShortNodeId =
-        sNodeId.substring(0, 10) + "..." + sNodeId.substring(sNodeId.length() - 8);
-    return base58PeerId.map(s -> s + " (nodeId = " + sShortNodeId + ")").orElse(sShortNodeId);
+    final Optional<String> shortNodeId =
+        nodeId.map(
+            id -> {
+              final String sNodeId = id.toHexString();
+              return sNodeId.substring(0, 10) + "..." + sNodeId.substring(sNodeId.length() - 8);
+            });
+    return base58PeerId
+        .map(peerId -> shortNodeId.map(s -> peerId + " (nodeId = " + s + ")").orElse(peerId))
+        .orElseGet(() -> shortNodeId.orElse("unknown"));
   }
 }

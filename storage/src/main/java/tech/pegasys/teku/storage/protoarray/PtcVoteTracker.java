@@ -66,6 +66,11 @@ class PtcVoteTracker {
     return getPayloadPresentVoteCount(blockRoot, true);
   }
 
+  int getPayloadVoteCount(final Bytes32 blockRoot) {
+    final VotesPerPtcPosition votes = votesByRoot.get(blockRoot);
+    return votes != null ? votes.payload.size() : 0;
+  }
+
   int getPayloadPresentVoteCount(final Bytes32 blockRoot, final boolean payloadPresent) {
     return countVotes(votesByRoot.get(blockRoot), VotesPerPtcPosition::payload, payloadPresent);
   }

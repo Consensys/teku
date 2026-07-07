@@ -418,6 +418,7 @@ public class Eth2P2PNetworkFactory {
                                 NodeIdToDataColumnSidecarSubnetsCalculator.create(
                                     spec, currentSlotSupplier),
                                 gossipNetwork,
+                                eth2PeerManager,
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,
                                 syncCommitteeSubnetService,
@@ -647,14 +648,16 @@ public class Eth2P2PNetworkFactory {
           peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
 
       final Random random = new Random();
-      final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      final int tcpPort = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT - 1);
+      final int quicPort = tcpPort + 1;
 
       return P2PConfig.builder()
           .specProvider(spec)
           .targetSubnetSubscriberCount(2)
           .network(
               b ->
-                  b.listenPort(port)
+                  b.listenPort(tcpPort)
+                      .listenQuicPort(quicPort)
                       .networkInterface("127.0.0.1")
                       .wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(

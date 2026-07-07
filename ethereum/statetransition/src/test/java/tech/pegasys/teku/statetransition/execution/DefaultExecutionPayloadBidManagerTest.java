@@ -36,8 +36,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -79,7 +79,8 @@ public class DefaultExecutionPayloadBidManagerTest {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(state.getSlot()).getSchemaDefinitions());
 
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests =
+        dataStructureUtil.randomExecutionRequests(state.getSlot());
 
     final GetPayloadResponse getPayloadResponse =
         new GetPayloadResponse(
@@ -159,7 +160,8 @@ public class DefaultExecutionPayloadBidManagerTest {
     final ExecutionPayload executionPayload =
         dataStructureUtil.randomExecutionPayload(state.getSlot());
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final ExecutionRequests executionRequests =
+        dataStructureUtil.randomExecutionRequests(state.getSlot());
 
     final GetPayloadResponse getPayloadResponse =
         new GetPayloadResponse(
@@ -414,7 +416,7 @@ public class DefaultExecutionPayloadBidManagerTest {
         UInt256.valueOf(1000000000000L),
         dataStructureUtil.randomBlobsBundle(3),
         false,
-        dataStructureUtil.randomExecutionRequests());
+        dataStructureUtil.randomExecutionRequests(slot));
   }
 
   private SignedExecutionPayloadBid createBid(

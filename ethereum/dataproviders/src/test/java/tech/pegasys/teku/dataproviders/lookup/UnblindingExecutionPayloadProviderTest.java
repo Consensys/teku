@@ -128,7 +128,7 @@ class UnblindingExecutionPayloadProviderTest {
                     .getExecutionPayloadEnvelopeSchema()
                     .create(
                         executionPayload,
-                        dataStructureUtil.randomExecutionRequests(),
+                        dataStructureUtil.randomExecutionRequests(slot),
                         dataStructureUtil.randomBuilderIndex(),
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32()),

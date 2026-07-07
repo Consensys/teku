@@ -22,6 +22,7 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Multihash;
+import io.libp2p.core.multiformats.Protocol;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.IdentifyController;
 import io.netty.buffer.ByteBufUtil;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.peer.Transport;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
@@ -63,6 +65,7 @@ public class LibP2PPeer implements Peer {
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
+  private final Transport transport;
   private final PeerId peerId;
   private final PubKey pubKey;
   private volatile PeerClientType peerClientType = PeerClientType.UNKNOWN;
@@ -100,6 +103,7 @@ public class LibP2PPeer implements Peer {
     final NodeId nodeId = new LibP2PNodeId(peerId);
     final Multiaddr remoteAddress = connection.remoteAddress();
     peerAddress = new MultiaddrPeerAddress(nodeId, remoteAddress);
+    this.transport = transportFromMultiaddr(remoteAddress);
     if (remoteAddress != null) {
       LOG.debug("Connected to peer {} via {}", nodeId, remoteAddress);
     }
@@ -156,6 +160,19 @@ public class LibP2PPeer implements Peer {
     }
   }
 
+  private static Transport transportFromMultiaddr(final Multiaddr multiaddr) {
+    if (multiaddr == null) {
+      return Transport.UNKNOWN;
+    }
+    if (multiaddr.hasAny(Protocol.QUICV1, Protocol.QUIC)) {
+      return Transport.QUIC;
+    }
+    if (multiaddr.has(Protocol.TCP)) {
+      return Transport.TCP;
+    }
+    return Transport.UNKNOWN;
+  }
+
   @Override
   public PeerAddress getAddress() {
     return peerAddress;
@@ -167,6 +184,11 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public Optional<String> getAgentVersion() {
+    return maybeAgentString;
+  }
+
+  @Override
   public boolean isConnected() {
     return connected.get();
   }
@@ -174,6 +196,11 @@ public class LibP2PPeer implements Peer {
   @Override
   public PeerClientType getPeerClientType() {
     return peerClientType;
+  }
+
+  @Override
+  public Transport getTransport() {
+    return transport;
   }
 
   @Override

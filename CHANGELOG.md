@@ -8,11 +8,9 @@
 
 ### Breaking Changes
 
- * Dropped Windows support. Teku is no longer built, tested, or distributed for Windows. The `gradlew.bat` wrapper, Windows CI job, and Windows-specific native dependencies (LevelDB JNI) have been removed.
-
 ### Additions and Improvements
+ - Added ssz output for validator balances api.
 
 ### Bug Fixes
-
-- Prevent RPC rate-limited peers from immediately reconnecting inbound.
-- Fixed missing `process_cpu_seconds_total` metric in the Docker images by adding the `jdk.management` module to the custom Java runtime.
+ - Updated Libp2p to remove handshake info message.
+ - Dual-stack P2P nodes can now bind IPv4 and IPv6 listeners to the same port.

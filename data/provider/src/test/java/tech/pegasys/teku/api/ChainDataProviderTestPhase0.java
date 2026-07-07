@@ -105,6 +105,27 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
   }
 
   @Test
+  public void getForkChoiceDataV2_shouldReturnFullPayloadStatusBeforeGloas() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(
+            spec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
+
+    final ForkChoiceDataV2 forkChoiceData = provider.getForkChoiceDataV2();
+
+    assertThat(forkChoiceData.getNodes()).isNotEmpty();
+    assertThat(forkChoiceData.getNodes())
+        .allSatisfy(
+            node ->
+                assertThat(node.getPayloadStatus())
+                    .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL));
+  }
+
+  @Test
   public void getGenesisTime_shouldThrowIfStoreNotAvailable() {
     final ChainDataProvider provider =
         new ChainDataProvider(
@@ -443,12 +464,15 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             mockBlobSidecarReconstructionProvider,
             mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(1024);
-    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
+    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList()).size())
+        .isEqualTo(1024);
 
     assertThat(
-            provider.getValidatorBalancesFromState(
-                internalState, List.of("0", "100", "1023", "1024", "1024000")))
-        .hasSize(3);
+            provider
+                .getValidatorBalancesFromState(
+                    internalState, List.of("0", "100", "1023", "1024", "1024000"))
+                .size())
+        .isEqualTo(3);
   }
 
   @Test

@@ -344,6 +344,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("p2p-enabled", true);
     configMap.put("p2p-discovery-enabled", true);
     configMap.put("p2p-port", P2P_PORT);
+    configMap.put("p2p-quic-port", P2P_PORT + 1);
     configMap.put("p2p-advertised-port", P2P_PORT);
     configMap.put("p2p-interface", "0.0.0.0");
     configMap.put("p2p-private-key-file", PRIVATE_KEY_FILE_PATH);

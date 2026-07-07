@@ -25,6 +25,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedDataColumnSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -57,6 +58,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
       final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
@@ -75,6 +77,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         blindedExecutionPayloadProvider,
         validatedBlockProvider,
         validatedBlobSidecarProvider,
+        validatedSlotProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
         storageUpdateChannel,
@@ -97,6 +100,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
       final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
@@ -113,6 +117,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storeConfig,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
+            validatedSlotProvider,
             executionPayloadProvider,
             blindedExecutionPayloadProvider,
             storageQueryChannel,
@@ -133,6 +138,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final RecentlyValidatedDataColumnSlotProvider validatedSlotProvider,
       final ExecutionPayloadProvider executionPayloadProvider,
       final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
@@ -149,6 +155,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storeConfig,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
+            validatedSlotProvider,
             executionPayloadProvider,
             blindedExecutionPayloadProvider,
             storageQueryChannel,

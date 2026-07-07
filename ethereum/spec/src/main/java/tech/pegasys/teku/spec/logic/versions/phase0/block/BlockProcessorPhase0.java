@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -173,7 +174,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock) {
+      final MutableBeaconState state, final SignedExecutionPayloadBid signedBid) {
     throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
   }
 

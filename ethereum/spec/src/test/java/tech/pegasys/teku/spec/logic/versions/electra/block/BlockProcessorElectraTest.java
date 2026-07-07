@@ -24,14 +24,12 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -43,7 +41,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDenebTest;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
@@ -162,7 +159,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .map(miscHelpers::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());
     final List<Bytes> expectedExecutionRequests =
-        getExecutionRequestsDataCodec().encode(blockBody.getExecutionRequests());
+        spec.getExecutionRequestsDataCodec(UInt64.ONE).encode(blockBody.getExecutionRequests());
 
     final NewPayloadRequest newPayloadRequest =
         spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
@@ -185,12 +182,5 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
   private BlockProcessorElectra getBlockProcessor(final BeaconState state) {
     return (BlockProcessorElectra) spec.getBlockProcessor(state.getSlot());
-  }
-
-  private ExecutionRequestsDataCodec getExecutionRequestsDataCodec() {
-    return new ExecutionRequestsDataCodec(
-        SchemaDefinitionsElectra.required(
-                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
-            .getExecutionRequestsSchema());
   }
 }

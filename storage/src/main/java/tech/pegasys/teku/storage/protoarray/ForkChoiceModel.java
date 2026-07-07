@@ -82,8 +82,12 @@ interface ForkChoiceModel {
     rebuildBlockNodesFromMetadata(protoArray, blockNodeIndex, block, optimisticallyProcessed);
   }
 
-  /** Resolves a latest-message vote onto a concrete node identity. */
-  Optional<ForkChoiceNode> resolveVoteNode(
+  /**
+   * Resolves a latest-message vote onto a concrete node identity.
+   *
+   * <p>Spec mapping: {@code get_supported_node(store, message)}.
+   */
+  Optional<ForkChoiceNode> getSupportedNode(
       Bytes32 voteRoot,
       UInt64 voteSlot,
       boolean payloadPresent,
@@ -165,6 +169,18 @@ interface ForkChoiceModel {
   Optional<Boolean> getPayloadTimelinessVote(Bytes32 blockRoot, int ptcPosition);
 
   Optional<Boolean> getPayloadDataAvailabilityVote(Bytes32 blockRoot, int ptcPosition);
+
+  default int getPayloadAttesterCount(final Bytes32 blockRoot) {
+    return 0;
+  }
+
+  default int getPayloadAvailabilityYesCount(final Bytes32 blockRoot) {
+    return 0;
+  }
+
+  default int getPayloadDataAvailabilityYesCount(final Bytes32 blockRoot) {
+    return 0;
+  }
 
   void onRemovedBlockRoot(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);

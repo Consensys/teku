@@ -362,7 +362,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
-  public Optional<ForkChoiceNode> resolveVoteNode(
+  public Optional<ForkChoiceNode> getSupportedNode(
       final Bytes32 voteRoot,
       final UInt64 voteSlot,
       final boolean payloadPresent,
@@ -746,6 +746,21 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   public Optional<Boolean> getPayloadDataAvailabilityVote(
       final Bytes32 blockRoot, final int ptcPosition) {
     return ptcVoteTracker.getDataAvailableVote(blockRoot, ptcPosition);
+  }
+
+  @Override
+  public int getPayloadAttesterCount(final Bytes32 blockRoot) {
+    return ptcVoteTracker.getPayloadVoteCount(blockRoot);
+  }
+
+  @Override
+  public int getPayloadAvailabilityYesCount(final Bytes32 blockRoot) {
+    return ptcVoteTracker.getPayloadPresentVoteCount(blockRoot);
+  }
+
+  @Override
+  public int getPayloadDataAvailabilityYesCount(final Bytes32 blockRoot) {
+    return ptcVoteTracker.getDataAvailableVoteCount(blockRoot);
   }
 
   @Override
