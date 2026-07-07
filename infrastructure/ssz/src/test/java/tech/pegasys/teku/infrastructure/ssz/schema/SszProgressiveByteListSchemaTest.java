@@ -17,8 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveList;
@@ -40,6 +43,20 @@ class SszProgressiveByteListSchemaTest {
     assertThat(byteList).isInstanceOf(SszProgressiveByteListImpl.class);
     assertThat(byteList.size()).isEqualTo(3);
     assertThat(byteList.getBytes()).isEqualTo(bytes);
+  }
+
+  // 97 bytes (4 chunks) fills progressive levels 0-1; 193 bytes (7 chunks) reaches level 2
+  @ParameterizedTest
+  @ValueSource(ints = {97, 193})
+  void fromBytes_shouldPreserveBytesAcrossMultipleChunks(final int size) {
+    final Bytes bytes = Bytes.of(IntStream.range(0, size).map(i -> (i * 17) & 0xFF).toArray());
+    final SszByteList byteList = SCHEMA.fromBytes(bytes);
+
+    assertThat(byteList).isInstanceOf(SszProgressiveByteListImpl.class);
+    assertThat(byteList.size()).isEqualTo(size);
+    assertThat(byteList.getBytes()).isEqualTo(bytes);
+    assertThat(SCHEMA.sszDeserialize(byteList.sszSerialize()).hashTreeRoot())
+        .isEqualTo(byteList.hashTreeRoot());
   }
 
   @Test

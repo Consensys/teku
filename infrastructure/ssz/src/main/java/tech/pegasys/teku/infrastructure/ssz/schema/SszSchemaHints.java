@@ -70,6 +70,23 @@ public class SszSchemaHints {
     }
   }
 
+  /**
+   * Hint for a List[ByteList[N], M] schema to back the list with a single
+   * tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode holding the serialized bytes,
+   * instead of a materialized tree. Requires the element schema to be a byte list schema.
+   */
+  public static final class SszPackedByteListsHint extends SszSchemaHint {
+    @Override
+    public boolean equals(final Object o) {
+      return o instanceof SszPackedByteListsHint;
+    }
+
+    @Override
+    public int hashCode() {
+      return SszPackedByteListsHint.class.hashCode();
+    }
+  }
+
   public static SszSchemaHints of(final SszSchemaHint... hints) {
     return new SszSchemaHints(Arrays.asList(hints));
   }
@@ -80,6 +97,10 @@ public class SszSchemaHints {
 
   public static SszSchemaHints sszSuperNode(final int superNodeDepth) {
     return of(new SszSuperNodeHint(superNodeDepth));
+  }
+
+  public static SszSchemaHints sszPackedByteLists() {
+    return of(new SszPackedByteListsHint());
   }
 
   private final List<SszSchemaHint> hints;

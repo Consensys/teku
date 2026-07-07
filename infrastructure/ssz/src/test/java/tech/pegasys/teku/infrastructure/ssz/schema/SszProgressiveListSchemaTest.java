@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.schema.TreeNodeAssert.assertThatTreeNode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszContainerImpl;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBoolean;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
@@ -129,6 +131,21 @@ public class SszProgressiveListSchemaTest {
     for (int i = 0; i < 10; i++) {
       assertThat(deserialized.get(i).get()).isEqualTo(UInt64.valueOf(i));
     }
+  }
+
+  @Test
+  void sszDeserialize_shouldValidateBooleanEncodingInEveryChunk() {
+    final SszProgressiveListSchema<SszBoolean> schema =
+        SszProgressiveListSchema.create(SszPrimitiveSchemas.BOOLEAN_SCHEMA);
+
+    final byte[] valid = new byte[40];
+    Arrays.fill(valid, (byte) 1);
+    assertThat(schema.sszDeserialize(Bytes.wrap(valid)).size()).isEqualTo(40);
+
+    final byte[] invalid = valid.clone();
+    invalid[35] = 2; // second 32-byte chunk
+    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.wrap(invalid)))
+        .isInstanceOf(SszDeserializeException.class);
   }
 
   @Test

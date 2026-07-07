@@ -54,15 +54,18 @@ public interface SszPrimitiveListSchema<
     if (elementSchema.equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBitlistSchema.create(maxLength);
     } else if (elementSchema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
-      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszUInt64ListSchema.create(maxLength);
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>)
+          SszUInt64ListSchema.create(maxLength, hints);
     } else if (elementSchema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)) {
-      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.create(maxLength);
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>)
+          SszByteListSchema.create(maxLength, hints);
     } else if (elementSchema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
-      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.createUInt8(maxLength);
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>)
+          SszByteListSchema.createUInt8(maxLength, hints);
     } else if (elementSchema.equals(SszPrimitiveSchemas.BOOLEAN_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBooleanListSchema.create(maxLength);
     } else {
-      return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);
+      return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength, hints);
     }
   }
 

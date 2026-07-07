@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.createPackedProgressiveListTree;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengthNode;
@@ -280,24 +281,12 @@ public abstract class AbstractSszProgressiveListSchema<
       }
     }
 
-    if (elementSchema instanceof AbstractSszPrimitiveSchema) {
-      // Primitive packing: multiple values per 32-byte leaf
-      final int bytesPerElement = elementBitSize / 8;
-      int bytesRemain = bytesSize;
-      final List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
-      while (bytesRemain > 0) {
-        final int toRead = Math.min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
-        bytesRemain -= toRead;
-        final Bytes bytes = reader.read(toRead);
-        // Validate each element within the chunk (e.g., booleans must be 0 or 1)
-        for (int offset = 0; offset < bytes.size(); offset += bytesPerElement) {
-          elementSchema.sszDeserialize(bytes.slice(offset, bytesPerElement));
-        }
-        childNodes.add(LeafNode.create(bytes));
-      }
+    if (elementSchema instanceof final AbstractSszPrimitiveSchema<?, ?> primitiveElementSchema) {
+      // Primitive packing: multiple values per 32-byte leaf. The element schema validates
+      // constrained encodings per chunk (e.g., booleans must be 0 or 1)
       final int elementsCount = (int) (bytesSize * 8L / elementBitSize);
-      final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
-      return BranchNode.create(progressiveTree, toLengthNode(elementsCount));
+      return createPackedProgressiveListTree(
+          reader.read(bytesSize), primitiveElementSchema::createNodeFromSszBytes, elementsCount);
     } else {
       // Fixed-size composite elements: one per chunk
       final int elementsCount = bytesSize / elementSchema.getSszFixedPartSize();
@@ -475,6 +464,10 @@ public abstract class AbstractSszProgressiveListSchema<
       elementSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, levelGIndex, levelSubtree);
     } else if (childDepth == 0) {
       // SuperNode covers entire level subtree
+      // NOTE: storing SszSuperNodes via storeLeafNode is unsound for payloads <= 32 bytes: stores
+      // assume a leaf's root equals rightPad(data) and skip persisting them (see
+      // KvStoreTreeNodeStore.storeLeafNode), which does not hold for computed-root data nodes.
+      // Left as-is: no production schema currently stores supernode-hinted structures.
       nodeStore.storeLeafNode(levelSubtree, levelGIndex);
     } else {
       final long lastUsefulGIndex =
