@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -222,6 +223,32 @@ class ForkChoiceTest {
       final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
       setBlobSidecarsAvailabilityResult(DataAndValidationResult.validResult(blobSidecars));
     }
+  }
+
+  @Test
+  void shouldNotInitializeFastConfirmationStoreWhenDisabled() {
+    assertThat(forkChoice.isFastConfirmationEnabled()).isFalse();
+    assertThat(forkChoice.getFastConfirmationStore()).isEmpty();
+  }
+
+  @Test
+  void shouldInitializeFastConfirmationStoreWhenEnabled() {
+    recreateForkChoice(true, LateBlockReorgPreparationHandler.NOOP);
+
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
+    final FastConfirmationStore fastConfirmationStore =
+        forkChoice.getFastConfirmationStore().orElseThrow();
+    assertThat(forkChoice.isFastConfirmationEnabled()).isTrue();
+    assertThat(fastConfirmationStore.store()).isSameAs(recentChainData.getStore());
+    assertThat(fastConfirmationStore.confirmedRoot()).isEqualTo(finalizedCheckpoint.getRoot());
+    assertThat(fastConfirmationStore.previousEpochObservedJustifiedCheckpoint())
+        .isEqualTo(finalizedCheckpoint);
+    assertThat(fastConfirmationStore.currentEpochObservedJustifiedCheckpoint())
+        .isEqualTo(finalizedCheckpoint);
+    assertThat(fastConfirmationStore.previousEpochGreatestUnrealizedCheckpoint())
+        .isEqualTo(finalizedCheckpoint);
+    assertThat(fastConfirmationStore.previousSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
   }
 
   @Test
@@ -1892,6 +1919,12 @@ class ForkChoiceTest {
 
   private void recreateForkChoice(
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
+    recreateForkChoice(false, lateBlockReorgPreparationHandler);
+  }
+
+  private void recreateForkChoice(
+      final boolean fastConfirmationEnabled,
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
     forkChoice =
         new ForkChoice(
             spec,
@@ -1901,7 +1934,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            false,
+            fastConfirmationEnabled,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             lateBlockReorgPreparationHandler,
             debugDataDumper,
