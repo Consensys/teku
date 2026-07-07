@@ -179,7 +179,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         .withOptionalField(
             INCLUDE_EXECUTION_PAYLOAD,
             BOOLEAN_TYPE,
-            (b) -> Optional.of(b.blockContainer().getExecutionPayloadEnvelope().isPresent()))
+            (b) -> Optional.of(false))
         .withField("data", blockContainerType, BlockContainerAndMetaData::blockContainer)
         .build();
   }
