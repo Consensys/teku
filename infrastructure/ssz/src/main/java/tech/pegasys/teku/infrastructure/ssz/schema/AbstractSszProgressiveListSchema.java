@@ -280,20 +280,15 @@ public abstract class AbstractSszProgressiveListSchema<
       }
     }
 
-    if (elementSchema instanceof AbstractSszPrimitiveSchema) {
-      // Primitive packing: multiple values per 32-byte leaf
-      final int bytesPerElement = elementBitSize / 8;
+    if (elementSchema instanceof final AbstractSszPrimitiveSchema<?, ?> primitiveElementSchema) {
+      // Primitive packing: multiple values per 32-byte leaf. The element schema validates
+      // constrained encodings per chunk (e.g., booleans must be 0 or 1)
       int bytesRemain = bytesSize;
       final List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
       while (bytesRemain > 0) {
         final int toRead = Math.min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
         bytesRemain -= toRead;
-        final Bytes bytes = reader.read(toRead);
-        // Validate each element within the chunk (e.g., booleans must be 0 or 1)
-        for (int offset = 0; offset < bytes.size(); offset += bytesPerElement) {
-          elementSchema.sszDeserialize(bytes.slice(offset, bytesPerElement));
-        }
-        childNodes.add(LeafNode.create(bytes));
+        childNodes.add(primitiveElementSchema.createNodeFromSszBytes(reader.read(toRead)));
       }
       final int elementsCount = (int) (bytesSize * 8L / elementBitSize);
       final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
