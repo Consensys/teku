@@ -62,6 +62,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
+  public static final boolean DEFAULT_FAST_CONFIRMATION_ENABLED = false;
+
   public static final boolean DEFAULT_QUARTZ_SCHEDULER_ENABLED = false;
 
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
@@ -150,6 +152,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean fastConfirmationEnabled;
   private final boolean prepareBlockProductionEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
@@ -192,6 +195,7 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean fastConfirmationEnabled,
       final boolean prepareBlockProductionEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
@@ -235,6 +239,7 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.fastConfirmationEnabled = fastConfirmationEnabled;
     this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
@@ -373,6 +378,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isFastConfirmationEnabled() {
+    return fastConfirmationEnabled;
+  }
+
   public boolean isPrepareBlockProductionEnabled() {
     return prepareBlockProductionEnabled;
   }
@@ -442,6 +451,7 @@ public class Eth2NetworkConfiguration {
         && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && fastConfirmationEnabled == that.fastConfirmationEnabled
         && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
@@ -507,6 +517,7 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
+        fastConfirmationEnabled,
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled,
@@ -548,6 +559,7 @@ public class Eth2NetworkConfiguration {
     private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean fastConfirmationEnabled = DEFAULT_FAST_CONFIRMATION_ENABLED;
     private boolean prepareBlockProductionEnabled = DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
@@ -658,6 +670,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
+          fastConfirmationEnabled,
           resolvePrepareBlockProductionAbility(prepareBlockProductionEnabled),
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
@@ -1305,6 +1318,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder forkChoiceLateBlockReorgEnabled(final boolean forkChoiceLateBlockReorgEnabled) {
       this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
+    }
+
+    public Builder fastConfirmationEnabled(final boolean fastConfirmationEnabled) {
+      this.fastConfirmationEnabled = fastConfirmationEnabled;
       return this;
     }
 

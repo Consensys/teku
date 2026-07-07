@@ -1643,6 +1643,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
+            beaconConfig.eth2NetworkConfig().isFastConfirmationEnabled(),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             (slot, blockRoot) ->
                 beaconAsyncRunner.runAsync(

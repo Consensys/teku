@@ -125,6 +125,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
+  private final boolean fastConfirmationEnabled;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
@@ -144,6 +145,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
+      final boolean fastConfirmationEnabled,
       final boolean forkChoiceLateBlockReorgEnabled,
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final DebugDataDumper debugDataDumper,
@@ -158,9 +160,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.attestationStateSelector =
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
+    this.fastConfirmationEnabled = fastConfirmationEnabled;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
+    LOG.debug("fastConfirmationEnabled is set to {}", fastConfirmationEnabled);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
     this.signatureVerifier = signatureVerifier;
@@ -190,6 +194,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
+        false,
         false,
         LateBlockReorgPreparationHandler.NOOP,
         DebugDataDumper.NOOP,
@@ -1294,6 +1299,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public UInt64 getLastProcessHeadSlot() {
     return lastProcessHeadSlot.get();
+  }
+
+  @VisibleForTesting
+  boolean isFastConfirmationEnabled() {
+    return fastConfirmationEnabled;
   }
 
   SafeFuture<ChainHead> prepareForBlockProduction(

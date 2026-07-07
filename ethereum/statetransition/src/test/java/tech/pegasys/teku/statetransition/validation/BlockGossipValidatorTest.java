@@ -109,6 +109,7 @@ public class BlockGossipValidatorTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             mock(MergeTransitionBlockValidator.class),
+            false,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             LateBlockReorgPreparationHandler.NOOP,
             mock(DebugDataDumper.class),
