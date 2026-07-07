@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.nio.ByteOrder;
+import java.util.OptionalLong;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszByteArrayWriter;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
@@ -75,4 +76,16 @@ public interface SszType {
   TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException;
 
   SszLengthBounds getSszLengthBounds();
+
+  default OptionalLong getNetworkSszLengthBytesUpperBound() {
+    return OptionalLong.empty();
+  }
+
+  default SszLengthBounds getNetworkSszLengthBounds() {
+    if (getNetworkSszLengthBytesUpperBound().isPresent()) {
+      throw new UnsupportedOperationException(
+          "Schemas with a network SSZ upper bound must override getNetworkSszLengthBounds()");
+    }
+    return getSszLengthBounds();
+  }
 }
