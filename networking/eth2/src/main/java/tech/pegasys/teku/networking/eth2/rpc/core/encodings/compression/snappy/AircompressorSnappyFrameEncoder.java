@@ -1,0 +1,37 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy;
+
+import io.airlift.compress.v3.snappy.SnappyCompressor;
+import io.netty.buffer.ByteBuf;
+
+/** Snappy framed encoder that uses aircompressor-v3 for raw snappy chunks. */
+public class AircompressorSnappyFrameEncoder extends SnappyFrameEncoder {
+
+  // Owned by a fresh frame encoder per RPC payload; this mutable codec is not shared.
+  private final SnappyCompressor compressor = SnappyCompressor.create();
+
+  @Override
+  protected void encodeCompressedChunk(
+      final ByteBuf input, final ByteBuf output, final int dataLength) {
+    final byte[] uncompressedData = new byte[dataLength];
+    input.getBytes(input.readerIndex(), uncompressedData);
+
+    final byte[] compressedData = new byte[compressor.maxCompressedLength(dataLength)];
+    final int compressedLength =
+        compressor.compress(
+            uncompressedData, 0, dataLength, compressedData, 0, compressedData.length);
+    output.writeBytes(compressedData, 0, compressedLength);
+  }
+}

@@ -21,7 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_O
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.migrated.BuilderStatus;
 import tech.pegasys.teku.api.migrated.StateBuilderData;
-import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateBuilderRequestBodyType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 
@@ -51,24 +50,22 @@ public class PostStateBuilders extends RestApiEndpoint {
   static final SerializableTypeDefinition<StateBuilderData> STATE_BUILDER_DATA_TYPE =
       SerializableTypeDefinition.<StateBuilderData>object()
           .name("BuilderResponse")
-          .withField("index", UINT64_TYPE, StateBuilderData::getIndex)
-          .withField("status", RAW_INTEGER_TYPE, StateBuilderData::getStatus)
+          .withField("index", UINT64_TYPE, StateBuilderData::index)
+          .withField("status", STRING_TYPE, StateBuilderData::getStatusName)
           .withField(
-              "builder", Builder.SSZ_SCHEMA.getJsonTypeDefinition(), StateBuilderData::getBuilder)
+              "builder", Builder.SSZ_SCHEMA.getJsonTypeDefinition(), StateBuilderData::builder)
           .build();
 
-  static final SerializableTypeDefinition<ObjectAndMetaData<SszList<StateBuilderData>>>
-      RESPONSE_TYPE =
-          SerializableTypeDefinition.<ObjectAndMetaData<SszList<StateBuilderData>>>object()
-              .name("GetStateBuildersResponse")
-              .withField(
-                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-              .withField(
-                  "data",
-                  SerializableTypeDefinition.listOf(STATE_BUILDER_DATA_TYPE),
-                  data -> data.getData().asList())
-              .build();
+  static final SerializableTypeDefinition<ObjectAndMetaData<List<StateBuilderData>>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<ObjectAndMetaData<List<StateBuilderData>>>object()
+          .name("GetStateBuildersResponse")
+          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+          .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
+          .withField(
+              "data",
+              SerializableTypeDefinition.listOf(STATE_BUILDER_DATA_TYPE),
+              ObjectAndMetaData::getData)
+          .build();
 
   public PostStateBuilders(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
@@ -84,9 +81,8 @@ public class PostStateBuilders extends RestApiEndpoint {
             .optionalRequestBody()
             .requestBodyType(STATE_BUILDER_REQUEST_TYPE)
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", RESPONSE_TYPE, EthereumTypes.sszResponseType())
+            .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
-            .withNotAcceptableResponse()
             .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -110,10 +106,10 @@ public class PostStateBuilders extends RestApiEndpoint {
 
     final List<String> builderIds =
         requestBody.map(StateBuilderRequestBodyType::getIds).orElse(List.of());
-    final List<Integer> builderStatuses =
+    final List<BuilderStatus> builderStatuses =
         requestBody.map(StateBuilderRequestBodyType::getStatuses).orElse(List.of());
 
-    final SafeFuture<Optional<ObjectAndMetaData<SszList<StateBuilderData>>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<List<StateBuilderData>>>> future =
         chainDataProvider.getStateBuilders(
             request.getPathParameter(PARAMETER_STATE_ID), builderIds, builderStatuses);
 

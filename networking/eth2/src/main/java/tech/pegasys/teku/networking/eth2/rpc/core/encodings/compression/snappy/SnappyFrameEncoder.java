@@ -17,7 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.s
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.compression.Snappy;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
@@ -29,7 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
  * <p>See <a href="https://github.com/google/snappy/blob/master/framing_format.txt">Snappy framing
  * format</a>.
  */
-public class SnappyFrameEncoder {
+public abstract class SnappyFrameEncoder {
   /**
    * The minimum amount that we'll consider actually attempting to compress. This value is preamble
    * + the minimum length our Snappy service will compress (instead of just emitting a literal).
@@ -44,7 +43,6 @@ public class SnappyFrameEncoder {
     (byte) 0xff, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59
   };
 
-  private final Snappy snappy = new Snappy();
   private boolean started;
 
   public Bytes encode(final Bytes in) {
@@ -85,13 +83,13 @@ public class SnappyFrameEncoder {
         if (dataLength > Short.MAX_VALUE) {
           ByteBuf slice = in.readSlice(Short.MAX_VALUE);
           calculateAndWriteChecksum(slice, out);
-          snappy.encode(slice, out, Short.MAX_VALUE);
+          encodeCompressedChunk(slice, out, Short.MAX_VALUE);
           setChunkLength(out, lengthIdx);
           dataLength -= Short.MAX_VALUE;
         } else {
           ByteBuf slice = in.readSlice(dataLength);
           calculateAndWriteChecksum(slice, out);
-          snappy.encode(slice, out, dataLength);
+          encodeCompressedChunk(slice, out, dataLength);
           setChunkLength(out, lengthIdx);
           break;
         }
@@ -136,4 +134,6 @@ public class SnappyFrameEncoder {
   private static void calculateAndWriteChecksum(final ByteBuf slice, final ByteBuf out) {
     out.writeIntLE(calculateChecksum(slice));
   }
+
+  protected abstract void encodeCompressedChunk(ByteBuf input, ByteBuf output, int dataLength);
 }

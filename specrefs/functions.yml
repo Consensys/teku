@@ -2981,7 +2981,7 @@
 
 - name: get_ancestor#gloas
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
       search: public Optional<ForkChoiceNode> getAncestorNode(
   spec: |
     <spec fn="get_ancestor" fork="gloas" hash="31a66ff1">
@@ -3276,7 +3276,7 @@
 - name: get_attestation_score#gloas
   sources:
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
-      search: public Optional<ForkChoiceNode> resolveVoteNode(
+      search: public Optional<ForkChoiceNode> getSupportedNode(
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ProtoArrayScoreCalculator.java
       search: private static void computeDelta(
   spec: |
@@ -6233,7 +6233,9 @@
     </spec>
 
 - name: get_supported_node#phase0
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelPhase0.java
+      search: public Optional<ForkChoiceNode> getSupportedNode(
   spec: |
     <spec fn="get_supported_node" fork="phase0" hash="21e3292d">
     def get_supported_node(
@@ -6247,7 +6249,9 @@
     </spec>
 
 - name: get_supported_node#gloas
-  sources: []
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
+      search: public Optional<ForkChoiceNode> getSupportedNode(
   spec: |
     <spec fn="get_supported_node" fork="gloas" hash="244f14f6">
     def get_supported_node(store: Store, message: LatestMessage) -> ForkChoiceNode:
@@ -7148,7 +7152,9 @@
     </spec>
 
 - name: is_ancestor#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public boolean isAncestor(
   spec: |
     <spec fn="is_ancestor" fork="phase0" hash="2878c47d">
     def is_ancestor(store: Store, node: ForkChoiceNode, ancestor: ForkChoiceNode) -> bool:
@@ -7156,7 +7162,9 @@
     </spec>
 
 - name: is_ancestor#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
+      search: public boolean isAncestor(
   spec: |
     <spec fn="is_ancestor" fork="gloas" hash="4df6a173">
     def is_ancestor(store: Store, node: ForkChoiceNode, ancestor: ForkChoiceNode) -> bool:
@@ -7510,7 +7518,9 @@
     </spec>
 
 - name: is_epoch_boundary#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public boolean isNotEpochBoundary(
   spec: |
     <spec fn="is_epoch_boundary" fork="phase0" hash="8900b82d">
     def is_epoch_boundary(slot: Slot) -> bool:
