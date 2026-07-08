@@ -14,12 +14,14 @@
 package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -36,6 +38,16 @@ class FastConfirmationTrackerTest {
   private final ReadOnlyStore store = mock(ReadOnlyStore.class);
   private final Checkpoint finalizedCheckpoint =
       new Checkpoint(UInt64.valueOf(12), Bytes32.random());
+
+  @BeforeEach
+  void setUp() {
+    // No source states available: get_latest_confirmed is skipped and the confirmed root is left
+    // unchanged, so these tests exercise only update_fast_confirmation_variables and the guard.
+    when(store.retrieveCheckpointState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(store.retrieveBlockState(any(Bytes32.class)))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+  }
 
   @Test
   void shouldNotInitializeStoreWhenDisabled() {

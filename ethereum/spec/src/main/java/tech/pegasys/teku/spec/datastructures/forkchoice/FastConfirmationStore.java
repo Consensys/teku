@@ -37,4 +37,15 @@ public record FastConfirmationStore(
         finalizedRoot,
         finalizedRoot);
   }
+
+  public FastConfirmationStore withConfirmedRoot(final Bytes32 confirmedRoot) {
+    return new FastConfirmationStore(
+        store,
+        confirmedRoot,
+        previousEpochObservedJustifiedCheckpoint,
+        currentEpochObservedJustifiedCheckpoint,
+        previousEpochGreatestUnrealizedCheckpoint,
+        previousSlotHead,
+        currentSlotHead);
+  }
 }

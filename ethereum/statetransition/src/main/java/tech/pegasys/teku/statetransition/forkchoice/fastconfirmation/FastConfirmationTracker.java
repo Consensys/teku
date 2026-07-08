@@ -157,13 +157,17 @@ public class FastConfirmationTracker {
             ? FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store)
             : store.getFinalizedCheckpoint();
 
-    final FastConfirmationStore updatedStore =
+    final FastConfirmationStore withUpdatedVariables =
         FastConfirmationRuleUtil.updateFastConfirmationVariables(
             currentStore,
             input.headRoot(),
             greatestUnrealizedJustifiedCheckpoint,
             currentSlotIsEpochStart,
             nextSlotIsEpochStart);
+
+    // on_fast_confirmation: fcr_store.confirmed_root = get_latest_confirmed(fcr_store).
+    final FastConfirmationStore updatedStore =
+        updateConfirmedRoot(withUpdatedVariables, input.slot(), currentSlotIsEpochStart);
     fastConfirmationStore.set(updatedStore);
     lastProcessedSlot.set(input.slot());
 
@@ -172,6 +176,28 @@ public class FastConfirmationTracker {
         input.slot(),
         input.headRoot(),
         updatedStore.confirmedRoot());
+  }
+
+  /**
+   * Runs {@code get_latest_confirmed} against the loaded source states. The state loads are
+   * composed concurrently and joined here; in practice the required states are cache-resident (the
+   * head state and the justified checkpoint state), so the join is effectively non-blocking, and
+   * the overall task is bounded by {@link #updateTimeout}. When a required state is unavailable the
+   * confirmed root is left unchanged for this slot.
+   */
+  private FastConfirmationStore updateConfirmedRoot(
+      final FastConfirmationStore fcrStore, final UInt64 slot, final boolean atEpochStart) {
+    final Optional<FastConfirmationStates> maybeStates =
+        FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart).join();
+    if (maybeStates.isEmpty()) {
+      LOG.debug(
+          "Skipping fast confirmation computation for slot {}: source states unavailable", slot);
+      return fcrStore;
+    }
+    final Bytes32 confirmedRoot =
+        new FastConfirmationCalculator(spec, fcrStore, maybeStates.get(), slot)
+            .getLatestConfirmed();
+    return fcrStore.withConfirmedRoot(confirmedRoot);
   }
 
   public Optional<FastConfirmationStore> getFastConfirmationStore() {
