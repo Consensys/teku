@@ -441,6 +441,77 @@ class FastConfirmationCalculator {
         .allMatch(root -> isOneConfirmed(previousBalanceSource, root));
   }
 
+  /**
+   * Implements {@code find_latest_confirmed_descendant}: the most recent confirmed block in the
+   * canonical suffix starting from {@code latestConfirmedRoot}. It first tries to advance across
+   * previous-epoch blocks (relying on the previous slot head), then further into the current epoch
+   * (gated on the current target being justifiable), keeping the result only if it cannot be
+   * reorged out in the current or next epoch.
+   */
+  Bytes32 findLatestConfirmedDescendant(final Bytes32 latestConfirmedRoot) {
+    final boolean atEpochStart = FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, currentSlot);
+    final Bytes32 previousSlotHead = fcrStore.previousSlotHead();
+    final BeaconState currentBalanceSource = states.currentBalanceSource();
+    Bytes32 confirmedRoot = latestConfirmedRoot;
+
+    if (getBlockEpoch(confirmedRoot).plus(1).equals(currentEpoch)
+        && epochPlusIsAtLeastCurrent(getVotingSource(previousSlotHead).getEpoch(), 2)
+        && (atEpochStart
+            || (willNoConflictingCheckpointBeJustified()
+                && (epochPlusIsAtLeastCurrent(
+                        getUnrealizedJustification(previousSlotHead).getEpoch(), 1)
+                    || epochPlusIsAtLeastCurrent(
+                        getUnrealizedJustification(head).getEpoch(), 1))))) {
+      // Advance towards the head over previous-epoch blocks; stop at the first unconfirmed one.
+      for (final Bytes32 blockRoot : getAncestorRoots(head, confirmedRoot)) {
+        // Only meant to confirm previous-epoch blocks.
+        if (getBlockEpoch(blockRoot).equals(currentEpoch)) {
+          break;
+        }
+        // Can only rely on the previous head if it descends from the block being confirmed.
+        if (!isAncestor(previousSlotHead, blockRoot)) {
+          break;
+        }
+        if (!isOneConfirmed(currentBalanceSource, blockRoot)) {
+          break;
+        }
+        confirmedRoot = blockRoot;
+      }
+    }
+
+    if (atEpochStart || epochPlusIsAtLeastCurrent(getUnrealizedJustification(head).getEpoch(), 1)) {
+      Bytes32 tentativeConfirmedRoot = confirmedRoot;
+      for (final Bytes32 blockRoot : getAncestorRoots(head, confirmedRoot)) {
+        // Only true the first time the walk advances into the current epoch.
+        if (getBlockEpoch(blockRoot).isGreaterThan(getBlockEpoch(tentativeConfirmedRoot))
+            && !willCurrentTargetBeJustified()) {
+          break;
+        }
+        if (!isOneConfirmed(currentBalanceSource, blockRoot)) {
+          break;
+        }
+        tentativeConfirmedRoot = blockRoot;
+      }
+
+      // Only keep the advance if the block cannot be reorged out this epoch or the next.
+      if (getBlockEpoch(tentativeConfirmedRoot).equals(currentEpoch)
+          || (epochPlusIsAtLeastCurrent(getVotingSource(tentativeConfirmedRoot).getEpoch(), 2)
+              && (atEpochStart || willNoConflictingCheckpointBeJustified()))) {
+        confirmedRoot = tentativeConfirmedRoot;
+      }
+    }
+
+    return confirmedRoot;
+  }
+
+  /**
+   * Returns {@code epoch + offset >= currentEpoch} (spec pattern {@code checkpoint.epoch + n >=
+   * current_epoch}).
+   */
+  private boolean epochPlusIsAtLeastCurrent(final UInt64 epoch, final long offset) {
+    return epoch.plus(offset).isGreaterThanOrEqualTo(currentEpoch);
+  }
+
   /** Reconstructs {@code store.unrealized_justified_checkpoint} (the store-level greatest). */
   private Checkpoint getStoreUnrealizedJustifiedCheckpoint() {
     return FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store);

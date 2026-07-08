@@ -487,6 +487,35 @@ class FastConfirmationCalculatorTest {
     assertThat(calculator.isConfirmedChainSafe(chain.get(3))).isFalse();
   }
 
+  @Test
+  void shouldNotAdvanceConfirmedRootWhenItIsAlreadyTheHead() {
+    buildLinearChain(11);
+    // Head's unrealized justification (epoch 0) satisfies the phase-2 guard.
+    setCheckpoints(chain.get(10), checkpoint(0), checkpoint(0));
+    // currentSlot 10 -> currentEpoch 1; head == confirmed == chain[10].
+    final FastConfirmationCalculator calculator =
+        descendantCalculator(genesisState(), chain.get(10), chain.get(9), 10);
+
+    assertThat(calculator.findLatestConfirmedDescendant(chain.get(10))).isEqualTo(chain.get(10));
+  }
+
+  @Test
+  void shouldAdvanceConfirmedRootToHeadAtEpochStartUnderFullParticipation() {
+    buildLinearChain(11);
+    final BeaconState genesis = genesisState();
+    when(forkChoice.isFullyValidated(any())).thenReturn(true);
+    // Everyone votes for the head, supporting every ancestor.
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(allValidatorsVotingFor(genesis, chain.get(10))));
+    // Voting source of the previous slot head (chain[9]) for the phase-1 guard.
+    setCheckpoints(chain.get(9), checkpoint(0), checkpoint(0));
+    // currentSlot 8 = epoch 1 start; head=chain[10], previousSlotHead=chain[9], confirmed=chain[6].
+    final FastConfirmationCalculator calculator =
+        descendantCalculator(genesis, chain.get(10), chain.get(9), 8);
+
+    assertThat(calculator.findLatestConfirmedDescendant(chain.get(6))).isEqualTo(chain.get(10));
+  }
+
   private UInt64 estimate(
       final UInt64 totalActiveBalance, final long startSlot, final long endSlot) {
     return FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
@@ -530,6 +559,20 @@ class FastConfirmationCalculatorTest {
         new FastConfirmationStates(Optional.of(state), mock(BeaconState.class), state);
     return new FastConfirmationCalculator(
         spec, fcrStore(head, currentObservedJustified), states, UInt64.valueOf(currentSlot));
+  }
+
+  private FastConfirmationCalculator descendantCalculator(
+      final BeaconState state,
+      final Bytes32 head,
+      final Bytes32 previousSlotHead,
+      final long currentSlot) {
+    // The state doubles as the current balance source and the committee shuffling source.
+    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    final FastConfirmationStore fcrStore =
+        new FastConfirmationStore(store, Bytes32.ZERO, zero, zero, zero, previousSlotHead, head);
+    final FastConfirmationStates states =
+        new FastConfirmationStates(Optional.empty(), state, state);
+    return new FastConfirmationCalculator(spec, fcrStore, states, UInt64.valueOf(currentSlot));
   }
 
   private FastConfirmationStore fcrStore(final Bytes32 head) {
