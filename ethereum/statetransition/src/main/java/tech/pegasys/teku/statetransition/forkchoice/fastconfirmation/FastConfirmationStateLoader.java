@@ -45,7 +45,7 @@ final class FastConfirmationStateLoader {
     final SafeFuture<Optional<BeaconState>> previousBalanceSource =
         includePreviousBalanceSource
             ? store.retrieveCheckpointState(fcrStore.previousEpochObservedJustifiedCheckpoint())
-            : SafeFuture.completedFuture(Optional.<BeaconState>empty());
+            : SafeFuture.completedFuture(Optional.empty());
     final SafeFuture<Optional<BeaconState>> currentBalanceSource =
         store.retrieveCheckpointState(fcrStore.currentEpochObservedJustifiedCheckpoint());
     final SafeFuture<Optional<BeaconState>> headBlockState = store.retrieveBlockState(head);
