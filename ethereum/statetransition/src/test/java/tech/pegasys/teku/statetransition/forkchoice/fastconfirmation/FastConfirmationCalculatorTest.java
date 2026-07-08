@@ -516,6 +516,32 @@ class FastConfirmationCalculatorTest {
     assertThat(calculator.findLatestConfirmedDescendant(chain.get(6))).isEqualTo(chain.get(10));
   }
 
+  @Test
+  void shouldRevertToFinalizedWhenConfirmedRootIsStale() {
+    buildLinearChain(18);
+    when(store.getFinalizedCheckpoint()).thenReturn(new Checkpoint(UInt64.ZERO, chain.get(0)));
+    // confirmed = chain[0] (epoch 0); currentSlot 17 -> currentEpoch 2, so confirmed is >1 epoch
+    // old
+    // and reverts to the finalized block, which is itself too old to advance.
+    final FastConfirmationCalculator calculator =
+        latestConfirmedCalculator(genesisState(), chain.get(0), chain.get(17), 17);
+
+    assertThat(calculator.getLatestConfirmed()).isEqualTo(chain.get(0));
+  }
+
+  @Test
+  void shouldAdvanceRecentConfirmedRootTowardHead() {
+    buildLinearChain(11);
+    // Head's unrealized justification (epoch 0) satisfies find_latest_confirmed_descendant phase 2.
+    setCheckpoints(chain.get(10), checkpoint(0), checkpoint(0));
+    when(store.getFinalizedCheckpoint()).thenReturn(new Checkpoint(UInt64.ZERO, chain.get(0)));
+    // confirmed == head == chain[10]; currentSlot 10 -> currentEpoch 1, not an epoch start.
+    final FastConfirmationCalculator calculator =
+        latestConfirmedCalculator(genesisState(), chain.get(10), chain.get(10), 10);
+
+    assertThat(calculator.getLatestConfirmed()).isEqualTo(chain.get(10));
+  }
+
   private UInt64 estimate(
       final UInt64 totalActiveBalance, final long startSlot, final long endSlot) {
     return FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
@@ -572,6 +598,22 @@ class FastConfirmationCalculatorTest {
         new FastConfirmationStore(store, Bytes32.ZERO, zero, zero, zero, previousSlotHead, head);
     final FastConfirmationStates states =
         new FastConfirmationStates(Optional.empty(), state, state);
+    return new FastConfirmationCalculator(spec, fcrStore, states, UInt64.valueOf(currentSlot));
+  }
+
+  private FastConfirmationCalculator latestConfirmedCalculator(
+      final BeaconState state,
+      final Bytes32 confirmedRoot,
+      final Bytes32 head,
+      final long currentSlot) {
+    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    // The observed justified checkpoint root must be an in-tree block; get_latest_confirmed reads
+    // its slot unconditionally. chain[0] exists in every test chain.
+    final Checkpoint observedJustified = new Checkpoint(UInt64.ZERO, chain.get(0));
+    final FastConfirmationStore fcrStore =
+        new FastConfirmationStore(store, confirmedRoot, zero, observedJustified, zero, head, head);
+    final FastConfirmationStates states =
+        new FastConfirmationStates(Optional.of(state), state, state);
     return new FastConfirmationCalculator(spec, fcrStore, states, UInt64.valueOf(currentSlot));
   }
 

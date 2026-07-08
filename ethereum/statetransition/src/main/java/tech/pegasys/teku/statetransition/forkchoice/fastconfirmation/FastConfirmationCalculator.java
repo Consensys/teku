@@ -505,6 +505,43 @@ class FastConfirmationCalculator {
   }
 
   /**
+   * Implements {@code get_latest_confirmed}: the FCR entry point. Reverts {@code confirmed_root} to
+   * the finalized block when it is too old, no longer canonical, or (at an epoch boundary) fails
+   * reconfirmation; optionally restarts the chain from the observed justified checkpoint; then
+   * advances via {@link #findLatestConfirmedDescendant}.
+   */
+  Bytes32 getLatestConfirmed() {
+    final boolean atEpochStart = FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, currentSlot);
+    Bytes32 confirmedRoot = fcrStore.confirmedRoot();
+
+    // Revert to the finalized block if the confirmed block is more than one epoch old, no longer an
+    // ancestor of the head, or (at an epoch boundary) its chain can no longer be reconfirmed.
+    if (getBlockEpoch(confirmedRoot).plus(1).isLessThan(currentEpoch)
+        || !isAncestor(head, confirmedRoot)
+        || (atEpochStart && !isConfirmedChainSafe(confirmedRoot))) {
+      confirmedRoot = store.getFinalizedCheckpoint().getRoot();
+    }
+
+    // Restart the confirmation chain from the observed justified checkpoint when, at an epoch
+    // boundary, that checkpoint is from the previous epoch, equals the head's unrealized
+    // justification, and the confirmed block is older than it.
+    final Checkpoint observedJustified = fcrStore.currentEpochObservedJustifiedCheckpoint();
+    final UInt64 observedJustifiedBlockSlot = getBlockSlot(observedJustified.getRoot());
+    if (atEpochStart
+        && spec.computeEpochAtSlot(observedJustifiedBlockSlot).plus(1).equals(currentEpoch)
+        && observedJustified.equals(getUnrealizedJustification(head))
+        && getBlockSlot(confirmedRoot).isLessThan(observedJustifiedBlockSlot)) {
+      confirmedRoot = observedJustified.getRoot();
+    }
+
+    // Attempt to advance the confirmed block further; only meaningful while it is recent.
+    if (getBlockEpoch(confirmedRoot).plus(1).isGreaterThanOrEqualTo(currentEpoch)) {
+      return findLatestConfirmedDescendant(confirmedRoot);
+    }
+    return confirmedRoot;
+  }
+
+  /**
    * Returns {@code epoch + offset >= currentEpoch} (spec pattern {@code checkpoint.epoch + n >=
    * current_epoch}).
    */
