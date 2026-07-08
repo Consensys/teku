@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -27,7 +28,10 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteSnapshot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -49,6 +53,7 @@ class FastConfirmationCalculator {
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
   private final ReadOnlyForkChoiceStrategy forkChoice;
+  private final VoteSnapshot votes;
   private final FastConfirmationStates states;
   private final Bytes32 head;
   private final UInt64 currentEpoch;
@@ -65,6 +70,7 @@ class FastConfirmationCalculator {
     this.spec = spec;
     this.forkChoiceUtil = spec.atSlot(currentSlot).getForkChoiceUtil();
     this.forkChoice = store.getForkChoiceStrategy();
+    this.votes = store.getVoteSnapshot();
     this.states = states;
     this.head = head;
     this.currentEpoch = spec.computeEpochAtSlot(currentSlot);
@@ -129,6 +135,96 @@ class FastConfirmationCalculator {
           spec.getBeaconCommittee(shufflingSource, slot, UInt64.valueOf(committeeIndex)));
     }
     return participants;
+  }
+
+  /**
+   * Implements {@code get_attestation_score}: the total effective balance (per {@code
+   * balanceSource}) of unslashed, active, non-equivocating validators whose latest vote supports a
+   * descendant of {@code nodeRoot}.
+   */
+  UInt64 getAttestationScore(final Bytes32 nodeRoot, final BeaconState balanceSource) {
+    final UInt64 balanceSourceEpoch = spec.getCurrentEpoch(balanceSource);
+    final SszList<Validator> validators = balanceSource.getValidators();
+    UInt64 score = UInt64.ZERO;
+    for (final int index : spec.getActiveValidatorIndices(balanceSource, balanceSourceEpoch)) {
+      final Validator validator = validators.get(index);
+      if (validator.isSlashed()) {
+        continue;
+      }
+      final VoteTracker vote = votes.getVote(index);
+      if (vote.isEquivocating()) {
+        continue;
+      }
+      final Bytes32 votedRoot = vote.getNextRoot();
+      // A zero root means the validator is not in store.latest_messages.
+      if (!votedRoot.isZero() && isAncestor(votedRoot, nodeRoot)) {
+        score = score.plus(validator.getEffectiveBalance());
+      }
+    }
+    return score;
+  }
+
+  /**
+   * Implements {@code get_block_support_between_slots}: the total effective balance (per {@code
+   * balanceSource}) of unslashed, active, non-equivocating validators assigned to the inclusive
+   * slot range whose latest vote is exactly {@code blockRoot}.
+   */
+  UInt64 getBlockSupportBetweenSlots(
+      final BeaconState balanceSource,
+      final Bytes32 blockRoot,
+      final UInt64 startSlot,
+      final UInt64 endSlot) {
+    final UInt64 balanceSourceEpoch = spec.getCurrentEpoch(balanceSource);
+    final SszList<Validator> validators = balanceSource.getValidators();
+    UInt64 support = UInt64.ZERO;
+    for (final int index : getCommitteeBetweenSlots(startSlot, endSlot)) {
+      final Validator validator = validators.get(index);
+      if (validator.isSlashed() || !isActiveValidator(validator, balanceSourceEpoch)) {
+        continue;
+      }
+      final VoteTracker vote = votes.getVote(index);
+      if (!vote.isEquivocating() && vote.getNextRoot().equals(blockRoot)) {
+        support = support.plus(validator.getEffectiveBalance());
+      }
+    }
+    return support;
+  }
+
+  /**
+   * Implements {@code get_equivocation_score}: the total effective balance (per {@code
+   * balanceSource}) of active, equivocating validators assigned to the inclusive slot range. Per
+   * spec, slashed validators are not filtered out here (they are very likely already equivocating).
+   */
+  UInt64 getEquivocationScore(
+      final BeaconState balanceSource, final UInt64 startSlot, final UInt64 endSlot) {
+    final UInt64 balanceSourceEpoch = spec.getCurrentEpoch(balanceSource);
+    final SszList<Validator> validators = balanceSource.getValidators();
+    UInt64 score = UInt64.ZERO;
+    for (final int index : getCommitteeBetweenSlots(startSlot, endSlot)) {
+      if (!votes.getVote(index).isEquivocating()) {
+        continue;
+      }
+      final Validator validator = validators.get(index);
+      if (isActiveValidator(validator, balanceSourceEpoch)) {
+        score = score.plus(validator.getEffectiveBalance());
+      }
+    }
+    return score;
+  }
+
+  /**
+   * Union of {@code get_slot_committee} over the inclusive slot range {@code [startSlot, endSlot]}.
+   */
+  private IntSet getCommitteeBetweenSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    final IntSet participants = new IntOpenHashSet();
+    for (UInt64 slot = startSlot; slot.isLessThanOrEqualTo(endSlot); slot = slot.increment()) {
+      participants.addAll(getSlotCommittee(slot));
+    }
+    return participants;
+  }
+
+  private boolean isActiveValidator(final Validator validator, final UInt64 epoch) {
+    return spec.atEpoch(epoch).predicates().isActiveValidator(validator, epoch);
   }
 
   private BeaconState computePulledUpHeadState() {

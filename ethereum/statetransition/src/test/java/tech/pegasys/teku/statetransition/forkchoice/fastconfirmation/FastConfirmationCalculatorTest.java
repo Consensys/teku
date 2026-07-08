@@ -36,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteSnapshot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -54,6 +56,10 @@ class FastConfirmationCalculatorTest {
   @BeforeEach
   void setUp() {
     when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
+    // Default to no votes; the weight tests re-stub with specific votes before building a
+    // calculator.
+    when(store.getVoteSnapshot())
+        .thenReturn(VoteSnapshot.create(UInt64.ZERO, new VoteTracker[] {VoteTracker.DEFAULT}));
   }
 
   @Test
@@ -180,6 +186,83 @@ class FastConfirmationCalculatorTest {
     assertThat(calculator.getSlotCommittee(UInt64.ZERO)).isNotEmpty();
   }
 
+  @Test
+  void shouldSumAttestationScoreForNonEquivocatingUnslashedVotersSupportingADescendant() {
+    buildLinearChain(6);
+    // Validator 5 votes for a descendant too, but is slashed, so it must be excluded.
+    final BeaconState balanceSource = withSlashedValidator(genesisState(), 5);
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    0, vote(chain.get(5)), // descendant of chain[3] -> counts
+                    1, vote(chain.get(2)), // ancestor of chain[3], not a descendant -> excluded
+                    2, equivocatingVote(chain.get(5)), // equivocating -> excluded
+                    4, vote(chain.get(3)), // chain[3] itself -> counts
+                    5, vote(chain.get(5))))); // descendant but slashed -> excluded
+    final FastConfirmationCalculator calculator = calculator(chain.get(5), 5);
+
+    final UInt64 expected =
+        effectiveBalance(balanceSource, 0).plus(effectiveBalance(balanceSource, 4));
+    assertThat(calculator.getAttestationScore(chain.get(3), balanceSource)).isEqualTo(expected);
+  }
+
+  @Test
+  void shouldSumBlockSupportOnlyForInRangeVotersOfTheExactBlockRoot() {
+    final BeaconState balanceSource = genesisState();
+    final int voterForBlock = firstCommitteeMember(balanceSource, UInt64.ZERO); // slot 0
+    final int voterForOther = firstCommitteeMember(balanceSource, UInt64.ONE); // slot 1
+    final int outOfRangeVoter = firstCommitteeMember(balanceSource, UInt64.valueOf(3)); // slot 3
+    final Bytes32 blockRoot = Bytes32.random();
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    voterForBlock, vote(blockRoot),
+                    voterForOther, vote(Bytes32.random()),
+                    outOfRangeVoter, vote(blockRoot))));
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 0);
+
+    // Range [0,1] covers voterForBlock (counts) and voterForOther (wrong root); slot 3 is excluded.
+    assertThat(
+            calculator.getBlockSupportBetweenSlots(
+                balanceSource, blockRoot, UInt64.ZERO, UInt64.ONE))
+        .isEqualTo(effectiveBalance(balanceSource, voterForBlock));
+  }
+
+  @Test
+  void shouldExcludeEquivocatingVotersFromBlockSupport() {
+    final BeaconState balanceSource = genesisState();
+    final int voter = firstCommitteeMember(balanceSource, UInt64.ZERO);
+    final Bytes32 blockRoot = Bytes32.random();
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(Map.of(voter, equivocatingVote(blockRoot))));
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 0);
+
+    assertThat(
+            calculator.getBlockSupportBetweenSlots(
+                balanceSource, blockRoot, UInt64.ZERO, UInt64.ZERO))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  void shouldSumEquivocationScoreForInRangeEquivocatingValidators() {
+    final BeaconState balanceSource = genesisState();
+    final int equivocator = firstCommitteeMember(balanceSource, UInt64.ZERO); // slot 0
+    final int outOfRange = firstCommitteeMember(balanceSource, UInt64.valueOf(3)); // slot 3
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    equivocator, equivocatingVote(Bytes32.random()),
+                    outOfRange, equivocatingVote(Bytes32.random()))));
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 0);
+
+    // Only the equivocator assigned to slot 0 is inside the [0,0] range.
+    assertThat(calculator.getEquivocationScore(balanceSource, UInt64.ZERO, UInt64.ZERO))
+        .isEqualTo(effectiveBalance(balanceSource, equivocator));
+  }
+
   private FastConfirmationCalculator calculator(final Bytes32 head, final long currentSlot) {
     return new FastConfirmationCalculator(
         spec, store, placeholderStates(), head, UInt64.valueOf(currentSlot));
@@ -257,5 +340,36 @@ class FastConfirmationCalculatorTest {
 
   private Checkpoint checkpoint(final int epoch) {
     return new Checkpoint(UInt64.valueOf(epoch), Bytes32.random());
+  }
+
+  private VoteSnapshot voteSnapshot(final Map<Integer, VoteTracker> votesByIndex) {
+    final int size = votesByIndex.keySet().stream().mapToInt(Integer::intValue).max().orElse(0) + 1;
+    final VoteTracker[] voteArray = new VoteTracker[size];
+    votesByIndex.forEach((index, voteTracker) -> voteArray[index] = voteTracker);
+    return VoteSnapshot.create(UInt64.valueOf(size - 1), voteArray);
+  }
+
+  private VoteTracker vote(final Bytes32 root) {
+    return new VoteTracker(Bytes32.ZERO, root);
+  }
+
+  private VoteTracker equivocatingVote(final Bytes32 root) {
+    return vote(root).createNextEquivocating();
+  }
+
+  private UInt64 effectiveBalance(final BeaconState state, final int validatorIndex) {
+    return state.getValidators().get(validatorIndex).getEffectiveBalance();
+  }
+
+  private int firstCommitteeMember(final BeaconState state, final UInt64 slot) {
+    return spec.getBeaconCommittee(state, slot, UInt64.ZERO).getInt(0);
+  }
+
+  private BeaconState withSlashedValidator(final BeaconState state, final int index) {
+    return state.updated(
+        mutable ->
+            mutable
+                .getValidators()
+                .set(index, mutable.getValidators().get(index).withSlashed(true)));
   }
 }
