@@ -27,7 +27,7 @@ public class BeaconNodeOptions {
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
-  private boolean eventChannelVirtualThreadsEnabled = false;
+  private boolean eventChannelVirtualThreadsEnabled = true;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.beaconNode(b -> b.eventChannelVirtualThreadsEnabled(eventChannelVirtualThreadsEnabled));
