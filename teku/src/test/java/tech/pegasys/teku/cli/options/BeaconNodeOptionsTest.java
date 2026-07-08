@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.config.BeaconNodeConfig.DEFAULT_EVENT_CHANNEL_VIRTUAL_THREADS_ENABLED;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -22,9 +23,10 @@ import tech.pegasys.teku.config.TekuConfiguration;
 class BeaconNodeOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  void eventChannelVirtualThreads_shouldDefaultToTrue() {
+  void eventChannelVirtualThreads_shouldDefaultToConfig() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.beaconNodeConfig().eventChannelVirtualThreadsEnabled()).isTrue();
+    assertThat(config.beaconNodeConfig().eventChannelVirtualThreadsEnabled())
+        .isEqualTo(DEFAULT_EVENT_CHANNEL_VIRTUAL_THREADS_ENABLED);
   }
 
   @Test
