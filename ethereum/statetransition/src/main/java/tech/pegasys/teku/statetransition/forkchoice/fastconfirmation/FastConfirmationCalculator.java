@@ -56,6 +56,7 @@ class FastConfirmationCalculator {
   private final VoteSnapshot votes;
   private final FastConfirmationStates states;
   private final Bytes32 head;
+  private final UInt64 currentSlot;
   private final UInt64 currentEpoch;
 
   // Lazily computed once per instance (single-threaded per slot); see getPulledUpHeadState.
@@ -73,6 +74,7 @@ class FastConfirmationCalculator {
     this.votes = store.getVoteSnapshot();
     this.states = states;
     this.head = head;
+    this.currentSlot = currentSlot;
     this.currentEpoch = spec.computeEpochAtSlot(currentSlot);
   }
 
@@ -210,6 +212,104 @@ class FastConfirmationCalculator {
       }
     }
     return score;
+  }
+
+  /**
+   * Implements {@code compute_adversarial_weight}: the maximum weight that could be adversarial in
+   * the committees of the slot range, assuming {@code CONFIRMATION_BYZANTINE_THRESHOLD} and
+   * discounting validators already known to be equivocating.
+   */
+  UInt64 computeAdversarialWeight(
+      final BeaconState balanceSource, final UInt64 startSlot, final UInt64 endSlot) {
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(balanceSource);
+    final UInt64 maximumWeight =
+        FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+            spec, totalActiveBalance, startSlot, endSlot);
+    final UInt64 maxAdversarialWeight =
+        maximumWeight
+            .dividedBy(100)
+            .times(FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+    final UInt64 equivocationScore = getEquivocationScore(balanceSource, startSlot, endSlot);
+    return maxAdversarialWeight.isGreaterThan(equivocationScore)
+        ? maxAdversarialWeight.minus(equivocationScore)
+        : UInt64.ZERO;
+  }
+
+  /**
+   * Implements {@code get_adversarial_weight}: the maximum adversarial weight that can support the
+   * block, from the block's first relevant slot up to the slot before the current one.
+   */
+  UInt64 getAdversarialWeight(final BeaconState balanceSource, final Bytes32 blockRoot) {
+    final UInt64 lastSlot = currentSlot.minus(1);
+    final UInt64 blockEpoch = getBlockEpoch(blockRoot);
+    if (blockEpoch.isGreaterThan(getBlockEpoch(getBlockParentRoot(blockRoot)))) {
+      // Use the first epoch slot as the start slot when crossing an epoch boundary.
+      return computeAdversarialWeight(
+          balanceSource, spec.computeStartSlotAtEpoch(blockEpoch), lastSlot);
+    }
+    return computeAdversarialWeight(balanceSource, getBlockSlot(blockRoot), lastSlot);
+  }
+
+  /**
+   * Implements {@code compute_empty_slot_support_discount}: weight discountable from the safety
+   * threshold when empty slots precede the block, i.e. parent support from the empty slots'
+   * committees beyond what could be adversarial.
+   */
+  UInt64 computeEmptySlotSupportDiscount(final BeaconState balanceSource, final Bytes32 blockRoot) {
+    final Bytes32 parentRoot = getBlockParentRoot(blockRoot);
+    final UInt64 blockSlot = getBlockSlot(blockRoot);
+    final UInt64 parentSlot = getBlockSlot(parentRoot);
+    if (parentSlot.plus(1).equals(blockSlot)) {
+      // No empty slot.
+      return UInt64.ZERO;
+    }
+    final UInt64 firstEmptySlot = parentSlot.plus(1);
+    final UInt64 lastEmptySlot = blockSlot.minus(1);
+    final UInt64 parentSupportInEmptySlots =
+        getBlockSupportBetweenSlots(balanceSource, parentRoot, firstEmptySlot, lastEmptySlot);
+    final UInt64 adversarialWeight =
+        computeAdversarialWeight(balanceSource, firstEmptySlot, lastEmptySlot);
+    return parentSupportInEmptySlots.isGreaterThan(adversarialWeight)
+        ? parentSupportInEmptySlots.minus(adversarialWeight)
+        : UInt64.ZERO;
+  }
+
+  /** Implements {@code get_support_discount}. */
+  UInt64 getSupportDiscount(final BeaconState balanceSource, final Bytes32 blockRoot) {
+    return computeEmptySlotSupportDiscount(balanceSource, blockRoot);
+  }
+
+  /** Implements {@code compute_safety_threshold}: the LMD-GHOST safety threshold for the block. */
+  UInt64 computeSafetyThreshold(final Bytes32 blockRoot, final BeaconState balanceSource) {
+    final UInt64 parentSlot = getBlockSlot(getBlockParentRoot(blockRoot));
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(balanceSource);
+    final UInt64 proposerScore = spec.getProposerBoostAmount(balanceSource);
+    final UInt64 maximumSupport =
+        FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+            spec, totalActiveBalance, parentSlot.plus(1), currentSlot.minus(1));
+    final UInt64 supportDiscount = getSupportDiscount(balanceSource, blockRoot);
+    final UInt64 adversarialWeight = getAdversarialWeight(balanceSource, blockRoot);
+
+    // (maximumSupport + proposerScore + 2 * adversarialWeight - supportDiscount) // 2, guarded
+    // against underflow.
+    final UInt64 gross = maximumSupport.plus(proposerScore).plus(adversarialWeight.times(2));
+    return supportDiscount.isLessThan(gross)
+        ? gross.minus(supportDiscount).dividedBy(2)
+        : UInt64.ZERO;
+  }
+
+  /**
+   * Implements {@code is_one_confirmed}: whether the block is LMD-GHOST safe (its support exceeds
+   * the safety threshold). Returns {@code false} for a block that is not fully validated (not
+   * {@code VALID} per optimistic sync).
+   */
+  boolean isOneConfirmed(final BeaconState balanceSource, final Bytes32 blockRoot) {
+    if (!forkChoice.isFullyValidated(blockRoot)) {
+      return false;
+    }
+    final UInt64 support = getAttestationScore(blockRoot, balanceSource);
+    final UInt64 safetyThreshold = computeSafetyThreshold(blockRoot, balanceSource);
+    return support.isGreaterThan(safetyThreshold);
   }
 
   /**

@@ -33,6 +33,14 @@ public final class FastConfirmationRuleUtil {
    */
   static final UInt64 COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR = UInt64.valueOf(5);
 
+  /**
+   * {@code CONFIRMATION_BYZANTINE_THRESHOLD}: assumed maximum percentage of Byzantine validators.
+   * The spec exposes it as configuration with a maximum of {@code 25}; both the mainnet and minimal
+   * presets set it to {@code 25}, so it is treated here as a fixed constant to avoid touching
+   * {@code SpecConfig}.
+   */
+  static final int CONFIRMATION_BYZANTINE_THRESHOLD = 25;
+
   private FastConfirmationRuleUtil() {}
 
   public static boolean isStartSlotAtEpoch(final Spec spec, final UInt64 slot) {

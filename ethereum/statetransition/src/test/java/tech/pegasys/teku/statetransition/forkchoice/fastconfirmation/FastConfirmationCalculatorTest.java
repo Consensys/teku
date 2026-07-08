@@ -263,6 +263,136 @@ class FastConfirmationCalculatorTest {
         .isEqualTo(effectiveBalance(balanceSource, equivocator));
   }
 
+  @Test
+  void shouldComputeAdversarialWeightAsByzantineFractionWhenNoEquivocation() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 10);
+
+    final UInt64 total = spec.getTotalActiveBalance(balanceSource);
+    final UInt64 expected =
+        estimate(total, 3, 6)
+            .dividedBy(100)
+            .times(FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+    assertThat(
+            calculator.computeAdversarialWeight(
+                balanceSource, UInt64.valueOf(3), UInt64.valueOf(6)))
+        .isEqualTo(expected);
+  }
+
+  @Test
+  void shouldReduceAdversarialWeightByEquivocationScore() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    final UInt64 withoutEquivocation =
+        calculatorWithHeadState(balanceSource, 10)
+            .computeAdversarialWeight(balanceSource, UInt64.valueOf(3), UInt64.valueOf(6));
+
+    // Make the slot-3 committee member equivocate; it is inside the [3,6] range.
+    final int equivocator = firstCommitteeMember(balanceSource, UInt64.valueOf(3));
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(Map.of(equivocator, equivocatingVote(Bytes32.random()))));
+    final UInt64 withEquivocation =
+        calculatorWithHeadState(balanceSource, 10)
+            .computeAdversarialWeight(balanceSource, UInt64.valueOf(3), UInt64.valueOf(6));
+
+    assertThat(withEquivocation).isLessThan(withoutEquivocation);
+  }
+
+  @Test
+  void shouldDiscountParentSupportInEmptySlotsBeyondAdversarialWeight() {
+    final BeaconState balanceSource = genesisState();
+    // Block at slot 4 whose parent is at slot 2 leaves slot 3 empty.
+    final Bytes32 parent = Bytes32.random();
+    final Bytes32 block = Bytes32.random();
+    when(forkChoice.blockSlot(parent)).thenReturn(Optional.of(UInt64.valueOf(2)));
+    when(forkChoice.blockSlot(block)).thenReturn(Optional.of(UInt64.valueOf(4)));
+    when(forkChoice.blockParentRoot(block)).thenReturn(Optional.of(parent));
+    // A slot-3 committee member supports the parent across the empty slot.
+    final int voter = firstCommitteeMember(balanceSource, UInt64.valueOf(3));
+    when(store.getVoteSnapshot()).thenReturn(voteSnapshot(Map.of(voter, vote(parent))));
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 10);
+
+    final UInt64 total = spec.getTotalActiveBalance(balanceSource);
+    final UInt64 adversarial =
+        estimate(total, 3, 3)
+            .dividedBy(100)
+            .times(FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+    final UInt64 expected = effectiveBalance(balanceSource, voter).minus(adversarial);
+    assertThat(calculator.computeEmptySlotSupportDiscount(balanceSource, block))
+        .isEqualTo(expected);
+  }
+
+  @Test
+  void shouldComputeSafetyThresholdFromWeightsProposerScoreAndAdversarialWeight() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    // Block chain[3] (slot 3), parent chain[2] (slot 2): no empty slot, so no support discount.
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 5);
+
+    final UInt64 total = spec.getTotalActiveBalance(balanceSource);
+    // parentSlot + 1 = 3 .. currentSlot - 1 = 4
+    final UInt64 maximumSupport = estimate(total, 3, 4);
+    final UInt64 proposerScore = spec.getProposerBoostAmount(balanceSource);
+    // Not crossing an epoch boundary, so the adversarial range starts at the block slot (3).
+    final UInt64 adversarial =
+        estimate(total, 3, 4)
+            .dividedBy(100)
+            .times(FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+    final UInt64 expected =
+        maximumSupport.plus(proposerScore).plus(adversarial.times(2)).dividedBy(2);
+    assertThat(calculator.computeSafetyThreshold(chain.get(3), balanceSource)).isEqualTo(expected);
+  }
+
+  @Test
+  void shouldNotConfirmBlockThatIsNotFullyValidated() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(false);
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 5);
+
+    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isFalse();
+  }
+
+  @Test
+  void shouldConfirmBlockWhenSupportExceedsSafetyThreshold() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(true);
+    // All active validators vote for the block, so support equals the total active balance.
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(allValidatorsVotingFor(balanceSource, chain.get(3))));
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 5);
+
+    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isTrue();
+  }
+
+  @Test
+  void shouldNotConfirmBlockWithoutSupport() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(true);
+    // No votes -> zero support, which cannot exceed the positive safety threshold.
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 5);
+
+    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isFalse();
+  }
+
+  private UInt64 estimate(
+      final UInt64 totalActiveBalance, final long startSlot, final long endSlot) {
+    return FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+        spec, totalActiveBalance, UInt64.valueOf(startSlot), UInt64.valueOf(endSlot));
+  }
+
+  private Map<Integer, VoteTracker> allValidatorsVotingFor(
+      final BeaconState state, final Bytes32 root) {
+    final Map<Integer, VoteTracker> votesByIndex = new HashMap<>();
+    for (final int index : spec.getActiveValidatorIndices(state, UInt64.ZERO)) {
+      votesByIndex.put(index, vote(root));
+    }
+    return votesByIndex;
+  }
+
   private FastConfirmationCalculator calculator(final Bytes32 head, final long currentSlot) {
     return new FastConfirmationCalculator(
         spec, store, placeholderStates(), head, UInt64.valueOf(currentSlot));
