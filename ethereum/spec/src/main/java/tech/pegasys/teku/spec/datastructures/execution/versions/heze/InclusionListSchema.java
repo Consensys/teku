@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
@@ -41,7 +42,9 @@ public class InclusionListSchema
         namedSchema(
             "transactions",
             SszListSchema.create(
-                new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())));
+                new TransactionSchema(specConfig),
+                specConfig.getMaxTransactionsPerPayload(),
+                SszSchemaHints.sszPackedByteLists())));
   }
 
   @Override

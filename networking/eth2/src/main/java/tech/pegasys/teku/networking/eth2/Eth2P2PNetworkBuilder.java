@@ -57,6 +57,7 @@ import tech.pegasys.teku.networking.eth2.peers.DiscoveryNodeIdExtractor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.peers.LibP2PDiscoveryNodeIdExtractor;
+import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -223,7 +224,11 @@ public class Eth2P2PNetworkBuilder {
     final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network =
-        buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
+        buildNetwork(
+            gossipEncoding,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            eth2PeerManager);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
@@ -518,7 +523,8 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final SubnetSubscriptionService dataColumnSidecarSubnetService) {
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final PeerLookup peerLookup) {
     final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(
@@ -592,6 +598,7 @@ public class Eth2P2PNetworkBuilder {
                         combinedChainDataClient.getRecentChainData().getCurrentSpec(),
                         nodeIdToDataColumnSidecarSubnetsCalculator,
                         network,
+                        peerLookup,
                         attestationSubnetTopicProvider,
                         syncCommitteeSubnetTopicProvider,
                         syncCommitteeSubnetService,
