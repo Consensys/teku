@@ -52,6 +52,7 @@ class FastConfirmationCalculator {
 
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
+  private final ReadOnlyStore store;
   private final ReadOnlyForkChoiceStrategy forkChoice;
   private final VoteSnapshot votes;
   private final FastConfirmationStates states;
@@ -70,6 +71,7 @@ class FastConfirmationCalculator {
       final UInt64 currentSlot) {
     this.spec = spec;
     this.forkChoiceUtil = spec.atSlot(currentSlot).getForkChoiceUtil();
+    this.store = store;
     this.forkChoice = store.getForkChoiceStrategy();
     this.votes = store.getVoteSnapshot();
     this.states = states;
@@ -310,6 +312,95 @@ class FastConfirmationCalculator {
     final UInt64 support = getAttestationScore(blockRoot, balanceSource);
     final UInt64 safetyThreshold = computeSafetyThreshold(blockRoot, balanceSource);
     return support.isGreaterThan(safetyThreshold);
+  }
+
+  /**
+   * Implements {@code get_current_target_score}: the estimated FFG support of the current-epoch
+   * target, using the pulled-up head state's validator set and the LMD votes received so far.
+   */
+  UInt64 getCurrentTargetScore() {
+    final Checkpoint target = getCurrentTarget();
+    final BeaconState state = getPulledUpHeadState();
+    final UInt64 epoch = spec.getCurrentEpoch(state);
+    final SszList<Validator> validators = state.getValidators();
+    UInt64 score = UInt64.ZERO;
+    for (final int index : spec.getActiveValidatorIndices(state, epoch)) {
+      final Validator validator = validators.get(index);
+      if (validator.isSlashed()) {
+        continue;
+      }
+      final VoteTracker vote = votes.getVote(index);
+      if (vote.isEquivocating()) {
+        continue;
+      }
+      final Bytes32 votedRoot = vote.getNextRoot();
+      if (votedRoot.isZero() || !forkChoice.contains(votedRoot)) {
+        continue;
+      }
+      final UInt64 messageEpoch = spec.computeEpochAtSlot(vote.getNextSlot());
+      if (target.equals(getCheckpointForBlock(votedRoot, messageEpoch))) {
+        score = score.plus(validator.getEffectiveBalance());
+      }
+    }
+    return score;
+  }
+
+  /**
+   * Implements {@code compute_honest_ffg_support_for_current_target}: the minimum honest FFG
+   * support the current-epoch target can be assured of, assuming synchrony and {@code
+   * CONFIRMATION_BYZANTINE_THRESHOLD}.
+   */
+  UInt64 computeHonestFfgSupportForCurrentTarget() {
+    final BeaconState balanceSource = getPulledUpHeadState();
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(balanceSource);
+    final UInt64 ffgSupportForCheckpoint = getCurrentTargetScore();
+    final UInt64 epochStart = spec.computeStartSlotAtEpoch(currentEpoch);
+    final UInt64 lastSlot = currentSlot.minus(1);
+
+    // Total FFG weight already assigned up to, but excluding, the current slot.
+    final UInt64 ffgWeightTillNow =
+        FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+            spec, totalActiveBalance, epochStart, lastSlot);
+    final UInt64 remainingFfgWeight = totalActiveBalance.minusMinZero(ffgWeightTillNow);
+    final UInt64 remainingHonestFfgWeight =
+        remainingFfgWeight
+            .dividedBy(100)
+            .times(100 - FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+
+    final UInt64 adversarialWeight = computeAdversarialWeight(balanceSource, epochStart, lastSlot);
+    // ffg_support - min(adversarial_weight, ffg_support)
+    final UInt64 minHonestFfgSupport = ffgSupportForCheckpoint.minusMinZero(adversarialWeight);
+
+    return minHonestFfgSupport.plus(remainingHonestFfgWeight);
+  }
+
+  /**
+   * Implements {@code will_no_conflicting_checkpoint_be_justified}: whether no checkpoint
+   * conflicting with the current target can ever be justified.
+   */
+  boolean willNoConflictingCheckpointBeJustified() {
+    // If the target is already the greatest unrealized justified checkpoint, nothing can conflict.
+    if (getCurrentTarget().equals(getStoreUnrealizedJustifiedCheckpoint())) {
+      return true;
+    }
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(getPulledUpHeadState());
+    return computeHonestFfgSupportForCurrentTarget().times(3).isGreaterThan(totalActiveBalance);
+  }
+
+  /**
+   * Implements {@code will_current_target_be_justified}: whether the current target will eventually
+   * be justified.
+   */
+  boolean willCurrentTargetBeJustified() {
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(getPulledUpHeadState());
+    return computeHonestFfgSupportForCurrentTarget()
+        .times(3)
+        .isGreaterThanOrEqualTo(totalActiveBalance.times(2));
+  }
+
+  /** Reconstructs {@code store.unrealized_justified_checkpoint} (the store-level greatest). */
+  private Checkpoint getStoreUnrealizedJustifiedCheckpoint() {
+    return FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store);
   }
 
   /**

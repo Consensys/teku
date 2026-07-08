@@ -378,6 +378,74 @@ class FastConfirmationCalculatorTest {
     assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isFalse();
   }
 
+  @Test
+  void shouldScoreOnlyVotesWhoseTargetMatchesTheCurrentTarget() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    // currentSlot 10 -> currentEpoch 1; current target = checkpoint(1, chain[8]).
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    0, vote(chain.get(9), 9), // target checkpoint(1, chain[8]) -> counts
+                    1, vote(chain.get(9), 9), // counts
+                    2, vote(chain.get(3), 3), // target checkpoint(0, chain[0]) -> excluded
+                    3, equivocatingVote(chain.get(9))))); // equivocating -> excluded
+    final FastConfirmationCalculator calculator = calculator(balanceSource, chain.get(10), 10);
+
+    final BeaconState pulledUp = calculator.getPulledUpHeadState();
+    final UInt64 expected = effectiveBalance(pulledUp, 0).plus(effectiveBalance(pulledUp, 1));
+    assertThat(calculator.getCurrentTargetScore()).isEqualTo(expected);
+  }
+
+  @Test
+  void shouldComputeHonestFfgSupportFromRemainingWeightWhenNoVotes() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    // No votes: honest support is just the honest fraction of the not-yet-assigned FFG weight.
+    final FastConfirmationCalculator calculator = calculator(balanceSource, chain.get(10), 12);
+
+    final UInt64 total = spec.getTotalActiveBalance(calculator.getPulledUpHeadState());
+    // epochStart(epoch 1) = 8, currentSlot - 1 = 11
+    final UInt64 ffgWeightTillNow = estimate(total, 8, 11);
+    final UInt64 expected =
+        total
+            .minusMinZero(ffgWeightTillNow)
+            .dividedBy(100)
+            .times(100 - FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+    assertThat(calculator.computeHonestFfgSupportForCurrentTarget()).isEqualTo(expected);
+  }
+
+  @Test
+  void shouldReportNoConflictingCheckpointWhenTargetIsGreatestUnrealizedJustified() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    // currentSlot 10 -> current target = checkpoint(1, chain[8]); make it the greatest unrealized.
+    final Checkpoint target = new Checkpoint(UInt64.ONE, chain.get(8));
+    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    final ProtoNodeData blockData = mock(ProtoNodeData.class);
+    when(blockData.getCheckpoints()).thenReturn(new BlockCheckpoints(zero, zero, target, zero));
+    when(forkChoice.getBlockData()).thenReturn(List.of(blockData));
+    final FastConfirmationCalculator calculator = calculator(balanceSource, chain.get(10), 10);
+
+    assertThat(calculator.willNoConflictingCheckpointBeJustified()).isTrue();
+  }
+
+  @Test
+  void shouldExpectCurrentTargetToBeJustifiedUnderFullParticipation() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    // Everyone votes for the target block (chain[8]) in the current epoch.
+    final Map<Integer, VoteTracker> allVotes = new HashMap<>();
+    for (final int index : spec.getActiveValidatorIndices(balanceSource, UInt64.ONE)) {
+      allVotes.put(index, vote(chain.get(8), 8));
+    }
+    when(store.getVoteSnapshot()).thenReturn(voteSnapshot(allVotes));
+    final FastConfirmationCalculator calculator = calculator(balanceSource, chain.get(10), 10);
+
+    assertThat(calculator.willCurrentTargetBeJustified()).isTrue();
+  }
+
   private UInt64 estimate(
       final UInt64 totalActiveBalance, final long startSlot, final long endSlot) {
     return FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
@@ -400,10 +468,14 @@ class FastConfirmationCalculatorTest {
 
   private FastConfirmationCalculator calculatorWithHeadState(
       final BeaconState headState, final long currentSlot) {
+    return calculator(headState, Bytes32.random(), currentSlot);
+  }
+
+  private FastConfirmationCalculator calculator(
+      final BeaconState headState, final Bytes32 head, final long currentSlot) {
     final FastConfirmationStates states =
         new FastConfirmationStates(Optional.empty(), mock(BeaconState.class), headState);
-    return new FastConfirmationCalculator(
-        spec, store, states, Bytes32.random(), UInt64.valueOf(currentSlot));
+    return new FastConfirmationCalculator(spec, store, states, head, UInt64.valueOf(currentSlot));
   }
 
   private FastConfirmationStates placeholderStates() {
@@ -424,6 +496,7 @@ class FastConfirmationCalculatorTest {
     for (int slot = 0; slot < length; slot++) {
       final Bytes32 root = chain.get(slot);
       when(forkChoice.blockSlot(root)).thenReturn(Optional.of(UInt64.valueOf(slot)));
+      when(forkChoice.contains(root)).thenReturn(true);
       final Bytes32 parent = slot > 0 ? chain.get(slot - 1) : Bytes32.ZERO;
       when(forkChoice.blockParentRoot(root)).thenReturn(Optional.of(parent));
     }
@@ -481,6 +554,11 @@ class FastConfirmationCalculatorTest {
 
   private VoteTracker vote(final Bytes32 root) {
     return new VoteTracker(Bytes32.ZERO, root);
+  }
+
+  private VoteTracker vote(final Bytes32 root, final long slot) {
+    return new VoteTracker(
+        Bytes32.ZERO, root, false, false, UInt64.valueOf(slot), false, UInt64.ZERO, false);
   }
 
   private VoteTracker equivocatingVote(final Bytes32 root) {
