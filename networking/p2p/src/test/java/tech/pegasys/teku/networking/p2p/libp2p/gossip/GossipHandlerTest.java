@@ -21,12 +21,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Unit;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +39,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
@@ -45,6 +51,7 @@ public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final TopicHandler topicHandler = mock(TopicHandler.class);
+  private final Peer peer = mock(Peer.class);
   private final GossipHandler gossipHandler =
       new GossipHandler(new StubMetricsSystem(), topic, publisher, topicHandler);
 
@@ -77,6 +84,49 @@ public class GossipHandlerTest {
   }
 
   @Test
+  public void apply_invalidAppliesSmallPenalty() {
+    final Bytes data = Bytes.fromHexString("0x01");
+    final MockMessageApi message = new MockMessageApi(data, topic);
+    final AtomicReference<NodeId> lookupNodeId = new AtomicReference<>();
+    final GossipHandler scoringGossipHandler =
+        new GossipHandler(
+            new StubMetricsSystem(),
+            topic,
+            publisher,
+            topicHandler,
+            nodeId -> {
+              lookupNodeId.set(nodeId);
+              return Optional.of(peer);
+            });
+    when(topicHandler.handleMessage(any()))
+        .thenReturn(SafeFuture.completedFuture(ValidationResult.Invalid));
+
+    final SafeFuture<ValidationResult> result = scoringGossipHandler.apply(message);
+
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(lookupNodeId.get().toBytes()).isEqualTo(Bytes.wrap(message.getFrom()));
+    verify(peer).adjustReputation(SMALL_PENALTY);
+  }
+
+  @Test
+  public void apply_exceptionallyCompletedValidationPenalizesPeer() {
+    final Bytes data = Bytes.fromHexString("0x01");
+    final MockMessageApi message = new MockMessageApi(data, topic);
+    final GossipHandler scoringGossipHandler =
+        new GossipHandler(
+            new StubMetricsSystem(), topic, publisher, topicHandler, __ -> Optional.of(peer));
+    when(topicHandler.handleMessage(any()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("invalid message")));
+
+    final SafeFuture<ValidationResult> result = scoringGossipHandler.apply(message);
+
+    assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(RuntimeException.class)
+        .hasMessage("invalid message");
+    verify(peer).adjustReputation(LARGE_PENALTY);
+  }
+
+  @Test
   public void apply_exceedsMaxSize() {
     final Bytes data = Bytes.wrap(new byte[gossipMaxSize + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
@@ -84,6 +134,20 @@ public class GossipHandlerTest {
 
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(topicHandler, never()).handleMessage(any());
+  }
+
+  @Test
+  public void apply_exceedsMaxSizePenalizesPeer() {
+    final Bytes data = Bytes.wrap(new byte[gossipMaxSize + 1]);
+    final MockMessageApi message = new MockMessageApi(data, topic);
+    final GossipHandler scoringGossipHandler =
+        new GossipHandler(
+            new StubMetricsSystem(), topic, publisher, topicHandler, __ -> Optional.of(peer));
+
+    final SafeFuture<ValidationResult> result = scoringGossipHandler.apply(message);
+
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verify(peer).adjustReputation(LARGE_PENALTY);
   }
 
   @Test

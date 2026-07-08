@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
+
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
@@ -21,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
@@ -47,6 +50,7 @@ public class Eth2IncomingRequestHandler<
   private final String protocolId;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean requestHandled = new AtomicBoolean(false);
+  private Optional<Eth2Peer> cachedPeer = Optional.empty();
 
   public Eth2IncomingRequestHandler(
       final String protocolId,
@@ -70,26 +74,31 @@ public class Eth2IncomingRequestHandler<
 
   @Override
   public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
+    final Optional<Eth2Peer> peer = getPeer(nodeId);
+    final PenalizingResponseCallback<TResponse> responseCallback =
+        createResponseCallback(rpcStream, peer);
     try {
-      Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder
           .decodeRequest(data)
-          .ifPresent(request -> handleRequest(peer, request, createResponseCallback(rpcStream)));
+          .ifPresent(request -> handleRequest(peer, request, responseCallback));
     } catch (final RpcException e) {
       requestHandled.set(true);
-      createResponseCallback(rpcStream).completeWithErrorResponse(e);
+      responseCallback.completeWithErrorResponse(e);
     }
   }
 
   @Override
   public void readComplete(final NodeId nodeId, final RpcStream rpcStream) {
+    final Optional<Eth2Peer> peer = getPeer(nodeId);
+    final PenalizingResponseCallback<TResponse> responseCallback =
+        createResponseCallback(rpcStream, peer);
     try {
-      Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder
           .complete()
-          .ifPresent(request -> handleRequest(peer, request, createResponseCallback(rpcStream)));
+          .ifPresent(request -> handleRequest(peer, request, responseCallback));
     } catch (RpcException e) {
-      createResponseCallback(rpcStream).completeWithErrorResponse(e);
+      requestHandled.set(true);
+      responseCallback.completeWithErrorResponse(e);
       LOG.debug("RPC Request stream closed prematurely {}", protocolId, e);
     }
   }
@@ -102,7 +111,7 @@ public class Eth2IncomingRequestHandler<
   private void handleRequest(
       final Optional<Eth2Peer> peer,
       final TRequest request,
-      final ResponseCallback<TResponse> callback) {
+      final PenalizingResponseCallback<TResponse> callback) {
     try {
       requestHandled.set(true);
       final Optional<RpcException> requestValidationError =
@@ -117,8 +126,22 @@ public class Eth2IncomingRequestHandler<
       callback.completeWithUnexpectedError(e);
     } catch (final Throwable t) {
       LOG.error("Unhandled error while processing request {}", protocolId, t);
+      callback.penalizePeer(
+          "unexpected RPC request handler exception: " + t.getClass().getSimpleName());
       callback.completeWithUnexpectedError(t);
     }
+  }
+
+  private Optional<Eth2Peer> getPeer(final NodeId nodeId) {
+    if (cachedPeer.isPresent()) {
+      return cachedPeer;
+    }
+
+    final Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
+    if (peer.isPresent()) {
+      cachedPeer = peer;
+    }
+    return peer;
   }
 
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
@@ -147,7 +170,73 @@ public class Eth2IncomingRequestHandler<
     return "Eth2IncomingRequestHandler{" + "protocol=" + protocolId + '}';
   }
 
-  private RpcResponseCallback<TResponse> createResponseCallback(final RpcStream rpcStream) {
-    return new RpcResponseCallback<>(rpcStream, responseEncoder);
+  private PenalizingResponseCallback<TResponse> createResponseCallback(
+      final RpcStream rpcStream, final Optional<Eth2Peer> peer) {
+    return new PenalizingResponseCallback<>(
+        new RpcResponseCallback<>(rpcStream, responseEncoder), peer, protocolId);
+  }
+
+  private static class PenalizingResponseCallback<T> implements ResponseCallback<T> {
+    private final ResponseCallback<T> delegate;
+    private final Optional<Eth2Peer> peer;
+    private final String protocolId;
+    private final AtomicBoolean penaltyApplied = new AtomicBoolean(false);
+
+    private PenalizingResponseCallback(
+        final ResponseCallback<T> delegate,
+        final Optional<Eth2Peer> peer,
+        final String protocolId) {
+      this.delegate = delegate;
+      this.peer = peer;
+      this.protocolId = protocolId;
+    }
+
+    @Override
+    public SafeFuture<Void> respond(final T data) {
+      return delegate.respond(data);
+    }
+
+    @Override
+    public void respondAndCompleteSuccessfully(final T data) {
+      delegate.respondAndCompleteSuccessfully(data);
+    }
+
+    @Override
+    public void completeSuccessfully() {
+      delegate.completeSuccessfully();
+    }
+
+    @Override
+    public void completeWithErrorResponse(final RpcException error) {
+      if (isMalformedRequestError(error)) {
+        penalizePeer("malformed RPC request: " + error.getErrorMessageString());
+      }
+      delegate.completeWithErrorResponse(error);
+    }
+
+    @Override
+    public void completeWithUnexpectedError(final Throwable error) {
+      delegate.completeWithUnexpectedError(error);
+    }
+
+    private boolean isMalformedRequestError(final RpcException error) {
+      return error instanceof RpcException.ChunkTooLongException
+          || error instanceof RpcException.DecompressFailedException
+          || error instanceof RpcException.DeserializationFailedException
+          || error instanceof RpcException.ExtraDataAppendedException
+          || error instanceof RpcException.LengthOutOfBoundsException
+          || error instanceof RpcException.MessageTruncatedException
+          || error instanceof RpcException.PayloadTruncatedException;
+    }
+
+    private void penalizePeer(final String reason) {
+      if (penaltyApplied.compareAndSet(false, true)) {
+        peer.ifPresent(
+            p -> {
+              LOG.debug("Penalising peer {} for {} on protocol {}", p.getId(), reason, protocolId);
+              p.adjustReputation(LARGE_PENALTY);
+            });
+      }
+    }
   }
 }

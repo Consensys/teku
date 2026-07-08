@@ -18,8 +18,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -109,6 +112,64 @@ public class Eth2IncomingRequestHandlerTest
     asyncRunner.executeQueuedActions();
     asyncRunner.executeQueuedActions();
     verify(rpcStream, never()).closeAbruptly();
+  }
+
+  @Test
+  public void shouldNotPenalizePeerForSemanticallyInvalidRequest() {
+    final BeaconBlocksByRangeRequestMessage invalidRequest =
+        new BeaconBlocksByRangeRequestMessage(UInt64.ONE, UInt64.ONE, UInt64.ZERO);
+    final Bytes invalidRequestData =
+        beaconChainMethods.beaconBlocksByRange().encodeRequest(invalidRequest);
+
+    reqHandler.processData(nodeId, rpcStream, Utils.toByteBuf(invalidRequestData));
+
+    verify(peer, never()).adjustReputation(LARGE_PENALTY);
+  }
+
+  @Test
+  public void shouldPenalizePeerForMalformedRequest() {
+    final Bytes malformedRequestData = Bytes.fromHexString("0xdeadbeef");
+
+    reqHandler.processData(nodeId, rpcStream, Utils.toByteBuf(malformedRequestData));
+    reqHandler.readComplete(nodeId, rpcStream);
+
+    verify(peer).adjustReputation(LARGE_PENALTY);
+  }
+
+  @Test
+  public void shouldUseCachedPeerWhenReadCompleteFailsAfterPeerRemoved() {
+    when(peerLookup.getConnectedPeer(nodeId))
+        .thenReturn(Optional.of(peer))
+        .thenReturn(Optional.empty());
+    final ByteBuf partialData = Utils.toByteBuf(requestData.slice(0, requestData.size() / 2));
+
+    reqHandler.processData(nodeId, rpcStream, partialData);
+    reqHandler.readComplete(nodeId, rpcStream);
+
+    verify(peerLookup, times(1)).getConnectedPeer(nodeId);
+    verify(peer).adjustReputation(LARGE_PENALTY);
+  }
+
+  @Test
+  public void shouldPenalizePeerForUnexpectedRequestHandlerException() {
+    final LocalMessageHandler<EmptyMessage, EmptyMessage> throwingMessageHandler =
+        (protocolId, peer, message, callback) -> {
+          throw new RuntimeException("boom");
+        };
+    final RpcResponseEncoder<EmptyMessage, Bytes> responseEncoder =
+        new RpcResponseEncoder<>(getRpcEncoding(), RpcContextCodec.noop(EmptyMessage.SSZ_SCHEMA));
+    final Eth2IncomingRequestHandler<EmptyMessage, EmptyMessage> requestHandler =
+        new Eth2IncomingRequestHandler<>(
+            "test",
+            responseEncoder,
+            new RpcRequestDecoder<>(EmptyMessage.SSZ_SCHEMA, getRpcEncoding()),
+            asyncRunner,
+            peerLookup,
+            throwingMessageHandler);
+
+    requestHandler.readComplete(nodeId, rpcStream);
+
+    verify(peer).adjustReputation(LARGE_PENALTY);
   }
 
   @Test
