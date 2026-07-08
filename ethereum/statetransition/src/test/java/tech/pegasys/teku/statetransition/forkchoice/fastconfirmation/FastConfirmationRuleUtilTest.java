@@ -15,13 +15,18 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -107,6 +112,41 @@ class FastConfirmationRuleUtilTest {
 
     assertThat(FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, epochStart)).isTrue();
     assertThat(FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, epochStart.plus(1))).isFalse();
+  }
+
+  @Test
+  void shouldReconstructGreatestUnrealizedJustifiedCheckpointAsMaxOverBlocks() {
+    final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
+    when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
+    final Checkpoint greatest = checkpoint(5);
+    // Materialize the per-block mocks before stubbing getBlockData to avoid nested stubbing.
+    final ProtoNodeData lower = blockDataWithUnrealizedJustified(checkpoint(3));
+    final ProtoNodeData highest = blockDataWithUnrealizedJustified(greatest);
+    final ProtoNodeData middle = blockDataWithUnrealizedJustified(checkpoint(4));
+    when(forkChoice.getBlockData()).thenReturn(List.of(lower, highest, middle));
+
+    assertThat(FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store))
+        .isEqualTo(greatest);
+  }
+
+  @Test
+  void shouldFallBackToFinalizedWhenNoBlocksAvailable() {
+    final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
+    when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
+    when(forkChoice.getBlockData()).thenReturn(List.of());
+    final Checkpoint finalizedCheckpoint = checkpoint(9);
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+
+    assertThat(FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store))
+        .isEqualTo(finalizedCheckpoint);
+  }
+
+  private ProtoNodeData blockDataWithUnrealizedJustified(final Checkpoint unrealizedJustified) {
+    final ProtoNodeData data = mock(ProtoNodeData.class);
+    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    when(data.getCheckpoints())
+        .thenReturn(new BlockCheckpoints(zero, zero, unrealizedJustified, zero));
+    return data;
   }
 
   private FastConfirmationStore fastConfirmationStore(

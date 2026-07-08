@@ -472,7 +472,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final AsyncRunner fastConfirmationAsyncRunner =
           serviceConfig.createAsyncRunner("fastconfirmation", 1);
       this.fastConfirmationTracker =
-          FastConfirmationTracker.create(Optional.of(fastConfirmationAsyncRunner));
+          FastConfirmationTracker.create(spec, Optional.of(fastConfirmationAsyncRunner));
     } else {
       this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
     }

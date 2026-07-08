@@ -15,11 +15,11 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
-record FastConfirmationInput(
-    UInt64 slot,
-    Bytes32 headRoot,
-    Checkpoint greatestUnrealizedJustifiedCheckpoint,
-    boolean currentSlotIsEpochStart,
-    boolean nextSlotIsEpochStart) {}
+/**
+ * Per-slot snapshot captured on the fork-choice thread and handed to the fast confirmation runner.
+ * Only the head root and slot are pinned here; all remaining inputs (epoch-boundary flags, greatest
+ * unrealized justified checkpoint, source states) are derived on the runner to keep work off the
+ * latency-critical fork-choice thread.
+ */
+record FastConfirmationInput(UInt64 slot, Bytes32 headRoot) {}

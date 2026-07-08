@@ -257,7 +257,7 @@ class ForkChoiceTest {
   void shouldScheduleFastConfirmationUpdateOnSlotTickWhenEnabled() {
     final StubAsyncRunner fastConfirmationAsyncRunner = new StubAsyncRunner();
     recreateForkChoice(
-        FastConfirmationTracker.create(Optional.of(fastConfirmationAsyncRunner)),
+        FastConfirmationTracker.create(spec, Optional.of(fastConfirmationAsyncRunner)),
         LateBlockReorgPreparationHandler.NOOP);
     final UInt64 nextSlot = recentChainData.getCurrentSlot().orElseThrow().plus(ONE);
 
@@ -1944,7 +1944,7 @@ class ForkChoiceTest {
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
     final FastConfirmationTracker fastConfirmationTracker =
         fastConfirmationEnabled
-            ? FastConfirmationTracker.create(Optional.empty())
+            ? FastConfirmationTracker.create(spec, Optional.empty())
             : FastConfirmationTracker.NOOP;
     recreateForkChoice(fastConfirmationTracker, lateBlockReorgPreparationHandler);
   }

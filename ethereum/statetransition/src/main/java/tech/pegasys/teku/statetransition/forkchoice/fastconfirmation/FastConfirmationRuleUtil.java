@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
+import java.util.Comparator;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public final class FastConfirmationRuleUtil {
@@ -27,14 +31,17 @@ public final class FastConfirmationRuleUtil {
     return spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(slot)).equals(slot);
   }
 
-  static FastConfirmationStore updateFastConfirmationVariablesFromInput(
-      final FastConfirmationStore fcrStore, final FastConfirmationInput input) {
-    return updateFastConfirmationVariables(
-        fcrStore,
-        input.headRoot(),
-        input.greatestUnrealizedJustifiedCheckpoint(),
-        input.currentSlotIsEpochStart(),
-        input.nextSlotIsEpochStart());
+  /**
+   * Reconstructs {@code store.unrealized_justified_checkpoint} (the greatest unrealized justified
+   * checkpoint) from Teku's per-block checkpoint metadata. This is fork-correct: like the spec's
+   * store-level value, it rises from any processed block on any fork.
+   */
+  static Checkpoint getGreatestUnrealizedJustifiedCheckpoint(final ReadOnlyStore store) {
+    return store.getForkChoiceStrategy().getBlockData().stream()
+        .map(ProtoNodeData::getCheckpoints)
+        .map(BlockCheckpoints::getUnrealizedJustifiedCheckpoint)
+        .max(Comparator.comparing(Checkpoint::getEpoch))
+        .orElseGet(store::getFinalizedCheckpoint);
   }
 
   static FastConfirmationStore updateFastConfirmationVariables(

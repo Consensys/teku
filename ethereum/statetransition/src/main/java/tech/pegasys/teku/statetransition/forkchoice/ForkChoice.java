@@ -413,8 +413,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SafeFuture<Void> deferredAttestationsFuture = applyDeferredAttestations(currentSlot);
       if (fastConfirmationTracker.isEnabled()) {
         ForkChoiceFastConfirmation.processForSlot(
-            spec,
-            recentChainData,
             fastConfirmationTracker,
             currentSlot,
             deferredAttestationsFuture,
