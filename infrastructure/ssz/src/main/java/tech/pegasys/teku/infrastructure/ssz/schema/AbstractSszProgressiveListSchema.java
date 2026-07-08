@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.createPackedProgressiveListTree;
 import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
@@ -35,9 +36,11 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProgressiveListImpl;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszPackedByteListsHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.PackedByteListsUtil;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.ProgressiveTreeUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszNodeTemplate;
+import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedProgressiveByteListsNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
@@ -81,6 +85,9 @@ public abstract class AbstractSszProgressiveListSchema<
   private final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementSchema()));
 
+  // null when the SszPackedByteListsHint is not present.
+  private final SszProgressiveByteListSchema<?> packedByteListElementSchema;
+
   protected AbstractSszProgressiveListSchema(final SszSchema<ElementDataT> elementSchema) {
     this(elementSchema, SszSchemaHints.none());
   }
@@ -89,6 +96,18 @@ public abstract class AbstractSszProgressiveListSchema<
       final SszSchema<ElementDataT> elementSchema, final SszSchemaHints hints) {
     this.elementSchema = elementSchema;
     this.hints = hints;
+    if (hints.getHint(SszPackedByteListsHint.class).isPresent()) {
+      checkArgument(
+          elementSchema instanceof SszProgressiveByteListSchema,
+          "SszPackedByteListsHint on a progressive list requires a progressive byte list element schema but got %s",
+          elementSchema);
+      checkArgument(
+          hints.getHint(SszSuperNodeHint.class).isEmpty(),
+          "SszPackedByteListsHint and SszSuperNodeHint are mutually exclusive");
+      this.packedByteListElementSchema = (SszProgressiveByteListSchema<?>) elementSchema;
+    } else {
+      this.packedByteListElementSchema = null;
+    }
     this.elementsPerChunk = computeElementsPerChunk(elementSchema);
     this.defaultTree =
         BranchNode.create(ProgressiveTreeUtil.createProgressiveTree(List.of()), toLengthNode(0));
@@ -113,6 +132,13 @@ public abstract class AbstractSszProgressiveListSchema<
 
   @Override
   public TreeNode createTreeFromElements(final List<? extends ElementDataT> elements) {
+    if (packedByteListElementSchema != null && !elements.isEmpty()) {
+      final PackedByteListsUtil.PackedElements packed = PackedByteListsUtil.packElements(elements);
+      final SszPackedProgressiveByteListsNode packedNode =
+          new SszPackedProgressiveByteListsNode(
+              packed.sszBytes(), packed.offsets(), this::materializePackedElement);
+      return BranchNode.create(packedNode, toLengthNode(elements.size()));
+    }
     final List<TreeNode> chunks = packElementsToChunks(elements);
     final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
     return BranchNode.create(progressiveTree, toLengthNode(elements.size()));
@@ -191,6 +217,9 @@ public abstract class AbstractSszProgressiveListSchema<
 
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
+    if (getVectorNode(node) instanceof SszPackedProgressiveByteListsNode packedNode) {
+      return packedNode.getSszBytes().size();
+    }
     final int length = getLength(node);
     if (elementSchema.isFixedSize()) {
       return (int) bitsCeilToBytes((long) length * getSszElementBitSize());
@@ -211,6 +240,11 @@ public abstract class AbstractSszProgressiveListSchema<
       return 0;
     }
     final TreeNode dataNode = getVectorNode(node);
+    if (dataNode instanceof SszPackedProgressiveByteListsNode packedNode) {
+      final Bytes sszBytes = packedNode.getSszBytes();
+      writer.write(sszBytes);
+      return sszBytes.size();
+    }
     if (elementSchema.isFixedSize()) {
       return sszSerializeFixed(dataNode, writer, elementsCount);
     } else {
@@ -266,8 +300,29 @@ public abstract class AbstractSszProgressiveListSchema<
   public TreeNode sszDeserializeTree(final SszReader reader) {
     if (elementSchema.isFixedSize()) {
       return sszDeserializeFixed(reader);
-    } else {
-      return sszDeserializeVariable(reader);
+    }
+    if (packedByteListElementSchema != null) {
+      return sszDeserializePacked(reader);
+    }
+    return sszDeserializeVariable(reader);
+  }
+
+  private TreeNode sszDeserializePacked(final SszReader reader) {
+    final int endOffset = reader.getAvailableBytes();
+    if (endOffset == 0) {
+      return defaultTree;
+    }
+    final Bytes bytes = reader.read(endOffset);
+    final int[] offsets =
+        PackedByteListsUtil.parsePackedOffsets(bytes, Long.MAX_VALUE, Long.MAX_VALUE);
+    final SszPackedProgressiveByteListsNode packedNode =
+        new SszPackedProgressiveByteListsNode(bytes, offsets, this::materializePackedElement);
+    return BranchNode.create(packedNode, toLengthNode(packedNode.getElementCount()));
+  }
+
+  private TreeNode materializePackedElement(final Bytes elementSsz) {
+    try (SszReader elementReader = SszReader.fromBytes(elementSsz)) {
+      return elementSchema.sszDeserializeTree(elementReader);
     }
   }
 

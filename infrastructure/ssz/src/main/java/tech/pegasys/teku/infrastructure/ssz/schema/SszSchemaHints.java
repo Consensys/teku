@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.SszSuperNode;
  */
 public class SszSchemaHints {
 
-  private static class SszSchemaHint {}
+  static class SszSchemaHint {}
 
   @Override
   public String toString() {
