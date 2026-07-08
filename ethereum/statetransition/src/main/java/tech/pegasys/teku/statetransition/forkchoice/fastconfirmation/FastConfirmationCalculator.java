@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -26,6 +28,9 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 
 /**
@@ -33,24 +38,34 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
  * store}, the head selected at slot start, and the current slot. Instances are short-lived and
  * single-threaded (created per slot on the fast confirmation runner).
  *
- * <p>This step implements only the spec's misc helpers that read block metadata and ancestry from
- * the protoarray fork-choice strategy. Ancestry checks delegate to the fork-choice {@code
- * is_ancestor} via {@link ForkChoiceUtil}, so Gloas payload-status semantics are preserved; block
- * roots are lifted to the spec's {@code ForkChoiceNode} through {@code get_node_for_root}.
+ * <p>It reads block metadata and ancestry from the protoarray fork-choice strategy and derives the
+ * source-state helpers from the {@link FastConfirmationStates} loaded for the slot. Ancestry checks
+ * delegate to the fork-choice {@code is_ancestor} via {@link ForkChoiceUtil}, so Gloas
+ * payload-status semantics are preserved; block roots are lifted to the spec's {@code
+ * ForkChoiceNode} through {@code get_node_for_root}.
  */
 class FastConfirmationCalculator {
 
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
   private final ReadOnlyForkChoiceStrategy forkChoice;
+  private final FastConfirmationStates states;
   private final Bytes32 head;
   private final UInt64 currentEpoch;
 
+  // Lazily computed once per instance (single-threaded per slot); see getPulledUpHeadState.
+  private BeaconState pulledUpHeadState;
+
   FastConfirmationCalculator(
-      final Spec spec, final ReadOnlyStore store, final Bytes32 head, final UInt64 currentSlot) {
+      final Spec spec,
+      final ReadOnlyStore store,
+      final FastConfirmationStates states,
+      final Bytes32 head,
+      final UInt64 currentSlot) {
     this.spec = spec;
     this.forkChoiceUtil = spec.atSlot(currentSlot).getForkChoiceUtil();
     this.forkChoice = store.getForkChoiceStrategy();
+    this.states = states;
     this.head = head;
     this.currentEpoch = spec.computeEpochAtSlot(currentSlot);
   }
@@ -86,6 +101,46 @@ class FastConfirmationCalculator {
   /** Implements {@code get_current_target}. */
   Checkpoint getCurrentTarget() {
     return getCheckpointForBlock(head, currentEpoch);
+  }
+
+  /**
+   * Implements {@code get_pulled_up_head_state}: the head state advanced to the start of the
+   * current epoch when it lags behind, otherwise the head state as-is. Memoized because the FFG
+   * helpers read it repeatedly within a single slot.
+   */
+  BeaconState getPulledUpHeadState() {
+    if (pulledUpHeadState == null) {
+      pulledUpHeadState = computePulledUpHeadState();
+    }
+    return pulledUpHeadState;
+  }
+
+  /**
+   * Implements {@code get_slot_committee}: all validators assigned to any committee in {@code
+   * slot}, using the raw head state as the shuffling source.
+   */
+  IntSet getSlotCommittee(final UInt64 slot) {
+    final BeaconState shufflingSource = states.headBlockState();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final int committeesCount = spec.getCommitteeCountPerSlot(shufflingSource, epoch).intValue();
+    final IntSet participants = new IntOpenHashSet();
+    for (int committeeIndex = 0; committeeIndex < committeesCount; committeeIndex++) {
+      participants.addAll(
+          spec.getBeaconCommittee(shufflingSource, slot, UInt64.valueOf(committeeIndex)));
+    }
+    return participants;
+  }
+
+  private BeaconState computePulledUpHeadState() {
+    final BeaconState headState = states.headBlockState();
+    if (spec.getCurrentEpoch(headState).isLessThan(currentEpoch)) {
+      try {
+        return spec.processSlots(headState, spec.computeStartSlotAtEpoch(currentEpoch));
+      } catch (final SlotProcessingException | EpochProcessingException e) {
+        throw new IllegalStateException("Failed to pull up head state for fast confirmation", e);
+      }
+    }
+    return headState;
   }
 
   /**

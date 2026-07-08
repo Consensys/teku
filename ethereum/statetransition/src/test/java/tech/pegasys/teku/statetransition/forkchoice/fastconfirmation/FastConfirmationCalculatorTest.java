@@ -18,6 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +37,8 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 
 class FastConfirmationCalculatorTest {
 
@@ -137,8 +141,65 @@ class FastConfirmationCalculatorTest {
     assertThat(calculator.getVotingSource(chain.get(9))).isEqualTo(realized);
   }
 
+  @Test
+  void shouldReturnHeadStateAsPulledUpWhenAlreadyInCurrentEpoch() {
+    final BeaconState headState = genesisState();
+    // currentSlot 0 -> currentEpoch 0 == head state epoch, so no pull-up occurs.
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(headState, 0);
+
+    assertThat(calculator.getPulledUpHeadState()).isSameAs(headState);
+  }
+
+  @Test
+  void shouldPullUpHeadStateWhenBehindCurrentEpoch() {
+    final BeaconState headState = genesisState();
+    // currentSlot 8 -> currentEpoch 1 > head state epoch 0, so pull up to slot 8.
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(headState, 8);
+
+    final BeaconState pulledUp = calculator.getPulledUpHeadState();
+    assertThat(pulledUp.getSlot()).isEqualTo(UInt64.valueOf(8));
+    // Memoized: repeated reads return the same instance.
+    assertThat(calculator.getPulledUpHeadState()).isSameAs(pulledUp);
+  }
+
+  @Test
+  void shouldUnionAllSlotCommitteesToTheActiveValidatorSetOverAnEpoch() {
+    final BeaconState headState = genesisState();
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(headState, 0);
+
+    final IntSet allCommitteeMembers = new IntOpenHashSet();
+    for (int slot = 0; slot < spec.getSlotsPerEpoch(UInt64.ZERO); slot++) {
+      allCommitteeMembers.addAll(calculator.getSlotCommittee(UInt64.valueOf(slot)));
+    }
+
+    // Every active validator is assigned to exactly one committee per epoch, so the union of all
+    // slot committees over epoch 0 must be exactly the active validator set.
+    final IntSet activeValidators =
+        new IntOpenHashSet(spec.getActiveValidatorIndices(headState, UInt64.ZERO));
+    assertThat(allCommitteeMembers).isEqualTo(activeValidators);
+    assertThat(calculator.getSlotCommittee(UInt64.ZERO)).isNotEmpty();
+  }
+
   private FastConfirmationCalculator calculator(final Bytes32 head, final long currentSlot) {
-    return new FastConfirmationCalculator(spec, store, head, UInt64.valueOf(currentSlot));
+    return new FastConfirmationCalculator(
+        spec, store, placeholderStates(), head, UInt64.valueOf(currentSlot));
+  }
+
+  private FastConfirmationCalculator calculatorWithHeadState(
+      final BeaconState headState, final long currentSlot) {
+    final FastConfirmationStates states =
+        new FastConfirmationStates(Optional.empty(), mock(BeaconState.class), headState);
+    return new FastConfirmationCalculator(
+        spec, store, states, Bytes32.random(), UInt64.valueOf(currentSlot));
+  }
+
+  private FastConfirmationStates placeholderStates() {
+    return new FastConfirmationStates(
+        Optional.empty(), mock(BeaconState.class), mock(BeaconState.class));
+  }
+
+  private BeaconState genesisState() {
+    return ChainBuilder.create(spec).generateGenesis().getState();
   }
 
   private void buildLinearChain(final int length) {
