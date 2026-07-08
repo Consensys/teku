@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class FastConfirmationTracker {
   private static final Logger LOG = LogManager.getLogger();
@@ -55,13 +56,17 @@ public class FastConfirmationTracker {
     fastConfirmationStore.set(FastConfirmationStore.create(store));
   }
 
-  public SafeFuture<Void> onSlotHeadUpdated(final UInt64 slot, final Bytes32 headRoot) {
+  public SafeFuture<Void> onSlotHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 headRoot,
+      final Checkpoint greatestUnrealizedJustifiedCheckpoint,
+      final boolean currentSlotIsEpochStart,
+      final boolean nextSlotIsEpochStart) {
     if (!enabled) {
       return SafeFuture.COMPLETE;
     }
 
-    final Optional<FastConfirmationStore> maybeStore = getFastConfirmationStore();
-    if (maybeStore.isEmpty()) {
+    if (fastConfirmationStore.get() == null) {
       LOG.debug("Skipping fast confirmation update because store is not initialized");
       return SafeFuture.COMPLETE;
     }
@@ -72,16 +77,31 @@ public class FastConfirmationTracker {
     }
 
     final FastConfirmationInput input =
-        new FastConfirmationInput(slot, headRoot, maybeStore.orElseThrow());
+        new FastConfirmationInput(
+            slot,
+            headRoot,
+            greatestUnrealizedJustifiedCheckpoint,
+            currentSlotIsEpochStart,
+            nextSlotIsEpochStart);
     return asyncRunner.orElseThrow().runAsync(() -> processFastConfirmationInput(input));
   }
 
   private void processFastConfirmationInput(final FastConfirmationInput input) {
+    final FastConfirmationStore currentStore = fastConfirmationStore.get();
+    if (currentStore == null) {
+      LOG.debug("Skipping fast confirmation update because store is not initialized");
+      return;
+    }
+
+    final FastConfirmationStore updatedStore =
+        FastConfirmationRuleUtil.updateFastConfirmationVariablesFromInput(currentStore, input);
+    fastConfirmationStore.set(updatedStore);
+
     LOG.info(
         "Fast confirmation update for slot {}: head={}, confirmed_root={}",
         input.slot(),
         input.headRoot(),
-        input.fastConfirmationStore().confirmedRoot());
+        updatedStore.confirmedRoot());
   }
 
   public Optional<FastConfirmationStore> getFastConfirmationStore() {

@@ -85,9 +85,6 @@ specrefs:
       # No light client support
       - LightClientStore
 
-      # Not implemented: phase0
-      - FastConfirmationStore#phase0
-
       # Not defined, implemented differently
       - Seen#phase0
       - Seen#altair
@@ -233,7 +230,6 @@ specrefs:
       - get_current_target#phase0
       - get_current_target_score#phase0
       - get_equivocation_score#phase0
-      - get_fast_confirmation_store#phase0
       - get_latest_confirmed#phase0
       - get_latest_message_epoch#phase0
       - get_previous_balance_source#phase0
@@ -245,7 +241,6 @@ specrefs:
       - is_one_confirmed#phase0
       - is_start_slot_at_epoch#phase0
       - on_fast_confirmation#phase0
-      - update_fast_confirmation_variables#phase0
       - will_current_target_be_justified#phase0
       - will_no_conflicting_checkpoint_be_justified#phase0
       - get_node_for_root#phase0

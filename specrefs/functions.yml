@@ -4869,7 +4869,9 @@
     </spec>
 
 - name: get_fast_confirmation_store#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/FastConfirmationStore.java
+      search: public static FastConfirmationStore create(final ReadOnlyStore store) {
   spec: |
     <spec fn="get_fast_confirmation_store" fork="phase0" hash="799b2284">
     def get_fast_confirmation_store(store: Store) -> FastConfirmationStore:
@@ -12754,7 +12756,9 @@
     </spec>
 
 - name: update_fast_confirmation_variables#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static FastConfirmationStore updateFastConfirmationVariables(
   spec: |
     <spec fn="update_fast_confirmation_variables" fork="phase0" hash="4002d8dd">
     def update_fast_confirmation_variables(fcr_store: FastConfirmationStore) -> None:

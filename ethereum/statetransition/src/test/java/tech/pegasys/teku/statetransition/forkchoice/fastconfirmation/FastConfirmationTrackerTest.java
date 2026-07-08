@@ -71,7 +71,9 @@ class FastConfirmationTrackerTest {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     final FastConfirmationTracker tracker = FastConfirmationTracker.NOOP;
 
-    final SafeFuture<Void> result = tracker.onSlotHeadUpdated(UInt64.valueOf(13), Bytes32.random());
+    final SafeFuture<Void> result =
+        tracker.onSlotHeadUpdated(
+            UInt64.valueOf(13), Bytes32.random(), finalizedCheckpoint, false, false);
 
     assertThatSafeFuture(result).isCompleted();
     assertThat(asyncRunner.countDelayedActions()).isZero();
@@ -84,8 +86,13 @@ class FastConfirmationTrackerTest {
     final FastConfirmationTracker tracker =
         FastConfirmationTracker.create(Optional.of(asyncRunner));
     tracker.initialize(store);
+    final Bytes32 headRoot = Bytes32.random();
+    final Checkpoint greatestUnrealizedCheckpoint =
+        new Checkpoint(UInt64.valueOf(13), Bytes32.random());
 
-    final SafeFuture<Void> result = tracker.onSlotHeadUpdated(UInt64.valueOf(13), Bytes32.random());
+    final SafeFuture<Void> result =
+        tracker.onSlotHeadUpdated(
+            UInt64.valueOf(13), headRoot, greatestUnrealizedCheckpoint, false, true);
 
     assertThat(result).isNotDone();
     assertThat(asyncRunner.countDelayedActions()).isOne();
@@ -93,5 +100,11 @@ class FastConfirmationTrackerTest {
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompleted();
+    final FastConfirmationStore fastConfirmationStore =
+        tracker.getFastConfirmationStore().orElseThrow();
+    assertThat(fastConfirmationStore.previousEpochGreatestUnrealizedCheckpoint())
+        .isEqualTo(greatestUnrealizedCheckpoint);
+    assertThat(fastConfirmationStore.previousSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(headRoot);
   }
 }

@@ -15,7 +15,11 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 record FastConfirmationInput(
-    UInt64 slot, Bytes32 headRoot, FastConfirmationStore fastConfirmationStore) {}
+    UInt64 slot,
+    Bytes32 headRoot,
+    Checkpoint greatestUnrealizedJustifiedCheckpoint,
+    boolean currentSlotIsEpochStart,
+    boolean nextSlotIsEpochStart) {}
