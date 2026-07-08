@@ -142,6 +142,38 @@ public abstract class ContainerSchema11<
             fieldNamedSchema10));
   }
 
+  protected ContainerSchema11(
+      final String containerName,
+      final boolean[] activeFields,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V3> fieldNamedSchema3,
+      final NamedSchema<V4> fieldNamedSchema4,
+      final NamedSchema<V5> fieldNamedSchema5,
+      final NamedSchema<V6> fieldNamedSchema6,
+      final NamedSchema<V7> fieldNamedSchema7,
+      final NamedSchema<V8> fieldNamedSchema8,
+      final NamedSchema<V9> fieldNamedSchema9,
+      final NamedSchema<V10> fieldNamedSchema10) {
+
+    super(
+        containerName,
+        activeFields,
+        List.of(
+            fieldNamedSchema0,
+            fieldNamedSchema1,
+            fieldNamedSchema2,
+            fieldNamedSchema3,
+            fieldNamedSchema4,
+            fieldNamedSchema5,
+            fieldNamedSchema6,
+            fieldNamedSchema7,
+            fieldNamedSchema8,
+            fieldNamedSchema9,
+            fieldNamedSchema10));
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(0);

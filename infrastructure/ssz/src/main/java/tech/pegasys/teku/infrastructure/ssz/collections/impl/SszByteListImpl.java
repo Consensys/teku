@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> implements SszByteList {
@@ -48,8 +47,8 @@ public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> impleme
   }
 
   @Override
-  public SszByteListSchemaImpl<?> getSchema() {
-    return (SszByteListSchemaImpl<?>) super.getSchema();
+  public SszByteListSchema<?> getSchema() {
+    return (SszByteListSchema<?>) super.getSchema();
   }
 
   @Override

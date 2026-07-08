@@ -59,13 +59,19 @@ public class NodeRecordConverter {
       final Optional<Integer> maxDasCustodyGroupCount) {
     final Optional<InetSocketAddress> tcpAddress;
     final Optional<InetSocketAddress> quicAddress;
-    if (supportsIpv6) {
-      // prefer IPv6 address
-      tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
-      quicAddress = nodeRecord.getQuic6Address().or(nodeRecord::getQuicAddress);
-    } else {
-      tcpAddress = nodeRecord.getTcpAddress();
-      quicAddress = nodeRecord.getQuicAddress();
+    try {
+      if (supportsIpv6) {
+        // prefer IPv6 address
+        tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
+        quicAddress = nodeRecord.getQuic6Address().or(nodeRecord::getQuicAddress);
+      } else {
+        tcpAddress = nodeRecord.getTcpAddress();
+        quicAddress = nodeRecord.getQuicAddress();
+      }
+    } catch (final RuntimeException e) {
+      // A single malformed record (e.g. an out-of-range port) must not drop the rest of the batch.
+      LOG.debug("Ignoring node record with unusable address: {}", nodeRecord, e);
+      return Optional.empty();
     }
     return tcpAddress.map(
         address ->

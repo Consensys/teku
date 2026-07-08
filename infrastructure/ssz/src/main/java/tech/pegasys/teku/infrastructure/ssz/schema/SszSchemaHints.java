@@ -52,6 +52,39 @@ public class SszSchemaHints {
     public int getDepth() {
       return depth;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof SszSuperNodeHint that)) {
+        return false;
+      }
+      return depth == that.depth;
+    }
+
+    @Override
+    public int hashCode() {
+      return Integer.hashCode(depth);
+    }
+  }
+
+  /**
+   * Hint for a List[ByteList[N], M] schema to back the list with a single
+   * tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode holding the serialized bytes,
+   * instead of a materialized tree. Requires the element schema to be a byte list schema.
+   */
+  public static final class SszPackedByteListsHint extends SszSchemaHint {
+    @Override
+    public boolean equals(final Object o) {
+      return o instanceof SszPackedByteListsHint;
+    }
+
+    @Override
+    public int hashCode() {
+      return SszPackedByteListsHint.class.hashCode();
+    }
   }
 
   public static SszSchemaHints of(final SszSchemaHint... hints) {
@@ -66,6 +99,10 @@ public class SszSchemaHints {
     return of(new SszSuperNodeHint(superNodeDepth));
   }
 
+  public static SszSchemaHints sszPackedByteLists() {
+    return of(new SszPackedByteListsHint());
+  }
+
   private final List<SszSchemaHint> hints;
 
   private SszSchemaHints(final List<SszSchemaHint> hints) {
@@ -75,5 +112,21 @@ public class SszSchemaHints {
   @SuppressWarnings("unchecked")
   public <C extends SszSchemaHint> Optional<C> getHint(final Class<C> hintClass) {
     return (Optional<C>) hints.stream().filter(h -> h.getClass() == hintClass).findFirst();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SszSchemaHints that)) {
+      return false;
+    }
+    return hints.equals(that.hints);
+  }
+
+  @Override
+  public int hashCode() {
+    return hints.hashCode();
   }
 }
