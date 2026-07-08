@@ -71,9 +71,9 @@ public class SszSchemaHints {
   }
 
   /**
-   * Hint for a List[ByteList[N], M] schema to back the list with a single
-   * tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode holding the serialized bytes,
-   * instead of a materialized tree. Requires the element schema to be a byte list schema.
+   * Hint for fixed and progressive list-of-byte-list schemas to back the outer list with a single
+   * packed node holding the serialized bytes, instead of a materialized tree. Requires the element
+   * schema to be a compatible byte list schema.
    */
   public static final class SszPackedByteListsHint extends SszSchemaHint {
     @Override

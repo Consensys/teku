@@ -62,6 +62,10 @@ public final class PackedByteListsUtil {
     return offsets;
   }
 
+  public static int[] parseUnboundedPackedOffsets(final Bytes bytes) {
+    return parsePackedOffsets(bytes, Long.MAX_VALUE, Long.MAX_VALUE);
+  }
+
   /// Serializes elements into a packed variable part (offset table + concatenated element
   /// bytes) with the matching offsets array (end sentinel included).
   public static PackedElements packElements(final List<? extends SszData> elements) {
