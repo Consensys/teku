@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 class FastConfirmationRuleUtilTest {
 
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final ReadOnlyStore store = mock(ReadOnlyStore.class);
 
   @Test
@@ -107,11 +108,87 @@ class FastConfirmationRuleUtilTest {
 
   @Test
   void shouldDetectEpochStartSlots() {
-    final Spec spec = TestSpecFactory.createMinimalPhase0();
     final UInt64 epochStart = spec.computeStartSlotAtEpoch(UInt64.ONE);
 
     assertThat(FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, epochStart)).isTrue();
     assertThat(FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, epochStart.plus(1))).isFalse();
+  }
+
+  @Test
+  void shouldComputeSlotsSinceEpochStart() {
+    // Minimal preset: SLOTS_PER_EPOCH == 8
+    assertThat(FastConfirmationRuleUtil.computeSlotsSinceEpochStart(spec, UInt64.valueOf(8)))
+        .isEqualTo(UInt64.ZERO);
+    assertThat(FastConfirmationRuleUtil.computeSlotsSinceEpochStart(spec, UInt64.valueOf(10)))
+        .isEqualTo(UInt64.valueOf(2));
+    assertThat(FastConfirmationRuleUtil.computeSlotsSinceEpochStart(spec, UInt64.valueOf(7)))
+        .isEqualTo(UInt64.valueOf(7));
+  }
+
+  @Test
+  void shouldDetectWhenFullValidatorSetIsCovered() {
+    // Slots 0..7 span the whole of epoch 0
+    assertThat(FastConfirmationRuleUtil.isFullValidatorSetCovered(spec, UInt64.ZERO, uint(7)))
+        .isTrue();
+    // Slots 0..6 do not cover any full epoch
+    assertThat(FastConfirmationRuleUtil.isFullValidatorSetCovered(spec, UInt64.ZERO, uint(6)))
+        .isFalse();
+    // Slots 1..8 span the boundary but cover no full epoch
+    assertThat(FastConfirmationRuleUtil.isFullValidatorSetCovered(spec, UInt64.ONE, uint(8)))
+        .isFalse();
+    // Slots 1..15 span the whole of epoch 1
+    assertThat(FastConfirmationRuleUtil.isFullValidatorSetCovered(spec, UInt64.ONE, uint(15)))
+        .isTrue();
+  }
+
+  @Test
+  void shouldAdjustCommitteeWeightEstimateToEnsureSafety() {
+    // ceil(1000 / 1000) == 1 -> 1 * (1000 + 5)
+    assertThat(FastConfirmationRuleUtil.adjustCommitteeWeightEstimateToEnsureSafety(uint(1000)))
+        .isEqualTo(UInt64.valueOf(1005));
+    // ceil(1001 / 1000) == 2 -> 2 * (1000 + 5)
+    assertThat(FastConfirmationRuleUtil.adjustCommitteeWeightEstimateToEnsureSafety(uint(1001)))
+        .isEqualTo(UInt64.valueOf(2010));
+    assertThat(FastConfirmationRuleUtil.adjustCommitteeWeightEstimateToEnsureSafety(UInt64.ZERO))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  void shouldReturnZeroCommitteeWeightWhenStartAfterEnd() {
+    assertThat(
+            FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+                spec, uint(8000), uint(5), uint(4)))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  void shouldReturnTotalActiveBalanceWhenFullEpochCovered() {
+    final UInt64 totalActiveBalance = uint(8000);
+    assertThat(
+            FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+                spec, totalActiveBalance, UInt64.ZERO, uint(7)))
+        .isEqualTo(totalActiveBalance);
+  }
+
+  @Test
+  void shouldEstimateCommitteeWeightWithinSingleEpoch() {
+    // committeeWeight = 8000 / 8 = 1000; slots 2..4 -> 3 committees -> 3000
+    assertThat(
+            FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+                spec, uint(8000), uint(2), uint(4)))
+        .isEqualTo(UInt64.valueOf(3000));
+  }
+
+  @Test
+  void shouldEstimateCommitteeWeightAcrossEpochBoundaryWithoutFullEpoch() {
+    // total = 8000, committeeWeight = 1000; range slots 6..9 (epoch 0: 6,7; epoch 1: 8,9).
+    // numSlotsInEndEpoch = 2, remainingSlotsInEndEpoch = 6, numSlotsInStartEpoch = 2.
+    // startEpochWeight = 2000, endEpochWeight = 2000, proRated = (2000 / 8) * 6 = 1500.
+    // sum = 3500 -> adjust: ceil(3500 / 1000) = 4 -> 4 * 1005 = 4020.
+    assertThat(
+            FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+                spec, uint(8000), uint(6), uint(9)))
+        .isEqualTo(UInt64.valueOf(4020));
   }
 
   @Test
@@ -167,5 +244,9 @@ class FastConfirmationRuleUtilTest {
 
   private Checkpoint checkpoint(final int epoch) {
     return new Checkpoint(UInt64.valueOf(epoch), Bytes32.random());
+  }
+
+  private UInt64 uint(final long value) {
+    return UInt64.valueOf(value);
   }
 }
