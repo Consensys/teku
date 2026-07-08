@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -52,6 +53,7 @@ class FastConfirmationCalculator {
 
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
+  private final FastConfirmationStore fcrStore;
   private final ReadOnlyStore store;
   private final ReadOnlyForkChoiceStrategy forkChoice;
   private final VoteSnapshot votes;
@@ -65,17 +67,18 @@ class FastConfirmationCalculator {
 
   FastConfirmationCalculator(
       final Spec spec,
-      final ReadOnlyStore store,
+      final FastConfirmationStore fcrStore,
       final FastConfirmationStates states,
-      final Bytes32 head,
       final UInt64 currentSlot) {
     this.spec = spec;
     this.forkChoiceUtil = spec.atSlot(currentSlot).getForkChoiceUtil();
-    this.store = store;
+    this.fcrStore = fcrStore;
+    this.store = fcrStore.store();
     this.forkChoice = store.getForkChoiceStrategy();
     this.votes = store.getVoteSnapshot();
     this.states = states;
-    this.head = head;
+    // After update_fast_confirmation_variables, current_slot_head == get_head(store).root.
+    this.head = fcrStore.currentSlotHead();
     this.currentSlot = currentSlot;
     this.currentEpoch = spec.computeEpochAtSlot(currentSlot);
   }
@@ -396,6 +399,46 @@ class FastConfirmationCalculator {
     return computeHonestFfgSupportForCurrentTarget()
         .times(3)
         .isGreaterThanOrEqualTo(totalActiveBalance.times(2));
+  }
+
+  /**
+   * Implements {@code is_confirmed_chain_safe}: whether every block of the confirmed chain, from
+   * the current-epoch observed justified checkpoint up to {@code confirmedRoot}, is LMD-GHOST safe
+   * against the previous balance source. Run at the start of each epoch to relax the synchrony
+   * assumption (reconfirmation).
+   */
+  boolean isConfirmedChainSafe(final Bytes32 confirmedRoot) {
+    final Checkpoint observedJustified = fcrStore.currentEpochObservedJustifiedCheckpoint();
+    // The observed justified checkpoint must be on the confirmed chain.
+    if (!observedJustified.equals(
+        getCheckpointForBlock(confirmedRoot, observedJustified.getEpoch()))) {
+      return false;
+    }
+
+    final Bytes32 startRootExclusive;
+    if (observedJustified.getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch)) {
+      // Exclude the justified checkpoint block: from the previous epoch it is always canonical.
+      startRootExclusive = observedJustified.getRoot();
+    } else {
+      // Limit reconfirmation to the first block of the previous epoch; confirming it implies its
+      // ancestors.
+      final Bytes32 ancestorAtPreviousEpochStart =
+          getAncestorRoot(confirmedRoot, spec.computeStartSlotAtEpoch(currentEpoch.minus(1)));
+      startRootExclusive =
+          getBlockEpoch(ancestorAtPreviousEpochStart).plus(1).equals(currentEpoch)
+              ? getBlockParentRoot(ancestorAtPreviousEpochStart)
+              : ancestorAtPreviousEpochStart;
+    }
+
+    final BeaconState previousBalanceSource =
+        states
+            .previousBalanceSource()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Previous balance source is required for reconfirmation"));
+    return getAncestorRoots(confirmedRoot, startRootExclusive).stream()
+        .allMatch(root -> isOneConfirmed(previousBalanceSource, root));
   }
 
   /** Reconstructs {@code store.unrealized_justified_checkpoint} (the store-level greatest). */

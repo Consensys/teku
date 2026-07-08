@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -446,6 +447,46 @@ class FastConfirmationCalculatorTest {
     assertThat(calculator.willCurrentTargetBeJustified()).isTrue();
   }
 
+  @Test
+  void shouldNotReconfirmWhenObservedJustifiedCheckpointNotInConfirmedChain() {
+    buildLinearChain(11);
+    final BeaconState genesis = genesisState();
+    // Observed justified checkpoint references a block that is not on chain[3]'s chain.
+    final Checkpoint observed = new Checkpoint(UInt64.ZERO, Bytes32.random());
+    final FastConfirmationCalculator calculator =
+        reconfirmationCalculator(genesis, chain.get(3), observed, 5);
+
+    assertThat(calculator.isConfirmedChainSafe(chain.get(3))).isFalse();
+  }
+
+  @Test
+  void shouldReconfirmWhenEveryChainBlockIsOneConfirmed() {
+    buildLinearChain(11);
+    final BeaconState genesis = genesisState();
+    when(forkChoice.isFullyValidated(any())).thenReturn(true);
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(allValidatorsVotingFor(genesis, chain.get(3))));
+    // Observed justified checkpoint = (0, chain[0]); reconfirms chain[1..3].
+    final Checkpoint observed = new Checkpoint(UInt64.ZERO, chain.get(0));
+    final FastConfirmationCalculator calculator =
+        reconfirmationCalculator(genesis, chain.get(3), observed, 5);
+
+    assertThat(calculator.isConfirmedChainSafe(chain.get(3))).isTrue();
+  }
+
+  @Test
+  void shouldNotReconfirmWhenAChainBlockIsNotOneConfirmed() {
+    buildLinearChain(11);
+    final BeaconState genesis = genesisState();
+    when(forkChoice.isFullyValidated(any())).thenReturn(true);
+    // No votes -> zero support, so no chain block is one-confirmed.
+    final Checkpoint observed = new Checkpoint(UInt64.ZERO, chain.get(0));
+    final FastConfirmationCalculator calculator =
+        reconfirmationCalculator(genesis, chain.get(3), observed, 5);
+
+    assertThat(calculator.isConfirmedChainSafe(chain.get(3))).isFalse();
+  }
+
   private UInt64 estimate(
       final UInt64 totalActiveBalance, final long startSlot, final long endSlot) {
     return FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
@@ -463,7 +504,7 @@ class FastConfirmationCalculatorTest {
 
   private FastConfirmationCalculator calculator(final Bytes32 head, final long currentSlot) {
     return new FastConfirmationCalculator(
-        spec, store, placeholderStates(), head, UInt64.valueOf(currentSlot));
+        spec, fcrStore(head), placeholderStates(), UInt64.valueOf(currentSlot));
   }
 
   private FastConfirmationCalculator calculatorWithHeadState(
@@ -475,7 +516,31 @@ class FastConfirmationCalculatorTest {
       final BeaconState headState, final Bytes32 head, final long currentSlot) {
     final FastConfirmationStates states =
         new FastConfirmationStates(Optional.empty(), mock(BeaconState.class), headState);
-    return new FastConfirmationCalculator(spec, store, states, head, UInt64.valueOf(currentSlot));
+    return new FastConfirmationCalculator(
+        spec, fcrStore(head), states, UInt64.valueOf(currentSlot));
+  }
+
+  private FastConfirmationCalculator reconfirmationCalculator(
+      final BeaconState state,
+      final Bytes32 head,
+      final Checkpoint currentObservedJustified,
+      final long currentSlot) {
+    // The state doubles as the previous balance source and the committee shuffling source.
+    final FastConfirmationStates states =
+        new FastConfirmationStates(Optional.of(state), mock(BeaconState.class), state);
+    return new FastConfirmationCalculator(
+        spec, fcrStore(head, currentObservedJustified), states, UInt64.valueOf(currentSlot));
+  }
+
+  private FastConfirmationStore fcrStore(final Bytes32 head) {
+    return fcrStore(head, new Checkpoint(UInt64.ZERO, Bytes32.ZERO));
+  }
+
+  private FastConfirmationStore fcrStore(
+      final Bytes32 head, final Checkpoint currentObservedJustified) {
+    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    return new FastConfirmationStore(
+        store, Bytes32.ZERO, zero, currentObservedJustified, zero, Bytes32.ZERO, head);
   }
 
   private FastConfirmationStates placeholderStates() {
