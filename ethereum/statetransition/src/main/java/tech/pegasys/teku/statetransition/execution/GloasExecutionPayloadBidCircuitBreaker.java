@@ -73,21 +73,21 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
         forkChoiceStrategySupplier.get();
     if (maybeForkChoiceStrategy.isEmpty()) {
       LOG.debug(
-          "Gloas builder circuit breaker engaged because fork choice data is unavailable at slot {}",
+          "Builder circuit breaker engaged because fork choice data is unavailable at slot {}",
           state.getSlot());
       return true;
     }
 
     if (inspectPayloadAvailability(maybeForkChoiceStrategy.get(), parentRoot, state)) {
       LOG.debug(
-          "Gloas builder circuit breaker engaged because fork choice data is incomplete for parent root {} at slot {}",
+          "Builder circuit breaker engaged because fork choice data is incomplete for parent root {} at slot {}",
           parentRoot,
           state.getSlot());
       return true;
     }
 
     LOG.debug(
-        "Gloas builder circuit breaker has not engaged for parent root {} at slot {}",
+        "Builder circuit breaker has not engaged for parent root {} at slot {}",
         parentRoot,
         state.getSlot());
     return false;
@@ -102,7 +102,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
               final boolean builderAllowed = !builderStatus.isBannedAt(state.getSlot());
               if (!builderAllowed) {
                 LOG.debug(
-                    "Rejecting Gloas builder index {} because it is banned until slot {} at slot {}",
+                    "Rejecting builder index {} because it is banned until slot {} at slot {}",
                     builderIndex,
                     builderStatus.banUntilSlot(),
                     state.getSlot());
@@ -254,7 +254,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
       final UInt64 previousBanUntilSlot = builderStatus.banUntilSlot();
       builderStatus.banUntilSlot(state.getSlot().plus(faultInspectionWindow));
       LOG.debug(
-          "Banning Gloas builder index {} until slot {} at slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads. Previous ban until slot {}",
+          "Banning builder index {} until slot {} at slot {} after {} unavailable payloads in window and {} consecutive unavailable payloads. Previous ban until slot {}",
           observedBlock.builderIndex(),
           builderStatus.banUntilSlot(),
           state.getSlot(),
@@ -276,7 +276,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
     if (maybeCurrentBuilderPubKey.isEmpty()
         || !builderStatus.isForBuilder(maybeCurrentBuilderPubKey.get())) {
       LOG.debug(
-          "Clearing Gloas builder circuit breaker status for builder index {} at slot {} because the index is no longer associated with the tracked builder public key",
+          "Clearing builder circuit breaker status for builder index {} at slot {} because the index is no longer associated with the tracked builder public key",
           builderIndex,
           state.getSlot());
       builderStatusByIndex.remove(builderIndex);
@@ -307,7 +307,7 @@ public class GloasExecutionPayloadBidCircuitBreaker implements ExecutionPayloadB
                   .ifPresent(
                       expiredBanUntilSlot ->
                           LOG.debug(
-                              "Unbanning Gloas builder index {} at slot {}. Ban expired at slot {}",
+                              "Unbanning builder index {} at slot {}. Ban expired at slot {}",
                               entry.getKey(),
                               currentSlot,
                               expiredBanUntilSlot));
