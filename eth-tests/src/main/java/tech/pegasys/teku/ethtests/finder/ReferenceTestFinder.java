@@ -38,7 +38,7 @@ public class ReferenceTestFinder {
           TestFork.DENEB,
           TestFork.ELECTRA,
           TestFork.FULU
-          /// TODO: we will reenable gloas after 7688 support will be merged
+          /// TODO: we will re-enable gloas after 7688 support will be merged
           /// ref: [7688 epic](https://github.com/Consensys/teku/issues/9772)
           );
 
