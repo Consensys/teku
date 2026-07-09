@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
 import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
 
 import java.util.List;
@@ -73,6 +74,9 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
     builderDepositRequests.forEach(
         request -> {
           // process_builder_deposit_request
+          if (!predicatesGloas.isBuilderWithdrawalCredential(request.getWithdrawalCredentials())) {
+            return;
+          }
           final BLSPublicKey pubkey = request.getPubkey();
           beaconStateAccessorsGloas
               .getBuilderIndex(state, pubkey)
@@ -98,7 +102,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                       beaconStateMutatorsGloas.addBuilderToRegistry(
                           state,
                           pubkey,
-                          request.getWithdrawalCredentials().get(0),
+                          PAYLOAD_BUILDER_VERSION,
                           getExecutionAddressUnchecked(request.getWithdrawalCredentials()),
                           request.getAmount(),
                           state.getSlot());
