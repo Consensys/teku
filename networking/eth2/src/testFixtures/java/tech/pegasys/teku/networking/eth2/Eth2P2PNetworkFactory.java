@@ -418,6 +418,7 @@ public class Eth2P2PNetworkFactory {
                                 NodeIdToDataColumnSidecarSubnetsCalculator.create(
                                     spec, currentSlotSupplier),
                                 gossipNetwork,
+                                eth2PeerManager,
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,
                                 syncCommitteeSubnetService,

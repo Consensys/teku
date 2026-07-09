@@ -81,13 +81,19 @@ public class BlobSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
+    final UInt64 maxSlot;
+    try {
+      maxSlot = request.getMaxSlot();
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
 
     final SpecConfigDeneb specConfig =
-        SpecConfigDeneb.required(
-            spec.atSlot(getEndSlotBeforeFulu(request.getMaxSlot())).getConfig());
+        SpecConfigDeneb.required(spec.atSlot(getEndSlotBeforeFulu(maxSlot)).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
-    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(request.getMaxSlot()).orElseThrow();
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(maxSlot).orElseThrow();
 
     final int requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
