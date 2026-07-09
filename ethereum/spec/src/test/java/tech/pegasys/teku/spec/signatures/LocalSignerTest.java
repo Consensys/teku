@@ -246,7 +246,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "jzKiAGsIdRaQBZu3BuDrZ0KODt5hZXgqLCT+7Ti8EzjCaO4GIezBOHvI5TD4+PY7FDHmq+Sc1AJqmHZ8D587uSiUMQsV5m6z9OFdYn+jhUfshGVhCNZIztsBEhXA0LM0"));
+                "mXX6tmBudLKOd3zVBSpbhPTj8YhIrHxGnNlbNmxRuGjxkOhHQEKgRCnhG7Ctn3xWFr7v2uB7RoCrjPHr4X8BIIbDYKtfpJMn0hoitZTaqXmnowSlTsF3KH/Org425Tp2"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadEnvelope(envelope, fork);
     asyncRunner.executeQueuedActions();
