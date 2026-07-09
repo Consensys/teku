@@ -964,7 +964,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return Optional.of(Bytes32.ZERO);
     }
     return forkChoiceStrategy
-        .getAncestorNode(node.blockRoot(), maybeDependentSlot.get())
+        .getAncestorNode(node, maybeDependentSlot.get())
         .map(ForkChoiceNode::blockRoot);
   }
 
