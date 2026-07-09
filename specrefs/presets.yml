@@ -535,7 +535,7 @@
       search: "NUMBER_OF_COLUMNS:"
   spec: |
     <spec preset_var="NUMBER_OF_COLUMNS" fork="fulu" hash="8b6dad29">
-    NUMBER_OF_COLUMNS = 128
+    NUMBER_OF_COLUMNS: uint64 = 128
     </spec>
 
 - name: PENDING_CONSOLIDATIONS_LIMIT#electra
