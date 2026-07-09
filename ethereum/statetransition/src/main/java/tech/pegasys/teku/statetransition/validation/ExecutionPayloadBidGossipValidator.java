@@ -105,7 +105,7 @@ public class ExecutionPayloadBidGossipValidator {
      */
     if (!bid.getFeeRecipient().equals(proposerPreferences.get().getFeeRecipient())) {
       return completedFuture(
-          reject(
+          ignore(
               "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
               bid.getFeeRecipient(), proposerPreferences.get().getFeeRecipient()));
     }
