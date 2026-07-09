@@ -9879,7 +9879,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionRequestsProcessorGloas.java
       search: public void processBuilderDepositRequests(
   spec: |
-    <spec fn="process_builder_deposit_request" fork="gloas" hash="1bb6237c">
+    <spec fn="process_builder_deposit_request" fork="gloas" hash="1d458f9c">
     def process_builder_deposit_request(state: BeaconState, request: BuilderDepositRequest) -> None:
         # Ignore deposits with unexpected withdrawal credential prefixes
         if not is_builder_withdrawal_credential(request.withdrawal_credentials):
@@ -9900,13 +9900,13 @@
             builder_index = BuilderIndex(builder_pubkeys.index(request.pubkey))
             builder = state.builders[builder_index]
 
-            # Increase balance by deposit amount
-            builder.balance += request.amount
-
-            # If exited, reset the withdrawable epoch
-            if builder.withdrawable_epoch != FAR_FUTURE_EPOCH:
+            # If exited and swept, reset the withdrawable epoch
+            if builder.withdrawable_epoch != FAR_FUTURE_EPOCH and builder.balance == 0:
                 epoch = get_current_epoch(state)
                 builder.withdrawable_epoch = epoch + MIN_BUILDER_WITHDRAWABILITY_DELAY
+
+            # Increase balance by deposit amount
+            builder.balance += request.amount
     </spec>
 
 - name: process_builder_exit_request#gloas

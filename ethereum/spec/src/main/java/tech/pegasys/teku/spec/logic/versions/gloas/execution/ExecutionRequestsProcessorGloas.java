@@ -85,16 +85,19 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                     final SszMutableList<Builder> builders =
                         MutableBeaconStateGloas.required(state).getBuilders();
                     final Builder builder = builders.get(builderIndex);
-                    //  Increase balance by deposit amount
-                    Builder modifiedBuilder =
-                        builder.copyWithNewBalance(builder.getBalance().plus(request.getAmount()));
-                    // If exited, reset the withdrawable epoch
-                    if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+                    Builder modifiedBuilder = builder;
+                    // If exited and swept, reset the withdrawable epoch
+                    if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)
+                        && builder.getBalance().isZero()) {
                       final UInt64 epoch = beaconStateAccessorsGloas.getCurrentEpoch(state);
                       modifiedBuilder =
                           modifiedBuilder.copyWithNewWithdrawableEpoch(
                               epoch.plus(specConfigGloas.getMinBuilderWithdrawabilityDelay()));
                     }
+                    // Increase balance by deposit amount
+                    modifiedBuilder =
+                        modifiedBuilder.copyWithNewBalance(
+                            modifiedBuilder.getBalance().plus(request.getAmount()));
                     builders.set(builderIndex, modifiedBuilder);
                   },
                   () -> {
