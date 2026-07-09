@@ -4306,20 +4306,19 @@
         )
     </spec>
 
-- name: get_dependent_root#phase0
+- name: get_shuffling_dependent_root#phase0
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<Bytes32> getDependentRoot\(\s*final SignedBeaconBlock block,
+      search: private Optional<Bytes32> getShufflingDependentRoot\(\s*final SignedBeaconBlock block,
       regex: true
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<Bytes32> getDependentRoot\(\s*final ForkChoiceNode node,
+      search: private Optional<Bytes32> getShufflingDependentRoot\(\s*final ForkChoiceNode node,
       regex: true
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<UInt64> getDependentSlot(
+      search: private Optional<UInt64> getShufflingDependentSlot(
   spec: |
-    <spec fn="get_dependent_root" fork="phase0" hash="6c7301b5">
-    def get_dependent_root(store: Store, root: Root) -> Root:
-        epoch = get_current_store_epoch(store)
+    <spec fn="get_shuffling_dependent_root" fork="phase0" hash="bb6205ed">
+    def get_shuffling_dependent_root(store: Store, root: Root, epoch: Epoch) -> Root:
         if epoch <= MIN_SEED_LOOKAHEAD:
             # Genesis block parent
             return Root()
@@ -4329,20 +4328,19 @@
         return get_ancestor(store, node, dependent_slot).root
     </spec>
 
-- name: get_dependent_root#gloas
+- name: get_shuffling_dependent_root#gloas
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<Bytes32> getDependentRoot\(\s*final SignedBeaconBlock block,
+      search: private Optional<Bytes32> getShufflingDependentRoot\(\s*final SignedBeaconBlock block,
       regex: true
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<Bytes32> getDependentRoot\(\s*final ForkChoiceNode node,
+      search: private Optional<Bytes32> getShufflingDependentRoot\(\s*final ForkChoiceNode node,
       regex: true
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private Optional<UInt64> getDependentSlot(
+      search: private Optional<UInt64> getShufflingDependentSlot(
   spec: |
-    <spec fn="get_dependent_root" fork="gloas" hash="4e1d4042">
-    def get_dependent_root(store: Store, root: Root) -> Root:
-        epoch = get_current_store_epoch(store)
+    <spec fn="get_shuffling_dependent_root" fork="gloas" hash="57c2e2d6">
+    def get_shuffling_dependent_root(store: Store, root: Root, epoch: Epoch) -> Root:
         if epoch <= MIN_SEED_LOOKAHEAD:
             # Genesis block parent
             return Root()
@@ -5852,19 +5850,6 @@
         """
         current_epoch = get_current_epoch(state)
         return GENESIS_EPOCH if current_epoch == GENESIS_EPOCH else Epoch(current_epoch - 1)
-    </spec>
-
-- name: get_proposer_dependent_root#gloas
-  sources: []
-  spec: |
-    <spec fn="get_proposer_dependent_root" fork="gloas" hash="9a7daf1b">
-    def get_proposer_dependent_root(state: BeaconState, epoch: Epoch) -> Root:
-        """
-        Return the dependent root for the proposer lookahead at ``epoch``.
-        """
-        return get_block_root_at_slot(
-            state, Slot(compute_start_slot_at_epoch(Epoch(epoch - MIN_SEED_LOOKAHEAD)) - 1)
-        )
     </spec>
 
 - name: get_proposer_head#phase0
@@ -12913,11 +12898,14 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private boolean shouldUpdateProposerBoostRoot(
   spec: |
-    <spec fn="update_proposer_boost_root" fork="phase0" hash="3278de09">
+    <spec fn="update_proposer_boost_root" fork="phase0" hash="c5182f16">
     def update_proposer_boost_root(store: Store, head: Root, root: Root) -> None:
         is_first_block = store.proposer_boost_root == Root()
         is_timely = store.block_timeliness[root]
-        is_same_dependent_root = get_dependent_root(store, root) == get_dependent_root(store, head)
+        epoch = get_current_store_epoch(store)
+        head_dependent_root = get_shuffling_dependent_root(store, head, epoch)
+        block_dependent_root = get_shuffling_dependent_root(store, root, epoch)
+        is_same_dependent_root = head_dependent_root == block_dependent_root
 
         # Add proposer score boost if the block is timely, not conflicting with an
         # existing block, with the same dependent root as the canonical chain head.
@@ -12930,12 +12918,15 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private boolean shouldUpdateProposerBoostRoot(
   spec: |
-    <spec fn="update_proposer_boost_root" fork="gloas" hash="75ff4ddf">
+    <spec fn="update_proposer_boost_root" fork="gloas" hash="18e43e0c">
     def update_proposer_boost_root(store: Store, head: Root, root: Root) -> None:
         is_first_block = store.proposer_boost_root == Root()
         # [Modified in Gloas:EIP7732]
         is_timely = store.block_timeliness[root][ATTESTATION_TIMELINESS_INDEX]
-        is_same_dependent_root = get_dependent_root(store, root) == get_dependent_root(store, head)
+        epoch = get_current_store_epoch(store)
+        head_dependent_root = get_shuffling_dependent_root(store, head, epoch)
+        block_dependent_root = get_shuffling_dependent_root(store, root, epoch)
+        is_same_dependent_root = head_dependent_root == block_dependent_root
 
         # Add proposer score boost if the block is timely, not conflicting with an
         # existing block, with the same dependent root as the canonical chain head.
