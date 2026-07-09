@@ -87,14 +87,14 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
           new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
     }
 
-    if (request.getCount().isGreaterThan(config.getMaxRequestBlocksDeneb())) {
+    if (request.getCount().isGreaterThan(config.getMaxRequestPayloads())) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
                   "Only a maximum of %s execution payload envelopes can be requested per request",
-                  config.getMaxRequestBlocksDeneb())));
+                  config.getMaxRequestPayloads())));
     }
     return Optional.empty();
   }
