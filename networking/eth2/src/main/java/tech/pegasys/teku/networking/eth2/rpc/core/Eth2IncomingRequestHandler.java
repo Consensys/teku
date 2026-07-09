@@ -148,6 +148,6 @@ public class Eth2IncomingRequestHandler<
   }
 
   private RpcResponseCallback<TResponse> createResponseCallback(final RpcStream rpcStream) {
-    return new RpcResponseCallback<>(rpcStream, responseEncoder);
+    return new RpcResponseCallback<>(rpcStream, responseEncoder, asyncRunner, protocolId);
   }
 }
