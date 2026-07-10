@@ -107,9 +107,35 @@ public class ForkChoiceUtil {
     return forkChoiceStrategy.getAncestor(root, slot);
   }
 
-  public Optional<ForkChoiceNode> getAncestorNode(
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
-    return getAncestor(forkChoiceStrategy, root, slot).map(ForkChoiceNode::createBase);
+  /**
+   * is_ancestor
+   *
+   * <p>Returns whether {@code ancestor} is an ancestor of {@code node}, i.e. {@code ancestor} lies
+   * on the chain from {@code node} at {@code ancestor}'s block slot.
+   *
+   * <p>This base (phase0) form is the {@code is_ancestor#phase0} spec anchor and the default that
+   * {@code ForkChoiceUtilGloas#isAncestor} overrides. It has no pre-Gloas caller by design: in the
+   * spec, {@code is_ancestor} is consumed only by {@code get_weight}, to add proposer boost when a
+   * node is an ancestor of the proposer-boost node. Teku instead computes {@code get_weight} inside
+   * protoarray, folding the proposer-boost delta into each node's stored weight during {@code
+   * ProtoArray#applyScoreChanges}. That back-propagation realizes the ancestry condition
+   * implicitly, so the weight path needs no explicit {@code is_ancestor} call. The only explicit
+   * caller is the Gloas override, which runs the check in reverse to recover the attestation-only
+   * weight (via {@code ForkChoiceUtilGloas#getNodeAttestationWeight}); pre-Gloas {@code
+   * isHeadWeak}/{@code isParentStrong} read the already-boosted protoarray weight directly and
+   * never query ancestry. Since {@code ForkChoiceUtilGloas} overrides this method, even that
+   * reverse path dispatches to the override rather than here — so this base form is retained for
+   * spec fidelity and exercised only by its unit test.
+   */
+  public boolean isAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final ForkChoiceNode node,
+      final ForkChoiceNode ancestor) {
+    return forkChoiceStrategy
+        .blockSlot(ancestor.blockRoot())
+        .flatMap(ancestorSlot -> forkChoiceStrategy.getAncestorNode(node, ancestorSlot))
+        .map(ancestor::equals)
+        .orElse(false);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
@@ -155,14 +181,11 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * is_shuffling_stable
+   * is_not_epoch_boundary
    *
-   * <p>Refer to fork-choice specification.
-   *
-   * @param slot
-   * @return
+   * @return {@code true} when {@code slot} is NOT at an epoch boundary.
    */
-  public boolean isShufflingStable(final UInt64 slot) {
+  public boolean isNotEpochBoundary(final UInt64 slot) {
     return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
   }
 
@@ -359,7 +382,7 @@ public class ForkChoiceUtil {
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
-    return isShufflingStable(slot) && isFinalizationOk(store, slot);
+    return isNotEpochBoundary(slot) && isFinalizationOk(store, slot);
   }
 
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {

@@ -18,6 +18,7 @@ import java.util.function.BiFunction;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil;
@@ -56,6 +57,30 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
       @Override
       public C createFromBackingNode(TreeNode node) {
         return instanceCtor.apply(this, node);
+      }
+    };
+  }
+
+  /**
+   * Creates a progressive container schema (EIP-7495) with the given active fields and field
+   * schemas. The returned schema produces generic {@link SszContainer} instances backed by {@link
+   * SszContainerImpl}.
+   *
+   * @param containerName name of the container
+   * @param activeFields bitvector indicating which slots are active (must not be empty, last
+   *     element must be true)
+   * @param fieldSchemas named schemas for ONLY the active fields, in order of their active_fields
+   *     positions
+   */
+  @SuppressWarnings("unchecked")
+  static <C extends SszContainer> SszContainerSchema<C> createProgressive(
+      final String containerName,
+      final boolean[] activeFields,
+      final List<? extends NamedSchema<? extends SszData>> fieldSchemas) {
+    return new AbstractSszContainerSchema<C>(containerName, activeFields, fieldSchemas) {
+      @Override
+      public C createFromBackingNode(final TreeNode node) {
+        return (C) new SszContainerImpl(this, node);
       }
     };
   }

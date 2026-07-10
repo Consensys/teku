@@ -39,7 +39,7 @@ public class SpecConfigGloasTest {
     final SpecConfigGloas config =
         SpecConfigLoader.loadConfig("minimal").specConfig().toVersionGloas().orElseThrow();
 
-    assertThat(config.getPayloadDueBps()).isEqualTo(7500);
+    assertThat(config.getPayloadDueBps()).isEqualTo(5000);
   }
 
   @Test

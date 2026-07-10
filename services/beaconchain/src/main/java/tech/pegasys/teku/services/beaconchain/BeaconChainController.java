@@ -115,7 +115,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
-import tech.pegasys.teku.services.timer.QuartzTimerService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
@@ -609,10 +608,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService =
-        beaconConfig.eth2NetworkConfig().isQuartzSchedulerEnabled()
-            ? new QuartzTimerService(this::onTick)
-            : new TimerService(this::onTick);
+    timerService = new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -648,6 +644,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     singleBlockProviderResolver,
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
+                    blockRoot -> dasSamplerBasic.getSlotForBlockRoot(blockRoot),
                     executionPayloadProvider,
                     blindedExecutionPayloadProvider,
                     storageQueryChannel,

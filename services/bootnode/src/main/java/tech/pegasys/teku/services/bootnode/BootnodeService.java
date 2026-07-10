@@ -80,6 +80,7 @@ public class BootnodeService extends Service {
             kvStore,
             Bytes.wrap(privateKeyProvider.get().raw()),
             currentSchemaDefinitionsSupplier,
+            eth2NetworkConfiguration.getSpec().getNumberOfCustodyGroups(),
             DiscV5Service.createDefaultDiscoverySystemBuilder(),
             DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER);
 

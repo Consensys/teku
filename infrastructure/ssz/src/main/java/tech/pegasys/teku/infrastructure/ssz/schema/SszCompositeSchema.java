@@ -27,7 +27,11 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   /**
    * Returns the maximum number of elements in ssz structures of this scheme. For structures with
    * fixed number of children (like Containers and Vectors) their size should always be equal to
-   * maxLength
+   * maxLength.
+   *
+   * <p><b>Warning:</b> Progressive types (EIP-7916) return {@code Long.MAX_VALUE} since they have
+   * no max capacity. Callers must not use this value to size data structures or cast to int without
+   * checking first.
    */
   long getMaxLength();
 

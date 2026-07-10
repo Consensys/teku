@@ -932,6 +932,26 @@ public class DasSamplerBasicTest {
     }
   }
 
+  @Test
+  void getSlotForBlockRoot_returnsTrackerSlotForObservedColumn() {
+    // Non-zero delay so onFirstSeen schedules (StubAsyncRunner won't auto-run) instead of fetching
+    // now.
+    when(rpcFetchDelayProvider.calculate(any())).thenReturn(Duration.ofSeconds(1));
+    final UInt64 slot = UInt64.valueOf(123);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(recentChainData.containsBlock(blockRoot)).thenReturn(false);
+
+    sampler.onNewValidatedDataColumnSidecar(
+        new DataColumnSlotAndIdentifier(slot, blockRoot, SAMPLING_INDEX_0), RemoteOrigin.GOSSIP);
+
+    assertThat(sampler.getSlotForBlockRoot(blockRoot)).contains(slot);
+  }
+
+  @Test
+  void getSlotForBlockRoot_returnsEmptyForUnknownRoot() {
+    assertThat(sampler.getSlotForBlockRoot(dataStructureUtil.randomBytes32())).isEmpty();
+  }
+
   private DasSamplerBasicImpl createGloasSampler() {
     return new DasSamplerBasicImpl(
         TestSpecFactory.createMinimalGloas(),

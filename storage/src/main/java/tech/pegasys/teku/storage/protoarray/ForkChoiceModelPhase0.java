@@ -113,7 +113,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
-  public Optional<ForkChoiceNode> resolveVoteNode(
+  public Optional<ForkChoiceNode> getSupportedNode(
       final Bytes32 voteRoot,
       final UInt64 voteSlot,
       final boolean payloadPresent,
