@@ -163,7 +163,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldReject_whenFeeRecipientDoesNotMatchProposerPreferences() {
+  void shouldIgnore_whenFeeRecipientDoesNotMatchProposerPreferences() {
     final ProposerPreferences mismatchedPreferences = mock(ProposerPreferences.class);
     when(mismatchedPreferences.getFeeRecipient()).thenReturn(dataStructureUtil.randomEth1Address());
     when(mismatchedPreferences.getTargetGasLimit()).thenReturn(bid.getGasLimit());
@@ -171,7 +171,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .thenReturn(Optional.of(mismatchedPreferences));
 
     assertThatSafeFuture(bidValidator.validate(signedBid))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @TestTemplate

@@ -22,9 +22,12 @@ import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
@@ -33,6 +36,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongExcep
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -51,11 +55,26 @@ class LengthPrefixedEncodingTest {
 
   private final Bytes prefixExceedingMaxLength =
       ProtobufEncoder.encodeVarInt(spec.getNetworkingConfig().getMaxPayloadSize() + 1);
-  private final RpcEncoding encoding =
-      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
 
-  @Test
-  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {
+  private static Stream<Arguments> encodings() {
+    final int maxPayloadSize =
+        TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize();
+    return Stream.of(
+        Arguments.of(
+            "netty",
+            RpcEncoding.createSszSnappyEncoding(maxPayloadSize, SnappyFramedCompressor.NETTY),
+            SnappyFramedCompressor.NETTY),
+        Arguments.of(
+            "aircompressor",
+            RpcEncoding.createSszSnappyEncoding(
+                maxPayloadSize, SnappyFramedCompressor.AIRCOMPRESSOR),
+            SnappyFramedCompressor.AIRCOMPRESSOR));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     List<List<ByteBuf>> testByteBufSlices =
         Utils.generateTestSlices(Bytes.fromHexString("0xAAAAAAAAAAAAAAAAAAAA80"));
 
@@ -75,8 +94,10 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooShortForMessageType() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooShortForMessageType(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(Bytes.fromHexString("0x52"));
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
@@ -95,8 +116,10 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLongForMessageType() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLongForMessageType(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(Bytes.fromHexString("0x55"));
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
@@ -115,8 +138,10 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldReturnErrorWhenNoPayloadIsPresent() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldReturnErrorWhenNoPayloadIsPresent(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     final Bytes statusMessageLengthPrefix = Bytes.fromHexString("0x54");
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(statusMessageLengthPrefix);
 
@@ -137,9 +162,11 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldReturnErrorWhenPayloadTooShort() {
-    final Bytes correctMessage = createValidStatusMessage();
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldReturnErrorWhenPayloadTooShort(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
+    final Bytes correctMessage = createValidStatusMessage(encoding);
     final int truncatedSize = correctMessage.size() - 5;
     List<List<ByteBuf>> testByteBufSlices =
         Utils.generateTestSlices(correctMessage.slice(0, truncatedSize));
@@ -161,8 +188,11 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldReadPayloadWhenExtraDataIsAppended() throws RpcException {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldReadPayloadWhenExtraDataIsAppended(
+      final String name, final RpcEncoding encoding, final Compressor compressor)
+      throws RpcException {
     final StatusMessagePhase0 originalMessage = StatusMessagePhase0.createPreGenesisStatus(spec);
     final Bytes encoded = encoding.encodePayload(originalMessage);
     final Bytes extraData = Bytes.of(1, 2, 3, 4);
@@ -188,8 +218,10 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldRejectMessagesThatAreTooLong() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldRejectMessagesThatAreTooLong(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     // We should reject the message based on the length prefix and skip reading the data entirely
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(prefixExceedingMaxLength);
 
@@ -210,8 +242,10 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  @Test
-  public void decodePayload_shouldRejectEmptyMessages() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldRejectEmptyMessages(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     final ByteBuf input = Utils.emptyBuf();
     RpcByteBufDecoder<StatusMessagePhase0> decoder = encoding.createDecoder(statusMessageSchema);
 
@@ -225,8 +259,10 @@ class LengthPrefixedEncodingTest {
     assertThat(input.refCnt()).isEqualTo(0);
   }
 
-  @Test
-  public void decodePayload_shouldThrowErrorWhenPrefixTruncated() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldThrowErrorWhenPrefixTruncated(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     final ByteBuf input = inputByteBuffer(TWO_BYTE_LENGTH_PREFIX.slice(0, 1));
     assertThatThrownBy(
             () -> {
@@ -240,8 +276,10 @@ class LengthPrefixedEncodingTest {
     assertThat(input.refCnt()).isEqualTo(0);
   }
 
-  @Test
-  public void decodePayload_shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void decodePayload_shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     final ByteBuf input = inputByteBuffer("0x80808001");
     RpcByteBufDecoder<StatusMessagePhase0> decoder = encoding.createDecoder(statusMessageSchema);
     assertThatThrownBy(() -> decoder.decodeOneMessage(input)).isInstanceOf(RpcException.class);
@@ -249,8 +287,10 @@ class LengthPrefixedEncodingTest {
     assertThat(input.refCnt()).isEqualTo(0);
   }
 
-  @Test
-  public void encodePayload_shouldEncodeBlocksByRootRequest() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void encodePayload_shouldEncodeBlocksByRootRequest(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema schema =
         spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema();
     final Bytes encoded =
@@ -258,27 +298,31 @@ class LengthPrefixedEncodingTest {
             new BeaconBlocksByRootRequestMessage(schema, singletonList(Bytes32.ZERO)));
     // Just the length prefix and the hash itself.
     assertThat(encoded)
-        .isEqualTo(
-            Bytes.wrap(
-                Bytes.fromHexString("0x20"), new SnappyFramedCompressor().compress(Bytes32.ZERO)));
+        .isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), compressor.compress(Bytes32.ZERO)));
   }
 
-  @Test
-  void encodePayload_shouldReturnZeroBytesForEmptyMessages() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  void encodePayload_shouldReturnZeroBytesForEmptyMessages(
+      final String name, final RpcEncoding encoding, final Compressor compressor) {
     final Bytes result = encoding.encodePayload(EmptyMessage.EMPTY_MESSAGE);
     assertThat(result).isEqualTo(Bytes.EMPTY);
   }
 
-  @Test
-  void shouldDecodeEmptyMessage() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  void shouldDecodeEmptyMessage(
+      final String name, final RpcEncoding encoding, final Compressor compressor) throws Exception {
     final RpcByteBufDecoder<EmptyMessage> decoder = encoding.createDecoder(EmptyMessage.SSZ_SCHEMA);
     final Optional<EmptyMessage> message =
         decoder.decodeOneMessage(Unpooled.wrappedBuffer(new byte[0]));
     assertThat(message).contains(EmptyMessage.EMPTY_MESSAGE);
   }
 
-  @Test
-  public void roundtrip_blocksByRootRequest() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("encodings")
+  public void roundtrip_blocksByRootRequest(
+      final String name, final RpcEncoding encoding, final Compressor compressor) throws Exception {
     final BeaconBlocksByRootRequestMessage request =
         new BeaconBlocksByRootRequestMessage(
             spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
@@ -287,7 +331,7 @@ class LengthPrefixedEncodingTest {
     final int expectedLengthPrefixLength = 1;
     final Bytes uncompressedPayload =
         Bytes.wrap(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02"));
-    final Bytes payload = new SnappyFramedCompressor().compress(uncompressedPayload);
+    final Bytes payload = compressor.compress(uncompressedPayload);
     assertThat(data.size()).isEqualTo(payload.size() + expectedLengthPrefixLength);
 
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(data);
@@ -311,7 +355,7 @@ class LengthPrefixedEncodingTest {
     }
   }
 
-  private Bytes createValidStatusMessage() {
+  private Bytes createValidStatusMessage(final RpcEncoding encoding) {
     return encoding.encodePayload(
         new StatusMessagePhase0(
             new Bytes4(Bytes.of(0, 0, 0, 0)),

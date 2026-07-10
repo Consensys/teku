@@ -111,6 +111,7 @@ public class DiscoveryNetworkBuilder {
       checkNotNull(kvStore);
       checkNotNull(p2pNetwork);
       checkNotNull(currentSchemaDefinitionsSupplier);
+      checkNotNull(spec);
 
       discoveryService =
           new DiscV5Service(
@@ -121,6 +122,7 @@ public class DiscoveryNetworkBuilder {
               kvStore,
               p2pNetwork.getPrivateKey(),
               currentSchemaDefinitionsSupplier,
+              spec.getNumberOfCustodyGroups(),
               DiscV5Service.createDefaultDiscoverySystemBuilder(),
               DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER);
     } else {

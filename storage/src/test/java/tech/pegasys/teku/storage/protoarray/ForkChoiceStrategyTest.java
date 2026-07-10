@@ -443,7 +443,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
 
-    assertThat(strategy.getAncestorNode(head.getRoot(), ancestor.getSlot()))
+    assertThat(
+            strategy.getAncestorNode(ForkChoiceNode.createBase(head.getRoot()), ancestor.getSlot()))
         .contains(
             new ForkChoiceNode(ancestor.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
   }

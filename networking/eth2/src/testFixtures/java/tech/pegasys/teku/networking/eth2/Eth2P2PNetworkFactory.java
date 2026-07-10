@@ -289,7 +289,9 @@ public class Eth2P2PNetworkFactory {
 
         if (rpcEncoding == null) {
           rpcEncoding =
-              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
+              RpcEncoding.createSszSnappyEncoding(
+                  spec.getNetworkingConfig().getMaxPayloadSize(),
+                  config.isRpcSnappyAircompressorEnabled());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final int numberOfColumns = spec.getNumberOfDataColumns().orElse(0);
@@ -418,6 +420,7 @@ public class Eth2P2PNetworkFactory {
                                 NodeIdToDataColumnSidecarSubnetsCalculator.create(
                                     spec, currentSlotSupplier),
                                 gossipNetwork,
+                                eth2PeerManager,
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,
                                 syncCommitteeSubnetService,

@@ -22,9 +22,9 @@ import tech.pegasys.teku.config.TekuConfiguration;
 class BeaconNodeOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  void eventChannelVirtualThreads_shouldDefaultToFalse() {
+  void eventChannelVirtualThreads_shouldDefaultToTrue() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.beaconNodeConfig().eventChannelVirtualThreadsEnabled()).isFalse();
+    assertThat(config.beaconNodeConfig().eventChannelVirtualThreadsEnabled()).isTrue();
   }
 
   @Test

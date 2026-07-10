@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
@@ -103,8 +104,8 @@ public class DataColumnSidecarsByRootMessageHandler
         dasLogger
             .getDataColumnSidecarsByRootLogger()
             .onInboundRequest(
-                LoggingPeerId.fromPeerAndNodeId(
-                    peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
+                LoggingPeerId.fromPeerAndMaybeNodeId(
+                    peer.getId().toBase58(), peer.getDiscoveryNodeId()),
                 message.asList());
 
     final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
@@ -131,29 +132,32 @@ public class DataColumnSidecarsByRootMessageHandler
     completionCallback.onCompletion(
         () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
 
-    SafeFuture.collectAll(
-            message.stream()
-                .map(
-                    byRootIdentifier -> {
-                      if (byRootIdentifier.getColumns().stream()
-                          .noneMatch(myCustodyColumns::contains)) {
-                        // we don't custody any of the requested columns
-                        return SafeFuture.completedFuture(0L);
-                      }
-                      return resolveBlockRootSlot(byRootIdentifier.getBlockRoot())
-                          .thenCompose(
-                              maybeSlot ->
-                                  retrieveAndRespondForBlockRoot(
-                                      byRootIdentifier.getBlockRoot(),
-                                      maybeSlot,
-                                      byRootIdentifier.getColumns(),
-                                      myCustodyColumns,
-                                      messageId,
-                                      completionCallback));
-                    }))
+    SafeFuture<Long> responseFuture = SafeFuture.completedFuture(0L);
+    for (final DataColumnsByRootIdentifier byRootIdentifier : message) {
+      responseFuture =
+          responseFuture.thenCompose(
+              sentSoFar -> {
+                if (byRootIdentifier.getColumns().stream().noneMatch(myCustodyColumns::contains)) {
+                  // we don't custody any of the requested columns
+                  return SafeFuture.completedFuture(sentSoFar);
+                }
+                return resolveBlockRootSlot(byRootIdentifier.getBlockRoot())
+                    .thenCompose(
+                        maybeSlot ->
+                            retrieveAndRespondForBlockRoot(
+                                byRootIdentifier.getBlockRoot(),
+                                maybeSlot,
+                                byRootIdentifier.getColumns(),
+                                myCustodyColumns,
+                                messageId,
+                                completionCallback))
+                    .thenApply(sent -> sentSoFar + sent);
+              });
+    }
+
+    responseFuture
         .thenAccept(
-            counts -> {
-              final long sent = counts.stream().mapToLong(Long::longValue).sum();
+            sent -> {
               if (sent != requestedDataColumnSidecarsCount) {
                 peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sent);
               }
@@ -231,15 +235,22 @@ public class DataColumnSidecarsByRootMessageHandler
     final UInt64 slot = maybeSlot.get();
     return validateMinimumRequestEpoch(blockRoot, slot)
         .thenCompose(
-            __ ->
-                SafeFuture.collectAll(
-                        columns.stream()
-                            .filter(myCustodyColumns::contains)
-                            .map(column -> new DataColumnSlotAndIdentifier(slot, blockRoot, column))
-                            .map(
-                                identifier ->
-                                    retrieveAndRespondForColumn(identifier, messageId, callback)))
-                    .thenApply(counts -> counts.stream().mapToLong(Long::longValue).sum()));
+            __ -> {
+              SafeFuture<Long> responseFuture = SafeFuture.completedFuture(0L);
+              for (final UInt64 column : columns) {
+                if (!myCustodyColumns.contains(column)) {
+                  continue;
+                }
+                final DataColumnSlotAndIdentifier identifier =
+                    new DataColumnSlotAndIdentifier(slot, blockRoot, column);
+                responseFuture =
+                    responseFuture.thenCompose(
+                        sentSoFar ->
+                            retrieveAndRespondForColumn(identifier, messageId, callback)
+                                .thenApply(sent -> sentSoFar + sent));
+              }
+              return responseFuture;
+            });
   }
 
   private SafeFuture<Long> retrieveAndRespondForColumn(
