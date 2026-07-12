@@ -759,12 +759,15 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             mockBlobSidecarReconstructionProvider,
             mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(1024);
-    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
+    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList()).size())
+        .isEqualTo(1024);
 
     assertThat(
-            provider.getValidatorBalancesFromState(
-                internalState, List.of("0", "100", "1023", "1024", "1024000")))
-        .hasSize(3);
+            provider
+                .getValidatorBalancesFromState(
+                    internalState, List.of("0", "100", "1023", "1024", "1024000"))
+                .size())
+        .isEqualTo(3);
   }
 
   @Test

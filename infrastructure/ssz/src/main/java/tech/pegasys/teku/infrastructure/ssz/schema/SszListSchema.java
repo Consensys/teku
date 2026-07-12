@@ -33,6 +33,12 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
     return create(elementSchema, maxLength, SszSchemaHints.none());
   }
 
+  static <ElementDataT extends SszData>
+      SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> createProgressive(
+          final SszSchema<ElementDataT> elementSchema) {
+    return createProgressive(elementSchema, SszSchemaHints.none());
+  }
+
   @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
@@ -45,6 +51,18 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
           SszPrimitiveListSchema.create((SszPrimitiveSchema<?, ?>) elementSchema, maxLength, hints);
     } else {
       return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  static <ElementDataT extends SszData>
+      SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> createProgressive(
+          final SszSchema<ElementDataT> elementSchema, final SszSchemaHints hints) {
+    if (elementSchema instanceof SszPrimitiveSchema) {
+      return (SszListSchema<ElementDataT, ?>)
+          SszPrimitiveListSchema.createProgressive((SszPrimitiveSchema<?, ?>) elementSchema, hints);
+    } else {
+      return SszProgressiveListSchema.create(elementSchema, hints);
     }
   }
 }

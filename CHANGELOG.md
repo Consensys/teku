@@ -11,4 +11,3 @@
 ### Additions and Improvements
 
 ### Bug Fixes
- - Updated Libp2p to remove handshake info message.

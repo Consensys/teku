@@ -120,14 +120,14 @@ class ProtoArrayScoreCalculator {
     }
 
     final Optional<ForkChoiceNode> currentNode =
-        forkChoiceModel.resolveVoteNode(
+        forkChoiceModel.getSupportedNode(
             vote.getCurrentRoot(),
             vote.getCurrentSlot(),
             vote.isCurrentFullPayloadHint(),
             protoArray,
             blockNodeIndex);
     final Optional<ForkChoiceNode> nextNode =
-        forkChoiceModel.resolveVoteNode(
+        forkChoiceModel.getSupportedNode(
             vote.getNextRoot(),
             vote.getNextSlot(),
             vote.isNextFullPayloadHint(),

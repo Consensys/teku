@@ -113,6 +113,13 @@ public class TreeUtil {
   }
 
   public static TreeNode createTree(final List<? extends TreeNode> leafNodes, final int depth) {
+    final int packedDepth = treeDepth(leafNodes.size());
+    if (!leafNodes.isEmpty() && depth > packedDepth) {
+      // the populated leaves fit in a shallower left-aligned subtree: build only that subtree and
+      // represent the zero-padded levels above it with a single compact spine node
+      final TreeNode packedTree = createTree(leafNodes, 0, leafNodes.size(), packedDepth);
+      return ZeroPaddedSpineNode.create(packedTree, packedDepth, depth);
+    }
     return createTree(leafNodes, 0, leafNodes.size(), depth);
   }
 

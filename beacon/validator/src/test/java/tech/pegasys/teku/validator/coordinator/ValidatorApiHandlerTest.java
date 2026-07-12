@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -36,6 +37,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
 import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
@@ -57,6 +59,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -102,6 +105,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -651,27 +655,39 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void onBlockProductionPreparationDue_shouldPrepareBlock() {
+  public void onBlockProductionPreparationDue_shouldReusePreparedChainHeadWhenCreatingBlock() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
-
-    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
-
-    validatorApiHandler.onBlockProductionPreparationDue(newSlot);
+    final ChainHead selectedChainHead = mock(ChainHead.class);
+    final Bytes32 parentRoot =
+        mockRequiredMethodsForBlockProduction(
+            selectedChainHead, blockSlotState, newSlot, PAYLOAD_STATUS_FULL);
 
     when(blockFactory.createUnsignedBlock(any()))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
-    SafeFuture<Optional<BlockContainerAndMetaData>> result =
+    validatorApiHandler.onBlockProductionPreparationDue(newSlot);
+
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
 
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
 
-    verify(chainDataClient).getStateForBlockProduction(eq(chainHead), eq(newSlot));
+    verify(forkChoiceTrigger).prepareForBlockProduction(eq(newSlot), any());
+    verify(chainDataClient).getStateForBlockProduction(same(selectedChainHead), eq(newSlot));
+
+    final ArgumentCaptor<BlockProductionContext> blockProductionContextCaptor =
+        ArgumentCaptor.forClass(BlockProductionContext.class);
+    verify(blockFactory).createUnsignedBlock(blockProductionContextCaptor.capture());
+
+    final BlockProductionContext blockProductionContext = blockProductionContextCaptor.getValue();
+    assertThat(blockProductionContext.blockSlotState()).isSameAs(blockSlotState);
+    assertThat(blockProductionContext.parentRoot()).isEqualTo(parentRoot);
+    assertThat(blockProductionContext.parentPayloadStatus()).isEqualTo(PAYLOAD_STATUS_FULL);
   }
 
   @Test
@@ -1543,11 +1559,24 @@ class ValidatorApiHandlerTest {
 
   private void mockRequiredMethodsForBlockProduction(
       final BeaconState blockSlotState, final UInt64 newSlot) {
-    when(chainDataClient.getStateForBlockProduction(eq(chainHead), eq(newSlot)))
+    mockRequiredMethodsForBlockProduction(
+        chainHead, blockSlotState, newSlot, PAYLOAD_STATUS_PENDING);
+  }
+
+  private Bytes32 mockRequiredMethodsForBlockProduction(
+      final ChainHead chainHead,
+      final BeaconState blockSlotState,
+      final UInt64 newSlot,
+      final ForkChoicePayloadStatus payloadStatus) {
+    when(forkChoiceTrigger.prepareForBlockProduction(eq(newSlot), any()))
+        .thenReturn(SafeFuture.completedFuture(chainHead));
+    when(chainDataClient.getStateForBlockProduction(same(chainHead), eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(blockSlotState));
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.decrement());
     when(chainHead.getRoot()).thenReturn(parentRoot);
-    when(chainHead.getForkChoiceNode()).thenReturn(ForkChoiceNode.createBase(parentRoot));
+    when(chainHead.getForkChoiceNode()).thenReturn(new ForkChoiceNode(parentRoot, payloadStatus));
+    when(chainHead.getPayloadStatus()).thenReturn(payloadStatus);
+    return parentRoot;
   }
 
   private boolean validatorIsLive(
