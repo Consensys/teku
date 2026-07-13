@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
@@ -40,19 +39,16 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
   private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
   private final ExecutionPayloadManager executionPayloadManager;
-  private final CombinedChainDataClient combinedChainDataClient;
 
   public ExecutionPayloadPublisherGloas(
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
-      final ExecutionPayloadManager executionPayloadManager,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final ExecutionPayloadManager executionPayloadManager) {
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadGossipChannel = executionPayloadGossipChannel;
     this.dataColumnSidecarGossipChannel = dataColumnSidecarGossipChannel;
     this.executionPayloadManager = executionPayloadManager;
-    this.combinedChainDataClient = combinedChainDataClient;
   }
 
   @Override
@@ -79,33 +75,20 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return combinedChainDataClient
-        .getExecutionPayloadByBlockRoot(signedBlindedExecutionPayload.getBeaconBlockRoot())
+    return SafeFuture.<SignedExecutionPayloadEnvelope>of(
+            () ->
+                executionPayloadFactory.unblindSignedExecutionPayload(
+                    signedBlindedExecutionPayload))
         .thenCompose(
-            maybeSignedExecutionPayload ->
-                maybeSignedExecutionPayload
-                    .map(
-                        signedExecutionPayload -> {
-                          if (!signedExecutionPayload
-                              .hashTreeRoot()
-                              .equals(signedBlindedExecutionPayload.hashTreeRoot())) {
-                            return SafeFuture.completedFuture(
-                                PublishSignedExecutionPayloadResult.rejected(
-                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
-                                    "Cached execution payload envelope does not match blinded envelope"));
-                          }
-                          return publishSignedExecutionPayload(
-                              signedExecutionPayload,
-                              combinedChainDataClient.getDataColumnSidecars(
-                                  signedExecutionPayload.getSlotAndBlockRoot(), List.of()),
-                              broadcastValidationLevel);
-                        })
-                    .orElseGet(
-                        () ->
-                            SafeFuture.completedFuture(
-                                PublishSignedExecutionPayloadResult.rejected(
-                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
-                                    "No cached execution payload envelope found for blinded envelope"))));
+            signedExecutionPayload ->
+                publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel))
+        .exceptionallyCompose(
+            error -> {
+              return SafeFuture.completedFuture(
+                  PublishSignedExecutionPayloadResult.rejected(
+                      signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                      "No cached execution payload envelope found for blinded envelope"));
+            });
   }
 
   private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(

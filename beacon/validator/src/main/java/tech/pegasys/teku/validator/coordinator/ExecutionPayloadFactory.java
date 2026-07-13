@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 
@@ -29,6 +30,12 @@ public interface ExecutionPayloadFactory {
         @Override
         public SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
             final UInt64 builderIndex, final BeaconBlockAndState blockAndState) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
+        public SafeFuture<SignedExecutionPayloadEnvelope> unblindSignedExecutionPayload(
+            final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -47,6 +54,9 @@ public interface ExecutionPayloadFactory {
 
   SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
       UInt64 builderIndex, BeaconBlockAndState blockAndState);
+
+  SafeFuture<SignedExecutionPayloadEnvelope> unblindSignedExecutionPayload(
+      SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload);
 
   SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       SignedExecutionPayloadEnvelope signedExecutionPayload);

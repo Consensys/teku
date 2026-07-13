@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -66,6 +67,19 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
                                 getPayloadResponse.getBlobsBundle().orElseThrow())));
     return spec.createNewUnsignedExecutionPayload(
         proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
+  }
+
+  @Override
+  public SafeFuture<SignedExecutionPayloadEnvelope> unblindSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload) {
+    final UInt64 slot = signedBlindedExecutionPayload.getSlot();
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+    return getCachedGetPayloadResponseFuture(slot)
+        .thenApply(
+            getPayloadResponse ->
+                signedBlindedExecutionPayload.unblind(
+                    schemaDefinitions, getPayloadResponse.getExecutionPayload()));
   }
 
   @Override

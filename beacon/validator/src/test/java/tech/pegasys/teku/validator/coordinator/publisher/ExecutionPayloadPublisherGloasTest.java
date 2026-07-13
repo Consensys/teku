@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
@@ -56,16 +54,13 @@ class ExecutionPayloadPublisherGloasTest {
       mock(DataColumnSidecarGossipChannel.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
-  private final CombinedChainDataClient combinedChainDataClient =
-      mock(CombinedChainDataClient.class);
 
   private final ExecutionPayloadPublisherGloas executionPayloadPublisher =
       new ExecutionPayloadPublisherGloas(
           executionPayloadFactory,
           executionPayloadGossipChannel,
           dataColumnSidecarGossipChannel,
-          executionPayloadManager,
-          combinedChainDataClient);
+          executionPayloadManager);
 
   final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
@@ -99,13 +94,9 @@ class ExecutionPayloadPublisherGloasTest {
   }
 
   @Test
-  public void publishSignedBlindedExecutionPayload_shouldPublishSidecarsFromChainData() {
-    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(
-            signedBlindedExecutionPayload.getBeaconBlockRoot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(signedExecutionPayload)));
-    when(combinedChainDataClient.getDataColumnSidecars(
-            signedExecutionPayload.getSlotAndBlockRoot(), List.of()))
-        .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
+  public void publishSignedBlindedExecutionPayload_shouldReconstructFromCacheAndPublish() {
+    when(executionPayloadFactory.unblindSignedExecutionPayload(signedBlindedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(signedExecutionPayload));
 
     SafeFutureAssert.assertThatSafeFuture(
             executionPayloadPublisher.publishSignedExecutionPayload(
@@ -114,10 +105,25 @@ class ExecutionPayloadPublisherGloasTest {
             PublishSignedExecutionPayloadResult.success(
                 signedBlindedExecutionPayload.getBeaconBlockRoot()));
 
-    verify(executionPayloadFactory, never()).createDataColumnSidecars(signedExecutionPayload);
     verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
     verify(dataColumnSidecarGossipChannel)
         .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
+  }
+
+  @Test
+  public void publishSignedBlindedExecutionPayload_shouldRejectWhenNotCached() {
+    when(executionPayloadFactory.unblindSignedExecutionPayload(signedBlindedExecutionPayload))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("not cached")));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(
+                signedBlindedExecutionPayload, Optional.empty()))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                "No cached execution payload envelope found for blinded envelope"));
+
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
   }
 
   @Test
