@@ -14,9 +14,9 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.spec.config.Constants.VALID_EXECUTION_PAYLOAD_SET_SIZE;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
-import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 

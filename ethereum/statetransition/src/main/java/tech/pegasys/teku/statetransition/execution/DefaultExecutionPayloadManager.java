@@ -165,7 +165,8 @@ public class DefaultExecutionPayloadManager
                       result, Optional.of(importExecutionPayload(signedExecutionPayload, true)));
                 }
                 case SAVE_FOR_FUTURE ->
-                    saveForFuture(signedExecutionPayload, arrivalTimestamp, broadcastValidationLevel);
+                    saveForFuture(
+                        signedExecutionPayload, arrivalTimestamp, broadcastValidationLevel);
                 case IGNORE, REJECT -> {}
               }
               return new ValidateAndImportResult(result, Optional.empty());

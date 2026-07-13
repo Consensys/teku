@@ -1,4 +1,3 @@
-
 /*
  * Copyright Consensys Software Inc., 2026
  *

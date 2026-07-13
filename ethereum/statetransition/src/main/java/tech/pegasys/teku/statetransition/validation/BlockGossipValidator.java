@@ -373,7 +373,8 @@ public class BlockGossipValidator {
 
   public synchronized boolean isBlockEquivocating(
       final UInt64 slot, final UInt64 proposerIndex, final Bytes32 blockRoot) {
-    return Optional.ofNullable(receivedValidBlockRoots.get(new SlotAndProposer(slot, proposerIndex)))
+    return Optional.ofNullable(
+            receivedValidBlockRoots.get(new SlotAndProposer(slot, proposerIndex)))
         .map(seenBlockRoot -> !seenBlockRoot.equals(blockRoot))
         .orElse(false);
   }
