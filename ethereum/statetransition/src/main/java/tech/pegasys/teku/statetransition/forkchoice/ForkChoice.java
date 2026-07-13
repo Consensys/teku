@@ -411,15 +411,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 currentSlot = spec.getCurrentSlot(store);
     if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
       final SafeFuture<Void> deferredAttestationsFuture = applyDeferredAttestations(currentSlot);
+      // When fast confirmation is disabled this is exactly the master behaviour. When enabled, the
+      // slot-start work runs entirely off the fork-choice thread (on the fast confirmation runner)
+      // with no blocking join; it never gates tick processing.
       if (fastConfirmationTracker.isEnabled()) {
         ForkChoiceFastConfirmation.processForSlot(
-            fastConfirmationTracker,
-            currentSlot,
-            deferredAttestationsFuture,
-            // FCR needs the post-deferred-attestation head at slot start, so this may trigger an
-            // extra early-slot fork-choice calculation before the usual attestation-due head
-            // update.
-            this::processHead);
+            fastConfirmationTracker, currentSlot, deferredAttestationsFuture, this::processHead);
       } else {
         deferredAttestationsFuture.finishStackTrace();
       }

@@ -192,9 +192,10 @@ class FastConfirmationRuleUtilTest {
   }
 
   @Test
-  void shouldReconstructGreatestUnrealizedJustifiedCheckpointAsMaxOverBlocks() {
+  void shouldRaiseGreatestUnrealizedJustifiedCheckpointAboveTheJustifiedFloor() {
     final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
     when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
+    when(store.getJustifiedCheckpoint()).thenReturn(checkpoint(0));
     final Checkpoint greatest = checkpoint(5);
     // Materialize the per-block mocks before stubbing getBlockData to avoid nested stubbing.
     final ProtoNodeData lower = blockDataWithUnrealizedJustified(checkpoint(3));
@@ -207,15 +208,18 @@ class FastConfirmationRuleUtilTest {
   }
 
   @Test
-  void shouldFallBackToFinalizedWhenNoBlocksAvailable() {
+  void shouldReturnJustifiedCheckpointWhenNoBlockHasHigherUnrealizedJustification() {
     final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
     when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
-    when(forkChoice.getBlockData()).thenReturn(List.of());
-    final Checkpoint finalizedCheckpoint = checkpoint(9);
-    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final Checkpoint justifiedCheckpoint = checkpoint(9);
+    when(store.getJustifiedCheckpoint()).thenReturn(justifiedCheckpoint);
+    // Blocks report a lower-epoch (zero) unrealized justified checkpoint, so the floor wins.
+    final ProtoNodeData block =
+        blockDataWithUnrealizedJustified(new Checkpoint(UInt64.ZERO, Bytes32.ZERO));
+    when(forkChoice.getBlockData()).thenReturn(List.of(block));
 
     assertThat(FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store))
-        .isEqualTo(finalizedCheckpoint);
+        .isEqualTo(justifiedCheckpoint);
   }
 
   private ProtoNodeData blockDataWithUnrealizedJustified(final Checkpoint unrealizedJustified) {

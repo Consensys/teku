@@ -52,22 +52,12 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(GossipTests.GOSSIP_TEST_TYPES)
+          .putAll(ForkChoiceTestExecutor.FAST_CONFIRMATION_TEST_TYPES)
           .put("slashing-protection-interchange", new SlashingProtectionInterchangeTestExecutor())
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)
           .put("light_client/data_collection", TestExecutor.IGNORE_TESTS)
-          // TODO: Fast confirmation reference tests implementation
-          .put("fast_confirmation/basic", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/current_epoch", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/empty_slots", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/ffg", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/is_one_confirmed", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/previous_epoch", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/reconfirmation", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/restart_gu", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/revert_finality", TestExecutor.IGNORE_TESTS)
-          .put("fast_confirmation/variables", TestExecutor.IGNORE_TESTS)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =

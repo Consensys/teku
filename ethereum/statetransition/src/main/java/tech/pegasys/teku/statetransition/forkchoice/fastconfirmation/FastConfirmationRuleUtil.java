@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
-import java.util.Comparator;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -123,15 +121,25 @@ public final class FastConfirmationRuleUtil {
 
   /**
    * Reconstructs {@code store.unrealized_justified_checkpoint} (the greatest unrealized justified
-   * checkpoint) from Teku's per-block checkpoint metadata. This is fork-correct: like the spec's
-   * store-level value, it rises from any processed block on any fork.
+   * checkpoint) from Teku's per-block checkpoint metadata.
+   *
+   * <p>Mirrors {@code update_unrealized_checkpoints}: it is initialized to the (realized) justified
+   * checkpoint and raised only when a block reports an unrealized justified checkpoint from a
+   * strictly higher epoch. Starting from the justified checkpoint matters at/near genesis, where
+   * blocks carry a zero unrealized justified checkpoint but the store value is the genesis
+   * checkpoint. This is fork-correct: like the spec's store-level value, it rises from any
+   * processed block on any fork.
    */
   static Checkpoint getGreatestUnrealizedJustifiedCheckpoint(final ReadOnlyStore store) {
-    return store.getForkChoiceStrategy().getBlockData().stream()
-        .map(ProtoNodeData::getCheckpoints)
-        .map(BlockCheckpoints::getUnrealizedJustifiedCheckpoint)
-        .max(Comparator.comparing(Checkpoint::getEpoch))
-        .orElseGet(store::getFinalizedCheckpoint);
+    Checkpoint greatest = store.getJustifiedCheckpoint();
+    for (final ProtoNodeData block : store.getForkChoiceStrategy().getBlockData()) {
+      final Checkpoint unrealizedJustified =
+          block.getCheckpoints().getUnrealizedJustifiedCheckpoint();
+      if (unrealizedJustified.getEpoch().isGreaterThan(greatest.getEpoch())) {
+        greatest = unrealizedJustified;
+      }
+    }
+    return greatest;
   }
 
   static FastConfirmationStore updateFastConfirmationVariables(

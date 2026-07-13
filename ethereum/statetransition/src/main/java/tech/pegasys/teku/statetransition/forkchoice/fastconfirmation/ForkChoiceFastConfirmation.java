@@ -28,13 +28,12 @@ public final class ForkChoiceFastConfirmation {
   private ForkChoiceFastConfirmation() {}
 
   /**
-   * Runs the FCR slot-start work after deferred attestations have been applied.
-   *
-   * <p>FCR is defined from the post-deferred-attestation head at slot start, so this deliberately
-   * triggers the extra early-slot fork-choice calculation supplied by {@code processHead}. Only the
-   * head snapshot is taken on the fork-choice thread; everything else (epoch-boundary flags,
-   * greatest unrealized justified checkpoint, source states, and the confirmation computation) is
-   * handed to the fast confirmation runner via {@link FastConfirmationTracker#onSlot}.
+   * Runs the FCR slot-start work once deferred attestations have been applied, entirely without
+   * blocking the fork-choice thread. FCR is defined from the post-deferred-attestation head at slot
+   * start, so this composes {@code processHead} onto the deferred-attestation future rather than
+   * joining it. Everything after the head snapshot (epoch-boundary flags, greatest unrealized
+   * justified checkpoint, source states, and the confirmation computation) is handed to the fast
+   * confirmation runner via {@link FastConfirmationTracker#onSlot}.
    */
   public static void processForSlot(
       final FastConfirmationTracker fastConfirmationTracker,

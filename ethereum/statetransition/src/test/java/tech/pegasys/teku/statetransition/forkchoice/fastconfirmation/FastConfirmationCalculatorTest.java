@@ -424,6 +424,7 @@ class FastConfirmationCalculatorTest {
     // currentSlot 10 -> current target = checkpoint(1, chain[8]); make it the greatest unrealized.
     final Checkpoint target = new Checkpoint(UInt64.ONE, chain.get(8));
     final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    when(store.getJustifiedCheckpoint()).thenReturn(zero);
     final ProtoNodeData blockData = mock(ProtoNodeData.class);
     when(blockData.getCheckpoints()).thenReturn(new BlockCheckpoints(zero, zero, target, zero));
     when(forkChoice.getBlockData()).thenReturn(List.of(blockData));

@@ -47,6 +47,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -142,9 +144,30 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice_compliance/shuffling_test", new ForkChoiceTestExecutor())
           .build();
 
+  public static final ImmutableMap<String, TestExecutor> FAST_CONFIRMATION_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .put("fast_confirmation/basic", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/current_epoch", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/empty_slots", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/ffg", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/is_one_confirmed", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/previous_epoch", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/reconfirmation", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/restart_gu", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/revert_finality", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/variables", new ForkChoiceTestExecutor(true))
+          .build();
+
   private final List<?> testsToSkip;
+  private final boolean fastConfirmationEnabled;
 
   public ForkChoiceTestExecutor(final String... testsToSkip) {
+    this(false, testsToSkip);
+  }
+
+  public ForkChoiceTestExecutor(
+      final boolean fastConfirmationEnabled, final String... testsToSkip) {
+    this.fastConfirmationEnabled = fastConfirmationEnabled;
     this.testsToSkip = List.of(testsToSkip);
   }
 
@@ -204,6 +227,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final AsyncBLSSignatureVerifier signatureVerifier =
         AsyncBLSSignatureVerifier.wrap(
             blsDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE);
+    // Run the fast confirmation side work synchronously so it completes within each onTick, before
+    // the following checks step reads the confirmation store.
+    final FastConfirmationTracker fastConfirmationTracker =
+        fastConfirmationEnabled
+            ? FastConfirmationTracker.create(spec, Optional.of(SyncAsyncRunner.SYNC_RUNNER))
+            : FastConfirmationTracker.NOOP;
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -213,7 +242,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            FastConfirmationTracker.NOOP,
+            fastConfirmationTracker,
             // forkChoiceLateBlockReorgEnabled is true here always because this is the reference
             // test executor
             true,
@@ -245,6 +274,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           blobSidecarManager,
           dataColumnSidecarManager,
           forkChoice,
+          fastConfirmationTracker,
           executionLayer,
           maybeAttestationValidator,
           gossipValidationHelper,
@@ -291,6 +321,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final StubBlobSidecarManager blobSidecarManager,
       final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
+      final FastConfirmationTracker fastConfirmationTracker,
       final ExecutionLayerChannelStub executionLayer,
       final Optional<AttestationValidator> maybeAttestationValidator,
       final GossipValidationHelper gossipValidationHelper,
@@ -301,7 +332,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     for (Map<String, Object> step : steps) {
       LOG.info("Executing step {}", step);
       if (step.containsKey("checks")) {
-        applyChecks(recentChainData, forkChoice, step);
+        applyChecks(recentChainData, forkChoice, fastConfirmationTracker, step);
 
       } else if (step.containsKey("tick")) {
         forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")), Optional.empty());
@@ -451,8 +482,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SafeFuture<AttestationProcessingResult> result =
         forkChoice.onAttestation(validatableAttestation);
     assertThat(result).isCompleted();
-    AttestationProcessingResult processingResult = safeJoin(result);
-    assertThat(processingResult.isSuccessful())
+    final AttestationProcessingResult processingResult = safeJoin(result);
+    // A current-slot attestation is valid but deferred by fork choice (stored and applied on the
+    // next tick). The fast confirmation vectors apply such attestations, so treat deferral as an
+    // accepted outcome.
+    final boolean acceptedByForkChoice =
+        processingResult.isSuccessful()
+            || processingResult.getStatus()
+                == AttestationProcessingResult.Status.DEFER_FORK_CHOICE_PROCESSING;
+    assertThat(acceptedByForkChoice)
         .withFailMessage(processingResult.getInvalidReason())
         .isEqualTo(valid);
   }
@@ -662,6 +700,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private void applyChecks(
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
+      final FastConfirmationTracker fastConfirmationTracker,
       final Map<String, Object> step) {
     assertThat(forkChoice.processHead()).isCompleted();
     final UpdatableStore store = recentChainData.getStore();
@@ -790,6 +829,42 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                   get(checks, checkType),
                   ReadOnlyForkChoiceStrategy::getPayloadDataAvailabilityVote);
 
+          case "previous_epoch_observed_justified_checkpoint" ->
+              assertCheckpoint(
+                  checkType,
+                  fastConfirmationStore(fastConfirmationTracker)
+                      .previousEpochObservedJustifiedCheckpoint(),
+                  get(checks, checkType));
+
+          case "current_epoch_observed_justified_checkpoint" ->
+              assertCheckpoint(
+                  checkType,
+                  fastConfirmationStore(fastConfirmationTracker)
+                      .currentEpochObservedJustifiedCheckpoint(),
+                  get(checks, checkType));
+
+          case "previous_epoch_greatest_unrealized_checkpoint" ->
+              assertCheckpoint(
+                  checkType,
+                  fastConfirmationStore(fastConfirmationTracker)
+                      .previousEpochGreatestUnrealizedCheckpoint(),
+                  get(checks, checkType));
+
+          case "previous_slot_head" ->
+              assertThat(fastConfirmationStore(fastConfirmationTracker).previousSlotHead())
+                  .describedAs(checkType)
+                  .isEqualTo(getBytes32(checks, checkType));
+
+          case "current_slot_head" ->
+              assertThat(fastConfirmationStore(fastConfirmationTracker).currentSlotHead())
+                  .describedAs(checkType)
+                  .isEqualTo(getBytes32(checks, checkType));
+
+          case "confirmed_root" ->
+              assertThat(fastConfirmationStore(fastConfirmationTracker).confirmedRoot())
+                  .describedAs(checkType)
+                  .isEqualTo(getBytes32(checks, checkType));
+
           default ->
               throw new UnsupportedOperationException("Unsupported check type: " + checkType);
         }
@@ -805,6 +880,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       }
       throw firstError;
     }
+  }
+
+  private FastConfirmationStore fastConfirmationStore(final FastConfirmationTracker tracker) {
+    return tracker
+        .getFastConfirmationStore()
+        .orElseThrow(() -> new IllegalStateException("Fast confirmation store is not available"));
   }
 
   private void assertCheckpoint(
