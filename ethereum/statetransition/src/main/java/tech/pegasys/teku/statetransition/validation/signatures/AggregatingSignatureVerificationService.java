@@ -163,7 +163,34 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
     while (isRunning()) {
       final List<SignatureTask> tasks = waitForBatch();
       if (!tasks.isEmpty()) {
-        batchVerifySignatures(tasks);
+        try {
+          batchVerifySignatures(tasks);
+        } catch (final RuntimeException ex) {
+          // Batch verification can throw on malformed input (for example a BLS aggregate public
+          // key at infinity). Keep the worker alive by falling back to verifying the tasks
+          // individually rather than letting the exception unwind the loop and drop the thread.
+          LOG.error("Unexpected error during batch signature verification", ex);
+          verifyTasksIndividually(tasks);
+        }
+      }
+    }
+  }
+
+  @VisibleForTesting
+  void verifyTasksIndividually(final List<SignatureTask> tasks) {
+    for (final SignatureTask task : tasks) {
+      if (task.result.isDone()) {
+        // Already verified before the failure; skip it so we don't repeat the expensive
+        // verification or overwrite its result.
+        continue;
+      }
+      try {
+        final boolean taskIsValid =
+            BLSSignatureVerifier.SIMPLE.verify(task.publicKeys, task.messages, task.signatures);
+        task.completeAsync(taskIsValid);
+      } catch (final RuntimeException ex) {
+        // Isolate the failure to this task so the rest of the batch still completes.
+        task.completeExceptionallyAsync(ex);
       }
     }
   }
@@ -209,7 +236,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
       }
     } else if (tasks.size() == 1) {
       // We only had 1 signature, so it must be invalid
-      tasks.get(0).completeAsync(false);
+      tasks.getFirst().completeAsync(false);
     } else if (tasks.size() >= minBatchSizeToSplit) {
       // Split up tasks and try to verify in smaller batches
       final List<List<SignatureTask>> splitTasks = splitTasks(tasks);
@@ -257,6 +284,12 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
 
     public void completeAsync(final boolean isValid) {
       asyncRunner.runAsync(() -> result.complete(isValid)).finish(result::completeExceptionally);
+    }
+
+    public void completeExceptionallyAsync(final Throwable error) {
+      asyncRunner
+          .runAsync(() -> result.completeExceptionally(error))
+          .finish(result::completeExceptionally);
     }
   }
 }

@@ -396,6 +396,41 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
+  public void shouldWaitForPreviousResponseWriteBeforeSendingNextSidecar() {
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(2, 1);
+    final List<DataColumnSidecar> generatedSidecars =
+        IntStream.range(0, 2).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
+    final SafeFuture<Void> firstWriteFuture = new SafeFuture<>();
+
+    when(callback.respond(any())).thenReturn(firstWriteFuture).thenReturn(SafeFuture.COMPLETE);
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenAnswer(
+            invocation -> {
+              final DataColumnSlotAndIdentifier slotAndIdentifier = invocation.getArgument(0);
+              for (int i = 0; i < 2; ++i) {
+                if (dataColumnsByRootIdentifiers[i]
+                    .getBlockRoot()
+                    .equals(slotAndIdentifier.blockRoot())) {
+                  return SafeFuture.completedFuture(Optional.of(generatedSidecars.get(i)));
+                }
+              }
+              throw new RuntimeException("Should never get here");
+            });
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(callback, times(1)).respond(any());
+    verify(callback, never()).completeSuccessfully();
+
+    firstWriteFuture.complete(null);
+
+    verify(callback, times(2)).respond(any());
+    verify(callback).completeSuccessfully();
+  }
+
+  @TestTemplate
   public void shouldTryToReconstructArchiveDataColumnSidecars() {
     final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
         generateDataColumnsByRootIdentifiers(4, 1);

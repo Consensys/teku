@@ -37,8 +37,10 @@ public class ReferenceTestFinder {
           TestFork.CAPELLA,
           TestFork.DENEB,
           TestFork.ELECTRA,
-          TestFork.FULU,
-          TestFork.GLOAS);
+          TestFork.FULU
+          /// TODO: we will re-enable gloas after 7688 support will be merged
+          /// ref: [7688 epic](https://github.com/Consensys/teku/issues/9772)
+          );
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {

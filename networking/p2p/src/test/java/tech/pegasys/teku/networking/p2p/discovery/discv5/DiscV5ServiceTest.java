@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.KeyType;
@@ -75,6 +76,27 @@ class DiscV5ServiceTest {
     assertThat(discoverySystemBuilder.listenAddresses[0].getAddress().isAnyLocalAddress()).isTrue();
     assertThat(IPVersionResolver.resolve(discoverySystemBuilder.listenAddresses[0]))
         .isEqualTo(IPVersion.IP_V6);
+  }
+
+  @Test
+  void shouldSkipMalformedBootnodeWithoutFailingStartup() {
+    final DiscoveryConfig discoveryConfig =
+        DiscoveryConfig.builder()
+            .listenUdpPort(9000)
+            .listenUdpPortIpv6(9000)
+            .bootnodes(List.of("enr:-not-valid-base64!!!"))
+            .build();
+    final NetworkConfig networkConfig =
+        NetworkConfig.builder()
+            .networkInterfaces(List.of("0.0.0.0", "::"))
+            .advertisedIps(Optional.of(List.of("127.0.0.1", "::1")))
+            .build();
+
+    assertThatCode(
+            () ->
+                createService(
+                    discoveryConfig, networkConfig, new CapturingDiscoverySystemBuilder()))
+        .doesNotThrowAnyException();
   }
 
   private static void createService(
