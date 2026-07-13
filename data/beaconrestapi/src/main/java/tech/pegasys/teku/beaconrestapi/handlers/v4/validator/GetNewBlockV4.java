@@ -101,7 +101,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
-        .queryParamAllowsEmpty(GRAFFITI_PARAMETER)
+        .queryParam(GRAFFITI_PARAMETER)
         .queryParamAllowsEmpty(SKIP_RANDAO_VERIFICATION_PARAMETER)
         .queryParamAllowsEmpty(INCLUDE_PAYLOAD_PARAMETER)
         .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
