@@ -17,12 +17,11 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -85,9 +84,8 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 ETH_CONSENSUS_HEADER_TYPE)
             .withBadRequestResponse(Optional.of("Invalid request - the slot is invalid"))
             .response(
-                SC_NOT_FOUND,
-                "No canonical block has been seen for the requested slot.",
-                HTTP_ERROR_RESPONSE_TYPE)
+                SC_NO_CONTENT,
+                "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.")
             .withNotAcceptableResponse()
             .withInternalErrorResponse()
             .withChainDataResponses()
@@ -115,11 +113,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                               new ObjectAndMetaData<>(
                                   payloadAttestationData, milestone, false, true, false));
                         })
-                    .orElseGet(
-                        () ->
-                            AsyncApiResponse.respondWithError(
-                                SC_NOT_FOUND,
-                                "No canonical block found at slot=" + slot.toString()))));
+                    .orElseGet(() -> AsyncApiResponse.respondWithCode(SC_NO_CONTENT))));
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<PayloadAttestationData>>
