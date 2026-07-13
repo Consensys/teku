@@ -47,6 +47,7 @@ class FastConfirmationCalculatorTest {
 
   // Minimal preset: SLOTS_PER_EPOCH == 8
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private static final Spec GLOAS_SPEC = TestSpecFactory.createMinimalGloas();
   private final ReadOnlyStore store = mock(ReadOnlyStore.class);
   private final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
 
@@ -380,6 +381,34 @@ class FastConfirmationCalculatorTest {
   }
 
   @Test
+  void shouldConfirmGloasBlockThatIsPresentEvenWhenNotFullyValidated() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = gloasGenesisState();
+    // A Gloas block stays OPTIMISTIC (not fully validated) until its execution payload envelope is
+    // revealed, but the rule confirms the PENDING (block-level) node, so presence in fork choice is
+    // enough. contains() defaults to true from buildLinearChain.
+    when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(false);
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(allValidatorsVotingFor(balanceSource, chain.get(3))));
+    final FastConfirmationCalculator calculator = gloasCalculator(balanceSource, chain.get(5), 5);
+
+    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isTrue();
+  }
+
+  @Test
+  void shouldNotConfirmGloasBlockThatIsAbsentFromForkChoice() {
+    buildLinearChain(11);
+    // An execution-invalid Gloas block is pruned from fork choice, so contains() is false and it
+    // must never be confirmed even though isFullyValidated would report true here.
+    when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(true);
+    when(forkChoice.contains(chain.get(3))).thenReturn(false);
+    final FastConfirmationCalculator calculator =
+        gloasCalculator(mock(BeaconState.class), chain.get(5), 5);
+
+    assertThat(calculator.isOneConfirmed(mock(BeaconState.class), chain.get(3))).isFalse();
+  }
+
+  @Test
   void shouldScoreOnlyVotesWhoseTargetMatchesTheCurrentTarget() {
     buildLinearChain(11);
     final BeaconState balanceSource = genesisState();
@@ -636,6 +665,18 @@ class FastConfirmationCalculatorTest {
 
   private BeaconState genesisState() {
     return ChainBuilder.create(spec).generateGenesis().getState();
+  }
+
+  private BeaconState gloasGenesisState() {
+    return ChainBuilder.create(GLOAS_SPEC).generateGenesis().getState();
+  }
+
+  private FastConfirmationCalculator gloasCalculator(
+      final BeaconState headState, final Bytes32 head, final long currentSlot) {
+    final FastConfirmationStates states =
+        new FastConfirmationStates(Optional.empty(), mock(BeaconState.class), headState);
+    return new FastConfirmationCalculator(
+        GLOAS_SPEC, fcrStore(head), states, UInt64.valueOf(currentSlot));
   }
 
   private void buildLinearChain(final int length) {

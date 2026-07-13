@@ -76,10 +76,6 @@ public class ReferenceTestFinder {
                               "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes",
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_current_epoch",
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch",
-                              // TODO-GLOAS: fast confirmation is not yet wired for the Gloas
-                              // (ePBS) fork-choice variant, so the whole Gloas suite is skipped
-                              // until it is implemented.
-                              "gloas - minimal - fast_confirmation",
                               // These fail the standard fork-choice `head` check (not any fast
                               // confirmation check): Teku's LMD-GHOST selects a different head than
                               // the spec in this two-competing-blocks-in-one-slot scenario. The
