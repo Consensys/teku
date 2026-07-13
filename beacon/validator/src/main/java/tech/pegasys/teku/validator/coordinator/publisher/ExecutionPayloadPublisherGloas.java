@@ -26,8 +26,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
@@ -95,23 +97,38 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
     return executionPayloadManager
-        .validateAndImportExecutionPayload(
-            signedExecutionPayload, Optional.empty(), broadcastValidationLevel)
-        .thenApply(
-            result -> {
-              final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
-              if (result.isAccept()) {
-                // we publish the execution payload (and data column sidecars) after passing gossip
-                // validation
-                publishExecutionPayloadAndDataColumnSidecars(
-                    signedExecutionPayload, dataColumnSidecarsFuture);
-                return PublishSignedExecutionPayloadResult.success(beaconBlockRoot);
+        .validateAndImportExecutionPayloadForBroadcast(
+            signedExecutionPayload, broadcastValidationLevel)
+        .thenCompose(
+            validateAndImportResult -> {
+              final InternalValidationResult validationResult =
+                  validateAndImportResult.validationResult();
+              if (!validationResult.isAccept()) {
+                return SafeFuture.completedFuture(
+                    PublishSignedExecutionPayloadResult.rejected(
+                        beaconBlockRoot,
+                        "Failed broadcast validation"
+                            + validationResult
+                                .getDescription()
+                                .map(description -> ": " + description)
+                                .orElse("")));
               }
-              return PublishSignedExecutionPayloadResult.rejected(
-                  beaconBlockRoot,
-                  "Failed gossip validation"
-                      + result.getDescription().map(description -> ": " + description).orElse(""));
+              publishExecutionPayloadAndDataColumnSidecars(
+                  signedExecutionPayload, dataColumnSidecarsFuture);
+              return validateAndImportResult
+                  .importResult()
+                  .orElseGet(
+                      () ->
+                          SafeFuture.completedFuture(
+                              ExecutionPayloadImportResult.successful(signedExecutionPayload)))
+                  .thenApply(
+                      importResult ->
+                          importResult.isSuccessful()
+                              ? PublishSignedExecutionPayloadResult.success(beaconBlockRoot)
+                              : PublishSignedExecutionPayloadResult.notImported(
+                                  beaconBlockRoot, importResult.getFailureReason().name()));
             });
   }
 

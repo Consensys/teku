@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -71,9 +72,15 @@ class ExecutionPayloadPublisherGloasTest {
 
   @BeforeEach
   public void setUp() {
-    when(executionPayloadManager.validateAndImportExecutionPayload(
-            eq(signedExecutionPayload), eq(Optional.empty()), any()))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.ACCEPT,
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            ExecutionPayloadImportResult.successful(signedExecutionPayload))))));
     when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
     when(executionPayloadGossipChannel.publishExecutionPayload(signedExecutionPayload))
@@ -127,16 +134,43 @@ class ExecutionPayloadPublisherGloasTest {
   }
 
   @Test
-  public void publishSignedExecutionPayload_shouldReturnRejectedResultIfGossipValidationFails() {
-    when(executionPayloadManager.validateAndImportExecutionPayload(
-            eq(signedExecutionPayload), eq(Optional.empty()), any()))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("oopsy")));
+  public void publishSignedExecutionPayload_shouldReturnRejectedResultIfBroadcastValidationFails() {
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.reject("oopsy"), Optional.empty())));
     SafeFutureAssert.assertThatSafeFuture(
             executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
         .isCompletedWithValue(
             PublishSignedExecutionPayloadResult.rejected(
-                signedExecutionPayload.getBeaconBlockRoot(), "Failed gossip validation: oopsy"));
+                signedExecutionPayload.getBeaconBlockRoot(), "Failed broadcast validation: oopsy"));
 
     verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldReturnNotImportedWhenIntegrationFails() {
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.ACCEPT,
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            ExecutionPayloadImportResult.failedExecution(
+                                new RuntimeException("el error")))))));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.notImported(
+                signedExecutionPayload.getBeaconBlockRoot(), "FAILED_EXECUTION"));
+
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
 }

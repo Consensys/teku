@@ -1,3 +1,4 @@
+
 /*
  * Copyright Consensys Software Inc., 2026
  *
@@ -47,6 +48,14 @@ public interface ExecutionPayloadManager {
         }
 
         @Override
+        public SafeFuture<ValidateAndImportResult> validateAndImportExecutionPayloadForBroadcast(
+            final SignedExecutionPayloadEnvelope signedExecutionPayload,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
+              new ValidateAndImportResult(InternalValidationResult.ACCEPT, Optional.empty()));
+        }
+
+        @Override
         public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload,
             final boolean payloadCommitmentVerified) {
@@ -90,6 +99,10 @@ public interface ExecutionPayloadManager {
       Optional<UInt64> maybeArrivalTimestamp,
       Optional<BroadcastValidationLevel> broadcastValidationLevel);
 
+  SafeFuture<ValidateAndImportResult> validateAndImportExecutionPayloadForBroadcast(
+      SignedExecutionPayloadEnvelope signedExecutionPayload,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
+
   /**
    * Imports execution payload via fork choice `on_execution_payload`
    *
@@ -128,4 +141,8 @@ public interface ExecutionPayloadManager {
   interface FailedPayloadExecutionSubscriber {
     void onPayloadExecutionFailed(SignedExecutionPayloadEnvelope executionPayload);
   }
+
+  record ValidateAndImportResult(
+      InternalValidationResult validationResult,
+      Optional<SafeFuture<ExecutionPayloadImportResult>> importResult) {}
 }

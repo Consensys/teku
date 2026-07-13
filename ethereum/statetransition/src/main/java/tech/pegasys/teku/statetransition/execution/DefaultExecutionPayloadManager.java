@@ -138,33 +138,66 @@ public class DefaultExecutionPayloadManager
                   signedExecutionPayload, arrivalTimestamp);
               importExecutionPayload(signedExecutionPayload, true).finishError(LOG);
             }
-            case SAVE_FOR_FUTURE -> {
-              if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
-                // handles edge case where block was imported while validating the payload
-                asyncRunner
-                    .runAfterDelay(
-                        () ->
-                            validateAndImportExecutionPayload(
-                                    signedExecutionPayload,
-                                    Optional.of(arrivalTimestamp),
-                                    broadcastValidationLevel)
-                                .thenCompose(r -> publishPayload(r, signedExecutionPayload)),
-                        Duration.ofMillis(100))
-                    .finishError(LOG);
-              } else {
-                // since no slashing is implemented in order to prevent DoS, we keep one pending
-                // payload: the latest candidate received before payload due, or the first candidate
-                // if none arrived before payload due
-                pendingExecutionPayloads.merge(
-                    signedExecutionPayload.getBlockRootAndBuilderIndex(),
-                    new PendingExecutionPayload(signedExecutionPayload, arrivalTimestamp),
-                    this::selectPendingExecutionPayload);
-              }
-            }
+            case SAVE_FOR_FUTURE ->
+                saveForFuture(signedExecutionPayload, arrivalTimestamp, broadcastValidationLevel);
             case IGNORE, REJECT -> {}
           }
         });
     return validationResult;
+  }
+
+  @Override
+  public SafeFuture<ValidateAndImportResult> validateAndImportExecutionPayloadForBroadcast(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    final UInt64 arrivalTimestamp = recentChainData.getStore().getTimeInMillis();
+    return executionPayloadGossipValidator
+        .validate(signedExecutionPayload, broadcastValidationLevel)
+        .thenApply(
+            result -> {
+              switch (result.code()) {
+                case ACCEPT -> {
+                  receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadValidated(
+                      signedExecutionPayload);
+                  recordIfExecutionPayloadIsSeenBeforeDeadline(
+                      signedExecutionPayload, arrivalTimestamp);
+                  return new ValidateAndImportResult(
+                      result, Optional.of(importExecutionPayload(signedExecutionPayload, true)));
+                }
+                case SAVE_FOR_FUTURE ->
+                    saveForFuture(signedExecutionPayload, arrivalTimestamp, broadcastValidationLevel);
+                case IGNORE, REJECT -> {}
+              }
+              return new ValidateAndImportResult(result, Optional.empty());
+            });
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void saveForFuture(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final UInt64 arrivalTimestamp,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    if (recentChainData.containsBlock(signedExecutionPayload.getBeaconBlockRoot())) {
+      // handles edge case where block was imported while validating the payload
+      asyncRunner
+          .runAfterDelay(
+              () ->
+                  validateAndImportExecutionPayload(
+                          signedExecutionPayload,
+                          Optional.of(arrivalTimestamp),
+                          broadcastValidationLevel)
+                      .thenCompose(r -> publishPayload(r, signedExecutionPayload)),
+              Duration.ofMillis(100))
+          .finishError(LOG);
+    } else {
+      // since no slashing is implemented in order to prevent DoS, we keep one pending
+      // payload: the latest candidate received before payload due, or the first candidate
+      // if none arrived before payload due
+      pendingExecutionPayloads.merge(
+          signedExecutionPayload.getBlockRootAndBuilderIndex(),
+          new PendingExecutionPayload(signedExecutionPayload, arrivalTimestamp),
+          this::selectPendingExecutionPayload);
+    }
   }
 
   @Override
