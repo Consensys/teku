@@ -371,6 +371,13 @@ public class BlockGossipValidator {
         signingRoot, block.getProposerIndex(), block.getSignature(), postState);
   }
 
+  public synchronized boolean isBlockEquivocating(
+      final UInt64 slot, final UInt64 proposerIndex, final Bytes32 blockRoot) {
+    return Optional.ofNullable(receivedValidBlockRoots.get(new SlotAndProposer(slot, proposerIndex)))
+        .map(seenBlockRoot -> !seenBlockRoot.equals(blockRoot))
+        .orElse(false);
+  }
+
   private record SlotAndProposer(UInt64 slot, UInt64 proposerIndex) {
     public SlotAndProposer(final SignedBeaconBlock block) {
       this(block.getSlot(), block.getMessage().getProposerIndex());

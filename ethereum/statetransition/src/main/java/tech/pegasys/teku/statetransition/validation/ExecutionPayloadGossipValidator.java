@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.spec.config.Constants.VALID_EXECUTION_PAYLOAD_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
@@ -47,6 +48,7 @@ public class ExecutionPayloadGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final GossipValidationHelper gossipValidationHelper;
+  private final BlockGossipValidator blockGossipValidator;
   private final SigningRootUtil signingRootUtil;
 
   private final Set<BlockRootAndBuilderIndex> seenPayloads =
@@ -57,8 +59,10 @@ public class ExecutionPayloadGossipValidator {
   public ExecutionPayloadGossipValidator(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
+      final BlockGossipValidator blockGossipValidator,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
     this.gossipValidationHelper = gossipValidationHelper;
+    this.blockGossipValidator = blockGossipValidator;
     this.invalidBlockRoots = invalidBlockRoots;
     signingRootUtil = new SigningRootUtil(spec);
   }
@@ -91,17 +95,40 @@ public class ExecutionPayloadGossipValidator {
               }
 
               return performWithStateValidation(signedExecutionPayloadEnvelope)
-                  .thenApply(
+                  .thenCompose(
                       result -> {
-                        if (broadcastValidationLevel.isPresent()
+                        if (result.isAccept()
                             && broadcastValidationLevel
-                                .get()
-                                .equals(BroadcastValidationLevel.GOSSIP)
-                            && result.isAccept()) {
-                          return markAsSeen(ACCEPT, envelope);
+                                .map(CONSENSUS_AND_EQUIVOCATION::equals)
+                                .orElse(false)) {
+                          // consensus_and_equivocation: reject if the envelope's beacon block is an
+                          // equivocation, before it is broadcast
+                          return performEquivocationCheck(envelope);
                         }
-                        return markAsSeen(result, envelope);
+                        return SafeFuture.completedFuture(markAsSeen(result, envelope));
                       });
+            });
+  }
+
+  private SafeFuture<InternalValidationResult> performEquivocationCheck(
+      final ExecutionPayloadEnvelope envelope) {
+    return gossipValidationHelper
+        .retrieveBlockByRoot(envelope.getBeaconBlockRoot())
+        .thenApply(
+            maybeBeaconBlock -> {
+              if (maybeBeaconBlock
+                  .map(
+                      beaconBlock ->
+                          blockGossipValidator.isBlockEquivocating(
+                              beaconBlock.getSlot(),
+                              beaconBlock.getProposerIndex(),
+                              beaconBlock.getRoot()))
+                  .orElse(false)) {
+                return reject(
+                    "Execution payload envelope's beacon block with root %s is an equivocation",
+                    envelope.getBeaconBlockRoot());
+              }
+              return markAsSeen(ACCEPT, envelope);
             });
   }
 
