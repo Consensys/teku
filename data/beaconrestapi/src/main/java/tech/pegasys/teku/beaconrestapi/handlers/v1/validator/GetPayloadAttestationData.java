@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetPayloadAttestationData extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/payload_attestation_data/{slot}";
+  public static final String ROUTE = "/eth/v1/validator/payload_attestation_data";
 
   private final ValidatorDataProvider provider;
   private final SchemaDefinitionCache schemaDefinitionCache;
@@ -75,7 +75,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 A 503 error must be returned if the beacon node is currently syncing.
                 """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .pathParam(SLOT_PARAM)
+            .queryParam(SLOT_PARAM)
             .response(
                 SC_OK,
                 "Success response",
@@ -83,12 +83,12 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 sszResponseType(),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withBadRequestResponse(Optional.of("Invalid request - the slot is invalid"))
-            .response(
-                SC_NO_CONTENT,
-                "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.")
             .withNotAcceptableResponse()
             .withInternalErrorResponse()
             .withChainDataResponses()
+            .response(
+                SC_NO_CONTENT,
+                "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.")
             .build());
     this.provider = validatorDataProvider;
     this.schemaDefinitionCache = schemaDefinitionCache;
@@ -96,7 +96,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final UInt64 slot = request.getPathParameter(SLOT_PARAM);
+    final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
     final SafeFuture<Optional<PayloadAttestationData>> future =
         provider.createPayloadAttestationData(slot);
 

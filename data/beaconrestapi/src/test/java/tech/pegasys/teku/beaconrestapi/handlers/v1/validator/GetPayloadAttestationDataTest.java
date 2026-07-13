@@ -53,13 +53,13 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
     payloadAttestationDataResponse =
         new ObjectAndMetaData<>(payloadAttestationData, SpecMilestone.GLOAS, false, true, false);
     setHandler(new GetPayloadAttestationData(validatorDataProvider, schemaDefinitionCache));
-    request.setPathParameter(RestApiConstants.SLOT, ONE.toString());
+    request.setQueryParameter(RestApiConstants.SLOT, ONE.toString());
   }
 
   @Test
   void metadata_shouldUsePayloadAttestationDataRoute() {
     assertThat(handler.getMetadata().getPath())
-        .isEqualTo("/eth/v1/validator/payload_attestation_data/{slot}");
+        .isEqualTo("/eth/v1/validator/payload_attestation_data");
   }
 
   @Test
@@ -78,7 +78,7 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
     setSpec(TestSpecFactory.createMinimalWithHezeForkEpoch(ONE));
     setHandler(new GetPayloadAttestationData(validatorDataProvider, schemaDefinitionCache));
     final UInt64 hezeSlot = spec.computeStartSlotAtEpoch(ONE);
-    request.setPathParameter(RestApiConstants.SLOT, hezeSlot.toString());
+    request.setQueryParameter(RestApiConstants.SLOT, hezeSlot.toString());
     final PayloadAttestationData hezePayloadAttestationData =
         dataStructureUtil.randomPayloadAttestationData(hezeSlot);
     when(validatorDataProvider.createPayloadAttestationData(hezeSlot))

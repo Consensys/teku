@@ -21,6 +21,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import static java.util.Collections.emptyMap;
+
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
@@ -57,12 +59,9 @@ class CreatePayloadAttestationDataRequestTest extends AbstractTypeDefRequestTest
     final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .isEqualTo(
-            "/"
-                + ValidatorApiMethod.GET_PAYLOAD_ATTESTATION_DATA.getPath(
-                    Map.of("slot", slot.toString())));
-    assertThat(request.getRequestUrl().queryParameter("slot")).isNull();
+    assertThat(request.getRequestUrl().encodedPath())
+        .isEqualTo("/" + ValidatorApiMethod.GET_PAYLOAD_ATTESTATION_DATA.getPath(emptyMap()));
+    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getHeader("Accept"))
         .isEqualTo("application/octet-stream;q=0.9, application/json;q=0.4");
   }

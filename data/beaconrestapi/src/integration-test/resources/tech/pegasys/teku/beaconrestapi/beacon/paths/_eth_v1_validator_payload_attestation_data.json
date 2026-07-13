@@ -6,8 +6,7 @@
     "description" : "Requests that the beacon node produce a `PayloadAttestationData`.\n\nThis endpoint is used by PTC validators to obtain the data structure they need to attest to regarding payload presence and blob data availability for a specific slot.\n\nA 503 error must be returned if the beacon node is currently syncing.\n",
     "parameters" : [ {
       "name" : "slot",
-      "required" : true,
-      "in" : "path",
+      "in" : "query",
       "schema" : {
         "type" : "string",
         "description" : "The slot for which payload attestation data should be created.",
@@ -53,16 +52,6 @@
           }
         }
       },
-      "404" : {
-        "description" : "No canonical block has been seen for the requested slot.",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
-      },
       "406" : {
         "description" : "Not acceptable",
         "content" : {
@@ -94,7 +83,7 @@
         }
       },
       "204" : {
-        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "description" : "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.",
         "content" : { }
       }
     }
