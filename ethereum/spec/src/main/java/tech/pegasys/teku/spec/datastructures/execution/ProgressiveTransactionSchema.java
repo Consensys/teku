@@ -13,13 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class Transaction extends SszByteListImpl {
+/**
+ * Progressive (EIP-7916) variant of {@link TransactionSchema} that preserves the {@link
+ * Transaction} subtype while using progressive merkleization with no fixed max capacity.
+ */
+public class ProgressiveTransactionSchema extends SszProgressiveByteListSchema<Transaction> {
 
-  Transaction(final SszByteListSchema<?> schema, final TreeNode backingNode) {
-    super(schema, backingNode);
+  @Override
+  public Transaction createFromBackingNode(final TreeNode node) {
+    return new Transaction(this, node);
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTING_INDICES_SCHEMA;
+
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
@@ -20,17 +22,26 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class IndexedAttestationSchema
     extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
-  public IndexedAttestationSchema(
-      final String containerName, final long maxValidatorsPerAttestation) {
+  public IndexedAttestationSchema(final String containerName, final SchemaRegistry schemaRegistry) {
     super(
         containerName,
-        namedSchema("attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerAttestation)),
+        namedSchema("attesting_indices", schemaRegistry.get(ATTESTING_INDICES_SCHEMA)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
+  }
+
+  protected IndexedAttestationSchema(
+      final String containerName,
+      final boolean[] activeFields,
+      final NamedSchema<SszUInt64List> attestingIndicesSchema,
+      final NamedSchema<AttestationData> dataSchema,
+      final NamedSchema<SszSignature> signatureSchema) {
+    super(containerName, activeFields, attestingIndicesSchema, dataSchema, signatureSchema);
   }
 
   public SszUInt64ListSchema<?> getAttestingIndicesSchema() {

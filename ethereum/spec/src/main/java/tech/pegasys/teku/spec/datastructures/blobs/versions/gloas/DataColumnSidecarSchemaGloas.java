@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
@@ -37,7 +37,7 @@ public class DataColumnSidecarSchemaGloas
     implements DataColumnSidecarSchema<DataColumnSidecarGloas> {
 
   public DataColumnSidecarSchemaGloas(
-      final DataColumnSchema dataColumnSchema, final SpecConfigGloas specConfig) {
+      final DataColumnSchemaFulu dataColumnSchema, final SpecConfigGloas specConfig) {
     super(
         "DataColumnSidecarGloas",
         namedSchema(FIELD_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),

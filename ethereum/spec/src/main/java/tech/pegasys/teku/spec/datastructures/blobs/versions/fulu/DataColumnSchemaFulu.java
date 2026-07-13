@@ -19,14 +19,17 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class DataColumnSchema extends AbstractSszListSchema<Cell, DataColumn> {
+public class DataColumnSchemaFulu extends AbstractSszListSchema<Cell, DataColumn>
+    implements DataColumnSchema {
 
-  public DataColumnSchema(final SpecConfigDeneb specConfig, final SchemaRegistry registry) {
+  public DataColumnSchemaFulu(final SpecConfigDeneb specConfig, final SchemaRegistry registry) {
     super(registry.get(CELL_SCHEMA), specConfig.getMaxBlobCommitmentsPerBlock());
   }
 
+  @Override
   public DataColumn create(final List<Cell> cells) {
     final TreeNode backingNode = this.createTreeFromElements(cells);
     return createFromBackingNode(backingNode);

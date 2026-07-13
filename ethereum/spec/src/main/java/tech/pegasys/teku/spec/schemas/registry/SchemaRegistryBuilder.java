@@ -119,11 +119,11 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSidecarSchemaGloas;
@@ -523,8 +523,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                new ExecutionRequestsSchemaElectra(
-                    SpecConfigElectra.required(specConfig), registry, schemaName))
+                new ExecutionRequestsSchemaElectra(registry, schemaName))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
@@ -614,15 +613,18 @@ public class SchemaRegistryBuilder {
         .withCreator(
             BELLATRIX,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadHeaderSchemaBellatrix(SpecConfigBellatrix.required(specConfig)))
+                new ExecutionPayloadHeaderSchemaBellatrix(
+                    SpecConfigBellatrix.required(specConfig), registry))
         .withCreator(
             CAPELLA,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)))
+                new ExecutionPayloadHeaderSchemaCapella(
+                    SpecConfigCapella.required(specConfig), registry))
         .withCreator(
             DENEB,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)))
+                new ExecutionPayloadHeaderSchemaDeneb(
+                    SpecConfigDeneb.required(specConfig), registry))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
@@ -635,15 +637,18 @@ public class SchemaRegistryBuilder {
         .withCreator(
             BELLATRIX,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadSchemaBellatrix(SpecConfigBellatrix.required(specConfig)))
+                new ExecutionPayloadSchemaBellatrix(
+                    SpecConfigBellatrix.required(specConfig), registry))
         .withCreator(
             CAPELLA,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadSchemaCapella(SpecConfigCapella.required(specConfig)))
+                new ExecutionPayloadSchemaCapella(
+                    SpecConfigCapella.required(specConfig), registry))
         .withCreator(
             DENEB,
             (registry, specConfig, schemaName) ->
-                new ExecutionPayloadSchemaDeneb(SpecConfigDeneb.required(specConfig)))
+                new ExecutionPayloadSchemaDeneb(
+                    SpecConfigDeneb.required(specConfig), registry))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
@@ -669,7 +674,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             DENEB,
             (registry, specConfig, schemaName) ->
-                new BlobKzgCommitmentsSchema(SpecConfigDeneb.required(specConfig)))
+            new BlobKzgCommitmentsSchemaDeneb(SpecConfigDeneb.required(specConfig)))
         .build();
   }
 
@@ -797,13 +802,11 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (registry, specConfig, schemaName) ->
-                new IndexedAttestationSchema(
-                    schemaName, getMaxValidatorsPerAttestationPhase0(specConfig)))
+                new IndexedAttestationSchema(schemaName, registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                new IndexedAttestationSchema(
-                    schemaName, getMaxValidatorsPerAttestationElectra(specConfig)))
+                new IndexedAttestationSchema(schemaName, registry))
         .build();
   }
 
@@ -817,9 +820,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                new AttestationElectraSchema(
-                        getMaxValidatorsPerAttestationElectra(specConfig),
-                        specConfig.getMaxCommitteesPerSlot())
+                new AttestationElectraSchema(registry, specConfig.getMaxCommitteesPerSlot())
                     .castTypeToAttestationSchema())
         .build();
   }
@@ -875,7 +876,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             FULU,
             (registry, specConfig, schemaName) ->
-                new DataColumnSchema(SpecConfigDeneb.required(specConfig), registry))
+                new DataColumnSchemaFulu(SpecConfigDeneb.required(specConfig), registry))
         .build();
   }
 
@@ -892,7 +893,8 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new DataColumnSidecarSchemaGloas(
-                    registry.get(DATA_COLUMN_SCHEMA), SpecConfigGloas.required(specConfig)))
+                    new DataColumnSchemaFulu(SpecConfigDeneb.required(specConfig), registry),
+                    SpecConfigGloas.required(specConfig)))
         .build();
   }
 
@@ -976,10 +978,6 @@ public class SchemaRegistryBuilder {
 
   private static long getMaxValidatorsPerAttestationPhase0(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
-  }
-
-  private static long getMaxValidatorsPerAttestationElectra(final SpecConfig specConfig) {
-    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 
   private static SchemaProvider<?> createBuilderPendingPaymentSchemaProvider() {
@@ -1149,7 +1147,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             HEZE,
             (registry, specConfig, schemaName) ->
-                new InclusionListSchema(SpecConfigHeze.required(specConfig)))
+                new InclusionListSchema(registry))
         .build();
   }
 

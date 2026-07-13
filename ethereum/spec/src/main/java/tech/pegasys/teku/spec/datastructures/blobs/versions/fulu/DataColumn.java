@@ -16,10 +16,11 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.fulu;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 
 public class DataColumn extends SszListImpl<Cell> implements SszList<Cell> {
 
-  DataColumn(final DataColumnSchema schema, final TreeNode node) {
+  public DataColumn(final DataColumnSchema schema, final TreeNode node) {
     super(schema, node);
   }
 

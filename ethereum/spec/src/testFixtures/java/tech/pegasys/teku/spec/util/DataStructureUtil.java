@@ -81,6 +81,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
@@ -101,16 +102,16 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -168,7 +169,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
@@ -195,6 +195,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -490,9 +491,13 @@ public final class DataStructureUtil {
   }
 
   public SszBitlist randomBitlist(final int n) {
+    return randomBitlist(SszBitlistSchema.create(n), n);
+  }
+
+  public SszBitlist randomBitlist(final SszBitlistSchema<?> schema, final int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
-    return SszBitlistSchema.create(n).ofBits(n, bits);
+    return schema.ofBits(n, bits);
   }
 
   public SszBitvector randomCommitteeBitvector() {
@@ -814,7 +819,7 @@ public final class DataStructureUtil {
   }
 
   public Transaction randomExecutionPayloadTransaction() {
-    final TransactionSchema schema =
+    final SszByteListSchema<Transaction> schema =
         getBellatrixSchemaDefinitions(randomSlot())
             .getExecutionPayloadSchema()
             .getTransactionSchema();
@@ -935,13 +940,15 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation() {
-    return spec.getGenesisSchemaDefinitions()
-        .getAttestationSchema()
-        .create(
-            randomBitlist(),
-            randomAttestationData(),
-            randomSignature(),
-            this::randomCommitteeBitvector);
+    final AttestationSchema<?> attestationSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    final UInt64 slot = randomSlot();
+    return attestationSchema.create(
+        randomBitlist(
+            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerCommittee(slot)),
+        randomAttestationData(),
+        randomSignature(),
+        this::randomCommitteeBitvector);
   }
 
   public SingleAttestation randomSingleAttestation() {
@@ -974,21 +981,26 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final UInt64 slot) {
-    return spec.atSlot(slot)
-        .getSchemaDefinitions()
-        .getAttestationSchema()
-        .create(
-            randomBitlist(slot),
-            randomAttestationData(slot),
-            randomSignature(),
-            this::randomCommitteeBitvector);
+    final AttestationSchema<?> attestationSchema =
+        spec.atSlot(slot).getSchemaDefinitions().getAttestationSchema();
+    return attestationSchema.create(
+        randomBitlist(
+            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerCommittee(slot)),
+        randomAttestationData(slot),
+        randomSignature(),
+        this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
-    return spec.getGenesisSchemaDefinitions()
-        .getAttestationSchema()
-        .create(
-            randomBitlist(), attestationData, randomSignature(), this::randomCommitteeBitvector);
+    final AttestationSchema<?> attestationSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    return attestationSchema.create(
+        randomBitlist(
+            attestationSchema.getAggregationBitsSchema(),
+            getMaxValidatorsPerCommittee(randomSlot())),
+        attestationData,
+        randomSignature(),
+        this::randomCommitteeBitvector);
   }
 
   public AggregateAndProof randomAggregateAndProof() {
