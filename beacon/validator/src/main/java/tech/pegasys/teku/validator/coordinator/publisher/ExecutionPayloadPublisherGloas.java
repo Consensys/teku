@@ -81,16 +81,22 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
             () ->
                 executionPayloadFactory.unblindSignedExecutionPayload(
                     signedBlindedExecutionPayload))
+        .thenApply(Optional::of)
+        .exceptionally(error -> Optional.empty())
         .thenCompose(
-            signedExecutionPayload ->
-                publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel))
-        .exceptionallyCompose(
-            error -> {
-              return SafeFuture.completedFuture(
-                  PublishSignedExecutionPayloadResult.rejected(
-                      signedBlindedExecutionPayload.getBeaconBlockRoot(),
-                      "No cached execution payload envelope found for blinded envelope"));
-            });
+            maybeSignedExecutionPayload ->
+                maybeSignedExecutionPayload
+                    .map(
+                        signedExecutionPayload ->
+                            publishSignedExecutionPayload(
+                                signedExecutionPayload, broadcastValidationLevel))
+                    .orElseGet(
+                        () ->
+                            SafeFuture.completedFuture(
+                                PublishSignedExecutionPayloadResult.rejected(
+                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                                    "No cached execution payload envelope found for blinded"
+                                        + " envelope"))));
   }
 
   private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
