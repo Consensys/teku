@@ -127,9 +127,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         request.getOptionalQueryParameter(INCLUDE_PAYLOAD_PARAMETER);
     final Optional<UInt64> requestedBuilderBoostFactor =
         request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
-    //    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
-    //        validatorDataProvider.produceBlock(slot, randao, graffiti,
-    // requestedBuilderBoostFactor);
+
     LOG.debug(
         "Parsed parameters: slot={}, randao={}, graffiti={}, include_payload={}, builder_boost_factor={}",
         slot,
@@ -137,28 +135,6 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         graffiti,
         includePayload,
         requestedBuilderBoostFactor);
-    //    request.respondAsync(
-    //        result.thenApply(
-    //            maybeBlock ->
-    //                maybeBlock
-    //                    .map(
-    //                        blockContainerAndMetaData -> {
-    //                          request.header(
-    //                              HEADER_CONSENSUS_VERSION,
-    //                              blockContainerAndMetaData.specMilestone().lowerCaseName());
-    //                          request.header(
-    //                              HEADER_CONSENSUS_BLOCK_VALUE,
-    //
-    // blockContainerAndMetaData.consensusBlockValue().toDecimalString());
-    //                          request.header(
-    //                              HEADER_INCLUDE_PAYLOAD,
-    // includePayload.orElse(false).toString());
-    //                          return AsyncApiResponse.respondOk(blockContainerAndMetaData);
-    //                        })
-    //                    .orElseGet(
-    //                        () ->
-    //                            AsyncApiResponse.respondWithError(
-    //                                SC_INTERNAL_SERVER_ERROR, "Unable to produce a block"))));
     request.respondError(SC_NOT_IMPLEMENTED, ROUTE + " is not implemented");
   }
 
