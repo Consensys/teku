@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -28,7 +29,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
@@ -50,7 +50,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -83,8 +82,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   private DataColumnsByRootIdentifierSchema identifierSchema;
   private final ArgumentCaptor<DataColumnSidecar> datacolumnSidecarCaptor =
       ArgumentCaptor.forClass(DataColumnSidecar.class);
-  private final ArgumentCaptor<RpcException> rpcExceptionCaptor =
-      ArgumentCaptor.forClass(RpcException.class);
   private final Optional<RequestKey> allowedRequest = Optional.of(new RequestKey(ZERO, 100));
 
   @SuppressWarnings("unchecked")
@@ -249,9 +246,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
-  public void
-      shouldSendResourceUnavailableIfBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
-    // 1 million epoch
+  public void shouldSilentlySkipBlockRootOutsideMinimumRequestEpoch() {
+    // 1 million epoch — makes slot 100 (epoch 12) far outside the availability window
     when(store.getTimeSeconds())
         .thenReturn(
             spec.computeTimeAtSlot(
@@ -260,30 +256,94 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
         generateDataColumnsByRootIdentifiers(4, 1);
 
-    // an old block out of availability window
+    // an old block out of availability window — all 4 roots resolve to this slot
     when(combinedChainDataClient.getSlotByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.valueOf(100))));
-    when(combinedChainDataClient.getSidecar(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(
         protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
 
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
-    // Request cancelled due to error
-    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
+    // 0 served vs 4 requested — rate-limit token adjusted
+    verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(0L));
 
     verify(callback, never()).respond(any());
-    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+    verify(callback, never()).completeWithErrorResponse(any());
+    verify(callback).completeSuccessfully();
+  }
 
-    final RpcException rpcException = rpcExceptionCaptor.getValue();
+  @TestTemplate
+  public void shouldSilentlySkipBlockRootBeforeFuluForkEpoch() {
+    // Skip when Fulu activates at epoch 0 (e.g. GLOAS test config) — no pre-Fulu epochs exist.
+    // Before the fix, atEpoch(preFuluEpoch) threw IllegalArgumentException -> SERVER_ERROR (2).
+    // After the fix, the pre-Fulu epoch guard causes the root to be silently skipped.
+    final UInt64 fuluForkEpoch = spec.atEpoch(UInt64.ZERO).getConfig().getFuluForkEpoch();
+    assumeTrue(fuluForkEpoch.isGreaterThan(UInt64.ZERO), "No pre-Fulu epochs in this config");
 
-    assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
-    assertThat(rpcException.getErrorMessageString())
-        .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
-            dataColumnsByRootIdentifiers[0].getBlockRoot());
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(1, 1);
+
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback, never()).completeWithErrorResponse(any());
+    verify(callback).completeSuccessfully();
+  }
+
+  @TestTemplate
+  public void shouldServeInWindowRootsAndSkipOutOfWindowRootInMixedRequest() {
+    // Current epoch 5000: min_request_epoch = max(5000 - 4096, FULU_FORK_EPOCH) = 904 for both
+    // FULU (FULU_FORK_EPOCH=1) and GLOAS (FULU_FORK_EPOCH=0).
+    final UInt64 currentEpochForTest = UInt64.valueOf(5000);
+    when(store.getTimeSeconds())
+        .thenReturn(
+            spec.computeTimeAtSlot(
+                currentEpochForTest.times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
+
+    // In-window: epoch 1000 (5000 - 1000 = 4000 <= 4096)
+    final UInt64 inWindowSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(1000));
+    // Out-of-window: epoch 100 (5000 - 100 = 4900 > 4096)
+    final UInt64 outOfWindowSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(100));
+
+    final DataColumnsByRootIdentifier inWindowA = generateDataColumnsByRootIdentifiers(1, 1)[0];
+    final DataColumnsByRootIdentifier outOfWindowB = generateDataColumnsByRootIdentifiers(1, 1)[0];
+    final DataColumnsByRootIdentifier inWindowC = generateDataColumnsByRootIdentifiers(1, 1)[0];
+
+    final DataColumnSidecar sidecarA = dataStructureUtil.randomDataColumnSidecar();
+    final DataColumnSidecar sidecarC = dataStructureUtil.randomDataColumnSidecar();
+
+    when(combinedChainDataClient.getSlotByBlockRoot(inWindowA.getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(inWindowSlot)));
+    when(combinedChainDataClient.getSlotByBlockRoot(outOfWindowB.getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(outOfWindowSlot)));
+    when(combinedChainDataClient.getSlotByBlockRoot(inWindowC.getBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(inWindowSlot)));
+
+    when(combinedChainDataClient.getSidecar(
+            argThat(id -> id != null && id.blockRoot().equals(inWindowA.getBlockRoot()))))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(sidecarA)));
+    when(combinedChainDataClient.getSidecar(
+            argThat(id -> id != null && id.blockRoot().equals(inWindowC.getBlockRoot()))))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(sidecarC)));
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        messageSchema.of(new DataColumnsByRootIdentifier[] {inWindowA, outOfWindowB, inWindowC}),
+        callback);
+
+    // 2 served vs 3 requested — rate-limit token adjusted
+    verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(2L));
+    verify(callback, times(2)).respond(datacolumnSidecarCaptor.capture());
+    verify(callback, never()).completeWithErrorResponse(any());
+    verify(callback).completeSuccessfully();
+
+    assertThat(datacolumnSidecarCaptor.getAllValues()).containsExactly(sidecarA, sidecarC);
   }
 
   @TestTemplate
