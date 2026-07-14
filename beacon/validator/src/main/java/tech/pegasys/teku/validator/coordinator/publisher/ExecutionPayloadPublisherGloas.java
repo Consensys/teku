@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -82,7 +81,14 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                 executionPayloadFactory.unblindSignedExecutionPayload(
                     signedBlindedExecutionPayload))
         .thenApply(Optional::of)
-        .exceptionally(error -> Optional.empty())
+        .exceptionally(
+            error -> {
+              LOG.warn(
+                  "Failed to unblind execution payload envelope for beacon block root {}",
+                  signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                  error);
+              return Optional.empty();
+            })
         .thenCompose(
             maybeSignedExecutionPayload ->
                 maybeSignedExecutionPayload
@@ -125,10 +131,7 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                   signedExecutionPayload, dataColumnSidecarsFuture);
               return validateAndImportResult
                   .importResult()
-                  .orElseGet(
-                      () ->
-                          SafeFuture.completedFuture(
-                              ExecutionPayloadImportResult.successful(signedExecutionPayload)))
+                  .orElseThrow(() -> new IllegalStateException("ACCEPT without import future"))
                   .thenApply(
                       importResult ->
                           importResult.isSuccessful()
