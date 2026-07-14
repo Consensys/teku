@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszMutableProgressiveListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -35,6 +36,11 @@ public class SszMutableProgressiveByteListImpl
   }
 
   @Override
+  public void set(final int index, final SszByte value) {
+    super.set(index, getElementSchema().boxed(value.get()));
+  }
+
+  @Override
   public SszByteList commitChanges() {
     return (SszByteList) super.commitChanges();
   }
@@ -49,5 +55,10 @@ public class SszMutableProgressiveByteListImpl
   @Override
   public SszMutablePrimitiveList<Byte, SszByte> createWritableCopy() {
     throw new UnsupportedOperationException("Creating a copy from writable list is not supported");
+  }
+
+  @SuppressWarnings("unchecked")
+  private SszPrimitiveSchema<Byte, SszByte> getElementSchema() {
+    return (SszPrimitiveSchema<Byte, SszByte>) getSchema().getElementSchema();
   }
 }
