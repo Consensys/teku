@@ -128,11 +128,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
-              state.setHistoricalSummaries(
-                  BeaconStateListFieldMigration.rematerialize(
-                      targetStateSchema,
-                      BeaconStateFields.HISTORICAL_SUMMARIES,
-                      preStateFulu.getHistoricalSummaries()));
+              state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
               state.setDepositRequestsStartIndex(preStateFulu.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(preStateFulu.getDepositBalanceToConsume());
               state.setExitBalanceToConsume(preStateFulu.getExitBalanceToConsume());

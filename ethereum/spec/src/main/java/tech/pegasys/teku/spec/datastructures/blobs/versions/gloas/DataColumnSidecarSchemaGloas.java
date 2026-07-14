@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
@@ -40,15 +39,12 @@ public class DataColumnSidecarSchemaGloas
 
   private final OptionalLong networkSszLengthBytesUpperBound;
 
-  public DataColumnSidecarSchemaGloas(
-      final DataColumnSchema dataColumnSchema, final SpecConfigGloas specConfig) {
-    this(dataColumnSchema, specConfig, OptionalLong.empty());
+  public DataColumnSidecarSchemaGloas(final DataColumnSchema dataColumnSchema) {
+    this(dataColumnSchema, OptionalLong.empty());
   }
 
   public DataColumnSidecarSchemaGloas(
-      final DataColumnSchema dataColumnSchema,
-      final SpecConfigGloas specConfig,
-      final OptionalLong networkSszLengthBytesUpperBound) {
+      final DataColumnSchema dataColumnSchema, final OptionalLong networkSszLengthBytesUpperBound) {
     super(
         "DataColumnSidecarGloas",
         namedSchema(FIELD_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
