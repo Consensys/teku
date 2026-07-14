@@ -11,6 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.pow;
+package tech.pegasys.teku.spec.datastructures.operations;
 
-public interface MonitorableEth1Provider extends Eth1Provider, MonitorableProvider {}
+import java.util.List;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+
+public record IndexedPayloadAttestationLight(
+    List<UInt64> attestingIndices, PayloadAttestationData data, BLSSignature signature) {}

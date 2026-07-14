@@ -115,7 +115,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
-import tech.pegasys.teku.services.timer.QuartzTimerService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
@@ -183,6 +182,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructorImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
@@ -228,7 +228,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
-import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageGossipValidator;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
@@ -271,6 +270,7 @@ import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -610,10 +610,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService =
-        beaconConfig.eth2NetworkConfig().isQuartzSchedulerEnabled()
-            ? new QuartzTimerService(this::onTick)
-            : new TimerService(this::onTick);
+    timerService = new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -1698,13 +1695,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth1DataCache,
             storageUpdateChannel,
             eventChannels.getPublisher(Eth1DepositStorageChannel.class, beaconAsyncRunner),
-            spec,
-            EVENT_LOG,
-            beaconConfig.powchainConfig().useMissingDepositEventLogging());
+            spec);
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
-        .subscribe(FinalizedCheckpointChannel.class, depositProvider)
-        .subscribe(SlotEventsChannel.class, depositProvider);
+        .subscribe(FinalizedCheckpointChannel.class, depositProvider);
   }
 
   protected void initAttestationTopicSubscriber() {
@@ -1927,14 +1921,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (!recentChainData.isPreGenesis()) {
       // We already have a genesis block - no need for a genesis handler
       return;
-    } else if (!beaconConfig.powchainConfig().isEnabled()) {
-      // We're pre-genesis but no eth1 endpoint is set
-      throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
-    STATUS_LOG.loadingGenesisFromEth1Chain();
-    eventChannels.subscribe(
-        Eth1EventsChannel.class,
-        new GenesisHandler(recentChainData, forkChoice, timeProvider, spec));
+    // Genesis can no longer be derived from the Eth1 chain (deposit-log fetching has been removed).
+    // If we are still pre-genesis here, an initial anchor state must be supplied via a custom
+    // initial state, checkpoint sync, or interop.
+    throw new IllegalStateException("No initial state is set and genesis is not available.");
   }
 
   protected void initSignatureVerificationService() {
@@ -2049,9 +2040,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SuperNodeSupplier isSuperNodeSupplier =
         new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
-    // TODO: Implementation + subscription
-    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
-        DataColumnSidecarArchiveReconstructor.NOOP;
+    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      dataColumnSidecarArchiveReconstructor =
+          new DataColumnSidecarArchiveReconstructorImpl(
+              throttlingCombinedChainDataClient.orElse(combinedChainDataClient),
+              asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 2),
+              isSuperNodeSupplier,
+              spec,
+              beaconConfig.eth2NetworkConfig().getDataColumnSidecarExtensionRetentionEpochs(),
+              eventChannels.getPublisher(SidecarArchivePrunableChannel.class),
+              metricsSystem,
+              timeProvider);
+      eventChannels.subscribe(
+          FinalizedCheckpointChannel.class, dataColumnSidecarArchiveReconstructor);
+    } else {
+      dataColumnSidecarArchiveReconstructor = DataColumnSidecarArchiveReconstructor.NOOP;
+    }
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
@@ -2319,10 +2324,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // forkChoiceNotifier subscription
     syncService.subscribeToSyncStateChangesAndUpdate(
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
-
-    // depositProvider subscription
-    syncService.subscribeToSyncStateChangesAndUpdate(
-        syncState -> depositProvider.onSyncingStatusChanged(syncState.isInSync()));
 
     // forkChoice subscription
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(syncService.getOptimisticSyncSubscriber());

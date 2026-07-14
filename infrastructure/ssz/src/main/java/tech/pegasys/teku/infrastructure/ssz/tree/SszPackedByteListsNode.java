@@ -181,15 +181,16 @@ public class SszPackedByteListsNode implements BranchNode {
     return Bytes32.wrap(sha256.digest(dataRoot, lengthRoot));
   }
 
-  private static Bytes32 byteChunksRoot(
+  static Bytes32 byteChunksRoot(
       final Sha256 sha256, final Bytes data, final int firstChunk, final int chunksDepth) {
-    final int firstByte = firstChunk * LeafNode.MAX_BYTE_SIZE;
+    final long firstByte = (long) firstChunk * LeafNode.MAX_BYTE_SIZE;
     if (firstByte >= data.size()) {
       return TreeUtil.ZERO_TREES[chunksDepth].hashTreeRoot();
     }
     if (chunksDepth == 0) {
+      final int firstByteInt = Math.toIntExact(firstByte);
       return Bytes32.rightPad(
-          data.slice(firstByte, Math.min(LeafNode.MAX_BYTE_SIZE, data.size() - firstByte)));
+          data.slice(firstByteInt, Math.min(LeafNode.MAX_BYTE_SIZE, data.size() - firstByteInt)));
     }
     final Bytes32 leftRoot = byteChunksRoot(sha256, data, firstChunk, chunksDepth - 1);
     final Bytes32 rightRoot =

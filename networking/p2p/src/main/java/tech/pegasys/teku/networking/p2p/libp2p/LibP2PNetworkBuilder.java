@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.MAXIMUM_ACTIVE_INBOUND_RPC_STREAMS;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_OPEN_STREAMS_RATE_LIMIT;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT;
 
@@ -49,6 +50,7 @@ import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.PrivateKeyProvider;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.InboundRpcStreamLimiter;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
@@ -289,7 +291,11 @@ public class LibP2PNetworkBuilder {
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
-    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m, metricsSystem)).toList();
+    final InboundRpcStreamLimiter inboundRpcStreamLimiter =
+        new InboundRpcStreamLimiter(MAXIMUM_ACTIVE_INBOUND_RPC_STREAMS);
+    return rpcMethods.stream()
+        .map(m -> new RpcHandler<>(asyncRunner, m, metricsSystem, inboundRpcStreamLimiter))
+        .toList();
   }
 
   protected LibP2PGossipNetwork createGossipNetwork() {

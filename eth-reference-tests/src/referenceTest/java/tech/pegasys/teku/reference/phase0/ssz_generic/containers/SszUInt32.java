@@ -11,14 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.pow.exception;
+package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 
-public class FailedToFindMinGenesisBlockException extends RuntimeException {
-  public FailedToFindMinGenesisBlockException(final String message) {
-    super(message);
+import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
+
+public class SszUInt32 extends AbstractSszPrimitive<Long> {
+
+  public static SszUInt32 of(final Long val) {
+    return new SszUInt32(val);
   }
 
-  public FailedToFindMinGenesisBlockException(final String message, final Throwable cause) {
-    super(message, cause);
+  private SszUInt32(final Long val) {
+    super(val, UInt32PrimitiveSchema.UINT32_SCHEMA);
   }
 }

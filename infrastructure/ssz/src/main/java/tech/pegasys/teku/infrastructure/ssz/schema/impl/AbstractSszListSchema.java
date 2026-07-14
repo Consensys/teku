@@ -30,11 +30,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszPackedByteListsHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszSuperNodeHint;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil.TargetDepthNodeHandler;
@@ -73,6 +73,10 @@ public abstract class AbstractSszListSchema<
     super(maxLength, elementSchema, hints);
     if (hints.getHint(SszPackedByteListsHint.class).isPresent()) {
       checkArgument(
+          !(elementSchema instanceof SszProgressiveByteListSchema),
+          "SszPackedByteListsHint on a fixed list requires a fixed byte list element schema but got %s",
+          elementSchema);
+      checkArgument(
           elementSchema instanceof SszByteListSchema,
           "SszPackedByteListsHint requires a byte list element schema but got %s",
           elementSchema);
@@ -100,31 +104,15 @@ public abstract class AbstractSszListSchema<
         "Too many elements for this collection type (max length %s, size %s)",
         getMaxLength(),
         elements.size());
-    final int count = elements.size();
-    final byte[] offsetBytes = new byte[count * SSZ_LENGTH_SIZE];
-    final int[] offsets = new int[count + 1];
-    final Bytes[] parts = new Bytes[count + 1];
-    int offset = count * SSZ_LENGTH_SIZE;
-    for (int i = 0; i < count; i++) {
-      final Bytes elementSsz = elements.get(i).sszSerialize();
-      offsets[i] = offset;
-      offsetBytes[i * SSZ_LENGTH_SIZE] = (byte) offset;
-      offsetBytes[i * SSZ_LENGTH_SIZE + 1] = (byte) (offset >>> 8);
-      offsetBytes[i * SSZ_LENGTH_SIZE + 2] = (byte) (offset >>> 16);
-      offsetBytes[i * SSZ_LENGTH_SIZE + 3] = (byte) (offset >>> 24);
-      parts[i + 1] = elementSsz;
-      offset += elementSsz.size();
-    }
-    offsets[count] = offset;
-    parts[0] = Bytes.wrap(offsetBytes);
+    final PackedByteListsUtil.PackedElements packed = PackedByteListsUtil.packElements(elements);
     final SszPackedByteListsNode packedNode =
         new SszPackedByteListsNode(
-            Bytes.wrap(parts),
-            offsets,
+            packed.sszBytes(),
+            packed.offsets(),
             packedByteListElementSchema.treeDepth(),
             treeDepth(),
             this::materializePackedElement);
-    return createTree(packedNode, count);
+    return createTree(packedNode, elements.size());
   }
 
   @Override
@@ -231,27 +219,8 @@ public abstract class AbstractSszListSchema<
   }
 
   private int[] parsePackedOffsets(final Bytes bytes) {
-    final int endOffset = bytes.size();
-    checkSsz(endOffset >= SSZ_LENGTH_SIZE, "Invalid SSZ: trying to read more bytes than available");
-    final int firstElementOffset = SszType.sszBytesToLength(bytes.slice(0, SSZ_LENGTH_SIZE));
-    checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
-    checkSsz(firstElementOffset > 0, "Invalid first element offset");
-    checkSsz(firstElementOffset <= endOffset, "Invalid first element offset");
-    final int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
-    checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
-    final long elementMaxSize = packedByteListElementSchema.getMaxLength();
-    final int[] offsets = new int[elementsCount + 1];
-    offsets[0] = firstElementOffset;
-    for (int i = 1; i < elementsCount; i++) {
-      offsets[i] = SszType.sszBytesToLength(bytes.slice(i * SSZ_LENGTH_SIZE, SSZ_LENGTH_SIZE));
-    }
-    offsets[elementsCount] = endOffset;
-    for (int i = 0; i < elementsCount; i++) {
-      final int size = offsets[i + 1] - offsets[i];
-      checkSsz(size >= 0, "Invalid SSZ: wrong child offsets");
-      checkSsz(size <= elementMaxSize, "SSZ element length exceeds max element type length");
-    }
-    return offsets;
+    return PackedByteListsUtil.parsePackedOffsets(
+        bytes, getMaxLength(), packedByteListElementSchema.getMaxLength());
   }
 
   private TreeNode materializePackedElement(final Bytes elementSsz) {

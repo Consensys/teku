@@ -62,8 +62,6 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
-  public static final boolean DEFAULT_QUARTZ_SCHEDULER_ENABLED = false;
-
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
@@ -109,7 +107,6 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
       Math.max(Runtime.getRuntime().availableProcessors(), DEFAULT_VALIDATOR_EXECUTOR_THREADS);
 
-  // TODO: consider switching to 512 after tests
   public static final int DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS =
       Integer.MAX_VALUE;
 
@@ -160,7 +157,6 @@ public class Eth2NetworkConfiguration {
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
   private final int attestationWaitLimitMillis;
-  private final boolean quartzSchedulerEnabled;
   private final int dataColumnSidecarExtensionRetentionEpochs;
   private final int pendingPayloadAttestationsMaxQueue;
 
@@ -203,7 +199,6 @@ public class Eth2NetworkConfiguration {
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
       final int attestationWaitLimitMillis,
       final int dataColumnSidecarExtensionRetentionEpochs,
-      final boolean quartzSchedulerEnabled,
       final int pendingPayloadAttestationsMaxQueue) {
     this.spec = spec;
     this.constants = constants;
@@ -248,7 +243,6 @@ public class Eth2NetworkConfiguration {
     this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
     this.attestationWaitLimitMillis = attestationWaitLimitMillis;
-    this.quartzSchedulerEnabled = quartzSchedulerEnabled;
     this.dataColumnSidecarExtensionRetentionEpochs = dataColumnSidecarExtensionRetentionEpochs;
     this.pendingPayloadAttestationsMaxQueue = pendingPayloadAttestationsMaxQueue;
 
@@ -413,10 +407,6 @@ public class Eth2NetworkConfiguration {
     return dataColumnSidecarExtensionRetentionEpochs;
   }
 
-  public boolean isQuartzSchedulerEnabled() {
-    return quartzSchedulerEnabled;
-  }
-
   public int getPendingPayloadAttestationsMaxQueue() {
     return pendingPayloadAttestationsMaxQueue;
   }
@@ -473,8 +463,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(totalTerminalDifficultyOverride, that.totalTerminalDifficultyOverride)
         && Objects.equals(terminalBlockHashEpochOverride, that.terminalBlockHashEpochOverride)
         && Objects.equals(eth2Network, that.eth2Network)
-        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs)
-        && quartzSchedulerEnabled == that.quartzSchedulerEnabled;
+        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs);
   }
 
   @Override
@@ -510,8 +499,7 @@ public class Eth2NetworkConfiguration {
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled,
-        dataColumnSidecarExtensionRetentionEpochs,
-        quartzSchedulerEnabled);
+        dataColumnSidecarExtensionRetentionEpochs);
   }
 
   public static class Builder {
@@ -565,7 +553,6 @@ public class Eth2NetworkConfiguration {
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
-    private boolean quartzSchedulerEnabled = DEFAULT_QUARTZ_SCHEDULER_ENABLED;
     private OptionalInt pendingPayloadAttestationsMaxQueue = OptionalInt.empty();
 
     public void spec(final Spec spec) {
@@ -669,7 +656,6 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis,
           dataColumnSidecarExtensionRetentionEpochs,
-          quartzSchedulerEnabled,
           pendingPayloadAttestationsMaxQueue.orElse(
               DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS));
     }
@@ -989,11 +975,6 @@ public class Eth2NetworkConfiguration {
 
     public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
       this.rustKzgEnabled = rustKzgEnabled;
-      return this;
-    }
-
-    public Builder quartzSchedulerEnabled(final boolean quartzSchedulerEnabled) {
-      this.quartzSchedulerEnabled = quartzSchedulerEnabled;
       return this;
     }
 
