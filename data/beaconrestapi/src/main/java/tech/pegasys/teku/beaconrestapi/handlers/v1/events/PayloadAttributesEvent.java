@@ -55,7 +55,7 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
           .name("PayloadAttributesEventData")
           .withField("proposal_slot", UINT64_TYPE, data -> data.proposalSlot)
           .withField("parent_block_root", BYTES32_TYPE, data -> data.parentBlockRoot)
-          .withField(
+          .withOptionalField(
               "parent_block_number",
               UINT64_TYPE,
               PayloadAttributesEvent.Data::parentExecutionBlockNumber)
@@ -87,7 +87,7 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
   record Data(
       UInt64 proposalSlot,
       Bytes32 parentBlockRoot,
-      UInt64 parentExecutionBlockNumber,
+      Optional<UInt64> parentExecutionBlockNumber,
       Bytes32 parentExecutionBlockHash,
       UInt64 proposerIndex,
       PayloadAttributes payloadAttributes) {}
@@ -113,7 +113,9 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
             new PayloadAttributesEvent.Data(
                 payloadAttributes.proposalSlot(),
                 payloadAttributes.parentBeaconBlock().blockRoot(),
-                forkChoiceState.headExecutionBlockNumber(),
+                milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+                    ? Optional.empty()
+                    : Optional.of(forkChoiceState.headExecutionBlockNumber()),
                 forkChoiceState.headExecutionBlockHash(),
                 payloadAttributes.proposerIndex(),
                 // based on PayloadAttributesV<N> as defined by the execution-apis specification

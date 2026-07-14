@@ -147,7 +147,7 @@ public class EventSubscriptionManagerTest {
           new Data(
               samplePayloadAttributes.proposalSlot(),
               samplePayloadAttributes.parentBeaconBlock().blockRoot(),
-              data.randomUInt64(),
+              Optional.empty(),
               data.randomBytes32(),
               samplePayloadAttributes.proposerIndex(),
               new PayloadAttributes(
@@ -161,7 +161,7 @@ public class EventSubscriptionManagerTest {
           new ForkChoiceState(
               ForkChoiceNode.createBase(data.randomBytes32()),
               data.randomSlot(),
-              samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+              data.randomUInt64(),
               samplePayloadAttributesData.data().parentExecutionBlockHash(),
               data.randomBytes32(),
               data.randomBytes32(),
