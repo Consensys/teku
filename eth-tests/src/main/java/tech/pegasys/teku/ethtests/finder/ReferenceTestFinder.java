@@ -75,19 +75,7 @@ public class ReferenceTestFinder {
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_previous_epoch",
                               "gloas - minimal - fork_choice/reorg - simple_attempted_reorg_without_enough_ffg_votes",
                               "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_with_enough_ffg_votes_current_epoch",
-                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch",
-                              // Another equivocation-handling limitation (cf. the reorg tests
-                              // above): a validator attests to two competing blocks in one slot.
-                              // update_latest_messages keeps the validator's first vote for the
-                              // epoch (strict target.epoch > stored.epoch), but Teku's
-                              // deferred-vote
-                              // store (VoteUpdates) groups votes by block root, so the block-root
-                              // iteration order at apply time decides which vote wins and the head
-                              // can diverge. Fails the standard fork-choice `head` check, not any
-                              // fast confirmation check; does not occur on deneb+.
-                              "altair - minimal - fast_confirmation/is_one_confirmed - is_one_confirmed_fails_with_competing_branch",
-                              "bellatrix - minimal - fast_confirmation/is_one_confirmed - is_one_confirmed_fails_with_competing_branch",
-                              "capella - minimal - fast_confirmation/is_one_confirmed - is_one_confirmed_fails_with_competing_branch")),
+                              "gloas - minimal - fork_choice/reorg - include_votes_another_empty_chain_without_enough_ffg_votes_current_epoch")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });
