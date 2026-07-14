@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
@@ -311,7 +312,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
                     blsToExecutionChanges.orElseGet(
-                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+                        () -> emptySignedBlsToExecutionChangesList(newSlot)));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
@@ -422,7 +423,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
                     blsToExecutionChanges.orElseGet(
-                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+                        () -> emptySignedBlsToExecutionChangesList(newSlot)));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
@@ -623,6 +624,14 @@ public class BlockProposalTestUtil {
     rlpOutput.startList();
     rlpOutput.endList();
     return rlpOutput.encoded();
+  }
+
+  private SszList<SignedBlsToExecutionChange> emptySignedBlsToExecutionChangesList(
+      final UInt64 slot) {
+    return BeaconBlockBodySchemaCapella.required(
+            spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema())
+        .getBlsToExecutionChangesSchema()
+        .of();
   }
 
   private ExecutionRequests createExecutionRequests(final UInt64 newSlot) {
