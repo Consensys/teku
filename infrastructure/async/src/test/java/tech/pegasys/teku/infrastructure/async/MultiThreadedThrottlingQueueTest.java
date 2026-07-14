@@ -49,12 +49,8 @@ public class MultiThreadedThrottlingQueueTest {
   private static final int EXPECTED_MAX_DEQUEUING_TIME_MS =
       (MAXIMUM_QUEUE_SIZE * MAX_SLOW_TASK_DURATION_MS) / MAXIMUM_CONCURRENT_TASKS;
 
-  private static final int TEST_TIMEOUT_MARGIN_MILLIS = 10_000;
-
   private static final int EXPECTED_MAX_TEST_DURATION_MILLIS =
-      (SIMULATION_TIME_SECONDS * 1000)
-          + EXPECTED_MAX_DEQUEUING_TIME_MS
-          + TEST_TIMEOUT_MARGIN_MILLIS;
+      (SIMULATION_TIME_SECONDS * 1000) + EXPECTED_MAX_DEQUEUING_TIME_MS;
 
   private static final Logger LOG = LogManager.getLogger();
 

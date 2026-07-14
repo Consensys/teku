@@ -20,6 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
@@ -122,7 +123,7 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
             The signed envelope object is invalid, broadcast validation failed, or a blinded \
             envelope could not be reconstructed from cache.""",
             HTTP_ERROR_RESPONSE_TYPE)
-        .response(415, "Unsupported media type", HTTP_ERROR_RESPONSE_TYPE)
+        .response(SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", HTTP_ERROR_RESPONSE_TYPE)
         .withInternalErrorResponse()
         .build();
   }
