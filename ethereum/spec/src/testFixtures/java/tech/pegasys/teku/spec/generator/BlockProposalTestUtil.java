@@ -642,6 +642,11 @@ public class BlockProposalTestUtil {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions());
     final ExecutionPayload executionPayload = executionPayloadProposalData.executionPayload();
+    final SszList<SszKZGCommitment> kzgCommitments =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .getBlobKzgCommitmentsSchema()
+            .createFromElements(executionPayloadProposalData.kzgCommitments().asList());
     // self-building bid
     final ExecutionPayloadBid bid =
         schemaDefinitions
@@ -657,7 +662,7 @@ public class BlockProposalTestUtil {
                 newSlot,
                 UInt64.ZERO,
                 UInt64.ZERO,
-                executionPayloadProposalData.kzgCommitments(),
+                kzgCommitments,
                 executionPayloadProposalData.executionRequests().hashTreeRoot());
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
