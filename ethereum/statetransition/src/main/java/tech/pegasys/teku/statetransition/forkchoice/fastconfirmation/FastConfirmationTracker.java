@@ -223,17 +223,19 @@ public class FastConfirmationTracker {
     fastConfirmationStore.set(updatedStore);
     lastProcessedSlot.set(input.slot());
 
-    LOG.info(
-        "Fast confirmation update for slot {}: head={}, confirmed_root={}",
-        input.slot(),
-        input.headRoot(),
-        updatedStore.confirmedRoot());
-
-    // The fast_confirmation event is emitted every time the algorithm runs, regardless of whether
-    // the confirmed block changed (per the Beacon API event stream spec).
     final Bytes32 confirmedRoot = updatedStore.confirmedRoot();
     final UInt64 confirmedSlot =
         store.getForkChoiceStrategy().blockSlot(confirmedRoot).orElse(UInt64.ZERO);
+
+    LOG.info(
+        "Fast confirmation update for slot {}: head={}, confirmed_root={}, confirmed_slot={}",
+        input.slot(),
+        input.headRoot(),
+        confirmedRoot,
+        confirmedSlot);
+
+    // The fast_confirmation event is emitted every time the algorithm runs, regardless of whether
+    // the confirmed block changed (per the Beacon API event stream spec).
     fastConfirmationEventChannel.onFastConfirmation(confirmedRoot, confirmedSlot, input.slot());
   }
 
@@ -249,9 +251,17 @@ public class FastConfirmationTracker {
     final Optional<FastConfirmationStates> maybeStates =
         FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart).join();
     if (maybeStates.isEmpty()) {
+      // The source states could not be loaded (e.g. the observed-justified checkpoint state has
+      // been pruned, which happens for a short window after startup before that checkpoint has
+      // advanced to a still-hot one). We cannot run get_latest_confirmed, so fall back to the
+      // finalized block: it is always safe to consider confirmed, its root is known without a state
+      // load, and this keeps confirmed_root tracking finality rather than going stale.
+      final Bytes32 finalizedRoot = fcrStore.store().getFinalizedCheckpoint().getRoot();
       LOG.debug(
-          "Skipping fast confirmation computation for slot {}: source states unavailable", slot);
-      return fcrStore;
+          "Fast confirmation for slot {}: source states unavailable, falling back to finalized {}",
+          slot,
+          finalizedRoot);
+      return fcrStore.withConfirmedRoot(finalizedRoot);
     }
     final Bytes32 confirmedRoot =
         new FastConfirmationCalculator(spec, fcrStore, maybeStates.get(), slot)

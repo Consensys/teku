@@ -19,6 +19,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -51,6 +53,8 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
  * ForkChoiceNode} through {@code get_node_for_root}.
  */
 class FastConfirmationCalculator {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
@@ -534,9 +538,15 @@ class FastConfirmationCalculator {
     final boolean atEpochStart = FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, currentSlot);
     Bytes32 confirmedRoot = fcrStore.confirmedRoot();
 
-    // Revert to the finalized block if the confirmed block is more than one epoch old, no longer an
-    // ancestor of the head, or (at an epoch boundary) its chain can no longer be reconfirmed.
-    if (getBlockEpoch(confirmedRoot).plus(1).isLessThan(currentEpoch)
+    // Revert to the finalized block if the confirmed block is no longer tracked by fork choice
+    // (pruned below the finalized anchor as finality advanced — the spec assumes every block stays
+    // in store.blocks, but Teku's protoarray only keeps finalized-onward), is more than one epoch
+    // old, no longer an ancestor of the head, or (at an epoch boundary) its chain can no longer be
+    // reconfirmed. The fork-choice-presence check is first so the epoch/ancestry lookups below
+    // never
+    // run on a pruned root.
+    if (!forkChoice.contains(confirmedRoot)
+        || getBlockEpoch(confirmedRoot).plus(1).isLessThan(currentEpoch)
         || !isAncestor(head, confirmedRoot)
         || (atEpochStart && !isConfirmedChainSafe(confirmedRoot))) {
       confirmedRoot = store.getFinalizedCheckpoint().getRoot();
@@ -544,21 +554,44 @@ class FastConfirmationCalculator {
 
     // Restart the confirmation chain from the observed justified checkpoint when, at an epoch
     // boundary, that checkpoint is from the previous epoch, equals the head's unrealized
-    // justification, and the confirmed block is older than it.
+    // justification, and the confirmed block is older than it. Skip when the checkpoint block has
+    // been pruned from fork choice.
     final Checkpoint observedJustified = fcrStore.currentEpochObservedJustifiedCheckpoint();
-    final UInt64 observedJustifiedBlockSlot = getBlockSlot(observedJustified.getRoot());
-    if (atEpochStart
-        && spec.computeEpochAtSlot(observedJustifiedBlockSlot).plus(1).equals(currentEpoch)
-        && observedJustified.equals(getUnrealizedJustification(head))
-        && getBlockSlot(confirmedRoot).isLessThan(observedJustifiedBlockSlot)) {
-      confirmedRoot = observedJustified.getRoot();
+    if (atEpochStart && forkChoice.contains(observedJustified.getRoot())) {
+      final UInt64 observedJustifiedBlockSlot = getBlockSlot(observedJustified.getRoot());
+      if (spec.computeEpochAtSlot(observedJustifiedBlockSlot).plus(1).equals(currentEpoch)
+          && observedJustified.equals(getUnrealizedJustification(head))
+          && getBlockSlot(confirmedRoot).isLessThan(observedJustifiedBlockSlot)) {
+        confirmedRoot = observedJustified.getRoot();
+      }
     }
 
     // Attempt to advance the confirmed block further; only meaningful while it is recent.
-    if (getBlockEpoch(confirmedRoot).plus(1).isGreaterThanOrEqualTo(currentEpoch)) {
-      return findLatestConfirmedDescendant(confirmedRoot);
+    final boolean advanceRan =
+        getBlockEpoch(confirmedRoot).plus(1).isGreaterThanOrEqualTo(currentEpoch);
+    final Bytes32 result =
+        advanceRan ? findLatestConfirmedDescendant(confirmedRoot) : confirmedRoot;
+
+    if (LOG.isTraceEnabled()) {
+      final Object headUnrealizedJustifiedEpoch =
+          forkChoice.getBlockData(head).isPresent()
+              ? getUnrealizedJustification(head).getEpoch()
+              : "n/a";
+      LOG.trace(
+          "FCR getLatestConfirmed slot={} epoch={} atEpochStart={} isGloas={} headFullyValidated={} finalizedEpoch={} observedJustifiedEpoch={} headUnrealizedJustifiedEpoch={} confirmedEpochBeforeAdvance={} advanceRan={} resultEpoch={}",
+          currentSlot,
+          currentEpoch,
+          atEpochStart,
+          isGloas,
+          forkChoice.isFullyValidated(head),
+          getBlockEpoch(store.getFinalizedCheckpoint().getRoot()),
+          observedJustified.getEpoch(),
+          headUnrealizedJustifiedEpoch,
+          getBlockEpoch(confirmedRoot),
+          advanceRan,
+          getBlockEpoch(result));
     }
-    return confirmedRoot;
+    return result;
   }
 
   /**
