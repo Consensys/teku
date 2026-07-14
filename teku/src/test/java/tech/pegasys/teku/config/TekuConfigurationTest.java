@@ -43,6 +43,19 @@ public class TekuConfigurationTest {
   }
 
   @Test
+  void passesBuilderSelectionPolicyToBeaconChainConfiguration() {
+    final TekuConfiguration configuration =
+        TekuConfiguration.builder()
+            .executionLayer(
+                builder ->
+                    builder.builderBidCompareFactor("73").useShouldOverrideBuilderFlag(false))
+            .build();
+
+    assertThat(configuration.beaconChain().executionLayerConfig())
+        .isSameAs(configuration.executionLayer());
+  }
+
+  @Test
   void beaconChainControllerFactory_useCustomFactories() {
     AtomicBoolean customDiscoveryBuilderMethodCalled = new AtomicBoolean();
     AtomicBoolean customLibP2PBuilderMethodCalled = new AtomicBoolean();
