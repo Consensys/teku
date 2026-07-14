@@ -1601,19 +1601,36 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(final int count) {
-    return randomBeaconBlockBodyWithCommitments(randomBlobKzgCommitments(count));
+    final UInt64 slot = randomSlot();
+    final BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
+    return randomBeaconBlockBodyWithCommitments(
+        slot,
+        randomBlobKzgCommitments(
+            BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(), count));
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
+    return randomBeaconBlockBodyWithCommitments(randomSlot(), commitments);
+  }
+
+  private BeaconBlockBody randomBeaconBlockBodyWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
+    final BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
+    final SszList<SszKZGCommitment> bodyCommitments =
+        rematerializeBlobKzgCommitments(
+            BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(), commitments);
     return randomBeaconBlockBody(
+        slot,
         builder -> {
           if (builder.supportsKzgCommitments()) {
-            builder.blobKzgCommitments(commitments);
+            builder.blobKzgCommitments(bodyCommitments);
           }
           if (builder.supportsSignedExecutionPayloadBid()) {
             builder.signedExecutionPayloadBid(
-                randomSignedExecutionPayloadBidWithCommitments(commitments));
+                randomSignedExecutionPayloadBidWithCommitments(bodyCommitments));
           }
         });
   }
@@ -1664,7 +1681,9 @@ public final class DataStructureUtil {
                             .getBlsToExecutionChangesSchema()));
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(randomBlobKzgCommitments());
+                builder.blobKzgCommitments(
+                    randomBlobKzgCommitments(
+                        BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema()));
               }
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests(slot));
@@ -3118,7 +3137,18 @@ public final class DataStructureUtil {
 
   private SszList<SszKZGCommitment> randomBlobKzgCommitments(
       final SszListSchema<SszKZGCommitment, ?> schema) {
-    return randomSszList(schema, randomNumberOfBlobsPerBlock(), this::randomSszKZGCommitment);
+    return randomBlobKzgCommitments(schema, randomNumberOfBlobsPerBlock());
+  }
+
+  private SszList<SszKZGCommitment> randomBlobKzgCommitments(
+      final SszListSchema<SszKZGCommitment, ?> schema, final int count) {
+    return randomSszList(schema, count, this::randomSszKZGCommitment);
+  }
+
+  private SszList<SszKZGCommitment> rematerializeBlobKzgCommitments(
+      final SszListSchema<SszKZGCommitment, ?> targetSchema,
+      final SszList<SszKZGCommitment> source) {
+    return targetSchema.sszDeserialize(source.sszSerialize());
   }
 
   public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
@@ -3403,6 +3433,10 @@ public final class DataStructureUtil {
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsGloas schemaDefinitions = getGloasSchemaDefinitions(slot);
+    final SszList<SszKZGCommitment> bidCommitments =
+        rematerializeBlobKzgCommitments(
+            schemaDefinitions.getExecutionPayloadBidSchema().getBlobKzgCommitmentsSchema(),
+            blobKzgCommitments);
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(
@@ -3419,7 +3453,7 @@ public final class DataStructureUtil {
                     slot,
                     randomUInt64(),
                     randomUInt64(),
-                    blobKzgCommitments,
+                    bidCommitments,
                     randomBytes32()),
             randomSignature());
   }
