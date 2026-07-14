@@ -569,7 +569,7 @@ jobs:
           fi
           HASH=$(echo -n "$LINE" | sha256sum | cut -c1-16)
           echo "key=reftests-$HASH" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: ${{ steps.ref-cache-key.outputs.key }}
@@ -588,7 +588,7 @@ jobs:
         run: |
           ./gradlew --no-daemon --parallel compileReferenceTestJava resolveCiJacocoDependencies
       - name: Caching reference tests
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: ${{ steps.ref-cache-key.outputs.key }}
@@ -629,7 +629,7 @@ jobs:
           name: assemble-output
           merge-multiple: true
           path: ${{ github.workspace }}
-      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: ${{ needs.referenceTestsPrep.outputs.cache-key }}
