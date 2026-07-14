@@ -26,6 +26,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -41,6 +44,8 @@ class FastConfirmationTrackerTest {
   private final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
   private final FastConfirmationEventChannel eventChannel =
       mock(FastConfirmationEventChannel.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   private final Checkpoint finalizedCheckpoint =
       new Checkpoint(UInt64.valueOf(12), Bytes32.random());
 
@@ -71,7 +76,8 @@ class FastConfirmationTrackerTest {
   void shouldInitializeStoreFromFinalizedCheckpointWhenEnabled() {
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
     final FastConfirmationTracker tracker =
-        FastConfirmationTracker.create(spec, Optional.empty(), eventChannel);
+        FastConfirmationTracker.create(
+            spec, Optional.empty(), eventChannel, metricsSystem, timeProvider);
 
     tracker.initialize(store);
 
@@ -106,7 +112,8 @@ class FastConfirmationTrackerTest {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
     final FastConfirmationTracker tracker =
-        FastConfirmationTracker.create(spec, Optional.of(asyncRunner), eventChannel);
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
     tracker.initialize(store);
     final Bytes32 headRoot = Bytes32.random();
 
@@ -130,7 +137,8 @@ class FastConfirmationTrackerTest {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
     final FastConfirmationTracker tracker =
-        FastConfirmationTracker.create(spec, Optional.of(asyncRunner), eventChannel);
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
     tracker.initialize(store);
 
     applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), Bytes32.random());
@@ -140,6 +148,11 @@ class FastConfirmationTrackerTest {
     verify(eventChannel)
         .onFastConfirmation(
             finalizedCheckpoint.getRoot(), finalizedCheckpoint.getEpoch(), UInt64.valueOf(13));
+    // The timeout counter is registered and unaffected by a normal (non-timed-out) run.
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_timeout_total"))
+        .isZero();
   }
 
   @Test
@@ -147,7 +160,8 @@ class FastConfirmationTrackerTest {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
     final FastConfirmationTracker tracker =
-        FastConfirmationTracker.create(spec, Optional.of(asyncRunner), eventChannel);
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
     tracker.initialize(store);
 
     final Bytes32 headA = Bytes32.random();

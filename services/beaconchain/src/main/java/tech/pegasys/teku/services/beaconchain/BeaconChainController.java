@@ -476,7 +476,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
           FastConfirmationTracker.create(
               spec,
               Optional.of(fastConfirmationAsyncRunner),
-              serviceConfig.getEventChannels().getPublisher(FastConfirmationEventChannel.class));
+              serviceConfig.getEventChannels().getPublisher(FastConfirmationEventChannel.class),
+              serviceConfig.getMetricsSystem(),
+              serviceConfig.getTimeProvider());
     } else {
       this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
     }

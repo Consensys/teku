@@ -68,6 +68,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -259,7 +260,11 @@ class ForkChoiceTest {
     final StubAsyncRunner fastConfirmationAsyncRunner = new StubAsyncRunner();
     recreateForkChoice(
         FastConfirmationTracker.create(
-            spec, Optional.of(fastConfirmationAsyncRunner), FastConfirmationEventChannel.NOOP),
+            spec,
+            Optional.of(fastConfirmationAsyncRunner),
+            FastConfirmationEventChannel.NOOP,
+            metricsSystem,
+            StubTimeProvider.withTimeInMillis(0)),
         LateBlockReorgPreparationHandler.NOOP);
     final UInt64 nextSlot = recentChainData.getCurrentSlot().orElseThrow().plus(ONE);
 
@@ -1947,7 +1952,11 @@ class ForkChoiceTest {
     final FastConfirmationTracker fastConfirmationTracker =
         fastConfirmationEnabled
             ? FastConfirmationTracker.create(
-                spec, Optional.empty(), FastConfirmationEventChannel.NOOP)
+                spec,
+                Optional.empty(),
+                FastConfirmationEventChannel.NOOP,
+                metricsSystem,
+                StubTimeProvider.withTimeInMillis(0))
             : FastConfirmationTracker.NOOP;
     recreateForkChoice(fastConfirmationTracker, lateBlockReorgPreparationHandler);
   }

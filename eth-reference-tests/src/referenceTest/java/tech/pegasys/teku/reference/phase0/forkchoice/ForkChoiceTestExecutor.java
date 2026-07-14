@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -233,7 +234,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final FastConfirmationTracker fastConfirmationTracker =
         fastConfirmationEnabled
             ? FastConfirmationTracker.create(
-                spec, Optional.of(SyncAsyncRunner.SYNC_RUNNER), FastConfirmationEventChannel.NOOP)
+                spec,
+                Optional.of(SyncAsyncRunner.SYNC_RUNNER),
+                FastConfirmationEventChannel.NOOP,
+                new StubMetricsSystem(),
+                StubTimeProvider.withTimeInMillis(0))
             : FastConfirmationTracker.NOOP;
     final ForkChoice forkChoice =
         new ForkChoice(

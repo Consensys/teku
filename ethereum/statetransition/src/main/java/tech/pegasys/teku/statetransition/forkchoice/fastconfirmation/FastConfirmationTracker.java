@@ -20,9 +20,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
@@ -33,11 +38,19 @@ public class FastConfirmationTracker {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final FastConfirmationTracker NOOP =
-      new FastConfirmationTracker(false, null, Optional.empty(), FastConfirmationEventChannel.NOOP);
+      new FastConfirmationTracker(
+          false, null, Optional.empty(), FastConfirmationEventChannel.NOOP, null, null);
 
   private final boolean enabled;
   private final Spec spec;
   private final FastConfirmationEventChannel fastConfirmationEventChannel;
+
+  /** Wall-clock duration of a single per-slot fast confirmation run; {@code null} when disabled. */
+  private final MetricsHistogram calculationTimer;
+
+  /** Incremented when a per-slot run does not finish within {@link #updateTimeout}. */
+  private final Counter timeoutCounter;
+
   private final AtomicReference<FastConfirmationStore> fastConfirmationStore =
       new AtomicReference<>();
 
@@ -55,18 +68,37 @@ public class FastConfirmationTracker {
       final boolean enabled,
       final Spec spec,
       final Optional<AsyncRunner> asyncRunner,
-      final FastConfirmationEventChannel fastConfirmationEventChannel) {
+      final FastConfirmationEventChannel fastConfirmationEventChannel,
+      final MetricsHistogram calculationTimer,
+      final Counter timeoutCounter) {
     this.enabled = enabled;
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.fastConfirmationEventChannel = fastConfirmationEventChannel;
+    this.calculationTimer = calculationTimer;
+    this.timeoutCounter = timeoutCounter;
   }
 
   public static FastConfirmationTracker create(
       final Spec spec,
       final Optional<AsyncRunner> asyncRunner,
-      final FastConfirmationEventChannel fastConfirmationEventChannel) {
-    return new FastConfirmationTracker(true, spec, asyncRunner, fastConfirmationEventChannel);
+      final FastConfirmationEventChannel fastConfirmationEventChannel,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
+    final MetricsHistogram calculationTimer =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_calculation_seconds",
+            "Time taken to run the fast confirmation algorithm (incl. source-state loading) each slot");
+    final Counter timeoutCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_timeout_total",
+            "Number of slots where the fast confirmation update did not complete within its timeout");
+    return new FastConfirmationTracker(
+        true, spec, asyncRunner, fastConfirmationEventChannel, calculationTimer, timeoutCounter);
   }
 
   public boolean isEnabled() {
@@ -113,6 +145,7 @@ public class FastConfirmationTracker {
               // A timeout means the side computation is lagging (e.g. slow state retrieval): log it
               // and move on rather than failing the fork-choice tick. Real errors still propagate.
               if (ExceptionUtil.hasCause(error, TimeoutException.class)) {
+                timeoutCounter.inc();
                 LOG.warn(
                     "Fast confirmation update for slot {} timed out after {}", slot, updateTimeout);
                 return SafeFuture.COMPLETE;
@@ -151,6 +184,18 @@ public class FastConfirmationTracker {
       return;
     }
 
+    // Time the actual per-slot computation (state loading + get_latest_confirmed), which is what
+    // the timeout bounds; the cheap guards above are deliberately left out of the measurement.
+    final MetricsHistogram.Timer calculationTimerContext = calculationTimer.startTimer();
+    try {
+      runFastConfirmation(input, currentStore);
+    } finally {
+      calculationTimerContext.closeUnchecked().run();
+    }
+  }
+
+  private void runFastConfirmation(
+      final FastConfirmationInput input, final FastConfirmationStore currentStore) {
     // Derived off the fork-choice thread. The greatest unrealized justified checkpoint is only
     // needed on the last slot of an epoch (when the next slot starts a new epoch); otherwise it is
     // left at the finalized checkpoint and unused by update_fast_confirmation_variables.
