@@ -247,7 +247,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPending
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.PtcWindowSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-// Error Prone's JavaCase check doesn't yet recognize Java 25 unnamed lambda parameters.
+// TODO Error Prone's JavaCase check doesn't yet recognize Java 25 unnamed lambda parameters.
 @SuppressWarnings("JavaCase")
 public class SchemaRegistryBuilder {
 

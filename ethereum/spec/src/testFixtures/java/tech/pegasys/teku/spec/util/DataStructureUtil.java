@@ -129,6 +129,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
@@ -1518,7 +1519,11 @@ public final class DataStructureUtil {
                 builder.executionPayloadHeader(randomExecutionPayloadHeader(spec.atSlot(slot)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
-                builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList(slot, schema));
+                builder.blsToExecutionChanges(
+                    randomSignedBlsToExecutionChangesList(
+                        slot,
+                        ((BlindedBeaconBlockBodySchemaCapella<?>) schema)
+                            .getBlsToExecutionChanges()));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
@@ -1652,7 +1657,11 @@ public final class DataStructureUtil {
                 builder.executionPayload(randomExecutionPayload(slot));
               }
               if (builder.supportsBlsToExecutionChanges()) {
-                builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList(slot, schema));
+                builder.blsToExecutionChanges(
+                    randomSignedBlsToExecutionChangesList(
+                        slot,
+                        BeaconBlockBodySchemaCapella.required(schema)
+                            .getBlsToExecutionChangesSchema()));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
@@ -2505,13 +2514,13 @@ public final class DataStructureUtil {
     final UInt64 slot = randomSlot();
     final BeaconBlockBodySchema<?> schema =
         getCapellaSchemaDefinitions(slot).getBeaconBlockBodySchema();
-    return randomSignedBlsToExecutionChangesList(slot, schema);
+    return randomSignedBlsToExecutionChangesList(
+        slot, BeaconBlockBodySchemaCapella.required(schema).getBlsToExecutionChangesSchema());
   }
 
   private SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList(
-      final UInt64 slot, final BeaconBlockBodySchema<?> schema) {
-    final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
-        BeaconBlockBodySchemaCapella.required(schema).getBlsToExecutionChangesSchema();
+      final UInt64 slot,
+      final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema) {
     final int maxBlsToExecutionChanges =
         SpecConfigCapella.required(spec.atSlot(slot).getConfig()).getMaxBlsToExecutionChanges();
 
