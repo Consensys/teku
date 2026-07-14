@@ -116,6 +116,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -257,7 +258,8 @@ class ForkChoiceTest {
   void shouldScheduleFastConfirmationUpdateOnSlotTickWhenEnabled() {
     final StubAsyncRunner fastConfirmationAsyncRunner = new StubAsyncRunner();
     recreateForkChoice(
-        FastConfirmationTracker.create(spec, Optional.of(fastConfirmationAsyncRunner)),
+        FastConfirmationTracker.create(
+            spec, Optional.of(fastConfirmationAsyncRunner), FastConfirmationEventChannel.NOOP),
         LateBlockReorgPreparationHandler.NOOP);
     final UInt64 nextSlot = recentChainData.getCurrentSlot().orElseThrow().plus(ONE);
 
@@ -1944,7 +1946,8 @@ class ForkChoiceTest {
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
     final FastConfirmationTracker fastConfirmationTracker =
         fastConfirmationEnabled
-            ? FastConfirmationTracker.create(spec, Optional.empty())
+            ? FastConfirmationTracker.create(
+                spec, Optional.empty(), FastConfirmationEventChannel.NOOP)
             : FastConfirmationTracker.NOOP;
     recreateForkChoice(fastConfirmationTracker, lateBlockReorgPreparationHandler);
   }

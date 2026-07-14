@@ -99,6 +99,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -231,7 +232,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     // the following checks step reads the confirmation store.
     final FastConfirmationTracker fastConfirmationTracker =
         fastConfirmationEnabled
-            ? FastConfirmationTracker.create(spec, Optional.of(SyncAsyncRunner.SYNC_RUNNER))
+            ? FastConfirmationTracker.create(
+                spec, Optional.of(SyncAsyncRunner.SYNC_RUNNER), FastConfirmationEventChannel.NOOP)
             : FastConfirmationTracker.NOOP;
     final ForkChoice forkChoice =
         new ForkChoice(

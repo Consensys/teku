@@ -33,10 +33,11 @@ public class FastConfirmationTracker {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final FastConfirmationTracker NOOP =
-      new FastConfirmationTracker(false, null, Optional.empty());
+      new FastConfirmationTracker(false, null, Optional.empty(), FastConfirmationEventChannel.NOOP);
 
   private final boolean enabled;
   private final Spec spec;
+  private final FastConfirmationEventChannel fastConfirmationEventChannel;
   private final AtomicReference<FastConfirmationStore> fastConfirmationStore =
       new AtomicReference<>();
 
@@ -51,15 +52,21 @@ public class FastConfirmationTracker {
   private final Optional<AsyncRunner> asyncRunner;
 
   private FastConfirmationTracker(
-      final boolean enabled, final Spec spec, final Optional<AsyncRunner> asyncRunner) {
+      final boolean enabled,
+      final Spec spec,
+      final Optional<AsyncRunner> asyncRunner,
+      final FastConfirmationEventChannel fastConfirmationEventChannel) {
     this.enabled = enabled;
     this.spec = spec;
     this.asyncRunner = asyncRunner;
+    this.fastConfirmationEventChannel = fastConfirmationEventChannel;
   }
 
   public static FastConfirmationTracker create(
-      final Spec spec, final Optional<AsyncRunner> asyncRunner) {
-    return new FastConfirmationTracker(true, spec, asyncRunner);
+      final Spec spec,
+      final Optional<AsyncRunner> asyncRunner,
+      final FastConfirmationEventChannel fastConfirmationEventChannel) {
+    return new FastConfirmationTracker(true, spec, asyncRunner, fastConfirmationEventChannel);
   }
 
   public boolean isEnabled() {
@@ -176,6 +183,13 @@ public class FastConfirmationTracker {
         input.slot(),
         input.headRoot(),
         updatedStore.confirmedRoot());
+
+    // The fast_confirmation event is emitted every time the algorithm runs, regardless of whether
+    // the confirmed block changed (per the Beacon API event stream spec).
+    final Bytes32 confirmedRoot = updatedStore.confirmedRoot();
+    final UInt64 confirmedSlot =
+        store.getForkChoiceStrategy().blockSlot(confirmedRoot).orElse(UInt64.ZERO);
+    fastConfirmationEventChannel.onFastConfirmation(confirmedRoot, confirmedSlot, input.slot());
   }
 
   /**

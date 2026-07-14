@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -36,6 +38,9 @@ class FastConfirmationTrackerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final ReadOnlyStore store = mock(ReadOnlyStore.class);
+  private final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
+  private final FastConfirmationEventChannel eventChannel =
+      mock(FastConfirmationEventChannel.class);
   private final Checkpoint finalizedCheckpoint =
       new Checkpoint(UInt64.valueOf(12), Bytes32.random());
 
@@ -47,6 +52,9 @@ class FastConfirmationTrackerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(store.retrieveBlockState(any(Bytes32.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // Used by the fast_confirmation event to resolve the confirmed block's slot.
+    when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
+    when(forkChoice.blockSlot(any())).thenReturn(Optional.of(finalizedCheckpoint.getEpoch()));
   }
 
   @Test
@@ -62,7 +70,8 @@ class FastConfirmationTrackerTest {
   @Test
   void shouldInitializeStoreFromFinalizedCheckpointWhenEnabled() {
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
-    final FastConfirmationTracker tracker = FastConfirmationTracker.create(spec, Optional.empty());
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(spec, Optional.empty(), eventChannel);
 
     tracker.initialize(store);
 
@@ -97,7 +106,7 @@ class FastConfirmationTrackerTest {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
     final FastConfirmationTracker tracker =
-        FastConfirmationTracker.create(spec, Optional.of(asyncRunner));
+        FastConfirmationTracker.create(spec, Optional.of(asyncRunner), eventChannel);
     tracker.initialize(store);
     final Bytes32 headRoot = Bytes32.random();
 
@@ -117,11 +126,28 @@ class FastConfirmationTrackerTest {
   }
 
   @Test
+  void shouldEmitFastConfirmationEventWhenAlgorithmRuns() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(spec, Optional.of(asyncRunner), eventChannel);
+    tracker.initialize(store);
+
+    applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), Bytes32.random());
+
+    // Emitted with the confirmed root (still the finalized root, as no source states are loaded),
+    // the confirmed block's slot, and the wall-clock slot the algorithm ran at.
+    verify(eventChannel)
+        .onFastConfirmation(
+            finalizedCheckpoint.getRoot(), finalizedCheckpoint.getEpoch(), UInt64.valueOf(13));
+  }
+
+  @Test
   void shouldSkipStaleOrDuplicateSlotUpdates() {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
     final FastConfirmationTracker tracker =
-        FastConfirmationTracker.create(spec, Optional.of(asyncRunner));
+        FastConfirmationTracker.create(spec, Optional.of(asyncRunner), eventChannel);
     tracker.initialize(store);
 
     final Bytes32 headA = Bytes32.random();

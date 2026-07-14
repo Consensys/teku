@@ -228,6 +228,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
@@ -472,7 +473,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final AsyncRunner fastConfirmationAsyncRunner =
           serviceConfig.createAsyncRunner("fastconfirmation", 1);
       this.fastConfirmationTracker =
-          FastConfirmationTracker.create(spec, Optional.of(fastConfirmationAsyncRunner));
+          FastConfirmationTracker.create(
+              spec,
+              Optional.of(fastConfirmationAsyncRunner),
+              serviceConfig.getEventChannels().getPublisher(FastConfirmationEventChannel.class));
     } else {
       this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
     }

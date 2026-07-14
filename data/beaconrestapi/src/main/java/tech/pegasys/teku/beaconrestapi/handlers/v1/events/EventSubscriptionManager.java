@@ -60,6 +60,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -70,7 +71,8 @@ public class EventSubscriptionManager
         FinalizedCheckpointChannel,
         ReceivedBlockEventsChannel,
         ReceivedExecutionPayloadEventsChannel,
-        ReceivedExecutionPayloadBidEventsChannel {
+        ReceivedExecutionPayloadBidEventsChannel,
+        FastConfirmationEventChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -104,6 +106,7 @@ public class EventSubscriptionManager
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, this);
     eventChannels.subscribe(ReceivedExecutionPayloadEventsChannel.class, this);
     eventChannels.subscribe(ReceivedExecutionPayloadBidEventsChannel.class, this);
+    eventChannels.subscribe(FastConfirmationEventChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
@@ -200,6 +203,14 @@ public class EventSubscriptionManager
             checkpoint.getEpoch(),
             fromOptimisticBlock);
     notifySubscribersOfEvent(EventType.finalized_checkpoint, event);
+  }
+
+  @Override
+  public void onFastConfirmation(
+      final Bytes32 confirmedRoot, final UInt64 confirmedSlot, final UInt64 currentSlot) {
+    notifySubscribersOfEvent(
+        EventType.fast_confirmation,
+        new FastConfirmationEvent(confirmedRoot, confirmedSlot, currentSlot));
   }
 
   @Override
