@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 
 import java.util.List;
 import java.util.Optional;
@@ -201,7 +201,7 @@ public class DataColumnSidecarsByRootMessageHandler
         combinedChainDataClient.getStore(), requestedEpoch)) {
       return SafeFuture.failedFuture(
           new RpcException(
-              INVALID_REQUEST_CODE,
+              RESOURCE_UNAVAILABLE,
               String.format(
                   "Block root (%s) references a block earlier than the minimum_request_epoch",
                   blockRoot)));

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
@@ -279,11 +280,37 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final RpcException rpcException = rpcExceptionCaptor.getValue();
 
-    assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
+    assertThat(rpcException.getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
             "Block root (%s) references a block earlier than the minimum_request_epoch",
             dataColumnsByRootIdentifiers[0].getBlockRoot());
+  }
+
+  @TestTemplate
+  public void shouldSendInvalidRequestIfBlockRootReferencesBlockEarlierThanFuluForkEpoch() {
+    // Skip when Fulu activates at epoch 0 (e.g. GLOAS test config) — no pre-Fulu epochs exist.
+    // Before the fix, atEpoch(preFuluEpoch) returned a pre-Fulu SpecVersion whose config caused
+    // SpecConfigFulu.required() to throw IllegalArgumentException -> SERVER_ERROR (code 2).
+    // After the fix, the pre-Fulu epoch guard returns false -> INVALID_REQUEST (code 1).
+    final UInt64 fuluForkEpoch = spec.atEpoch(UInt64.ZERO).getConfig().getFuluForkEpoch();
+    assumeTrue(fuluForkEpoch.isGreaterThan(UInt64.ZERO), "No pre-Fulu epochs in this config");
+    final UInt64 preFuluSlot = UInt64.ZERO;
+
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(1, 1);
+
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(preFuluSlot)));
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(callback, never()).respond(any());
+    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+
+    final RpcException rpcException = rpcExceptionCaptor.getValue();
+    assertThat(rpcException.getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
   }
 
   @TestTemplate
