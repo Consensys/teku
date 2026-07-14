@@ -15,7 +15,11 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -24,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSecond
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +40,8 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -52,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
@@ -456,6 +464,75 @@ class StoreTest extends AbstractStoreTest {
               .describedAs("State at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState.getState()));
         });
+  }
+
+  @Test
+  public void retrieveBlockState_shouldReuseGeneratedStateForSameSlotAndParentRoot()
+      throws Exception {
+    final Spec spec = spy(TestSpecFactory.createMinimalDeneb());
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    final UpdatableStore store =
+        StoreBuilder.create()
+            .asyncRunner(SYNC_RUNNER)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(
+                roots ->
+                    SafeFuture.completedFuture(
+                        roots.stream()
+                            .map(chainBuilder::getBlock)
+                            .flatMap(Optional::stream)
+                            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, block -> block))))
+            .earliestBlobSidecarSlotProvider(
+                () -> SafeFuture.completedFuture(chainBuilder.getEarliestBlobSidecarSlot()))
+            .stateProvider(StateAndBlockSummaryProvider.NOOP)
+            .anchor(Optional.empty())
+            .genesisTime(genesis.getState().getGenesisTime())
+            .time(genesis.getState().getGenesisTime())
+            .latestFinalized(AnchorPoint.create(spec, genesisCheckpoint, genesis))
+            .justifiedCheckpoint(genesisCheckpoint)
+            .bestJustifiedCheckpoint(genesisCheckpoint)
+            .blockInformation(
+                Map.of(
+                    genesis.getRoot(),
+                    new StoredBlockMetadata(
+                        genesis.getSlot(),
+                        genesis.getRoot(),
+                        genesis.getParentRoot(),
+                        genesis.getStateRoot(),
+                        genesis.getExecutionBlockNumber(),
+                        genesis.getExecutionBlockHash(),
+                        Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
+            .storeConfig(defaultStoreConfig)
+            .votes(Collections.emptyMap())
+            .latestCanonicalBlockRoot(Optional.empty())
+            .build();
+    final SignedBlockAndState parentBlock = chainBuilder.generateBlockAtSlot(UInt64.ONE);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    transaction.putBlockAndState(
+        parentBlock, spec.calculateBlockCheckpoints(parentBlock.getState()));
+    assertThat(transaction.commit()).isCompletedWithValue(null);
+    clearInvocations(spec);
+
+    final UInt64 productionSlot = parentBlock.getSlot().plus(2);
+    final SlotAndBlockRoot productionStateKey =
+        new SlotAndBlockRoot(productionSlot, parentBlock.getRoot());
+
+    // First call mirrors block production generating state for the selected proposer parent.
+    final Optional<BeaconState> productionState =
+        safeJoin(store.retrieveBlockState(productionStateKey));
+    // Second call mirrors block import requesting the same generated state by the same key.
+    final Optional<BeaconState> importState =
+        safeJoin(store.retrieveBlockState(productionStateKey));
+
+    final BeaconState generatedProductionState = productionState.orElseThrow();
+    final BeaconState generatedImportState = importState.orElseThrow();
+    assertThat(generatedProductionState.getSlot()).isEqualTo(productionSlot);
+    assertThat(generatedImportState.getSlot()).isEqualTo(productionSlot);
+    assertThat(generatedImportState).isSameAs(generatedProductionState);
+    verify(spec, times(1)).processSlots(parentBlock.getState(), productionSlot);
   }
 
   @Test

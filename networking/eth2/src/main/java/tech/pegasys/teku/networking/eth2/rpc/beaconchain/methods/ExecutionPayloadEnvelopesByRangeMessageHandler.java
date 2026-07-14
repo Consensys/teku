@@ -80,14 +80,21 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final ExecutionPayloadEnvelopesByRangeRequestMessage request) {
-    if (request.getCount().isGreaterThan(config.getMaxRequestBlocksDeneb())) {
+    try {
+      request.getMaxSlot();
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
+
+    if (request.getCount().isGreaterThan(config.getMaxRequestPayloads())) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
                   "Only a maximum of %s execution payload envelopes can be requested per request",
-                  config.getMaxRequestBlocksDeneb())));
+                  config.getMaxRequestPayloads())));
     }
     return Optional.empty();
   }

@@ -467,6 +467,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
+      // Base-only: this fixture does not model the Gloas three-state tree.
+      return getAncestor(node.blockRoot(), slot).map(ForkChoiceNode::createBase);
+    }
+
+    @Override
     public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
       throw new UnsupportedOperationException("Not implemented");
     }

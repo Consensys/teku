@@ -19,7 +19,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -101,80 +100,64 @@ class TimerServiceTest {
     assertThat(TimerService.nextTickDue(millis, ticksPerSecond)).isEqualTo(expectedValue);
   }
 
-  // ---------------------------------------------------------------------------
-  // Comparison tests: TimerService vs QuartzTimerService
-  // ---------------------------------------------------------------------------
-
-  /** Provides both timer implementations as a {@code Function<TimeTickHandler, Service>}. */
-  static Stream<Arguments> timerServiceFactories() {
-    return Stream.of(
-        Arguments.of(
-            "TimerService",
-            (Function<TimeTickHandler, Service>)
-                handler -> new TimerService(handler, TICKS_PER_SECOND, new SystemTimeProvider())),
-        Arguments.of(
-            "QuartzTimerService",
-            (Function<TimeTickHandler, Service>)
-                handler -> new QuartzTimerService(handler, TICK_INTERVAL_MS)));
+  private TimerService createTimerService(final TimeTickHandler handler) {
+    return new TimerService(handler, TICKS_PER_SECOND, new SystemTimeProvider());
   }
 
-  /** Both services should fire a comparable number of ticks in a fixed wall-clock window. */
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("timerServiceFactories")
-  void comparison_ticksFire_withinExpectedRange(
-      final String name, final Function<TimeTickHandler, Service> factory) throws Exception {
+  /** The service should fire a comparable number of ticks in a fixed wall-clock window. */
+  @Test
+  void ticksFire_withinExpectedRange() throws Exception {
     final AtomicInteger counter = new AtomicInteger();
-    final Service service = factory.apply(counter::incrementAndGet);
+    final TimerService service = createTimerService(counter::incrementAndGet);
+    serviceUnderTest = service;
 
     service.start().get(5, TimeUnit.SECONDS);
     Thread.sleep(1_000);
     service.stop().get(5, TimeUnit.SECONDS);
+    serviceUnderTest = null;
 
     // 10 ticks/sec over ~1 s → expect roughly 7–14 ticks; allow wide margin for CI jitter
-    assertThat(counter.get()).as("%s tick count", name).isBetween(7, 14);
+    assertThat(counter.get()).as("tick count").isBetween(7, 14);
   }
 
   /**
-   * Both services must continue firing after the tick handler throws an exception. This is a
-   * regression guard: raw {@code ScheduledExecutorService} silently stops on uncaught exceptions,
-   * while Quartz is inherently resilient.
+   * The service must continue firing after the tick handler throws an exception. This is a
+   * regression guard: raw {@code ScheduledExecutorService} silently stops on uncaught exceptions.
    */
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("timerServiceFactories")
-  void comparison_exceptionInHandler_timerContinuesFiring(
-      final String name, final Function<TimeTickHandler, Service> factory) throws Exception {
+  @Test
+  void exceptionInHandler_timerContinuesFiring() throws Exception {
     final AtomicBoolean threw = new AtomicBoolean(false);
     final CountDownLatch ticksAfterException = new CountDownLatch(2);
 
-    final Service service =
-        factory.apply(
+    final TimerService service =
+        createTimerService(
             () -> {
               if (threw.compareAndSet(false, true)) {
                 throw new RuntimeException("simulated tick failure");
               }
               ticksAfterException.countDown();
             });
+    serviceUnderTest = service;
 
     service.start().get(5, TimeUnit.SECONDS);
     final boolean timedOut = !ticksAfterException.await(10, TimeUnit.SECONDS);
     service.stop().get(5, TimeUnit.SECONDS);
+    serviceUnderTest = null;
 
-    assertThat(timedOut).as("%s: timer should continue firing after exception", name).isFalse();
+    assertThat(timedOut).as("timer should continue firing after exception").isFalse();
   }
 
   /**
-   * When a tick takes longer than the interval, neither service should fire a catch-up burst of
+   * When a tick takes longer than the interval, the service should not fire a catch-up burst of
    * missed ticks once the slow tick completes.
    */
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("timerServiceFactories")
-  void comparison_slowTick_doesNotCauseCatchupBurst(
-      final String name, final Function<TimeTickHandler, Service> factory) throws Exception {
+  @Test
+  void slowTick_doesNotCauseCatchupBurst() throws Exception {
     final AtomicInteger counter = new AtomicInteger();
     final AtomicBoolean first = new AtomicBoolean(true);
 
-    final Service service =
-        factory.apply(
+    final TimerService service =
+        createTimerService(
             () -> {
               counter.incrementAndGet();
               if (first.compareAndSet(true, false)) {
@@ -186,13 +169,15 @@ class TimerServiceTest {
                 }
               }
             });
+    serviceUnderTest = service;
 
     service.start().get(5, TimeUnit.SECONDS);
     // Run for ~10 intervals; without catch-up the count stays low
     Thread.sleep(TICK_INTERVAL_MS * 10L);
     service.stop().get(5, TimeUnit.SECONDS);
+    serviceUnderTest = null;
 
     // A burst-free implementation fires at most ~6 ticks in this window
-    assertThat(counter.get()).as("%s: no catch-up burst expected", name).isBetween(2, 8);
+    assertThat(counter.get()).as("no catch-up burst expected").isBetween(2, 8);
   }
 }

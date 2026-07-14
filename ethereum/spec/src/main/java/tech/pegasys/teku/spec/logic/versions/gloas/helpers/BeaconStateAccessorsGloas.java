@@ -30,15 +30,14 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -177,32 +176,22 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    *
    * <p>Return the indexed payload attestation corresponding to ``payload_attestation``.
    */
-  public IndexedPayloadAttestation getIndexedPayloadAttestation(
+  public IndexedPayloadAttestationLight getIndexedPayloadAttestation(
       final BeaconState state, final PayloadAttestation payloadAttestation) {
     final UInt64 slot = payloadAttestation.getData().getSlot();
     final IntList ptc = getPtc(state, slot);
     final SszBitvector aggregationBits = payloadAttestation.getAggregationBits();
-    final IntList attestingIndices = new IntArrayList();
+    final List<UInt64> attestingIndices = new ArrayList<>();
     for (int i = 0; i < ptc.size(); i++) {
       if (aggregationBits.isSet(i)) {
         final int index = ptc.getInt(i);
-        attestingIndices.add(index);
+        attestingIndices.add(UInt64.valueOf(index));
       }
     }
-    final SszUInt64List sszAttestingIndices =
-        attestingIndices
-            .intStream()
-            .sorted()
-            .mapToObj(idx -> SszUInt64.of(UInt64.valueOf(idx)))
-            .collect(
-                schemaDefinitions
-                    .getIndexedPayloadAttestationSchema()
-                    .getAttestingIndicesSchema()
-                    .collector());
-    return schemaDefinitions
-        .getIndexedPayloadAttestationSchema()
-        .create(
-            sszAttestingIndices, payloadAttestation.getData(), payloadAttestation.getSignature());
+    attestingIndices.sort(UInt64::compareTo);
+
+    return new IndexedPayloadAttestationLight(
+        attestingIndices, payloadAttestation.getData(), payloadAttestation.getSignature());
   }
 
   /**

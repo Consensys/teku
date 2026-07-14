@@ -19,6 +19,7 @@ import io.netty.util.ReferenceCounted;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
@@ -29,8 +30,26 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 /** Implements snappy compression using the "framed" / streaming format. */
 public class SnappyFramedCompressor implements Compressor {
 
+  // Suppliers intentionally create fresh stateful encoders and decoders per framed RPC payload.
+  public static final SnappyFramedCompressor NETTY =
+      new SnappyFramedCompressor(NettySnappyFrameEncoder::new, NettySnappyFrameDecoder::new);
+
+  public static final SnappyFramedCompressor AIRCOMPRESSOR =
+      new SnappyFramedCompressor(
+          AircompressorSnappyFrameEncoder::new, AircompressorSnappyFrameDecoder::new);
+
+  private final Supplier<SnappyFrameEncoder> encoderSupplier;
+  private final Supplier<SnappyFrameDecoder> decoderSupplier;
+
+  private SnappyFramedCompressor(
+      final Supplier<SnappyFrameEncoder> encoderSupplier,
+      final Supplier<SnappyFrameDecoder> decoderSupplier) {
+    this.encoderSupplier = encoderSupplier;
+    this.decoderSupplier = decoderSupplier;
+  }
+
   private class SnappyFramedDecompressor implements Decompressor {
-    private final SnappyFrameDecoder snappyFrameDecoder = new SnappyFrameDecoder();
+    private final SnappyFrameDecoder snappyFrameDecoder;
     private final int uncompressedPayloadSize;
     private int consumedCompressedSize = 0;
     private final List<ByteBuf> decodedSnappyFrames = new ArrayList<>();
@@ -38,6 +57,7 @@ public class SnappyFramedCompressor implements Compressor {
     private boolean disposed = false;
 
     public SnappyFramedDecompressor(final int uncompressedPayloadSize) {
+      this.snappyFrameDecoder = decoderSupplier.get();
       this.uncompressedPayloadSize = uncompressedPayloadSize;
     }
 
@@ -125,7 +145,7 @@ public class SnappyFramedCompressor implements Compressor {
 
   @Override
   public Bytes compress(final Bytes data) {
-    return new SnappyFrameEncoder().encode(data);
+    return encoderSupplier.get().encode(data);
   }
 
   @Override

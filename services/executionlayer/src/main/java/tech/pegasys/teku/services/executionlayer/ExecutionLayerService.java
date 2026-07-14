@@ -38,7 +38,6 @@ import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
-import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
@@ -132,44 +131,32 @@ public class ExecutionLayerService extends Service {
       executionLayerManager =
           createStubExecutionLayerManager(serviceConfig, config, builderCircuitBreaker);
     } else {
-      if (!config.isUseNewEngineApiClient()) {
-        executionLayerManager =
-            createRealExecutionLayerManager(
-                serviceConfig,
-                config,
-                spec,
-                new Web3JExecutionEngineClient(engineWeb3jClientProvider.getWeb3JClient()),
-                builderRestClientProvider,
-                builderCircuitBreaker);
-      } else {
-        LOG.info("Using new experimental Engine API client");
-        final Optional<JwtConfig> jwtConfig =
-            JwtConfig.createIfNeeded(
-                true,
-                config.getEngineJwtSecretFile(),
-                config.getEngineJwtClaimId(),
-                beaconDataDirectory);
-        final Supplier<OkHttpClient> okHttpClientSupplier =
-            () -> OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
-        final ExecutionEngineClient newEngineApiClient =
-            ExecutionEngineClientFactory.create(
-                config.getEngineEndpoint(),
-                timeProvider,
-                EVENT_LOG,
-                executionClientEventsPublisher,
-                okHttpClientSupplier,
-                () ->
-                    serviceConfig.createAsyncRunner(
-                        IPC_READER_ASYNC_RUNNER_NAME, IPC_READER_MAX_THREADS));
-        executionLayerManager =
-            createRealExecutionLayerManager(
-                serviceConfig,
-                config,
-                spec,
-                newEngineApiClient,
-                builderRestClientProvider,
-                builderCircuitBreaker);
-      }
+      final Optional<JwtConfig> jwtConfig =
+          JwtConfig.createIfNeeded(
+              true,
+              config.getEngineJwtSecretFile(),
+              config.getEngineJwtClaimId(),
+              beaconDataDirectory);
+      final Supplier<OkHttpClient> okHttpClientSupplier =
+          () -> OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
+      final ExecutionEngineClient engineApiClient =
+          ExecutionEngineClientFactory.create(
+              config.getEngineEndpoint(),
+              timeProvider,
+              EVENT_LOG,
+              executionClientEventsPublisher,
+              okHttpClientSupplier,
+              () ->
+                  serviceConfig.createAsyncRunner(
+                      IPC_READER_ASYNC_RUNNER_NAME, IPC_READER_MAX_THREADS));
+      executionLayerManager =
+          createRealExecutionLayerManager(
+              serviceConfig,
+              config,
+              spec,
+              engineApiClient,
+              builderRestClientProvider,
+              builderCircuitBreaker);
     }
 
     return new ExecutionLayerService(
