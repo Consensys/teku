@@ -217,7 +217,7 @@ jobs:
       - name: Assemble
         shell: bash
         run: |
-          ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava resolveCiJacocoDependencies assemble
+          ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava resolveCiDependencies assemble
       - name: Upload distribution tar
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -586,7 +586,7 @@ jobs:
       - name: CompileReferenceTests
         shell: bash
         run: |
-          ./gradlew --no-daemon --parallel compileReferenceTestJava resolveCiJacocoDependencies
+          ./gradlew --no-daemon --parallel compileReferenceTestJava resolveCiDependencies
       - name: Caching reference tests
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
