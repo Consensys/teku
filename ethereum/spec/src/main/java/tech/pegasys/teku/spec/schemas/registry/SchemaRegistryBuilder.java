@@ -73,6 +73,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
@@ -184,7 +185,10 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionR
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientBootstrapSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -249,6 +253,9 @@ public class SchemaRegistryBuilder {
         .addProvider(createMetadataMessageSchemaProvider())
         .addProvider(createStatusMessageSchemaProvider())
         .addProvider(createLightClientBootstrapSchemaProvider())
+
+        // ALTAIR
+            .addProvider(createLightClientHeaderSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -846,6 +853,19 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new LightClientBootstrapSchemaElectra(SpecConfigElectra.required(specConfig)))
         .build();
+  }
+
+  private static SchemaProvider<?> createLightClientHeaderSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_HEADER_SCHEMA)
+            .withCreator(
+                    ALTAIR,
+                    (registry, specConfig, schemaName) -> new LightClientHeaderSchemaAltair()
+            )
+            .withCreator(CAPELLA,
+                    (registry, specConfig, schemaName) -> new LightClientHeaderSchemaCapella(registry)).withCreator(
+                            GLOAS,
+                    (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas()
+            ).build();
   }
 
   private static SchemaProvider<?> createSignedAggregateAndProofSchemaProvider() {

@@ -75,6 +75,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -146,6 +148,7 @@ public class SchemaTypes {
       create("STATUS_MESSAGE_SCHEMA");
 
   // Altair
+  public static final SchemaId<LightClientHeaderSchema<? extends LightClientHeader>> LIGHT_CLIENT_HEADER_SCHEMA = create("LIGHT_CLIENT_HEADER_SCHEMA");
 
   // Bellatrix
   public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>

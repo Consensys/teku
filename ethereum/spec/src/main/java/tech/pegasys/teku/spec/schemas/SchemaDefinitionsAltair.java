@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_B
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
@@ -75,7 +76,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
   private final MetadataMessageSchema<?> metadataMessageSchema;
   private final StatusMessageSchema<?> statusMessageSchema;
-  private final LightClientHeaderSchema lightClientHeaderSchema;
+  private final LightClientHeaderSchema<?> lightClientHeaderSchema;
   private final LightClientBootstrapSchema lightClientBootstrapSchema;
   private final LightClientUpdateSchema lightClientUpdateSchema;
   private final LightClientUpdateResponseSchema lightClientUpdateResponseSchema;
@@ -100,7 +101,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
     this.metadataMessageSchema = schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
     this.statusMessageSchema = schemaRegistry.get(STATUS_MESSAGE_SCHEMA);
-    this.lightClientHeaderSchema = new LightClientHeaderSchema();
+    this.lightClientHeaderSchema = schemaRegistry.get(LIGHT_CLIENT_HEADER_SCHEMA);
     this.lightClientBootstrapSchema = schemaRegistry.get(LIGHT_CLIENT_BOOTSTRAP_SCHEMA);
     this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig);
     this.lightClientUpdateResponseSchema = new LightClientUpdateResponseSchema(specConfig);
@@ -236,7 +237,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     return SyncAggregatorSelectionDataSchema.INSTANCE;
   }
 
-  public LightClientHeaderSchema getLightClientHeaderSchema() {
+  public LightClientHeaderSchema<?> getLightClientHeaderSchema() {
     return lightClientHeaderSchema;
   }
 
