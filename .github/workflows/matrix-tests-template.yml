@@ -68,13 +68,6 @@ jobs:
         with:
           gradle-cache-read-only: 'true'
 
-      - name: Restore resolved Gradle dependencies
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
-        with:
-          path: ~/.gradle/caches/modules-2
-          key: ci-gradle-dependencies-${{ inputs.assemble_output_run_id }}
-          fail-on-cache-miss: true
-
       # only acceptance tests need the docker login
       # 4.0.0
       - name: Login to dockerhub
