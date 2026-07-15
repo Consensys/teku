@@ -1015,11 +1015,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createAggregateAndProofSchemaProvider() {
     return providerBuilder(AGGREGATE_AND_PROOF_SCHEMA)
         .withCreator(
-            PHASE0,
-            (registry, specConfig, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
-        .withCreator(
-            ELECTRA,
-            (registry, specConfig, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
+            PHASE0, (registry, _, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
         .build();
   }
 
