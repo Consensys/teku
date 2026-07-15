@@ -255,7 +255,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createLightClientBootstrapSchemaProvider())
 
         // ALTAIR
-            .addProvider(createLightClientHeaderSchemaProvider())
+        .addProvider(createLightClientHeaderSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -847,25 +847,25 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ALTAIR,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchema(SpecConfigAltair.required(specConfig)))
+                new LightClientBootstrapSchema(SpecConfigAltair.required(specConfig), registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchemaElectra(SpecConfigElectra.required(specConfig)))
+                new LightClientBootstrapSchemaElectra(
+                    SpecConfigElectra.required(specConfig), registry))
         .build();
   }
 
   private static SchemaProvider<?> createLightClientHeaderSchemaProvider() {
     return providerBuilder(LIGHT_CLIENT_HEADER_SCHEMA)
-            .withCreator(
-                    ALTAIR,
-                    (registry, specConfig, schemaName) -> new LightClientHeaderSchemaAltair()
-            )
-            .withCreator(CAPELLA,
-                    (registry, specConfig, schemaName) -> new LightClientHeaderSchemaCapella(registry)).withCreator(
-                            GLOAS,
-                    (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas()
-            ).build();
+        .withCreator(
+            ALTAIR, (registry, specConfig, schemaName) -> new LightClientHeaderSchemaAltair())
+        .withCreator(
+            CAPELLA,
+            (registry, specConfig, schemaName) -> new LightClientHeaderSchemaCapella(registry))
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas())
+        .build();
   }
 
   private static SchemaProvider<?> createSignedAggregateAndProofSchemaProvider() {

@@ -17,9 +17,11 @@ import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC
 
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientBootstrapSchemaElectra extends LightClientBootstrapSchema {
-  public LightClientBootstrapSchemaElectra(final SpecConfigElectra specConfigElectra) {
-    super(specConfigElectra, CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA);
+  public LightClientBootstrapSchemaElectra(
+      final SpecConfigElectra specConfigElectra, final SchemaRegistry registry) {
+    super(specConfigElectra, CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA, registry);
   }
 }

@@ -148,7 +148,8 @@ public class SchemaTypes {
       create("STATUS_MESSAGE_SCHEMA");
 
   // Altair
-  public static final SchemaId<LightClientHeaderSchema<? extends LightClientHeader>> LIGHT_CLIENT_HEADER_SCHEMA = create("LIGHT_CLIENT_HEADER_SCHEMA");
+  public static final SchemaId<LightClientHeaderSchema<? extends LightClientHeader>>
+      LIGHT_CLIENT_HEADER_SCHEMA = create("LIGHT_CLIENT_HEADER_SCHEMA");
 
   // Bellatrix
   public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>

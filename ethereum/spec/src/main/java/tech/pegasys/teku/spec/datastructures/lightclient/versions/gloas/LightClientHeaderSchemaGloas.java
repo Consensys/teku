@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas;
 
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_BLOCK_HASH_GINDEX_GLOAS;
+
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -22,8 +24,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
-
-import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_BLOCK_HASH_GINDEX_GLOAS;
 
 public class LightClientHeaderSchemaGloas
     extends ContainerSchema3<
@@ -50,12 +50,18 @@ public class LightClientHeaderSchemaGloas
 
   @Override
   public LightClientHeaderGloas create(final BeaconBlockHeader header) {
-    return new LightClientHeaderGloas(this, header, getFieldSchema1().getDefault(), getFieldSchema2().getDefault());
+    return new LightClientHeaderGloas(
+        this, header, getFieldSchema1().getDefault(), getFieldSchema2().getDefault());
   }
 
   @Override
   public LightClientHeaderGloas createFromBackingNode(final TreeNode node) {
     return new LightClientHeaderGloas(this, node);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszBytes32VectorSchema<SszBytes32Vector> getExecutionBranchSchema() {
+    return (SszBytes32VectorSchema<SszBytes32Vector>) getChildSchema(2);
   }
 
   @Override

@@ -190,6 +190,8 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -2378,8 +2380,24 @@ public final class DataStructureUtil {
   }
 
   public LightClientHeader randomLightClientHeader(final UInt64 slot) {
-    final LightClientHeaderSchema<?> headerSchema = getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
 
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      final LightClientHeaderSchemaGloas gloasSchema = headerSchema.toVersionGloasRequired();
+      return gloasSchema.create(
+          randomBeaconBlockHeader(),
+          SszBytes32.of(randomBytes32()),
+          randomSszBytes32Vector(gloasSchema.getExecutionBranchSchema(), this::randomBytes32));
+    }
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      final LightClientHeaderSchemaCapella capellaSchema = headerSchema.toVersionCapellaRequired();
+      return capellaSchema.create(
+          randomBeaconBlockHeader(),
+          randomExecutionPayloadHeader(),
+          randomSszBytes32Vector(capellaSchema.getExecutionBranchSchema(), this::randomBytes32));
+    }
     return headerSchema.create(randomBeaconBlockHeader());
   }
 

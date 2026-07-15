@@ -13,31 +13,31 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.altair;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 
-import java.util.Optional;
+public class LightClientHeaderAltair extends Container1<LightClientHeaderAltair, BeaconBlockHeader>
+    implements LightClientHeader {
+  public LightClientHeaderAltair(
+      final LightClientHeaderSchemaAltair schema, final BeaconBlockHeader header) {
+    super(schema, header);
+  }
 
-public class LightClientHeaderAltair extends Container1<LightClientHeaderAltair, BeaconBlockHeader> implements LightClientHeader {
-    public LightClientHeaderAltair(
-            final LightClientHeaderSchemaAltair schema, final BeaconBlockHeader header) {
-        super(schema, header);
-    }
+  protected LightClientHeaderAltair(
+      final LightClientHeaderSchemaAltair type, final TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
-    protected LightClientHeaderAltair(
-            final LightClientHeaderSchemaAltair type, final TreeNode backingNode) {
-        super(type, backingNode);
-    }
+  @Override
+  public BeaconBlockHeader getBeacon() {
+    return getField0();
+  }
 
-    @Override
-    public BeaconBlockHeader getBeacon() {
-        return getField0();
-    }
-
-    @Override
-    public Optional<LightClientHeaderAltair> toVersionAltair() {
-        return Optional.of(this);
-    }
+  @Override
+  public Optional<LightClientHeaderAltair> toVersionAltair() {
+    return Optional.of(this);
+  }
 }

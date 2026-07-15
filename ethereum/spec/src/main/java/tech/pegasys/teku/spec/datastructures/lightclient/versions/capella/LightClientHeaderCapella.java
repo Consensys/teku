@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.capella;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -20,37 +21,38 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 
-import java.util.Optional;
+public class LightClientHeaderCapella
+    extends Container3<
+        LightClientHeaderCapella, BeaconBlockHeader, ExecutionPayloadHeader, SszBytes32Vector>
+    implements LightClientHeader {
+  public LightClientHeaderCapella(
+      final LightClientHeaderSchemaCapella schema,
+      final BeaconBlockHeader beacon,
+      final ExecutionPayloadHeader execution,
+      final SszBytes32Vector executionBranch) {
+    super(schema, beacon, execution, executionBranch);
+  }
 
-public class LightClientHeaderCapella extends Container3<LightClientHeaderCapella, BeaconBlockHeader, ExecutionPayloadHeader, SszBytes32Vector> implements LightClientHeader {
-    public LightClientHeaderCapella(
-            final LightClientHeaderSchemaCapella schema,
-            final BeaconBlockHeader beacon,
-            final ExecutionPayloadHeader execution,
-            final SszBytes32Vector executionBranch) {
-        super(schema, beacon, execution, executionBranch);
-    }
+  protected LightClientHeaderCapella(
+      final LightClientHeaderSchemaCapella type, final TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
-    protected LightClientHeaderCapella(
-            final LightClientHeaderSchemaCapella type, final TreeNode backingNode) {
-        super(type, backingNode);
-    }
+  @Override
+  public BeaconBlockHeader getBeacon() {
+    return getField0();
+  }
 
-    @Override
-    public BeaconBlockHeader getBeacon() {
-        return getField0();
-    }
+  public ExecutionPayloadHeader getExecutionPayload() {
+    return getField1();
+  }
 
-    public ExecutionPayloadHeader getExecutionPayload() {
-        return getField1();
-    }
+  public SszBytes32Vector getExecutionBranch() {
+    return getField2();
+  }
 
-    public SszBytes32Vector getExecutionBranch() {
-        return getField2();
-    }
-
-    @Override
-    public Optional<LightClientHeaderCapella> toVersionCapella() {
-        return Optional.of(this);
-    }
+  @Override
+  public Optional<LightClientHeaderCapella> toVersionCapella() {
+    return Optional.of(this);
+  }
 }

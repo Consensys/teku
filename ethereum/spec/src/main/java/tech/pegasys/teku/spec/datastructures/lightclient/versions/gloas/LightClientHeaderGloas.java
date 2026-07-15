@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -20,38 +21,38 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 
-import java.util.Optional;
+public class LightClientHeaderGloas
+    extends Container3<LightClientHeaderGloas, BeaconBlockHeader, SszBytes32, SszBytes32Vector>
+    implements LightClientHeader {
 
-public class LightClientHeaderGloas extends Container3<LightClientHeaderGloas, BeaconBlockHeader, SszBytes32, SszBytes32Vector> implements LightClientHeader {
+  public LightClientHeaderGloas(
+      final LightClientHeaderSchemaGloas schema,
+      final BeaconBlockHeader beacon,
+      final SszBytes32 executionBlockHash,
+      final SszBytes32Vector executionBranch) {
+    super(schema, beacon, executionBlockHash, executionBranch);
+  }
 
-    public LightClientHeaderGloas(
-            final LightClientHeaderSchemaGloas schema,
-            final BeaconBlockHeader beacon,
-            final SszBytes32 executionBlockHash,
-            final SszBytes32Vector executionBranch) {
-        super(schema, beacon, executionBlockHash, executionBranch);
-    }
+  protected LightClientHeaderGloas(
+      final LightClientHeaderSchemaGloas type, final TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
-    protected LightClientHeaderGloas(
-            final LightClientHeaderSchemaGloas type, final TreeNode backingNode) {
-        super(type, backingNode);
-    }
+  @Override
+  public BeaconBlockHeader getBeacon() {
+    return getField0();
+  }
 
-    @Override
-    public BeaconBlockHeader getBeacon() {
-        return getField0();
-    }
+  public SszBytes32 getExecutionHash() {
+    return getField1();
+  }
 
-    public SszBytes32 getExecutionHash() {
-        return getField1();
-    }
+  public SszBytes32Vector getExecutionBranch() {
+    return getField2();
+  }
 
-    public SszBytes32Vector getExecutionBranch() {
-        return getField2();
-    }
-
-    @Override
-    public Optional<LightClientHeaderGloas> toVersionGloas() {
-        return Optional.of(this);
-    }
+  @Override
+  public Optional<LightClientHeaderGloas> toVersionGloas() {
+    return Optional.of(this);
+  }
 }

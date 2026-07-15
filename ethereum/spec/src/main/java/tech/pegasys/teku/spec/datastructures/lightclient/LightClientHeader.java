@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderAltair;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderCapella;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderGloas;
-
-import java.util.Optional;
 
 public interface LightClientHeader extends SszContainer {
 
@@ -28,6 +27,7 @@ public interface LightClientHeader extends SszContainer {
   default Optional<LightClientHeaderAltair> toVersionAltair() {
     return Optional.empty();
   }
+
   default Optional<LightClientHeaderCapella> toVersionCapella() {
     return Optional.empty();
   }

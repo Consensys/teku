@@ -14,23 +14,30 @@
 package tech.pegasys.teku.spec.datastructures.lightclient;
 
 import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC_COMMITTEE_GINDEX;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientBootstrapSchema
     extends ContainerSchema3<
         LightClientBootstrap, LightClientHeader, SyncCommittee, SszBytes32Vector> {
   protected LightClientBootstrapSchema(
-      final SpecConfigAltair specConfigAltair, final int syncCommitteeGindex) {
+      final SpecConfigAltair specConfigAltair,
+      final int syncCommitteeGindex,
+      final SchemaRegistry registry) {
     super(
         "LightClientBootstrap",
-        namedSchema("header", new LightClientHeaderSchema()),
+        namedSchema(
+            "header",
+            SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
         namedSchema(
             "current_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
@@ -38,8 +45,9 @@ public class LightClientBootstrapSchema
             SszBytes32VectorSchema.create(MathHelpers.floorLog2(syncCommitteeGindex))));
   }
 
-  public LightClientBootstrapSchema(final SpecConfigAltair specConfigAltair) {
-    this(specConfigAltair, CURRENT_SYNC_COMMITTEE_GINDEX);
+  public LightClientBootstrapSchema(
+      final SpecConfigAltair specConfigAltair, final SchemaRegistry registry) {
+    this(specConfigAltair, CURRENT_SYNC_COMMITTEE_GINDEX, registry);
   }
 
   public LightClientBootstrap create(
