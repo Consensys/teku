@@ -13,23 +13,28 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient;
 
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema1;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 
-public class LightClientHeaderSchema
-    extends ContainerSchema1<LightClientHeader, BeaconBlockHeader> {
-
-  public LightClientHeaderSchema() {
-    super("LightClientHeader", namedSchema("beacon", BeaconBlockHeader.SSZ_SCHEMA));
-  }
-
-  public LightClientHeader create(final BeaconBlockHeader beaconBlockHeader) {
-    return new LightClientHeader(this, beaconBlockHeader);
-  }
+public interface LightClientHeaderSchema<T extends LightClientHeader>
+    extends SszContainerSchema<T> {
 
   @Override
-  public LightClientHeader createFromBackingNode(final TreeNode node) {
-    return new LightClientHeader(this, node);
+  T createFromBackingNode(TreeNode node);
+
+  default LightClientHeaderSchemaAltair toVersionAltairRequired() {
+    throw new UnsupportedOperationException("Not an Altair light client header");
+  }
+
+  default LightClientHeaderSchemaCapella toVersionCapellaRequired() {
+    throw new UnsupportedOperationException("Not a Capella light client header");
+  }
+
+  default LightClientHeaderSchemaGloas toVersionGloasRequired() {
+    throw new UnsupportedOperationException("Not a Gloas light client header");
   }
 }
