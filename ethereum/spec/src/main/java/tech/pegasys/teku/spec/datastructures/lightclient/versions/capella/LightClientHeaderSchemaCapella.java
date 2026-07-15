@@ -41,6 +41,11 @@ public class LightClientHeaderSchemaCapella extends ContainerSchema3<LightClient
     }
 
     @Override
+    public LightClientHeaderCapella create(final BeaconBlockHeader header) {
+        return new LightClientHeaderCapella(this, header, getFieldSchema1().getDefault(), getFieldSchema2().getDefault());
+    }
+
+    @Override
     public LightClientHeaderCapella createFromBackingNode(final TreeNode node) {
         return new LightClientHeaderCapella(this, node);
     }

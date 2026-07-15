@@ -184,6 +184,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
@@ -2376,10 +2377,16 @@ public final class DataStructureUtil {
             randomSignature());
   }
 
+  public LightClientHeader randomLightClientHeader(final UInt64 slot) {
+    final LightClientHeaderSchema<?> headerSchema = getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+
+    return headerSchema.create(randomBeaconBlockHeader());
+  }
+
   public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
     final LightClientBootstrapSchema bootstrapSchema =
         getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
-    final LightClientHeaderSchema headerSchema =
+    final LightClientHeaderSchema<?> headerSchema =
         getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return bootstrapSchema.create(
@@ -2392,7 +2399,7 @@ public final class DataStructureUtil {
   public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
     final LightClientUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
-    final LightClientHeaderSchema headerSchema =
+    final LightClientHeaderSchema<?> headerSchema =
         getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(

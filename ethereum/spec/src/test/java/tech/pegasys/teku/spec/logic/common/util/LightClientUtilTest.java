@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
@@ -46,8 +47,8 @@ public class LightClientUtilTest {
   @TestTemplate
   public void getBoostrap_shouldReturnValidBootstrap() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final LightClientHeader expectedHeader =
-        new LightClientHeaderSchema().create(BeaconBlockHeader.fromState(state));
+    final LightClientHeader expectedHeader = SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
+            .getLightClientHeaderSchema().create(BeaconBlockHeader.fromState(state));
     final LightClientBootstrap bootstrap = lightClientUtil.getLightClientBootstrap(state);
 
     assertThat(bootstrap.getLightClientHeader()).isEqualTo(expectedHeader);

@@ -23,6 +23,8 @@ import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightCli
 public interface LightClientHeaderSchema<T extends LightClientHeader>
     extends SszContainerSchema<T> {
 
+  LightClientHeader create(BeaconBlockHeader header);
+
   @Override
   T createFromBackingNode(TreeNode node);
 

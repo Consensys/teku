@@ -49,6 +49,11 @@ public class LightClientHeaderSchemaGloas
   }
 
   @Override
+  public LightClientHeaderGloas create(final BeaconBlockHeader header) {
+    return new LightClientHeaderGloas(this, header, getFieldSchema1().getDefault(), getFieldSchema2().getDefault());
+  }
+
+  @Override
   public LightClientHeaderGloas createFromBackingNode(final TreeNode node) {
     return new LightClientHeaderGloas(this, node);
   }

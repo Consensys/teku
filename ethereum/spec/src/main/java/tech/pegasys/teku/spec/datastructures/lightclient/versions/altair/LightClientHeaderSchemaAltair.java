@@ -27,6 +27,11 @@ public class LightClientHeaderSchemaAltair
   }
 
   @Override
+  public LightClientHeaderAltair create(final BeaconBlockHeader header) {
+    return new LightClientHeaderAltair(this, header);
+  }
+
+  @Override
   public LightClientHeaderAltair createFromBackingNode(final TreeNode node) {
     return new LightClientHeaderAltair(this, node);
   }
