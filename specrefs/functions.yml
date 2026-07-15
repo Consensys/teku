@@ -118,7 +118,9 @@
     </spec>
 
 - name: adjust_committee_weight_estimate_to_ensure_safety#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static UInt64 adjustCommitteeWeightEstimateToEnsureSafety(
   spec: |
     <spec fn="adjust_committee_weight_estimate_to_ensure_safety" fork="phase0" hash="9f438f67">
     def adjust_committee_weight_estimate_to_ensure_safety(estimate: Gwei) -> Gwei:
@@ -577,7 +579,9 @@
     </spec>
 
 - name: compute_adversarial_weight#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 computeAdversarialWeight(
   spec: |
     <spec fn="compute_adversarial_weight" fork="phase0" hash="1cd908fc">
     def compute_adversarial_weight(
@@ -853,7 +857,9 @@
     </spec>
 
 - name: compute_empty_slot_support_discount#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 computeEmptySlotSupportDiscount(final BeaconState balanceSource, final Bytes32 blockRoot) {
   spec: |
     <spec fn="compute_empty_slot_support_discount" fork="phase0" hash="099b1dbb">
     def compute_empty_slot_support_discount(
@@ -1232,7 +1238,9 @@
     </spec>
 
 - name: compute_honest_ffg_support_for_current_target#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 computeHonestFfgSupportForCurrentTarget() {
   spec: |
     <spec fn="compute_honest_ffg_support_for_current_target" fork="phase0" hash="3aa9e6a2">
     def compute_honest_ffg_support_for_current_target(store: Store) -> Gwei:
@@ -1733,7 +1741,9 @@
     </spec>
 
 - name: compute_safety_threshold#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 computeSafetyThreshold(final Bytes32 blockRoot, final BeaconState balanceSource) {
   spec: |
     <spec fn="compute_safety_threshold" fork="phase0" hash="3bf5104c">
     def compute_safety_threshold(store: Store, block_root: Root, balance_source: BeaconState) -> Gwei:
@@ -1775,7 +1785,9 @@
     </spec>
 
 - name: compute_shuffled_permutation#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
+      search: public void shuffleList(final int[] input, final Bytes32 seed) {
   spec: |
     <spec fn="compute_shuffled_permutation" fork="phase0" hash="48fcb874">
     def compute_shuffled_permutation(index_count: uint64, seed: Bytes32) -> Sequence[uint64]:
@@ -2474,7 +2486,9 @@
     </spec>
 
 - name: estimate_committee_weight_between_slots#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static UInt64 estimateCommitteeWeightBetweenSlots(
   spec: |
     <spec fn="estimate_committee_weight_between_slots" fork="phase0" hash="a445a2ff">
     def estimate_committee_weight_between_slots(
@@ -2708,7 +2722,9 @@
     </spec>
 
 - name: find_latest_confirmed_descendant#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: Bytes32 findLatestConfirmedDescendant(final Bytes32 latestConfirmedRoot) {
   spec: |
     <spec fn="find_latest_confirmed_descendant" fork="phase0" hash="f38db29f">
     def find_latest_confirmed_descendant(
@@ -2877,7 +2893,9 @@
     </spec>
 
 - name: get_adversarial_weight#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getAdversarialWeight(final BeaconState balanceSource, final Bytes32 blockRoot) {
   spec: |
     <spec fn="get_adversarial_weight" fork="phase0" hash="352fef9f">
     def get_adversarial_weight(store: Store, balance_source: BeaconState, block_root: Root) -> Gwei:
@@ -2998,7 +3016,9 @@
     </spec>
 
 - name: get_ancestor_roots#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: List<Bytes32> getAncestorRoots(final Bytes32 blockRoot, final Bytes32 terminalRoot) {
   spec: |
     <spec fn="get_ancestor_roots" fork="phase0" hash="bb6a8697">
     def get_ancestor_roots(store: Store, block_root: Root, terminal_root: Root) -> Sequence[Root]:
@@ -3591,7 +3611,9 @@
     </spec>
 
 - name: get_block_epoch#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getBlockEpoch(final Bytes32 blockRoot) {
   spec: |
     <spec fn="get_block_epoch" fork="phase0" hash="87871c03">
     def get_block_epoch(store: Store, block_root: Root) -> Epoch:
@@ -3641,7 +3663,9 @@
     </spec>
 
 - name: get_block_slot#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getBlockSlot(final Bytes32 blockRoot) {
   spec: |
     <spec fn="get_block_slot" fork="phase0" hash="34cd0207">
     def get_block_slot(store: Store, block_root: Root) -> Slot:
@@ -3652,7 +3676,9 @@
     </spec>
 
 - name: get_block_support_between_slots#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getBlockSupportBetweenSlots(
   spec: |
     <spec fn="get_block_support_between_slots" fork="phase0" hash="a9987209">
     def get_block_support_between_slots(
@@ -3827,7 +3853,9 @@
     </spec>
 
 - name: get_checkpoint_for_block#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: Checkpoint getCheckpointForBlock(final Bytes32 blockRoot, final UInt64 epoch) {
   spec: |
     <spec fn="get_checkpoint_for_block" fork="phase0" hash="9c609c9a">
     def get_checkpoint_for_block(store: Store, block_root: Root, epoch: Epoch) -> Checkpoint:
@@ -3992,7 +4020,9 @@
     </spec>
 
 - name: get_current_balance_source#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationStateLoader.java
+      search: store.retrieveCheckpointState(fcrStore.currentEpochObservedJustifiedCheckpoint())
   spec: |
     <spec fn="get_current_balance_source" fork="phase0" hash="75c0851b">
     def get_current_balance_source(fcr_store: FastConfirmationStore) -> BeaconState:
@@ -4034,7 +4064,9 @@
     </spec>
 
 - name: get_current_target#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: Checkpoint getCurrentTarget() {
   spec: |
     <spec fn="get_current_target" fork="phase0" hash="78140d53">
     def get_current_target(store: Store) -> Checkpoint:
@@ -4047,7 +4079,9 @@
     </spec>
 
 - name: get_current_target_score#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getCurrentTargetScore() {
   spec: |
     <spec fn="get_current_target_score" fork="phase0" hash="aaef2a7c">
     def get_current_target_score(store: Store) -> Gwei:
@@ -4404,7 +4438,9 @@
     </spec>
 
 - name: get_equivocation_score#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getEquivocationScore(
   spec: |
     <spec fn="get_equivocation_score" fork="phase0" hash="4e9bace4">
     def get_equivocation_score(
@@ -5273,7 +5309,9 @@
     </spec>
 
 - name: get_latest_confirmed#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: Bytes32 getLatestConfirmed() {
   spec: |
     <spec fn="get_latest_confirmed" fork="phase0" hash="32f11e2b">
     def get_latest_confirmed(fcr_store: FastConfirmationStore) -> Root:
@@ -5333,7 +5371,11 @@
     </spec>
 
 - name: get_latest_message_epoch#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: final UInt64 messageEpoch = spec.computeEpochAtSlot(vote.getNextSlot());
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
+      search: public UInt64 computeEpochAtSlot(
   spec: |
     <spec fn="get_latest_message_epoch" fork="phase0" hash="29335531">
     def get_latest_message_epoch(latest_message: LatestMessage) -> Epoch:
@@ -5646,7 +5688,9 @@
     </spec>
 
 - name: get_node_for_root#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: private ForkChoiceNode getNodeForRoot(final Bytes32 blockRoot) {
   spec: |
     <spec fn="get_node_for_root" fork="phase0" hash="22a7e039">
     def get_node_for_root(block_root: Root) -> ForkChoiceNode:
@@ -5654,7 +5698,9 @@
     </spec>
 
 - name: get_node_for_root#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: private ForkChoiceNode getNodeForRoot(final Bytes32 blockRoot) {
   spec: |
     <spec fn="get_node_for_root" fork="gloas" hash="75c9f337">
     def get_node_for_root(block_root: Root) -> ForkChoiceNode:
@@ -5834,7 +5880,9 @@
     </spec>
 
 - name: get_previous_balance_source#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationStateLoader.java
+      search: store.retrieveCheckpointState(fcrStore.previousEpochObservedJustifiedCheckpoint())
   spec: |
     <spec fn="get_previous_balance_source" fork="phase0" hash="18421690">
     def get_previous_balance_source(fcr_store: FastConfirmationStore) -> BeaconState:
@@ -6085,7 +6133,9 @@
     </spec>
 
 - name: get_pulled_up_head_state#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: BeaconState getPulledUpHeadState() {
   spec: |
     <spec fn="get_pulled_up_head_state" fork="phase0" hash="2530de3b">
     def get_pulled_up_head_state(store: Store) -> BeaconState:
@@ -6146,7 +6196,9 @@
     </spec>
 
 - name: get_slot_committee#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: IntSet getSlotCommittee(final UInt64 slot) {
   spec: |
     <spec fn="get_slot_committee" fork="phase0" hash="34f6f1c4">
     def get_slot_committee(store: Store, slot: Slot) -> Set[ValidatorIndex]:
@@ -6224,7 +6276,9 @@
     </spec>
 
 - name: get_support_discount#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 getSupportDiscount(final BeaconState balanceSource, final Bytes32 blockRoot) {
   spec: |
     <spec fn="get_support_discount" fork="phase0" hash="9dce5551">
     def get_support_discount(store: Store, balance_source: BeaconState, block_root: Root) -> Gwei:
@@ -7328,7 +7382,9 @@
     </spec>
 
 - name: is_confirmed_chain_safe#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean isConfirmedChainSafe(final Bytes32 confirmedRoot) {
   spec: |
     <spec fn="is_confirmed_chain_safe" fork="phase0" hash="7e4d7c51">
     def is_confirmed_chain_safe(fcr_store: FastConfirmationStore, confirmed_root: Root) -> bool:
@@ -7581,7 +7637,9 @@
     </spec>
 
 - name: is_full_validator_set_covered#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static boolean isFullValidatorSetCovered(
   spec: |
     <spec fn="is_full_validator_set_covered" fork="phase0" hash="d83c05cd">
     def is_full_validator_set_covered(start_slot: Slot, end_slot: Slot) -> bool:
@@ -7810,7 +7868,9 @@
     </spec>
 
 - name: is_one_confirmed#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean isOneConfirmed(final BeaconState balanceSource, final Bytes32 blockRoot) {
   spec: |
     <spec fn="is_one_confirmed" fork="phase0" hash="2a6e987b">
     def is_one_confirmed(store: Store, balance_source: BeaconState, block_root: Root) -> bool:
@@ -8072,7 +8132,9 @@
     </spec>
 
 - name: is_start_slot_at_epoch#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: public static boolean isStartSlotAtEpoch(
   spec: |
     <spec fn="is_start_slot_at_epoch" fork="phase0" hash="81d191cd">
     def is_start_slot_at_epoch(slot: Slot) -> bool:
@@ -8969,7 +9031,9 @@
     </spec>
 
 - name: on_fast_confirmation#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationTracker.java
+      search: private void runFastConfirmation(
   spec: |
     <spec fn="on_fast_confirmation" fork="phase0" hash="f1f1a4c3">
     def on_fast_confirmation(fcr_store: FastConfirmationStore) -> None:
@@ -16853,7 +16917,9 @@
     </spec>
 
 - name: will_current_target_be_justified#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean willCurrentTargetBeJustified() {
   spec: |
     <spec fn="will_current_target_be_justified" fork="phase0" hash="c3ddf941">
     def will_current_target_be_justified(store: Store) -> bool:
@@ -16867,7 +16933,9 @@
     </spec>
 
 - name: will_no_conflicting_checkpoint_be_justified#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean willNoConflictingCheckpointBeJustified() {
   spec: |
     <spec fn="will_no_conflicting_checkpoint_be_justified" fork="phase0" hash="5dbf7eb2">
     def will_no_conflicting_checkpoint_be_justified(store: Store) -> bool:
