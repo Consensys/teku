@@ -740,15 +740,23 @@ public final class DataStructureUtil {
 
   public BuilderBid randomBuilderBid(final Consumer<BuilderBidBuilder> builderModifier) {
     final UInt64 slot = randomSlot();
+    return randomBuilderBid(slot, builderModifier);
+  }
+
+  private BuilderBid randomBuilderBid(
+      final UInt64 slot, final Consumer<BuilderBidBuilder> builderModifier) {
     final SchemaDefinitionsBellatrix schemaDefinitions = getBellatrixSchemaDefinitions(slot);
     return schemaDefinitions
         .getBuilderBidSchema()
         .createBuilderBid(
             builder -> {
-              builder.header(randomExecutionPayloadHeader());
+              builder.header(randomExecutionPayloadHeader(spec.atSlot(slot)));
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+                  .ifPresent(
+                      deneb ->
+                          builder.blobKzgCommitments(
+                              randomBlobKzgCommitments(deneb.getBlobKzgCommitmentsSchema())));
               schemaDefinitions
                   .toVersionElectra()
                   .ifPresent(__ -> builder.executionRequests(randomExecutionRequests(slot)));
@@ -768,9 +776,10 @@ public final class DataStructureUtil {
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {
-    return getBellatrixSchemaDefinitions(randomSlot())
+    final UInt64 slot = randomSlot();
+    return getBellatrixSchemaDefinitions(slot)
         .getSignedBuilderBidSchema()
-        .create(randomBuilderBid(), randomSignature());
+        .create(randomBuilderBid(slot, __ -> {}), randomSignature());
   }
 
   public SignedBuilderBid randomSignedBuilderBid(final Bytes32 withdrawalsRoot) {
@@ -1521,9 +1530,7 @@ public final class DataStructureUtil {
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
                     randomSignedBlsToExecutionChangesList(
-                        slot,
-                        ((BlindedBeaconBlockBodySchemaCapella<?>) schema)
-                            .getBlsToExecutionChanges()));
+                        slot, getBlsToExecutionChangesSchema(schema)));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
@@ -2547,6 +2554,14 @@ public final class DataStructureUtil {
         signedBlsToExecutionChangeSchema,
         maxBlsToExecutionChanges,
         this::randomSignedBlsToExecutionChange);
+  }
+
+  private SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema(
+      final BeaconBlockBodySchema<?> schema) {
+    if (schema instanceof BlindedBeaconBlockBodySchemaCapella<?> blindedSchema) {
+      return blindedSchema.getBlsToExecutionChanges();
+    }
+    return BeaconBlockBodySchemaCapella.required(schema).getBlsToExecutionChangesSchema();
   }
 
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
