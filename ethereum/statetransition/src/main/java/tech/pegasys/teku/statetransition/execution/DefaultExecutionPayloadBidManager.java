@@ -231,6 +231,7 @@ public class DefaultExecutionPayloadBidManager
           logValueComparison(
               localValueWins,
               builderBoostFactor,
+              requestedBuilderBoostFactor.isPresent(),
               localResponse.getExecutionPayloadValue(),
               remoteBid.getMessage(),
               slot);
@@ -301,11 +302,12 @@ public class DefaultExecutionPayloadBidManager
   private void logValueComparison(
       final boolean localValueWins,
       final UInt64 builderBoostFactor,
+      final boolean isRequestedBuilderBoostFactor,
       final UInt256 localValue,
       final ExecutionPayloadBid remoteBid,
       final UInt64 slot) {
     LOG.info(
-        "{} - builder compare factor: {}%.",
+        "{} - builder compare factor: {}%, source: {}.",
         localValueWins
             ? String.format(
                 "Local execution payload (%s ETH) is chosen over remote bid (%s ETH) for block at slot %s",
@@ -313,7 +315,8 @@ public class DefaultExecutionPayloadBidManager
             : String.format(
                 "Remote bid (%s ETH) is chosen over local execution payload (%s ETH) for block at slot %s",
                 gweiToEth(remoteBid.getValue()), weiToEth(localValue), slot),
-        builderBoostFactor);
+        builderBoostFactor,
+        isRequestedBuilderBoostFactor ? "VC" : "BN");
   }
 
   private SignedExecutionPayloadBid createLocalSelfBuiltSignedBid(

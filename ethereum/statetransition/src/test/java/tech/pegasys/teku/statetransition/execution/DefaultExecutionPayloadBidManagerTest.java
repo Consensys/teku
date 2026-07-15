@@ -592,12 +592,12 @@ public class DefaultExecutionPayloadBidManagerTest {
               log ->
                   log.contains(
                       "Local execution payload (0.080000 ETH) is chosen over remote bid (0.100000 ETH)"))
-          .anyMatch(log -> log.contains("builder compare factor: 80%."))
+          .anyMatch(log -> log.contains("builder compare factor: 80%, source: VC."))
           .anyMatch(
               log ->
                   log.contains(
                       "Remote bid (0.100000 ETH) is chosen over local execution payload (0.089000 ETH)"))
-          .anyMatch(log -> log.contains("builder compare factor: 90%."));
+          .anyMatch(log -> log.contains("builder compare factor: 90%, source: BN."));
     }
   }
 
