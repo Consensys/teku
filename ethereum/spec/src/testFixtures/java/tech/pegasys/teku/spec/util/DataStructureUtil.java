@@ -880,10 +880,11 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadAndBlobsBundle randomExecutionPayloadAndBlobsBundle() {
-    final SchemaDefinitionsDeneb schemaDefinitionsDeneb = getDenebSchemaDefinitions(randomSlot());
-    final ExecutionPayload executionPayload = randomExecutionPayload();
+    final UInt64 slot = randomSlot();
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb = getDenebSchemaDefinitions(slot);
+    final ExecutionPayload executionPayload = randomExecutionPayload(slot);
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-        randomBuilderBlobsBundle();
+        randomBuilderBlobsBundle(slot);
 
     final ExecutionPayloadAndBlobsBundleSchema schema =
         schemaDefinitionsDeneb.getExecutionPayloadAndBlobsBundleSchema();
@@ -2704,22 +2705,49 @@ public final class DataStructureUtil {
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
-    return randomBuilderBlobsBundle(randomNumberOfBlobsPerBlock());
+    return randomBuilderBlobsBundle(randomSlot(), randomNumberOfBlobsPerBlock());
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
       final int count) {
-    return randomBuilderBlobsBundle(randomBlobKzgCommitments(count));
+    return randomBuilderBlobsBundle(randomSlot(), count);
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
       final SszList<SszKZGCommitment> commitments) {
-    final UInt64 slot = randomSlot();
+    return randomBuilderBlobsBundle(randomSlot(), commitments);
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot) {
+    return randomBuilderBlobsBundle(slot, randomNumberOfBlobsPerBlock());
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot, final int count) {
     final BlobsBundleSchema<?> schema = getDenebSchemaDefinitions(slot).getBlobsBundleSchema();
+    return randomBuilderBlobsBundle(
+        slot, schema, randomBlobKzgCommitments(schema.getCommitmentsSchema(), count));
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
+    final BlobsBundleSchema<?> schema = getDenebSchemaDefinitions(slot).getBlobsBundleSchema();
+    return randomBuilderBlobsBundle(
+        slot, schema, rematerializeBlobKzgCommitments(schema.getCommitmentsSchema(), commitments));
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot,
+      final BlobsBundleSchema<?> schema,
+      final SszList<SszKZGCommitment> commitments) {
     return schema.create(
         commitments,
-        randomSszKZGProofs(getNumberOfRequiredProofs(slot, commitments.size())),
-        randomSszBlobs(commitments.size()));
+        randomSszList(
+            schema.getProofsSchema(),
+            this::randomSszKZGProof,
+            getNumberOfRequiredProofs(slot, commitments.size())),
+        randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
   }
 
   public BlobsBundle randomBlobsBundle() {
