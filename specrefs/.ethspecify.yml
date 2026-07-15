@@ -204,9 +204,6 @@ specrefs:
       - upgrade_lc_store_to_gloas#gloas
       - upgrade_lc_update_to_gloas#gloas
 
-      # Not implemented yet: fast confirmation FCU safe-hash integration
-      - get_safe_execution_block_hash#bellatrix
-      - get_safe_execution_block_hash#gloas
 
       # Not implemented: fulu
       - verify_partial_data_column_header_inclusion_proof#fulu

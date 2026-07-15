@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.Optional;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -24,10 +26,25 @@ public class ForkChoiceStateProvider {
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
 
+  /**
+   * Supplies the fast confirmation {@code confirmed_root} to use as the FCU {@code safe_block_hash}
+   * source ({@code get_safe_execution_block_hash}), or empty when fast confirmation is disabled (in
+   * which case the safe hash defaults to the justified block, as before).
+   */
+  private final Supplier<Optional<Bytes32>> fastConfirmationSafeBlockRootSupplier;
+
   public ForkChoiceStateProvider(
       final EventThread forkChoiceExecutor, final RecentChainData recentChainData) {
+    this(forkChoiceExecutor, recentChainData, Optional::empty);
+  }
+
+  public ForkChoiceStateProvider(
+      final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData,
+      final Supplier<Optional<Bytes32>> fastConfirmationSafeBlockRootSupplier) {
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
+    this.fastConfirmationSafeBlockRootSupplier = fastConfirmationSafeBlockRootSupplier;
   }
 
   public SafeFuture<ForkChoiceState> getForkChoiceStateAsync() {
@@ -47,6 +64,7 @@ public class ForkChoiceStateProvider {
             proposingOnHead,
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
-            recentChainData.getFinalizedCheckpoint().orElseThrow());
+            recentChainData.getFinalizedCheckpoint().orElseThrow(),
+            fastConfirmationSafeBlockRootSupplier.get());
   }
 }

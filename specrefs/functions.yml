@@ -6165,6 +6165,29 @@
         return state.randao_mixes[epoch % EPOCHS_PER_HISTORICAL_VECTOR]
     </spec>
 
+- name: get_safe_execution_block_hash#bellatrix
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
+      search: getBaseNodeData(safeBlockRoot)
+  spec: |
+    <spec fn="get_safe_execution_block_hash" fork="bellatrix" hash="ccd5f801">
+    def get_safe_execution_block_hash(fcr_store: FastConfirmationStore) -> Hash32:
+        safe_block = fcr_store.store.blocks[fcr_store.confirmed_root]
+        return safe_block.body.execution_payload.block_hash
+    </spec>
+
+- name: get_safe_execution_block_hash#gloas
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
+      search: getBaseNodeData(safeBlockRoot)
+  spec: |
+    <spec fn="get_safe_execution_block_hash" fork="gloas" hash="4884e9d5">
+    def get_safe_execution_block_hash(fcr_store: FastConfirmationStore) -> Hash32:
+        safe_block = fcr_store.store.blocks[fcr_store.confirmed_root]
+        # [Modified in Gloas:EIP7732]
+        return safe_block.body.signed_execution_payload_bid.message.parent_block_hash
+    </spec>
+
 - name: get_safety_threshold#altair
   sources: []
   spec: |
