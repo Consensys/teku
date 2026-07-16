@@ -75,7 +75,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 A 503 error must be returned if the beacon node is currently syncing.
                 """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .queryParam(SLOT_PARAM)
+            .queryParamRequired(SLOT_PARAM)
             .response(
                 SC_OK,
                 "Success response",

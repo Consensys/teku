@@ -6,6 +6,7 @@
     "description" : "Requests that the beacon node produce a `PayloadAttestationData`.\n\nThis endpoint is used by PTC validators to obtain the data structure they need to attest to regarding payload presence and blob data availability for a specific slot.\n\nA 503 error must be returned if the beacon node is currently syncing.\n",
     "parameters" : [ {
       "name" : "slot",
+      "required" : true,
       "in" : "query",
       "schema" : {
         "type" : "string",
