@@ -2395,7 +2395,7 @@ public final class DataStructureUtil {
       final LightClientHeaderSchemaCapella capellaSchema = headerSchema.toVersionCapellaRequired();
       return capellaSchema.create(
           randomBeaconBlockHeader(),
-          randomExecutionPayloadHeader(),
+          randomExecutionPayloadHeader(spec.atSlot(slot)),
           randomSszBytes32Vector(capellaSchema.getExecutionBranchSchema(), this::randomBytes32));
     }
     return headerSchema.create(randomBeaconBlockHeader());
