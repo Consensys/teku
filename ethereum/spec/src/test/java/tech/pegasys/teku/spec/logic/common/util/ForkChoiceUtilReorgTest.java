@@ -452,24 +452,31 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
-  void isSingleSlotReorgReturnsTrueWhenParentAndProposalSlotsMatch() {
+  void isParentSlotOkReturnsTrueWhenParentIsOneSlotBeforeHead() {
     final ReorgTestSetup setup = new ReorgTestSetup();
     setup.withParentSlot(Optional.of(UInt64.ZERO));
 
-    assertThat(
-            setup.harness.isSingleSlotReorg(
-                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+    assertThat(setup.harness.isParentSlotOk(setup.store, setup.signedBlockAndState.getBlock()))
         .isTrue();
   }
 
   @Test
-  void isSingleSlotReorgReturnsFalseWhenProposalSlotSkipsAhead() {
+  void isCurrentSlotOkReturnsTrueWhenProposalIsOneSlotAfterHead() {
     final ReorgTestSetup setup = new ReorgTestSetup();
-    setup.withParentSlot(Optional.of(UInt64.ZERO));
 
     assertThat(
-            setup.harness.isSingleSlotReorg(
-                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
+            setup.harness.isCurrentSlotOk(
+                setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+        .isTrue();
+  }
+
+  @Test
+  void isCurrentSlotOkReturnsFalseWhenProposalSlotSkipsAhead() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+
+    assertThat(
+            setup.harness.isCurrentSlotOk(
+                setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
         .isFalse();
   }
 

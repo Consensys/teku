@@ -227,37 +227,52 @@ public class ForkChoiceUtil {
     final boolean isProposingOnTime = isProposingOnTime(store, slot);
     final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headNode.blockRoot()));
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headNode.blockRoot());
-    if (!isHeadLate
-        || !isShufflingStableAndForkChoiceOk
-        || !isProposingOnTime
-        || isProposerBoostActive
-        || maybeHead.isEmpty()) {
-      LOG.debug(
-          "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
-          isHeadLate,
-          isShufflingStableAndForkChoiceOk,
-          isProposingOnTime,
-          isProposerBoostActive,
-          maybeHead.isEmpty());
+    if (maybeHead.isEmpty()) {
+      LOG.debug("getProposerHead head - maybeHead empty.");
       return headNode;
     }
-
     final SignedBeaconBlock head = maybeHead.orElseThrow();
     final boolean isFfgCompetitive =
         isFfgCompetitive(store, headNode.blockRoot(), head.getParentRoot());
-    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, slot);
-    if (!isFfgCompetitive || !isSingleSlotReorg) {
-      LOG.debug(
-          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
-          isFfgCompetitive,
-          isSingleSlotReorg);
-      return headNode;
-    }
-
+    final boolean isParentSlotOk = isParentSlotOk(store, head);
+    final boolean isCurrentSlotOk = isCurrentSlotOk(head, slot);
     final boolean isHeadWeak = isHeadWeak(store, headNode.blockRoot(), store.getReorgThreshold());
     final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
-    if (isHeadWeak && isParentStrong) {
-      LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
+    if (isHeadLate
+        && isShufflingStableAndForkChoiceOk
+        && isFfgCompetitive
+        && isParentSlotOk
+        && isCurrentSlotOk
+        && isProposingOnTime
+        && isHeadWeak
+        && isParentStrong
+        && !isProposerBoostActive) {
+      LOG.debug(
+          "getProposerHead - return parentRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}, isProposingOnTime {}, isHeadWeak {}, isParentStrong {}, isProposerBoostActive {}",
+          isHeadLate,
+          isShufflingStableAndForkChoiceOk,
+          isFfgCompetitive,
+          isParentSlotOk,
+          isCurrentSlotOk,
+          isProposingOnTime,
+          isHeadWeak,
+          isParentStrong,
+          isProposerBoostActive);
+      return context
+          .getStore()
+          .getForkChoiceStrategy()
+          .getParentBeaconBlockNode(headNode)
+          .orElse(headNode);
+    }
+
+    final boolean isProposerEquivocation = isProposerEquivocation(store, headNode.blockRoot());
+    if (isHeadWeak && isCurrentSlotOk && isProposerEquivocation && !isProposerBoostActive) {
+      LOG.debug(
+          "getProposerHead - return parentRoot - isHeadWeak {}, isCurrentSlotOk {}, isProposerEquivocation {}, isProposerBoostActive {}",
+          isHeadWeak,
+          isCurrentSlotOk,
+          isProposerEquivocation,
+          isProposerBoostActive);
       return context
           .getStore()
           .getForkChoiceStrategy()
@@ -266,10 +281,29 @@ public class ForkChoiceUtil {
     }
 
     LOG.debug(
-        "getProposerHead - return headRoot - isHeadWeak {}, isParentStrong {}",
+        "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}, isProposingOnTime {}, isHeadWeak {}, isParentStrong {}, isProposerEquivocation {}, isProposerBoostActive {}",
+        isHeadLate,
+        isShufflingStableAndForkChoiceOk,
+        isFfgCompetitive,
+        isParentSlotOk,
+        isCurrentSlotOk,
+        isProposingOnTime,
         isHeadWeak,
-        isParentStrong);
+        isParentStrong,
+        isProposerEquivocation,
+        isProposerBoostActive);
     return headNode;
+  }
+
+  boolean isProposerEquivocation(final ReadOnlyStore store, final Bytes32 blockRoot) {
+    final Optional<UInt64> maybeSlot = store.getForkChoiceStrategy().blockSlot(blockRoot);
+    if (maybeSlot.isEmpty()) {
+      LOG.debug("isProposerEquivocation - block not in fork choice.");
+      return false;
+    }
+    // A slot has exactly one valid proposer and fork choice only holds validated blocks, so all
+    // blocks at a slot share a proposer_index; more than one block at the slot means equivocation.
+    return store.getForkChoiceStrategy().getBlockRootsAtSlot(maybeSlot.get()).size() > 1;
   }
 
   /** Spec reference: should_override_forkchoice_update. */
@@ -321,7 +355,7 @@ public class ForkChoiceUtil {
     final boolean isCurrentTimeOk =
         head.getSlot().equals(currentSlot)
             || (currentSlot.equals(proposalSlot) && isProposingOnTime);
-    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, proposalSlot);
+    final boolean isSingleSlotReorg = isParentSlotOk(store, head);
     if (!isSingleSlotReorg || !isCurrentTimeOk) {
       LOG.debug(
           "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isCurrentTimeOk {}",
@@ -369,16 +403,16 @@ public class ForkChoiceUtil {
     }
   }
 
-  boolean isSingleSlotReorg(
-      final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 proposalSlot) {
+  boolean isParentSlotOk(final ReadOnlyStore store, final SignedBeaconBlock head) {
     final Optional<UInt64> maybeParentSlot =
         store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
     return maybeParentSlot
-        .map(
-            parentSlot ->
-                parentSlot.increment().equals(head.getSlot())
-                    && proposalSlot.equals(head.getSlot().increment()))
+        .map(parentSlot -> parentSlot.increment().equals(head.getSlot()))
         .orElse(false);
+  }
+
+  boolean isCurrentSlotOk(final SignedBeaconBlock head, final UInt64 proposalSlot) {
+    return proposalSlot.equals(head.getSlot().increment());
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
