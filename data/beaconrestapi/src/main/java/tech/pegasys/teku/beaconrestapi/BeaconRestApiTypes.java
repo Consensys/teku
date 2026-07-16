@@ -28,6 +28,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INCLUDE_PAYLOAD;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INCLUDE_PAYLOAD_PARAM_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
@@ -162,6 +164,10 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           RestApiConstants.SKIP_RANDAO_VERIFICATION,
           CoreTypes.flag(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION));
+
+  public static final ParameterMetadata<Boolean> INCLUDE_PAYLOAD_PARAMETER =
+      new ParameterMetadata<>(
+          INCLUDE_PAYLOAD, BOOLEAN_TYPE.withDescription(INCLUDE_PAYLOAD_PARAM_DESCRIPTION));
 
   public static final ParameterMetadata<UInt64> BUILDER_BOOST_FACTOR_PARAMETER =
       new ParameterMetadata<>(
