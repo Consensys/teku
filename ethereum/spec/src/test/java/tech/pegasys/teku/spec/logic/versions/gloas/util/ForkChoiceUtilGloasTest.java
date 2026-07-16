@@ -539,7 +539,6 @@ class ForkChoiceUtilGloasTest {
     when(strategy.getAncestorNode(ForkChoiceNode.createBase(parentRoot), gloasSlot))
         .thenReturn(Optional.of(ForkChoiceNode.createBase(parentRoot)));
 
-    // boostedWeight - proposerBoostAmount == parentThreshold + 1 > parentThreshold => strong.
     assertThat(forkChoiceUtil.isParentStrong(store, signedHead, parentThreshold)).isTrue();
   }
 

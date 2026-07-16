@@ -499,14 +499,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   /**
-   * Determines whether the parent selected by {@code head} is strong.
+   * Determines whether the parent selected by {@code head} is strong using the child-aware Gloas
+   * payload-status rules.
    *
-   * <p>The parent support is measured with {@code PAYLOAD_STATUS_PENDING} regardless of the
-   * parent's payload status.
-   *
-   * <p>If the justified state is not immediately available, Teku returns {@code false}. That
-   * suppresses the late-reorg override rather than risking a false positive that would incorrectly
-   * prefer the parent.
+   * <p>If the justified state or the parent payload status is not immediately available, Teku
+   * returns {@code false}. That suppresses the late-reorg override rather than risking a false
+   * positive that would incorrectly prefer the parent.
    */
   @Override
   public boolean isParentStrong(
