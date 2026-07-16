@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -215,6 +216,70 @@ class ForkChoiceUtilReorgTest {
     final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
     assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
         .isEqualTo(head);
+  }
+
+  @Test
+  void getProposerHeadReturnsParentOnProposerEquivocation() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.harness.headWeak = true;
+
+    setup.withEquivocationAtHeadSlot();
+
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode parent =
+        ForkChoiceNode.createBase(setup.signedBlockAndState.getParentRoot());
+    when(setup.forkChoiceStrategy.getParentBeaconBlockNode(head)).thenReturn(Optional.of(parent));
+
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(parent);
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadOnEquivocationWhenProposerBoostIsActive() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.harness.headWeak = true;
+    setup.withEquivocationAtHeadSlot();
+    when(setup.store.getProposerBoostRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
+
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
+  }
+
+  @Test
+  void isProposerEquivocationReturnsFalseWhenBlockNotInForkChoice() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+
+    assertThat(
+            setup.baseForkChoiceUtil.isProposerEquivocation(
+                setup.store, setup.signedBlockAndState.getRoot()))
+        .isFalse();
+  }
+
+  @Test
+  void isProposerEquivocationReturnsFalseWhenSingleBlockAtSlot() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    final Bytes32 headRoot = setup.signedBlockAndState.getRoot();
+    when(setup.forkChoiceStrategy.blockSlot(headRoot)).thenReturn(Optional.of(slot));
+    when(setup.forkChoiceStrategy.getBlockRootsAtSlot(slot)).thenReturn(List.of(headRoot));
+
+    assertThat(setup.baseForkChoiceUtil.isProposerEquivocation(setup.store, headRoot)).isFalse();
+  }
+
+  @Test
+  void isProposerEquivocationReturnsTrueWhenMultipleBlocksAtSlot() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    final Bytes32 headRoot = setup.signedBlockAndState.getRoot();
+    when(setup.forkChoiceStrategy.blockSlot(headRoot)).thenReturn(Optional.of(slot));
+    when(setup.forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .thenReturn(List.of(headRoot, dataStructureUtil.randomBytes32()));
+
+    assertThat(setup.baseForkChoiceUtil.isProposerEquivocation(setup.store, headRoot)).isTrue();
   }
 
   @Test
@@ -604,6 +669,13 @@ class ForkChoiceUtilReorgTest {
 
     private void withParentSlot(final Optional<UInt64> maybeSlot) {
       when(forkChoiceStrategy.blockSlot(signedBlockAndState.getParentRoot())).thenReturn(maybeSlot);
+    }
+
+    private void withEquivocationAtHeadSlot() {
+      final Bytes32 headRoot = signedBlockAndState.getRoot();
+      when(forkChoiceStrategy.blockSlot(headRoot)).thenReturn(Optional.of(slot));
+      when(forkChoiceStrategy.getBlockRootsAtSlot(slot))
+          .thenReturn(List.of(headRoot, dataStructureUtil.randomBytes32()));
     }
 
     private void withFfgCompetitive() {
