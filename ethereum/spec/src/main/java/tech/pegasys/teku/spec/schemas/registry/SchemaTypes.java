@@ -150,6 +150,8 @@ public class SchemaTypes {
   // Altair
   public static final SchemaId<LightClientHeaderSchema<? extends LightClientHeader>>
       LIGHT_CLIENT_HEADER_SCHEMA = create("LIGHT_CLIENT_HEADER_SCHEMA");
+  public static final SchemaId<LightClientBootstrapSchema> LIGHT_CLIENT_BOOTSTRAP_SCHEMA =
+      create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
 
   // Bellatrix
   public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>
@@ -224,8 +226,6 @@ public class SchemaTypes {
   // Move this when we decide which fork this schema should be under
   public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
       create("EXECUTION_PROOF_SCHEMA");
-  public static final SchemaId<LightClientBootstrapSchema> LIGHT_CLIENT_BOOTSTRAP_SCHEMA =
-      create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
 
   // Fulu
   public static final SchemaId<CellSchema> CELL_SCHEMA = create("CELL_SCHEMA");
