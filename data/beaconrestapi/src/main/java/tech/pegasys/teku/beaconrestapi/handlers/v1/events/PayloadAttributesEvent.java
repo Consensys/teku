@@ -101,7 +101,7 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
 
   /**
    * @param forkChoiceState The fork choice state before sending the fCu so can use it to get
-   *     parent_block_number and parent_block_hash
+   *     parent_block_number (pre-gloas) and parent_block_hash
    */
   static PayloadAttributesEvent create(
       final SpecMilestone milestone,
