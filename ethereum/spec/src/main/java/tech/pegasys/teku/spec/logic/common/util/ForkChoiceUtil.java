@@ -295,14 +295,17 @@ public class ForkChoiceUtil {
     return headNode;
   }
 
+  /**
+   * Each slot has single proposer. Since fork choice only contains validated blocks, any blocks at
+   * the same slot must have been proposed by that proposer. Hence, multiple blocks at the slot
+   * indicate proposer equivocation.
+   */
   boolean isProposerEquivocation(final ReadOnlyStore store, final Bytes32 blockRoot) {
     final Optional<UInt64> maybeSlot = store.getForkChoiceStrategy().blockSlot(blockRoot);
     if (maybeSlot.isEmpty()) {
       LOG.debug("isProposerEquivocation - block not in fork choice.");
       return false;
     }
-    // A slot has exactly one valid proposer and fork choice only holds validated blocks, so all
-    // blocks at a slot share a proposer_index; more than one block at the slot means equivocation.
     return store.getForkChoiceStrategy().getBlockRootsAtSlot(maybeSlot.get()).size() > 1;
   }
 

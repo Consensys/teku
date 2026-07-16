@@ -499,26 +499,22 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   /**
-   * Determines whether the parent selected by {@code head} is strong using the child-aware Gloas
-   * payload-status rules.
+   * Determines whether the parent selected by {@code head} is strong.
    *
-   * <p>If the justified state or the parent payload status is not immediately available, Teku
-   * returns {@code false}. That suppresses the late-reorg override rather than risking a false
-   * positive that would incorrectly prefer the parent.
+   * <p>The parent support is measured with {@code PAYLOAD_STATUS_PENDING} regardless of the
+   * parent's payload status.
+   *
+   * <p>If the justified state is not immediately available, Teku returns {@code false}. That
+   * suppresses the late-reorg override rather than risking a false positive that would incorrectly
+   * prefer the parent.
    */
   @Override
   public boolean isParentStrong(
       final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 parentThreshold) {
     final Optional<BeaconState> maybeJustifiedState = store.getJustifiedStateIfAvailable();
-    final Optional<ForkChoicePayloadStatus> maybeParentPayloadStatus =
-        getParentPayloadStatusIfAvailable(store, head.getMessage().getBlock());
-    if (maybeJustifiedState.isPresent() && maybeParentPayloadStatus.isPresent()) {
+    if (maybeJustifiedState.isPresent()) {
       return isParentStrong(
-          store,
-          head.getParentRoot(),
-          parentThreshold,
-          maybeParentPayloadStatus.get(),
-          maybeJustifiedState.get());
+          store, head.getParentRoot(), parentThreshold, maybeJustifiedState.get());
     }
     // Fail closed for late-reorg decisions: missing inputs mean "do not treat the parent as
     // strong".
@@ -556,10 +552,9 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final ReadOnlyStore store,
       final Bytes32 parentRoot,
       final UInt64 parentThreshold,
-      final ForkChoicePayloadStatus parentPayloadStatus,
       final BeaconState justifiedState) {
     final UInt64 attestationScore =
-        getNodeAttestationWeight(store, parentRoot, parentPayloadStatus, justifiedState);
+        getNodeAttestationWeight(store, parentRoot, PAYLOAD_STATUS_PENDING, justifiedState);
     return attestationScore.isGreaterThan(parentThreshold);
   }
 
