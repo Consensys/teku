@@ -16,10 +16,12 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -31,19 +33,39 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 
 public class FastConfirmationTracker {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final FastConfirmationTracker NOOP =
       new FastConfirmationTracker(
-          false, null, Optional.empty(), FastConfirmationEventChannel.NOOP, null, null);
+          false,
+          null,
+          Optional.empty(),
+          FastConfirmationEventChannel.NOOP,
+          new NoOpMetricsSystem(),
+          () -> UInt64.ZERO);
 
   private final boolean enabled;
   private final Spec spec;
   private final FastConfirmationEventChannel fastConfirmationEventChannel;
+
+  /** Slot of the most recent confirmed block * */
+  private final AtomicInteger latestConfirmedSlot = new AtomicInteger(0);
+
+  /** Total number of confirmed block reorganizations */
+  private final Counter reorgsCounter;
+
+  /** Total number of fallbacks to finality */
+  private final Counter fallbacksCounter;
+
+  /** Total number of restarts from a safe unrealized justified block */
+  private final Counter restartsCounter;
 
   /** Wall-clock duration of a single per-slot fast confirmation run; {@code null} when disabled. */
   private final MetricsHistogram calculationTimer;
@@ -69,14 +91,46 @@ public class FastConfirmationTracker {
       final Spec spec,
       final Optional<AsyncRunner> asyncRunner,
       final FastConfirmationEventChannel fastConfirmationEventChannel,
-      final MetricsHistogram calculationTimer,
-      final Counter timeoutCounter) {
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     this.enabled = enabled;
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.fastConfirmationEventChannel = fastConfirmationEventChannel;
-    this.calculationTimer = calculationTimer;
-    this.timeoutCounter = timeoutCounter;
+
+    // Setting up metrics
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        "fast_confirmation_slot",
+        "Slot of the most recent confirmed block",
+        latestConfirmedSlot::get);
+    this.reorgsCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_reorgs_total",
+            "Total number of confirmed block reorganizations");
+    this.fallbacksCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_fallbacks_total",
+            "Total number of fallbacks to finality");
+    this.restartsCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_restarts_total",
+            "Total number of restarts from a safe unrealized justified block");
+    this.calculationTimer =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_calculation_seconds",
+            "Time taken to run the fast confirmation algorithm (incl. source-state loading) each slot");
+    this.timeoutCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_timeout_total",
+            "Number of slots where the fast confirmation update did not complete within its timeout");
   }
 
   public static FastConfirmationTracker create(
@@ -85,20 +139,8 @@ public class FastConfirmationTracker {
       final FastConfirmationEventChannel fastConfirmationEventChannel,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
-    final MetricsHistogram calculationTimer =
-        new MetricsHistogram(
-            metricsSystem,
-            timeProvider,
-            TekuMetricCategory.BEACON,
-            "fast_confirmation_calculation_seconds",
-            "Time taken to run the fast confirmation algorithm (incl. source-state loading) each slot");
-    final Counter timeoutCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.BEACON,
-            "fast_confirmation_timeout_total",
-            "Number of slots where the fast confirmation update did not complete within its timeout");
     return new FastConfirmationTracker(
-        true, spec, asyncRunner, fastConfirmationEventChannel, calculationTimer, timeoutCounter);
+        true, spec, asyncRunner, fastConfirmationEventChannel, metricsSystem, timeProvider);
   }
 
   public boolean isEnabled() {
@@ -226,6 +268,11 @@ public class FastConfirmationTracker {
     final Bytes32 confirmedRoot = updatedStore.confirmedRoot();
     final UInt64 confirmedSlot =
         store.getForkChoiceStrategy().blockSlot(confirmedRoot).orElse(UInt64.ZERO);
+    latestConfirmedSlot.set(confirmedSlot.intValue());
+    if (!isAncestor(input.slot(), confirmedRoot, currentStore.confirmedRoot())
+        && !isAncestor(input.slot(), currentStore.confirmedRoot(), confirmedRoot)) {
+      reorgsCounter.inc();
+    }
 
     LOG.info(
         "Fast confirmation update for slot {}: head={}, confirmed_root={}, confirmed_slot={}",
@@ -250,23 +297,42 @@ public class FastConfirmationTracker {
       final FastConfirmationStore fcrStore, final UInt64 slot, final boolean atEpochStart) {
     final Optional<FastConfirmationStates> maybeStates =
         FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart).join();
+    final Bytes32 finalizedRoot = fcrStore.store().getFinalizedCheckpoint().getRoot();
     if (maybeStates.isEmpty()) {
       // The source states could not be loaded (e.g. the observed-justified checkpoint state has
       // been pruned, which happens for a short window after startup before that checkpoint has
       // advanced to a still-hot one). We cannot run get_latest_confirmed, so fall back to the
       // finalized block: it is always safe to consider confirmed, its root is known without a state
       // load, and this keeps confirmed_root tracking finality rather than going stale.
-      final Bytes32 finalizedRoot = fcrStore.store().getFinalizedCheckpoint().getRoot();
       LOG.debug(
           "Fast confirmation for slot {}: source states unavailable, falling back to finalized {}",
           slot,
           finalizedRoot);
+      fallbacksCounter.inc();
       return fcrStore.withConfirmedRoot(finalizedRoot);
     }
+
     final Bytes32 confirmedRoot =
         new FastConfirmationCalculator(spec, fcrStore, maybeStates.get(), slot)
             .getLatestConfirmed();
+    if (confirmedRoot.equals(finalizedRoot)) {
+      fallbacksCounter.inc();
+    } else if (confirmedRoot.equals(fcrStore.currentEpochObservedJustifiedCheckpoint().getRoot())) {
+      restartsCounter.inc();
+    }
+
     return fcrStore.withConfirmedRoot(confirmedRoot);
+  }
+
+  private boolean isAncestor(
+      final UInt64 slot, final Bytes32 descendantRoot, final Bytes32 ancestorRoot) {
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(slot).getForkChoiceUtil();
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        fastConfirmationStore.get().store().getForkChoiceStrategy();
+    return forkChoiceUtil.isAncestor(
+        forkChoiceStrategy,
+        ForkChoiceNode.createBase(descendantRoot),
+        ForkChoiceNode.createBase(ancestorRoot));
   }
 
   public Optional<FastConfirmationStore> getFastConfirmationStore() {
