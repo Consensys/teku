@@ -530,8 +530,7 @@ class ForkChoiceUtilReorgTest {
     final ReorgTestSetup setup = new ReorgTestSetup();
 
     assertThat(
-            setup.harness.isCurrentSlotOk(
-                setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+            setup.harness.isCurrentSlotOk(setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
         .isTrue();
   }
 
@@ -540,8 +539,7 @@ class ForkChoiceUtilReorgTest {
     final ReorgTestSetup setup = new ReorgTestSetup();
 
     assertThat(
-            setup.harness.isCurrentSlotOk(
-                setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
+            setup.harness.isCurrentSlotOk(setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
         .isFalse();
   }
 
