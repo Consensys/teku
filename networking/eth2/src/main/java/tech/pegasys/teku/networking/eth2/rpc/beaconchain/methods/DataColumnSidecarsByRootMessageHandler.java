@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,7 +29,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
@@ -188,27 +185,6 @@ public class DataColumnSidecarsByRootMessageHandler
     return SafeFuture.completedFuture(Optional.empty());
   }
 
-  /**
-   * Validations:
-   *
-   * <ul>
-   *   <li>The block root references a block greater than or equal to the minimum_request_epoch
-   * </ul>
-   */
-  private SafeFuture<Void> validateMinimumRequestEpoch(final Bytes32 blockRoot, final UInt64 slot) {
-    final UInt64 requestedEpoch = spec.computeEpochAtSlot(slot);
-    if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
-        combinedChainDataClient.getStore(), requestedEpoch)) {
-      return SafeFuture.failedFuture(
-          new RpcException(
-              RESOURCE_UNAVAILABLE,
-              String.format(
-                  "Block root (%s) references a block earlier than the minimum_request_epoch",
-                  blockRoot)));
-    }
-    return SafeFuture.COMPLETE;
-  }
-
   private SafeFuture<Optional<UInt64>> resolveBlockRootSlot(final Bytes32 blockRoot) {
     final Optional<UInt64> cached = blockRootSlotCache.getCached(blockRoot);
     if (cached.isPresent()) {
@@ -233,24 +209,26 @@ public class DataColumnSidecarsByRootMessageHandler
       return SafeFuture.completedFuture(0L);
     }
     final UInt64 slot = maybeSlot.get();
-    return validateMinimumRequestEpoch(blockRoot, slot)
-        .thenCompose(
-            __ -> {
-              SafeFuture<Long> responseFuture = SafeFuture.completedFuture(0L);
-              for (final UInt64 column : columns) {
-                if (!myCustodyColumns.contains(column)) {
-                  continue;
-                }
-                final DataColumnSlotAndIdentifier identifier =
-                    new DataColumnSlotAndIdentifier(slot, blockRoot, column);
-                responseFuture =
-                    responseFuture.thenCompose(
-                        sentSoFar ->
-                            retrieveAndRespondForColumn(identifier, messageId, callback)
-                                .thenApply(sent -> sentSoFar + sent));
-              }
-              return responseFuture;
-            });
+    final UInt64 requestedEpoch = spec.computeEpochAtSlot(slot);
+    if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+        combinedChainDataClient.getStore(), requestedEpoch)) {
+      // Root is outside the data column serve range; silently skip per spec
+      return SafeFuture.completedFuture(0L);
+    }
+    SafeFuture<Long> responseFuture = SafeFuture.completedFuture(0L);
+    for (final UInt64 column : columns) {
+      if (!myCustodyColumns.contains(column)) {
+        continue;
+      }
+      final DataColumnSlotAndIdentifier identifier =
+          new DataColumnSlotAndIdentifier(slot, blockRoot, column);
+      responseFuture =
+          responseFuture.thenCompose(
+              sentSoFar ->
+                  retrieveAndRespondForColumn(identifier, messageId, callback)
+                      .thenApply(sent -> sentSoFar + sent));
+    }
+    return responseFuture;
   }
 
   private SafeFuture<Long> retrieveAndRespondForColumn(
