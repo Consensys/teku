@@ -342,6 +342,33 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldIncludeParentBlockNumberInPayloadAttributesEventForDeneb()
+      throws JsonProcessingException {
+    final UInt64 denebHeadExecutionBlockNumber = UInt64.valueOf(123_456L);
+    final ForkChoiceState denebForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(data.randomBytes32()),
+            data.randomSlot(),
+            denebHeadExecutionBlockNumber,
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            data.randomBytes32(),
+            data.randomBytes32(),
+            false);
+
+    final PayloadAttributesEvent denebPayloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            SpecMilestone.DENEB, samplePayloadAttributes, denebForkChoiceState);
+
+    final String result =
+        JsonUtil.serialize(
+            denebPayloadAttributesEvent.getData(),
+            denebPayloadAttributesEvent.getJsonTypeDefinition());
+
+    assertThat(result)
+        .contains(String.format("\"parent_block_number\":\"%s\"", denebHeadExecutionBlockNumber));
+  }
+
+  @Test
   void shouldPropagateAttestation() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=attestation");
     manager.registerClient(client1);
