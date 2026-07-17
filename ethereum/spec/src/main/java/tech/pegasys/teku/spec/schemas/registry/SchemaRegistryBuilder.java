@@ -24,83 +24,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_BEACON_BLOCK_BODY_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_BEACON_BLOCK_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_IN_BLOCK_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_DEPOSIT_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_EXIT_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWAL_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROOF_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_PROPOSER_PREFERENCES_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.*;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
@@ -185,10 +109,14 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionR
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientBootstrapSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientUpdateSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientBootstrapSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientUpdateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -252,10 +180,11 @@ public class SchemaRegistryBuilder {
         .addProvider(createBeaconStateSchemaProvider())
         .addProvider(createMetadataMessageSchemaProvider())
         .addProvider(createStatusMessageSchemaProvider())
-        .addProvider(createLightClientBootstrapSchemaProvider())
 
         // ALTAIR
         .addProvider(createLightClientHeaderSchemaProvider())
+            .addProvider(createLightClientBootstrapSchemaProvider())
+            .addProvider(createLightClientUpdateSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -853,6 +782,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new LightClientBootstrapSchemaElectra(
                     SpecConfigElectra.required(specConfig), registry))
+            .withCreator(GLOAS, (registry, specConfig, schemaName) -> new LightClientBootstrapSchemaGloas(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
@@ -866,6 +796,13 @@ public class SchemaRegistryBuilder {
         .withCreator(
             GLOAS, (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas())
         .build();
+  }
+
+  private static SchemaProvider<?> createLightClientUpdateSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_UPDATE_SCHEMA)
+            .withCreator(ALTAIR, (registry, specConfig, schemaName) -> new LightClientUpdateSchema(SpecConfigAltair.required(specConfig), registry))
+            .withCreator(ELECTRA, (registry, specConfig, schemaName) -> new LightClientUpdateSchemaElectra(SpecConfigElectra.required(specConfig), registry))
+            .withCreator(GLOAS, (registry, specConfig, schemaName) -> new LightClientUpdateSchemaGloas(SpecConfigGloas.required(specConfig), registry)).build();
   }
 
   private static SchemaProvider<?> createSignedAggregateAndProofSchemaProvider() {

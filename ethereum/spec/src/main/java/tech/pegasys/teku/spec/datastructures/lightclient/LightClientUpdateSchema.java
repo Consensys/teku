@@ -43,7 +43,7 @@ public class LightClientUpdateSchema
         SszUInt64> {
 
   public LightClientUpdateSchema(
-      final SpecConfigAltair specConfigAltair, final SchemaRegistry registry) {
+      final SpecConfigAltair specConfigAltair, final SchemaRegistry registry, final int syncCommitteeGIndex, final int finalizedBranchGindex) {
     super(
         "LightClientUpdate",
         namedSchema(
@@ -52,16 +52,20 @@ public class LightClientUpdateSchema
         namedSchema("next_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "next_sync_committee_branch",
-            SszBytes32VectorSchema.create(MathHelpers.floorLog2(NEXT_SYNC_COMMITTEE_GINDEX))),
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(syncCommitteeGIndex))),
         namedSchema(
             "finalized_header",
             SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
         namedSchema(
             "finality_branch",
-            SszBytes32VectorSchema.create(MathHelpers.floorLog2(FINALIZED_ROOT_GINDEX))),
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(finalizedBranchGindex))),
         namedSchema(
             "sync_aggregate", SyncAggregateSchema.create(specConfigAltair.getSyncCommitteeSize())),
         namedSchema("signature_slot", SszPrimitiveSchemas.UINT64_SCHEMA));
+  }
+
+  public LightClientUpdateSchema(final SpecConfigAltair specConfigAltair, final SchemaRegistry registry) {
+    this(specConfigAltair, registry, NEXT_SYNC_COMMITTEE_GINDEX, FINALIZED_ROOT_GINDEX);
   }
 
   public LightClientUpdate create(
