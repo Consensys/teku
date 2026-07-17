@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
@@ -103,7 +104,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.statusMessageSchema = schemaRegistry.get(STATUS_MESSAGE_SCHEMA);
     this.lightClientHeaderSchema = schemaRegistry.get(LIGHT_CLIENT_HEADER_SCHEMA);
     this.lightClientBootstrapSchema = schemaRegistry.get(LIGHT_CLIENT_BOOTSTRAP_SCHEMA);
-    this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig, schemaRegistry);
+    this.lightClientUpdateSchema = schemaRegistry.get(LIGHT_CLIENT_UPDATE_SCHEMA);
     this.lightClientUpdateResponseSchema =
         new LightClientUpdateResponseSchema(specConfig, schemaRegistry);
   }

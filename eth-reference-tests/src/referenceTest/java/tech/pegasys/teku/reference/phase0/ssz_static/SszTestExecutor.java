@@ -155,7 +155,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/LightClientOptimisticUpdate", IGNORE_TESTS)
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
-          .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
+          .put(
+              "ssz_static/LightClientUpdate",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas).getLightClientUpdateSchema()))
 
           // TODO: Partial messages (not yet implemented)
           .put("ssz_static/PartialDataColumnHeader", IGNORE_TESTS)
