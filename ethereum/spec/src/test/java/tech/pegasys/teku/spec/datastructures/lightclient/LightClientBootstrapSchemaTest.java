@@ -32,6 +32,8 @@ public class LightClientBootstrapSchemaTest {
       5; // floorLog2(CURRENT_SYNC_COMMITTEE_GINDEX)
   private static final int ELECTRA_CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH =
       6; // floorLog2(CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA)
+  private static final int GLOAS_CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH =
+      11; // floorLog2(CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS)
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
@@ -44,10 +46,14 @@ public class LightClientBootstrapSchemaTest {
 
   @TestTemplate
   public void syncCommitteeBranch_shouldHaveSpecLength() {
-    final int expectedLength =
-        milestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-            ? ELECTRA_CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH
-            : CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH;
+    final int expectedLength;
+    if (milestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      expectedLength = GLOAS_CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH;
+    } else if (milestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      expectedLength = ELECTRA_CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH;
+    } else {
+      expectedLength = CURRENT_SYNC_COMMITTEE_BRANCH_LENGTH;
+    }
 
     assertThat(bootstrapSchema().getSyncCommitteeBranchSchema().getLength())
         .isEqualTo(expectedLength);

@@ -30,7 +30,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
+// TODO: Gloas (and later milestones) are ignored because light-client bootstrap-from-state is not
+// yet supported for them. It depends upon #10931.
+@TestSpecContext(
+    allMilestones = true,
+    ignoredMilestones = {SpecMilestone.PHASE0, SpecMilestone.GLOAS, SpecMilestone.HEZE})
 public class LightClientUtilTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
