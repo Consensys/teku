@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
@@ -252,7 +253,7 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
-  void isProposerEquivocationReturnsFalseWhenBlockNotInForkChoice() {
+  void isProposerEquivocationReturnsFalseWhenBlockNotAvailable() {
     final ReorgTestSetup setup = new ReorgTestSetup();
 
     assertThat(
@@ -264,22 +265,51 @@ class ForkChoiceUtilReorgTest {
   @Test
   void isProposerEquivocationReturnsFalseWhenSingleBlockAtSlot() {
     final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
     final Bytes32 headRoot = setup.signedBlockAndState.getRoot();
-    when(setup.forkChoiceStrategy.blockSlot(headRoot)).thenReturn(Optional.of(slot));
     when(setup.forkChoiceStrategy.getBlockRootsAtSlot(slot)).thenReturn(List.of(headRoot));
 
     assertThat(setup.baseForkChoiceUtil.isProposerEquivocation(setup.store, headRoot)).isFalse();
   }
 
   @Test
-  void isProposerEquivocationReturnsTrueWhenMultipleBlocksAtSlot() {
+  void isProposerEquivocationReturnsTrueWhenSameProposerHasMultipleBlocksAtSlot() {
     final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
     final Bytes32 headRoot = setup.signedBlockAndState.getRoot();
-    when(setup.forkChoiceStrategy.blockSlot(headRoot)).thenReturn(Optional.of(slot));
     when(setup.forkChoiceStrategy.getBlockRootsAtSlot(slot))
         .thenReturn(List.of(headRoot, dataStructureUtil.randomBytes32()));
 
     assertThat(setup.baseForkChoiceUtil.isProposerEquivocation(setup.store, headRoot)).isTrue();
+  }
+
+  @Test
+  void isProposerEquivocationReturnsFalseWhenBlocksAtSlotHaveDifferentProposers() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    final Bytes32 headRoot = setup.signedBlockAndState.getRoot();
+    final Bytes32 siblingRoot = dataStructureUtil.randomBytes32();
+    final SignedBeaconBlock siblingBlock = mock(SignedBeaconBlock.class);
+    when(siblingBlock.getProposerIndex())
+        .thenReturn(setup.signedBlockAndState.getBlock().getProposerIndex().increment());
+    when(setup.store.getBlockIfAvailable(headRoot))
+        .thenReturn(setup.signedBlockAndState.getSignedBeaconBlock());
+    when(setup.store.getBlockIfAvailable(siblingRoot)).thenReturn(Optional.of(siblingBlock));
+    when(setup.forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .thenReturn(List.of(headRoot, siblingRoot));
+
+    assertThat(setup.baseForkChoiceUtil.isProposerEquivocation(setup.store, headRoot)).isFalse();
+  }
+
+  @Test
+  void isProposerEquivocationReturnsFalseWhenSiblingBlockNotAvailable() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    final Bytes32 headRoot = setup.signedBlockAndState.getRoot();
+    when(setup.store.getBlockIfAvailable(headRoot))
+        .thenReturn(setup.signedBlockAndState.getSignedBeaconBlock());
+    when(setup.forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .thenReturn(List.of(headRoot, dataStructureUtil.randomBytes32()));
+
+    assertThat(setup.baseForkChoiceUtil.isProposerEquivocation(setup.store, headRoot)).isFalse();
   }
 
   @Test
@@ -670,10 +700,8 @@ class ForkChoiceUtilReorgTest {
     }
 
     private void withEquivocationAtHeadSlot() {
-      final Bytes32 headRoot = signedBlockAndState.getRoot();
-      when(forkChoiceStrategy.blockSlot(headRoot)).thenReturn(Optional.of(slot));
       when(forkChoiceStrategy.getBlockRootsAtSlot(slot))
-          .thenReturn(List.of(headRoot, dataStructureUtil.randomBytes32()));
+          .thenReturn(List.of(signedBlockAndState.getRoot(), dataStructureUtil.randomBytes32()));
     }
 
     private void withFfgCompetitive() {

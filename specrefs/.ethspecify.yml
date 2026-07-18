@@ -263,9 +263,6 @@ specrefs:
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
       - validate_partial_data_column_sidecar_gossip#fulu
 
-      # Not implemented: gloas
-      - get_proposer_head#gloas
-
       # Not implemented yet: EIP-7688 progressive SSZ transition
       - upgrade_attestation_to_gloas#gloas
       - upgrade_attester_slashing_to_gloas#gloas

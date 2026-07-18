@@ -499,12 +499,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   /**
-   * Determines whether the parent selected by {@code head} is strong using the child-aware Gloas
-   * payload-status rules.
+   * Determines whether the parent selected by {@code head} is strong by scoring the parent's
+   * PENDING variant, measuring support for the parent beacon block regardless of payload status.
    *
-   * <p>If the justified state or the parent payload status is not immediately available, Teku
-   * returns {@code false}. That suppresses the late-reorg override rather than risking a false
-   * positive that would incorrectly prefer the parent.
+   * <p>If the justified state is not immediately available, Teku returns {@code false}. That
+   * suppresses the late-reorg override rather than risking a false positive that would incorrectly
+   * prefer the parent.
    */
   @Override
   public boolean isParentStrong(
@@ -543,8 +543,8 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    *
    * <p>Spec reference: is_parent_strong (Gloas override)
    *
-   * <p>The Java signature carries `parentPayloadStatus` explicitly because the protoarray stores
-   * the EMPTY/FULL/PENDING split as node identity rather than recomputing it inside the helper.
+   * <p>Scores the parent's PENDING variant so the attestation weight counts support for the parent
+   * beacon block as a whole rather than a single EMPTY/FULL payload variant.
    */
   private boolean isParentStrong(
       final ReadOnlyStore store,

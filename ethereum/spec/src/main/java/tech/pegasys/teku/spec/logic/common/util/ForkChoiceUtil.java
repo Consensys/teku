@@ -296,17 +296,26 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * Each slot has single proposer. Since fork choice only contains validated blocks, any blocks at
-   * the same slot must have been proposed by that proposer. Hence, multiple blocks at the slot
-   * indicate proposer equivocation.
+   * Spec reference: is_proposer_equivocation.
+   *
+   * <p>Counts fork choice blocks at the head's slot proposed by the head's proposer. Competing
+   * branches that diverged before the proposer shuffling was pinned can assign different proposers
+   * to the same slot, so matching the proposer index is required. Blocks that are not immediately
+   * available are not counted, failing closed towards keeping the head.
    */
   boolean isProposerEquivocation(final ReadOnlyStore store, final Bytes32 blockRoot) {
-    final Optional<UInt64> maybeSlot = store.getForkChoiceStrategy().blockSlot(blockRoot);
-    if (maybeSlot.isEmpty()) {
-      LOG.debug("isProposerEquivocation - block not in fork choice.");
+    final Optional<SignedBeaconBlock> maybeBlock = store.getBlockIfAvailable(blockRoot);
+    if (maybeBlock.isEmpty()) {
+      LOG.debug("isProposerEquivocation - block not available.");
       return false;
     }
-    return store.getForkChoiceStrategy().getBlockRootsAtSlot(maybeSlot.get()).size() > 1;
+    final SignedBeaconBlock block = maybeBlock.orElseThrow();
+    return store.getForkChoiceStrategy().getBlockRootsAtSlot(block.getSlot()).stream()
+            .map(store::getBlockIfAvailable)
+            .flatMap(Optional::stream)
+            .filter(other -> other.getProposerIndex().equals(block.getProposerIndex()))
+            .count()
+        > 1;
   }
 
   /** Spec reference: should_override_forkchoice_update. */

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -543,6 +544,32 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
+  void getProposerHead_preservesFullParentPayloadStatusOnReorg() {
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode fullParent = ForkChoiceNode.createFull(parentRoot);
+
+    assertThat(getProposerHeadAfterEquivocationReorg(fullParent, true)).isEqualTo(fullParent);
+  }
+
+  @Test
+  void getProposerHead_downgradesReorgedFullParentToEmptyWhenNotBuildingOnFull() {
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode fullParent = ForkChoiceNode.createFull(parentRoot);
+
+    assertThat(getProposerHeadAfterEquivocationReorg(fullParent, false))
+        .isEqualTo(ForkChoiceNode.createEmpty(parentRoot));
+  }
+
+  @Test
+  void getProposerHead_returnsPendingReorgedParentAsIs() {
+    final ForkChoiceNode pendingParent =
+        ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+
+    assertThat(getProposerHeadAfterEquivocationReorg(pendingParent, false))
+        .isEqualTo(pendingParent);
+  }
+
+  @Test
   void isAncestor_returnsTrueWhenRootAndPayloadStatusMatch() {
     final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
     final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
@@ -734,5 +761,33 @@ class ForkChoiceUtilGloasTest {
             parentRoot, // Set the desired parent root
             block.getStateRoot(),
             newBody);
+  }
+
+  private ForkChoiceNode getProposerHeadAfterEquivocationReorg(
+      final ForkChoiceNode parentNode, final boolean shouldBuildOnFull) {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    final ForkChoiceReorgContext context = mock(ForkChoiceReorgContext.class);
+    final SignedBeaconBlock head = dataStructureUtil.randomSignedBeaconBlock(gloasSlot);
+    final ForkChoiceNode headNode = ForkChoiceNode.createFull(head.getRoot());
+    final UInt64 proposalSlot = gloasSlot.increment();
+
+    when(context.getStore()).thenReturn(store);
+    when(store.getForkChoiceStrategy()).thenReturn(strategy);
+    when(store.getGenesisTimeMillis()).thenReturn(UInt64.ZERO);
+    when(store.getTimeInMillis()).thenReturn(UInt64.ZERO);
+    when(store.getFinalizedCheckpoint())
+        .thenReturn(dataStructureUtil.randomCheckpoint(UInt64.ZERO));
+    when(store.getJustifiedStateIfAvailable()).thenReturn(Optional.of(justifiedState));
+    when(store.getBlockStateIfAvailable(head.getRoot())).thenReturn(Optional.of(justifiedState));
+    when(store.getParentThreshold()).thenReturn(UInt64.ONE);
+    when(store.getReorgThreshold()).thenReturn(UInt64.MAX_VALUE);
+    when(store.getBlockIfAvailable(ArgumentMatchers.any())).thenReturn(Optional.of(head));
+    when(strategy.getBlockRootsAtSlot(gloasSlot))
+        .thenReturn(List.of(head.getRoot(), dataStructureUtil.randomBytes32()));
+    when(strategy.getParentBeaconBlockNode(headNode)).thenReturn(Optional.of(parentNode));
+    when(strategy.shouldBuildOnFull(store, proposalSlot, parentNode)).thenReturn(shouldBuildOnFull);
+
+    return forkChoiceUtil.getProposerHead(context, headNode, proposalSlot);
   }
 }
