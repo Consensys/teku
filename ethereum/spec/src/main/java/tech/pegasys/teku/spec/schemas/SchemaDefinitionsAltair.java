@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_B
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
@@ -81,6 +83,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final LightClientBootstrapSchema lightClientBootstrapSchema;
   private final LightClientUpdateSchema lightClientUpdateSchema;
   private final LightClientUpdateResponseSchema lightClientUpdateResponseSchema;
+  private final LightClientFinalityUpdateSchema lightClientFinalityUpdateSchema;
 
   public SchemaDefinitionsAltair(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
@@ -107,6 +110,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.lightClientUpdateSchema = schemaRegistry.get(LIGHT_CLIENT_UPDATE_SCHEMA);
     this.lightClientUpdateResponseSchema =
         new LightClientUpdateResponseSchema(specConfig, schemaRegistry);
+    this.lightClientFinalityUpdateSchema = schemaRegistry.get(LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA);
   }
 
   public static SchemaDefinitionsAltair required(final SchemaDefinitions schemaDefinitions) {
@@ -253,6 +257,10 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
 
   public LightClientUpdateResponseSchema getLightClientUpdateResponseSchema() {
     return lightClientUpdateResponseSchema;
+  }
+
+  public LightClientFinalityUpdateSchema getLightClientFinalityUpdateSchema() {
+    return lightClientFinalityUpdateSchema;
   }
 
   @Override

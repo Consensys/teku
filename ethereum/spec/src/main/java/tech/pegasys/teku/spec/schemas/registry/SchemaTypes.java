@@ -75,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
@@ -155,6 +156,8 @@ public class SchemaTypes {
       create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
   public static final SchemaId<LightClientUpdateSchema> LIGHT_CLIENT_UPDATE_SCHEMA =
       create("LIGHT_CLIENT_UPDATE_SCHEMA");
+  public static final SchemaId<LightClientFinalityUpdateSchema>
+      LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA = create("LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA");
 
   // Bellatrix
   public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>

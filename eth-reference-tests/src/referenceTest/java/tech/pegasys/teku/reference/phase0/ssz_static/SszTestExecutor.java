@@ -146,7 +146,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas).getLightClientBootstrapSchema()))
-          .put("ssz_static/LightClientFinalityUpdate", IGNORE_TESTS)
+          .put("ssz_static/LightClientFinalityUpdate", new SszTestExecutor<>(schemas -> SchemaDefinitionsAltair.required(schemas).getLightClientFinalityUpdateSchema()))
           .put(
               "ssz_static/LightClientHeader",
               new SszTestExecutor<>(

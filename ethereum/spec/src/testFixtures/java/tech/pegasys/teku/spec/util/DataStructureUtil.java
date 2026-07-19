@@ -184,6 +184,8 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
@@ -2426,6 +2428,20 @@ public final class DataStructureUtil {
         randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32),
         headerSchema.create(randomBeaconBlockHeader()),
         randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
+        randomSyncAggregate(),
+        SszUInt64.of(randomUInt64()));
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(final UInt64 slot) {
+    final LightClientFinalityUpdateSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientFinalityUpdateSchema();
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+
+    return schema.create(
+        headerSchema.create(randomBeaconBlockHeader()),
+        headerSchema.create(randomBeaconBlockHeader()),
+        randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
   }

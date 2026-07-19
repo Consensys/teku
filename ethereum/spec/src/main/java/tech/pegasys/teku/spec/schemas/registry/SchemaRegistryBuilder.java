@@ -73,6 +73,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
@@ -186,12 +187,15 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionR
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientBootstrapSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientFinalityUpdateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientUpdateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientBootstrapSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientFinalityUpdateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientUpdateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
@@ -262,6 +266,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createLightClientHeaderSchemaProvider())
         .addProvider(createLightClientBootstrapSchemaProvider())
         .addProvider(createLightClientUpdateSchemaProvider())
+        .addProvider(createLightClientFinalityUpdateSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -893,6 +898,26 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new LightClientUpdateSchemaGloas(SpecConfigGloas.required(specConfig), registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createLightClientFinalityUpdateSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA)
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) ->
+                new LightClientFinalityUpdateSchema(
+                    SpecConfigAltair.required(specConfig), registry))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig, schemaName) ->
+                new LightClientFinalityUpdateSchemaElectra(
+                    SpecConfigElectra.required(specConfig), registry))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new LightClientFinalityUpdateSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 

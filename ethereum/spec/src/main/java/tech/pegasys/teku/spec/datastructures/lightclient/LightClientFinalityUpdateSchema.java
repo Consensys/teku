@@ -76,4 +76,9 @@ public class LightClientFinalityUpdateSchema
   public LightClientFinalityUpdate createFromBackingNode(final TreeNode node) {
     return new LightClientFinalityUpdate(this, node);
   }
+
+  @SuppressWarnings("unchecked")
+  public SszBytes32VectorSchema<SszBytes32Vector> getFinalizedBranchSchema() {
+    return (SszBytes32VectorSchema<SszBytes32Vector>) getChildSchema(2);
+  }
 }
