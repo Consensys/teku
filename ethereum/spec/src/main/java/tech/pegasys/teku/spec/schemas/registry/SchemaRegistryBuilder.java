@@ -75,6 +75,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
@@ -188,6 +189,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
@@ -267,6 +269,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createLightClientBootstrapSchemaProvider())
         .addProvider(createLightClientUpdateSchemaProvider())
         .addProvider(createLightClientFinalityUpdateSchemaProvider())
+        .addProvider(createLightClientOptimisticUpdateSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -918,6 +921,16 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new LightClientFinalityUpdateSchemaGloas(
                     SpecConfigGloas.required(specConfig), registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createLightClientOptimisticUpdateSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA)
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) ->
+                new LightClientOptimisticUpdateSchema(
+                    SpecConfigAltair.required(specConfig), registry))
         .build();
   }
 

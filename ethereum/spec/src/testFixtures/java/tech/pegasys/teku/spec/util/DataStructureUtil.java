@@ -188,6 +188,8 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpda
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
@@ -2442,6 +2444,18 @@ public final class DataStructureUtil {
         headerSchema.create(randomBeaconBlockHeader()),
         headerSchema.create(randomBeaconBlockHeader()),
         randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
+        randomSyncAggregate(),
+        SszUInt64.of(randomUInt64()));
+  }
+
+  public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(final UInt64 slot) {
+    final LightClientOptimisticUpdateSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientOptimisticUpdateSchema();
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+
+    return schema.create(
+        headerSchema.create(randomBeaconBlockHeader()),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
   }

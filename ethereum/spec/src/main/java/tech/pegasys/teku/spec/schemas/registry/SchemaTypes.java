@@ -78,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSch
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
@@ -158,6 +159,8 @@ public class SchemaTypes {
       create("LIGHT_CLIENT_UPDATE_SCHEMA");
   public static final SchemaId<LightClientFinalityUpdateSchema>
       LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA = create("LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA");
+  public static final SchemaId<LightClientOptimisticUpdateSchema>
+      LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA = create("LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA");
 
   // Bellatrix
   public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>
