@@ -14,19 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.electra;
 
 import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX_ELECTRA;
-import static tech.pegasys.teku.spec.constants.LightClientConstants.NEXT_SYNC_COMMITTEE_GINDEX_ELECTRA;
 
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class LightClientUpdateSchemaElectra extends LightClientUpdateSchema {
-  public LightClientUpdateSchemaElectra(
+public class LightClientFinalityUpdateSchemaElectra extends LightClientFinalityUpdateSchema {
+  public LightClientFinalityUpdateSchemaElectra(
       final SpecConfigElectra specConfigElectra, final SchemaRegistry registry) {
-    super(
-        specConfigElectra,
-        registry,
-        NEXT_SYNC_COMMITTEE_GINDEX_ELECTRA,
-        FINALIZED_ROOT_GINDEX_ELECTRA);
+    super(specConfigElectra, FINALIZED_ROOT_GINDEX_ELECTRA, registry);
   }
 }

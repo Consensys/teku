@@ -153,7 +153,7 @@ public class SchemaTypes {
       LIGHT_CLIENT_HEADER_SCHEMA = create("LIGHT_CLIENT_HEADER_SCHEMA");
   public static final SchemaId<LightClientBootstrapSchema> LIGHT_CLIENT_BOOTSTRAP_SCHEMA =
       create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
-  public static final SchemaId<LightClientUpdateSchema>  LIGHT_CLIENT_UPDATE_SCHEMA =
+  public static final SchemaId<LightClientUpdateSchema> LIGHT_CLIENT_UPDATE_SCHEMA =
       create("LIGHT_CLIENT_UPDATE_SCHEMA");
 
   // Bellatrix

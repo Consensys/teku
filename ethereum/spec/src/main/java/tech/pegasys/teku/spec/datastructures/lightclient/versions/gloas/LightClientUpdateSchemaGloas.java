@@ -13,15 +13,20 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas;
 
+import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX_GLOAS;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.NEXT_SYNC_COMMITTEE_GINDEX_GLOAS;
+
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX_GLOAS;
-import static tech.pegasys.teku.spec.constants.LightClientConstants.NEXT_SYNC_COMMITTEE_GINDEX_GLOAS;
-
 public class LightClientUpdateSchemaGloas extends LightClientUpdateSchema {
-    public LightClientUpdateSchemaGloas(final SpecConfigGloas specConfigGloas, final SchemaRegistry schemaRegistry) {
-        super(specConfigGloas, schemaRegistry, NEXT_SYNC_COMMITTEE_GINDEX_GLOAS, FINALIZED_ROOT_GINDEX_GLOAS);
-    }
+  public LightClientUpdateSchemaGloas(
+      final SpecConfigGloas specConfigGloas, final SchemaRegistry schemaRegistry) {
+    super(
+        specConfigGloas,
+        schemaRegistry,
+        NEXT_SYNC_COMMITTEE_GINDEX_GLOAS,
+        FINALIZED_ROOT_GINDEX_GLOAS);
+  }
 }

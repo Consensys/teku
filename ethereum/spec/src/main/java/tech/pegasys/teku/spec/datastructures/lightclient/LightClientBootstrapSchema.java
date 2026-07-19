@@ -38,7 +38,8 @@ public class LightClientBootstrapSchema
         namedSchema(
             "header",
             SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
-        namedSchema("current_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
+        namedSchema(
+            "current_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "current_sync_committee_branch",
             SszBytes32VectorSchema.create(MathHelpers.floorLog2(syncCommitteeGindex))));
