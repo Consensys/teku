@@ -16,6 +16,8 @@
           "$ref" : "#/components/schemas/AttestationPhase0"
         }, {
           "$ref" : "#/components/schemas/AttestationElectra"
+        }, {
+          "$ref" : "#/components/schemas/AttestationGloas"
         } ]
       }
     }
