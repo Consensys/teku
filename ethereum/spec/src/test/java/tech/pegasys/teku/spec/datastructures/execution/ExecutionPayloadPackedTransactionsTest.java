@@ -24,6 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedProgressiveByteListsNode;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -35,10 +37,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class ExecutionPayloadPackedTransactionsTest {
 
   private DataStructureUtil dataStructureUtil;
+  private SpecMilestone milestone;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
     dataStructureUtil = specContext.getDataStructureUtil();
+    milestone = specContext.getSpecMilestone();
   }
 
   @TestTemplate
@@ -52,6 +56,9 @@ public class ExecutionPayloadPackedTransactionsTest {
     assertThat(deserialized.hashTreeRoot()).isEqualTo(payload.hashTreeRoot());
     assertThat(deserialized.sszSerialize()).isEqualTo(serialized);
     assertThat(deserialized.getTransactions().getBackingNode().get(GIndexUtil.LEFT_CHILD_G_INDEX))
-        .isInstanceOf(SszPackedByteListsNode.class);
+        .isInstanceOf(
+            milestone.isGreaterThanOrEqualTo(GLOAS)
+                ? SszPackedProgressiveByteListsNode.class
+                : SszPackedByteListsNode.class);
   }
 }
