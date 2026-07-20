@@ -99,17 +99,6 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
-      names = {"--Xquartz-scheduler-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Use Quartz scheduler instead of ScheduledExecutorService for slot timing.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean quartzSchedulerEnabled =
-      Eth2NetworkConfiguration.DEFAULT_QUARTZ_SCHEDULER_ENABLED;
-
-  @Option(
       names = {"--Xrust-kzg-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
@@ -594,8 +583,7 @@ public class Eth2NetworkOptions {
         .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled)
-        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs)
-        .quartzSchedulerEnabled(quartzSchedulerEnabled);
+        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs);
     kzgPrecompute.ifPresent(builder::kzgPrecompute);
     dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
         builder::dataColumnSidecarRecoveryMaxDelayMillis);

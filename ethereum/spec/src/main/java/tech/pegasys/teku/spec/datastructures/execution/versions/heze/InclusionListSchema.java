@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.heze;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTION_SCHEMA;
+
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,26 +25,26 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class InclusionListSchema
     extends ContainerSchema4<
         InclusionList, SszUInt64, SszUInt64, SszBytes32, SszList<Transaction>> {
 
-  public InclusionListSchema(final SpecConfigHeze specConfig) {
+  private final SszByteListSchema<Transaction> transactionSchema;
+
+  public InclusionListSchema(final SchemaRegistry schemaRegistry) {
     super(
         "InclusionList",
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("inclusion_list_committee_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(
-            "transactions",
-            SszListSchema.create(
-                new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())));
+        namedSchema("transactions", schemaRegistry.get(TRANSACTIONS_SCHEMA)));
+    this.transactionSchema = schemaRegistry.get(TRANSACTION_SCHEMA);
   }
 
   @Override
@@ -57,8 +60,8 @@ public class InclusionListSchema
     return new InclusionList(this, slot, validatorIndex, inclusionListCommitteeRoot, transactions);
   }
 
-  public TransactionSchema getTransactionSchema() {
-    return (TransactionSchema) getTransactionsSchema().getElementSchema();
+  public SszByteListSchema<Transaction> getTransactionSchema() {
+    return transactionSchema;
   }
 
   @SuppressWarnings("unchecked")

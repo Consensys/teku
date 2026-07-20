@@ -507,6 +507,17 @@ public class P2POptions {
       P2PConfig.DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED;
 
   @Option(
+      names = {"--Xp2p-rpc-snappy-aircompressor-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Use aircompressor-v3 for RPC snappy encoding and decoding",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean rpcSnappyAircompressorEnabled =
+      P2PConfig.DEFAULT_RPC_SNAPPY_AIRCOMPRESSOR_ENABLED;
+
+  @Option(
       names = {"--Xpeer-all-topics-filter-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -773,6 +784,7 @@ public class P2POptions {
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .gossipSnappyAircompressorEnabled(gossipSnappyAircompressorEnabled)
+                  .rpcSnappyAircompressorEnabled(rpcSnappyAircompressorEnabled)
                   .custodyGroupCountOverride(custodyGroupCountOverride)
                   .dasPublishWithholdColumnsEverySlots(dasPublishWithholdColumnsEverySlots)
                   .dasDisableElRecovery(dasDisableElRecovery)

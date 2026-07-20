@@ -63,6 +63,18 @@ public abstract class /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<
     super(containerName, List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/));
   }
 
+  protected /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/(
+      final String containerName,
+      final boolean[] activeFields,
+      /*$$NamedFieldsDeclarations*/ final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1 /*$$*/) {
+
+    super(
+        containerName,
+        activeFields,
+        List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/));
+  }
+
   /*$$TypeGetters*/
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {

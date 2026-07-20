@@ -954,19 +954,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
 
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
     final Optional<Bytes32> maybeBlockDependentRoot =
-        getDependentRoot(block, forkChoiceStrategy, transaction);
+        getShufflingDependentRoot(block, currentEpoch, forkChoiceStrategy);
     final Optional<Bytes32> maybeHeadDependentRoot =
-        getDependentRoot(preImportHead, forkChoiceStrategy, transaction);
+        getShufflingDependentRoot(preImportHead, currentEpoch, forkChoiceStrategy);
     return maybeBlockDependentRoot.isPresent()
         && maybeBlockDependentRoot.equals(maybeHeadDependentRoot);
   }
 
-  private Optional<Bytes32> getDependentRoot(
+  private Optional<Bytes32> getShufflingDependentRoot(
       final SignedBeaconBlock block,
-      final ForkChoiceStrategy forkChoiceStrategy,
-      final StoreTransaction transaction) {
-    final Optional<UInt64> maybeDependentSlot = getDependentSlot(transaction);
+      final UInt64 epoch,
+      final ForkChoiceStrategy forkChoiceStrategy) {
+    final Optional<UInt64> maybeDependentSlot = getShufflingDependentSlot(epoch);
     if (maybeDependentSlot.isEmpty()) {
       return Optional.of(Bytes32.ZERO);
     }
@@ -977,11 +978,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return forkChoiceStrategy.getAncestor(block.getParentRoot(), dependentSlot);
   }
 
-  private Optional<Bytes32> getDependentRoot(
-      final ForkChoiceNode node,
-      final ForkChoiceStrategy forkChoiceStrategy,
-      final StoreTransaction transaction) {
-    final Optional<UInt64> maybeDependentSlot = getDependentSlot(transaction);
+  private Optional<Bytes32> getShufflingDependentRoot(
+      final ForkChoiceNode node, final UInt64 epoch, final ForkChoiceStrategy forkChoiceStrategy) {
+    final Optional<UInt64> maybeDependentSlot = getShufflingDependentSlot(epoch);
     if (maybeDependentSlot.isEmpty()) {
       return Optional.of(Bytes32.ZERO);
     }
@@ -990,13 +989,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .map(ForkChoiceNode::blockRoot);
   }
 
-  private Optional<UInt64> getDependentSlot(final StoreTransaction transaction) {
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
-    final int minSeedLookahead = spec.getSpecConfig(currentEpoch).getMinSeedLookahead();
-    if (currentEpoch.isLessThanOrEqualTo(UInt64.valueOf(minSeedLookahead))) {
+  private Optional<UInt64> getShufflingDependentSlot(final UInt64 epoch) {
+    final int minSeedLookahead = spec.getSpecConfig(epoch).getMinSeedLookahead();
+    if (epoch.isLessThanOrEqualTo(UInt64.valueOf(minSeedLookahead))) {
       return Optional.empty();
     }
-    return Optional.of(spec.computeStartSlotAtEpoch(currentEpoch.minus(minSeedLookahead)).minus(1));
+    return Optional.of(spec.computeStartSlotAtEpoch(epoch.minus(minSeedLookahead)).minus(1));
   }
 
   private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(

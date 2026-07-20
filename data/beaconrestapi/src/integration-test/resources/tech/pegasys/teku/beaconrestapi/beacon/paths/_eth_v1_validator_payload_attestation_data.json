@@ -1,0 +1,92 @@
+{
+  "get" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "producePayloadAttestationData",
+    "summary" : "Produce payload attestation data",
+    "description" : "Requests that the beacon node produce a `PayloadAttestationData`.\n\nThis endpoint is used by PTC validators to obtain the data structure they need to attest to regarding payload presence and blob data availability for a specific slot.\n\nA 503 error must be returned if the beacon node is currently syncing.\n",
+    "parameters" : [ {
+      "name" : "slot",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "The slot for which payload attestation data should be created.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Success response",
+        "headers" : {
+          "Eth-Consensus-Version" : {
+            "description" : "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required" : true,
+            "schema" : {
+              "type" : "string",
+              "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ],
+              "example" : "phase0"
+            }
+          }
+        },
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ProducePayloadAttestationDataResponse"
+            }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid request - the slot is invalid",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "406" : {
+        "description" : "Not acceptable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.",
+        "content" : { }
+      }
+    }
+  }
+}

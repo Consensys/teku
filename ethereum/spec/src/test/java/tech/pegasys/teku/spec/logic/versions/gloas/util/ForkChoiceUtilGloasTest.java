@@ -100,7 +100,10 @@ class ForkChoiceUtilGloasTest {
                 UInt64.ZERO,
                 parentPayloadValue,
                 UInt64.ZERO,
-                dataStructureUtil.randomBlobKzgCommitments(),
+                schemaDefinitions
+                    .getExecutionPayloadBidSchema()
+                    .getBlobKzgCommitmentsSchema()
+                    .createFromElements(dataStructureUtil.randomBlobKzgCommitments().asList()),
                 parentExecutionRequests.hashTreeRoot());
 
     final BeaconState originalState =
@@ -168,10 +171,12 @@ class ForkChoiceUtilGloasTest {
 
   @Test
   void getPayloadDueMillis_shouldUsePayloadDueBps() {
+    // PAYLOAD_DUE_BPS is 5000 (50% of SLOT_DURATION_MS)
     assertThat(forkChoiceUtil.getPayloadDueMillis())
-        .hasValue(spec.getSlotDurationMillis(gloasSlot) * 3 / 4);
+        .hasValue(spec.getSlotDurationMillis(gloasSlot) / 2);
+    // PAYLOAD_ATTESTATION_DUE_BPS remains 7500 (75%), so the payload deadline is now earlier
     assertThat(forkChoiceUtil.getPayloadDueMillis())
-        .isEqualTo(forkChoiceUtil.getPayloadAttestationDueMillis());
+        .isNotEqualTo(forkChoiceUtil.getPayloadAttestationDueMillis());
   }
 
   @Test

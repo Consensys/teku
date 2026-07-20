@@ -60,11 +60,16 @@ public class CreatePayloadAttestationDataRequest extends AbstractTypeDefRequest 
                 (request, response) ->
                     handlePayloadAttestationDataResult(
                         request, response, payloadAttestationDataSchema, jsonResponseHandler));
-    final Map<String, String> urlParams = Map.of("slot", slot.toString());
+    final Map<String, String> queryParams = Map.of("slot", slot.toString());
     final Map<String, String> headers =
         Map.of("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     return get(
-        GET_PAYLOAD_ATTESTATION_DATA, urlParams, emptyMap(), emptyMap(), headers, responseHandler);
+        GET_PAYLOAD_ATTESTATION_DATA,
+        emptyMap(),
+        queryParams,
+        emptyMap(),
+        headers,
+        responseHandler);
   }
 
   private Optional<PayloadAttestationData> handlePayloadAttestationDataResult(

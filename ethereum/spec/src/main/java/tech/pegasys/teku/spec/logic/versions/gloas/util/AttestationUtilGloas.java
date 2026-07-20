@@ -23,8 +23,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
@@ -50,9 +50,9 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
    * signature.
    */
   public boolean isValidIndexedPayloadAttestation(
-      final BeaconState state, final IndexedPayloadAttestation attestation) {
+      final BeaconState state, final IndexedPayloadAttestationLight attestation) {
     // Verify indices are non-empty and sorted
-    final List<UInt64> indices = attestation.getAttestingIndices().asListUnboxed();
+    final List<UInt64> indices = attestation.attestingIndices();
     if (indices.isEmpty() || !Comparators.isInOrder(indices, UInt64::compareTo)) {
       return false;
     }
@@ -65,11 +65,11 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
         beaconStateAccessors.getDomain(
             state.getForkInfo(),
             Domain.PTC_ATTESTER,
-            miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()));
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.getData(), domain);
+            miscHelpers.computeEpochAtSlot(attestation.data().getSlot()));
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.data(), domain);
     return specConfig
         .getBLSSignatureVerifier()
-        .verify(pubKeys, signingRoot, attestation.getSignature());
+        .verify(pubKeys, signingRoot, attestation.signature());
   }
 
   @Override
