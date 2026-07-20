@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
-import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedProgressiveByteListsNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 /// Companion to {@code ExecutionPayloadPackedTransactionsTest}: the heze {@code InclusionList}
 /// transactions list is the identical {@code List[Transaction, MAX_TRANSACTIONS_PER_PAYLOAD]}
-/// shape and also carries the {@code SszPackedByteListsHint}.
+/// shape and also carries the progressive {@code SszPackedByteListsHint}.
 public class InclusionListPackedTransactionsTest {
 
   @Test
@@ -47,7 +47,7 @@ public class InclusionListPackedTransactionsTest {
             UInt64.valueOf(1), UInt64.valueOf(2), Bytes32.ZERO, transactions);
     assertThat(inclusionList.getTransactions()).isNotEmpty();
     assertThat(inclusionList.getTransactions().getBackingNode().get(GIndexUtil.LEFT_CHILD_G_INDEX))
-        .isInstanceOf(SszPackedByteListsNode.class);
+        .isInstanceOf(SszPackedProgressiveByteListsNode.class);
 
     final Bytes serialized = inclusionList.sszSerialize();
     final InclusionList deserialized = inclusionListSchema.sszDeserialize(serialized);
@@ -55,7 +55,7 @@ public class InclusionListPackedTransactionsTest {
     assertThat(deserialized.hashTreeRoot()).isEqualTo(inclusionList.hashTreeRoot());
     assertThat(deserialized.sszSerialize()).isEqualTo(serialized);
     assertThat(deserialized.getTransactions().getBackingNode().get(GIndexUtil.LEFT_CHILD_G_INDEX))
-        .isInstanceOf(SszPackedByteListsNode.class);
+        .isInstanceOf(SszPackedProgressiveByteListsNode.class);
     for (int i = 0; i < transactions.size(); i++) {
       assertThat(deserialized.getTransactions().get(i).getBytes()).isEqualTo(transactions.get(i));
     }

@@ -12,7 +12,7 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttestationElectra"
+        "$ref" : "#/components/schemas/AttestationGloas"
       }
     }
   }

@@ -19,14 +19,19 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -41,6 +46,21 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final MiscHelpersGloas miscHelpers) {
     super(specConfig, schemaDefinitions, beaconStateAccessors, miscHelpers);
+  }
+
+  @Override
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      final Fork fork,
+      final BeaconState state,
+      final IndexedAttestationLight indexedAttestation,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+    final int maxAttestingIndices =
+        specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+    if (indexedAttestation.attestingIndices().size() > maxAttestingIndices) {
+      return SafeFuture.completedFuture(
+          AttestationProcessingResult.invalid("Too many attesting indices"));
+    }
+    return super.isValidIndexedAttestationAsync(fork, state, indexedAttestation, signatureVerifier);
   }
 
   /**
