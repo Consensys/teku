@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
@@ -61,9 +62,12 @@ public class ExecutionPayloadBidSchema
         SszList<SszKZGCommitment>,
         SszBytes32> {
 
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(12);
+
   public ExecutionPayloadBidSchema(final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadBid",
+        ACTIVE_FIELDS,
         namedSchema(PARENT_BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(PARENT_BLOCK_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),

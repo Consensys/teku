@@ -25,8 +25,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -72,6 +74,8 @@ public class BeaconBlockBodySchemaGloasImpl
         ExecutionRequests>
     implements BeaconBlockBodySchemaGloas<BeaconBlockBodyGloasImpl> {
 
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(13);
+
   protected BeaconBlockBodySchemaGloasImpl(
       final String containerName,
       final NamedSchema<SszSignature> randaoRevealSchema,
@@ -89,6 +93,7 @@ public class BeaconBlockBodySchemaGloasImpl
       final NamedSchema<ExecutionRequests> executionRequests) {
     super(
         containerName,
+        ACTIVE_FIELDS,
         randaoRevealSchema,
         eth1DataSchema,
         graffitiSchema,
@@ -115,40 +120,31 @@ public class BeaconBlockBodySchemaGloasImpl
         namedSchema(BlockBodyFields.GRAFFITI, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             BlockBodyFields.PROPOSER_SLASHINGS,
-            SszListSchema.create(
-                ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
+            SszProgressiveListSchema.create(ProposerSlashing.SSZ_SCHEMA)),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(
-                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
-                specConfig.getMaxAttesterSlashingsElectra())),
+            SszProgressiveListSchema.create(
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA))),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
-            SszListSchema.create(
-                schemaRegistry.get(ATTESTATION_SCHEMA), specConfig.getMaxAttestationsElectra())),
-        namedSchema(
-            BlockBodyFields.DEPOSITS,
-            SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
+            SszProgressiveListSchema.create(schemaRegistry.get(ATTESTATION_SCHEMA))),
+        namedSchema(BlockBodyFields.DEPOSITS, SszProgressiveListSchema.create(Deposit.SSZ_SCHEMA)),
         namedSchema(
             BlockBodyFields.VOLUNTARY_EXITS,
-            SszListSchema.create(
-                SignedVoluntaryExit.SSZ_SCHEMA, specConfig.getMaxVoluntaryExits())),
+            SszProgressiveListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA)),
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
-            SszListSchema.create(
-                schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA),
-                specConfig.getMaxBlsToExecutionChanges())),
+            SszProgressiveListSchema.create(
+                schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA))),
         namedSchema(
             BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_BID,
             schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema(
             BlockBodyFields.PAYLOAD_ATTESTATIONS,
-            SszListSchema.create(
-                schemaRegistry.get(PAYLOAD_ATTESTATION_SCHEMA),
-                specConfig.getMaxPayloadAttestations())),
+            SszProgressiveListSchema.create(schemaRegistry.get(PAYLOAD_ATTESTATION_SCHEMA))),
         namedSchema(
             BlockBodyFields.PARENT_EXECUTION_REQUESTS,
             SszSchema.as(ExecutionRequests.class, schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA))));
