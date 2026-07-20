@@ -11,19 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.spec.datastructures.operations;
 
-public enum BesuDockerVersion {
-  STABLE("26.7.0"),
-  DEVELOP("develop");
+import java.util.List;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 
-  private final String version;
-
-  BesuDockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
-  }
-}
+public record IndexedPayloadAttestationLight(
+    List<UInt64> attestingIndices, PayloadAttestationData data, BLSSignature signature) {}

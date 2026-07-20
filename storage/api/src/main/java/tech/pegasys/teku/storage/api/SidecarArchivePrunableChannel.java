@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.storage.api;
 
-public enum BesuDockerVersion {
-  STABLE("26.7.0"),
-  DEVELOP("develop");
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-  private final String version;
-
-  BesuDockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
-  }
+public interface SidecarArchivePrunableChannel extends VoidReturningChannelInterface {
+  void onSidecarArchivePrunableSlot(UInt64 slot);
 }

@@ -277,6 +277,28 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
+  public void shouldNotServeBlobSidecarsIfPeerRequestIsRateLimited() {
+    when(peer.approveRequest()).thenReturn(false);
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    verify(peer, times(1)).approveRequest();
+    verify(peer, never()).approveBlobSidecarsRequest(any(), anyLong());
+    verifyNoInteractions(listener, combinedChainDataClient);
+
+    final long rateLimitedCount =
+        metricsSystem.getLabelledCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "rate_limited");
+
+    assertThat(rateLimitedCount).isOne();
+  }
+
+  @TestTemplate
   public void shouldSendResourceUnavailableIfBlobSidecarsAreNotAvailable() {
 
     // current epoch is 5020
