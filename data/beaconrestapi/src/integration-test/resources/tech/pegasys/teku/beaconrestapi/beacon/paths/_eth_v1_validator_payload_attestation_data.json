@@ -7,7 +7,7 @@
     "parameters" : [ {
       "name" : "slot",
       "required" : true,
-      "in" : "path",
+      "in" : "query",
       "schema" : {
         "type" : "string",
         "description" : "The slot for which payload attestation data should be created.",
@@ -53,16 +53,6 @@
           }
         }
       },
-      "404" : {
-        "description" : "No canonical block has been seen for the requested slot.",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
-      },
       "406" : {
         "description" : "Not acceptable",
         "content" : {
@@ -94,7 +84,7 @@
         }
       },
       "204" : {
-        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "description" : "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.",
         "content" : { }
       }
     }
