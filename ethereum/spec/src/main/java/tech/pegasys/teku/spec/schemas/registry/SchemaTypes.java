@@ -19,20 +19,26 @@ import com.google.common.base.Converter;
 import com.google.common.base.MoreObjects;
 import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
@@ -67,11 +73,17 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
@@ -120,6 +132,8 @@ public class SchemaTypes {
           create("BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
   public static final SchemaId<AttesterSlashingSchema> ATTESTER_SLASHING_SCHEMA =
       create("ATTESTER_SLASHING_SCHEMA");
+  public static final SchemaId<SszUInt64ListSchema<SszUInt64List>> ATTESTING_INDICES_SCHEMA =
+      create("ATTESTING_INDICES_SCHEMA");
   public static final SchemaId<IndexedAttestationSchema> INDEXED_ATTESTATION_SCHEMA =
       create("INDEXED_ATTESTATION_SCHEMA");
 
@@ -166,6 +180,10 @@ public class SchemaTypes {
       create("BUILDER_BID_SCHEMA");
   public static final SchemaId<SignedBuilderBidSchema> SIGNED_BUILDER_BID_SCHEMA =
       create("SIGNED_BUILDER_BID_SCHEMA");
+  public static final SchemaId<SszByteListSchema<Transaction>> TRANSACTION_SCHEMA =
+      create("TRANSACTION_SCHEMA");
+  public static final SchemaId<SszListSchema<Transaction, SszList<Transaction>>>
+      TRANSACTIONS_SCHEMA = create("TRANSACTIONS_SCHEMA");
 
   // Capella
   public static final SchemaId<WithdrawalSchema> WITHDRAWAL_SCHEMA = create("WITHDRAWAL_SCHEMA");
@@ -195,6 +213,8 @@ public class SchemaTypes {
       create("BLOBS_BUNDLE_SCHEMA");
 
   // Electra
+  public static final SchemaId<SszBitlistSchema<SszBitlist>> AGGREGATION_BITS_SCHEMA =
+      create("AGGREGATION_BITS_SCHEMA");
   public static final SchemaId<ExecutionRequestsSchema<? extends ExecutionRequests>>
       EXECUTION_REQUESTS_SCHEMA = create("EXECUTION_REQUESTS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingPartialWithdrawal, ?>>
@@ -208,14 +228,16 @@ public class SchemaTypes {
           create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
   public static final SchemaId<DepositRequestSchema> DEPOSIT_REQUEST_SCHEMA =
       create("DEPOSIT_REQUEST_SCHEMA");
+  public static final SchemaId<SszListSchema<DepositRequest, ?>> DEPOSIT_REQUESTS_SCHEMA =
+      create("DEPOSIT_REQUESTS_SCHEMA");
   public static final SchemaId<WithdrawalRequestSchema> WITHDRAWAL_REQUEST_SCHEMA =
       create("WITHDRAWAL_REQUEST_SCHEMA");
+  public static final SchemaId<SszListSchema<WithdrawalRequest, ?>> WITHDRAWAL_REQUESTS_SCHEMA =
+      create("WITHDRAWAL_REQUESTS_SCHEMA");
   public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
       create("CONSOLIDATION_REQUEST_SCHEMA");
-  public static final SchemaId<BuilderDepositRequestSchema> BUILDER_DEPOSIT_REQUEST_SCHEMA =
-      create("BUILDER_DEPOSIT_REQUEST_SCHEMA");
-  public static final SchemaId<BuilderExitRequestSchema> BUILDER_EXIT_REQUEST_SCHEMA =
-      create("BUILDER_EXIT_REQUEST_SCHEMA");
+  public static final SchemaId<SszListSchema<ConsolidationRequest, ?>>
+      CONSOLIDATION_REQUESTS_SCHEMA = create("CONSOLIDATION_REQUESTS_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
       create("SINGLE_ATTESTATION_SCHEMA");
   // Move this when we decide which fork this schema should be under
@@ -287,6 +309,16 @@ public class SchemaTypes {
   public static final SchemaId<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
       EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<BuilderDepositRequestSchema> BUILDER_DEPOSIT_REQUEST_SCHEMA =
+      create("BUILDER_DEPOSIT_REQUEST_SCHEMA");
+  public static final SchemaId<SszListSchema<BuilderDepositRequest, ?>>
+      BUILDER_DEPOSIT_REQUESTS_SCHEMA = create("BUILDER_DEPOSIT_REQUESTS_SCHEMA");
+  public static final SchemaId<BuilderExitRequestSchema> BUILDER_EXIT_REQUEST_SCHEMA =
+      create("BUILDER_EXIT_REQUEST_SCHEMA");
+  public static final SchemaId<SszListSchema<BuilderExitRequest, ?>> BUILDER_EXIT_REQUESTS_SCHEMA =
+      create("BUILDER_EXIT_REQUESTS_SCHEMA");
+  public static final SchemaId<SszByteListSchema<SszByteList>> BLOCK_ACCESS_LIST_SCHEMA =
+      create("BLOCK_ACCESS_LIST_SCHEMA");
 
   // Heze
   public static final SchemaId<InclusionListSchema> INCLUSION_LIST_SCHEMA =

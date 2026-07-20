@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTEST
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -31,11 +32,13 @@ public class IndexedPayloadAttestationSchema
         IndexedPayloadAttestation, SszUInt64List, PayloadAttestationData, SszSignature> {
 
   private static final SszFieldName ATTESTING_INDICES = () -> "attesting_indices";
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(3);
 
   public IndexedPayloadAttestationSchema(
       final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "IndexedPayloadAttestation",
+        ACTIVE_FIELDS,
         namedSchema(ATTESTING_INDICES, SszUInt64ListSchema.create(specConfig.getPtcSize())),
         namedSchema("data", schemaRegistry.get(PAYLOAD_ATTESTATION_DATA_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));

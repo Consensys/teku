@@ -27,6 +27,8 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.STATE_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTION_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -40,7 +42,6 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -49,9 +50,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadSchemaBellatrix
     extends ContainerSchema14<
@@ -73,8 +74,10 @@ public class ExecutionPayloadSchemaBellatrix
     implements ExecutionPayloadSchema<ExecutionPayloadBellatrix> {
 
   private final ExecutionPayloadBellatrix defaultExecutionPayload;
+  private final SszByteListSchema<Transaction> transactionSchema;
 
-  public ExecutionPayloadSchemaBellatrix(final SpecConfigBellatrix specConfig) {
+  public ExecutionPayloadSchemaBellatrix(
+      final SpecConfigBellatrix specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadBellatrix",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -90,19 +93,15 @@ public class ExecutionPayloadSchemaBellatrix
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(
-            TRANSACTIONS,
-            SszListSchema.create(
-                new TransactionSchema(specConfig),
-                specConfig.getMaxTransactionsPerPayload(),
-                SszSchemaHints.sszPackedByteLists())));
+        namedSchema(TRANSACTIONS, schemaRegistry.get(TRANSACTIONS_SCHEMA)));
 
+    this.transactionSchema = schemaRegistry.get(TRANSACTION_SCHEMA);
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
   @Override
-  public TransactionSchema getTransactionSchema() {
-    return (TransactionSchema) getTransactionsSchema().getElementSchema();
+  public SszByteListSchema<Transaction> getTransactionSchema() {
+    return transactionSchema;
   }
 
   @Override
