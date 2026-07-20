@@ -210,9 +210,34 @@ specrefs:
       - upgrade_lc_update_to_gloas#gloas
 
       # Not implemented: fast confirmation
+      - compute_adversarial_weight#phase0
+      - compute_empty_slot_support_discount#phase0
+      - compute_honest_ffg_support_for_current_target#phase0
+      - compute_safety_threshold#phase0
+      - find_latest_confirmed_descendant#phase0
+      - get_adversarial_weight#phase0
+      - get_ancestor_roots#phase0
+      - get_block_epoch#phase0
+      - get_block_slot#phase0
+      - get_block_support_between_slots#phase0
+      - get_checkpoint_for_block#phase0
       - get_current_balance_source#phase0
+      - get_current_target#phase0
+      - get_current_target_score#phase0
+      - get_equivocation_score#phase0
+      - get_latest_confirmed#phase0
+      - get_latest_message_epoch#phase0
       - get_previous_balance_source#phase0
+      - get_pulled_up_head_state#phase0
+      - get_slot_committee#phase0
+      - get_support_discount#phase0
+      - is_confirmed_chain_safe#phase0
+      - is_one_confirmed#phase0
       - on_fast_confirmation#phase0
+      - will_current_target_be_justified#phase0
+      - will_no_conflicting_checkpoint_be_justified#phase0
+      - get_node_for_root#phase0
+      - get_node_for_root#gloas
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 
