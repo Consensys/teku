@@ -56,6 +56,7 @@ public class PublishSignedExecutionPayloadRequest extends AbstractTypeDefRequest
   public PublishSignedExecutionPayloadResult submit(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    // Blind before sending: the BN unblinds from its getPayload cache; avoids a blob round-trip.
     return submit(signedExecutionPayload.blind(spec), broadcastValidationLevel);
   }
 
