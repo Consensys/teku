@@ -369,6 +369,33 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldNotIncludeParentBlockNumberInPayloadAttributesEventForGloas()
+      throws JsonProcessingException {
+    final UInt64 headExecutionBlockNumber = UInt64.valueOf(123_456L);
+    final ForkChoiceState gloasForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(data.randomBytes32()),
+            data.randomSlot(),
+            headExecutionBlockNumber,
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            data.randomBytes32(),
+            data.randomBytes32(),
+            false);
+
+    final PayloadAttributesEvent gloasPayloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            SpecMilestone.GLOAS, samplePayloadAttributes, gloasForkChoiceState);
+
+    final String result =
+        JsonUtil.serialize(
+            gloasPayloadAttributesEvent.getData(),
+            gloasPayloadAttributesEvent.getJsonTypeDefinition());
+
+    assertThat(result)
+        .doesNotContain(String.format("\"parent_block_number\":\"%s\"", headExecutionBlockNumber));
+  }
+
+  @Test
   void shouldPropagateAttestation() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=attestation");
     manager.registerClient(client1);
