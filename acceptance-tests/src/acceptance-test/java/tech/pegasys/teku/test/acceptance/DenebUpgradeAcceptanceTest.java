@@ -17,93 +17,97 @@ import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
-  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
 
+  private static final String NETWORK_NAME = "swift";
+  public static final Eth1Address WITHDRAWAL_ADDRESS =
+      Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
   void shouldUpgradeToDeneb() throws Exception {
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(60).intValue(); // magic node startup time
-    final int epochDuration = 4 * 2; // 4 slots, 2 seconds each for swift
-    final int shanghaiTime = genesisTime + epochDuration;
-    final Map<String, String> genesisOverrides =
-        Map.of(
-            "shanghaiTime",
-            String.valueOf(shanghaiTime),
-            "cancunTime",
-            String.valueOf(shanghaiTime + epochDuration));
+    final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
+    final int genesisTime =
+        currentTime.intValue() + 45; // genesis in 45 seconds to give node time to start
 
-    BesuNode primaryEL =
-        createBesuNode(
-            BesuDockerVersion.STABLE,
-            config ->
-                config
-                    .withMergeSupport()
-                    .withGenesisFile("besu/mergedGenesis.json")
-                    .withP2pEnabled(true)
-                    .withJwtTokenAuthorization(JWT_FILE),
-            genesisOverrides);
-    primaryEL.start();
+    final BesuNode besuNode = createBesuNode(genesisTime);
+    besuNode.start();
 
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeWithTrustedSetup(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
+    final ValidatorKeystores validatorKeys =
+        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
 
-    primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.DENEB);
+    final InitialStateData initialStateData =
+        createGenesisGenerator()
+            .network(NETWORK_NAME)
+            .withGenesisTime(genesisTime)
+            .genesisDelaySeconds(0)
+            .withAltairEpoch(UInt64.ZERO)
+            .withBellatrixEpoch(UInt64.ZERO)
+            .withCapellaEpoch(UInt64.ZERO)
+            .withDenebEpoch(UInt64.ONE)
+            .withTotalTerminalDifficulty(0)
+            .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
+            .validatorKeys(validatorKeys)
+            .generate();
 
-    BesuNode secondaryEL =
-        createBesuNode(
-            BesuDockerVersion.STABLE,
-            config ->
-                config
-                    .withMergeSupport()
-                    .withGenesisFile("besu/mergedGenesis.json")
-                    .withP2pEnabled(true)
-                    .withJwtTokenAuthorization(JWT_FILE),
-            genesisOverrides);
-    secondaryEL.start();
-    secondaryEL.addPeer(primaryEL);
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
+    tekuNode.start();
 
-    final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
-
-    TekuBeaconNode lateJoiningNode =
-        createTekuBeaconNode(
-            beaconNodeWithTrustedSetup(primaryNodeGenesisTime, secondaryEL)
-                .withPeers(primaryNode)
-                .withInteropValidators(0, 0)
-                .build());
-
-    lateJoiningNode.start();
-    lateJoiningNode.waitUntilInSyncWith(primaryNode);
-
-    primaryNode.waitForNewBlock();
+    tekuNode.waitForMilestone(SpecMilestone.DENEB);
+    tekuNode.waitForNewBlock();
   }
 
-  private static TekuNodeConfigBuilder beaconNodeWithTrustedSetup(
-      final int genesisTime, final BesuNode besuNode) throws Exception {
+  private BesuNode createBesuNode(final int genesisTime) {
+    final int cancunTime =
+        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Cancun on first slot
+    final Map<String, String> genesisOverrides = Map.of("cancunTime", String.valueOf(cancunTime));
+
+    return createBesuNode(
+        BesuDockerVersion.STABLE,
+        config ->
+            config
+                .withMergeSupport()
+                .withGenesisFile("besu/cancunGenesis.json")
+                .withP2pEnabled(true)
+                .withJwtTokenAuthorization(JWT_FILE),
+        genesisOverrides);
+  }
+
+  private static TekuNodeConfig beaconNode(
+      final int genesisTime,
+      final BesuNode besuNode,
+      final InitialStateData initialStateData,
+      final ValidatorKeystores validatorKeys)
+      throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
+        .withInitialState(initialStateData)
+        .withNetwork(NETWORK_NAME)
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
-        .withCapellaEpoch(UInt64.ONE)
+        .withCapellaEpoch(UInt64.ZERO)
+        .withDenebEpoch(UInt64.ONE)
+        .withTotalTerminalDifficulty(0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
-        .withRealNetwork()
         .withJwtSecretFile(JWT_FILE)
-        .withDenebEpoch(UInt64.valueOf(2))
-        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0);
+        .withReadOnlyKeystorePath(validatorKeys)
+        .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
+        .withStartupTargetPeerCount(0)
+        .withRealNetwork()
+        .build();
   }
 }
