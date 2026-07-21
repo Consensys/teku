@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -37,9 +38,12 @@ public class ExecutionPayloadEnvelopeSchema
         SszBytes32,
         SszBytes32> {
 
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(5);
+
   public ExecutionPayloadEnvelopeSchema(final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadEnvelope",
+        ACTIVE_FIELDS,
         namedSchema(
             "payload",
             SszSchema.as(ExecutionPayload.class, schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA))),

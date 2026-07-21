@@ -18,14 +18,16 @@ import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 
-public class BlobKzgCommitmentsSchema
-    extends AbstractSszListSchema<SszKZGCommitment, SszList<SszKZGCommitment>> {
+public class BlobKzgCommitmentsSchemaDeneb
+    extends AbstractSszListSchema<SszKZGCommitment, SszList<SszKZGCommitment>>
+    implements BlobKzgCommitmentsSchema {
 
-  public BlobKzgCommitmentsSchema(final SpecConfigDeneb specConfig) {
+  public BlobKzgCommitmentsSchemaDeneb(final SpecConfigDeneb specConfig) {
     super(SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock());
   }
 
@@ -34,6 +36,7 @@ public class BlobKzgCommitmentsSchema
     return new SszListImpl<>(this, node);
   }
 
+  @Override
   public SszList<SszKZGCommitment> createFromBlobsBundle(final BlobsBundle blobsBundle) {
     return createFromElements(
         blobsBundle.getCommitments().stream().map(SszKZGCommitment::new).toList());
