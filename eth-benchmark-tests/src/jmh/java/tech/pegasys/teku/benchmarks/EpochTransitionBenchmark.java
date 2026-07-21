@@ -45,7 +45,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -56,7 +55,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalt
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -136,7 +134,6 @@ public class EpochTransitionBenchmark {
     chainBuilder = ChainBuilder.create(spec, validatorKeys);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     chainUpdater.initializeGenesis();
-
 
     blockImporter =
         new BlockImporter(
