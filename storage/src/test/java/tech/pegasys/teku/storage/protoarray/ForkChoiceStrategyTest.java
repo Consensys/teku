@@ -1103,6 +1103,19 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     Optional.of(fixture.child().getRoot()))
                 .safeExecutionBlockHash())
         .isEqualTo(childSafeHash);
+
+    // If the supplied confirmed root is no longer in protoarray, use the justified block.
+    assertThat(
+            fixture
+                .strategy()
+                .getForkChoiceState(
+                    Optional.empty(),
+                    currentEpoch,
+                    justifiedCheckpoint,
+                    fixture.finalizedCheckpoint(),
+                    Optional.of(Bytes32.random()))
+                .safeExecutionBlockHash())
+        .isEqualTo(boundarySafeHash);
   }
 
   private StorageSystem initStorageSystem() {

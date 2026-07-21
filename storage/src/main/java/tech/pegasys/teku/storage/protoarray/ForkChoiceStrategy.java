@@ -276,10 +276,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       // hash (the pre-fast-confirmation default). The BASE-node hash already matches the spec per
       // fork: pre-Gloas the confirmed block's execution_payload.block_hash, in Gloas its
       // signed_execution_payload_bid.message.parent_block_hash.
-      final Bytes32 safeBlockRoot =
-          fastConfirmationSafeBlockRoot.orElseGet(justifiedCheckpoint::getRoot);
       final Bytes32 safeExecutionHash =
-          getBaseNodeData(safeBlockRoot)
+          fastConfirmationSafeBlockRoot
+              .flatMap(this::getBaseNodeData)
+              .or(() -> getBaseNodeData(justifiedCheckpoint.getRoot()))
               .map(ProtoNodeData::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
