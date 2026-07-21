@@ -35,6 +35,14 @@ public class KeyStoreFilesLocator {
   private final List<String> colonSeparatedPairs;
   private final String pathSeparator;
 
+  /**
+   * Construct a KeyStoreFilesLocator with the specified parameters.
+   *
+   * @param colonSeparatedPairs A list of keyfile and password files. Each pair should be one of
+   *     &lt;KEY_DIR&gt;:&lt;PASS_DIR&gt; | &lt;KEY_DIR&gt;:&lt;PASS_FILE&gt; |
+   *     &lt;KEY_FILE&gt;:&lt;PASS_FILE&gt;
+   * @param pathSeparator The path separator used in specifying the colonSeparatedPairs
+   */
   public KeyStoreFilesLocator(final List<String> colonSeparatedPairs, final String pathSeparator) {
     this.colonSeparatedPairs = colonSeparatedPairs;
     this.pathSeparator = pathSeparator;
@@ -75,11 +83,12 @@ public class KeyStoreFilesLocator {
           String.format(
               "Invalid configuration. Could not find the password file (%s).", passwordFileName));
     }
-    if (keyFile.isDirectory() != passwordFile.isDirectory()) {
+    if (keyFile.isFile() && passwordFile.isDirectory()) {
       throw new InvalidConfigurationException(
           String.format(
-              "Invalid configuration. --validator-keys entry (%s%s%s) must be both directories or both files",
-              keyFileName, pathSeparator, passwordFileName));
+              "Invalid configuration. Password directory (%s) makes no sense with individual "
+                  + "key file (%s).",
+              passwordFileName, keyFileName));
     }
     if (keyFile.isFile()) {
       pathMap.putIfAbsent(keyFile.toPath(), passwordFile.toPath());
@@ -114,7 +123,7 @@ public class KeyStoreFilesLocator {
   }
 
   private void parseDirectory(
-      final File keyDirectory, final File passwordDirectory, final Map<Path, Path> pathMap) {
+      final File keyDirectory, final File passwordFileOrDirectory, final Map<Path, Path> pathMap) {
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
           .filter(
@@ -128,19 +137,28 @@ public class KeyStoreFilesLocator {
                   return;
                 }
                 final String keystoreName = path.getFileName().toString();
-                final File passwordFile =
-                    passwordDirectory
-                        .toPath()
-                        .resolve(relativeDirectoryPath)
-                        .resolve(
-                            keystoreName.substring(0, keystoreName.length() - ".json".length())
-                                + ".txt")
-                        .toFile();
-                if (!passwordFile.isFile()) {
-                  throw new InvalidConfigurationException(
-                      String.format(
-                          "Invalid configuration. Password file for keystore %s either doesn't exist or isn't readable. Expected to find it at %s",
-                          path.toAbsolutePath(), passwordFile.getAbsolutePath()));
+                final File passwordFile;
+                if (passwordFileOrDirectory.isDirectory()) {
+                  // User specified a password directory, search for the file matching this
+                  // keystore.
+                  passwordFile =
+                      passwordFileOrDirectory
+                          .toPath()
+                          .resolve(relativeDirectoryPath)
+                          .resolve(
+                              keystoreName.substring(0, keystoreName.length() - ".json".length())
+                                  + ".txt")
+                          .toFile();
+                  if (!passwordFile.isFile()) {
+                    throw new InvalidConfigurationException(
+                        String.format(
+                            "Invalid configuration. Password file for keystore %s either doesn't "
+                                + "exist or isn't readable. Expected to find it at %s",
+                            path.toAbsolutePath(), passwordFile.getAbsolutePath()));
+                  }
+                } else {
+                  // User specified a single password file to use for all keystores.
+                  passwordFile = passwordFileOrDirectory;
                 }
                 pathMap.putIfAbsent(path, passwordFile.toPath());
               });

@@ -137,12 +137,11 @@ public class KeyStoreFilesLocatorTest {
   }
 
   @Test
-  public void shouldDetectMissingPasswordFileWhenDirectoryIsPresent(@TempDir final Path tempDir)
+  public void shouldDetectPasswordDirectoryUsedWithKeyFile(@TempDir final Path tempDir)
       throws IOException {
-    createFolders(tempDir, Path.of("key"), Path.of("pass", "a.txt"));
-    createFiles(tempDir, Path.of("key", "a"));
-    final String p1 =
-        generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
+    createFolders(tempDir, Path.of("key"), Path.of("pass"));
+    createFiles(tempDir, Path.of("key", "a.json"));
+    final String p1 = generatePath(tempDir, PATH_SEP, List.of("key", "a.json"), List.of("pass"));
     KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThatThrownBy(locator::parse).isInstanceOf(InvalidConfigurationException.class);
@@ -209,6 +208,28 @@ public class KeyStoreFilesLocatorTest {
         .containsExactlyInAnyOrder(
             tuple(
                 tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
+  }
+
+  @Test
+  public void shouldHandleKeyDirectoryWithPasswordFile(@TempDir final Path tempDir)
+      throws IOException {
+    createFolders(tempDir, "key");
+    createFiles(
+        tempDir, Path.of("key", "a.json"), Path.of("key", "b.json"), Path.of("password.txt"));
+    final String colonSeparatedValue = generatePath(tempDir, PATH_SEP, "key", "password.txt");
+    KeyStoreFilesLocator locator =
+        new KeyStoreFilesLocator(List.of(colonSeparatedValue), PATH_SEP);
+
+    assertThat(locator.parse())
+        .containsExactlyInAnyOrder(
+            tuple(
+                tempDir,
+                Path.of("key", "a.json").toString(),
+                Path.of("password.txt").toString()),
+            tuple(
+                tempDir,
+                Path.of("key", "b.json").toString(),
+                Path.of("password.txt").toString()));
   }
 
   private void createFolders(final Path tempDir, final String... paths) {

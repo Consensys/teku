@@ -31,11 +31,13 @@ public class ValidatorKeysOptions {
 
   @CommandLine.Option(
       names = {"--validator-keys"},
-      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE>",
+      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE> | <KEY_DIR>:<PASS_FILE>",
       description =
           "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
               + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
-              + "and the file containing the password for it is <PASS_FILE>.",
+              + "and the file containing the password for it is <PASS_FILE>.\n"
+              + "<KEY_DIR>:<PASS_FILE> will find <KEY_DIR>/**.json, "
+              + "and use <PASS_FILE> as the password for all keystores.",
       split = ",",
       arity = "1..*")
   private List<String> validatorKeys = new ArrayList<>();
