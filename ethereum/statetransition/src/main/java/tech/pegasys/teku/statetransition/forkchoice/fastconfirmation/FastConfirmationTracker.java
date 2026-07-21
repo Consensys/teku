@@ -266,11 +266,11 @@ public class FastConfirmationTracker {
     lastProcessedSlot.set(input.slot());
 
     final Bytes32 confirmedRoot = updatedStore.confirmedRoot();
-    final UInt64 confirmedSlot =
-        store.getForkChoiceStrategy().blockSlot(confirmedRoot).orElse(UInt64.ZERO);
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+    final UInt64 confirmedSlot = forkChoiceStrategy.blockSlot(confirmedRoot).orElse(UInt64.ZERO);
     latestConfirmedSlot.set(confirmedSlot.intValue());
-    if (!isAncestor(input.slot(), confirmedRoot, currentStore.confirmedRoot())
-        && !isAncestor(input.slot(), currentStore.confirmedRoot(), confirmedRoot)) {
+    if (isConfirmedRootReorg(
+        input.slot(), forkChoiceStrategy, currentStore.confirmedRoot(), confirmedRoot)) {
       reorgsCounter.inc();
     }
 
@@ -315,20 +315,48 @@ public class FastConfirmationTracker {
     final Bytes32 confirmedRoot =
         new FastConfirmationCalculator(spec, fcrStore, maybeStates.get(), slot)
             .getLatestConfirmed();
+    recordConfirmationOutcome(fcrStore, confirmedRoot, finalizedRoot);
+
+    return fcrStore.withConfirmedRoot(confirmedRoot);
+  }
+
+  void recordConfirmationOutcome(
+      final FastConfirmationStore fcrStore,
+      final Bytes32 confirmedRoot,
+      final Bytes32 finalizedRoot) {
     if (confirmedRoot.equals(finalizedRoot)) {
       fallbacksCounter.inc();
     } else if (confirmedRoot.equals(fcrStore.currentEpochObservedJustifiedCheckpoint().getRoot())) {
       restartsCounter.inc();
     }
+  }
 
-    return fcrStore.withConfirmedRoot(confirmedRoot);
+  /**
+   * Returns whether changing between two confirmed block roots switches chains. Advancing to a
+   * descendant or falling back to an ancestor is not a reorg.
+   *
+   * <p>Confirmed roots are resolved through {@code get_node_for_root}, which deliberately produces
+   * PENDING nodes under Gloas. Unlike an attestation latest message, a confirmed root has no vote
+   * slot or payload hint with which to call {@code get_supported_node}.
+   */
+  boolean isConfirmedRootReorg(
+      final UInt64 slot,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 previousConfirmedRoot,
+      final Bytes32 confirmedRoot) {
+    if (confirmedRoot.equals(previousConfirmedRoot)) {
+      return false;
+    }
+    return !isAncestor(slot, forkChoiceStrategy, confirmedRoot, previousConfirmedRoot)
+        && !isAncestor(slot, forkChoiceStrategy, previousConfirmedRoot, confirmedRoot);
   }
 
   private boolean isAncestor(
-      final UInt64 slot, final Bytes32 descendantRoot, final Bytes32 ancestorRoot) {
+      final UInt64 slot,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 descendantRoot,
+      final Bytes32 ancestorRoot) {
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(slot).getForkChoiceUtil();
-    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
-        fastConfirmationStore.get().store().getForkChoiceStrategy();
     return forkChoiceUtil.isAncestor(
         forkChoiceStrategy,
         ForkChoiceNode.createBase(descendantRoot),

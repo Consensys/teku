@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -156,6 +157,58 @@ class FastConfirmationTrackerTest {
   }
 
   @Test
+  void shouldIncrementFallbackCounterWhenStatesAreUnavailable() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+
+    applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), Bytes32.random());
+
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_fallbacks_total"))
+        .isEqualTo(1);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_restarts_total"))
+        .isZero();
+  }
+
+  @Test
+  void shouldIncrementRestartCounterForObservedJustifiedRoot() {
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.empty(), eventChannel, metricsSystem, timeProvider);
+    final Bytes32 observedJustifiedRoot = Bytes32.random();
+    final Checkpoint observedJustifiedCheckpoint =
+        new Checkpoint(UInt64.valueOf(13), observedJustifiedRoot);
+    final FastConfirmationStore fastConfirmationStore =
+        new FastConfirmationStore(
+            store,
+            finalizedCheckpoint.getRoot(),
+            finalizedCheckpoint,
+            observedJustifiedCheckpoint,
+            finalizedCheckpoint,
+            finalizedCheckpoint.getRoot(),
+            finalizedCheckpoint.getRoot());
+
+    tracker.recordConfirmationOutcome(
+        fastConfirmationStore, observedJustifiedRoot, finalizedCheckpoint.getRoot());
+
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_restarts_total"))
+        .isEqualTo(1);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_fallbacks_total"))
+        .isZero();
+  }
+
+  @Test
   void shouldSkipStaleOrDuplicateSlotUpdates() {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
@@ -187,6 +240,46 @@ class FastConfirmationTrackerTest {
     applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), headC);
     assertThat(currentSlotHead(tracker)).isEqualTo(headB);
     assertThat(previousSlotHead(tracker)).isEqualTo(headA);
+  }
+
+  @Test
+  void shouldCompareGloasConfirmedRootsAsPendingNodes() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            gloasSpec, Optional.empty(), eventChannel, metricsSystem, timeProvider);
+    final Bytes32 previousConfirmedRoot = Bytes32.random();
+    final Bytes32 confirmedRoot = Bytes32.random();
+    final UInt64 previousConfirmedSlot = UInt64.valueOf(4);
+    final UInt64 currentSlot = UInt64.valueOf(6);
+    when(forkChoice.blockSlot(previousConfirmedRoot))
+        .thenReturn(Optional.of(previousConfirmedSlot));
+    when(forkChoice.getAncestorNode(
+            ForkChoiceNode.createBase(confirmedRoot), previousConfirmedSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(previousConfirmedRoot)));
+
+    assertThat(
+            tracker.isConfirmedRootReorg(
+                currentSlot, forkChoice, previousConfirmedRoot, confirmedRoot))
+        .isFalse();
+    verify(forkChoice)
+        .getAncestorNode(ForkChoiceNode.createBase(confirmedRoot), previousConfirmedSlot);
+  }
+
+  @Test
+  void shouldReportConfirmedRootReorgWhenRootsAreOnDifferentChains() {
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.empty(), eventChannel, metricsSystem, timeProvider);
+    final Bytes32 previousConfirmedRoot = Bytes32.random();
+    final Bytes32 confirmedRoot = Bytes32.random();
+    when(forkChoice.blockSlot(previousConfirmedRoot)).thenReturn(Optional.of(UInt64.valueOf(4)));
+    when(forkChoice.blockSlot(confirmedRoot)).thenReturn(Optional.of(UInt64.valueOf(5)));
+
+    assertThat(
+            tracker.isConfirmedRootReorg(
+                UInt64.valueOf(6), forkChoice, previousConfirmedRoot, confirmedRoot))
+        .isTrue();
   }
 
   private void applyUpdate(
