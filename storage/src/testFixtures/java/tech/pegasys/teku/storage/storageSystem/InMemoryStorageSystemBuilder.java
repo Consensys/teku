@@ -79,7 +79,7 @@ public class InMemoryStorageSystemBuilder {
   public StorageSystem build() {
     final Database database =
         switch (version) {
-          case LEVELDB_TREE ->
+          case LEVELDB_TREE, ROCKSDB_TREE ->
               createLevelDbTreeDatabase(); // Leveldb only varies by db type which doesn't apply to
           // in-memory
           case LEVELDB2, V6 ->
