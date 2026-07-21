@@ -129,6 +129,9 @@ public class PrettyPrintCommand implements Callable<Integer> {
     } else if (input.getName().endsWith(".ssz_snappy")) {
       final byte[] data = IOUtils.toByteArray(Files.newInputStream(input.toPath()));
       return new ByteArrayInputStream(Snappy.uncompress(data));
+    } else if (input.getName().endsWith(".ssz")) {
+      final byte[] data = IOUtils.toByteArray(Files.newInputStream(input.toPath()));
+      return new ByteArrayInputStream(data);
     } else if (input.getName().endsWith(".hex")) {
       final String str = Files.readString(input.toPath()).trim();
       final byte[] data = Bytes.fromHexString(str).toArrayUnsafe();

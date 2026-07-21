@@ -1406,6 +1406,10 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public Optional<Integer> getNumberOfCustodyGroups() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getNumberOfCustodyGroups);
+  }
+
   public int getNumberOfCustodyGroups(final UInt64 slot) {
     return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
   }
@@ -1417,11 +1421,14 @@ public class Spec {
 
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (getSpecConfigFulu().isEmpty()) {
+    final Optional<SpecConfigFulu> maybeSpecConfigFulu = getSpecConfigFulu();
+    if (maybeSpecConfigFulu.isEmpty()) {
       return false;
     }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
+    final SpecConfigFulu specConfigFulu = maybeSpecConfigFulu.get();
+    if (epoch.isLessThan(specConfigFulu.getFuluForkEpoch())) {
+      return false;
+    }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());

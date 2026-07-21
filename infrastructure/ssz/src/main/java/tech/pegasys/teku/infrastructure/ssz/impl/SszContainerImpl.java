@@ -58,6 +58,11 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
   }
 
   @Override
+  public boolean isWritableSupported() {
+    return true;
+  }
+
+  @Override
   protected int sizeImpl() {
     return (int) this.getSchema().getMaxLength();
   }

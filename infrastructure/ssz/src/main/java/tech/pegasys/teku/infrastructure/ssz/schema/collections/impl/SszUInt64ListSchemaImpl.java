@@ -17,6 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszUInt64ListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,6 +28,10 @@ public class SszUInt64ListSchemaImpl<SszListT extends SszUInt64List>
 
   public SszUInt64ListSchemaImpl(final long maxLength) {
     super(SszPrimitiveSchemas.UINT64_SCHEMA, maxLength);
+  }
+
+  public SszUInt64ListSchemaImpl(final long maxLength, final SszSchemaHints hints) {
+    super(SszPrimitiveSchemas.UINT64_SCHEMA, maxLength, hints);
   }
 
   @Override

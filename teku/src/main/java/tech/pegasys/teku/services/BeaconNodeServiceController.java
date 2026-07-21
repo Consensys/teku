@@ -21,7 +21,6 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
-import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
@@ -55,9 +54,6 @@ public class BeaconNodeServiceController extends ServiceController {
     final BeaconChainService beaconChainService =
         new BeaconChainService(serviceConfig, tekuConfig.beaconChain());
     services.add(beaconChainService);
-    // Loads the finalized deposit-tree snapshot and seeds the deposit provider. Started after the
-    // beacon chain service so the deposit provider is already subscribed to the Eth1EventsChannel.
-    services.add(new PowchainService(serviceConfig, tekuConfig.powchain()));
     final NetworkConfig networkConfig = tekuConfig.network();
     services.add(
         new NatService(

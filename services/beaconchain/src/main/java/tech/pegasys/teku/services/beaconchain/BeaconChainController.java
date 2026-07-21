@@ -115,7 +115,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
-import tech.pegasys.teku.services.timer.QuartzTimerService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
@@ -183,6 +182,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructorImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
@@ -270,6 +270,7 @@ import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -609,10 +610,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService =
-        beaconConfig.eth2NetworkConfig().isQuartzSchedulerEnabled()
-            ? new QuartzTimerService(this::onTick)
-            : new TimerService(this::onTick);
+    timerService = new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -648,6 +646,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     singleBlockProviderResolver,
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
+                    blockRoot -> dasSamplerBasic.getSlotForBlockRoot(blockRoot),
                     executionPayloadProvider,
                     blindedExecutionPayloadProvider,
                     storageQueryChannel,
@@ -2041,9 +2040,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SuperNodeSupplier isSuperNodeSupplier =
         new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
-    // TODO: Implementation + subscription
-    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
-        DataColumnSidecarArchiveReconstructor.NOOP;
+    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      dataColumnSidecarArchiveReconstructor =
+          new DataColumnSidecarArchiveReconstructorImpl(
+              throttlingCombinedChainDataClient.orElse(combinedChainDataClient),
+              asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 2),
+              isSuperNodeSupplier,
+              spec,
+              beaconConfig.eth2NetworkConfig().getDataColumnSidecarExtensionRetentionEpochs(),
+              eventChannels.getPublisher(SidecarArchivePrunableChannel.class),
+              metricsSystem,
+              timeProvider);
+      eventChannels.subscribe(
+          FinalizedCheckpointChannel.class, dataColumnSidecarArchiveReconstructor);
+    } else {
+      dataColumnSidecarArchiveReconstructor = DataColumnSidecarArchiveReconstructor.NOOP;
+    }
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()

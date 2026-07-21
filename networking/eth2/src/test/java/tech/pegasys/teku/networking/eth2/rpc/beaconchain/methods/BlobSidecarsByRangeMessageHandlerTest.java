@@ -147,6 +147,19 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BlobSidecarsByRangeRequestMessage(
+                UInt64.MAX_VALUE, UInt64.valueOf(10), maxBlobsPerBlock));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+  }
+
+  @TestTemplate
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(
@@ -261,6 +274,28 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     assertThat(rateLimitedCount).isOne();
 
     verifyNoInteractions(listener);
+  }
+
+  @TestTemplate
+  public void shouldNotServeBlobSidecarsIfPeerRequestIsRateLimited() {
+    when(peer.approveRequest()).thenReturn(false);
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    verify(peer, times(1)).approveRequest();
+    verify(peer, never()).approveBlobSidecarsRequest(any(), anyLong());
+    verifyNoInteractions(listener, combinedChainDataClient);
+
+    final long rateLimitedCount =
+        metricsSystem.getLabelledCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "rate_limited");
+
+    assertThat(rateLimitedCount).isOne();
   }
 
   @TestTemplate

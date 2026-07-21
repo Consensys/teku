@@ -20,6 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
@@ -38,9 +41,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
@@ -98,6 +104,58 @@ class DefaultExecutionPayloadManagerTest {
     final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
     when(executionPayloadGossipValidator.isPayloadSeen(beaconBlockRoot)).thenReturn(true);
     assertThat(executionPayloadManager.isExecutionPayloadRecentlySeen(beaconBlockRoot)).isTrue();
+  }
+
+  @Test
+  public void getParentExecutionRequests_shouldReturnImportedRequestsForFullParent() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final SignedBlindedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedBlindedExecutionPayloadEnvelope(slot.longValue());
+    when(recentChainData.retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot))
+        .thenReturn(completedFuture(Optional.of(parentExecutionPayload)));
+
+    final SafeFuture<ExecutionRequests> result =
+        executionPayloadManager.getParentExecutionRequestsForBlock(
+            slot, parentRoot, PAYLOAD_STATUS_FULL);
+
+    assertThat(result).isCompletedWithValue(parentExecutionPayload.getExecutionRequests());
+    verify(recentChainData).retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot);
+  }
+
+  @Test
+  public void getParentExecutionRequestsForBlock_shouldReturnDefaultRequestsForNonFullParent() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final ExecutionRequests defaultExecutionRequests = defaultExecutionRequests(slot);
+
+    assertThat(
+            executionPayloadManager.getParentExecutionRequestsForBlock(
+                slot, parentRoot, PAYLOAD_STATUS_EMPTY))
+        .isCompletedWithValue(defaultExecutionRequests);
+    assertThat(
+            executionPayloadManager.getParentExecutionRequestsForBlock(
+                slot, parentRoot, PAYLOAD_STATUS_PENDING))
+        .isCompletedWithValue(defaultExecutionRequests);
+    verify(recentChainData, never()).retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot);
+  }
+
+  @Test
+  public void getParentExecutionRequestsForBlock_shouldThrowForFullParentWhenPayloadIsMissing() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    when(recentChainData.retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    final SafeFuture<ExecutionRequests> result =
+        executionPayloadManager.getParentExecutionRequestsForBlock(
+            slot, parentRoot, PAYLOAD_STATUS_FULL);
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(IllegalStateException.class)
+        .hasMessageContaining(parentRoot.toString())
+        .hasMessageContaining(slot.toString());
+    verify(recentChainData).retrieveSignedBlindedExecutionPayloadByBlockRoot(parentRoot);
   }
 
   @Test
@@ -361,6 +419,12 @@ class DefaultExecutionPayloadManagerTest {
   private SignedExecutionPayloadEnvelope signedExecutionPayloadForBlock(
       final SignedBeaconBlock block) {
     return dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
+  }
+
+  private ExecutionRequests defaultExecutionRequests(final UInt64 slot) {
+    return SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+        .getExecutionRequestsSchema()
+        .getDefault();
   }
 
   private void assertExecutionPayloadSeenBeforeDeadline(
