@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -62,6 +64,10 @@ class FastConfirmationCalculatorTest {
     // calculator.
     when(store.getVoteSnapshot())
         .thenReturn(VoteSnapshot.create(UInt64.ZERO, new VoteTracker[] {VoteTracker.DEFAULT}));
+    when(forkChoice.getSupportedNode(any(), any(), any(), anyBoolean()))
+        .thenAnswer(
+            invocation ->
+                Optional.of(ForkChoiceNode.createBase(invocation.<Bytes32>getArgument(1))));
   }
 
   @Test
@@ -207,6 +213,42 @@ class FastConfirmationCalculatorTest {
     final UInt64 expected =
         effectiveBalance(balanceSource, 0).plus(effectiveBalance(balanceSource, 4));
     assertThat(calculator.getAttestationScore(chain.get(3), balanceSource)).isEqualTo(expected);
+  }
+
+  @Test
+  void shouldResolveGloasVoteToSupportedNodeBeforeCheckingAncestry() {
+    buildLinearChain(6);
+    final BeaconState balanceSource = gloasGenesisState();
+    final Bytes32 votedRoot = chain.get(5);
+    final UInt64 voteSlot = UInt64.valueOf(6);
+    final ForkChoiceNode supportedNode =
+        new ForkChoiceNode(votedRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    0,
+                    new VoteTracker(
+                        Bytes32.ZERO,
+                        votedRoot,
+                        false,
+                        false,
+                        voteSlot,
+                        true,
+                        UInt64.ZERO,
+                        false))));
+    when(forkChoice.getSupportedNode(voteSlot, votedRoot, voteSlot, true))
+        .thenReturn(Optional.of(supportedNode));
+    // The FULL path does not descend from chain[3], while the base PENDING path configured by
+    // buildLinearChain does. Scoring the root alone would incorrectly include this vote.
+    when(forkChoice.getAncestorNode(supportedNode, UInt64.valueOf(3)))
+        .thenReturn(
+            Optional.of(
+                new ForkChoiceNode(Bytes32.random(), ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)));
+    final FastConfirmationCalculator calculator =
+        gloasCalculator(balanceSource, votedRoot, voteSlot.longValue());
+
+    assertThat(calculator.getAttestationScore(chain.get(3), balanceSource)).isEqualTo(UInt64.ZERO);
   }
 
   @Test

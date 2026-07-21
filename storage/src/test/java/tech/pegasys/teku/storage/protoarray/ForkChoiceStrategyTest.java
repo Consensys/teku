@@ -207,6 +207,21 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void getSupportedNode_shouldResolveGloasVoteVariant() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final UInt64 blockSlot = fixture.block().getSlot();
+    final UInt64 laterSlot = blockSlot.plus(ONE);
+
+    assertThat(fixture.strategy().getSupportedNode(laterSlot, blockRoot, blockSlot, true))
+        .contains(ForkChoiceNode.createBase(blockRoot));
+    assertThat(fixture.strategy().getSupportedNode(laterSlot, blockRoot, laterSlot, false))
+        .contains(ForkChoiceNode.createEmpty(blockRoot));
+    assertThat(fixture.strategy().getSupportedNode(laterSlot, blockRoot, laterSlot, true))
+        .contains(ForkChoiceNode.createFull(blockRoot));
+  }
+
+  @Test
   void shouldBuildOnFull_shouldReturnFalseWhenPtcVotesPayloadUntimely() {
     final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
     final Bytes32 blockRoot = fixture.block().getRoot();

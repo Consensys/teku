@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,8 +50,8 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
  * <p>It reads block metadata and ancestry from the protoarray fork-choice strategy and derives the
  * source-state helpers from the {@link FastConfirmationStates} loaded for the slot. Ancestry checks
  * delegate to the fork-choice {@code is_ancestor} via {@link ForkChoiceUtil}, so Gloas
- * payload-status semantics are preserved; block roots are lifted to the spec's {@code
- * ForkChoiceNode} through {@code get_node_for_root}.
+ * payload-status semantics are preserved. Candidate block roots are lifted through {@code
+ * get_node_for_root}, while latest messages are resolved through {@code get_supported_node}.
  */
 class FastConfirmationCalculator {
 
@@ -155,11 +156,13 @@ class FastConfirmationCalculator {
   /**
    * Implements {@code get_attestation_score}: the total effective balance (per {@code
    * balanceSource}) of unslashed, active, non-equivocating validators whose latest vote supports a
-   * descendant of {@code nodeRoot}.
+   * descendant of {@code nodeRoot}. Latest messages are resolved to fork-choice nodes before
+   * checking ancestry, preserving Gloas PENDING, EMPTY, and FULL vote semantics.
    */
   UInt64 getAttestationScore(final Bytes32 nodeRoot, final BeaconState balanceSource) {
     final UInt64 balanceSourceEpoch = spec.getCurrentEpoch(balanceSource);
     final SszList<Validator> validators = balanceSource.getValidators();
+    final ForkChoiceNode node = getNodeForRoot(nodeRoot);
     UInt64 score = UInt64.ZERO;
     for (final int index : spec.getActiveValidatorIndices(balanceSource, balanceSourceEpoch)) {
       final Validator validator = validators.get(index);
@@ -172,9 +175,23 @@ class FastConfirmationCalculator {
       }
       final Bytes32 votedRoot = vote.getNextRoot();
       // A zero root means the validator is not in store.latest_messages.
-      if (!votedRoot.isZero() && isAncestor(votedRoot, nodeRoot)) {
-        score = score.plus(validator.getEffectiveBalance());
+      if (votedRoot.isZero()) {
+        continue;
       }
+
+      final Optional<ForkChoiceNode> maybeVotedNode =
+          forkChoice.getSupportedNode(
+              currentSlot, votedRoot, vote.getNextSlot(), vote.isNextFullPayloadHint());
+      if (maybeVotedNode.isEmpty()) {
+        continue;
+      }
+
+      final ForkChoiceNode votedNode = maybeVotedNode.orElseThrow();
+      if (!isAncestor(votedNode, node)) {
+        continue;
+      }
+
+      score = score.plus(validator.getEffectiveBalance());
     }
     return score;
   }
@@ -658,8 +675,12 @@ class FastConfirmationCalculator {
    * Gloas payload-status semantics are honoured.
    */
   boolean isAncestor(final Bytes32 descendantRoot, final Bytes32 ancestorRoot) {
-    return forkChoiceUtil.isAncestor(
-        forkChoice, getNodeForRoot(descendantRoot), getNodeForRoot(ancestorRoot));
+    return isAncestor(getNodeForRoot(descendantRoot), getNodeForRoot(ancestorRoot));
+  }
+
+  private boolean isAncestor(
+      final ForkChoiceNode descendantNode, final ForkChoiceNode ancestorNode) {
+    return forkChoiceUtil.isAncestor(forkChoice, descendantNode, ancestorNode);
   }
 
   /**
