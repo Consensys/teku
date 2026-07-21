@@ -217,19 +217,13 @@ public class KeyStoreFilesLocatorTest {
     createFiles(
         tempDir, Path.of("key", "a.json"), Path.of("key", "b.json"), Path.of("password.txt"));
     final String colonSeparatedValue = generatePath(tempDir, PATH_SEP, "key", "password.txt");
-    KeyStoreFilesLocator locator =
-        new KeyStoreFilesLocator(List.of(colonSeparatedValue), PATH_SEP);
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(colonSeparatedValue), PATH_SEP);
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
+            tuple(tempDir, Path.of("key", "a.json").toString(), Path.of("password.txt").toString()),
             tuple(
-                tempDir,
-                Path.of("key", "a.json").toString(),
-                Path.of("password.txt").toString()),
-            tuple(
-                tempDir,
-                Path.of("key", "b.json").toString(),
-                Path.of("password.txt").toString()));
+                tempDir, Path.of("key", "b.json").toString(), Path.of("password.txt").toString()));
   }
 
   private void createFolders(final Path tempDir, final String... paths) {
