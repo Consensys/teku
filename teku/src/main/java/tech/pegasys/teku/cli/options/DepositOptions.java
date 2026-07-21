@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.util.ArrayList;
-import java.util.List;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
@@ -22,33 +20,6 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 
 public class DepositOptions {
-
-  @Option(
-      names = {"--eth1-endpoints", "--eth1-endpoint"},
-      paramLabel = "<NETWORK>",
-      description = "URLs for Eth1 nodes.",
-      split = ",",
-      arity = "1..*")
-  private List<String> eth1Endpoints = new ArrayList<>();
-
-  @Option(
-      names = {"--eth1-deposit-contract-max-request-size"},
-      paramLabel = "<INTEGER>",
-      description =
-          "Maximum number of blocks to request deposit contract event logs for in a single request.",
-      arity = "1")
-  private int eth1LogsMaxBlockRange = PowchainConfiguration.DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
-
-  @Option(
-      names = {"--Xeth1-missing-deposits-event-logging-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable logging an event on each slot whenever deposits are missing",
-      hidden = true,
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean useMissingDepositEventLogging =
-      PowchainConfiguration.DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
 
   @CommandLine.Option(
       names = {"--Xdeposit-snapshot"},
@@ -68,27 +39,11 @@ public class DepositOptions {
       fallbackValue = "true")
   private boolean depositSnapshotEnabled = PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
 
-  @Option(
-      names = {"--Xdeposit-contract-logs-syncing-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description =
-          "Enable syncing of deposit contract logs from the Execution Engine node. This is required for block production.",
-      hidden = true,
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean depositContractLogsSyncingEnabled =
-      PowchainConfiguration.DEFAULT_DEPOSIT_CONTRACT_LOGS_SYNCING_ENABLED;
-
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
         b -> {
-          b.eth1Endpoints(eth1Endpoints);
-          b.eth1LogsMaxBlockRange(eth1LogsMaxBlockRange);
-          b.useMissingDepositEventLogging(useMissingDepositEventLogging);
           b.customDepositSnapshotPath(depositSnapshotPath);
           b.depositSnapshotEnabled(depositSnapshotEnabled);
-          b.depositContractLogsSyncingEnabled(depositContractLogsSyncingEnabled);
         });
   }
 }
