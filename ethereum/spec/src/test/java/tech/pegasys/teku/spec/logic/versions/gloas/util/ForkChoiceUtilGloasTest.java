@@ -100,7 +100,10 @@ class ForkChoiceUtilGloasTest {
                 UInt64.ZERO,
                 parentPayloadValue,
                 UInt64.ZERO,
-                dataStructureUtil.randomBlobKzgCommitments(),
+                schemaDefinitions
+                    .getExecutionPayloadBidSchema()
+                    .getBlobKzgCommitmentsSchema()
+                    .createFromElements(dataStructureUtil.randomBlobKzgCommitments().asList()),
                 parentExecutionRequests.hashTreeRoot());
 
     final BeaconState originalState =

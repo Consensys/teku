@@ -5185,7 +5185,7 @@
 - name: get_indexed_payload_attestation#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
-      search: public IndexedPayloadAttestation getIndexedPayloadAttestation(
+      search: public IndexedPayloadAttestationLight getIndexedPayloadAttestation(
   spec: |
     <spec fn="get_indexed_payload_attestation" fork="gloas" hash="0e516ffb">
     def get_indexed_payload_attestation(
