@@ -189,7 +189,6 @@ public class NetworkConfig {
     return wireLogsConfig;
   }
 
-  @SuppressWarnings("AddressSelection")
   private String resolveAnyLocalAddress(final String ipAddress) {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
