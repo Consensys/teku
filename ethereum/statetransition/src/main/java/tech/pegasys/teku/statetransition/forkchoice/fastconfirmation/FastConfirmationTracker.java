@@ -197,6 +197,27 @@ public class FastConfirmationTracker {
   }
 
   /**
+   * Whether the head is too far behind for {@code get_latest_confirmed} to do anything but revert
+   * to finalized: {@code true} when the head block is two or more epochs behind the current epoch,
+   * i.e. {@code head_epoch + 1 < current_epoch}. In that case the confirmed block (an ancestor of
+   * the head) is more than one epoch old (reverts), the observed-justified checkpoint is at most
+   * the head's epoch (no restart), and the advance gate (confirmed within one epoch of current)
+   * cannot pass — so the result is always the finalized block. One epoch of lag is tolerated so the
+   * rule keeps confirming through slow-following and non-finality. Treats a head not in fork choice
+   * as stale.
+   */
+  private boolean isHeadStale(
+      final UInt64 slot, final Bytes32 headRoot, final FastConfirmationStore store) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+    return store
+        .store()
+        .getForkChoiceStrategy()
+        .blockSlot(headRoot)
+        .map(headSlot -> spec.computeEpochAtSlot(headSlot).plus(1).isLessThan(currentEpoch))
+        .orElse(true);
+  }
+
+  /**
    * Upper bound for a single per-slot update: half a slot. The confirmation computation should
    * finish well within a slot; this only guards against a hung or very slow state retrieval
    * monopolizing the dedicated single-thread runner. Applied via the default scheduler so it fires
@@ -238,6 +259,23 @@ public class FastConfirmationTracker {
 
   private void runFastConfirmation(
       final FastConfirmationInput input, final FastConfirmationStore currentStore) {
+    final ReadOnlyStore store = currentStore.store();
+
+    // Stale-head short-circuit (during sync, or whenever the head stops progressing): when the head
+    // is two or more epochs behind the current epoch, get_latest_confirmed could only revert to the
+    // finalized block, so skip the whole update this slot — no source-state loads, no
+    // update_fast_confirmation_variables (including its greatest-unrealized-justified scan over all
+    // blocks), no event, no metrics churn. The store is left untouched and re-establishes itself on
+    // the first non-stale slot; the FCU safe hash falls back to the justified block while this (now
+    // stale) confirmed root is no longer in fork choice (see
+    // ForkChoiceStrategy#getForkChoiceState).
+    if (isHeadStale(input.slot(), input.headRoot(), currentStore)) {
+      LOG.debug(
+          "Fast confirmation update for slot {}: head is more than one epoch behind; skipping",
+          input.slot());
+      return;
+    }
+
     // Derived off the fork-choice thread. The greatest unrealized justified checkpoint is only
     // needed on the last slot of an epoch (when the next slot starts a new epoch); otherwise it is
     // left at the finalized checkpoint and unused by update_fast_confirmation_variables.
@@ -245,7 +283,6 @@ public class FastConfirmationTracker {
         FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, input.slot());
     final boolean nextSlotIsEpochStart =
         FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, input.slot().plus(1));
-    final ReadOnlyStore store = currentStore.store();
     final Checkpoint greatestUnrealizedJustifiedCheckpoint =
         nextSlotIsEpochStart
             ? FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store)

@@ -15,7 +15,9 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -131,6 +133,53 @@ class FastConfirmationTrackerTest {
         tracker.getFastConfirmationStore().orElseThrow();
     assertThat(fastConfirmationStore.previousSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
     assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(headRoot);
+  }
+
+  @Test
+  void shouldSkipUpdateEntirelyWhenHeadIsStale() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+    final Bytes32 headRoot = Bytes32.random();
+
+    // The head block slot is stubbed at 12 (epoch 1, minimal SLOTS_PER_EPOCH == 8). Slot 24 is
+    // epoch 3, so the head is two epochs behind: get_latest_confirmed could only revert to
+    // finalized, so the whole update is skipped this slot.
+    applyUpdate(tracker, asyncRunner, UInt64.valueOf(24), headRoot);
+
+    final FastConfirmationStore fastConfirmationStore =
+        tracker.getFastConfirmationStore().orElseThrow();
+    // Nothing happens: the store is untouched (confirmed root and slot heads at their initial
+    // values), no source states are loaded, no event is emitted, and no fallback is counted.
+    assertThat(fastConfirmationStore.confirmedRoot()).isEqualTo(finalizedCheckpoint.getRoot());
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
+    verify(store, never()).retrieveCheckpointState(any());
+    verify(store, never()).retrieveBlockState(any(Bytes32.class));
+    verify(eventChannel, never()).onFastConfirmation(any(), any(), any());
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_fallbacks_total"))
+        .isZero();
+  }
+
+  @Test
+  void shouldRunFullConfirmationWhenHeadIsWithinOneEpoch() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+
+    // Head block slot 12 (epoch 1); slot 17 is epoch 2 — one epoch behind, which is tolerated, so
+    // the full rule runs and the source states are loaded (here empty, so it falls back).
+    applyUpdate(tracker, asyncRunner, UInt64.valueOf(17), Bytes32.random());
+
+    verify(store, atLeastOnce()).retrieveCheckpointState(any());
+    verify(eventChannel).onFastConfirmation(any(), any(), any());
   }
 
   @Test
