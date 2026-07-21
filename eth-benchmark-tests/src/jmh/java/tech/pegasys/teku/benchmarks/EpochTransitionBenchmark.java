@@ -45,9 +45,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
@@ -60,8 +62,11 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -77,8 +82,9 @@ public class EpochTransitionBenchmark {
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
 
-  @SuppressWarnings("deprecation")
-  BeaconChainUtil localChain;
+  StorageSystem storageSystem;
+  ChainUpdater chainUpdater;
+  ChainBuilder chainBuilder;
 
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
@@ -96,9 +102,7 @@ public class EpochTransitionBenchmark {
   int validatorsCount = 400000;
 
   @Setup(Level.Trial)
-  @SuppressWarnings("deprecation")
-  public void init() throws Exception {
-
+  public void init() {
     spec =
         TestSpecFactory.createMainnetAltair(
             specConfigBuilder -> specConfigBuilder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
@@ -128,8 +132,11 @@ public class EpochTransitionBenchmark {
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             metricsSystem);
-    localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
-    localChain.initializeStorage();
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+    chainUpdater.initializeGenesis();
+
 
     blockImporter =
         new BlockImporter(
@@ -145,7 +152,7 @@ public class EpochTransitionBenchmark {
 
     for (int i = 0; i < 63; i++) {
       SignedBeaconBlock block = blockIterator.next();
-      localChain.setSlot(block.getSlot());
+      chainUpdater.setCurrentSlot(block.getSlot());
       lastResult = blockImporter.importBlock(block).join();
     }
 
