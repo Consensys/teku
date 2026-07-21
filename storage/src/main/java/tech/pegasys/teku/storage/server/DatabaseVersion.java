@@ -24,6 +24,7 @@ public enum DatabaseVersion {
   V4("4"),
   V5("5"),
   V6("6"),
+  ROCKSDB_TREE("rocksdb-tree"),
   LEVELDB1("leveldb1"),
   LEVELDB2("leveldb2"),
   LEVELDB_TREE("leveldb-tree");

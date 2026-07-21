@@ -165,9 +165,18 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
       }
+      case ROCKSDB_TREE -> {
+        warnArchiveFrequencyIgnoredForTreeDatabase();
+        database = createRocksDbTreeDatabase();
+        LOG.info(
+            "Created RocksDB tree Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+      }
       case LEVELDB_TREE -> {
-        database = createLevelDbTreeDatabase();
         warnLevelDbDeprecation();
+        warnArchiveFrequencyIgnoredForTreeDatabase();
+        database = createLevelDbTreeDatabase();
         LOG.info(
             "Created leveldb_tree Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -183,6 +192,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private void warnLevelDbDeprecation() {
     LOG.warn(
         "NOTE: Leveldb support has been deprecated and may be removed in a future release. Please refer to https://docs.teku.consensys.io/how-to/migrate-database to migrate.");
+  }
+
+  private void warnArchiveFrequencyIgnoredForTreeDatabase() {
+    if (stateStorageFrequency != StorageConfiguration.DEFAULT_STORAGE_FREQUENCY) {
+      LOG.warn(
+          "--data-storage-archive-frequency ({}) has no effect on tree database formats. "
+              + "States are stored at the hot-state-persistence rate (approximately one per epoch). "
+              + "Use --Xhot-state-persistence-frequency to control storage frequency.",
+          stateStorageFrequency);
+    }
   }
 
   public StateStorageMode getStateStorageMode() {
@@ -304,6 +323,22 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          spec);
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
+    }
+  }
+
+  private Database createRocksDbTreeDatabase() {
+    try {
+      final boolean blobDbEnabled = resolveAndPersistBlobDbMode();
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
+      return RocksDbDatabaseFactory.createV6Tree(
+          metricsSystem,
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()).withBlobDbEnabled(blobDbEnabled),
+          stateStorageMode,
+          storeNonCanonicalBlocks,
+          maxKnownNodeCacheSize,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

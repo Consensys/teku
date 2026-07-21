@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.storage.server.DatabaseVersion.LEVELDB_TREE;
+import static tech.pegasys.teku.storage.server.DatabaseVersion.ROCKSDB_TREE;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.collect.Streams;
@@ -165,11 +166,11 @@ public class DatabaseTest {
       throws IOException {
     // TODO refer to https://github.com/Consensys/teku/issues/10978
     assumeFalse(
-        databaseVersion == LEVELDB_TREE
+        (databaseVersion == LEVELDB_TREE || databaseVersion == ROCKSDB_TREE)
             && spec.getGenesisSpecConfig()
                 .getMilestone()
                 .isGreaterThanOrEqualTo(SpecMilestone.GLOAS),
-        "Progressive SSZ containers do not support LEVELDB_TREE storage");
+        "Progressive SSZ containers do not support tree storage");
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.chainBuilder = ChainBuilder.create(spec, validatorKeys);
