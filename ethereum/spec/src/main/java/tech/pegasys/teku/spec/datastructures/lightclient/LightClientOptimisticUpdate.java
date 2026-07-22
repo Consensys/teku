@@ -32,4 +32,16 @@ public class LightClientOptimisticUpdate
       final LightClientOptimisticUpdateSchema schema, final TreeNode node) {
     super(schema, node);
   }
+
+  public LightClientHeader getAttestedHeader() {
+    return getField0();
+  }
+
+  public SyncAggregate getSyncAggregate() {
+    return getField1();
+  }
+
+  public SszUInt64 getSignatureSlot() {
+    return getField2();
+  }
 }

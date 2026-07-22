@@ -22,7 +22,7 @@ public class LightClientConstants {
   public static final int CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA = 86;
   public static final int CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS = 2945;
   public static final int NEXT_SYNC_COMMITTEE_GINDEX = 55;
-  public static final int NEXT_SYNC_COMMITTEE_GINDEX_ELECTRA = 86;
+  public static final int NEXT_SYNC_COMMITTEE_GINDEX_ELECTRA = 87;
   public static final int NEXT_SYNC_COMMITTEE_GINDEX_GLOAS = 2946;
   public static final int EXECUTION_PAYLOAD_GINDEX = 25;
   public static final int EXECUTION_BLOCK_HASH_GINDEX_GLOAS = 2856;

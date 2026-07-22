@@ -54,4 +54,32 @@ public class LightClientUpdate
   protected LightClientUpdate(final LightClientUpdateSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
+
+  public LightClientHeader getAttestedHeader() {
+    return getField0();
+  }
+
+  public SyncCommittee getNextSyncCommittee() {
+    return getField1();
+  }
+
+  public SszBytes32Vector getNextSyncCommitteeBranch() {
+    return getField2();
+  }
+
+  public LightClientHeader getFinalizedHeader() {
+    return getField3();
+  }
+
+  public SszBytes32Vector getFinalityBranch() {
+    return getField4();
+  }
+
+  public SyncAggregate getSyncAggregate() {
+    return getField5();
+  }
+
+  public SszUInt64 getSignatureSlot() {
+    return getField6();
+  }
 }

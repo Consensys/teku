@@ -41,4 +41,24 @@ public class LightClientFinalityUpdate
       final LightClientFinalityUpdateSchema schema, final TreeNode node) {
     super(schema, node);
   }
+
+  public LightClientHeader getAttestedHeader() {
+    return getField0();
+  }
+
+  public LightClientHeader getFinalizedHeader() {
+    return getField1();
+  }
+
+  public SszBytes32Vector getFinalityBranch() {
+    return getField2();
+  }
+
+  public SyncAggregate getSyncAggregate() {
+    return getField3();
+  }
+
+  public SszUInt64 getSignatureSlot() {
+    return getField4();
+  }
 }
