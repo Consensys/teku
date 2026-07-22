@@ -2,7 +2,6 @@ dependencies {
 	api 'io.consensys.tuweni:tuweni-bytes'
 	api 'io.consensys.tuweni:tuweni-units'
 
-	implementation 'org.web3j:utils'
 	implementation 'org.apache.logging.log4j:log4j-core'
 	compileOnly 'com.github.oshi:oshi-core'
 
