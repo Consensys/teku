@@ -35,7 +35,9 @@ public final class FastConfirmationRuleUtil {
    * {@code CONFIRMATION_BYZANTINE_THRESHOLD}: assumed maximum percentage of Byzantine validators.
    * The spec exposes it as configuration with a maximum of {@code 25}; both the mainnet and minimal
    * presets set it to {@code 25}, so it is treated here as a fixed constant to avoid touching
-   * {@code SpecConfig}.
+   * {@code SpecConfig}. If a future network ever deviates from {@code 25} this constant must be
+   * updated manually (or promoted into {@code SpecConfig}), otherwise the confirmation rule will
+   * silently use the wrong threshold.
    */
   static final int CONFIRMATION_BYZANTINE_THRESHOLD = 25;
 
@@ -148,38 +150,27 @@ public final class FastConfirmationRuleUtil {
       final Checkpoint greatestUnrealizedJustifiedCheckpoint,
       final boolean currentSlotIsEpochStart,
       final boolean nextSlotIsEpochStart) {
+    // Shift the current slot head into the previous slot and record the new current slot head.
     FastConfirmationStore updatedStore =
-        new FastConfirmationStore(
-            fcrStore.store(),
-            fcrStore.confirmedRoot(),
-            fcrStore.previousEpochObservedJustifiedCheckpoint(),
-            fcrStore.currentEpochObservedJustifiedCheckpoint(),
-            fcrStore.previousEpochGreatestUnrealizedCheckpoint(),
-            fcrStore.currentSlotHead(),
-            currentSlotHead);
+        fcrStore
+            .withPreviousSlotHead(fcrStore.currentSlotHead())
+            .withCurrentSlotHead(currentSlotHead);
 
     if (nextSlotIsEpochStart) {
       updatedStore =
-          new FastConfirmationStore(
-              updatedStore.store(),
-              updatedStore.confirmedRoot(),
-              updatedStore.previousEpochObservedJustifiedCheckpoint(),
-              updatedStore.currentEpochObservedJustifiedCheckpoint(),
-              greatestUnrealizedJustifiedCheckpoint,
-              updatedStore.previousSlotHead(),
-              updatedStore.currentSlotHead());
+          updatedStore.withPreviousEpochGreatestUnrealizedCheckpoint(
+              greatestUnrealizedJustifiedCheckpoint);
     }
 
     if (currentSlotIsEpochStart) {
+      // Rotate the observed justified checkpoints: current becomes previous, and the greatest
+      // unrealized checkpoint from the previous epoch becomes the current observed value.
       updatedStore =
-          new FastConfirmationStore(
-              updatedStore.store(),
-              updatedStore.confirmedRoot(),
-              updatedStore.currentEpochObservedJustifiedCheckpoint(),
-              updatedStore.previousEpochGreatestUnrealizedCheckpoint(),
-              updatedStore.previousEpochGreatestUnrealizedCheckpoint(),
-              updatedStore.previousSlotHead(),
-              updatedStore.currentSlotHead());
+          updatedStore
+              .withPreviousEpochObservedJustifiedCheckpoint(
+                  updatedStore.currentEpochObservedJustifiedCheckpoint())
+              .withCurrentEpochObservedJustifiedCheckpoint(
+                  updatedStore.previousEpochGreatestUnrealizedCheckpoint());
     }
 
     return updatedStore;

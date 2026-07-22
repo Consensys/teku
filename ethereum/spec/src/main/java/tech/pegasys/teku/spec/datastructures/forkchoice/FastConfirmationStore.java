@@ -48,4 +48,62 @@ public record FastConfirmationStore(
         previousSlotHead,
         currentSlotHead);
   }
+
+  public FastConfirmationStore withPreviousEpochObservedJustifiedCheckpoint(
+      final Checkpoint previousEpochObservedJustifiedCheckpoint) {
+    return new FastConfirmationStore(
+        store,
+        confirmedRoot,
+        previousEpochObservedJustifiedCheckpoint,
+        currentEpochObservedJustifiedCheckpoint,
+        previousEpochGreatestUnrealizedCheckpoint,
+        previousSlotHead,
+        currentSlotHead);
+  }
+
+  public FastConfirmationStore withCurrentEpochObservedJustifiedCheckpoint(
+      final Checkpoint currentEpochObservedJustifiedCheckpoint) {
+    return new FastConfirmationStore(
+        store,
+        confirmedRoot,
+        previousEpochObservedJustifiedCheckpoint,
+        currentEpochObservedJustifiedCheckpoint,
+        previousEpochGreatestUnrealizedCheckpoint,
+        previousSlotHead,
+        currentSlotHead);
+  }
+
+  public FastConfirmationStore withPreviousEpochGreatestUnrealizedCheckpoint(
+      final Checkpoint previousEpochGreatestUnrealizedCheckpoint) {
+    return new FastConfirmationStore(
+        store,
+        confirmedRoot,
+        previousEpochObservedJustifiedCheckpoint,
+        currentEpochObservedJustifiedCheckpoint,
+        previousEpochGreatestUnrealizedCheckpoint,
+        previousSlotHead,
+        currentSlotHead);
+  }
+
+  public FastConfirmationStore withPreviousSlotHead(final Bytes32 previousSlotHead) {
+    return new FastConfirmationStore(
+        store,
+        confirmedRoot,
+        previousEpochObservedJustifiedCheckpoint,
+        currentEpochObservedJustifiedCheckpoint,
+        previousEpochGreatestUnrealizedCheckpoint,
+        previousSlotHead,
+        currentSlotHead);
+  }
+
+  public FastConfirmationStore withCurrentSlotHead(final Bytes32 currentSlotHead) {
+    return new FastConfirmationStore(
+        store,
+        confirmedRoot,
+        previousEpochObservedJustifiedCheckpoint,
+        currentEpochObservedJustifiedCheckpoint,
+        previousEpochGreatestUnrealizedCheckpoint,
+        previousSlotHead,
+        currentSlotHead);
+  }
 }
