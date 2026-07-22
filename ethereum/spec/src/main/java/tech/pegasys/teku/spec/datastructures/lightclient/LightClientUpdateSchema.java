@@ -96,6 +96,10 @@ public class LightClientUpdateSchema
     return new LightClientUpdate(this, node);
   }
 
+  public SyncCommittee.SyncCommitteeSchema getNextSyncCommitteeSchema() {
+    return (SyncCommittee.SyncCommitteeSchema) getChildSchema(1);
+  }
+
   @SuppressWarnings("unchecked")
   public SszBytes32VectorSchema<SszBytes32Vector> getSyncCommitteeBranchSchema() {
     return (SszBytes32VectorSchema<SszBytes32Vector>) getChildSchema(2);

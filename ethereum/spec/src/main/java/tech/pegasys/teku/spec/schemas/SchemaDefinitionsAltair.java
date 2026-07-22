@@ -111,8 +111,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.lightClientHeaderSchema = schemaRegistry.get(LIGHT_CLIENT_HEADER_SCHEMA);
     this.lightClientBootstrapSchema = schemaRegistry.get(LIGHT_CLIENT_BOOTSTRAP_SCHEMA);
     this.lightClientUpdateSchema = schemaRegistry.get(LIGHT_CLIENT_UPDATE_SCHEMA);
-    this.lightClientUpdateResponseSchema =
-        new LightClientUpdateResponseSchema(specConfig, schemaRegistry);
+    this.lightClientUpdateResponseSchema = new LightClientUpdateResponseSchema(schemaRegistry);
     this.lightClientFinalityUpdateSchema = schemaRegistry.get(LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA);
     this.lightClientOptimisticUpdateSchema =
         schemaRegistry.get(LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA);

@@ -167,7 +167,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
-        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+        new LightClientUtil(
+            beaconStateAccessors, syncCommitteeUtil, schemaDefinitions, miscHelpers, config);
     final WithdrawalsHelpersCapella withdrawalsHelpers =
         new WithdrawalsHelpersCapella(
             schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);

@@ -163,7 +163,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
-        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+        new LightClientUtil(
+            beaconStateAccessors, syncCommitteeUtil, schemaDefinitions, miscHelpers, config);
     final BlockProcessorBellatrix blockProcessor =
         new BlockProcessorBellatrix(
             config,
