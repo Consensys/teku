@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.PAYLOAD_BUILDER_VERSION;
 import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
 
 import java.util.List;
@@ -73,6 +74,9 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
     builderDepositRequests.forEach(
         request -> {
           // process_builder_deposit_request
+          if (!predicatesGloas.isBuilderWithdrawalCredential(request.getWithdrawalCredentials())) {
+            return;
+          }
           final BLSPublicKey pubkey = request.getPubkey();
           beaconStateAccessorsGloas
               .getBuilderIndex(state, pubkey)
@@ -81,16 +85,19 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                     final SszMutableList<Builder> builders =
                         MutableBeaconStateGloas.required(state).getBuilders();
                     final Builder builder = builders.get(builderIndex);
-                    //  Increase balance by deposit amount
-                    Builder modifiedBuilder =
-                        builder.copyWithNewBalance(builder.getBalance().plus(request.getAmount()));
-                    // If exited, reset the withdrawable epoch
-                    if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+                    Builder modifiedBuilder = builder;
+                    // If exited and swept, reset the withdrawable epoch
+                    if (!builder.getWithdrawableEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)
+                        && builder.getBalance().isZero()) {
                       final UInt64 epoch = beaconStateAccessorsGloas.getCurrentEpoch(state);
                       modifiedBuilder =
                           modifiedBuilder.copyWithNewWithdrawableEpoch(
                               epoch.plus(specConfigGloas.getMinBuilderWithdrawabilityDelay()));
                     }
+                    // Increase balance by deposit amount
+                    modifiedBuilder =
+                        modifiedBuilder.copyWithNewBalance(
+                            modifiedBuilder.getBalance().plus(request.getAmount()));
                     builders.set(builderIndex, modifiedBuilder);
                   },
                   () -> {
@@ -98,7 +105,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorF
                       beaconStateMutatorsGloas.addBuilderToRegistry(
                           state,
                           pubkey,
-                          request.getWithdrawalCredentials().get(0),
+                          PAYLOAD_BUILDER_VERSION,
                           getExecutionAddressUnchecked(request.getWithdrawalCredentials()),
                           request.getAmount(),
                           state.getSlot());

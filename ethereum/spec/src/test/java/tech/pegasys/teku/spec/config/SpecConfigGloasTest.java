@@ -39,7 +39,41 @@ public class SpecConfigGloasTest {
     final SpecConfigGloas config =
         SpecConfigLoader.loadConfig("minimal").specConfig().toVersionGloas().orElseThrow();
 
-    assertThat(config.getPayloadDueBps()).isEqualTo(7500);
+    assertThat(config.getPayloadDueBps()).isEqualTo(5000);
+  }
+
+  @Test
+  public void shouldLoadGloasNetworkMaxSizes() {
+    final SpecConfigGloas config =
+        SpecConfigLoader.loadConfig("minimal").specConfig().toVersionGloas().orElseThrow();
+
+    assertThat(config.getMaxSignedAggregateAndProofSize()).isEqualTo(16829);
+    assertThat(config.getMaxAttesterSlashingSize()).isEqualTo(2097616);
+    assertThat(config.getMaxDataColumnSidecarSize()).isEqualTo(8585272);
+    assertThat(config.getMaxSignedExecutionPayloadBidSize()).isEqualTo(196932);
+  }
+
+  @Test
+  public void shouldExposeProgrammaticGloasNetworkMaxSizeOverrides() {
+    final SpecConfigGloas config =
+        SpecConfigLoader.loadConfig(
+                "minimal",
+                builder ->
+                    builder.gloasBuilder(
+                        gloasBuilder ->
+                            gloasBuilder
+                                .maxSignedAggregateAndProofSize(1)
+                                .maxAttesterSlashingSize(2)
+                                .maxDataColumnSidecarSize(3)
+                                .maxSignedExecutionPayloadBidSize(4)))
+            .specConfig()
+            .toVersionGloas()
+            .orElseThrow();
+
+    assertThat(config.getMaxSignedAggregateAndProofSize()).isEqualTo(1);
+    assertThat(config.getMaxAttesterSlashingSize()).isEqualTo(2);
+    assertThat(config.getMaxDataColumnSidecarSize()).isEqualTo(3);
+    assertThat(config.getMaxSignedExecutionPayloadBidSize()).isEqualTo(4);
   }
 
   @Test
@@ -107,6 +141,10 @@ public class SpecConfigGloasTest {
         dataStructureUtil.randomPositiveInt(12000),
         dataStructureUtil.randomPositiveInt(65536),
         dataStructureUtil.randomPositiveInt(65536),
-        dataStructureUtil.randomUInt64()) {};
+        dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomPositiveInt(1_000_000),
+        dataStructureUtil.randomPositiveInt(1_000_000),
+        dataStructureUtil.randomPositiveInt(10_000_000),
+        dataStructureUtil.randomPositiveInt(1_000_000)) {};
   }
 }

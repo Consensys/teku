@@ -706,6 +706,26 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void rpcSnappyAircompressorEnabled_defaultIsFalse() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.p2p().isRpcSnappyAircompressorEnabled()).isFalse();
+  }
+
+  @Test
+  public void rpcSnappyAircompressorEnabled_shouldNotRequireAValue() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-rpc-snappy-aircompressor-enabled");
+    assertThat(config.p2p().isRpcSnappyAircompressorEnabled()).isTrue();
+  }
+
+  @Test
+  public void rpcSnappyAircompressorEnabled_false() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-rpc-snappy-aircompressor-enabled=false");
+    assertThat(config.p2p().isRpcSnappyAircompressorEnabled()).isFalse();
+  }
+
+  @Test
   public void defaultPortsAreSetCorrectly() {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
 

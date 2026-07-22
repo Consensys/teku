@@ -561,7 +561,9 @@ public class DefaultExecutionPayloadBidManagerTest {
             slot,
             value,
             UInt64.ZERO,
-            dataStructureUtil.randomBlobKzgCommitments(),
+            schema
+                .getBlobKzgCommitmentsSchema()
+                .createFromElements(dataStructureUtil.randomBlobKzgCommitments().asList()),
             dataStructureUtil.randomBytes32());
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

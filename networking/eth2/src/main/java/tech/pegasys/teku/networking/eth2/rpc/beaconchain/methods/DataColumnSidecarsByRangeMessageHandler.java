@@ -302,6 +302,10 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     SafeFuture<Optional<DataColumnSidecar>> loadNextDataColumnSidecar() {
       if (dataColumnSidecarKeysIterator.isEmpty()) {
+        // Intentionally cap the stored identifiers scanned before expanding pruned supernode
+        // columns. A valid sparse request can ask for one reconstructed column across many
+        // slots, and fully serving it may require one expensive reconstruction per slot.
+        // Reconstruction by range is therefore best-effort within the normal sidecar cap.
         return combinedChainDataClient
             .getDataColumnIdentifiers(startSlot, endSlot, maxRequestDataColumnSidecars)
             .thenCompose(

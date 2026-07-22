@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
+import java.time.Duration;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -65,6 +66,21 @@ class PeerRequiredLocalMessageHandlerTest {
       handler.handleError(error, callback, "thingy");
 
       assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+    verify(callback).completeWithUnexpectedError(error);
+  }
+
+  @Test
+  void shouldHandleStreamTimeoutAsExpectedStreamClose() {
+    final Throwable error = new RpcTimeoutException("Timed out writing response", Duration.ZERO);
+
+    try (final LogCaptor logCaptor =
+        LogCaptor.forClass(PeerRequiredLocalMessageHandler.class, Level.TRACE)) {
+      handler.handleError(error, callback, "thingy");
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+      assertThat(logCaptor.getTraceLogs())
+          .anySatisfy(log -> assertThat(log).contains("Stream closed while sending requested"));
     }
     verify(callback).completeWithUnexpectedError(error);
   }

@@ -27,6 +27,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.STATE_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadHeaderSchemaBellatrix
     extends ContainerSchema14<
@@ -69,7 +71,8 @@ public class ExecutionPayloadHeaderSchemaBellatrix
   private final ExecutionPayloadHeaderBellatrix defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderBellatrix executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaBellatrix(final SpecConfigBellatrix specConfig) {
+  public ExecutionPayloadHeaderSchemaBellatrix(
+      final SpecConfigBellatrix specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadHeaderBellatrix",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -87,9 +90,8 @@ public class ExecutionPayloadHeaderSchemaBellatrix
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
-    final ExecutionPayloadBellatrix defaultExecutionPayload =
-        new ExecutionPayloadSchemaBellatrix(specConfig).getDefault();
-
+    final ExecutionPayload defaultExecutionPayload =
+        schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).toVersionBellatrixRequired().getDefault();
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
 
