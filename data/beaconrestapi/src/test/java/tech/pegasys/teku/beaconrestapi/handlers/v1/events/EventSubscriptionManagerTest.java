@@ -147,7 +147,7 @@ public class EventSubscriptionManagerTest {
           new Data(
               samplePayloadAttributes.proposalSlot(),
               samplePayloadAttributes.parentBeaconBlock().blockRoot(),
-              data.randomUInt64(),
+              Optional.empty(),
               data.randomBytes32(),
               samplePayloadAttributes.proposerIndex(),
               new PayloadAttributes(
@@ -161,7 +161,7 @@ public class EventSubscriptionManagerTest {
           new ForkChoiceState(
               ForkChoiceNode.createBase(data.randomBytes32()),
               data.randomSlot(),
-              samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+              data.randomUInt64(),
               samplePayloadAttributesData.data().parentExecutionBlockHash(),
               data.randomBytes32(),
               data.randomBytes32(),
@@ -339,6 +339,60 @@ public class EventSubscriptionManagerTest {
             samplePayloadAttributesData.milestone(),
             samplePayloadAttributes,
             forkChoiceUpdatedResultNotification.forkChoiceState()));
+  }
+
+  @Test
+  void shouldIncludeParentBlockNumberInPayloadAttributesEventForDeneb()
+      throws JsonProcessingException {
+    final UInt64 denebHeadExecutionBlockNumber = UInt64.valueOf(123_456L);
+    final ForkChoiceState denebForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(data.randomBytes32()),
+            data.randomSlot(),
+            denebHeadExecutionBlockNumber,
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            data.randomBytes32(),
+            data.randomBytes32(),
+            false);
+
+    final PayloadAttributesEvent denebPayloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            SpecMilestone.DENEB, samplePayloadAttributes, denebForkChoiceState);
+
+    final String result =
+        JsonUtil.serialize(
+            denebPayloadAttributesEvent.getData(),
+            denebPayloadAttributesEvent.getJsonTypeDefinition());
+
+    assertThat(result)
+        .contains(String.format("\"parent_block_number\":\"%s\"", denebHeadExecutionBlockNumber));
+  }
+
+  @Test
+  void shouldNotIncludeParentBlockNumberInPayloadAttributesEventForGloas()
+      throws JsonProcessingException {
+    final UInt64 headExecutionBlockNumber = UInt64.valueOf(123_456L);
+    final ForkChoiceState gloasForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(data.randomBytes32()),
+            data.randomSlot(),
+            headExecutionBlockNumber,
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            data.randomBytes32(),
+            data.randomBytes32(),
+            false);
+
+    final PayloadAttributesEvent gloasPayloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            SpecMilestone.GLOAS, samplePayloadAttributes, gloasForkChoiceState);
+
+    final String result =
+        JsonUtil.serialize(
+            gloasPayloadAttributesEvent.getData(),
+            gloasPayloadAttributesEvent.getJsonTypeDefinition());
+
+    assertThat(result)
+        .doesNotContain(String.format("\"parent_block_number\":\"%s\"", headExecutionBlockNumber));
   }
 
   @Test
