@@ -51,15 +51,11 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator;
 
 public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int HUNDRED_PERCENT = 100;
-
-  public static final UInt64 BUILDER_BOOST_FACTOR_MAX_PROFIT = UInt64.valueOf(HUNDRED_PERCENT);
-  public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_EXECUTION = UInt64.ZERO;
-  public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_BUILDER = UInt64.MAX_VALUE;
 
   private final AtomicBoolean latestBuilderAvailability;
   private final ExecutionLayerManagerImpl executionLayerManager;
@@ -243,50 +239,19 @@ public class ExecutionBuilderModule {
       final Optional<UInt64> requestedBuilderBoostFactor,
       final UInt256 localBlockValue,
       final UInt256 builderBidValue) {
-    final UInt64 actualBuilderBoostFactor;
-    final boolean isRequestedBuilderBoostFactor;
-
-    // we give precedence to the requestedBuilderBoostFactor over the BN configured
-    // builderBidCompareFactor
-
-    if (requestedBuilderBoostFactor.isPresent()) {
-      actualBuilderBoostFactor = requestedBuilderBoostFactor.get();
-      isRequestedBuilderBoostFactor = true;
-    } else {
-      actualBuilderBoostFactor = builderBidCompareFactor;
-      isRequestedBuilderBoostFactor = false;
-    }
-
-    final boolean localPayloadValueWon =
-        isLocalPayloadValueWinning(builderBidValue, localBlockValue, actualBuilderBoostFactor);
+    final UInt64 builderBoostFactor = requestedBuilderBoostFactor.orElse(builderBidCompareFactor);
+    final boolean localValueWins =
+        BuilderBoostFactorEvaluator.isLocalValueWinning(
+            localBlockValue, builderBidValue, builderBoostFactor);
 
     logPayloadValueComparisonDetails(
-        localPayloadValueWon,
+        localValueWins,
         builderBidValue,
         localBlockValue,
-        isRequestedBuilderBoostFactor,
-        actualBuilderBoostFactor);
+        requestedBuilderBoostFactor.isPresent(),
+        builderBoostFactor);
 
-    return localPayloadValueWon;
-  }
-
-  /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
-  private boolean isLocalPayloadValueWinning(
-      final UInt256 builderBidValue,
-      final UInt256 localPayloadValue,
-      final UInt64 builderBoostFactor) {
-
-    if (builderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
-      return true;
-    }
-
-    if (builderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
-      return false;
-    }
-
-    return builderBidValue
-        .multiply(UInt256.valueOf(builderBoostFactor.longValue()))
-        .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
+    return localValueWins;
   }
 
   private SafeFuture<BuilderBidOrFallbackData> getResultFromSignedBuilderBid(
@@ -567,11 +532,14 @@ public class ExecutionBuilderModule {
     final String actualComparisonFactorString;
     final String comparisonFactorSource = isRequestedBuilderBoostFactor ? "VC" : "BN";
 
-    if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_MAX_PROFIT)) {
+    if (actualBuilderBoostFactor.equals(
+        BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_MAX_PROFIT)) {
       actualComparisonFactorString = "MAX_PROFIT";
-    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+    } else if (actualBuilderBoostFactor.equals(
+        BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
       actualComparisonFactorString = "PREFER_EXECUTION";
-    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+    } else if (actualBuilderBoostFactor.equals(
+        BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
       actualComparisonFactorString = "PREFER_BUILDER";
     } else {
       actualComparisonFactorString = actualBuilderBoostFactor + "%";

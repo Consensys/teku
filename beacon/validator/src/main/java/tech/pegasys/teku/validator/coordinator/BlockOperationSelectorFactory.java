@@ -528,6 +528,7 @@ public class BlockOperationSelectorFactory {
                 blockProductionContext.parentExecutionBlockHash(),
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
+                blockProductionContext.requestedBuilderBoostFactor(),
                 blockProductionContext.blockProductionPerformance())
             .thenAccept(bodyBuilder::signedExecutionPayloadBid);
     return SafeFuture.allOf(

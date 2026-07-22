@@ -983,7 +983,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
-              receivedExecutionPayloadBidEventsChannelPublisher);
+              receivedExecutionPayloadBidEventsChannelPublisher,
+              beaconConfig.executionLayerConfig().getBuilderBidCompareFactor(),
+              beaconConfig.executionLayerConfig().getUseShouldOverrideBuilderFlag());
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
       executionPayloadBidManager = defaultExecutionPayloadBidManager;
     } else {
