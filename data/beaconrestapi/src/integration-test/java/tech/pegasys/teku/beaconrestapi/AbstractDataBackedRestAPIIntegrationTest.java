@@ -77,6 +77,8 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -182,6 +184,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ExecutionPayloadBidManager executionPayloadBidManager =
       mock(ExecutionPayloadBidManager.class);
   protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
+  protected final DataAvailabilitySampler dataAvailabilitySampler = mock(DasSamplerBasic.class);
   protected final ProposerPreferencesManager proposerPreferencesManager =
       mock(ProposerPreferencesManager.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
@@ -349,7 +352,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            executionProofManager);
+            executionProofManager,
+            dataAvailabilitySampler);
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();
     setupAndStartRestAPI();
