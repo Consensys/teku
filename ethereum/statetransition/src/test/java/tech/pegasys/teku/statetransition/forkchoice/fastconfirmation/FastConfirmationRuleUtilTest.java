@@ -192,6 +192,18 @@ class FastConfirmationRuleUtilTest {
   }
 
   @Test
+  void shouldEstimateCommitteeWeightAcrossEpochBoundaryWithNearlyFullStartEpoch() {
+    // total = 8000, committeeWeight = 1000; range slots 1..9 (epoch 0: 1..7; epoch 1: 8,9).
+    // numSlotsInEndEpoch = 2, remainingSlotsInEndEpoch = 6, numSlotsInStartEpoch = 7.
+    // startEpochWeight = 7000, endEpochWeight = 2000, proRated = (7000 / 8) * 6 = 5250.
+    // sum = 7250 -> adjust: ceil(7250 / 1000) = 8 -> 8 * 1005 = 8040.
+    assertThat(
+            FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+                spec, uint(8000), uint(1), uint(9)))
+        .isEqualTo(UInt64.valueOf(8040));
+  }
+
+  @Test
   void shouldRaiseGreatestUnrealizedJustifiedCheckpointAboveTheJustifiedFloor() {
     final ReadOnlyForkChoiceStrategy forkChoice = mock(ReadOnlyForkChoiceStrategy.class);
     when(store.getForkChoiceStrategy()).thenReturn(forkChoice);

@@ -297,6 +297,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return store.getVote(validatorIndex);
   }
 
+  /**
+   * Intentionally delegates to the committed store: uncommitted vote changes staged in this
+   * transaction are excluded so the fast confirmation rule sees only committed vote state.
+   */
   @Override
   public VoteSnapshot getVoteSnapshot() {
     return store.getVoteSnapshot();
