@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbHelper;
 
 @Command(
@@ -66,7 +67,7 @@ public class RocksDbCommand implements Runnable {
         getUsage(beaconNodeDataOptions, eth2NetworkOptions, "archive");
         getUsage(beaconNodeDataOptions, eth2NetworkOptions, "db");
       }
-      case V6 -> getUsage(beaconNodeDataOptions, eth2NetworkOptions, "db");
+      case V6, ROCKSDB_TREE -> getUsage(beaconNodeDataOptions, eth2NetworkOptions, "db");
       default -> {
         SUB_COMMAND_LOG.error("LevelDB is not supported in this command");
         return 1;
@@ -128,7 +129,8 @@ public class RocksDbCommand implements Runnable {
         getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "archive");
         getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "db");
       }
-      case V6 -> getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "db");
+      case V6, ROCKSDB_TREE ->
+          getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "db");
       default -> {
         SUB_COMMAND_LOG.error("LevelDB is not supported in this command");
         return 1;
@@ -179,6 +181,7 @@ public class RocksDbCommand implements Runnable {
           columnMap = V6SchemaCombinedSnapshot.createV4(spec).asSchemaFinalized().getColumnMap();
         }
       }
+      case ROCKSDB_TREE -> columnMap = new V6SchemaCombinedTreeState(spec).getColumnMap();
       default -> columnMap = V6SchemaCombinedSnapshot.createV6(spec).getColumnMap();
     }
 

@@ -40,6 +40,7 @@ public class DatabaseVersionTest {
         Arguments.of("4", DatabaseVersion.V4),
         Arguments.of("5", DatabaseVersion.V5),
         Arguments.of("6", DatabaseVersion.V6),
+        Arguments.of("rocksdb-tree", DatabaseVersion.ROCKSDB_TREE),
         Arguments.of("leveldb1", DatabaseVersion.LEVELDB1),
         Arguments.of("leveldb2", DatabaseVersion.LEVELDB2),
         Arguments.of("leveldb-tree", DatabaseVersion.LEVELDB_TREE));
