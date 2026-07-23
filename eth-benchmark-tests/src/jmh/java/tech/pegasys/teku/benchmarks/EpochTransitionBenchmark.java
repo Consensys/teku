@@ -63,8 +63,6 @@ import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -80,7 +78,6 @@ public class EpochTransitionBenchmark {
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
 
-  StorageSystem storageSystem;
   ChainUpdater chainUpdater;
   ChainBuilder chainBuilder;
 
@@ -130,10 +127,9 @@ public class EpochTransitionBenchmark {
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             metricsSystem);
-    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     chainBuilder = ChainBuilder.create(spec, validatorKeys);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
-    chainUpdater.initializeGenesis();
+    chainUpdater.initializeGenesis(false);
 
     blockImporter =
         new BlockImporter(
