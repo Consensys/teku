@@ -32,11 +32,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteSnapshot;
@@ -464,48 +462,6 @@ class FastConfirmationCalculatorTest {
         spec, fcrStore(head), states, UInt64.valueOf(currentSlot));
   }
 
-  private FastConfirmationCalculator reconfirmationCalculator(
-      final BeaconState state,
-      final Bytes32 head,
-      final Checkpoint currentObservedJustified,
-      final long currentSlot) {
-    // The state doubles as the previous balance source and the committee shuffling source.
-    final FastConfirmationStates states =
-        new FastConfirmationStates(Optional.of(state), mock(BeaconState.class), state);
-    return new FastConfirmationCalculator(
-        spec, fcrStore(head, currentObservedJustified), states, UInt64.valueOf(currentSlot));
-  }
-
-  private FastConfirmationCalculator descendantCalculator(
-      final BeaconState state,
-      final Bytes32 head,
-      final Bytes32 previousSlotHead,
-      final long currentSlot) {
-    // The state doubles as the current balance source and the committee shuffling source.
-    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
-    final FastConfirmationStore fcrStore =
-        new FastConfirmationStore(store, Bytes32.ZERO, zero, zero, zero, previousSlotHead, head);
-    final FastConfirmationStates states =
-        new FastConfirmationStates(Optional.empty(), state, state);
-    return new FastConfirmationCalculator(spec, fcrStore, states, UInt64.valueOf(currentSlot));
-  }
-
-  private FastConfirmationCalculator latestConfirmedCalculator(
-      final BeaconState state,
-      final Bytes32 confirmedRoot,
-      final Bytes32 head,
-      final long currentSlot) {
-    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
-    // The observed justified checkpoint root must be an in-tree block; get_latest_confirmed reads
-    // its slot unconditionally. chain[0] exists in every test chain.
-    final Checkpoint observedJustified = new Checkpoint(UInt64.ZERO, chain.get(0));
-    final FastConfirmationStore fcrStore =
-        new FastConfirmationStore(store, confirmedRoot, zero, observedJustified, zero, head, head);
-    final FastConfirmationStates states =
-        new FastConfirmationStates(Optional.of(state), state, state);
-    return new FastConfirmationCalculator(spec, fcrStore, states, UInt64.valueOf(currentSlot));
-  }
-
   private FastConfirmationStore fcrStore(final Bytes32 head) {
     return fcrStore(head, new Checkpoint(UInt64.ZERO, Bytes32.ZERO));
   }
@@ -581,19 +537,6 @@ class FastConfirmationCalculatorTest {
       i--;
     }
     return Optional.of(i);
-  }
-
-  private void setCheckpoints(
-      final Bytes32 root, final Checkpoint justified, final Checkpoint unrealizedJustified) {
-    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
-    final ProtoNodeData data = mock(ProtoNodeData.class);
-    when(data.getCheckpoints())
-        .thenReturn(new BlockCheckpoints(justified, zero, unrealizedJustified, zero));
-    when(forkChoice.getBlockData(root)).thenReturn(Optional.of(data));
-  }
-
-  private Checkpoint checkpoint(final int epoch) {
-    return new Checkpoint(UInt64.valueOf(epoch), Bytes32.random());
   }
 
   private VoteSnapshot voteSnapshot(final Map<Integer, VoteTracker> votesByIndex) {

@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -55,11 +53,12 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
  */
 class FastConfirmationCalculator {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
+
+  @SuppressWarnings({"UnusedVariable"})
   private final FastConfirmationStore fcrStore;
+
   private final ReadOnlyStore store;
   private final ReadOnlyForkChoiceStrategy forkChoice;
   private final VoteSnapshot votes;
@@ -387,11 +386,6 @@ class FastConfirmationCalculator {
       }
     }
     return score;
-  }
-
-  /** Reconstructs {@code store.unrealized_justified_checkpoint} (the store-level greatest). */
-  private Checkpoint getStoreUnrealizedJustifiedCheckpoint() {
-    return FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store);
   }
 
   /**
