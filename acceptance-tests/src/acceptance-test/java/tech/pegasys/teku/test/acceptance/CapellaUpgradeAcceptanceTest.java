@@ -47,7 +47,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
 
     final InitialStateData initialStateData =
         createGenesisGenerator()

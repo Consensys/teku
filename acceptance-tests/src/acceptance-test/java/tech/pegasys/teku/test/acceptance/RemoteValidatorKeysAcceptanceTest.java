@@ -31,7 +31,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   void shouldMaintainValidatorsInMutableClient() throws Exception {
     final String networkName = "swift";
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(8);
+        createValidatorKeyGenerator().generateValidatorKeys(8);
 
     final InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
