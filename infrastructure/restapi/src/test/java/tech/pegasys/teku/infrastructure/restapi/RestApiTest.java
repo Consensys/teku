@@ -61,4 +61,11 @@ class RestApiTest {
     assertThatThrownBy(() -> RestApiBuilder.ensurePasswordFile(managerDir.resolve("pass")))
         .isInstanceOf(IllegalStateException.class);
   }
+
+  @Test
+  void builder_shouldRejectNonPositiveAsyncTimeout() {
+    assertThatThrownBy(() -> new RestApiBuilder().asyncTimeoutMillis(0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("greater than zero");
+  }
 }

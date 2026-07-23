@@ -15,7 +15,11 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -32,12 +36,20 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT8_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.tuweni.bytes.Bytes32;
@@ -45,6 +57,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -76,8 +90,17 @@ public class RestApiRequestTest {
           .queryParam(STR_PARAM)
           .requestBodyType(STRING_TYPE)
           .build();
+  private static final EndpointMetadata ASYNC_METADATA =
+      EndpointMetadata.get("/async")
+          .operationId("async")
+          .summary("Async")
+          .description("Async response")
+          .response(SC_OK, "Success", STRING_TYPE)
+          .build();
 
   private final Context context = mock(Context.class);
+  private final HttpServletRequest servletRequest = mock(HttpServletRequest.class);
+  private final AsyncContext asyncContext = mock(AsyncContext.class);
 
   @Test
   void shouldGiveSensibleErrorMessageFromOptionalQueryParameter() {
@@ -205,6 +228,67 @@ public class RestApiRequestTest {
             .build();
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, metadata);
     assertThat(request.getResponseContentType(SC_OK)).isEqualTo(expectedResponseType);
+  }
+
+  @Test
+  void shouldSerializeAsyncResponse() throws Exception {
+    final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+    when(context.outputStream()).thenReturn(outputStream);
+    final SafeFuture<AsyncApiResponse> endpointResponse = new SafeFuture<>();
+    final CapturedAsyncResponse capturedResponse = respondAsync(endpointResponse);
+
+    endpointResponse.complete(AsyncApiResponse.respondOk("response"));
+
+    assertThat(capturedResponse.requestResponse().isDone()).isTrue();
+    assertThat(capturedResponse.requestResponse().isCompletedExceptionally()).isFalse();
+    verify(context).status(SC_OK);
+    verify(context).contentType(ContentTypes.JSON);
+    verify(outputStream, atLeastOnce()).write(any(byte[].class), anyInt(), anyInt());
+  }
+
+  @Test
+  void shouldCancelRequestResponseOnConnectionErrorWithoutCancellingEndpointResponse()
+      throws Exception {
+    final SafeFuture<AsyncApiResponse> endpointResponse = new SafeFuture<>();
+    final CapturedAsyncResponse capturedResponse = respondAsync(endpointResponse);
+
+    capturedResponse
+        .listener()
+        .onError(new AsyncEvent(asyncContext, new IOException("Client disconnected")));
+
+    assertRequestResponseCancelled(capturedResponse, endpointResponse);
+  }
+
+  @Test
+  void shouldCancelRequestResponseOnTimeoutWithoutCancellingEndpointResponse() throws Exception {
+    final SafeFuture<AsyncApiResponse> endpointResponse = new SafeFuture<>();
+    final CapturedAsyncResponse capturedResponse = respondAsync(endpointResponse);
+
+    capturedResponse.listener().onTimeout(new AsyncEvent(asyncContext));
+
+    assertRequestResponseCancelled(capturedResponse, endpointResponse);
+  }
+
+  @Test
+  void shouldCancelRequestResponseOnAsyncCompletionWithoutCancellingEndpointResponse()
+      throws Exception {
+    final SafeFuture<AsyncApiResponse> endpointResponse = new SafeFuture<>();
+    final CapturedAsyncResponse capturedResponse = respondAsync(endpointResponse);
+
+    capturedResponse.listener().onComplete(new AsyncEvent(asyncContext));
+
+    assertRequestResponseCancelled(capturedResponse, endpointResponse);
+  }
+
+  @Test
+  void shouldRegisterCancellationListenerWithNewAsyncCycle() throws Exception {
+    final SafeFuture<AsyncApiResponse> endpointResponse = new SafeFuture<>();
+    final CapturedAsyncResponse capturedResponse = respondAsync(endpointResponse);
+    final AsyncContext newAsyncContext = mock(AsyncContext.class);
+
+    capturedResponse.listener().onStartAsync(new AsyncEvent(newAsyncContext));
+
+    verify(newAsyncContext).addListener(capturedResponse.listener());
   }
 
   public static Stream<Arguments> getContentTypeAndExpectedResponseType() {
@@ -365,4 +449,42 @@ public class RestApiRequestTest {
         .hasCauseInstanceOf(IOException.class)
         .hasMessageContaining("Error reading request body");
   }
+
+  private CapturedAsyncResponse respondAsync(final SafeFuture<AsyncApiResponse> endpointResponse) {
+    when(context.req()).thenReturn(servletRequest);
+    when(servletRequest.getAsyncContext()).thenReturn(asyncContext);
+    final AtomicReference<CompletableFuture<?>> requestResponse = new AtomicReference<>();
+    doAnswer(
+            invocation -> {
+              final Supplier<? extends CompletableFuture<?>> responseSupplier =
+                  invocation.getArgument(0);
+              requestResponse.set(responseSupplier.get());
+              return null;
+            })
+        .when(context)
+        .future(any());
+
+    new JavalinRestApiRequest(context, ASYNC_METADATA).respondAsync(endpointResponse);
+
+    final ArgumentCaptor<AsyncListener> listenerCaptor =
+        ArgumentCaptor.forClass(AsyncListener.class);
+    verify(asyncContext).addListener(listenerCaptor.capture());
+    return new CapturedAsyncResponse(requestResponse.get(), listenerCaptor.getValue());
+  }
+
+  private void assertRequestResponseCancelled(
+      final CapturedAsyncResponse capturedResponse,
+      final SafeFuture<AsyncApiResponse> endpointResponse) {
+    assertThat(capturedResponse.requestResponse().isCancelled()).isTrue();
+    assertThat(endpointResponse.isDone()).isFalse();
+    assertThat(endpointResponse.getNumberOfDependents()).isZero();
+
+    endpointResponse.complete(AsyncApiResponse.respondOk("late response"));
+
+    assertThat(endpointResponse.isCancelled()).isFalse();
+    verify(context, never()).outputStream();
+  }
+
+  private record CapturedAsyncResponse(
+      CompletableFuture<?> requestResponse, AsyncListener listener) {}
 }

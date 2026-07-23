@@ -23,6 +23,8 @@ import io.javalin.http.Context;
 import io.javalin.http.Header;
 import io.javalin.http.sse.SseClient;
 import io.javalin.http.sse.SseHandler;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -99,22 +102,31 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @Override
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
     context.future(
-        () ->
-            futureResponse
-                .thenApply(
-                    result -> {
-                      try {
-                        respond(
-                            result.getResponseCode(),
-                            result.getResponseBody(),
-                            getResponseOutputStream());
-                      } catch (JsonProcessingException e) {
-                        LOG.trace("Failed to generate API response", e);
-                        context.status(SC_INTERNAL_SERVER_ERROR);
-                      }
-                      return Bytes.EMPTY.toArrayUnsafe();
-                    })
-                .thenApply(ByteArrayInputStream::new));
+        () -> {
+          final SafeFuture<Void> requestEnded = new SafeFuture<>();
+          final SafeFuture<ByteArrayInputStream> requestResponse =
+              futureResponse
+                  .orInterrupt(
+                      SafeFuture.createInterruptor(requestEnded, CancellationException::new))
+                  .thenApply(
+                      result -> {
+                        try {
+                          respond(
+                              result.getResponseCode(),
+                              result.getResponseBody(),
+                              getResponseOutputStream());
+                        } catch (JsonProcessingException e) {
+                          LOG.trace("Failed to generate API response", e);
+                          context.status(SC_INTERNAL_SERVER_ERROR);
+                        }
+                        return new ByteArrayInputStream(Bytes.EMPTY.toArrayUnsafe());
+                      });
+          context
+              .req()
+              .getAsyncContext()
+              .addListener(new AsyncResponseCancellationListener(requestResponse, requestEnded));
+          return requestResponse;
+        });
   }
 
   @Override
@@ -157,6 +169,42 @@ public class JavalinRestApiRequest implements RestApiRequest {
     context.contentType(responseMetadata.getContentType());
     responseMetadata.getAdditionalHeaders().forEach(context::header);
     metadata.serialize(statusCode, responseMetadata.getContentType(), response, out);
+  }
+
+  private static class AsyncResponseCancellationListener implements AsyncListener {
+    private final SafeFuture<?> requestResponse;
+    private final SafeFuture<Void> requestEnded;
+
+    private AsyncResponseCancellationListener(
+        final SafeFuture<?> requestResponse, final SafeFuture<Void> requestEnded) {
+      this.requestResponse = requestResponse;
+      this.requestEnded = requestEnded;
+    }
+
+    @Override
+    public void onComplete(final AsyncEvent event) {
+      cancelResponse();
+    }
+
+    @Override
+    public void onTimeout(final AsyncEvent event) {
+      cancelResponse();
+    }
+
+    @Override
+    public void onError(final AsyncEvent event) {
+      cancelResponse();
+    }
+
+    @Override
+    public void onStartAsync(final AsyncEvent event) {
+      event.getAsyncContext().addListener(this);
+    }
+
+    private void cancelResponse() {
+      requestResponse.cancel(false);
+      requestEnded.complete(null);
+    }
   }
 
   /** This is only used when intending to return status code without a response body */

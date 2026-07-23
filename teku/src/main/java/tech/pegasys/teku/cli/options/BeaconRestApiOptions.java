@@ -28,6 +28,15 @@ public class BeaconRestApiOptions {
   private int maxUrlLength = BeaconRestApiConfig.DEFAULT_MAX_URL_LENGTH;
 
   @Option(
+      names = {"--Xrest-api-async-timeout-seconds"},
+      paramLabel = "<INTEGER>",
+      description = "Timeout for asynchronous Beacon REST API requests in seconds",
+      arity = "1",
+      hidden = true)
+  private long restApiAsyncTimeoutSeconds =
+      BeaconRestApiConfig.DEFAULT_REST_API_ASYNC_TIMEOUT.toSeconds();
+
+  @Option(
       names = {"--rest-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Beacon Rest API",
@@ -186,6 +195,7 @@ public class BeaconRestApiOptions {
                 .restApiDocsEnabled(restApiDocsEnabled)
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
+                .restApiAsyncTimeoutSeconds(restApiAsyncTimeoutSeconds)
                 .restApiHostAllowlist(restApiHostAllowlist)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
