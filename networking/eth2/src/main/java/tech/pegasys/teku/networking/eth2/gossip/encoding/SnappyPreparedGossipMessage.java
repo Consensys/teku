@@ -143,7 +143,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
 
   private Bytes uncompressPayload(final long maxUncompressedLength) throws DecodingException {
     return snappyCompressor.uncompress(
-        compressedData, valueType.getSszLengthBounds(), maxUncompressedLength);
+        compressedData, valueType.getNetworkSszLengthBounds(), maxUncompressedLength);
   }
 
   @Override

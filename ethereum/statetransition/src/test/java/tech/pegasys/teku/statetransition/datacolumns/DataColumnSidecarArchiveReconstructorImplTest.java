@@ -98,7 +98,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
   @TestTemplate
   public void shouldReturnEmptyWhenNoSidecarsAvailable() {
     final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
-    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(chainDataClient.getDataColumnSidecarProofs(any()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
@@ -120,7 +120,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
     final List<DataColumnSidecar> firstHalfSidecars = createFirstHalfSidecars(competingBlock);
     final List<List<KZGProof>> secondHalfProofs = createSecondHalfProofs(block);
 
-    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
     when(chainDataClient.getDataColumnSidecarProofs(any()))
         .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
@@ -174,7 +174,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
     when(mockUtil.constructDataColumnSidecars(any(), any(), any(), any(), anyList()))
         .thenReturn(allSidecars);
 
-    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
     when(chainDataClient.getDataColumnSidecarProofs(any()))
         .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
@@ -203,7 +203,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
     final List<DataColumnSidecar> firstHalfSidecars = createFirstHalfSidecars(block);
     final List<List<KZGProof>> secondHalfProofs = createSecondHalfProofs(block);
 
-    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
     when(chainDataClient.getDataColumnSidecarProofs(any()))
         .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
@@ -221,14 +221,14 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
     assertThat(result1).isPresent();
     assertThat(result2).isPresent();
     // Should have only called getDataColumnSidecars once (same task reused)
-    verify(chainDataClient).getDataColumnSidecars(any(), anyList());
+    verify(chainDataClient).getDataColumnSidecars(any(UInt64.class), anyList());
   }
 
   @TestTemplate
   @SuppressWarnings("FutureReturnValueIgnored")
   public void shouldCleanupOnRequestCompleted() {
     final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
-    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(chainDataClient.getDataColumnSidecarProofs(any()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
@@ -241,7 +241,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
     final int newRequestId = reconstructor.onRequest();
     reconstructor.reconstructDataColumnSidecar(block, UInt64.valueOf(halfColumns), newRequestId);
 
-    verify(chainDataClient, times(2)).getDataColumnSidecars(any(), anyList());
+    verify(chainDataClient, times(2)).getDataColumnSidecars(any(UInt64.class), anyList());
   }
 
   @TestTemplate

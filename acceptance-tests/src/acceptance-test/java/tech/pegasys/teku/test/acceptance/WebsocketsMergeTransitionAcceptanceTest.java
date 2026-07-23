@@ -49,7 +49,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
 
     final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(totalValidators);
+        createValidatorKeyGenerator().generateValidatorKeys(totalValidators);
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator()
             .network(NETWORK_NAME)
