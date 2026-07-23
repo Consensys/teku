@@ -1906,7 +1906,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            executionProofManager);
+            executionProofManager,
+            dasSamplerBasic);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)

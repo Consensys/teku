@@ -109,11 +109,13 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
+import tech.pegasys.teku.statetransition.forkchoice.DataColumnSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
@@ -177,6 +179,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ExecutionPayloadBidManager executionPayloadBidManager;
   private final ProposerPreferencesManager proposerPreferencesManager;
   private final ExecutionProofManager executionProofManager;
+  private final DataAvailabilitySampler dataAvailabilitySampler;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
@@ -208,7 +211,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadPublisher executionPayloadPublisher,
       final ExecutionPayloadBidManager executionPayloadBidManager,
       final ProposerPreferencesManager proposerPreferencesManager,
-      final ExecutionProofManager executionProofManager) {
+      final ExecutionProofManager executionProofManager,
+      final DataAvailabilitySampler dataAvailabilitySampler) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -237,6 +241,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadBidManager = executionPayloadBidManager;
     this.proposerPreferencesManager = proposerPreferencesManager;
     this.executionProofManager = executionProofManager;
+    this.dataAvailabilitySampler = dataAvailabilitySampler;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -665,27 +670,49 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     }
     return combinedChainDataClient
         .getBlockAtSlotExact(slot)
-        .thenApply(
+        .thenCompose(
             maybeBlock -> {
               if (maybeBlock.isEmpty()) {
-                return Optional.empty();
+                return SafeFuture.completedFuture(Optional.<BlockAndBlobDataAvailable>empty());
               }
               final SignedBeaconBlock block = maybeBlock.get();
+              final DataColumnSidecarAvailabilityChecker availabilityChecker =
+                  new DataColumnSidecarAvailabilityChecker(
+                      dataAvailabilitySampler,
+                      spec,
+                      combinedChainDataClient.getRecentChainData(),
+                      block);
+              availabilityChecker.initiateDataAvailabilityCheck();
+              return availabilityChecker
+                  .getAvailabilityCheckResult()
+                  .thenApply(
+                      validationResult ->
+                          Optional.of(
+                              new BlockAndBlobDataAvailable(block, validationResult.isValid())));
+            })
+        .thenApply(
+            maybeBlockAndBlobDataAvailable -> {
+              if (maybeBlockAndBlobDataAvailable.isEmpty()) {
+                return Optional.empty();
+              }
+              final BlockAndBlobDataAvailable blockAndBlobDataAvailable =
+                  maybeBlockAndBlobDataAvailable.get();
+              final SignedBeaconBlock block = blockAndBlobDataAvailable.block;
               final boolean payloadPresent =
                   executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot());
-              // if execution payload is in the store, blob data is available
-              final boolean blobDataAvailable =
-                  combinedChainDataClient
-                      .getStore()
-                      .getExecutionPayloadIfAvailable(block.getRoot())
-                      .isPresent();
               final PayloadAttestationData payloadAttestationData =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getPayloadAttestationDataSchema()
-                      .create(block.getRoot(), slot, payloadPresent, blobDataAvailable);
+                      .create(
+                          block.getRoot(),
+                          slot,
+                          payloadPresent,
+                          blockAndBlobDataAvailable.blobDataAvailable);
               return Optional.of(payloadAttestationData);
             });
   }
+
+  private record BlockAndBlobDataAvailable(SignedBeaconBlock block, boolean blobDataAvailable) {}
 
   @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(
