@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+// as this is a unit test, there's no need to pedantic with how we select addresses
 @SuppressWarnings("AddressSelection")
 class NodeRecordConverterTest {
 
