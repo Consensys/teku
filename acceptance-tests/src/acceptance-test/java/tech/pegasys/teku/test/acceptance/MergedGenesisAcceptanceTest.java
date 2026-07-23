@@ -45,7 +45,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
     final InitialStateData initialStateData =
         createGenesisGenerator()
             .network(NETWORK_NAME)

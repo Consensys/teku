@@ -41,7 +41,7 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(8);
+        createValidatorKeyGenerator().generateValidatorKeys(8);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
