@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -219,6 +220,19 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
           }
         });
     sizeGauge.set(pendingItems.size(), itemType);
+  }
+
+  public synchronized List<T> removeItemsMatching(final Predicate<T> predicate) {
+    final List<T> itemsToRemove = pendingItems.values().stream().filter(predicate).toList();
+    itemsToRemove.forEach(this::remove);
+    return itemsToRemove;
+  }
+
+  public synchronized List<T> removeItemsDependingOn(
+      final Bytes32 blockRoot, final boolean includeIndirectDependents) {
+    final List<T> itemsToRemove = getItemsDependingOn(blockRoot, includeIndirectDependents);
+    itemsToRemove.forEach(this::remove);
+    return itemsToRemove;
   }
 
   @VisibleForTesting
