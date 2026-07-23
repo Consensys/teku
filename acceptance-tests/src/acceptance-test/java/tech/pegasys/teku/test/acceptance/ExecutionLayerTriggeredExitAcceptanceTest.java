@@ -51,7 +51,7 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
         besuNode.getRichBenefactorKey(); // key for withdrawal_credentials account
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME)
+        createValidatorKeyGenerator()
             .generateValidatorKeys(4, Eth1Address.fromHexString(eth1Address));
 
     final InitialStateData initialStateData =
