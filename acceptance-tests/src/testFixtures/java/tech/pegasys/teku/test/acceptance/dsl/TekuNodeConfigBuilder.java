@@ -478,9 +478,7 @@ public class TekuNodeConfigBuilder {
     mustBe(NodeType.BEACON_NODE);
     configMap.put("Xinterop-enabled", false);
     LOG.debug("eth1-deposit-contract-address={}}", eth1Node.getDepositContractAddress().toString());
-    LOG.debug("eth1-endpoint={}", eth1Node.getInternalJsonRpcUrl());
     configMap.put("eth1-deposit-contract-address", eth1Node.getDepositContractAddress().toString());
-    configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
     return this;
   }
 

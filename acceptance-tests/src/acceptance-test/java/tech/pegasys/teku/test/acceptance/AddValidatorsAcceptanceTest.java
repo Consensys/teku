@@ -27,10 +27,10 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "swift";
 
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2);
+        createValidatorKeyGenerator().generateValidatorKeys(2);
 
     final ValidatorKeystores additionalKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2);
+        createValidatorKeyGenerator().generateValidatorKeys(2);
 
     final InitialStateData genesis =
         createGenesisGenerator()
@@ -58,7 +58,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
     // Check loading new validators a second time still works and that they don't have to be active
     final ValidatorKeystores evenMoreKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(1);
+        createValidatorKeyGenerator().generateValidatorKeys(1);
     node.addValidators(evenMoreKeystores);
     node.waitForOwnedValidatorCount(5);
   }

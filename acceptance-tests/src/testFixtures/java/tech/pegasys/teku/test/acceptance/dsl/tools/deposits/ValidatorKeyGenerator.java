@@ -16,17 +16,35 @@ package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 import static tech.pegasys.teku.spec.datastructures.util.DepositGenerator.createWithdrawalCredentials;
 
 import java.security.SecureRandom;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class ValidatorKeyGenerator {
   private final SecureRandom srng = SecureRandomProvider.createSecureRandom();
 
-  public Stream<ValidatorKeys> generateKeysStream(
+  public ValidatorKeystores generateValidatorKeys(
+      final int numberOfValidators, final Eth1Address withdrawalAddress) {
+    return new ValidatorKeystores(
+        generateKeysStream(numberOfValidators, withdrawalAddress).collect(Collectors.toList()));
+  }
+
+  public ValidatorKeystores generateValidatorKeys(final int numberOfValidators) {
+    return generateValidatorKeys(numberOfValidators, false);
+  }
+
+  public ValidatorKeystores generateValidatorKeys(
+      final int numberOfValidators, final boolean isLocked) {
+    return new ValidatorKeystores(
+        generateKeysStream(numberOfValidators, isLocked).collect(Collectors.toList()));
+  }
+
+  private Stream<ValidatorKeys> generateKeysStream(
       final int validatorCount, final boolean lockedKeys) {
     return IntStream.range(0, validatorCount)
         .mapToObj(
@@ -34,7 +52,7 @@ public class ValidatorKeyGenerator {
                 new ValidatorKeys(BLSKeyPair.random(srng), BLSKeyPair.random(srng), lockedKeys));
   }
 
-  public Stream<ValidatorKeys> generateKeysStream(
+  private Stream<ValidatorKeys> generateKeysStream(
       final int validatorCount, final Bytes20 eth1WithdrawalAddress) {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(eth1WithdrawalAddress);
     return IntStream.range(0, validatorCount)

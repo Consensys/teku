@@ -13,10 +13,17 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
 import tech.pegasys.teku.spec.Spec;
@@ -43,5 +50,19 @@ public class DefaultRpcPayloadEncoderTest {
       assertThatThrownBy(() -> statusMessageEncoder.decode(truncated))
           .isInstanceOf(DeserializationFailedException.class);
     }
+  }
+
+  @Test
+  public void isLengthWithinBounds_shouldUseNetworkSszLengthBounds() {
+    @SuppressWarnings("unchecked")
+    final SszSchema<StatusMessage> schema = mock(SszSchema.class);
+    final SszLengthBounds networkBounds = SszLengthBounds.ofBytes(8, 16);
+    doReturn(networkBounds).when(schema).getNetworkSszLengthBounds();
+    final DefaultRpcPayloadEncoder<StatusMessage> encoder = new DefaultRpcPayloadEncoder<>(schema);
+
+    assertThat(encoder.isLengthWithinBounds(16)).isTrue();
+
+    verify(schema).getNetworkSszLengthBounds();
+    verify(schema, never()).getSszLengthBounds();
   }
 }

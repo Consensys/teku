@@ -50,6 +50,6 @@ public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEn
 
   @Override
   public boolean isLengthWithinBounds(final long length) {
-    return type.getSszLengthBounds().isWithinBounds(length);
+    return type.getNetworkSszLengthBounds().isWithinBounds(length);
   }
 }

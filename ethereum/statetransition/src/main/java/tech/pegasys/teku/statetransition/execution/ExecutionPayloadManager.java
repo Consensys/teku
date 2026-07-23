@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -40,8 +41,17 @@ public interface ExecutionPayloadManager {
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload,
-            final Optional<UInt64> maybeArrivalTimestamp) {
+            final Optional<UInt64> maybeArrivalTimestamp,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
+
+        @Override
+        public SafeFuture<ValidateAndImportResult> validateAndImportExecutionPayloadForBroadcast(
+            final SignedExecutionPayloadEnvelope signedExecutionPayload,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
+              new ValidateAndImportResult(InternalValidationResult.ACCEPT, Optional.empty()));
         }
 
         @Override
@@ -85,7 +95,12 @@ public interface ExecutionPayloadManager {
    */
   SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload,
-      Optional<UInt64> maybeArrivalTimestamp);
+      Optional<UInt64> maybeArrivalTimestamp,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
+
+  SafeFuture<ValidateAndImportResult> validateAndImportExecutionPayloadForBroadcast(
+      SignedExecutionPayloadEnvelope signedExecutionPayload,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
 
   /**
    * Imports execution payload via fork choice `on_execution_payload`
@@ -109,7 +124,15 @@ public interface ExecutionPayloadManager {
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return validateAndImportExecutionPayload(signedExecutionPayload, Optional.empty());
+    return validateAndImportExecutionPayload(
+        signedExecutionPayload, Optional.empty(), Optional.empty());
+  }
+
+  default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<UInt64> arrivalTimestamp) {
+    return validateAndImportExecutionPayload(
+        signedExecutionPayload, arrivalTimestamp, Optional.empty());
   }
 
   void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber);
@@ -117,4 +140,8 @@ public interface ExecutionPayloadManager {
   interface FailedPayloadExecutionSubscriber {
     void onPayloadExecutionFailed(SignedExecutionPayloadEnvelope executionPayload);
   }
+
+  record ValidateAndImportResult(
+      InternalValidationResult validationResult,
+      Optional<SafeFuture<ExecutionPayloadImportResult>> importResult) {}
 }

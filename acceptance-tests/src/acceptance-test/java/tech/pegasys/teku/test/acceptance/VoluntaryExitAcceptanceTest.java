@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
@@ -36,7 +36,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
     final String networkName = "swift";
 
-    final TekuDepositSender depositSender = createTekuDepositSender(networkName);
+    final ValidatorKeyGenerator depositSender = createValidatorKeyGenerator();
     final ValidatorKeystores validatorKeysToExit = depositSender.generateValidatorKeys(4);
     // network of 8 validators (4 of them will exit)
     final ValidatorKeystores validatorKeys =

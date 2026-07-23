@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -42,11 +43,12 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class DefaultExecutionPayloadBidManager
-    implements ExecutionPayloadBidManager, SlotEventsChannel {
+    implements ExecutionPayloadBidManager, SlotEventsChannel, ReceivedBlockEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -60,6 +62,7 @@ public class DefaultExecutionPayloadBidManager
 
   private final Spec spec;
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
+  private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
 
@@ -71,10 +74,12 @@ public class DefaultExecutionPayloadBidManager
   public DefaultExecutionPayloadBidManager(
       final Spec spec,
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator,
+      final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker,
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher) {
     this.spec = spec;
     this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
+    this.executionPayloadBidCircuitBreaker = executionPayloadBidCircuitBreaker;
     this.receivedExecutionPayloadBidEventsChannelPublisher =
         receivedExecutionPayloadBidEventsChannelPublisher;
   }
@@ -113,6 +118,14 @@ public class DefaultExecutionPayloadBidManager
   }
 
   @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    executionPayloadBidCircuitBreaker.observeImportedBlock(block);
+  }
+
+  @Override
   public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       final Bytes32 parentRoot,
       final Bytes32 parentBlockHash,
@@ -120,7 +133,12 @@ public class DefaultExecutionPayloadBidManager
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
-    return findBestRemoteBid(slot, parentRoot, parentBlockHash)
+    if (executionPayloadBidCircuitBreaker.isEngaged(parentRoot, state)) {
+      LOG.info("Builder circuit breaker engaged for Gloas block at slot {}; self-building", slot);
+      return getLocalSelfBuiltBid(parentRoot, parentBlockHash, slot, getPayloadResponseFuture);
+    }
+
+    return findBestRemoteBid(slot, parentRoot, parentBlockHash, state)
         .map(
             bestRemoteBid -> {
               final ExecutionPayloadBid bid = bestRemoteBid.getMessage();
@@ -148,7 +166,10 @@ public class DefaultExecutionPayloadBidManager
   }
 
   private Optional<SignedExecutionPayloadBid> findBestRemoteBid(
-      final UInt64 slot, final Bytes32 parentRoot, final Bytes32 parentBlockHash) {
+      final UInt64 slot,
+      final Bytes32 parentRoot,
+      final Bytes32 parentBlockHash,
+      final BeaconState state) {
     final NavigableSet<SignedExecutionPayloadBid> bids = bidsBySlot.get(slot);
     if (bids == null) {
       return Optional.empty();
@@ -157,6 +178,10 @@ public class DefaultExecutionPayloadBidManager
     return bids.stream()
         .filter(bid -> bid.getMessage().getParentBlockRoot().equals(parentRoot))
         .filter(bid -> bid.getMessage().getParentBlockHash().equals(parentBlockHash))
+        .filter(
+            bid ->
+                executionPayloadBidCircuitBreaker.isBuilderAllowed(
+                    bid.getMessage().getBuilderIndex(), state))
         .findFirst();
   }
 
