@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,9 +22,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
@@ -49,24 +54,90 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return publishSignedExecutionPayload(
+        signedExecutionPayload,
+        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload),
+        broadcastValidationLevel);
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return publishSignedExecutionPayload(
+        signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
+        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayloadEnvelopeContents),
+        broadcastValidationLevel);
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return SafeFuture.<SignedExecutionPayloadEnvelope>of(
+            () ->
+                executionPayloadFactory.unblindSignedExecutionPayload(
+                    signedBlindedExecutionPayload))
+        .thenApply(Optional::of)
+        .exceptionally(
+            error -> {
+              LOG.warn(
+                  "Failed to unblind execution payload envelope for beacon block root {}",
+                  signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                  error);
+              return Optional.empty();
+            })
+        .thenCompose(
+            maybeSignedExecutionPayload ->
+                maybeSignedExecutionPayload
+                    .map(
+                        signedExecutionPayload ->
+                            publishSignedExecutionPayload(
+                                signedExecutionPayload, broadcastValidationLevel))
+                    .orElseGet(
+                        () ->
+                            SafeFuture.completedFuture(
+                                PublishSignedExecutionPayloadResult.rejected(
+                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                                    "No cached execution payload envelope found for blinded"
+                                        + " envelope"))));
+  }
+
+  private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
     return executionPayloadManager
-        .validateAndImportExecutionPayload(signedExecutionPayload)
-        .thenApply(
-            result -> {
-              final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
-              if (result.isAccept()) {
-                // we publish the execution payload (and data column sidecars) after passing gossip
-                // validation
-                publishExecutionPayloadAndDataColumnSidecars(
-                    signedExecutionPayload,
-                    executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload));
-                return PublishSignedExecutionPayloadResult.success(beaconBlockRoot);
+        .validateAndImportExecutionPayloadForBroadcast(
+            signedExecutionPayload, broadcastValidationLevel)
+        .thenCompose(
+            validateAndImportResult -> {
+              final InternalValidationResult validationResult =
+                  validateAndImportResult.validationResult();
+              if (!validationResult.isAccept()) {
+                return SafeFuture.completedFuture(
+                    PublishSignedExecutionPayloadResult.rejected(
+                        beaconBlockRoot,
+                        "Failed broadcast validation"
+                            + validationResult
+                                .getDescription()
+                                .map(description -> ": " + description)
+                                .orElse("")));
               }
-              return PublishSignedExecutionPayloadResult.rejected(
-                  beaconBlockRoot,
-                  "Failed gossip validation"
-                      + result.getDescription().map(description -> ": " + description).orElse(""));
+              publishExecutionPayloadAndDataColumnSidecars(
+                  signedExecutionPayload, dataColumnSidecarsFuture);
+              return validateAndImportResult
+                  .importResult()
+                  .orElseThrow(() -> new IllegalStateException("ACCEPT without import future"))
+                  .thenApply(
+                      importResult ->
+                          importResult.isSuccessful()
+                              ? PublishSignedExecutionPayloadResult.success(beaconBlockRoot)
+                              : PublishSignedExecutionPayloadResult.notImported(
+                                  beaconBlockRoot, importResult.getFailureReason().name()));
             });
   }
 

@@ -19,7 +19,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 
 public interface ExecutionPayloadFactory {
 
@@ -32,8 +34,20 @@ public interface ExecutionPayloadFactory {
         }
 
         @Override
+        public SafeFuture<SignedExecutionPayloadEnvelope> unblindSignedExecutionPayload(
+            final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
         public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+          return SafeFuture.completedFuture(List.of());
+        }
+
+        @Override
+        public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
+            final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents) {
           return SafeFuture.completedFuture(List.of());
         }
       };
@@ -41,6 +55,12 @@ public interface ExecutionPayloadFactory {
   SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
       UInt64 builderIndex, BeaconBlockAndState blockAndState);
 
+  SafeFuture<SignedExecutionPayloadEnvelope> unblindSignedExecutionPayload(
+      SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload);
+
   SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
+
+  SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
+      SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents);
 }
