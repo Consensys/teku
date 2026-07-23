@@ -53,14 +53,6 @@ specrefs:
       # Not defined, unnecessary
       - Eth1Block
 
-      # No light client support
-      - LightClientFinalityUpdate
-      - LightClientHeader#capella
-      - LightClientOptimisticUpdate
-      - LightClientBootstrap#capella
-      - LightClientUpdate#capella
-      - LightClientHeader#gloas
-
       # Not implemented: fulu
       - PartialDataColumnHeader#fulu
       - PartialDataColumnGroupID#fulu
@@ -170,11 +162,6 @@ specrefs:
       # No light client support
       - apply_light_client_update
       - block_to_light_client_header
-      - compute_sync_committee_period_at_slot
-      - create_light_client_bootstrap
-      - create_light_client_finality_update
-      - create_light_client_optimistic_update
-      - create_light_client_update
       - current_sync_committee_gindex_at_slot
       - finalized_root_gindex_at_slot
       - get_lc_execution_root
@@ -263,8 +250,6 @@ specrefs:
       - verify_partial_data_column_sidecar_kzg_proofs#fulu
       - validate_partial_data_column_sidecar_gossip#fulu
 
-      # Not implemented: gloas
-      - get_proposer_head#gloas
 
       # Not implemented yet: EIP-7688 progressive SSZ transition
       - upgrade_attestation_to_gloas#gloas

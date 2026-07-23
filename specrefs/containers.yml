@@ -1301,14 +1301,18 @@
     </spec>
 
 - name: LightClientBootstrap#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrap.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrapSchema.java
   spec: |
     <spec container="LightClientBootstrap" fork="capella" style="diff" hash="85f4f5fe">
 
     </spec>
 
 - name: LightClientFinalityUpdate#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientFinalityUpdate.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientFinalityUpdateSchema.java
   spec: |
     <spec container="LightClientFinalityUpdate" fork="altair" hash="d392e9f3">
     class LightClientFinalityUpdate(Container):
@@ -1324,7 +1328,9 @@
     </spec>
 
 - name: LightClientFinalityUpdate#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientFinalityUpdate.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientFinalityUpdateSchema.java
   spec: |
     <spec container="LightClientFinalityUpdate" fork="capella" style="diff" hash="9d2b55dd">
 
@@ -1332,8 +1338,8 @@
 
 - name: LightClientHeader#altair
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientHeader.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientHeaderSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/versions/altair/LightClientHeaderAltair.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/versions/altair/LightClientHeaderSchemaAltair.java
   spec: |
     <spec container="LightClientHeader" fork="altair" hash="53de7cd2">
     class LightClientHeader(Container):
@@ -1341,7 +1347,9 @@
     </spec>
 
 - name: LightClientHeader#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/versions/capella/LightClientHeaderCapella.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/versions/capella/LightClientHeaderSchemaCapella.java
   spec: |
     <spec container="LightClientHeader" fork="capella" style="diff" hash="b625e61e">
     --- altair
@@ -1353,8 +1361,26 @@
     +    execution_branch: ExecutionBranch
     </spec>
 
+- name: LightClientHeader#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/versions/gloas/LightClientHeaderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/versions/gloas/LightClientHeaderSchemaGloas.java
+  spec: |
+    <spec container="LightClientHeader" fork="gloas" hash="b0387ab2">
+    class LightClientHeader(Container):
+        beacon: BeaconBlockHeader
+        # [Modified in Gloas:EIP7732]
+        # Removed `execution`
+        # [New in Gloas:EIP7732]
+        execution_block_hash: Hash32
+        # [Modified in Gloas:EIP7732]
+        execution_branch: ExecutionBranch
+    </spec>
+
 - name: LightClientOptimisticUpdate#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientOptimisticUpdate.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientOptimisticUpdateSchema.java
   spec: |
     <spec container="LightClientOptimisticUpdate" fork="altair" hash="0818d65f">
     class LightClientOptimisticUpdate(Container):
@@ -1367,7 +1393,9 @@
     </spec>
 
 - name: LightClientOptimisticUpdate#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientOptimisticUpdate.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientOptimisticUpdateSchema.java
   spec: |
     <spec container="LightClientOptimisticUpdate" fork="capella" style="diff" hash="bdce7b1d">
 
@@ -1395,7 +1423,9 @@
     </spec>
 
 - name: LightClientUpdate#capella
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientUpdate.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientUpdateSchema.java
   spec: |
     <spec container="LightClientUpdate" fork="capella" style="diff" hash="8d215165">
 
