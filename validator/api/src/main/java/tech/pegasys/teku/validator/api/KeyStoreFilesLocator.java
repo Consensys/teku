@@ -156,9 +156,14 @@ public class KeyStoreFilesLocator {
                                 + "exist or isn't readable. Expected to find it at %s",
                             path.toAbsolutePath(), passwordFile.getAbsolutePath()));
                   }
-                } else {
+                } else if (passwordFileOrDirectory.isFile()) {
                   // User specified a single password file to use for all keystores.
                   passwordFile = passwordFileOrDirectory;
+                } else {
+                  throw new InvalidConfigurationException(
+                      String.format(
+                          "Invalid configuration. Password file (%s) is neither a directory nor a file",
+                          passwordFileOrDirectory.getAbsolutePath()));
                 }
                 pathMap.putIfAbsent(path, passwordFile.toPath());
               });
