@@ -126,7 +126,9 @@
     </spec>
 
 - name: COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR =
   spec: |
     <spec constant_var="COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR" fork="phase0" hash="e8e1efcf">
     COMMITTEE_WEIGHT_ESTIMATION_ADJUSTMENT_FACTOR: uint64 = 5

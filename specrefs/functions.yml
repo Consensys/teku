@@ -118,7 +118,9 @@
     </spec>
 
 - name: adjust_committee_weight_estimate_to_ensure_safety#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static UInt64 adjustCommitteeWeightEstimateToEnsureSafety(
   spec: |
     <spec fn="adjust_committee_weight_estimate_to_ensure_safety" fork="phase0" hash="9f438f67">
     def adjust_committee_weight_estimate_to_ensure_safety(estimate: Gwei) -> Gwei:
@@ -1778,7 +1780,9 @@
     </spec>
 
 - name: compute_shuffled_permutation#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
+      search: public void shuffleList(final int[] input, final Bytes32 seed) {
   spec: |
     <spec fn="compute_shuffled_permutation" fork="phase0" hash="48fcb874">
     def compute_shuffled_permutation(index_count: uint64, seed: Bytes32) -> Sequence[uint64]:
@@ -2477,7 +2481,9 @@
     </spec>
 
 - name: estimate_committee_weight_between_slots#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static UInt64 estimateCommitteeWeightBetweenSlots(
   spec: |
     <spec fn="estimate_committee_weight_between_slots" fork="phase0" hash="a445a2ff">
     def estimate_committee_weight_between_slots(
@@ -4805,7 +4811,9 @@
     </spec>
 
 - name: get_fast_confirmation_store#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/FastConfirmationStore.java
+      search: public static FastConfirmationStore create(final ReadOnlyStore store) {
   spec: |
     <spec fn="get_fast_confirmation_store" fork="phase0" hash="799b2284">
     def get_fast_confirmation_store(store: Store) -> FastConfirmationStore:
@@ -7561,7 +7569,9 @@
     </spec>
 
 - name: is_full_validator_set_covered#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static boolean isFullValidatorSetCovered(
   spec: |
     <spec fn="is_full_validator_set_covered" fork="phase0" hash="d83c05cd">
     def is_full_validator_set_covered(start_slot: Slot, end_slot: Slot) -> bool:
@@ -8062,7 +8072,9 @@
     </spec>
 
 - name: is_start_slot_at_epoch#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: public static boolean isStartSlotAtEpoch(
   spec: |
     <spec fn="is_start_slot_at_epoch" fork="phase0" hash="81d191cd">
     def is_start_slot_at_epoch(slot: Slot) -> bool:
@@ -12789,7 +12801,9 @@
     </spec>
 
 - name: update_fast_confirmation_variables#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: static FastConfirmationStore updateFastConfirmationVariables(
   spec: |
     <spec fn="update_fast_confirmation_variables" fork="phase0" hash="4002d8dd">
     def update_fast_confirmation_variables(fcr_store: FastConfirmationStore) -> None:
