@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,6 +57,7 @@ public class RestApiBuilder {
 
   private int port;
   private String listenAddress = "127.0.0.1";
+  private OptionalLong asyncTimeoutMillis = OptionalLong.empty();
   private OptionalInt maxUrlLength = OptionalInt.empty();
   private boolean virtualThreadsEnabled;
   private OptionalInt virtualThreadsMaxThreads = OptionalInt.empty();
@@ -94,6 +97,16 @@ public class RestApiBuilder {
 
   public RestApiBuilder maxUrlLength(final int maxUrlLength) {
     this.maxUrlLength = OptionalInt.of(maxUrlLength);
+    return this;
+  }
+
+  /**
+   * Sets the timeout for future-based asynchronous REST responses. Server-sent event handlers use a
+   * separate unlimited timeout and are not affected by this setting.
+   */
+  public RestApiBuilder asyncTimeoutMillis(final long asyncTimeoutMillis) {
+    checkArgument(asyncTimeoutMillis > 0, "Async timeout must be greater than zero");
+    this.asyncTimeoutMillis = OptionalLong.of(asyncTimeoutMillis);
     return this;
   }
 
@@ -152,6 +165,7 @@ public class RestApiBuilder {
         Javalin.create(
             config -> {
               config.http.defaultContentType = "application/json";
+              asyncTimeoutMillis.ifPresent(timeout -> config.http.asyncTimeout = timeout);
               config.startup.showJavalinBanner = false;
               config.startup.startupWatcherEnabled = false;
               config.http.compressionStrategy = CompressionStrategy.GZIP;

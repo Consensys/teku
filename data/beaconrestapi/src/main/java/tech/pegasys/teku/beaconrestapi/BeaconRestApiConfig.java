@@ -38,6 +38,7 @@ public class BeaconRestApiConfig {
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
   public static final boolean DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED = false;
   public static final Duration DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_TIMEOUT = Duration.ofSeconds(5);
+  public static final Duration DEFAULT_REST_API_ASYNC_TIMEOUT = Duration.ofSeconds(30);
   public static final boolean DEFAULT_REST_API_VIRTUAL_THREADS_ENABLED = false;
   public static final int DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS = 200;
   public static final int DEFAULT_TARGET_VALIDATORS_API_THREADS = 10;
@@ -46,6 +47,7 @@ public class BeaconRestApiConfig {
   private final int restApiPort;
   private final boolean restApiDocsEnabled;
   private final boolean restApiEnabled;
+  private final Duration restApiAsyncTimeout;
   private final boolean restApiLightClientEnabled;
   private final boolean beaconLivenessTrackingEnabled;
   private final boolean getBlobsSidecarsDownloadEnabled;
@@ -64,6 +66,7 @@ public class BeaconRestApiConfig {
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
+      final Duration restApiAsyncTimeout,
       final boolean restApiLightClientEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
@@ -80,6 +83,7 @@ public class BeaconRestApiConfig {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
+    this.restApiAsyncTimeout = restApiAsyncTimeout;
     this.restApiLightClientEnabled = restApiLightClientEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
@@ -105,6 +109,10 @@ public class BeaconRestApiConfig {
 
   public boolean isRestApiEnabled() {
     return restApiEnabled;
+  }
+
+  public Duration getRestApiAsyncTimeout() {
+    return restApiAsyncTimeout;
   }
 
   public boolean isRestApiLightClientEnabled() {
@@ -179,6 +187,7 @@ public class BeaconRestApiConfig {
     private int restApiPort = DEFAULT_REST_API_PORT;
     private boolean restApiDocsEnabled = false;
     private boolean restApiEnabled = false;
+    private Duration restApiAsyncTimeout = DEFAULT_REST_API_ASYNC_TIMEOUT;
     private boolean restApiLightClientEnabled = false;
     private boolean beaconLivenessTrackingEnabled = DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
     private boolean getBlobsSidecarsDownloadEnabled = DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED;
@@ -213,6 +222,16 @@ public class BeaconRestApiConfig {
 
     public BeaconRestApiConfigBuilder restApiEnabled(final boolean restApiEnabled) {
       this.restApiEnabled = restApiEnabled;
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder restApiAsyncTimeoutSeconds(
+        final long restApiAsyncTimeoutSeconds) {
+      if (restApiAsyncTimeoutSeconds <= 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid restApiAsyncTimeoutSeconds: %d", restApiAsyncTimeoutSeconds));
+      }
+      this.restApiAsyncTimeout = Duration.ofSeconds(restApiAsyncTimeoutSeconds);
       return this;
     }
 
@@ -330,6 +349,7 @@ public class BeaconRestApiConfig {
           restApiPort,
           restApiDocsEnabled,
           restApiEnabled,
+          restApiAsyncTimeout,
           restApiLightClientEnabled,
           restApiInterface,
           restApiHostAllowlist,
