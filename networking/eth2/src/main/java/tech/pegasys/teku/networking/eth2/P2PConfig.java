@@ -58,6 +58,7 @@ public class P2PConfig {
   public static final int DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS = -1;
   public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 300_000;
   public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 240_000;
+  public static final double DEFAULT_SIDECAR_RETRIEVAL_OVERLAP_FRACTION = 0.05;
 
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS = 30;
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 3;
@@ -100,6 +101,7 @@ public class P2PConfig {
   private final boolean allTopicsFilterEnabled;
   private final int sidecarRecoveryTimeout;
   private final int sidecarDownloadTimeout;
+  private final double sidecarRetrievalOverlapFraction;
   private final int sidecarSyncBatchSize;
   private final int sidecarSyncPollPeriod;
   private final boolean columnsDataAvailabilityHalfCheckEnabled;
@@ -133,6 +135,7 @@ public class P2PConfig {
       final boolean isRpcSnappyAircompressorEnabled,
       final int sidecarRecoveryTimeout,
       final int sidecarDownloadTimeout,
+      final double sidecarRetrievalOverlapFraction,
       final Integer sidecarSyncBatchSize,
       final Integer sidecarSyncPollPeriod,
       final boolean columnsDataAvailabilityHalfCheckEnabled,
@@ -165,6 +168,7 @@ public class P2PConfig {
     this.isRpcSnappyAircompressorEnabled = isRpcSnappyAircompressorEnabled;
     this.sidecarDownloadTimeout = sidecarDownloadTimeout;
     this.sidecarRecoveryTimeout = sidecarRecoveryTimeout;
+    this.sidecarRetrievalOverlapFraction = sidecarRetrievalOverlapFraction;
     this.sidecarSyncBatchSize = sidecarSyncBatchSize;
     this.sidecarSyncPollPeriod = sidecarSyncPollPeriod;
     this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
@@ -289,6 +293,10 @@ public class P2PConfig {
     return sidecarDownloadTimeout;
   }
 
+  public double getSidecarRetrievalOverlapFraction() {
+    return sidecarRetrievalOverlapFraction;
+  }
+
   public int getSidecarSyncBatchSize() {
     return sidecarSyncBatchSize;
   }
@@ -341,6 +349,7 @@ public class P2PConfig {
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
     private Integer sidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
     private Integer sidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
+    private Double sidecarRetrievalOverlapFraction = DEFAULT_SIDECAR_RETRIEVAL_OVERLAP_FRACTION;
 
     private boolean columnsDataAvailabilityHalfCheckEnabled =
         DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED;
@@ -420,6 +429,7 @@ public class P2PConfig {
           rpcSnappyAircompressorEnabled,
           sidecarRecoveryTimeout,
           sidecarDownloadTimeout,
+          sidecarRetrievalOverlapFraction,
           sidecarSyncBatchSize,
           sidecarSyncPollPeriod,
           columnsDataAvailabilityHalfCheckEnabled,
@@ -613,6 +623,11 @@ public class P2PConfig {
 
     public Builder sidecarDownloadTimeout(final Integer sidecarDownloadTimeout) {
       this.sidecarDownloadTimeout = sidecarDownloadTimeout;
+      return this;
+    }
+
+    public Builder sidecarRetrievalOverlapFraction(final Double sidecarRetrievalOverlapFraction) {
+      this.sidecarRetrievalOverlapFraction = sidecarRetrievalOverlapFraction;
       return this;
     }
 

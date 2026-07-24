@@ -1118,7 +1118,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyCountSupplier,
             dasRpc,
             dasAsyncRunner,
-            Duration.ofSeconds(1));
+            timeProvider,
+            beaconConfig.p2pConfig().getSidecarRetrievalOverlapFraction());
 
     simpleSidecarRetriever = Optional.of(sidecarRetriever);
 
