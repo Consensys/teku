@@ -315,4 +315,7 @@ public interface Database extends AutoCloseable {
   // Triggers a full, blocking compaction of the underlying storage to physically reclaim the disk
   // space left behind by pruning. Expensive and I/O-heavy; intended for offline/CLI use.
   void compactStorage();
+
+  // prunes extension sidecars, storing proofs from them
+  void archiveSidecarsProofs(UInt64 startSlot, UInt64 tillSlotInclusive, int pruneLimit);
 }
