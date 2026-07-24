@@ -72,6 +72,10 @@ public class InternalValidationResult {
     return create(ValidationResultCode.IGNORE, String.format(descriptionTemplate, args));
   }
 
+  public static InternalValidationResult ignore(final String description) {
+    return create(ValidationResultCode.IGNORE, description);
+  }
+
   @FormatMethod
   public static InternalValidationResult ignore(
       final ValidationResultSubCode validationResultSubCode,
@@ -81,6 +85,16 @@ public class InternalValidationResult {
         ValidationResultCode.IGNORE,
         validationResultSubCode,
         String.format(descriptionTemplate, args));
+  }
+
+  @FormatMethod
+  public static InternalValidationResult saveForFuture(
+      final String descriptionTemplate, final Object... args) {
+    return create(ValidationResultCode.SAVE_FOR_FUTURE, String.format(descriptionTemplate, args));
+  }
+
+  public static InternalValidationResult saveForFuture(final String description) {
+    return create(ValidationResultCode.SAVE_FOR_FUTURE, description);
   }
 
   public ValidationResultCode code() {

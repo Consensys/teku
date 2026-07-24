@@ -21,6 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.saveForFuture;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -103,7 +106,10 @@ public class ProposerPreferencesGossipValidatorTest {
     when(gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot))
         .thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(
+            ignore(
+                "Proposer preferences proposal slot %s is not in the current or within lookahead epoch",
+                proposalSlot));
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 
@@ -112,7 +118,8 @@ public class ProposerPreferencesGossipValidatorTest {
     when(gossipValidationHelper.isSlotFromFuture(proposalSlot)).thenReturn(false);
     when(gossipValidationHelper.isSlotCurrent(proposalSlot)).thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(
+            ignore("Proposer preferences proposal slot %s has already passed", proposalSlot));
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 
@@ -120,7 +127,10 @@ public class ProposerPreferencesGossipValidatorTest {
   void shouldSaveForFuture_whenDependentRootBlockNotSeen() {
     when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValue(
+            saveForFuture(
+                "Proposer preferences dependent root %s has not been seen. Saving for future processing",
+                dependentRoot));
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 
@@ -134,15 +144,10 @@ public class ProposerPreferencesGossipValidatorTest {
         .thenReturn(Optional.of(checkpointBoundarySlot));
 
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(
-            result ->
-                result.isReject()
-                    && result
-                        .getDescription()
-                        .filter(
-                            description ->
-                                description.contains("but must be before checkpoint boundary slot"))
-                        .isPresent());
+        .isCompletedWithValue(
+            reject(
+                "Proposer preferences dependent root %s is at slot %s, but must be before checkpoint boundary slot %s",
+                dependentRoot, checkpointBoundarySlot, checkpointBoundarySlot));
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 
@@ -150,18 +155,14 @@ public class ProposerPreferencesGossipValidatorTest {
   void shouldReject_whenCheckpointStateRetrievalFails() {
     when(recentChainData.retrieveCheckpointState(any(Checkpoint.class)))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("checkpoint state failed")));
-
+    final int minSeedLookahead = spec.atSlot(proposalSlot).getConfig().getMinSeedLookahead();
+    final UInt64 checkpointEpoch =
+        spec.computeEpochAtSlot(proposalSlot).minusMinZero(minSeedLookahead);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(
-            result ->
-                result.isReject()
-                    && result
-                        .getDescription()
-                        .filter(
-                            description ->
-                                description.contains(
-                                    "Unable to generate proposer preferences checkpoint state"))
-                        .isPresent());
+        .isCompletedWithValue(
+            reject(
+                "Unable to generate proposer preferences checkpoint state for checkpoint epoch %s and dependent root %s",
+                checkpointEpoch, dependentRoot));
     verify(gossipValidationHelper, never())
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
   }
@@ -172,7 +173,12 @@ public class ProposerPreferencesGossipValidatorTest {
         .isCompletedWithValue(ACCEPT);
 
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(
+            ignore(
+                "Already received proposer preferences for tuple (%s, %s, %s)",
+                signedProposerPreferences.getMessage().getDependentRoot(),
+                signedProposerPreferences.getMessage().getProposalSlot(),
+                signedProposerPreferences.getMessage().getValidatorIndex()));
     verify(recentChainData, times(1)).retrieveCheckpointState(any(Checkpoint.class));
   }
 
@@ -183,7 +189,12 @@ public class ProposerPreferencesGossipValidatorTest {
         createSignedProposerPreferences(dependentRoot, proposalSlot, wrongValidatorIndex);
 
     assertThatSafeFuture(validator.validate(wrongIndexPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(
+            reject(
+                "Proposer preferences validator index %s does not match expected proposer %s for slot %s",
+                wrongIndexPreferences.getMessage().getValidatorIndex(),
+                validatorIndex,
+                proposalSlot));
     verify(gossipValidationHelper, never())
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
   }
@@ -195,7 +206,7 @@ public class ProposerPreferencesGossipValidatorTest {
         .thenReturn(false);
 
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(reject("Invalid proposer preferences signature"));
   }
 
   @TestTemplate
@@ -205,7 +216,7 @@ public class ProposerPreferencesGossipValidatorTest {
         .thenReturn(false);
 
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(reject("Invalid proposer preferences signature"));
 
     // Fix the signature mock
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
@@ -240,7 +251,12 @@ public class ProposerPreferencesGossipValidatorTest {
     // Now complete first validation - should be ignored due to race condition
     slowStateFuture.complete(Optional.of(state));
     assertThatSafeFuture(firstResult)
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(
+            ignore(
+                "Already received proposer preferences for tuple (%s, %s, %s)",
+                signedProposerPreferences.getMessage().getDependentRoot(),
+                signedProposerPreferences.getMessage().getProposalSlot(),
+                signedProposerPreferences.getMessage().getValidatorIndex()));
   }
 
   private SignedProposerPreferences createSignedProposerPreferences(
