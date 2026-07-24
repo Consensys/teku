@@ -44,14 +44,15 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -69,7 +70,6 @@ public class ProfilingRun {
 
   @Disabled
   @Test
-  @SuppressWarnings("deprecation")
   public void importBlocks() throws Exception {
     int validatorsCount = 32 * 1024;
     int iterationBlockLimit = 1024;
@@ -106,8 +106,9 @@ public class ProfilingRun {
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
               metricsSystem);
-      BeaconChainUtil localChain =
-          BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
+      ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+      ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+
       BlockImporter blockImporter =
           new BlockImporter(
               asyncRunner,
@@ -130,7 +131,7 @@ public class ProfilingRun {
             measuredBlockCount = 0;
           }
           long s = System.currentTimeMillis();
-          localChain.setSlot(block.getSlot());
+          chainUpdater.setCurrentSlot(block.getSlot());
           BlockImportResult result = blockImporter.importBlock(block).join();
           System.out.println(
               "Imported block at #"
@@ -158,7 +159,6 @@ public class ProfilingRun {
 
   @Disabled
   @Test
-  @SuppressWarnings("deprecation")
   public void importBlocksMemProfiling() throws Exception {
     final int validatorsCount = 32 * 1024;
 
@@ -170,23 +170,15 @@ public class ProfilingRun {
             + ".ssz.gz";
 
     final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
-
-    BeaconState initialState =
-        new GenesisStateBuilder()
-            .spec(spec)
-            .signDeposits(false)
-            .addValidators(validatorKeys)
-            .build();
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
       final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
           mock(ReceivedBlockEventsChannel.class);
       final RecentChainData recentChainData = MemoryOnlyRecentChainData.create();
-      final BeaconChainUtil localChain =
-          BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
-      recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
-      initialState = null;
+      ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+      ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+      chainUpdater.initializeGenesis(false);
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
       ForkChoice forkChoice =
@@ -212,7 +204,7 @@ public class ProfilingRun {
       try (Reader blockReader = BlockIO.createResourceReader(spec, blocksFile)) {
         for (SignedBeaconBlock block : blockReader) {
           long s = System.currentTimeMillis();
-          localChain.setSlot(block.getSlot());
+          chainUpdater.setCurrentSlot(block.getSlot());
           BlockImportResult result = blockImporter.importBlock(block).join();
           System.out.println(
               "Imported block at #"

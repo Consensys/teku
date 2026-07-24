@@ -55,7 +55,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2);
+        createValidatorKeyGenerator().generateValidatorKeys(2);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
@@ -144,8 +144,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
     eth1Node.start();
 
-    final ValidatorKeystores keyStore =
-        createTekuDepositSender(networkName).generateValidatorKeys(2);
+    final ValidatorKeystores keyStore = createValidatorKeyGenerator().generateValidatorKeys(2);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(keyStore).generate();

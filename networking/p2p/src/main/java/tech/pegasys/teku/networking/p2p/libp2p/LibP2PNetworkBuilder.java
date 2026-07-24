@@ -100,7 +100,6 @@ public class LibP2PNetworkBuilder {
 
   protected LibP2PNetworkBuilder() {}
 
-  @SuppressWarnings("AddressSelection")
   public P2PNetwork<Peer> build() {
 
     gossipNetwork = createGossipNetwork();
@@ -320,7 +319,6 @@ public class LibP2PNetworkBuilder {
         (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
   }
 
-  @SuppressWarnings("AddressSelection")
   protected Host createHost(final PrivKey privKey, final List<Multiaddr> advertisedAddresses) {
     final String[] listenAddrs = buildListenAddresses(config);
 
