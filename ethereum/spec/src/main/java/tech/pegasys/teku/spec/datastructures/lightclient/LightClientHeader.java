@@ -13,22 +13,26 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient;
 
-import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderAltair;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderCapella;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderGloas;
 
-public class LightClientHeader extends Container1<LightClientHeader, BeaconBlockHeader> {
+public interface LightClientHeader extends SszContainer {
 
-  public LightClientHeader(
-      final LightClientHeaderSchema schema, final BeaconBlockHeader beaconBlockHeader) {
-    super(schema, beaconBlockHeader);
+  BeaconBlockHeader getBeacon();
+
+  default Optional<LightClientHeaderAltair> toVersionAltair() {
+    return Optional.empty();
   }
 
-  protected LightClientHeader(final LightClientHeaderSchema type, final TreeNode backingNode) {
-    super(type, backingNode);
+  default Optional<LightClientHeaderCapella> toVersionCapella() {
+    return Optional.empty();
   }
 
-  public BeaconBlockHeader getBeacon() {
-    return getField0();
+  default Optional<LightClientHeaderGloas> toVersionGloas() {
+    return Optional.empty();
   }
 }

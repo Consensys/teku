@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.electra;
 
-import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX_ELECTRA;
 
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class LightClientBootstrapSchemaElectra extends LightClientBootstrapSchema {
-  public LightClientBootstrapSchemaElectra(
+public class LightClientFinalityUpdateSchemaElectra extends LightClientFinalityUpdateSchema {
+  public LightClientFinalityUpdateSchemaElectra(
       final SpecConfigElectra specConfigElectra,
       final SchemaRegistry registry,
       final String schemaName) {
-    super(specConfigElectra, CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA, registry, schemaName);
+    super(specConfigElectra, FINALIZED_ROOT_GINDEX_ELECTRA, registry, schemaName);
   }
 }

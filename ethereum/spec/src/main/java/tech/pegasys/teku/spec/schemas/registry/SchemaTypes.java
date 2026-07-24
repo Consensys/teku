@@ -88,6 +88,11 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -161,6 +166,16 @@ public class SchemaTypes {
       create("STATUS_MESSAGE_SCHEMA");
 
   // Altair
+  public static final SchemaId<LightClientHeaderSchema<? extends LightClientHeader>>
+      LIGHT_CLIENT_HEADER_SCHEMA = create("LIGHT_CLIENT_HEADER_SCHEMA");
+  public static final SchemaId<LightClientBootstrapSchema> LIGHT_CLIENT_BOOTSTRAP_SCHEMA =
+      create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
+  public static final SchemaId<LightClientUpdateSchema> LIGHT_CLIENT_UPDATE_SCHEMA =
+      create("LIGHT_CLIENT_UPDATE_SCHEMA");
+  public static final SchemaId<LightClientFinalityUpdateSchema>
+      LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA = create("LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA");
+  public static final SchemaId<LightClientOptimisticUpdateSchema>
+      LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA = create("LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA");
 
   // Bellatrix
   public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>
@@ -243,8 +258,6 @@ public class SchemaTypes {
   // Move this when we decide which fork this schema should be under
   public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
       create("EXECUTION_PROOF_SCHEMA");
-  public static final SchemaId<LightClientBootstrapSchema> LIGHT_CLIENT_BOOTSTRAP_SCHEMA =
-      create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
 
   // Fulu
   public static final SchemaId<CellSchema> CELL_SCHEMA = create("CELL_SCHEMA");

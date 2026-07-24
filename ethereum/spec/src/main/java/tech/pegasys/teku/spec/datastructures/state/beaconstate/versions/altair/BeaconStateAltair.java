@@ -22,7 +22,9 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -61,15 +63,29 @@ public interface BeaconStateAltair extends BeaconState {
   }
 
   default SszBytes32Vector createCurrentSyncCommitteeProof() {
-    final List<Bytes32> currentSyncCommitteeProof =
-        MerkleUtil.constructMerkleProof(
-            getBackingNode(),
-            getSchema()
-                .getChildGeneralizedIndex(
-                    getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE)));
+    return createProof(fieldGIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
+  }
 
-    return SszBytes32VectorSchema.create(currentSyncCommitteeProof.size())
-        .createFromElements(currentSyncCommitteeProof.stream().map(SszBytes32::of).toList());
+  default SszBytes32Vector createNextSyncCommitteeProof() {
+    return createProof(fieldGIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
+  }
+
+  default SszBytes32Vector createFinalityBranchProof() {
+    return createProof(
+        GIndexUtil.gIdxCompose(
+            fieldGIndex(BeaconStateFields.FINALIZED_CHECKPOINT),
+            Checkpoint.SSZ_SCHEMA.getChildGeneralizedIndex(
+                Checkpoint.SSZ_SCHEMA.getFieldIndex("root"))));
+  }
+
+  private long fieldGIndex(final BeaconStateFields field) {
+    return getSchema().getChildGeneralizedIndex(getSchema().getFieldIndex(field));
+  }
+
+  private SszBytes32Vector createProof(final long gIndex) {
+    final List<Bytes32> proof = MerkleUtil.constructMerkleProof(getBackingNode(), gIndex);
+    return SszBytes32VectorSchema.create(proof.size())
+        .createFromElements(proof.stream().map(SszBytes32::of).toList());
   }
 
   default SyncCommittee getNextSyncCommittee() {

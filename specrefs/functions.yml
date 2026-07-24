@@ -1980,7 +1980,7 @@
 - name: compute_sync_committee_period#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/SyncCommitteeUtil.java
-      search: private UInt64 computeSyncCommitteePeriod(
+      search: public UInt64 computeSyncCommitteePeriod(
   spec: |
     <spec fn="compute_sync_committee_period" fork="altair" hash="c5bb031f">
     def compute_sync_committee_period(epoch: Epoch) -> uint64:
@@ -1988,7 +1988,9 @@
     </spec>
 
 - name: compute_sync_committee_period_at_slot#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/LightClientUtil.java
+      search: private UInt64 syncCommitteePeriodAtSlot(
   spec: |
     <spec fn="compute_sync_committee_period_at_slot" fork="altair" hash="6ad449b8">
     def compute_sync_committee_period_at_slot(slot: Slot) -> uint64:
@@ -2306,7 +2308,9 @@
     </spec>
 
 - name: create_light_client_bootstrap#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/LightClientUtil.java
+      search: public LightClientBootstrap getLightClientBootstrap(
   spec: |
     <spec fn="create_light_client_bootstrap" fork="altair" hash="54e41304">
     def create_light_client_bootstrap(
@@ -2329,7 +2333,9 @@
     </spec>
 
 - name: create_light_client_finality_update#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/LightClientUtil.java
+      search: public LightClientFinalityUpdate createLightClientFinalityUpdate(
   spec: |
     <spec fn="create_light_client_finality_update" fork="altair" hash="21956507">
     def create_light_client_finality_update(update: LightClientUpdate) -> LightClientFinalityUpdate:
@@ -2343,7 +2349,9 @@
     </spec>
 
 - name: create_light_client_optimistic_update#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/LightClientUtil.java
+      search: public LightClientOptimisticUpdate createLightClientOptimisticUpdate(
   spec: |
     <spec fn="create_light_client_optimistic_update" fork="altair" hash="5a993ad2">
     def create_light_client_optimistic_update(update: LightClientUpdate) -> LightClientOptimisticUpdate:
@@ -2355,7 +2363,9 @@
     </spec>
 
 - name: create_light_client_update#altair
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/LightClientUtil.java
+      search: public LightClientUpdate createLightClientUpdate(
   spec: |
     <spec fn="create_light_client_update" fork="altair" hash="cde7d86c">
     def create_light_client_update(

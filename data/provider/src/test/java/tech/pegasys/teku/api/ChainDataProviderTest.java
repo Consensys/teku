@@ -706,8 +706,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
     LightClientBootstrap bootstrap = safeJoin(future).orElseThrow().getData();
 
-    assertThat(bootstrap.get(0)).isEqualTo(expectedBlockHeader);
-    assertThat(bootstrap.get(1))
+    assertThat(bootstrap.getLightClientHeader().getBeacon()).isEqualTo(expectedBlockHeader);
+    assertThat(bootstrap.getCurrentSyncCommittee())
         .isEqualTo(BeaconStateAltair.required(internalState).getCurrentSyncCommittee());
   }
 

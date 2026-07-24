@@ -80,6 +80,10 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_UPDATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
@@ -208,8 +212,18 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionR
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.altair.LightClientHeaderSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientBootstrapSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientFinalityUpdateSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientUpdateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientBootstrapSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientFinalityUpdateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientUpdateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -278,7 +292,13 @@ public class SchemaRegistryBuilder {
         .addProvider(createBeaconStateSchemaProvider())
         .addProvider(createMetadataMessageSchemaProvider())
         .addProvider(createStatusMessageSchemaProvider())
+
+        // ALTAIR
+        .addProvider(createLightClientHeaderSchemaProvider())
         .addProvider(createLightClientBootstrapSchemaProvider())
+        .addProvider(createLightClientUpdateSchemaProvider())
+        .addProvider(createLightClientFinalityUpdateSchemaProvider())
+        .addProvider(createLightClientOptimisticUpdateSchemaProvider())
 
         // BELLATRIX
         .addProvider(createTransactionSchemaProvider())
@@ -1027,15 +1047,83 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ALTAIR,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchema(SpecConfigAltair.required(specConfig)))
+                new LightClientBootstrapSchema(
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchemaElectra(SpecConfigElectra.required(specConfig)))
+                new LightClientBootstrapSchemaElectra(
+                    SpecConfigElectra.required(specConfig), registry, schemaName))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchemaGloas(SpecConfigGloas.required(specConfig)))
+                new LightClientBootstrapSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
+        .build();
+  }
+
+  private static SchemaProvider<?> createLightClientHeaderSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_HEADER_SCHEMA)
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) -> new LightClientHeaderSchemaAltair(schemaName))
+        .withCreator(
+            CAPELLA,
+            (registry, specConfig, schemaName) ->
+                new LightClientHeaderSchemaCapella(registry, schemaName))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas(schemaName))
+        .build();
+  }
+
+  private static SchemaProvider<?> createLightClientUpdateSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_UPDATE_SCHEMA)
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) ->
+                new LightClientUpdateSchema(
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig, schemaName) ->
+                new LightClientUpdateSchemaElectra(
+                    SpecConfigElectra.required(specConfig), registry, schemaName))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new LightClientUpdateSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
+        .build();
+  }
+
+  private static SchemaProvider<?> createLightClientFinalityUpdateSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_FINALITY_UPDATE_SCHEMA)
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) ->
+                new LightClientFinalityUpdateSchema(
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig, schemaName) ->
+                new LightClientFinalityUpdateSchemaElectra(
+                    SpecConfigElectra.required(specConfig), registry, schemaName))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new LightClientFinalityUpdateSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
+        .build();
+  }
+
+  private static SchemaProvider<?> createLightClientOptimisticUpdateSchemaProvider() {
+    return providerBuilder(LIGHT_CLIENT_OPTIMISTIC_UPDATE_SCHEMA)
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) ->
+                new LightClientOptimisticUpdateSchema(
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
         .build();
   }
 

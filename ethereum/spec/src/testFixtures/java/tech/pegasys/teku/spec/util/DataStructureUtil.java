@@ -186,11 +186,18 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -2425,10 +2432,32 @@ public final class DataStructureUtil {
             randomSignature());
   }
 
+  public LightClientHeader randomLightClientHeader(final UInt64 slot) {
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      final LightClientHeaderSchemaGloas gloasSchema = headerSchema.toVersionGloasRequired();
+      return gloasSchema.create(
+          randomBeaconBlockHeader(),
+          SszBytes32.of(randomBytes32()),
+          randomSszBytes32Vector(gloasSchema.getExecutionBranchSchema(), this::randomBytes32));
+    }
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      final LightClientHeaderSchemaCapella capellaSchema = headerSchema.toVersionCapellaRequired();
+      return capellaSchema.create(
+          randomBeaconBlockHeader(),
+          randomExecutionPayloadHeader(spec.atSlot(slot)),
+          randomSszBytes32Vector(capellaSchema.getExecutionBranchSchema(), this::randomBytes32));
+    }
+    return headerSchema.create(randomBeaconBlockHeader());
+  }
+
   public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
     final LightClientBootstrapSchema bootstrapSchema =
         getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
-    final LightClientHeaderSchema headerSchema =
+    final LightClientHeaderSchema<?> headerSchema =
         getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return bootstrapSchema.create(
@@ -2441,7 +2470,7 @@ public final class DataStructureUtil {
   public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
     final LightClientUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
-    final LightClientHeaderSchema headerSchema =
+    final LightClientHeaderSchema<?> headerSchema =
         getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(
@@ -2450,6 +2479,32 @@ public final class DataStructureUtil {
         randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32),
         headerSchema.create(randomBeaconBlockHeader()),
         randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
+        randomSyncAggregate(),
+        SszUInt64.of(randomUInt64()));
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(final UInt64 slot) {
+    final LightClientFinalityUpdateSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientFinalityUpdateSchema();
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+
+    return schema.create(
+        headerSchema.create(randomBeaconBlockHeader()),
+        headerSchema.create(randomBeaconBlockHeader()),
+        randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
+        randomSyncAggregate(),
+        SszUInt64.of(randomUInt64()));
+  }
+
+  public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(final UInt64 slot) {
+    final LightClientOptimisticUpdateSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientOptimisticUpdateSchema();
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+
+    return schema.create(
+        headerSchema.create(randomBeaconBlockHeader()),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
   }
