@@ -29,9 +29,11 @@ public class LightClientOptimisticUpdateSchema
     extends ContainerSchema3<
         LightClientOptimisticUpdate, LightClientHeader, SyncAggregate, SszUInt64> {
   public LightClientOptimisticUpdateSchema(
-      final SpecConfigAltair specConfigAltair, final SchemaRegistry registry) {
+      final SpecConfigAltair specConfigAltair,
+      final SchemaRegistry registry,
+      final String schemaName) {
     super(
-        "LightClientOptimisticUpdate",
+        schemaName,
         namedSchema(
             "attested_header",
             SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),

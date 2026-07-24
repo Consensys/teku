@@ -1123,7 +1123,7 @@ public class SchemaRegistryBuilder {
             ALTAIR,
             (registry, specConfig, schemaName) ->
                 new LightClientOptimisticUpdateSchema(
-                    SpecConfigAltair.required(specConfig), registry))
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
         .build();
   }
 
