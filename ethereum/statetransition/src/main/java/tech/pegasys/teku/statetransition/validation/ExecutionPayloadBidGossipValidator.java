@@ -17,9 +17,9 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.HIGHEST_BID_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_BUILDERS_BIDS;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.saveForFuture;
 
 import java.util.Map;
 import java.util.Optional;
@@ -96,7 +96,9 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<ProposerPreferences> proposerPreferences =
         proposerPreferencesManager.getProposerPreferences(bid.getSlot());
     if (proposerPreferences.isEmpty()) {
-      return completedFuture(SAVE_FOR_FUTURE);
+      return completedFuture(
+          saveForFuture(
+              "No proposer preferences available. The bid will be saved for future processing."));
     }
 
     /*
@@ -154,9 +156,12 @@ public class ExecutionPayloadBidGossipValidator {
     if (!gossipValidationHelper.isBlockHashKnown(
         bid.getParentBlockHash(), bid.getParentBlockRoot())) {
       LOG.trace(
-          "Bid's parent block hash {} is not the block hash of a known execution payload in fork choice. It will be saved for future processing",
+          "Bid's parent block hash {} is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
           bid.getParentBlockHash());
-      return completedFuture(SAVE_FOR_FUTURE);
+      return completedFuture(
+          saveForFuture(
+              "Bid's parent block hash %s is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
+              bid.getParentBlockHash()));
     }
 
     /*
@@ -169,7 +174,10 @@ public class ExecutionPayloadBidGossipValidator {
       LOG.trace(
           "Gas limit for parent execution payload with block hash {} is unavailable. It will be saved for future processing",
           bid.getParentBlockHash());
-      return completedFuture(SAVE_FOR_FUTURE);
+      return completedFuture(
+          saveForFuture(
+              "Gas limit for parent execution payload with block hash %s is unavailable. The bid will be saved for future processing",
+              bid.getParentBlockHash()));
     }
     final UInt64 parentGasLimit = maybeParentGasLimit.get();
     final UInt64 targetGasLimit = proposerPreferences.get().getTargetGasLimit();
@@ -187,9 +195,12 @@ public class ExecutionPayloadBidGossipValidator {
         gossipValidationHelper.getSlotForBlockRoot(bid.getParentBlockRoot());
     if (maybeParentBlockSlot.isEmpty()) {
       LOG.trace(
-          "Bid's parent block with root {} does not exist. It will be saved for future processing",
+          "Bid's parent block with root {} does not exist. The bid will be saved for future processing",
           bid.getParentBlockRoot());
-      return completedFuture(SAVE_FOR_FUTURE);
+      return completedFuture(
+          saveForFuture(
+              "Bid's parent block with root %s does not exist. The bid will be saved for future processing",
+              bid.getParentBlockRoot()));
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
@@ -214,7 +225,9 @@ public class ExecutionPayloadBidGossipValidator {
                     "State for block root {} and slot {} is unavailable.",
                     bid.getParentBlockRoot(),
                     parentBlockSlot);
-                return SAVE_FOR_FUTURE;
+                return saveForFuture(
+                    "State for block root %s and slot %s is unavailable. The bid will be saved for future processing.",
+                    bid.getParentBlockRoot(), parentBlockSlot);
               }
               final BeaconState state = maybeState.get();
 

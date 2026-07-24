@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.saveForFuture;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -120,7 +121,10 @@ public class ProposerPreferencesGossipValidatorTest {
   void shouldSaveForFuture_whenDependentRootBlockNotSeen() {
     when(gossipValidationHelper.isBlockAvailable(dependentRoot)).thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValue(
+            saveForFuture(
+                "Proposer preferences dependent root %s has not been seen. Saving for future processing",
+                dependentRoot));
     verify(recentChainData, never()).retrieveCheckpointState(any(Checkpoint.class));
   }
 

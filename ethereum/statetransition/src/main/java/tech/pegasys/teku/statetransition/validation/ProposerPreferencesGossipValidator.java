@@ -15,9 +15,9 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.saveForFuture;
 
 import java.util.Optional;
 import java.util.Set;
@@ -100,7 +100,10 @@ public class ProposerPreferencesGossipValidator {
       LOG.trace(
           "Proposer preferences dependent root {} has not been seen. Saving for future processing",
           dependentRoot);
-      return completedFuture(SAVE_FOR_FUTURE);
+      return completedFuture(
+          saveForFuture(
+              "Proposer preferences dependent root %s has not been seen. Saving for future processing",
+              dependentRoot));
     }
 
     /*
@@ -153,7 +156,9 @@ public class ProposerPreferencesGossipValidator {
                     "Could not retrieve checkpoint state for ({}, {}). Saving for future processing",
                     checkpointEpoch,
                     dependentRoot);
-                return SAVE_FOR_FUTURE;
+                return saveForFuture(
+                    "Could not retrieve checkpoint state for (%s, %s). Saving proposer preferences for future processing",
+                    checkpointEpoch, dependentRoot);
               }
               final BeaconState state = maybeState.get();
 
