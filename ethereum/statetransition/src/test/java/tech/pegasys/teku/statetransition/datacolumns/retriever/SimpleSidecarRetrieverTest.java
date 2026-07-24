@@ -44,14 +44,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
 @SuppressWarnings({"JavaCase"})
 public class SimpleSidecarRetrieverTest {
@@ -72,6 +68,8 @@ public class SimpleSidecarRetrieverTest {
       new DasPeerCustodyCountSupplierStub(config.getCustodyRequirement());
 
   final Duration retrieverRound = Duration.ofSeconds(1);
+  final Duration hedgeDelay = Duration.ofSeconds(2);
+  // hedging disabled (overlapFraction == 0)
   final SimpleSidecarRetriever simpleSidecarRetriever =
       new SimpleSidecarRetriever(
           spec,
@@ -79,7 +77,24 @@ public class SimpleSidecarRetrieverTest {
           custodyCountSupplier,
           testPeerManager,
           stubAsyncRunner,
-          retrieverRound);
+          stubTimeProvider,
+          retrieverRound,
+          0.0,
+          hedgeDelay);
+
+  // Retriever with hedging enabled: up to 100% of pending requests may be hedged, after being
+  // in-flight for hedgeDelay. Uses the same peer manager so tests can share the peer setup helpers.
+  final SimpleSidecarRetriever hedgingRetriever =
+      new SimpleSidecarRetriever(
+          spec,
+          testPeerManager,
+          custodyCountSupplier,
+          testPeerManager,
+          stubAsyncRunner,
+          stubTimeProvider,
+          retrieverRound,
+          1.0,
+          hedgeDelay);
 
   final UInt64 columnIndex = UInt64.valueOf(1);
 
@@ -87,19 +102,9 @@ public class SimpleSidecarRetrieverTest {
   final Iterator<UInt256> nonCustodyNodeIds = craftNodeIdsNotCustodyOf(columnIndex).iterator();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
-  final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
 
   public SimpleSidecarRetrieverTest() {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-  }
-
-  private SignedBeaconBlock createSigned(final BeaconBlock block) {
-    return dataStructureUtil.signedBlock(block);
-  }
-
-  private DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
-    return new DataColumnSlotAndIdentifier(
-        block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
 
   Set<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
@@ -127,19 +132,13 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData = createCustodyPeer();
     final TestPeer custodyPeerHavingData = createCustodyPeer();
     final TestPeer nonCustodyPeer = createNonCustodyPeer();
 
-    final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
-    final BeaconBlock block = blockResolver.addBlock(10, 1);
-    final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
-    final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
-
-    final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, custodyPeerHavingData);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
 
     testPeerManager.connectPeer(custodyPeerMissingData);
     testPeerManager.connectPeer(nonCustodyPeer);
@@ -163,7 +162,6 @@ public class SimpleSidecarRetrieverTest {
                 .getResponseScore())
         .isEqualTo(3);
 
-    custodyPeerHavingData.addSidecar(sidecar0);
     testPeerManager.connectPeer(custodyPeerHavingData);
     assertThat(
             simpleSidecarRetriever
@@ -308,6 +306,104 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  void hedgingShouldReDispatchToAlternatePeerWhenOriginalIsSlow() {
+    final TestPeer slowPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
+    final TestPeer fastAlternatePeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, fastAlternatePeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    // Only the slow peer is available when the request starts, so the primary attempt lands on it.
+    testPeerManager.connectPeer(slowPeer);
+    final SafeFuture<DataColumnSidecar> resp = hedgingRetriever.retrieve(id0);
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(resp).isNotDone();
+    assertThat(slowPeer.getRequests()).hasSize(1);
+
+    // A capable alternate appears; after the hedge delay the request is re-dispatched to it and
+    // completes even though the original peer never responds.
+    testPeerManager.connectPeer(fastAlternatePeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(3));
+
+    assertThat(resp).isCompletedWithValue(sidecar0);
+    assertThat(fastAlternatePeer.getRequests()).hasSize(1);
+    assertThat(slowPeer.getRequests()).hasSize(1);
+    assertThat(hedgingRetriever.getHedgeCount()).isGreaterThanOrEqualTo(1);
+  }
+
+  @Test
+  void withoutHedgingRequestStaysStuckOnSlowPeer() {
+    final TestPeer slowPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
+    final TestPeer fastAlternatePeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, fastAlternatePeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    testPeerManager.connectPeer(slowPeer);
+    // default retriever has hedging disabled (overlapFraction == 0)
+    final SafeFuture<DataColumnSidecar> resp = simpleSidecarRetriever.retrieve(id0);
+
+    advanceTimeGradually(retrieverRound);
+    testPeerManager.connectPeer(fastAlternatePeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(5));
+
+    // Without hedging the request is never re-dispatched to the available alternate.
+    assertThat(resp).isNotDone();
+    assertThat(fastAlternatePeer.getRequests()).isEmpty();
+    assertThat(slowPeer.getRequests()).hasSize(1);
+  }
+
+  @Test
+  void hedgingShouldRespectOverlapBudget() {
+    // 4 pending requests, 25% overlap -> at most 1 concurrent hedged attempt.
+    final SimpleSidecarRetriever retriever =
+        new SimpleSidecarRetriever(
+            spec,
+            testPeerManager,
+            custodyCountSupplier,
+            testPeerManager,
+            stubAsyncRunner,
+            stubTimeProvider,
+            retrieverRound,
+            0.25,
+            hedgeDelay);
+
+    final TestPeer slowPeer = createSupernodePeer(Duration.ofDays(1));
+    final TestPeer slowAlternatePeer = createSupernodePeer(Duration.ofDays(1));
+
+    final List<DataColumnSlotAndIdentifier> ids =
+        IntStream.range(0, 4)
+            .mapToObj(
+                i -> new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, UInt64.valueOf(i)))
+            .toList();
+
+    // Only the slow peer present initially, so all 4 primaries land on it.
+    testPeerManager.connectPeer(slowPeer);
+    ids.forEach(id -> retriever.retrieve(id).finish(err -> LOG.error("err", err)));
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(slowPeer.getRequests()).hasSize(4);
+
+    // The alternate never responds either, so a hedged attempt keeps the overlap budget consumed
+    // and no further hedges are issued regardless of how many rounds elapse.
+    testPeerManager.connectPeer(slowAlternatePeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(6));
+
+    assertThat(slowAlternatePeer.getRequests()).hasSize(1);
+    assertThat(retriever.getHedgeCount()).isEqualTo(1);
+    assertThat(slowPeer.getRequests()).hasSize(4);
+  }
+
+  @Test
   @SuppressWarnings("unused")
   void performanceTest() {
     final List<TestPeer> testNodes =
@@ -409,6 +505,13 @@ public class SimpleSidecarRetrieverTest {
             Duration.ofMillis(100),
             Optional.of(earliestSlot))
         .currentRequestLimit(1000);
+  }
+
+  // custodies every column (like a supernode), with the given response latency
+  private TestPeer createSupernodePeer(final Duration latency) {
+    final UInt256 nodeId = dataStructureUtil.randomUInt256();
+    custodyCountSupplier.setCustomCount(nodeId, columnCount);
+    return new TestPeer(stubAsyncRunner, nodeId, latency).currentRequestLimit(1000);
   }
 
   // with 1000 requests limit
