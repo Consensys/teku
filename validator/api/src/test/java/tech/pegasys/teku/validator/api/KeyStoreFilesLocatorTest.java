@@ -46,12 +46,11 @@ public class KeyStoreFilesLocatorTest {
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
-            tuple(
-                tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()),
+            tuple(tempDir, Path.of("key", "a.json"), Path.of("pass", "a.txt")),
             tuple(
                 tempDir,
-                Path.of("key", "1", "2", "3", "b.json").toString(),
-                Path.of("pass", "1", "2", "3", "b.txt").toString()));
+                Path.of("key", "1", "2", "3", "b.json"),
+                Path.of("pass", "1", "2", "3", "b.txt")));
   }
 
   @Test
@@ -77,8 +76,7 @@ public class KeyStoreFilesLocatorTest {
     KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThat(locator.parse())
-        .containsExactly(
-            tuple(tempDir, Path.of("key", "a").toString(), Path.of("pass", "a.txt").toString()));
+        .containsExactly(tuple(tempDir, Path.of("key", "a"), Path.of("pass", "a.txt")));
   }
 
   @Test
@@ -91,9 +89,7 @@ public class KeyStoreFilesLocatorTest {
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThat(locator.parse())
-        .containsExactly(
-            tuple(
-                tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
+        .containsExactly(tuple(tempDir, Path.of("key", "a.json"), Path.of("pass", "a.txt")));
   }
 
   @Test
@@ -110,39 +106,43 @@ public class KeyStoreFilesLocatorTest {
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThat(locator.parse())
-        .containsExactly(
-            tuple(
-                tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
+        .containsExactly(tuple(tempDir, Path.of("key", "a.json"), Path.of("pass", "a.txt")));
   }
 
   @Test
   public void shouldHandleFilesAndFoldersInOneArgument(@TempDir final Path tempDir)
       throws IOException {
-    createFolders(tempDir, "key", "pass");
+    createFolders(tempDir, "key", "pass", "key2");
     createFiles(
         tempDir,
         Path.of("key", "a"),
         Path.of("pass", "a.txt"),
         Path.of("keyStore"),
-        Path.of("password"));
+        Path.of("password"),
+        Path.of("key2", "a.json"),
+        Path.of("key2", "b.json"),
+        Path.of("key2", "password.txt"));
     final String p1 =
         generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
     final String p2 = generatePath(tempDir, PATH_SEP, "keyStore", "password");
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1, p2), PATH_SEP);
+    final String p3 =
+        generatePath(tempDir, PATH_SEP, List.of("key2"), List.of("key2", "password.txt"));
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1, p2, p3), PATH_SEP);
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
-            tuple(tempDir, Path.of("key", "a").toString(), Path.of("pass", "a.txt").toString()),
-            tuple(tempDir, "keyStore", "password"));
+            tuple(tempDir, Path.of("key", "a"), Path.of("pass", "a.txt")),
+            tuple(tempDir, "keyStore", "password"),
+            tuple(tempDir, Path.of("key2", "a.json"), Path.of("key2", "password.txt")),
+            tuple(tempDir, Path.of("key2", "b.json"), Path.of("key2", "password.txt")));
   }
 
   @Test
-  public void shouldDetectMissingPasswordFileWhenDirectoryIsPresent(@TempDir final Path tempDir)
+  public void shouldDetectPasswordDirectoryUsedWithKeyFile(@TempDir final Path tempDir)
       throws IOException {
-    createFolders(tempDir, Path.of("key"), Path.of("pass", "a.txt"));
-    createFiles(tempDir, Path.of("key", "a"));
-    final String p1 =
-        generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
+    createFolders(tempDir, Path.of("key"), Path.of("pass"));
+    createFiles(tempDir, Path.of("key", "a.json"));
+    final String p1 = generatePath(tempDir, PATH_SEP, List.of("key", "a.json"), List.of("pass"));
     KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThatThrownBy(locator::parse).isInstanceOf(InvalidConfigurationException.class);
@@ -207,8 +207,22 @@ public class KeyStoreFilesLocatorTest {
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
-            tuple(
-                tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
+            tuple(tempDir, Path.of("key", "a.json"), Path.of("pass", "a.txt")));
+  }
+
+  @Test
+  public void shouldHandleKeyDirectoryWithPasswordFile(@TempDir final Path tempDir)
+      throws IOException {
+    createFolders(tempDir, "key");
+    createFiles(
+        tempDir, Path.of("key", "a.json"), Path.of("key", "b.json"), Path.of("password.txt"));
+    final String colonSeparatedValue = generatePath(tempDir, PATH_SEP, "key", "password.txt");
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(colonSeparatedValue), PATH_SEP);
+
+    assertThat(locator.parse())
+        .containsExactlyInAnyOrder(
+            tuple(tempDir, Path.of("key", "a.json"), Path.of("password.txt")),
+            tuple(tempDir, Path.of("key", "b.json"), Path.of("password.txt")));
   }
 
   private void createFolders(final Path tempDir, final String... paths) {
@@ -259,6 +273,10 @@ public class KeyStoreFilesLocatorTest {
         separator,
         Path.of(tempStr, keyList.toArray(new String[0])).toString(),
         Path.of(tempStr, passList.toArray(new String[0])).toString());
+  }
+
+  private Pair<Path, Path> tuple(final Path tempDir, final Path keyPath, final Path passPath) {
+    return tuple(tempDir, keyPath.toString(), passPath.toString());
   }
 
   private Pair<Path, Path> tuple(final Path tempDir, final String k, final String p) {
