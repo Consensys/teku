@@ -54,7 +54,7 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
                 SC_OK,
                 "Request successful",
                 List.of(getJsonResponseType(schemaDefinitionCache), getSszResponseType()))
-            .withNotAcceptedResponse()
+            .withNotAcceptableResponse()
             .withNotImplementedResponse()
             .build());
   }

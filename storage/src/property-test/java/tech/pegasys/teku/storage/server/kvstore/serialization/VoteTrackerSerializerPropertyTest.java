@@ -14,28 +14,42 @@
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.constraints.Size;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 public class VoteTrackerSerializerPropertyTest {
+
+  private static final KvStoreSerializer<VoteTracker> SERIALIZER =
+      KvStoreSerializer.createVoteTrackerSerializer(TestSpecFactory.createMinimalGloas());
+
   @Property
-  public void roundTrip(
+  void roundTripGloasAtGenesisIsExact(
       @ForAll @Size(32) final byte[] currentRootBytes,
       @ForAll @Size(32) final byte[] nextRootBytes,
-      @ForAll final long nextEpoch) {
-    VoteTracker value =
+      @ForAll final boolean nextEquivocating,
+      @ForAll final boolean currentEquivocating,
+      @ForAll final long nextSlot,
+      @ForAll final boolean nextFullPayloadHint,
+      @ForAll final long currentSlot,
+      @ForAll final boolean currentFullPayloadHint) {
+    final VoteTracker value =
         new VoteTracker(
             Bytes32.wrap(currentRootBytes),
             Bytes32.wrap(nextRootBytes),
-            UInt64.fromLongBits(nextEpoch));
-    final byte[] serialized = VOTE_TRACKER_SERIALIZER.serialize(value);
-    final VoteTracker deserialized = VOTE_TRACKER_SERIALIZER.deserialize(serialized);
+            nextEquivocating,
+            currentEquivocating,
+            UInt64.fromLongBits(nextSlot),
+            nextFullPayloadHint,
+            UInt64.fromLongBits(currentSlot),
+            currentFullPayloadHint);
+    final byte[] serialized = SERIALIZER.serialize(value);
+    final VoteTracker deserialized = SERIALIZER.deserialize(serialized);
     assertThat(deserialized).isEqualTo(value);
   }
 }

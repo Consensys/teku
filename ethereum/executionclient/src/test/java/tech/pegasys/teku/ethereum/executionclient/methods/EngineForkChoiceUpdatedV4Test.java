@@ -115,6 +115,8 @@ class EngineForkChoiceUpdatedV4Test {
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
     final PayloadAttributesV4 payloadAttributesV4 =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(payloadBuildingAttributes);
+    assertThat(payloadAttributesV4.targetGasLimit)
+        .isEqualTo(payloadBuildingAttributes.targetGasLimit());
 
     jsonRpcMethod = new EngineForkChoiceUpdatedV4(executionEngineClient);
 

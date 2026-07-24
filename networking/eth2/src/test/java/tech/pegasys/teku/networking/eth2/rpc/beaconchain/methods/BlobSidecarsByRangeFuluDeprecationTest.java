@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestKey;
@@ -168,16 +170,26 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
   @Test
   public void shouldIgnoreRequestsWhenStartSlotIsAfterFulu() {
-    final UInt64 startSlot =
-        spec.computeStartSlotAtEpoch(fuluForkEpoch); // start slot at fulu boundary
+    final UInt64 startSlot = spec.blobSidecarsDeprecationSlot().increment();
     final UInt64 count = slotsPerEpoch.times(2); // count = 16
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
     final BlobSidecarsByRangeMessageHandler handler =
         new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
+
+    when(peer.approveRequest()).thenReturn(true);
+
     handler.onIncomingMessage(protocolId, peer, request, callback);
+
+    verify(peer, times(1)).approveRequest();
+    verify(peer, never()).approveBlobSidecarsRequest(any(), anyLong());
+    verify(callback, times(1)).completeSuccessfully();
+    verify(callback, never()).respond(any());
     verifyNoInteractions(combinedChainDataClient);
-    verifyNoInteractions(callback);
+    assertEquals(
+        1,
+        metricsSystem.getLabelledCounterValue(
+            TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total", "ignored"));
   }
 
   public void runTestWith(

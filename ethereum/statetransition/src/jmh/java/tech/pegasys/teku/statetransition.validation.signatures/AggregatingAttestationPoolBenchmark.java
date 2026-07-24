@@ -197,11 +197,7 @@ public class AggregatingAttestationPoolBenchmark {
                 attestations.add(attestation);
 
                 var validatorIndices =
-                    attestationUtil
-                        .getAttestingIndices(state, attestation.getAttestation())
-                        .intStream()
-                        .mapToObj(UInt64::valueOf)
-                        .toList();
+                    attestationUtil.getAttestingIndices(state, attestation.getAttestation());
                 pooledAttestations.add(
                     new PooledAttestationWithData(
                         attestation.getData(),

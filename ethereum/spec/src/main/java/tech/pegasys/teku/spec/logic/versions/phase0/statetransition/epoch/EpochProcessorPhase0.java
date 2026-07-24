@@ -110,4 +110,9 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   public void processBuilderPendingPayments(final MutableBeaconState state) {
     // Nothing to do
   }
+
+  @Override
+  public void processPtcWindow(final MutableBeaconState state) {
+    // Nothing to do
+  }
 }

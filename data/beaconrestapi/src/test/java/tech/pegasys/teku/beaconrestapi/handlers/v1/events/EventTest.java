@@ -56,6 +56,7 @@ public class EventTest {
         Arguments.of(
             "FinalizedCheckpointEvent", FinalizedCheckpointEvent.FINALIZED_CHECKPOINT_EVENT_TYPE),
         Arguments.of("HeadEvent", HeadEvent.HEAD_EVENT_TYPE),
+        Arguments.of("HeadV2Event", HeadV2Event.HEAD_V2_EVENT_TYPE),
         Arguments.of("SyncStateChangeEvent", SyncStateChangeEvent.SYNC_STATE_CHANGE_EVENT_TYPE),
         Arguments.of(
             "VoluntaryExitEvent",

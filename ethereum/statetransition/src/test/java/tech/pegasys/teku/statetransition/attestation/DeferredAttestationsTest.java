@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
@@ -42,9 +42,9 @@ class DeferredAttestationsTest {
     final UInt64 slot = UInt64.valueOf(32);
     final Bytes32 root1 = dataStructureUtil.randomBytes32();
     final Bytes32 root2 = dataStructureUtil.randomBytes32();
-    deferredAttestations.addAttestation(createAttestation(slot, root1, 10, 20));
-    deferredAttestations.addAttestation(createAttestation(slot, root1, 11, 21));
-    deferredAttestations.addAttestation(createAttestation(slot, root2, 15, 25));
+    deferredAttestations.addAttestation(createAttestation(slot, root1, 10, 20), false);
+    deferredAttestations.addAttestation(createAttestation(slot, root1, 11, 21), false);
+    deferredAttestations.addAttestation(createAttestation(slot, root2, 15, 25), false);
 
     assertDeferredVotes(
         slot,
@@ -60,8 +60,9 @@ class DeferredAttestationsTest {
   void shouldHandleSameAttestationMultipleTimes() {
     final UInt64 slot = UInt64.valueOf(32);
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    deferredAttestations.addAttestation(createAttestation(slot, root, 10, 20));
-    deferredAttestations.addAttestation(createAttestation(slot, root, 10, 20));
+    final IndexedAttestationLight attestation = createAttestation(slot, root, 10, 20);
+    deferredAttestations.addAttestation(attestation, false);
+    deferredAttestations.addAttestation(attestation, false);
     assertDeferredVotes(slot, vote(root, 10), vote(root, 20));
   }
 
@@ -72,9 +73,9 @@ class DeferredAttestationsTest {
     final UInt64 currentSlot = UInt64.valueOf(26);
     final Bytes32 root = dataStructureUtil.randomBytes32();
 
-    deferredAttestations.addAttestation(createAttestation(earlySlot, root, 1));
-    deferredAttestations.addAttestation(createAttestation(previousSlot, root, 2));
-    deferredAttestations.addAttestation(createAttestation(currentSlot, root, 3));
+    deferredAttestations.addAttestation(createAttestation(earlySlot, root, 1), false);
+    deferredAttestations.addAttestation(createAttestation(previousSlot, root, 2), false);
+    deferredAttestations.addAttestation(createAttestation(currentSlot, root, 3), false);
 
     final DeferredVotes earlyDeferred =
         deferredAttestations.getDeferredVotesFromSlot(earlySlot).orElseThrow();
@@ -98,14 +99,17 @@ class DeferredAttestationsTest {
         deferredAttestations.getDeferredVotesFromSlot(slot);
     assertThat(deferredVotes).isNotEmpty();
     final List<Pair<Bytes32, UInt64>> votes = new ArrayList<>();
-    deferredVotes.get().forEachDeferredVote((root, index) -> votes.add(Pair.of(root, index)));
+    deferredVotes
+        .get()
+        .forEachDeferredVote((root, index, fullPayloadHint) -> votes.add(Pair.of(root, index)));
     assertThat(votes).containsExactlyInAnyOrder(expected);
   }
 
-  private IndexedAttestation createAttestation(
+  private IndexedAttestationLight createAttestation(
       final UInt64 slot, final Bytes32 root, final int... attestingValidators) {
-    return dataStructureUtil.randomIndexedAttestation(
-        dataStructureUtil.randomAttestationData(slot, root),
-        IntStream.of(attestingValidators).mapToObj(UInt64::valueOf).toArray(UInt64[]::new));
+    return IndexedAttestationLight.fromSsz(
+        dataStructureUtil.randomIndexedAttestation(
+            dataStructureUtil.randomAttestationData(slot, root),
+            IntStream.of(attestingValidators).mapToObj(UInt64::valueOf).toArray(UInt64[]::new)));
   }
 }

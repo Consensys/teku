@@ -124,7 +124,7 @@ public class TransitionTestExecutor implements TestExecutor {
       try {
 
         final BLSSignatureVerifier signatureVerifier =
-            metadata.blsSetting == 2 ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+            metadata.blsSetting == 2 ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
         result = spec.processBlock(result, block, signatureVerifier, Optional.empty());
       } catch (final StateTransitionException e) {
         Assertions.fail(

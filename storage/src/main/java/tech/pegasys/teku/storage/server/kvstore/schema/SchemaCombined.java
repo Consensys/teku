@@ -27,6 +27,7 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -53,6 +54,9 @@ public interface SchemaCombined extends Schema {
   KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
 
   KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
+
+  KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnBlindedExecutionPayloadEnvelopesByRoot();
 
   KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
 
@@ -94,6 +98,8 @@ public interface SchemaCombined extends Schema {
   KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot();
 
   KvStoreVariable<UInt64> getVariableEarliestAvailableDataColumnSlot();
+
+  KvStoreVariable<UInt64> getVariableLastDataColumnSidecarPrunedSlot();
 
   KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot();
 

@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -270,6 +271,14 @@ public class GossipForkManager {
         message,
         "payload attestation message",
         GossipForkSubscriptions::publishPayloadAttestationMessage);
+  }
+
+  public void publishProposerPreferences(final SignedProposerPreferences message) {
+    publishMessage(
+        message.getMessage().getProposalSlot(),
+        message,
+        "proposer preferences",
+        GossipForkSubscriptions::publishProposerPreferences);
   }
 
   private synchronized <T> void publishMessage(

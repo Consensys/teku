@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATION_BITS_SCHEMA;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -29,20 +30,36 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class AttestationElectraSchema
     extends ContainerSchema4<
         AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements AttestationSchema<AttestationElectra> {
 
-  public AttestationElectraSchema(
-      final long maxValidatorsPerAttestation, final long maxCommitteesPerSlot) {
+  public AttestationElectraSchema(final SchemaRegistry registry, final long maxCommitteesPerSlot) {
     super(
         "AttestationElectra",
-        namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
+        namedSchema("aggregation_bits", registry.get(AGGREGATION_BITS_SCHEMA)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE),
         namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteesPerSlot)));
+  }
+
+  protected AttestationElectraSchema(
+      final String containerName,
+      final boolean[] activeFields,
+      final NamedSchema<SszBitlist> aggregationBitsSchema,
+      final NamedSchema<AttestationData> dataSchema,
+      final NamedSchema<SszSignature> signatureSchema,
+      final NamedSchema<SszBitvector> committeeBitsSchema) {
+    super(
+        containerName,
+        activeFields,
+        aggregationBitsSchema,
+        dataSchema,
+        signatureSchema,
+        committeeBitsSchema);
   }
 
   @Override

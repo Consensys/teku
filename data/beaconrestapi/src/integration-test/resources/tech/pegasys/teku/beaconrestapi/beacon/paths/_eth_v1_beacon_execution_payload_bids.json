@@ -1,0 +1,72 @@
+{
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "publishExecutionPayloadBid",
+    "summary" : "Publish a signed execution payload bid",
+    "description" : "Instructs the beacon node to broadcast a signed execution payload bid to the beacon network. The beacon node performs gossip validation before broadcasting.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ],
+        "description" : "Version of the signed execution payload bid being submitted."
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
+        "application/json" : {
+          "schema" : {
+            "title" : "SignedExecutionPayloadBid",
+            "type" : "object",
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/SignedExecutionPayloadBid"
+            } ]
+          }
+        }
+      }
+    },
+    "responses" : {
+      "415" : {
+        "description" : "Unsupported media type",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "200" : {
+        "description" : "Signed execution payload bid has been successfully validated and broadcast.",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid execution payload bid.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

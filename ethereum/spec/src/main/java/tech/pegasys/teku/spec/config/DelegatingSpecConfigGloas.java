@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implements SpecConfigGloas {
   private final SpecConfigGloas delegate;
@@ -44,6 +45,26 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public int getMaxSignedAggregateAndProofSize() {
+    return delegate.getMaxSignedAggregateAndProofSize();
+  }
+
+  @Override
+  public int getMaxAttesterSlashingSize() {
+    return delegate.getMaxAttesterSlashingSize();
+  }
+
+  @Override
+  public int getMaxDataColumnSidecarSize() {
+    return delegate.getMaxDataColumnSidecarSize();
+  }
+
+  @Override
+  public int getMaxSignedExecutionPayloadBidSize() {
+    return delegate.getMaxSignedExecutionPayloadBidSize();
+  }
+
+  @Override
   public int getMinBuilderWithdrawabilityDelay() {
     return delegate.getMinBuilderWithdrawabilityDelay();
   }
@@ -54,6 +75,11 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public int getPayloadDueBps() {
+    return delegate.getPayloadDueBps();
+  }
+
+  @Override
   public int getPtcSize() {
     return delegate.getPtcSize();
   }
@@ -61,6 +87,16 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   @Override
   public int getMaxPayloadAttestations() {
     return delegate.getMaxPayloadAttestations();
+  }
+
+  @Override
+  public int getMaxBuilderDepositRequestsPerPayload() {
+    return delegate.getMaxBuilderDepositRequestsPerPayload();
+  }
+
+  @Override
+  public int getMaxBuilderExitRequestsPerPayload() {
+    return delegate.getMaxBuilderExitRequestsPerPayload();
   }
 
   @Override
@@ -76,6 +112,21 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   @Override
   public int getMaxBuildersPerWithdrawalsSweep() {
     return delegate.getMaxBuildersPerWithdrawalsSweep();
+  }
+
+  @Override
+  public int getChurnLimitQuotientGloas() {
+    return delegate.getChurnLimitQuotientGloas();
+  }
+
+  @Override
+  public int getConsolidationChurnLimitQuotient() {
+    return delegate.getConsolidationChurnLimitQuotient();
+  }
+
+  @Override
+  public UInt64 getMaxPerEpochActivationChurnLimitGloas() {
+    return delegate.getMaxPerEpochActivationChurnLimitGloas();
   }
 
   @Override

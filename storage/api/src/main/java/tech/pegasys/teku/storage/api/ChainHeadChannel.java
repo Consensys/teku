@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 
 public interface ChainHeadChannel extends VoidReturningChannelInterface {
   /**
@@ -32,6 +33,7 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
    * @param executionOptimistic if the block was optimistically imported
    * @param previousDutyDependentRoot the duty dependent root from the previous epoch
    * @param currentDutyDependentRoot the duty dependent root from the current epoch
+   * @param payloadStatus the fork-choice payload status of the new chain head, when available
    * @param optionalReorgContext Roots and common ancestor if a re-org occurred
    */
   void chainHeadUpdated(
@@ -42,5 +44,6 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
+      Optional<ForkChoicePayloadStatus> payloadStatus,
       Optional<ReorgContext> optionalReorgContext);
 }

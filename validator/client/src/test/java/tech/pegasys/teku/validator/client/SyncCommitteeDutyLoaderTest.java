@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -128,6 +130,35 @@ class SyncCommitteeDutyLoaderTest {
                 .getGauge(TekuMetricCategory.VALIDATOR, "current_sync_committee_last_epoch")
                 .getValue())
         .isEqualTo(63.0);
+  }
+
+  @Test
+  void shouldNotScheduleDutiesWhenExecutionOptimistic() {
+    final UInt64 epoch = UInt64.valueOf(56);
+    when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new SyncCommitteeDuties(
+                        true,
+                        List.of(
+                            new SyncCommitteeDuty(
+                                validator1.getPublicKey(), validator1Index, IntSet.of(1, 6, 25)),
+                            new SyncCommitteeDuty(
+                                validator2.getPublicKey(),
+                                validator2Index,
+                                IntSet.of(7, 50, 38)))))));
+
+    final SafeFuture<Optional<SyncCommitteeScheduledDuties>> result =
+        dutyLoader.loadDutiesForEpoch(epoch);
+
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(NodeSyncingException.class);
+    verify(validatorApiChannel, never()).subscribeToSyncCommitteeSubnets(any());
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
+                .getValue())
+        .isEqualTo(0.0);
   }
 
   @Test

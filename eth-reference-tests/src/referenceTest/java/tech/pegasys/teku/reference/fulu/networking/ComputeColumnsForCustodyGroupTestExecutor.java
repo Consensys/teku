@@ -14,46 +14,50 @@
 package tech.pegasys.teku.reference.fulu.networking;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashSet;
+import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 public class ComputeColumnsForCustodyGroupTestExecutor implements TestExecutor {
 
   @Override
-  public void runTest(final TestDefinition testDefinition) throws Exception {
-    final ComputeColumnForCustodyGroupMetaData metaData =
-        loadYaml(testDefinition, "meta.yaml", ComputeColumnForCustodyGroupMetaData.class);
-    final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
-    final List<UInt64> actualResult =
-        MiscHelpersFulu.required(spec.miscHelpers())
-            .computeColumnsForCustodyGroup(UInt64.valueOf(metaData.getCustodyGroup()));
-    assertThat(new HashSet<>(actualResult)).isEqualTo(metaData.getResult());
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
+    final Data data = loadDataFile(testDefinition, Data.class);
+
+    final List<UInt64> calculatedColumns =
+        miscHelpersFulu.computeColumnsForCustodyGroup(data.custodyGroup());
+
+    assertThat(calculatedColumns).isEqualTo(data.expectedColumns());
   }
 
-  private static class ComputeColumnForCustodyGroupMetaData {
+  private static class Data {
 
     @JsonProperty(value = "custody_group", required = true)
-    private int custodyGroup;
+    private Integer custodyGroup;
 
     @JsonProperty(value = "result", required = true)
     private List<Integer> result;
 
-    public int getCustodyGroup() {
-      return custodyGroup;
+    public UInt64 custodyGroup() {
+      return UInt64.valueOf(custodyGroup);
     }
 
-    public Set<UInt64> getResult() {
-      return result.stream().map(UInt64::valueOf).collect(Collectors.toUnmodifiableSet());
+    public List<UInt64> expectedColumns() {
+      return result.stream().map(UInt64::valueOf).collect(Collectors.toList());
     }
+  }
+
+  protected <T> T loadDataFile(final TestDefinition testDefinition, final Class<T> type)
+      throws IOException {
+    return TestDataUtils.loadYaml(testDefinition, "meta.yaml", type);
   }
 }

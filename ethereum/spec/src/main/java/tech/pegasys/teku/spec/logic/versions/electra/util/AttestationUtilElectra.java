@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.electra.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -32,8 +32,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -68,16 +67,17 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
    */
   @Override
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
     final SszBitlist aggregationBits = attestation.getAggregationBits();
-    final IntList attestingIndices = new IntArrayList(aggregationBits.getBitCount());
+    final List<UInt64> attestingIndices = new ArrayList<>(aggregationBits.getBitCount());
     int committeeOffset = 0;
     for (final UInt64 committeeIndex : committeeIndices) {
       final IntList committee =
           beaconStateAccessors.getBeaconCommittee(
               state, attestation.getData().getSlot(), committeeIndex);
       streamCommitteeAttesters(committee, aggregationBits, committeeOffset)
+          .mapToObj(UInt64::valueOf)
           .forEach(attestingIndices::add);
       committeeOffset += committee.size();
     }
@@ -107,7 +107,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   }
 
   @Override
-  public IndexedAttestation getIndexedAttestation(
+  public IndexedAttestationLight getIndexedAttestation(
       final BeaconState state, final Attestation attestation) {
     if (attestation.isSingleAttestation()) {
       return getIndexedAttestationFromSingleAttestation(attestation.toSingleAttestationRequired());
@@ -115,15 +115,10 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     return super.getIndexedAttestation(state, attestation);
   }
 
-  private IndexedAttestation getIndexedAttestationFromSingleAttestation(
+  private IndexedAttestationLight getIndexedAttestationFromSingleAttestation(
       final SingleAttestation attestation) {
-    final IndexedAttestationSchema indexedAttestationSchema =
-        schemaDefinitions.getIndexedAttestationSchema();
-
-    return indexedAttestationSchema.create(
-        indexedAttestationSchema
-            .getAttestingIndicesSchema()
-            .of(attestation.getValidatorIndexRequired()),
+    return new IndexedAttestationLight(
+        List.of(attestation.getValidatorIndexRequired()),
         attestation.getData(),
         attestation.getSignature());
   }
@@ -159,7 +154,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
               if (result.isSuccessful()) {
                 final SingleAttestation singleAttestation =
                     attestation.getAttestation().toSingleAttestationRequired();
-                final IndexedAttestation indexedAttestation =
+                final IndexedAttestationLight indexedAttestation =
                     getIndexedAttestationFromSingleAttestation(singleAttestation);
 
                 final Attestation convertedAttestation =

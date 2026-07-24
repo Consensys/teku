@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -138,22 +139,31 @@ public class DataColumnSidecarSelectorFactory
     if (maybeBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
+
     final Optional<BeaconBlockBodyDeneb> maybeDenebBlock =
         maybeBlock.get().getMessage().getBody().toVersionDeneb();
     if (maybeDenebBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
+
+    final UInt64 slot = maybeBlock.get().getSlot();
+    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    // Valid FULU block but without blobs => emptyList()
     if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
-    final SignedBeaconBlock block = maybeBlock.get();
-    final UInt64 slot = block.getSlot();
 
     return client.getDataColumnSidecars(slot, indices).thenApply(Optional::of);
   }
 
   private SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecars(
       final UInt64 slot, final List<UInt64> indices) {
+    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
     return client.getDataColumnSidecars(slot, indices).thenApply(Optional::of);
   }
 

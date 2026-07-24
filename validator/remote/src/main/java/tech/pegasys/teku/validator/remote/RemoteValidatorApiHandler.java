@@ -58,8 +58,11 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -282,6 +285,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Void> sendSignedProposerPreferences(
+      final List<SignedProposerPreferences> signedProposerPreferences) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
@@ -305,7 +314,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
       final UInt64 slot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(() -> typeDefClient.createPayloadAttestationData(slot));
   }
 
   @Override
@@ -383,8 +392,32 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return sendRequest(
+        () ->
+            typeDefClient.publishSignedExecutionPayload(
+                signedExecutionPayload, broadcastValidationLevel));
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return sendRequest(
+        () ->
+            typeDefClient.publishSignedExecutionPayload(
+                signedExecutionPayloadEnvelopeContents, broadcastValidationLevel));
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return sendRequest(
+        () ->
+            typeDefClient.publishSignedExecutionPayload(
+                signedBlindedExecutionPayload, broadcastValidationLevel));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

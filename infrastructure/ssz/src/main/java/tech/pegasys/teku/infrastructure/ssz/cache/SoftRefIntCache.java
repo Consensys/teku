@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 
 /**
  * Keeps the delegate cache in a {@link SoftReference} to allow the cache to be GC'ed if the
@@ -97,5 +98,11 @@ public class SoftRefIntCache<V> implements IntCache<V> {
   @Override
   public Optional<V> getCached(final Integer key) {
     return getDelegate().getCached(key);
+  }
+
+  @Override
+  @Nullable
+  public V getCachedInt(final int key) {
+    return getDelegate().getCachedInt(key);
   }
 }

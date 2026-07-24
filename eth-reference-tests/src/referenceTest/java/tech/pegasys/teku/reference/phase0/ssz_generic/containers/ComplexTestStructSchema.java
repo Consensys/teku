@@ -42,7 +42,7 @@ public class ComplexTestStructSchema
         ComplexTestStruct.class.getSimpleName(),
         NamedSchema.of("A", UINT16_SCHEMA),
         NamedSchema.of("B", SszListSchema.create(UINT16_SCHEMA, 128)),
-        NamedSchema.of("C", SszPrimitiveSchemas.BYTE_SCHEMA),
+        NamedSchema.of("C", SszPrimitiveSchemas.UINT8_SCHEMA),
         NamedSchema.of("D", SszByteListSchema.create(256)),
         NamedSchema.of("E", new VarTestStructSchema()),
         NamedSchema.of("F", SszVectorSchema.create(new FixedTestStructSchema(), 4)),

@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidBuilderDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidBuilderElectra extends BuilderBidBuilderDeneb {

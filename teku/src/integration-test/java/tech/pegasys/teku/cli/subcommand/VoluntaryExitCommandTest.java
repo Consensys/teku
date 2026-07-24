@@ -44,8 +44,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.integration.ClientAndServer;
@@ -350,7 +348,6 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // can't set permissions on windows
   void shouldFailIfSaveFolderHasInsufficientAccess(@TempDir final Path tempDir) throws IOException {
     configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
     configureSuccessfulGenesisResponse();

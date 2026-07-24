@@ -81,7 +81,7 @@ public class BlockImporterTest {
   private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final Spec spec =
       TestSpecFactory.createMinimalPhase0(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();

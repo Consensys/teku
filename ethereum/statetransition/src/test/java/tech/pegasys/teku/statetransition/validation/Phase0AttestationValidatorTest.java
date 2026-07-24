@@ -16,7 +16,10 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -30,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -43,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public class Phase0AttestationValidatorTest extends AbstractAttestationValidatorTest {
@@ -57,6 +62,45 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
+  }
+
+  @Test
+  public void shouldRejectAttestationWhenBlockBeingVotedForHasFailedValidation() {
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+    invalidBlockRoots.put(
+        attestation.getData().getBeaconBlockRoot(),
+        BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
+    assertThat(validate(attestation).code()).isEqualTo(REJECT);
+  }
+
+  @Test
+  public void shouldIgnoreAttestationWhenFinalizedCheckpointIsNotAncestorOfBlock() {
+    final StateAndBlockSummary head = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(head);
+    final GossipValidationHelper gossipValidationHelper =
+        spy(new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem()));
+    doReturn(false)
+        .when(gossipValidationHelper)
+        .currentFinalizedCheckpointIsAncestorOfAttestationBlock(
+            attestation.getData().getBeaconBlockRoot());
+    final AttestationValidator validator =
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
+
+    assertThat(
+            validator.validate(
+                ValidatableAttestation.fromNetwork(
+                    spec,
+                    attestation,
+                    spec.computeSubnetForAttestation(head.getState(), attestation))))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isIgnore()
+                    && result
+                        .getDescription()
+                        .orElse("")
+                        .contains("Finalized checkpoint is not an ancestor of block"));
   }
 
   @Test
@@ -291,7 +335,8 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
     final AttestationValidator validator =
-        new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
     final AttestationData data = attestation.getData();
     final Checkpoint checkpoint =
         new Checkpoint(
@@ -319,5 +364,73 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                     expectedSubnetId)))
         .matches(
             rejected("descend from target block"), "Rejected does not descend from target block");
+  }
+
+  @Test
+  public void shouldRejectFutureSlotAttestationWithInvalidSignature() {
+    // A future-slot attestation with a bogus signature must be rejected (so the sender is
+    // penalised) rather than deferred with a penalty-free Ignore verdict, which would force a
+    // signature verification in the fork choice path for free.
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState, ONE);
+    assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
+
+    final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
+    when(signatureVerifier.verify(anyList(), any(Bytes.class), any()))
+        .thenReturn(SafeFuture.completedFuture(false));
+    final AttestationValidator validator =
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
+
+    final int subnetId = spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
+    chainUpdater.setCurrentSlot(ZERO);
+
+    assertThat(
+            validator
+                .validate(ValidatableAttestation.fromNetwork(spec, attestation, subnetId))
+                .join()
+                .code())
+        .isEqualTo(REJECT);
+    // The signature was actually verified at gossip time, giving a REJECT verdict that penalises
+    // the sender.
+    verify(signatureVerifier).verify(anyList(), any(Bytes.class), any());
+  }
+
+  @Test
+  public void shouldVerifyAndCacheSignatureForValidFutureSlotAttestation() {
+    // A valid future-slot attestation is still only deferred (SAVE_FOR_FUTURE), but its signature
+    // is verified and cached here so the fork choice path does not re-verify it.
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState, ONE);
+    assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
+    chainUpdater.setCurrentSlot(ZERO);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.fromNetwork(
+            spec,
+            attestation,
+            spec.computeSubnetForAttestation(blockAndState.getState(), attestation));
+
+    assertThat(validator.validate(validatableAttestation).join().code()).isEqualTo(SAVE_FOR_FUTURE);
+    assertThat(validatableAttestation.isValidIndexedAttestation()).isTrue();
+  }
+
+  @Test
+  public void shouldDeferFutureSlotAttestationOnWrongSubnetWhenSignatureIsValid() {
+    // A future-slot attestation is only rejected for an invalid signature; other gossip failures
+    // (here, the wrong subnet) defer rather than penalise the sender. Contrast with
+    // shouldRejectAttestationsSentOnTheWrongSubnet, which rejects an in-window attestation.
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState, ONE);
+    assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
+    final int subnetId = spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
+    chainUpdater.setCurrentSlot(ZERO);
+
+    assertThat(
+            validator
+                .validate(ValidatableAttestation.fromNetwork(spec, attestation, subnetId + 1))
+                .join()
+                .code())
+        .isEqualTo(SAVE_FOR_FUTURE);
   }
 }

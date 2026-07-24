@@ -33,7 +33,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 public class DataColumnSidecarsByRangeListenerValidatingProxy
     extends AbstractDataColumnSidecarValidator implements RpcResponseListener<DataColumnSidecar> {
@@ -56,8 +56,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
       final UInt64 startSlot,
       final UInt64 count,
       final List<UInt64> columns,
-      final CombinedChainDataClient combinedChainDataClient) {
-    super(peer, spec, dataColumnSidecarSignatureValidator, combinedChainDataClient);
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
+    super(peer, spec, dataColumnSidecarSignatureValidator, blobKzgCommitmentsProvider);
     this.dataColumnSidecarResponseListener = dataColumnSidecarResponseListener;
     this.startSlot = startSlot;
     this.endSlot = startSlot.plus(count).minusMinZero(1);
@@ -110,12 +110,21 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
           final MetricsHistogram.Timer kzgVerificationTimer =
               dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
           return verifyKzgProofs(dataColumnSidecar)
-              .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+              .alwaysRun(kzgVerificationTimer.closeUnchecked())
+              .exceptionallyCompose(
+                  error ->
+                      SafeFuture.failedFuture(
+                          new DataColumnSidecarsResponseInvalidResponseException(
+                              peer,
+                              InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED,
+                              error)))
               .thenCompose(
                   maybeKzgProofsVerificationResult -> {
                     if (maybeKzgProofsVerificationResult.isPresent()) {
                       throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                          peer,
+                          InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED,
+                          maybeKzgProofsVerificationResult.get());
                     }
                     return verifySignature(dataColumnSidecar);
                   })

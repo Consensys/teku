@@ -36,6 +36,7 @@ import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidCircuitBreakerFactory;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -58,6 +59,7 @@ public class TekuConfiguration {
   private final NatConfiguration natConfiguration;
   private final ValidatorRestApiConfig validatorRestApiConfig;
   private final ZkChainConfiguration zkChainConfiguration;
+  private final BeaconNodeConfig beaconNodeConfig;
 
   private TekuConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
@@ -77,7 +79,8 @@ public class TekuConfiguration {
       final NatConfiguration natConfiguration,
       final ValidatorRestApiConfig validatorRestApiConfig,
       final BeaconChainControllerFactory beaconChainControllerFactory,
-      final ZkChainConfiguration zkChainConfiguration) {
+      final ZkChainConfiguration zkChainConfiguration,
+      final BeaconNodeConfig beaconNodeConfig) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -95,6 +98,7 @@ public class TekuConfiguration {
             syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
+            createExecutionPayloadBidCircuitBreakerFactory(spec, executionLayerConfiguration),
             storeConfig,
             spec,
             beaconChainControllerFactory,
@@ -106,10 +110,24 @@ public class TekuConfiguration {
     this.natConfiguration = natConfiguration;
     this.validatorRestApiConfig = validatorRestApiConfig;
     this.zkChainConfiguration = zkChainConfiguration;
+    this.beaconNodeConfig = beaconNodeConfig;
   }
 
   public static Builder builder() {
     return new Builder();
+  }
+
+  private static ExecutionPayloadBidCircuitBreakerFactory
+      createExecutionPayloadBidCircuitBreakerFactory(
+          final Spec spec, final ExecutionLayerConfiguration executionLayerConfiguration) {
+    if (!executionLayerConfiguration.isBuilderCircuitBreakerEnabled()) {
+      return ExecutionPayloadBidCircuitBreakerFactory.NOOP;
+    }
+    return ExecutionPayloadBidCircuitBreakerFactory.create(
+        spec,
+        executionLayerConfiguration.getBuilderCircuitBreakerWindow(),
+        executionLayerConfiguration.getBuilderCircuitBreakerAllowedFaults(),
+        executionLayerConfiguration.getBuilderCircuitBreakerAllowedConsecutiveFaults());
   }
 
   public Eth2NetworkConfiguration eth2NetworkConfiguration() {
@@ -176,6 +194,10 @@ public class TekuConfiguration {
     return zkChainConfiguration;
   }
 
+  public BeaconNodeConfig beaconNodeConfig() {
+    return beaconNodeConfig;
+  }
+
   public static class Builder {
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
         Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults();
@@ -201,6 +223,8 @@ public class TekuConfiguration {
     private final MetricsConfig.MetricsConfigBuilder metricsConfigBuilder = MetricsConfig.builder();
     private final NatConfiguration.Builder natConfigBuilder = NatConfiguration.builder();
     private final StoreConfig.Builder storeConfigBuilder = StoreConfig.builder();
+
+    private final BeaconNodeConfig.Builder beaconNodeConfigBuilder = BeaconNodeConfig.builder();
 
     private BeaconChainControllerFactory beaconChainControllerFactory =
         BeaconChainControllerFactory.DEFAULT;
@@ -330,7 +354,8 @@ public class TekuConfiguration {
           natConfigBuilder.build(),
           validatorRestApiConfigBuilder.build(),
           beaconChainControllerFactory,
-          zkChainConfiguration);
+          zkChainConfiguration,
+          beaconNodeConfigBuilder.build());
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -435,6 +460,11 @@ public class TekuConfiguration {
     public Builder beaconChainControllerFactory(
         final BeaconChainControllerFactory beaconChainControllerFactory) {
       this.beaconChainControllerFactory = beaconChainControllerFactory;
+      return this;
+    }
+
+    public Builder beaconNode(final Consumer<BeaconNodeConfig.Builder> consumer) {
+      consumer.accept(beaconNodeConfigBuilder);
       return this;
     }
   }

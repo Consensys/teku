@@ -57,6 +57,7 @@ import tech.pegasys.teku.networking.eth2.peers.DiscoveryNodeIdExtractor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.peers.LibP2PDiscoveryNodeIdExtractor;
+import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -86,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -99,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -120,6 +123,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
+  protected BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
   protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   protected MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
@@ -134,6 +138,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
   protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
   protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
+  protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -177,7 +182,9 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService executionProofSubnetService = new SubnetSubscriptionService();
     final DiscoveryNodeIdExtractor discoveryNodeIdExtractor = new LibP2PDiscoveryNodeIdExtractor();
     final RpcEncoding rpcEncoding =
-        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
+        RpcEncoding.createSszSnappyEncoding(
+            spec.getNetworkingConfig().getMaxPayloadSize(),
+            config.isRpcSnappyAircompressorEnabled());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
       eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
@@ -189,6 +196,7 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
+            blobKzgCommitmentsProvider,
             custodyGroupCountManagerSupplier,
             metadataMessagesFactory,
             metricsSystem,
@@ -216,7 +224,11 @@ public class Eth2P2PNetworkBuilder {
     final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network =
-        buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
+        buildNetwork(
+            gossipEncoding,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            eth2PeerManager);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
@@ -431,6 +443,7 @@ public class Eth2P2PNetworkBuilder {
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              proposerPreferencesProcessor,
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
@@ -494,6 +507,7 @@ public class Eth2P2PNetworkBuilder {
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              proposerPreferencesProcessor,
               executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
@@ -509,7 +523,8 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final SubnetSubscriptionService dataColumnSidecarSubnetService) {
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final PeerLookup peerLookup) {
     final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(
@@ -583,6 +598,7 @@ public class Eth2P2PNetworkBuilder {
                         combinedChainDataClient.getRecentChainData().getCurrentSpec(),
                         nodeIdToDataColumnSidecarSubnetsCalculator,
                         network,
+                        peerLookup,
                         attestationSubnetTopicProvider,
                         syncCommitteeSubnetTopicProvider,
                         syncCommitteeSubnetService,
@@ -613,6 +629,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
+    assertNotNull("blobKzgCommitmentsProvider", blobKzgCommitmentsProvider);
     assertNotNull("custodyGroupCountManagerSupplier", custodyGroupCountManagerSupplier);
     assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
@@ -635,6 +652,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedPayloadAttestationMessageProcessor", payloadAttestationMessageProcessor);
     assertNotNull("gossipedExecutionProofOperationProcessor", executionProofOperationProcessor);
     assertNotNull("gossipedExecutionPayloadBidProcessor", executionPayloadBidProcessor);
+    assertNotNull("gossipedProposerPreferencesProcessor", proposerPreferencesProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -657,6 +675,13 @@ public class Eth2P2PNetworkBuilder {
       final CombinedChainDataClient combinedChainDataClient) {
     checkNotNull(combinedChainDataClient);
     this.combinedChainDataClient = combinedChainDataClient;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder blobKzgCommitmentsProvider(
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
+    checkNotNull(blobKzgCommitmentsProvider);
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
     return this;
   }
 
@@ -793,6 +818,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedExecutionPayloadBid> gossipedExecutionPayloadBidProcessor) {
     checkNotNull(gossipedExecutionPayloadBidProcessor);
     this.executionPayloadBidProcessor = gossipedExecutionPayloadBidProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedProposerPreferencesProcessor(
+      final OperationProcessor<SignedProposerPreferences> gossipedProposerPreferencesProcessor) {
+    checkNotNull(gossipedProposerPreferencesProcessor);
+    this.proposerPreferencesProcessor = gossipedProposerPreferencesProcessor;
     return this;
   }
 

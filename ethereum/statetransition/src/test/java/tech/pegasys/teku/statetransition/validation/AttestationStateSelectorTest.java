@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 class AttestationStateSelectorTest {
   private final Spec spec =
       TestSpecFactory.createDefault(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();

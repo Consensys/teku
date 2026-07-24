@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
-      Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
+      Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 8));
 
   private final UInt64 milestoneTransitionEpoch = UInt64.ONE;
   private UInt64 milestoneTransitionSlot;

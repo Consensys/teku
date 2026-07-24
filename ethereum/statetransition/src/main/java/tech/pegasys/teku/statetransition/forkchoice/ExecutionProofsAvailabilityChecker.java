@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
@@ -45,5 +46,15 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
     return validationResult;
+  }
+
+  @Override
+  public void logAvailabilityCheckResult(
+      final Logger log, final DataAndValidationResult<ExecutionProof> result) {
+    log.debug(
+        "Data availability check for slot: {}, block_root: {} result: {}",
+        block.getSlot(),
+        block.getRoot(),
+        result.toLogString());
   }
 }

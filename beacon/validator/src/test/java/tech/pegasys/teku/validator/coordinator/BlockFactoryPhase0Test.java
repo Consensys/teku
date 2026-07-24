@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   private final Consumer<SpecConfigBuilder> configAdapter =
-      builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP);
+      builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP);
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() {
@@ -221,6 +221,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
             forkChoiceNotifier,
             executionLayer,
             executionPayloadBidManager,
+            executionPayloadManager,
             metricsSystem,
             timeProvider));
   }

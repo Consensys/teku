@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class StateCachesTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(3, spec);
   protected ChainBuilder chainBuilder = storageSystem.chainBuilder();
   protected ChainUpdater chainUpdater = storageSystem.chainUpdater();
 
@@ -112,7 +112,7 @@ public class StateCachesTest {
                 stateAtSlot3,
                 blockAtSlot3.getMessage(),
                 IndexedAttestationCache.NOOP,
-                BLSSignatureVerifier.NO_OP,
+                BLSSignatureVerifier.NOOP,
                 Optional.empty());
 
     final UInt64 expectedRewards =

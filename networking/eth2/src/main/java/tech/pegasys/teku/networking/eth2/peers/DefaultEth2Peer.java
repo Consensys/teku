@@ -88,7 +88,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -126,7 +126,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
           DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema>
       dataColumnSidecarsByRangeRequestMessageSchema;
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
-  private final CombinedChainDataClient combinedChainDataClient;
+  private final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -144,7 +144,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
     super(peer);
     this.spec = spec;
     this.discoveryNodeId = discoveryNodeId;
@@ -153,7 +153,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerChainValidator = peerChainValidator;
     this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
-    this.combinedChainDataClient = combinedChainDataClient;
+    this.blobKzgCommitmentsProvider = blobKzgCommitmentsProvider;
     requestObjectsTrackers = new EnumMap<>(RequestObject.class);
     requestObjectsTrackers.put(RequestObject.BLOCK, blocksRequestTracker);
     requestObjectsTrackers.put(RequestObject.BLOB_SIDECAR, blobSidecarsRequestTracker);
@@ -366,7 +366,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         timeProvider,
                         dataColumnSidecarSignatureValidator,
                         dataColumnIdentifiers,
-                        combinedChainDataClient)))
+                        blobKzgCommitmentsProvider)))
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 
@@ -551,7 +551,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       request.getStartSlot(),
                       request.getCount(),
                       request.getColumns(),
-                      combinedChainDataClient));
+                      blobKzgCommitmentsProvider));
             })
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRange"));
   }

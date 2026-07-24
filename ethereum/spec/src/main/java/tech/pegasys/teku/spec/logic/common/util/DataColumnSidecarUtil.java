@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -73,9 +72,10 @@ public interface DataColumnSidecarUtil {
       Function<Bytes32, Optional<UInt64>> getBlockSlot,
       BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock);
 
-  SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
+  SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
       DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
+      Function<DataColumnSidecar, SafeFuture<Optional<SszList<SszKZGCommitment>>>>
+          retrieveBlobKzgCommitments);
 
   SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       DataColumnSidecar dataColumnSidecar,

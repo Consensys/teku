@@ -13,16 +13,21 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
@@ -34,7 +39,10 @@ record DataColumnSamplingTracker(
     AtomicBoolean rpcFetchInProgress,
     SafeFuture<List<UInt64>> completionFuture,
     AtomicBoolean fullySampled,
-    Optional<Integer> earlyCompletionRequirementCount) {
+    AtomicBoolean blockImportOnCompletionEnabled,
+    Optional<Integer> earlyCompletionRequirementCount,
+    AtomicReference<Optional<SignedBeaconBlock>> block,
+    long createdAtNanos) {
   private static final Logger LOG = LogManager.getLogger();
 
   static DataColumnSamplingTracker create(
@@ -54,7 +62,29 @@ record DataColumnSamplingTracker(
         new AtomicBoolean(false),
         completionFuture,
         new AtomicBoolean(false),
-        completionColumnCount);
+        new AtomicBoolean(false),
+        completionColumnCount,
+        new AtomicReference<>(Optional.empty()),
+        System.nanoTime());
+  }
+
+  public Optional<SignedBeaconBlock> getBlock() {
+    return block.get();
+  }
+
+  public boolean setBlock(final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(slot, blockRoot);
+    checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
+    final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
+    if (oldBlock.isPresent()) {
+      return false;
+    }
+    LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
+    return true;
+  }
+
+  boolean enableBlockImportOnCompletion() {
+    return blockImportOnCompletionEnabled.compareAndSet(false, true);
   }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {

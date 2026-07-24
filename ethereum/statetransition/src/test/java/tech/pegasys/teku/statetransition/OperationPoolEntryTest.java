@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 
 public class OperationPoolEntryTest {
@@ -58,8 +59,8 @@ public class OperationPoolEntryTest {
     }
 
     @Override
-    public int getValidatorId() {
-      return this.get().getWrappedBytes().toInt();
+    public UInt64 getValidatorId() {
+      return UInt64.fromLongBits(Integer.toUnsignedLong(this.get().getWrappedBytes().toInt()));
     }
   }
 }

@@ -32,6 +32,8 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -56,8 +58,8 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   private static final Logger LOG = LogManager.getLogger();
 
   protected final SchemaDefinitionsElectra schemaDefinitions;
-  private final MiscHelpers miscHelpers;
-  private final SpecConfigElectra specConfig;
+  protected final MiscHelpers miscHelpers;
+  protected final SpecConfigElectra specConfig;
   private final PredicatesElectra predicates;
   protected final ValidatorsUtil validatorsUtil;
   private final BeaconStateMutatorsElectra beaconStateMutators;
@@ -87,33 +89,26 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
+    final PendingDeposit.PendingDepositSchema pendingDepositSchema =
+        schemaDefinitions.getPendingDepositSchema();
     for (DepositRequest depositRequest : depositRequests) {
-      processDepositRequest(stateElectra, depositRequest);
+      if (stateElectra
+          .getDepositRequestsStartIndex()
+          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+        stateElectra.setDepositRequestsStartIndex(depositRequest.getIndex());
+      }
+      pendingDeposits.append(
+          pendingDepositSchema.create(
+              new SszPublicKey(depositRequest.getPubkey()),
+              SszBytes32.of(depositRequest.getWithdrawalCredentials()),
+              SszUInt64.of(depositRequest.getAmount()),
+              new SszSignature(depositRequest.getSignature()),
+              SszUInt64.of(state.getSlot())));
     }
   }
 
-  protected void processDepositRequest(
-      final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
-    final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
-    if (state
-        .getDepositRequestsStartIndex()
-        .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
-      state.setDepositRequestsStartIndex(depositRequest.getIndex());
-    }
-
-    final PendingDeposit deposit =
-        schemaDefinitions
-            .getPendingDepositSchema()
-            .create(
-                new SszPublicKey(depositRequest.getPubkey()),
-                SszBytes32.of(depositRequest.getWithdrawalCredentials()),
-                SszUInt64.of(depositRequest.getAmount()),
-                new SszSignature(depositRequest.getSignature()),
-                SszUInt64.of(state.getSlot()));
-    pendingDeposits.append(deposit);
-  }
-
-  /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
+  /** Implements process_withdrawal_request from consensus-specs (EIP-7002 &amp; EIP-7251). */
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
@@ -267,8 +262,7 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
    * Implements process_consolidation_request from consensus-spec (EIP-7251)
    *
    * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain
-   *     .md#new-process_consolidation_request"/>
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-process_consolidation_request">process_consolidation_request</a>
    */
   @Override
   public void processConsolidationRequests(
@@ -480,5 +474,17 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
 
     // Verify exit for source has not been initiated
     return sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+  }
+
+  @Override
+  public void processBuilderDepositRequests(
+      final MutableBeaconState state, final List<BuilderDepositRequest> builderDepositRequests) {
+    // NO-OP (until Gloas)
+  }
+
+  @Override
+  public void processBuilderExitRequests(
+      final MutableBeaconState state, final List<BuilderExitRequest> builderExitRequests) {
+    // NO-OP (until Gloas)
   }
 }

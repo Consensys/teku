@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactoryTest.CapturingBeaconBlockBodyBuilder;
+import static tech.pegasys.teku.validator.coordinator.BlockProductionTestUtil.blockProductionContext;
 
 import java.util.Comparator;
 import java.util.List;
@@ -75,6 +76,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -155,6 +157,8 @@ class BlockOperationSelectorFactoryFuluTest {
       mock(ExecutionLayerBlockProductionManager.class);
   private final ExecutionPayloadBidManager executionPayloadBidManager =
       mock(ExecutionPayloadBidManager.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
 
   private final GraffitiBuilder graffitiBuilder =
       new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED);
@@ -175,6 +179,7 @@ class BlockOperationSelectorFactoryFuluTest {
           forkChoiceNotifier,
           executionLayer,
           executionPayloadBidManager,
+          executionPayloadManager,
           metricsSystem,
           timeProvider);
   private ExecutionPayloadContext executionPayloadContext;
@@ -229,12 +234,13 @@ class BlockOperationSelectorFactoryFuluTest {
     safeJoin(
         factory
             .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
+                blockProductionContext(
+                    parentRoot,
+                    blockSlotState,
+                    dataStructureUtil.randomSignature(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    BlockProductionPerformance.NOOP))
             .apply(bodyBuilder));
 
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())

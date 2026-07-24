@@ -44,21 +44,21 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
     return payloadBuildingAttributes.map(
         payloadAttributes ->
             new PayloadAttributesV2(
-                payloadAttributes.getTimestamp(),
-                payloadAttributes.getPrevRandao(),
-                payloadAttributes.getFeeRecipient(),
+                payloadAttributes.timestamp(),
+                payloadAttributes.prevRandao(),
+                payloadAttributes.feeRecipient(),
                 getWithdrawals(payloadAttributes)));
   }
 
   public static List<WithdrawalV1> getWithdrawals(
       final PayloadBuildingAttributes payloadAttributes) {
     return payloadAttributes
-        .getWithdrawals()
+        .withdrawals()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
                     "Withdrawals were expected to be part of the payload attributes for slot "
-                        + payloadAttributes.getProposalSlot()))
+                        + payloadAttributes.proposalSlot()))
         .stream()
         .map(
             withdrawal ->

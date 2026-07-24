@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.pow.api.Deposit;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -69,11 +71,14 @@ public class GenesisHandlerTest {
 
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final ForkChoice forkChoice = mock(ForkChoice.class);
   private GenesisHandler genesisHandler;
 
   @BeforeEach
   public void setup() {
-    genesisHandler = new GenesisHandler(storageSystem.recentChainData(), timeProvider, spec);
+    when(forkChoice.applyGenesisExecutionPayloadForGloas()).thenReturn(SafeFuture.COMPLETE);
+    genesisHandler =
+        new GenesisHandler(storageSystem.recentChainData(), forkChoice, timeProvider, spec);
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);
   }
 

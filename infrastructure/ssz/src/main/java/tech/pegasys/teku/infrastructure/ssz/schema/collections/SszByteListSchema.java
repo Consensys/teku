@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
 
 public interface SszByteListSchema<SszListT extends SszByteList>
@@ -25,10 +26,19 @@ public interface SszByteListSchema<SszListT extends SszByteList>
   SszListT fromBytes(Bytes bytes);
 
   static SszByteListSchema<SszByteList> create(final long maxLength) {
-    return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
+    return create(maxLength, SszSchemaHints.none());
+  }
+
+  static SszByteListSchema<SszByteList> create(final long maxLength, final SszSchemaHints hints) {
+    return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength, hints);
   }
 
   static SszByteListSchema<SszByteList> createUInt8(final long maxLength) {
-    return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.UINT8_SCHEMA, maxLength);
+    return createUInt8(maxLength, SszSchemaHints.none());
+  }
+
+  static SszByteListSchema<SszByteList> createUInt8(
+      final long maxLength, final SszSchemaHints hints) {
+    return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.UINT8_SCHEMA, maxLength, hints);
   }
 }

@@ -27,7 +27,6 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.Di
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-@SuppressWarnings("AddressSelection")
 class NetworkConfigTest {
 
   private Optional<String> advertisedIp = Optional.empty();

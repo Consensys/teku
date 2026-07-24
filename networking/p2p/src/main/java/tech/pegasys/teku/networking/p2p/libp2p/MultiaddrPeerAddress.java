@@ -39,8 +39,10 @@ public class MultiaddrPeerAddress extends PeerAddress {
     return fromMultiaddr(multiaddr);
   }
 
-  public static MultiaddrPeerAddress fromDiscoveryPeer(final DiscoveryPeer discoveryPeer) {
-    final Multiaddr multiaddr = MultiaddrUtil.fromDiscoveryPeer(discoveryPeer);
+  public static MultiaddrPeerAddress fromDiscoveryPeer(
+      final DiscoveryPeer discoveryPeer, final boolean localNodeQuicEnabled) {
+    final Multiaddr multiaddr =
+        MultiaddrUtil.fromDiscoveryPeer(discoveryPeer, localNodeQuicEnabled);
     return fromMultiaddr(multiaddr);
   }
 

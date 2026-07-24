@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,34 +53,6 @@ public class TestStoreFactory {
     return getForkChoiceStore(anchor);
   }
 
-  public TestStoreImpl createGenesisStore(final BeaconState genesisState) {
-    checkArgument(
-        genesisState.getSlot().equals(SpecConfig.GENESIS_SLOT), "Genesis state has invalid slot.");
-    return getForkChoiceStore(createAnchorFromState(genesisState));
-  }
-
-  public TestStoreImpl createEmptyStore() {
-    return new TestStoreImpl(
-        spec,
-        UInt64.ZERO,
-        UInt64.ZERO,
-        Optional.empty(),
-        null,
-        null,
-        null,
-        new HashMap<>(),
-        new HashMap<>(),
-        new HashMap<>(),
-        new HashMap<>(),
-        new HashMap<>(),
-        new HashMap<>(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        new HashMap<>(),
-        new HashMap<>());
-  }
-
   private AnchorPoint createAnchorForGenesis() {
     return createAnchorFromState(createRandomGenesisState());
   }
@@ -103,7 +73,6 @@ public class TestStoreFactory {
     Map<UInt64, VoteTracker> votes = new HashMap<>();
     Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
     Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads = new HashMap<>();
-    Map<Bytes32, BeaconState> executionPayloadStates = new HashMap<>();
 
     blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
     blockStates.put(anchorRoot, anchorState);
@@ -130,8 +99,7 @@ public class TestStoreFactory {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        executionPayloads,
-        executionPayloadStates);
+        executionPayloads);
   }
 
   private BeaconState createRandomGenesisState() {

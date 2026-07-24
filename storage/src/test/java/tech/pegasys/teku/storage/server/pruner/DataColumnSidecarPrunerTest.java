@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.pruner;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -102,6 +103,6 @@ public class DataColumnSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(database).pruneAllSidecars(earliestSlotToKeep, PRUNE_LIMIT);
+    verify(database).pruneAllSidecars(eq(earliestSlotToKeep), eq(PRUNE_LIMIT));
   }
 }

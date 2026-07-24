@@ -21,7 +21,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -96,42 +95,16 @@ public class SyncCommitteeMessageValidator {
       return completedFuture(IGNORE);
     }
 
-    // [IGNORE] There has been no other valid sync committee message for the declared slot for the
-    // validator referenced by sync_committee_message.validator_index, unless the
-    // block being signed (beacon_block_root) matches the local head as selected by fork
-    // choice (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE //
-    // SYNC_COMMITTEE_SUBNET_COUNT` for each subnet that can be flushed after each slot).
+    // [IGNORE] There has been no other valid sync committee message for the declared slot for
+    // the validator referenced by sync_committee_message.validator_index for this subnet.
     // Note this validation is _per topic_ so that for a given `slot`, multiple messages could be
     // forwarded with the same `validator_index` as long as the `subnet_id`s are distinct.
     final Optional<UniquenessKey> uniquenessKey;
     if (validatableMessage.getReceivedSubnetId().isPresent()) {
       final UniquenessKey key =
-          getUniquenessKey(
-              message,
-              validatableMessage.getReceivedSubnetId().getAsInt(),
-              message.getBeaconBlockRoot());
-      final Optional<Bytes32> maybeBestBlockRoot = recentChainData.getBestBlockRoot();
-
-      if (maybeBestBlockRoot.isPresent()) {
-        final Optional<Bytes32> bestSeenRoot =
-            seenIndices.stream()
-                .filter(item -> item.isSameIgnoringBlockRoot(key))
-                .findFirst()
-                .map(UniquenessKey::getBlockRoot);
-        // I've already seen this message, can ignore it.
-        if (bestSeenRoot.isPresent() && maybeBestBlockRoot.get().equals(bestSeenRoot.get())) {
-          return completedFuture(IGNORE);
-        } else {
-          if (seenIndices.remove(key)) {
-            // I've seen a message for this slot already, and its block root didn't match current
-            // head
-            LOG.trace(
-                "Removed already seen sync committee message from cache "
-                    + "to accept a better one for validator index {}, slot {}",
-                message.getValidatorIndex(),
-                message.getSlot());
-          }
-        }
+          getUniquenessKey(message, validatableMessage.getReceivedSubnetId().getAsInt());
+      if (seenIndices.contains(key)) {
+        return completedFuture(IGNORE);
       }
       uniquenessKey = Optional.of(key);
     } else {
@@ -185,9 +158,7 @@ public class SyncCommitteeMessageValidator {
                     assignedSubcommittees
                         .getAssignedSubcommittees()
                         .intStream()
-                        .mapToObj(
-                            subnetId ->
-                                getUniquenessKey(message, subnetId, message.getBeaconBlockRoot()))
+                        .mapToObj(subnetId -> getUniquenessKey(message, subnetId))
                         .toList());
 
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the
@@ -235,57 +206,9 @@ public class SyncCommitteeMessageValidator {
             });
   }
 
-  private UniquenessKey getUniquenessKey(
-      final SyncCommitteeMessage message, final int subnetId, final Bytes32 root) {
-    return new UniquenessKey(message.getValidatorIndex(), message.getSlot(), subnetId, root);
+  private UniquenessKey getUniquenessKey(final SyncCommitteeMessage message, final int subnetId) {
+    return new UniquenessKey(message.getSlot(), message.getValidatorIndex(), subnetId);
   }
 
-  private static class UniquenessKey {
-    private final UInt64 validatorIndex;
-    private final UInt64 slot;
-    private final int subnetId;
-
-    private final Bytes32 blockRoot;
-
-    private UniquenessKey(
-        final UInt64 validatorIndex,
-        final UInt64 slot,
-        final int subnetId,
-        final Bytes32 blockRoot) {
-      this.validatorIndex = validatorIndex;
-      this.slot = slot;
-      this.subnetId = subnetId;
-      this.blockRoot = blockRoot;
-    }
-
-    public Bytes32 getBlockRoot() {
-      return blockRoot;
-    }
-
-    boolean isSameIgnoringBlockRoot(final UniquenessKey candidate) {
-      return candidate.validatorIndex.equals(this.validatorIndex)
-          && candidate.subnetId == this.subnetId
-          && candidate.slot.equals(this.slot);
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final UniquenessKey that = (UniquenessKey) o;
-      return subnetId == that.subnetId
-          && Objects.equals(validatorIndex, that.validatorIndex)
-          && Objects.equals(slot, that.slot)
-          && Objects.equals(blockRoot, that.blockRoot);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(validatorIndex, slot, subnetId, blockRoot);
-    }
-  }
+  private record UniquenessKey(UInt64 slot, UInt64 validatorIndex, int subnetId) {}
 }

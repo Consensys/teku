@@ -19,25 +19,19 @@ import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements SpecConfigHeze {
 
-  private final int viewFreezeCutoffBps;
-  private final int inclusionListSubmissionDueBps;
-  private final int proposerInclusionListCutoffBps;
+  private final int inclusionListDueBps;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
   private final int inclusionListCommitteeSize;
 
   public SpecConfigHezeImpl(
       final SpecConfigGloas specConfig,
-      final int viewFreezeCutoffBps,
-      final int inclusionListSubmissionDueBps,
-      final int proposerInclusionListCutoffBps,
+      final int inclusionListDueBps,
       final int maxRequestInclusionList,
       final int maxBytesPerInclusionList,
       final int inclusionListCommitteeSize) {
     super(specConfig);
-    this.viewFreezeCutoffBps = viewFreezeCutoffBps;
-    this.inclusionListSubmissionDueBps = inclusionListSubmissionDueBps;
-    this.proposerInclusionListCutoffBps = proposerInclusionListCutoffBps;
+    this.inclusionListDueBps = inclusionListDueBps;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxBytesPerInclusionList = maxBytesPerInclusionList;
     this.inclusionListCommitteeSize = inclusionListCommitteeSize;
@@ -49,18 +43,8 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
   }
 
   @Override
-  public int getViewFreezeCutoffBps() {
-    return viewFreezeCutoffBps;
-  }
-
-  @Override
-  public int getInclusionListSubmissionDueBps() {
-    return inclusionListSubmissionDueBps;
-  }
-
-  @Override
-  public int getProposerInclusionListCutoffBps() {
-    return proposerInclusionListCutoffBps;
+  public int getInclusionListDueBps() {
+    return inclusionListDueBps;
   }
 
   @Override
@@ -92,9 +76,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
       return false;
     }
     SpecConfigHezeImpl that = (SpecConfigHezeImpl) o;
-    return viewFreezeCutoffBps == that.viewFreezeCutoffBps
-        && inclusionListSubmissionDueBps == that.inclusionListSubmissionDueBps
-        && proposerInclusionListCutoffBps == that.proposerInclusionListCutoffBps
+    return inclusionListDueBps == that.inclusionListDueBps
         && maxRequestInclusionList == that.maxRequestInclusionList
         && maxBytesPerInclusionList == that.maxBytesPerInclusionList
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize;
@@ -104,9 +86,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
   public int hashCode() {
     return Objects.hash(
         super.hashCode(),
-        viewFreezeCutoffBps,
-        inclusionListSubmissionDueBps,
-        proposerInclusionListCutoffBps,
+        inclusionListDueBps,
         maxRequestInclusionList,
         maxBytesPerInclusionList,
         inclusionListCommitteeSize);

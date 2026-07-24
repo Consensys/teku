@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequiredResultFuture;
 
 import java.util.Optional;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -36,6 +37,12 @@ public interface AvailabilityChecker<Data> {
     public SafeFuture<DataAndValidationResult<Data>> getAvailabilityCheckResult() {
       return notRequiredResultFuture();
     }
+
+    @Override
+    public SafeFuture<DataAndValidationResult<Data>> getAndLogAvailabilityCheckResult(
+        final Logger log) {
+      return getAvailabilityCheckResult();
+    }
   }
 
   AvailabilityChecker<?> NOOP = new NOOP<>();
@@ -53,4 +60,14 @@ public interface AvailabilityChecker<Data> {
   boolean initiateDataAvailabilityCheck();
 
   SafeFuture<DataAndValidationResult<Data>> getAvailabilityCheckResult();
+
+  default SafeFuture<DataAndValidationResult<Data>> getAndLogAvailabilityCheckResult(
+      final Logger log) {
+    return getAvailabilityCheckResult().thenPeek(result -> logAvailabilityCheckResult(log, result));
+  }
+
+  default void logAvailabilityCheckResult(
+      final Logger log, final DataAndValidationResult<Data> result) {
+    log.debug("Data availability check result: {}", result.toLogString());
+  }
 }

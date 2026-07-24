@@ -50,7 +50,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
     final GenesisGenerator.InitialStateData initialStateData =
         createInitialState(genesisTime, besuNode, validatorKeys);
 
@@ -64,7 +64,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
             tekuNode.waitForLogMessageContaining(
                 "Custody group count updated to 10, because genesis validators were found."),
         () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 10"),
-        () -> tekuNode.waitForLogMessageContaining("Sampling group count for epoch 1: 10"),
+        () -> tekuNode.waitForLogMessageContaining("Sampling group count for epoch 2: 10"),
         () -> tekuNode.waitForLogMessageContaining("Persisting custody group count of 10"),
         () -> tekuNode.waitForMilestone(SpecMilestone.FULU));
     assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
@@ -102,7 +102,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
     final GenesisGenerator.InitialStateData initialStateData =
         createInitialState(genesisTime, besuNode, validatorKeys);
 
@@ -152,7 +152,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
     final GenesisGenerator.InitialStateData initialStateData =
         createInitialState(genesisTime, besuNode, validatorKeys);
 

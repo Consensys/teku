@@ -127,6 +127,7 @@ public class OperationsReOrgManagerTest {
         false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
+        Optional.empty(),
         ReorgContext.of(
             fork1Block2.hashTreeRoot(),
             dataStructureUtil.randomUInt64(),
@@ -228,6 +229,7 @@ public class OperationsReOrgManagerTest {
         false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
+        Optional.empty(),
         ReorgContext.of(Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, commonAncestorSlot, Bytes32.ZERO));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hashTreeRoot());

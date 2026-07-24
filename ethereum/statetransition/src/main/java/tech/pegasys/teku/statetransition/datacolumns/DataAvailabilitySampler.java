@@ -25,8 +25,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlockEventsListener;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadEventsListener;
 
-public interface DataAvailabilitySampler extends BlockEventsListener {
+public interface DataAvailabilitySampler
+    extends BlockEventsListener, ExecutionPayloadEventsListener {
 
   enum SamplingEligibilityStatus {
     NOT_REQUIRED_OLD_EPOCH,
@@ -62,6 +64,9 @@ public interface DataAvailabilitySampler extends BlockEventsListener {
         public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {}
 
         @Override
+        public void onExecutionPayloadImported(final SlotAndBlockRoot slotAndBlockRoot) {}
+
+        @Override
         public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {}
       };
 
@@ -85,5 +90,10 @@ public interface DataAvailabilitySampler extends BlockEventsListener {
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
     onNewValidatedDataColumnSidecar(
         DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar), remoteOrigin);
+  }
+
+  @Override
+  default void onExecutionPayloadImported(final SlotAndBlockRoot slotAndBlockRoot) {
+    removeAllForBlock(slotAndBlockRoot);
   }
 }

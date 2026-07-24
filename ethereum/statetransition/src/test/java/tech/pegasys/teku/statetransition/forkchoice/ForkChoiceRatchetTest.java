@@ -21,15 +21,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.client.ChainHead;
 
 class ForkChoiceRatchetTest {
 
   private final ForkChoice forkChoice = mock(ForkChoice.class);
-  private final SafeFuture<Boolean> processHeadResult = new SafeFuture<>();
+  private final SafeFuture<Optional<ChainHead>> processHeadResult = new SafeFuture<>();
   private final ForkChoiceRatchet ratchet = new ForkChoiceRatchet(forkChoice);
 
   @BeforeEach
@@ -75,7 +77,7 @@ class ForkChoiceRatchetTest {
     verifyNoMoreInteractions(forkChoice);
     assertThat(result).isNotDone();
 
-    processHeadResult.complete(true);
+    processHeadResult.complete(Optional.empty());
     assertThat(result).isCompleted();
   }
 
@@ -89,7 +91,7 @@ class ForkChoiceRatchetTest {
     verify(forkChoice).processHead(UInt64.ONE);
     assertThat(result).isNotDone();
 
-    processHeadResult.complete(true);
+    processHeadResult.complete(Optional.empty());
     assertThat(result).isCompleted();
   }
 

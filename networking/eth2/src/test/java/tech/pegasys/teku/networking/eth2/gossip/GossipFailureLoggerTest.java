@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.eth2.gossip.GossipFailureLogger.createNonSuppressing;
 import static tech.pegasys.teku.networking.eth2.gossip.GossipFailureLogger.createSuppressing;
 
 import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
+import io.netty.channel.socket.ChannelOutputShutdownException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -120,6 +123,27 @@ class GossipFailureLoggerTest {
   }
 
   @Test
+  void shouldLogClosedChannelExceptionAtDebugLevel() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
+      loggerSuppressing.log(new RuntimeException("Foo", new ClosedChannelException()), SLOT);
+      logCaptor.assertDebugLog(streamClosedMessage(SLOT, true));
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void shouldLogChannelOutputShutdownExceptionAtDebugLevel() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
+      loggerSuppressing.log(
+          new RuntimeException(
+              "Foo", new ChannelOutputShutdownException("STOP_SENDING frame received")),
+          SLOT);
+      logCaptor.assertDebugLog(streamClosedMessage(SLOT, true));
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
   void shouldLogFirstGenericErrorAtErrorLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       loggerSuppressing.log(new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
@@ -214,5 +238,13 @@ class GossipFailureLoggerTest {
     return "Failed to publish thingy"
         + (shouldSuppress ? "(s)" : "")
         + slot.map(s -> " for slot " + s).orElse("");
+  }
+
+  private static String streamClosedMessage(
+      final Optional<UInt64> slot, final boolean shouldSuppress) {
+    return "Failed to publish thingy"
+        + (shouldSuppress ? "(s)" : "")
+        + slot.map(s -> " for slot " + s).orElse("")
+        + " because the stream was closed";
   }
 }

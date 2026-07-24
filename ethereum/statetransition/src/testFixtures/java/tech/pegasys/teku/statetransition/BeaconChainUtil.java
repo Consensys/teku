@@ -284,6 +284,7 @@ public class BeaconChainUtil {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 false));
     return block;
   }

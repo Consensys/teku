@@ -99,7 +99,7 @@ public class AggregationDuty implements Duty {
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Aggregating attestations at slot {}", slot);
     if (!aggregators.hasAggregators()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     return sendingStrategy.send(aggregators.streamAggregators().map(this::aggregateCommittee));
   }

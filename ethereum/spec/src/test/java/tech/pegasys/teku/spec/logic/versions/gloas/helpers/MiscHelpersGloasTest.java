@@ -15,14 +15,20 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class MiscHelpersGloasTest {
 
   private final Spec spec = TestSpecFactory.createMinimalGloas();
+  private final DataStructureUtil data = new DataStructureUtil(spec);
 
   private final MiscHelpersGloas miscHelpers =
       MiscHelpersGloas.required(spec.getGenesisSpec().miscHelpers());
@@ -37,5 +43,36 @@ public class MiscHelpersGloasTest {
     assertThat(predicates.isBuilderIndex(validatorIndex)).isTrue();
     assertThat(miscHelpers.convertValidatorIndexToBuilderIndex(validatorIndex))
         .isEqualTo(builderIndex);
+  }
+
+  @Test
+  public void isBidBuildingOnEmptyParent_shouldBeFalseWhenBidIsBuildingOnFullParent() {
+    final Bytes32 fullParentBlockHash = data.randomBytes32();
+    final ExecutionPayloadBid latestExecutionPayloadBid =
+        data.randomExecutionPayloadBid(
+            data.randomSlot(),
+            data.randomBuilderIndex(),
+            fullParentBlockHash,
+            data.randomBytes32());
+    final BeaconStateGloas state =
+        BeaconStateGloas.required(
+            data.randomBeaconState()
+                .updated(
+                    mutableState -> {
+                      final MutableBeaconStateGloas stateGloas =
+                          MutableBeaconStateGloas.required(mutableState);
+                      stateGloas.setLatestBlockHash(fullParentBlockHash);
+                      stateGloas.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
+                    }));
+    final ExecutionPayloadBid childBid =
+        data.randomExecutionPayloadBid(
+            fullParentBlockHash,
+            data.randomSlot(),
+            data.randomBuilderIndex(),
+            UInt64.ZERO,
+            UInt64.ZERO);
+
+    assertThat(miscHelpers.isBidBuildingOnFullParent(state, childBid)).isTrue();
+    assertThat(miscHelpers.isBidBuildingOnEmptyParent(state, childBid)).isFalse();
   }
 }

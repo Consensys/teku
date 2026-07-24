@@ -2,6 +2,7 @@ dependencies {
 	implementation project(':ethereum:spec')
 	implementation project(':ethereum:statetransition')
 	implementation project(':ethereum:executionclient')
+	implementation project(':ethereum:execution-types')
 	implementation project(':infrastructure:async')
 	implementation project(':networking:p2p')
 	implementation project(':networking:eth2')

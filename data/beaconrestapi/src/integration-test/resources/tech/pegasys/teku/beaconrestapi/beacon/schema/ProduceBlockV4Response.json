@@ -1,0 +1,49 @@
+{
+  "title" : "ProduceBlockV4Response",
+  "type" : "object",
+  "required" : [ "version", "consensus_block_value", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
+    },
+    "consensus_block_value" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
+    },
+    "execution_payload_included" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "title" : "Block",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BeaconBlockPhase0"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockAltair"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockBellatrix"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBeaconBlockBellatrix"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockCapella"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBeaconBlockCapella"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsDeneb"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBeaconBlockDeneb"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsElectra"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBeaconBlockElectra"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsFulu"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockGloas"
+      } ]
+    }
+  }
+}

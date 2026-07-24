@@ -120,7 +120,7 @@ public class BlockProposalUtilPhase0 implements BlockProposalUtil {
                       blockSlotState,
                       block,
                       IndexedAttestationCache.NOOP,
-                      BLSSignatureVerifier.NO_OP,
+                      BLSSignatureVerifier.NOOP,
                       Optional.empty());
 
               blockProductionPerformance.stateTransition();

@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -135,7 +133,6 @@ class DebugDataFileDumperTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void saveBytesToFile_shouldNotEscalateWhenIOException(@TempDir final Path tempDir) {
     final DebugDataFileDumper dumper = new DebugDataFileDumper(tempDir);
     final File invalidPath = tempDir.resolve("invalid").toFile();
@@ -150,7 +147,6 @@ class DebugDataFileDumperTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void constructionOfDirectories_shouldDisableWhenFailedToCreate(@TempDir final Path tempDir) {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
     final DebugDataFileDumper dumper = new DebugDataFileDumper(tempDir);

@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectraImpl;
 
 public class ElectraBuilder extends BaseForkBuilder
     implements ForkConfigBuilder<SpecConfigDeneb, SpecConfigElectra> {
+  private static final Logger LOG = LogManager.getLogger();
 
   private UInt64 minPerEpochChurnLimitElectra;
 
@@ -52,6 +55,16 @@ public class ElectraBuilder extends BaseForkBuilder
   @Override
   public SpecConfigAndParent<SpecConfigElectra> build(
       final SpecConfigAndParent<SpecConfigDeneb> specConfigAndParent) {
+    if (maxBlobsPerBlockElectra != null) {
+      final Integer newMaxRequestBlobSidecarsElectra =
+          computeMaxRequestBlobSidecars(
+              specConfigAndParent.specConfig().getMaxRequestBlocksDeneb());
+      LOG.debug(
+          "Setting maxRequestBlobSidecarsElectra to {} (was {})",
+          newMaxRequestBlobSidecarsElectra,
+          maxRequestBlobSidecarsElectra);
+      maxRequestBlobSidecarsElectra = newMaxRequestBlobSidecarsElectra;
+    }
     return SpecConfigAndParent.of(
         new SpecConfigElectraImpl(
             specConfigAndParent.specConfig(),
@@ -178,12 +191,14 @@ public class ElectraBuilder extends BaseForkBuilder
     return this;
   }
 
+  @Deprecated
   public ElectraBuilder maxRequestBlobSidecarsElectra(final Integer maxRequestBlobSidecarsElectra) {
     checkNotNull(maxRequestBlobSidecarsElectra);
     this.maxRequestBlobSidecarsElectra = maxRequestBlobSidecarsElectra;
     return this;
   }
 
+  @Deprecated
   public ElectraBuilder blobSidecarSubnetCountElectra(final Integer blobSidecarSubnetCountElectra) {
     checkNotNull(blobSidecarSubnetCountElectra);
     this.blobSidecarSubnetCountElectra = blobSidecarSubnetCountElectra;
@@ -215,10 +230,19 @@ public class ElectraBuilder extends BaseForkBuilder
     constants.put("maxPendingPartialsPerWithdrawalsSweep", maxPendingPartialsPerWithdrawalsSweep);
     constants.put("maxPendingDepositsPerEpoch", maxPendingDepositsPerEpoch);
     constants.put("maxBlobsPerBlockElectra", maxBlobsPerBlockElectra);
-    constants.put("maxRequestBlobSidecarsElectra", maxRequestBlobSidecarsElectra);
     constants.put("blobSidecarSubnetCountElectra", blobSidecarSubnetCountElectra);
 
     return constants;
+  }
+
+  // compute_max_request_blob_sidecars
+  private Integer computeMaxRequestBlobSidecars(final Integer maxRequestBlocksDeneb) {
+    return computeMaxRequestBlobSidecars(maxRequestBlocksDeneb, maxBlobsPerBlockElectra);
+  }
+
+  public static Integer computeMaxRequestBlobSidecars(
+      final Integer maxRequestBlocksDeneb, final Integer maxBlobsPerBlockElectra) {
+    return maxRequestBlocksDeneb * maxBlobsPerBlockElectra;
   }
 
   @Override

@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.cache;
 
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import javax.annotation.Nullable;
 
 /**
  * Optimized int keys cache. Eliminate int boxing/unboxing
@@ -37,6 +38,16 @@ public interface IntCache<V> extends Cache<Integer, V> {
    * @return expected value result for provided key
    */
   V getInt(int key, IntFunction<V> fallback);
+
+  /**
+   * Returns the cached value for {@code key}, or {@code null} when no value is cached.
+   *
+   * <p>Null values are not supported by this cache.
+   */
+  @Nullable
+  default V getCachedInt(final int key) {
+    return getCached(key).orElse(null);
+  }
 
   @Override
   default V get(final Integer key, final Function<Integer, V> fallback) {

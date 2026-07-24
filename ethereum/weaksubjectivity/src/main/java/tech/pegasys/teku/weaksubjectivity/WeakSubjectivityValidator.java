@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
@@ -62,29 +61,18 @@ public class WeakSubjectivityValidator {
     this.deferValidationLogger = new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriodEpochs));
   }
 
-  public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.strict());
-  }
-
   public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.moderate());
+        config,
+        WeakSubjectivityCalculator.create(config.getSpec()),
+        WeakSubjectivityViolationPolicy.moderate());
   }
 
   public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.lenient());
-  }
-
-  public static WeakSubjectivityValidator lenient(
-      final WeakSubjectivityConfig config, final Optional<BeaconStateUtil> beaconStateUtil) {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.lenient());
+        config,
+        WeakSubjectivityCalculator.create(config.getSpec()),
+        WeakSubjectivityViolationPolicy.lenient());
   }
 
   public Optional<Checkpoint> getWSCheckpoint() {

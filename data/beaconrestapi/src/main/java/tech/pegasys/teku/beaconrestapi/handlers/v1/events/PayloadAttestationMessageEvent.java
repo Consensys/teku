@@ -13,11 +13,33 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
+
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 
-public class PayloadAttestationMessageEvent extends Event<PayloadAttestationMessage> {
+public class PayloadAttestationMessageEvent
+    extends Event<PayloadAttestationMessageEvent.VersionedPayloadAttestationMessage> {
+
+  record VersionedPayloadAttestationMessage(
+      SpecMilestone version, PayloadAttestationMessage data) {}
+
+  private static SerializableTypeDefinition<VersionedPayloadAttestationMessage> buildTypeDef(
+      final PayloadAttestationMessage msg) {
+    return SerializableTypeDefinition.object(VersionedPayloadAttestationMessage.class)
+        .name("VersionedPayloadAttestationMessage")
+        .withField("version", MILESTONE_TYPE, VersionedPayloadAttestationMessage::version)
+        .withField(
+            "data",
+            msg.getSchema().getJsonTypeDefinition(),
+            VersionedPayloadAttestationMessage::data)
+        .build();
+  }
 
   public PayloadAttestationMessageEvent(final PayloadAttestationMessage payloadAttestationMessage) {
-    super(payloadAttestationMessage.getSchema().getJsonTypeDefinition(), payloadAttestationMessage);
+    super(
+        buildTypeDef(payloadAttestationMessage),
+        new VersionedPayloadAttestationMessage(SpecMilestone.GLOAS, payloadAttestationMessage));
   }
 }

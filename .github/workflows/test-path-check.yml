@@ -1,11 +1,22 @@
 name: "Test Path Check"
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**/*.java'
+      - 'scripts/testcheck.sh'
+  pull_request:
+    paths:
+      - '**/*.java'
+      - 'scripts/testcheck.sh'
+
+permissions:
+  contents: read
 
 jobs:
   check:
     name: "Check"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check test paths
         run: ./scripts/testcheck.sh

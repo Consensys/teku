@@ -13,6 +13,10 @@ dependencies {
 	implementation 'io.consensys.tuweni:tuweni-bytes'
 	implementation 'io.consensys.tuweni:tuweni-ssz'
 	implementation 'io.consensys.tuweni:tuweni-units'
+	implementation 'org.hyperledger.besu.internal:besu-ethereum-core'
+	implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
+	implementation 'org.hyperledger.besu:besu-datatypes'
+	implementation 'org.hyperledger.besu:besu-plugin-api'
 	implementation project(':ethereum:performance-trackers')
 	implementation project(':ethereum:execution-types')
 	implementation project(':ethereum:pow:api')
@@ -40,6 +44,7 @@ dependencies {
 	testFixturesImplementation 'io.consensys.tuweni:tuweni-units'
 	testFixturesImplementation 'io.consensys.tuweni:tuweni-ssz'
 	testFixturesImplementation 'org.hyperledger.besu.internal:besu-ethereum-core'
+	testFixturesImplementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
 	testFixturesImplementation 'org.hyperledger.besu.internal:besu-config'
 	testFixturesImplementation 'org.hyperledger.besu:besu-datatypes'
 	testFixturesImplementation 'org.hyperledger.besu:besu-evm'

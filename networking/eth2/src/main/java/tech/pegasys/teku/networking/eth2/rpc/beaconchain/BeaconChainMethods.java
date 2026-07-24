@@ -577,7 +577,7 @@ public class BeaconChainMethods {
 
     final ExecutionPayloadEnvelopesByRootMessageHandler
         executionPayloadEnvelopesByRootMessageHandler =
-            new ExecutionPayloadEnvelopesByRootMessageHandler(recentChainData, metricsSystem);
+            new ExecutionPayloadEnvelopesByRootMessageHandler(spec, recentChainData, metricsSystem);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

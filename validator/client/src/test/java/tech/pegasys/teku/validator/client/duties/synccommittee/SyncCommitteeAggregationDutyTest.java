@@ -118,7 +118,7 @@ class SyncCommitteeAggregationDutyTest {
   void shouldDoNothingWhenAssignmentsAreEmpty() {
     final SyncCommitteeAggregationDuty duty = createDuty();
     final SafeFuture<DutyResult> result = duty.produceAggregates(slot, beaconBlockRoot);
-    assertThat(result).isCompletedWithValue(DutyResult.NO_OP);
+    assertThat(result).isCompletedWithValue(DutyResult.NOOP);
     verifyNoInteractions(validatorApiChannel);
   }
 
@@ -151,7 +151,7 @@ class SyncCommitteeAggregationDutyTest {
         .thenReturn(SafeFuture.completedFuture(nonAggregatorSignature));
 
     final SafeFuture<DutyResult> result = duty.produceAggregates(slot, beaconBlockRoot);
-    assertThat(result).isCompletedWithValue(DutyResult.NO_OP);
+    assertThat(result).isCompletedWithValue(DutyResult.NOOP);
   }
 
   @Test
@@ -225,7 +225,7 @@ class SyncCommitteeAggregationDutyTest {
     final SyncCommitteeAggregationDuty duty = createDuty(committeeAssignment(validator1, 11, 0));
 
     final SafeFuture<DutyResult> result = duty.produceAggregates(slot, beaconBlockRoot);
-    assertThat(result).isCompletedWithValue(DutyResult.NO_OP);
+    assertThat(result).isCompletedWithValue(DutyResult.NOOP);
 
     verify(validatorLogger).syncCommitteeAggregationSkipped(slot);
   }

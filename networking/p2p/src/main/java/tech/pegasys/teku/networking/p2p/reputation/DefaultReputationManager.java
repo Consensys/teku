@@ -76,6 +76,19 @@ public class DefaultReputationManager implements ReputationManager {
   }
 
   @Override
+  public Optional<DisconnectReason> getInboundConnectionRejectionReason(
+      final PeerAddress peerAddress) {
+    if (isStaticPeer(peerAddress)) {
+      return Optional.empty();
+    }
+    return peerReputations
+        .getCached(peerAddress.getId())
+        .flatMap(
+            reputation ->
+                reputation.getInboundConnectionRejectionReason(timeProvider.getTimeInSeconds()));
+  }
+
+  @Override
   public void reportInitiatedConnectionSuccessful(final PeerAddress peerAddress) {
     getOrCreateReputation(peerAddress).reportInitiatedConnectionSuccessful();
   }
@@ -130,13 +143,18 @@ public class DefaultReputationManager implements ReputationManager {
         EnumSet.of(
             DisconnectReason.IRRELEVANT_NETWORK,
             DisconnectReason.UNABLE_TO_VERIFY_NETWORK,
+            DisconnectReason.BAD_SCORE,
             DisconnectReason.REMOTE_FAULT);
+    private static final EnumSet<DisconnectReason> INBOUND_REJECTION_DURING_COOLDOWN_REASONS =
+        EnumSet.of(DisconnectReason.RATE_LIMITING);
 
     private volatile Optional<UInt64> suitableAfter = Optional.empty();
+    private volatile Optional<DisconnectReason> inboundConnectionRejectionReason = Optional.empty();
     private final AtomicInteger score = new AtomicInteger(DEFAULT_SCORE);
 
     public void reportInitiatedConnectionFailed(final UInt64 failureTime) {
       suitableAfter = Optional.of(failureTime.plus(COOLDOWN_PERIOD));
+      inboundConnectionRejectionReason = Optional.empty();
     }
 
     public boolean shouldInitiateConnection(final UInt64 currentTime) {
@@ -149,24 +167,46 @@ public class DefaultReputationManager implements ReputationManager {
 
     public void reportInitiatedConnectionSuccessful() {
       suitableAfter = Optional.empty();
+      inboundConnectionRejectionReason = Optional.empty();
     }
 
     public void reportDisconnection(
         final UInt64 disconnectTime,
         final Optional<DisconnectReason> reason,
         final boolean locallyInitiated) {
-      if (isLocallyConsideredUnsuitable(reason, locallyInitiated)
-          || reason.map(DisconnectReason::isPermanent).orElse(false)) {
+      if (shouldBan(reason, locallyInitiated)) {
         suitableAfter = Optional.of(disconnectTime.plus(BAN_PERIOD));
+        inboundConnectionRejectionReason = reason;
         score.set(DEFAULT_SCORE);
+      } else if (isLocallyConsideredUnsuitableDuringCooldown(reason, locallyInitiated)) {
+        suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
+        inboundConnectionRejectionReason = reason;
       } else if (suitableAfter.isEmpty()) {
         suitableAfter = Optional.of(disconnectTime.plus(COOLDOWN_PERIOD));
+        inboundConnectionRejectionReason = Optional.empty();
       }
     }
 
-    private static boolean isLocallyConsideredUnsuitable(
+    private static boolean shouldBan(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
-      return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
+      return reason
+          .map(
+              disconnectReason -> {
+                if (disconnectReason.isPermanent()) {
+                  return true;
+                }
+                if (!locallyInitiated) {
+                  return false;
+                }
+                return BAN_REASONS.contains(disconnectReason);
+              })
+          .orElse(false);
+    }
+
+    private static boolean isLocallyConsideredUnsuitableDuringCooldown(
+        final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+      return locallyInitiated
+          && reason.map(INBOUND_REJECTION_DURING_COOLDOWN_REASONS::contains).orElse(false);
     }
 
     public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
@@ -181,9 +221,18 @@ public class DefaultReputationManager implements ReputationManager {
       if (shouldDisconnect) {
         // Prevent our node from connecting out to the remote peer for a long time
         suitableAfter = Optional.of(currentTime.plus(BAN_PERIOD));
+        inboundConnectionRejectionReason = Optional.of(DisconnectReason.BAD_SCORE);
         score.set(DEFAULT_SCORE);
       }
       return shouldDisconnect;
+    }
+
+    public Optional<DisconnectReason> getInboundConnectionRejectionReason(
+        final UInt64 currentTime) {
+      if (isSuitableAt(currentTime)) {
+        return Optional.empty();
+      }
+      return inboundConnectionRejectionReason;
     }
 
     @Override
@@ -204,6 +253,12 @@ public class DefaultReputationManager implements ReputationManager {
     @Override
     public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
       return false;
+    }
+
+    @Override
+    public Optional<DisconnectReason> getInboundConnectionRejectionReason(
+        final UInt64 currentTime) {
+      return Optional.empty();
     }
 
     @Override

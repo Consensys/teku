@@ -621,6 +621,17 @@ public class EndpointMetadata {
     public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector,
+        final RequestContentTypeDefinition<T> octetStreamRequestContentTypeDefinition) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      this.requestBodyTypes.put(ContentTypes.OCTET_STREAM, octetStreamRequestContentTypeDefinition);
+      return withUnsupportedMediaTypeResponse();
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableOneOfTypeDefinition<T> requestBodyType,
+        final BodyTypeSelector<T> bodyTypeSelector,
         final BiFunction<Bytes, Optional<String>, T> milestoneSpecificOctetStreamParser) {
       this.requestBodyTypes.put(
           ContentTypes.JSON,
@@ -724,7 +735,7 @@ public class EndpointMetadata {
       return response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE);
     }
 
-    public EndpointMetaDataBuilder withNotAcceptedResponse() {
+    public EndpointMetaDataBuilder withNotAcceptableResponse() {
       return response(SC_NOT_ACCEPTABLE, "Not acceptable", HTTP_ERROR_RESPONSE_TYPE);
     }
 

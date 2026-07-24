@@ -27,9 +27,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
 
@@ -78,6 +81,18 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
+    // This fixture models only the pre-Gloas (single-variant) tree, so ancestry is resolved by
+    // block root and always yields base (PENDING) nodes.
+    return getAncestor(node.blockRoot(), slot).map(ForkChoiceNode::createBase);
+  }
+
+  @Override
+  public Optional<ForkChoiceNode> getParentBeaconBlockNode(final ForkChoiceNode node) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> findCommonAncestor(
       final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
     return Optional.empty();
@@ -111,7 +126,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
             blockAndState.getState().getFinalizedCheckpoint(),
             blockAndState.getState().getCurrentJustifiedCheckpoint(),
             blockAndState.getState().getFinalizedCheckpoint()),
-        UInt64.ZERO);
+        UInt64.ZERO,
+        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
   }
 
   @Override
@@ -146,6 +162,18 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return chainBuilder
         .getBlockAndState(blockRoot)
         .map(RandomChainBuilderForkChoiceStrategy::asProtoNodeData);
+  }
+
+  @Override
+  public boolean shouldExtendPayload(
+      final ReadOnlyStore store, final SlotAndBlockRoot slotAndBlockRoot) {
+    return store.getExecutionPayloadIfAvailable(slotAndBlockRoot.getBlockRoot()).isPresent();
+  }
+
+  @Override
+  public boolean shouldBuildOnFull(
+      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
+    return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
   }
 
   @Override

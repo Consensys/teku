@@ -27,15 +27,13 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 class RestApiTest {
   private final Javalin app = mock(Javalin.class);
 
-  private final RestApi restApi = new RestApi(app, Optional.empty(), Optional.empty());
+  private final RestApi restApi = new RestApi(app, Optional.empty());
 
   @Test
   void start_shouldThrowInvalidConfigurationExceptionWhenPortInUse() {
@@ -54,17 +52,20 @@ class RestApiTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
-  void start_shouldFailFastWhenTokenNotWritable(@TempDir final Path tempDir) throws IOException {
-
+  void build_shouldFailFastWhenTokenNotWritable(@TempDir final Path tempDir) throws IOException {
     final Path managerDir = tempDir.resolve("manager");
     Files.createDirectory(
         managerDir,
         PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("--x--x---")));
 
-    final RestApi restApi =
-        new RestApi(app, Optional.empty(), Optional.of(managerDir.resolve("pass")));
-    assertThatThrownBy(restApi::start).isInstanceOf(IllegalStateException.class);
-    assertThat(restApi.getRestApiDocs()).isEmpty();
+    assertThatThrownBy(() -> RestApiBuilder.ensurePasswordFile(managerDir.resolve("pass")))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void builder_shouldRejectNonPositiveAsyncTimeout() {
+    assertThatThrownBy(() -> new RestApiBuilder().asyncTimeoutMillis(0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("greater than zero");
   }
 }

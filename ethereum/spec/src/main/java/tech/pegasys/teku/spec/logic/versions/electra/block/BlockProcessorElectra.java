@@ -35,9 +35,9 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -74,7 +74,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   private final BeaconStateAccessorsElectra beaconStateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
   private final ExecutionRequestsDataCodec executionRequestsDataCodec;
-  private final ExecutionRequestsProcessor executionRequestsProcessor;
+  protected final ExecutionRequestsProcessor executionRequestsProcessor;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,

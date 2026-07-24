@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTEST
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -29,10 +30,13 @@ public class PayloadAttestationSchema
     extends ContainerSchema3<
         PayloadAttestation, SszBitvector, PayloadAttestationData, SszSignature> {
 
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(3);
+
   public PayloadAttestationSchema(
       final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "PayloadAttestation",
+        ACTIVE_FIELDS,
         namedSchema("aggregation_bits", SszBitvectorSchema.create(specConfig.getPtcSize())),
         namedSchema("data", schemaRegistry.get(PAYLOAD_ATTESTATION_DATA_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));

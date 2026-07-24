@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -37,20 +38,26 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.spec.util.RandomChainBuilder;
 import tech.pegasys.teku.spec.util.RandomChainBuilderForkChoiceStrategy;
@@ -61,8 +68,57 @@ class ForkChoiceUtilTest {
   private final RandomChainBuilder chainBuilder = new RandomChainBuilder(dataStructureUtil);
   private final RandomChainBuilderForkChoiceStrategy forkChoiceStrategy =
       new RandomChainBuilderForkChoiceStrategy(chainBuilder);
+  private final UInt64 slot = UInt64.ONE;
+  private final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
 
   private final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
+
+  @Test
+  void isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope_shouldDefaultToFalse() {
+    assertThat(forkChoiceUtil.isDataAvailabilityCheckDeferredToExecutionPayloadEnvelope())
+        .isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsTrueWhenResolvedAncestorMatches() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+    final UInt64 ancestorSlot = UInt64.valueOf(3);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(ancestorSlot));
+    when(strategy.getAncestorNode(node, ancestorSlot)).thenReturn(Optional.of(ancestor));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenResolvedAncestorDiffers() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+    final UInt64 ancestorSlot = UInt64.valueOf(3);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(ancestorSlot));
+    when(strategy.getAncestorNode(node, ancestorSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(dataStructureUtil.randomBytes32())));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenAncestorSlotUnknown() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.empty());
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
@@ -253,24 +309,24 @@ class ForkChoiceUtilTest {
   }
 
   @ParameterizedTest
-  @MethodSource("isShufflingStableConditions")
-  void isShufflingStable(final int slot, final boolean expectedResult) {
-    assertThat(forkChoiceUtil.isShufflingStable(UInt64.valueOf(slot))).isEqualTo(expectedResult);
+  @MethodSource("isNotEpochBoundaryConditions")
+  void isNotEpochBoundary(final int slot, final boolean expectedResult) {
+    assertThat(forkChoiceUtil.isNotEpochBoundary(UInt64.valueOf(slot))).isEqualTo(expectedResult);
   }
 
-  public static Stream<Arguments> isShufflingStableConditions() {
+  public static Stream<Arguments> isNotEpochBoundaryConditions() {
     // 8 slots per epoch for test conditions
     final int epochStart = 10240 * 8;
     final int nextEpochStart = 10241 * 8;
     // slot , expectedResult
     final ArrayList<Arguments> args = new ArrayList<>();
 
-    // shuffling is not stable at any epoch boundary
+    // is_not_epoch_boundary returns false at any epoch boundary
     args.add(Arguments.of(0, false));
     args.add(Arguments.of(epochStart, false));
     args.add(Arguments.of(nextEpochStart, false));
     for (int i = epochStart + 1; i < nextEpochStart; i++) {
-      // all non epoch boundary slots are considered stable
+      // all non epoch boundary slots return true
       args.add(Arguments.of(i, true));
     }
 
@@ -279,7 +335,7 @@ class ForkChoiceUtilTest {
 
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
-  void createAvailabilityChecker_shouldCreateExpectedCheckerForBlock(
+  void createAvailabilityCheckerOnBlock_shouldCreateExpectedAvailabilityChecker(
       final SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMinimal(milestone);
     final ForkChoiceUtil util = spec.getGenesisSpec().getForkChoiceUtil();
@@ -297,44 +353,50 @@ class ForkChoiceUtilTest {
         dataColumnSidecarAvailabilityCheckerFactory,
         KZG.DISABLED);
 
-    final AvailabilityChecker<?> availabilityChecker = util.createAvailabilityChecker(block);
+    final AvailabilityChecker<?> availabilityChecker = util.createAvailabilityCheckerOnBlock(block);
 
     switch (milestone) {
-      case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA, GLOAS, HEZE ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
       case DENEB, ELECTRA ->
           verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
       case FULU ->
           verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-      case GLOAS, HEZE ->
-          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
   }
 
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
-  void createAvailabilityChecker_shouldCreateExpectedCheckerForExecutionPayload(
+  void createAvailabilityCheckerOnExecutionPayloadEnvelope_shouldCreateExpectedAvailabilityChecker(
       final SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMinimal(milestone);
     final ForkChoiceUtil util = spec.getGenesisSpec().getForkChoiceUtil();
+    @SuppressWarnings("unchecked")
+    final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory =
+        mock(AvailabilityCheckerFactory.class);
+    @SuppressWarnings("unchecked")
+    final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory =
+        mock(AvailabilityCheckerFactory.class);
 
-    final SignedExecutionPayloadEnvelope executionPayload =
+    final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
+    final SignedExecutionPayloadEnvelope signedEnvelope =
         mock(SignedExecutionPayloadEnvelope.class);
 
     spec.reinitializeForTesting(
-        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
-        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        blobSidecarAvailabilityCheckerFactory,
+        dataColumnSidecarAvailabilityCheckerFactory,
         KZG.DISABLED);
 
     final AvailabilityChecker<?> availabilityChecker =
-        util.createAvailabilityChecker(executionPayload);
+        util.createAvailabilityCheckerOnExecutionPayloadEnvelope(block, signedEnvelope);
 
     switch (milestone) {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
       case GLOAS, HEZE ->
-          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR);
+          verify(dataColumnSidecarAvailabilityCheckerFactory)
+              .createAvailabilityChecker(block, signedEnvelope);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
   }
@@ -409,6 +471,159 @@ class ForkChoiceUtilTest {
     assertThat(forkChoiceUtil.getProposerReorgCutoffMillis()).isEqualTo(1000);
   }
 
+  @Test
+  void isProposingOnTime_shouldBeTrueAtSlotStart() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    when(setup.store.getTimeInMillis()).thenReturn(setup.genesisTimeMillis.plus(millisPerSlot));
+
+    assertThat(setup.baseForkChoiceUtil.isProposingOnTime(setup.store, slot)).isTrue();
+  }
+
+  @Test
+  void isProposingOnTime_shouldBeFalseAfterCutoff() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    when(setup.store.getTimeInMillis())
+        .thenReturn(setup.genesisTimeMillis.plus(millisPerSlot + 1001));
+
+    assertThat(setup.baseForkChoiceUtil.isProposingOnTime(setup.store, slot)).isFalse();
+  }
+
+  @Test
+  void getProposerHead_shouldShortCircuitWhenHeadIsTimely() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), true);
+
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.ONE)).isEqualTo(head);
+  }
+
+  @Test
+  void getProposerHead_shouldShortCircuitWhenProposerBoostIsActive() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    when(setup.store.getProposerBoostRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
+
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.ONE)).isEqualTo(head);
+  }
+
+  @Test
+  void getProposerHead_shouldReturnParentWhenHeadIsWeakAndParentStrong() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withStableForkChoice();
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+    setup.harness.parentStrong = true;
+
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    final ForkChoiceNode parent =
+        ForkChoiceNode.createBase(setup.signedBlockAndState.getParentRoot());
+    when(setup.forkChoiceStrategy.getParentBeaconBlockNode(head)).thenReturn(Optional.of(parent));
+
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(parent);
+  }
+
+  @Test
+  void getProposerHead_shouldKeepHeadWhenParentIsWeak() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withStableForkChoice();
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+    setup.harness.parentStrong = false;
+
+    final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
+    assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
+        .isEqualTo(head);
+  }
+
+  @Test
+  void shouldOverrideForkChoiceUpdate_shouldReturnFalseWhenHeadIsTimely() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), true);
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideForkChoiceUpdate_shouldReturnFalseWhenParentSlotMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.ONE);
+    setup.withStableForkChoice();
+    setup.withFfgCompetitive();
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideForkChoiceUpdate_shouldReturnTrueWhenAllChecksPass() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.valueOf(2));
+    setup.withStableForkChoice();
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+    setup.harness.parentStrong = true;
+    when(setup.store.getBlockStateIfAvailable(any()))
+        .thenReturn(Optional.of(setup.signedBlockAndState.getState()));
+    setup.context.validatorConnected = true;
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isTrue();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckProposerPreState_shouldReturnFalseWhenParentStateMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    when(setup.store.getBlockStateIfAvailable(any())).thenReturn(Optional.empty());
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckProposerPreState(
+                setup.context, UInt64.valueOf(2), dataStructureUtil.randomBytes32()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckProposerPreState_shouldReturnFalseWhenValidatorDisconnected() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    when(setup.store.getBlockStateIfAvailable(any()))
+        .thenReturn(Optional.of(setup.signedBlockAndState.getState()));
+    setup.context.validatorConnected = false;
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckProposerPreState(
+                setup.context, UInt64.valueOf(2), dataStructureUtil.randomBytes32()))
+        .isFalse();
+  }
+
   private ReadOnlyStore mockStore(
       final long currentSlot, final Bytes32... blocksWithNonDefaultPayloads) {
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
@@ -434,6 +649,105 @@ class ForkChoiceUtilTest {
         .toVersionBellatrix()
         .orElseThrow()
         .getSafeSlotsToImportOptimistically();
+  }
+
+  private class ReorgTestSetup {
+    private final SignedBlockAndState signedBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(slot);
+    private final UInt64 genesisTime = signedBlockAndState.getState().getGenesisTime();
+    private final UInt64 genesisTimeMillis = genesisTime.times(1000);
+    private final ForkChoiceUtil baseForkChoiceUtil;
+    private final ForkChoiceUtilHarness harness;
+    private final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    private final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        mock(ReadOnlyForkChoiceStrategy.class);
+    private final TestForkChoiceReorgContext context = new TestForkChoiceReorgContext(store);
+
+    private ReorgTestSetup() {
+      final SpecVersion specVersion = spec.atSlot(slot);
+      baseForkChoiceUtil = specVersion.getForkChoiceUtil();
+      harness =
+          new ForkChoiceUtilHarness(
+              specVersion.getConfig(),
+              specVersion.beaconStateAccessors(),
+              specVersion.getEpochProcessor(),
+              specVersion.getAttestationUtil(),
+              specVersion.miscHelpers());
+
+      when(store.getForkChoiceStrategy()).thenReturn(forkChoiceStrategy);
+      when(store.getGenesisTime()).thenReturn(genesisTime);
+      when(store.getGenesisTimeMillis()).thenReturn(genesisTimeMillis);
+      when(store.getTimeInMillis()).thenReturn(genesisTimeMillis);
+      when(store.getTimeSeconds()).thenReturn(genesisTime);
+      when(store.getFinalizedCheckpoint())
+          .thenReturn(dataStructureUtil.randomCheckpoint(UInt64.ZERO));
+      when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
+      when(store.getBlockIfAvailable(any())).thenReturn(Optional.empty());
+      when(store.getBlockStateIfAvailable(any())).thenReturn(Optional.empty());
+      when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.empty());
+      when(store.getReorgThreshold()).thenReturn(UInt64.ONE);
+      when(store.getParentThreshold()).thenReturn(UInt64.ONE);
+      when(forkChoiceStrategy.blockSlot(any())).thenReturn(Optional.empty());
+    }
+
+    private void withHeadBlock() {
+      when(store.getBlockIfAvailable(any())).thenReturn(signedBlockAndState.getSignedBeaconBlock());
+    }
+
+    private void withParentSlot(final Optional<UInt64> maybeSlot) {
+      when(forkChoiceStrategy.blockSlot(signedBlockAndState.getParentRoot())).thenReturn(maybeSlot);
+    }
+
+    private void withFfgCompetitive() {
+      when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.of(true));
+    }
+
+    private void withStableForkChoice() {
+      when(store.getFinalizedCheckpoint())
+          .thenReturn(dataStructureUtil.randomCheckpoint(UInt64.ZERO));
+      when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
+    }
+
+    private void withCurrentSlot(final UInt64 currentSlot) {
+      final UInt64 currentTimeMillis = genesisTimeMillis.plus(currentSlot.times(millisPerSlot));
+      when(store.getTimeInMillis()).thenReturn(currentTimeMillis);
+      when(store.getTimeSeconds()).thenReturn(currentTimeMillis.dividedBy(1000));
+    }
+  }
+
+  private static class TestForkChoiceReorgContext implements ForkChoiceReorgContext {
+    private final ReadOnlyStore store;
+    private final Map<Bytes32, ForkChoiceUtil.BlockTimeliness> blockTimeliness = new HashMap<>();
+    private boolean validatorConnected = true;
+
+    private TestForkChoiceReorgContext(final ReadOnlyStore store) {
+      this.store = store;
+    }
+
+    @Override
+    public ReadOnlyStore getStore() {
+      return store;
+    }
+
+    @Override
+    public Optional<ForkChoiceUtil.BlockTimeliness> getBlockTimeliness(final Bytes32 root) {
+      return Optional.ofNullable(blockTimeliness.get(root));
+    }
+
+    @Override
+    public boolean isValidatorConnected(final int validatorIndex, final UInt64 slot) {
+      return validatorConnected;
+    }
+
+    @Override
+    public BeaconState processSlots(final BeaconState state, final UInt64 slot)
+        throws SlotProcessingException, EpochProcessingException {
+      return state;
+    }
+
+    private void setBlockTimeliness(final Bytes32 root, final boolean isTimely) {
+      blockTimeliness.put(root, new ForkChoiceUtil.BlockTimeliness(isTimely, false));
+    }
   }
 
   private Map<UInt64, Bytes32> getRootsForBlocks(final int... blockNumbers) {

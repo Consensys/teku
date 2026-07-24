@@ -27,6 +27,9 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
@@ -524,9 +527,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace(
-                "data-path: \".\"",
-                "data-path: \"" + dataPath.toString().replace("\\", "\\\\") + "\"");
+            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
@@ -567,8 +568,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "true",
       "--eth1-deposit-contract-address",
       "0x77f7bED277449F51505a4C54550B074030d989bC",
-      "--eth1-endpoint",
-      "http://localhost:8545",
       "--ee-endpoint",
       "http://localhost:8550",
       "--metrics-enabled",
@@ -614,8 +613,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
-              b.eth1Endpoints(new ArrayList<>())
-                  .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
+              b.depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
             b ->
@@ -650,11 +648,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     return TekuConfiguration.builder()
         .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
         .executionLayer(b -> b.engineEndpoint("http://localhost:8550"))
-        .powchain(
-            b ->
-                b.eth1Endpoints(List.of("http://localhost:8545"))
-                    .depositContract(address)
-                    .eth1LogsMaxBlockRange(10_000))
+        .powchain(b -> b.depositContract(address))
         .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
         .storageConfiguration(
             b ->
@@ -675,9 +669,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 d.isDiscoveryEnabled(false)
                     .listenUdpPort(1234)
                     .advertisedUdpPort(OptionalInt.of(9000))
-                    .minPeers(64)
-                    .maxPeers(100)
-                    .minRandomlySelectedPeers(12))
+                    .minPeers(DEFAULT_P2P_PEERS_LOWER_BOUND)
+                    .maxPeers(DEFAULT_P2P_PEERS_UPPER_BOUND)
+                    .minRandomlySelectedPeers(
+                        DEFAULT_P2P_PEERS_LOWER_BOUND
+                            * DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE
+                            / 100))
         .network(
             n ->
                 n.isEnabled(false)
@@ -774,10 +771,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(actual.eth2NetworkConfiguration().getSpec())
         .isEqualTo(expected.eth2NetworkConfiguration().getSpec());
 
-    // Ignore any Spec assertion on recursion
+    // Ignore Spec recursion and synchronization locks from lazy suppliers.
     assertThat(actual)
         .usingRecursiveComparison()
         .ignoringFieldsOfTypes(Spec.class)
+        .ignoringFieldsMatchingRegexes(".*\\.lock")
         .isEqualTo(expected);
   }
 

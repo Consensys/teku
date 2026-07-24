@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -466,6 +467,30 @@ class RemoteValidatorApiHandlerTest {
     final SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
+  }
+
+  @Test
+  public void createPayloadAttestationData_WhenNone_ReturnsEmpty() {
+    when(typeDefClient.createPayloadAttestationData(ONE)).thenReturn(Optional.empty());
+
+    final SafeFuture<Optional<PayloadAttestationData>> future =
+        apiHandler.createPayloadAttestationData(ONE);
+
+    assertThat(unwrapToOptional(future)).isEmpty();
+  }
+
+  @Test
+  public void createPayloadAttestationData_WhenFound_ReturnsPayloadAttestationData() {
+    final PayloadAttestationData payloadAttestationData =
+        new DataStructureUtil(TestSpecFactory.createMinimalGloas())
+            .randomPayloadAttestationData(ONE);
+    when(typeDefClient.createPayloadAttestationData(ONE))
+        .thenReturn(Optional.of(payloadAttestationData));
+
+    final SafeFuture<Optional<PayloadAttestationData>> future =
+        apiHandler.createPayloadAttestationData(ONE);
+
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(payloadAttestationData);
   }
 
   @Test

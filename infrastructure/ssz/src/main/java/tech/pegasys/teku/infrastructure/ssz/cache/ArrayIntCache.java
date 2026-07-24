@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.cache;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.IntFunction;
+import javax.annotation.Nullable;
 
 /**
  * Thread-safe int indexed cache
@@ -79,6 +80,13 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   public Optional<V> getCached(final Integer key) {
     V[] valuesLocal = this.values;
     return key >= valuesLocal.length ? Optional.empty() : Optional.ofNullable(valuesLocal[key]);
+  }
+
+  @Override
+  @Nullable
+  public V getCachedInt(final int key) {
+    V[] valuesLocal = this.values;
+    return key >= valuesLocal.length ? null : valuesLocal[key];
   }
 
   @Override

@@ -42,7 +42,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
       throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
-            createFuluMinimalConfigBuilder()
+            createFuluMinimalConfigBuilder(1)
                 .withRealNetwork()
                 // interop validators are not count for validator custody
                 .withCustodyGroupCountOverride(subnetCount / 2)
@@ -57,7 +57,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
-            createFuluMinimalConfigBuilder()
+            createFuluMinimalConfigBuilder(1)
                 .withRealNetwork()
                 .withGenesisTime(genesisTime.intValue())
                 .withPeers(primaryNode)
@@ -117,7 +117,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
       throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
-            createFuluMinimalConfigBuilder()
+            createFuluMinimalConfigBuilder(1)
                 .withRealNetwork()
                 .withDiscoveryNetwork()
                 // interop validators are not count for validator custody
@@ -134,7 +134,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     // this node syncs fast, need debug set on startup
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
-            createFuluMinimalConfigBuilder()
+            createFuluMinimalConfigBuilder(1)
                 .withRealNetwork()
                 .withDiscoveryNetwork()
                 .withGenesisTime(genesisTime.intValue())
@@ -227,10 +227,11 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     }
   }
 
-  private TekuNodeConfigBuilder createFuluMinimalConfigBuilder() throws Exception {
+  private TekuNodeConfigBuilder createFuluMinimalConfigBuilder(final int blobsToProduce)
+      throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
-        .withStubExecutionEngine()
+        .withStubExecutionEngine(blobsToProduce)
         .withLogLevel("INFO");
   }
 }

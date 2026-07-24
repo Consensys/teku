@@ -56,8 +56,11 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
 
   @Override
   public void processWithdrawals(final MutableBeaconState state) {
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     // Return early if the parent block is empty
-    if (!predicatesGloas.isParentBlockFull(state)) {
+    if (!stateGloas
+        .getLatestBlockHash()
+        .equals(stateGloas.getLatestExecutionPayloadBid().getBlockHash())) {
       return;
     }
     super.processWithdrawals(state);

@@ -36,9 +36,8 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "swift";
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(8);
-    final ValidatorKeystores extraKeys =
-        createTekuDepositSender(networkName).generateValidatorKeys(1);
+        createValidatorKeyGenerator().generateValidatorKeys(8);
+    final ValidatorKeystores extraKeys = createValidatorKeyGenerator().generateValidatorKeys(1);
 
     final InitialStateData genesis =
         createGenesisGenerator()

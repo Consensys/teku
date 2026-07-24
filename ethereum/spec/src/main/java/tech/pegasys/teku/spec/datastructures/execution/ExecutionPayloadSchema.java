@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadSchemaGloas;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
     extends SszContainerSchema<T>, BuilderPayloadSchema<T> {
@@ -32,7 +34,7 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
   @Override
   T createFromBackingNode(TreeNode node);
 
-  TransactionSchema getTransactionSchema();
+  SszByteListSchema<Transaction> getTransactionSchema();
 
   SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired();
 
@@ -52,5 +54,9 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
 
   default ExecutionPayloadSchemaDeneb toVersionDenebRequired() {
     throw new UnsupportedOperationException("Not a Deneb schema");
+  }
+
+  default ExecutionPayloadSchemaGloas toVersionGloasRequired() {
+    throw new UnsupportedOperationException("Not a Gloas schema");
   }
 }

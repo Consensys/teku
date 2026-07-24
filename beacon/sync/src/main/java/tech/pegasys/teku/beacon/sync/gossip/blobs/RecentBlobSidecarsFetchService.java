@@ -19,7 +19,6 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchBlobSidecarTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -60,7 +59,7 @@ public class RecentBlobSidecarsFetchService
       final FetchTaskFactory fetchTaskFactory,
       final Spec spec) {
     final int maxConcurrentRequests =
-        RecentBlocksFetchService.MAX_CONCURRENT_REQUESTS
+        DEFAULT_MAX_CONCURRENT_BLOCKS_REQUESTS
             * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1);
     return new RecentBlobSidecarsFetchService(
         asyncRunner,

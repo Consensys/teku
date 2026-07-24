@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.cache;
 
 import java.util.Optional;
 import java.util.function.IntFunction;
+import javax.annotation.Nullable;
 
 public class NoopIntCache<V> implements IntCache<V> {
 
@@ -33,7 +34,16 @@ public class NoopIntCache<V> implements IntCache<V> {
   }
 
   @Override
+  @Nullable
+  public V getCachedInt(final int key) {
+    return null;
+  }
+
+  @Override
   public void invalidateInt(final int key) {}
+
+  @Override
+  public void invalidateWithNewValueInt(final int key, final V newValue) {}
 
   @Override
   public void clear() {}

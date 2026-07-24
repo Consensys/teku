@@ -27,9 +27,8 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDese
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 
 public class GetPayloadV4Response {
   public final ExecutionPayloadV3 executionPayload;
@@ -66,12 +65,12 @@ public class GetPayloadV4Response {
   public GetPayloadResponse asInternalGetPayloadResponse(
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final BlobSchema blobSchema,
-      final ExecutionRequestsSchema executionRequestsSchema) {
+      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     return new GetPayloadResponse(
         executionPayload.asInternalExecutionPayload(executionPayloadSchema),
         blockValue,
         blobsBundle.asInternalBlobsBundle(blobSchema),
         shouldOverrideBuilder,
-        new ExecutionRequestsDataCodec(executionRequestsSchema).decode(executionRequests));
+        executionRequestsDataCodec.decode(executionRequests));
   }
 }

@@ -181,6 +181,44 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   @Test
+  public void decodeNextResponse_shouldDecodeMultipleContextAwareResponses() throws Exception {
+    // Two messages with different fork digests in a single ByteBuf — exercises the fix where
+    // context/payload decoders are properly closed after each message so the snappy frame decoder
+    // inside the decompressor isn't reused in a disposed state.
+    final BeaconState phase0State = beaconState(true);
+    final Bytes serializedPhase0 = phase0State.sszSerialize();
+    final Bytes contextBytesPhase0 = TestContextCodec.getContextBytes(true).getWrappedBytes();
+    final Bytes compressedPhase0 = compressor.compress(serializedPhase0);
+
+    final BeaconState altairState = beaconState(false);
+    final Bytes serializedAltair = altairState.sszSerialize();
+    final Bytes contextBytesAltair = TestContextCodec.getContextBytes(false).getWrappedBytes();
+    final Bytes compressedAltair = compressor.compress(serializedAltair);
+
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(
+            SUCCESS_CODE,
+            contextBytesPhase0,
+            getLengthPrefix(serializedPhase0.size()),
+            compressedPhase0,
+            SUCCESS_CODE,
+            contextBytesAltair,
+            getLengthPrefix(serializedAltair.size()),
+            compressedAltair)) {
+
+      final RpcResponseDecoder<BeaconState, ?> decoder = createForkAwareDecoder();
+      final List<BeaconState> results = new ArrayList<>();
+      for (ByteBuf byteBuf : testByteBufSlice) {
+        results.addAll(decoder.decodeNextResponses(byteBuf));
+        byteBuf.release();
+      }
+      decoder.complete();
+      assertThat(results).containsExactly(phase0State, altairState);
+      assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
+  }
+
+  @Test
   public void decodeNextResponse_shouldDecodeBasedOnContext_matchingPhase0Input() throws Exception {
     testDecodeBasedOnContext(true);
   }

@@ -259,6 +259,56 @@ public abstract class ContainerSchema20<
             fieldNamedSchema19));
   }
 
+  protected ContainerSchema20(
+      final String containerName,
+      final boolean[] activeFields,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V3> fieldNamedSchema3,
+      final NamedSchema<V4> fieldNamedSchema4,
+      final NamedSchema<V5> fieldNamedSchema5,
+      final NamedSchema<V6> fieldNamedSchema6,
+      final NamedSchema<V7> fieldNamedSchema7,
+      final NamedSchema<V8> fieldNamedSchema8,
+      final NamedSchema<V9> fieldNamedSchema9,
+      final NamedSchema<V10> fieldNamedSchema10,
+      final NamedSchema<V11> fieldNamedSchema11,
+      final NamedSchema<V12> fieldNamedSchema12,
+      final NamedSchema<V13> fieldNamedSchema13,
+      final NamedSchema<V14> fieldNamedSchema14,
+      final NamedSchema<V15> fieldNamedSchema15,
+      final NamedSchema<V16> fieldNamedSchema16,
+      final NamedSchema<V17> fieldNamedSchema17,
+      final NamedSchema<V18> fieldNamedSchema18,
+      final NamedSchema<V19> fieldNamedSchema19) {
+
+    super(
+        containerName,
+        activeFields,
+        List.of(
+            fieldNamedSchema0,
+            fieldNamedSchema1,
+            fieldNamedSchema2,
+            fieldNamedSchema3,
+            fieldNamedSchema4,
+            fieldNamedSchema5,
+            fieldNamedSchema6,
+            fieldNamedSchema7,
+            fieldNamedSchema8,
+            fieldNamedSchema9,
+            fieldNamedSchema10,
+            fieldNamedSchema11,
+            fieldNamedSchema12,
+            fieldNamedSchema13,
+            fieldNamedSchema14,
+            fieldNamedSchema15,
+            fieldNamedSchema16,
+            fieldNamedSchema17,
+            fieldNamedSchema18,
+            fieldNamedSchema19));
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(0);

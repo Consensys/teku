@@ -28,6 +28,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -56,9 +58,13 @@ public class AttesterSlashingGenerator {
               goodAttestation.getData().getSlot(), blockAndState.getSlot()));
     }
     AttestationUtil attestationUtil = spec.atSlot(blockAndState.getSlot()).getAttestationUtil();
-    IndexedAttestation indexedGoodAttestation =
+    final IndexedAttestationSchema indexedAttestationSchema =
+        spec.atSlot(blockAndState.getSlot()).getSchemaDefinitions().getIndexedAttestationSchema();
+    IndexedAttestationLight indexedGoodAttestationLight =
         attestationUtil.getIndexedAttestation(blockAndState.getState(), goodAttestation);
-    int validatorIndex = indexedGoodAttestation.getAttestingIndices().get(0).get().intValue();
+    IndexedAttestation indexedGoodAttestation =
+        indexedGoodAttestationLight.toSsz(indexedAttestationSchema);
+    int validatorIndex = indexedGoodAttestationLight.attestingIndices().get(0).intValue();
 
     UInt64 epoch = spec.computeEpochAtSlot(blockAndState.getSlot());
     Optional<CommitteeAssignment> maybeAssignment =
@@ -91,7 +97,9 @@ public class AttesterSlashingGenerator {
             committee,
             brokenAttestationData);
     IndexedAttestation indexedBadAttestation =
-        attestationUtil.getIndexedAttestation(blockAndState.getState(), badAttestation);
+        attestationUtil
+            .getIndexedAttestation(blockAndState.getState(), badAttestation)
+            .toSsz(indexedAttestationSchema);
 
     return spec.getGenesisSchemaDefinitions()
         .getAttesterSlashingSchema()

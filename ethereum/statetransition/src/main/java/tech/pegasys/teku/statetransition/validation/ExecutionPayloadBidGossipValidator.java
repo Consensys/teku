@@ -35,9 +35,11 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 
 public class ExecutionPayloadBidGossipValidator {
 
@@ -51,11 +53,15 @@ public class ExecutionPayloadBidGossipValidator {
   private final Map<SlotAndBlockHash, UInt64> highestBids =
       LimitedMap.createSynchronizedLRU(HIGHEST_BID_SET_SIZE);
 
+  private final ProposerPreferencesManager proposerPreferencesManager;
+
   public ExecutionPayloadBidGossipValidator(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
+      final ProposerPreferencesManager proposerPreferencesManager,
       final int minBidIncrementPercentage) {
     this.gossipValidationHelper = gossipValidationHelper;
+    this.proposerPreferencesManager = proposerPreferencesManager;
     this.minBidIncrementPercentage = minBidIncrementPercentage;
     signingRootUtil = new SigningRootUtil(spec);
   }
@@ -83,12 +89,26 @@ public class ExecutionPayloadBidGossipValidator {
           ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
     }
 
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10259
     /*
-     * [IGNORE] the SignedProposerPreferences where preferences.proposal_slot is equal to bid.slot has been seen.
-     * [REJECT] bid.fee_recipient matches the fee_recipient from the proposer's SignedProposerPreferences associated with bid.slot.
-     * [REJECT] bid.gas_limit matches the gas_limit from the proposer's SignedProposerPreferences associated with bid.slot.
+     * [IGNORE] the SignedProposerPreferences where preferences.proposal_slot is equal to
+     * bid.slot has been seen
      */
+    final Optional<ProposerPreferences> proposerPreferences =
+        proposerPreferencesManager.getProposerPreferences(bid.getSlot());
+    if (proposerPreferences.isEmpty()) {
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+
+    /*
+     * [REJECT] bid.fee_recipient matches the fee_recipient from the proposer's
+     * SignedProposerPreferences associated with bid.slot
+     */
+    if (!bid.getFeeRecipient().equals(proposerPreferences.get().getFeeRecipient())) {
+      return completedFuture(
+          ignore(
+              "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
+              bid.getFeeRecipient(), proposerPreferences.get().getFeeRecipient()));
+    }
 
     /*
      * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.
@@ -140,6 +160,27 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
+     * [IGNORE] bid.gas_limit is compatible with proposer_preferences.target_gas_limit under the
+     * EIP-1559 transition rule from the parent execution payload gas limit.
+     */
+    final Optional<UInt64> maybeParentGasLimit =
+        gossipValidationHelper.getGasLimitForExecutionPayload(bid.getParentBlockRoot());
+    if (maybeParentGasLimit.isEmpty()) {
+      LOG.trace(
+          "Gas limit for parent execution payload with block hash {} is unavailable. It will be saved for future processing",
+          bid.getParentBlockHash());
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+    final UInt64 parentGasLimit = maybeParentGasLimit.get();
+    final UInt64 targetGasLimit = proposerPreferences.get().getTargetGasLimit();
+    if (!isGasLimitTargetCompatible(parentGasLimit, bid.getGasLimit(), targetGasLimit)) {
+      return completedFuture(
+          ignore(
+              "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+              bid.getGasLimit(), parentGasLimit, targetGasLimit));
+    }
+
+    /*
      * [IGNORE] bid.parent_block_root is the hash tree root of a known beacon block in fork choice.
      */
     final Optional<UInt64> maybeParentBlockSlot =
@@ -151,6 +192,18 @@ public class ExecutionPayloadBidGossipValidator {
       return completedFuture(SAVE_FOR_FUTURE);
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
+
+    /*
+     * [REJECT] The bid is for a higher slot than its parent block.
+     */
+    if (!bid.getSlot().isGreaterThan(parentBlockSlot)) {
+      LOG.trace(
+          "Bid slot {} is not greater than parent block slot {}", bid.getSlot(), parentBlockSlot);
+      return completedFuture(
+          reject(
+              "Bid slot %s is not greater than parent block slot %s",
+              bid.getSlot(), parentBlockSlot));
+    }
 
     return gossipValidationHelper
         .getParentStateInBlockEpoch(parentBlockSlot, bid.getParentBlockRoot(), bid.getSlot())
@@ -164,6 +217,22 @@ public class ExecutionPayloadBidGossipValidator {
                 return SAVE_FOR_FUTURE;
               }
               final BeaconState state = maybeState.get();
+
+              /*
+               * [REJECT] bid.prev_randao is the correct RANDAO mix -- i.e. validate that
+               * bid.prev_randao == get_randao_mix(parent_state, get_current_epoch(parent_state)).
+               */
+              final Bytes32 expectedRandaoMix =
+                  gossipValidationHelper.getRandaoMixForCurrentEpoch(state, bid.getSlot());
+              if (!bid.getPrevRandao().equals(expectedRandaoMix)) {
+                LOG.trace(
+                    "Bid prev_randao {} does not match expected RANDAO mix {}",
+                    bid.getPrevRandao(),
+                    expectedRandaoMix);
+                return reject(
+                    "Bid prev_randao %s does not match expected RANDAO mix %s",
+                    bid.getPrevRandao(), expectedRandaoMix);
+              }
 
               /*
                * [REJECT] bid.builder_index is a valid/active builder index -- i.e. is_active_builder(state, bid.builder_index) returns True
@@ -311,6 +380,23 @@ public class ExecutionPayloadBidGossipValidator {
         signedExecutionPayloadBid.getMessage().getBuilderIndex(),
         signedExecutionPayloadBid.getSignature(),
         state);
+  }
+
+  static boolean isGasLimitTargetCompatible(
+      final UInt64 parentGasLimit, final UInt64 gasLimit, final UInt64 targetGasLimit) {
+    final UInt64 maxGasLimitDifference =
+        parentGasLimit.dividedBy(1024).max(UInt64.ONE).minus(UInt64.ONE);
+    final UInt64 minGasLimit = parentGasLimit.minus(maxGasLimitDifference);
+    final UInt64 maxGasLimit = parentGasLimit.plus(maxGasLimitDifference);
+
+    if (targetGasLimit.isGreaterThanOrEqualTo(minGasLimit)
+        && targetGasLimit.isLessThanOrEqualTo(maxGasLimit)) {
+      return gasLimit.equals(targetGasLimit);
+    }
+    if (targetGasLimit.isGreaterThan(maxGasLimit)) {
+      return gasLimit.equals(maxGasLimit);
+    }
+    return gasLimit.equals(minGasLimit);
   }
 
   record SlotAndBlockHash(UInt64 slot, Bytes32 blockHash) {}

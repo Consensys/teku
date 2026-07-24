@@ -94,13 +94,16 @@ public class ExecutionPayloadSelectorFactory
   private Optional<ExecutionPayloadAndMetaData> addMetaData(
       final Optional<SignedExecutionPayloadEnvelope> maybeExecutionPayload,
       final ChainHead chainHead) {
-    return maybeExecutionPayload.map(
-        executionPayload ->
-            new ExecutionPayloadAndMetaData(
-                executionPayload,
-                spec.atSlot(executionPayload.getSlot()).getMilestone(),
-                chainHead.isOptimistic()
-                    || client.isOptimisticBlock(executionPayload.getBeaconBlockRoot()),
-                client.isFinalized(executionPayload.getSlot())));
+    if (maybeExecutionPayload.isEmpty()) {
+      return Optional.empty();
+    }
+    final SignedExecutionPayloadEnvelope executionPayload = maybeExecutionPayload.get();
+    return Optional.of(
+        new ExecutionPayloadAndMetaData(
+            executionPayload,
+            spec.atSlot(executionPayload.getSlot()).getMilestone(),
+            chainHead.isOptimistic()
+                || client.isOptimisticBlock(executionPayload.getBeaconBlockRoot()),
+            client.isFinalized(executionPayload.getSlot())));
   }
 }

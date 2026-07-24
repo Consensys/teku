@@ -24,6 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -35,12 +37,10 @@ public class ProtoNode {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final ForkChoiceNode forkChoiceNode;
   private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
-
-  private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
-
   private BlockCheckpoints checkpoints;
 
   /**
@@ -63,13 +63,12 @@ public class ProtoNode {
   private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
-
   private ProtoNodeValidationStatus validationStatus;
 
   ProtoNode(
+      final ForkChoiceNode forkChoiceNode,
       final UInt64 blockSlot,
       final Bytes32 stateRoot,
-      final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Optional<Integer> parentIndex,
       final BlockCheckpoints checkpoints,
@@ -79,9 +78,9 @@ public class ProtoNode {
       final Optional<Integer> bestChildIndex,
       final Optional<Integer> bestDescendantIndex,
       final ProtoNodeValidationStatus validationStatus) {
+    this.forkChoiceNode = forkChoiceNode;
     this.blockSlot = blockSlot;
     this.stateRoot = stateRoot;
-    this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
     this.parentIndex = parentIndex;
     this.checkpoints = checkpoints;
@@ -101,7 +100,7 @@ public class ProtoNode {
       } catch (final ArithmeticException __) {
         LOG.error(
             "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be subtracted causes uint64 underflow for block {} ({}). Attempting to subtract {} from {}",
-            blockRoot,
+            getBlockRoot(),
             blockSlot,
             absoluteDelta,
             weight);
@@ -114,7 +113,7 @@ public class ProtoNode {
       } catch (final ArithmeticException __) {
         LOG.error(
             "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
-            blockRoot,
+            getBlockRoot(),
             blockSlot,
             delta,
             weight);
@@ -140,7 +139,11 @@ public class ProtoNode {
   }
 
   public Bytes32 getBlockRoot() {
-    return blockRoot;
+    return forkChoiceNode.blockRoot();
+  }
+
+  public ForkChoiceNode getForkChoiceNode() {
+    return forkChoiceNode;
   }
 
   public Optional<Integer> getParentIndex() {
@@ -169,6 +172,10 @@ public class ProtoNode {
 
   public Bytes32 getExecutionBlockHash() {
     return executionBlockHash;
+  }
+
+  public BlockCheckpoints getBlockCheckpoints() {
+    return checkpoints;
   }
 
   public void pullUpCheckpoints() {
@@ -217,17 +224,22 @@ public class ProtoNode {
     this.validationStatus = validationStatus;
   }
 
+  public ForkChoicePayloadStatus getPayloadStatus() {
+    return forkChoiceNode.payloadStatus();
+  }
+
   public ProtoNodeData getBlockData() {
     return new ProtoNodeData(
         blockSlot,
-        blockRoot,
+        getBlockRoot(),
         parentRoot,
         stateRoot,
         executionBlockNumber,
         executionBlockHash,
         validationStatus,
         checkpoints,
-        weight);
+        weight,
+        getPayloadStatus());
   }
 
   @Override
@@ -239,9 +251,9 @@ public class ProtoNode {
       return false;
     }
     final ProtoNode protoNode = (ProtoNode) o;
-    return Objects.equals(blockSlot, protoNode.blockSlot)
+    return Objects.equals(forkChoiceNode, protoNode.forkChoiceNode)
+        && Objects.equals(blockSlot, protoNode.blockSlot)
         && Objects.equals(stateRoot, protoNode.stateRoot)
-        && Objects.equals(blockRoot, protoNode.blockRoot)
         && Objects.equals(parentRoot, protoNode.parentRoot)
         && Objects.equals(checkpoints, protoNode.checkpoints)
         && Objects.equals(executionBlockNumber, protoNode.executionBlockNumber)
@@ -256,9 +268,9 @@ public class ProtoNode {
   @Override
   public int hashCode() {
     return Objects.hash(
+        forkChoiceNode,
         blockSlot,
         stateRoot,
-        blockRoot,
         parentRoot,
         checkpoints,
         executionBlockNumber,
@@ -273,9 +285,9 @@ public class ProtoNode {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("forkChoiceNode", forkChoiceNode)
         .add("blockSlot", blockSlot)
         .add("stateRoot", stateRoot)
-        .add("blockRoot", blockRoot)
         .add("parentRoot", parentRoot)
         .add("justifiedCheckpoint", getJustifiedCheckpoint())
         .add("finalizedCheckpoint", getFinalizedCheckpoint())
@@ -292,6 +304,6 @@ public class ProtoNode {
   }
 
   public String toLogString() {
-    return LogFormatter.formatBlock(blockSlot, blockRoot);
+    return LogFormatter.formatBlock(blockSlot, getBlockRoot()) + " " + getPayloadStatus();
   }
 }

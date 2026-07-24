@@ -26,9 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfigHezeImpl;
 public class HezeBuilder extends BaseForkBuilder
     implements ForkConfigBuilder<SpecConfigGloas, SpecConfigHeze> {
 
-  private Integer viewFreezeCutoffBps;
-  private Integer inclusionListSubmissionDueBps;
-  private Integer proposerInclusionListCutoffBps;
+  private Integer inclusionListDueBps;
   private Integer maxRequestInclusionList;
   private Integer maxBytesPerInclusionList;
 
@@ -43,30 +41,16 @@ public class HezeBuilder extends BaseForkBuilder
     return SpecConfigAndParent.of(
         new SpecConfigHezeImpl(
             specConfigAndParent.specConfig(),
-            viewFreezeCutoffBps,
-            inclusionListSubmissionDueBps,
-            proposerInclusionListCutoffBps,
+            inclusionListDueBps,
             maxRequestInclusionList,
             maxBytesPerInclusionList,
             inclusionListCommitteeSize),
         specConfigAndParent);
   }
 
-  public HezeBuilder viewFreezeCutoffBps(final Integer viewFreezeCutoffBps) {
-    checkNotNull(viewFreezeCutoffBps);
-    this.viewFreezeCutoffBps = viewFreezeCutoffBps;
-    return this;
-  }
-
-  public HezeBuilder inclusionListSubmissionDueBps(final Integer inclusionListSubmissionDueBps) {
-    checkNotNull(inclusionListSubmissionDueBps);
-    this.inclusionListSubmissionDueBps = inclusionListSubmissionDueBps;
-    return this;
-  }
-
-  public HezeBuilder proposerInclusionListCutoffBps(final Integer proposerInclusionListCutoffBps) {
-    checkNotNull(proposerInclusionListCutoffBps);
-    this.proposerInclusionListCutoffBps = proposerInclusionListCutoffBps;
+  public HezeBuilder inclusionListDueBps(final Integer inclusionListDueBps) {
+    checkNotNull(inclusionListDueBps);
+    this.inclusionListDueBps = inclusionListDueBps;
     return this;
   }
 
@@ -97,9 +81,7 @@ public class HezeBuilder extends BaseForkBuilder
   @Override
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
-    constants.put("viewFreezeCutoffBps", viewFreezeCutoffBps);
-    constants.put("inclusionListSubmissionDueBps", inclusionListSubmissionDueBps);
-    constants.put("proposerInclusionListCutoffBps", proposerInclusionListCutoffBps);
+    constants.put("inclusionListDueBps", inclusionListDueBps);
     constants.put("maxRequestInclusionList", maxRequestInclusionList);
     constants.put("maxBytesPerInclusionList", maxBytesPerInclusionList);
     constants.put("inclusionListCommitteeSize", inclusionListCommitteeSize);

@@ -50,7 +50,7 @@ public class SyncCommitteeProductionDuty {
 
   public SafeFuture<DutyResult> produceMessages(final UInt64 slot, final Bytes32 blockRoot) {
     if (assignments.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     return forkProvider
         .getForkInfo(slot)

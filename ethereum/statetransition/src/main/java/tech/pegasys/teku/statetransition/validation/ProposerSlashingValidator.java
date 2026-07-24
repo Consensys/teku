@@ -36,7 +36,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidSlashingForProposerSet =
-      LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
+      LimitedSet.createSynchronizedLRU(VALID_VALIDATOR_SET_SIZE);
 
   public ProposerSlashingValidator(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;

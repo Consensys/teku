@@ -26,6 +26,7 @@ public class DiscoveryPeer {
   private final Bytes publicKey;
   private final Bytes nodeId;
   private final InetSocketAddress nodeAddress;
+  private final Optional<InetSocketAddress> quicAddress;
   private final Optional<EnrForkId> enrForkId;
   private final SszBitvector persistentAttestationSubnets;
   private final SszBitvector syncCommitteeSubnets;
@@ -36,6 +37,7 @@ public class DiscoveryPeer {
       final Bytes publicKey,
       final Bytes nodeId,
       final InetSocketAddress nodeAddress,
+      final Optional<InetSocketAddress> quicAddress,
       final Optional<EnrForkId> enrForkId,
       final SszBitvector persistentAttestationSubnets,
       final SszBitvector syncCommitteeSubnets,
@@ -44,6 +46,7 @@ public class DiscoveryPeer {
     this.publicKey = publicKey;
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
+    this.quicAddress = quicAddress;
     this.enrForkId = enrForkId;
     this.persistentAttestationSubnets = persistentAttestationSubnets;
     this.syncCommitteeSubnets = syncCommitteeSubnets;
@@ -61,6 +64,10 @@ public class DiscoveryPeer {
 
   public InetSocketAddress getNodeAddress() {
     return nodeAddress;
+  }
+
+  public Optional<InetSocketAddress> getQuicAddress() {
+    return quicAddress;
   }
 
   public Optional<EnrForkId> getEnrForkId() {
@@ -94,6 +101,7 @@ public class DiscoveryPeer {
     DiscoveryPeer that = (DiscoveryPeer) o;
     return Objects.equal(getPublicKey(), that.getPublicKey())
         && Objects.equal(getNodeAddress(), that.getNodeAddress())
+        && Objects.equal(getQuicAddress(), that.getQuicAddress())
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
         && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets())
@@ -106,6 +114,7 @@ public class DiscoveryPeer {
     return Objects.hashCode(
         getPublicKey(),
         getNodeAddress(),
+        getQuicAddress(),
         getEnrForkId(),
         getPersistentAttestationSubnets(),
         getSyncCommitteeSubnets(),
@@ -118,6 +127,7 @@ public class DiscoveryPeer {
     return MoreObjects.toStringHelper(this)
         .add("publicKey", publicKey)
         .add("nodeAddress", nodeAddress)
+        .add("quicAddress", quicAddress)
         .add("enrForkId", enrForkId)
         .add("persistentSubnets", persistentAttestationSubnets)
         .add("syncCommitteeSubnets", syncCommitteeSubnets)

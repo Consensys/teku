@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -71,6 +72,7 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
       final OperationProcessor<PayloadAttestationMessage>
           payloadAttestationMessageOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidOperationProcessor,
+      final OperationProcessor<SignedProposerPreferences> proposerPreferencesOperationProcessor,
       final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
@@ -99,6 +101,7 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
         executionPayloadOperationProcessor,
         payloadAttestationMessageOperationProcessor,
         executionPayloadBidOperationProcessor,
+        proposerPreferencesOperationProcessor,
         debugDataDumper,
         dasGossipLogger,
         executionProofOperationProcessor,

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.service.serviceutils.layout.DataConfig.DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
+import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_ROCKSDB_BLOB_DB_ENABLED;
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
 import java.nio.file.Path;
@@ -224,6 +225,18 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private boolean debugDataDumpingEnabled = DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
 
   @CommandLine.Option(
+      names = {"--Xdata-storage-rocksdb-blob-db-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enable RocksDB BlobDB for column families containing static data. "
+              + "BlobDB separates large values into blob files, which can reduce write amplification.",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean rocksdbBlobDbEnabled = DEFAULT_ROCKSDB_BLOB_DB_ENABLED;
+
+  @CommandLine.Option(
       names = {"--force-clear-db"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -263,7 +276,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .retainedSlots(dataStorageRetainedSlots)
                 .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds))
                 .statePruningLimit(statePruningLimit)
-                .forceClearDb(forceClearDb));
+                .forceClearDb(forceClearDb)
+                .rocksdbBlobDbEnabled(rocksdbBlobDbEnabled));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())

@@ -59,26 +59,6 @@ public class PendingDeposit
         final SszUInt64 slot) {
       return new PendingDeposit(this, publicKey, withdrawalCredentials, amount, signature, slot);
     }
-
-    public SszPublicKey getPublicKeySchema() {
-      return (SszPublicKey) getFieldSchema0();
-    }
-
-    public SszBytes32 getWithdrawalCredentialsSchema() {
-      return (SszBytes32) getFieldSchema1();
-    }
-
-    public SszUInt64 getAmountSchema() {
-      return (SszUInt64) getFieldSchema2();
-    }
-
-    public SszSignatureSchema getSignatureSchema() {
-      return (SszSignatureSchema) getFieldSchema3();
-    }
-
-    public SszUInt64 getSlotSchema() {
-      return (SszUInt64) getFieldSchema4();
-    }
   }
 
   private PendingDeposit(final PendingDepositSchema type, final TreeNode backingNode) {

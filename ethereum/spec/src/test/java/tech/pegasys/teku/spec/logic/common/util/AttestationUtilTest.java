@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -119,7 +119,10 @@ class AttestationUtilTest {
     final ValidatableAttestation validatableAttestation =
         ValidatableAttestation.from(spec, dataStructureUtil.randomAttestation());
     validatableAttestation.setValidIndexedAttestation();
-    final IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestationLight indexedAttestation =
+        IndexedAttestationLight.fromSsz(
+            dataStructureUtil.randomIndexedAttestation(
+                UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
     validatableAttestation.setIndexedAttestation(indexedAttestation);
 
     final SafeFuture<AttestationProcessingResult> result =
@@ -256,7 +259,7 @@ class AttestationUtilTest {
       final SpecContext specContext) {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     final BeaconState beaconState = dataStructureUtil.randomBeaconState();
-    final IndexedAttestation indexedAttestation =
+    final IndexedAttestationLight indexedAttestation =
         attestationUtil.getIndexedAttestation(beaconState, attestation);
 
     if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
@@ -272,8 +275,8 @@ class AttestationUtilTest {
               beaconState, attestation.getData().getSlot(), attestation.getData().getIndex());
     }
 
-    assertThat(indexedAttestation.getData()).isEqualTo(attestation.getData());
-    assertThat(indexedAttestation.getSignature()).isEqualTo(attestation.getAggregateSignature());
+    assertThat(indexedAttestation.data()).isEqualTo(attestation.getData());
+    assertThat(indexedAttestation.signature()).isEqualTo(attestation.getAggregateSignature());
   }
 
   @TestTemplate
@@ -284,15 +287,15 @@ class AttestationUtilTest {
     final Attestation attestation = dataStructureUtil.randomSingleAttestation();
     final BeaconState beaconState = dataStructureUtil.randomBeaconState();
 
-    final IndexedAttestation indexedAttestation =
+    final IndexedAttestationLight indexedAttestation =
         attestationUtil.getIndexedAttestation(beaconState, attestation);
 
     verify(beaconStateAccessors, never()).getBeaconCommittee(any(), any(), any());
 
-    assertThat(indexedAttestation.getAttestingIndices().streamUnboxed())
+    assertThat(indexedAttestation.attestingIndices())
         .containsExactly(attestation.getValidatorIndexRequired());
-    assertThat(indexedAttestation.getData()).isEqualTo(attestation.getData());
-    assertThat(indexedAttestation.getSignature()).isEqualTo(attestation.getAggregateSignature());
+    assertThat(indexedAttestation.data()).isEqualTo(attestation.getData());
+    assertThat(indexedAttestation.signature()).isEqualTo(attestation.getAggregateSignature());
   }
 
   private SafeFuture<AttestationProcessingResult> executeValidation(

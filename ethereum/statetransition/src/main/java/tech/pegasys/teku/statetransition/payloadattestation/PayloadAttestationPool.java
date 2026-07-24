@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.payloadattestation;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,6 +34,10 @@ public interface PayloadAttestationPool {
             final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {}
 
         @Override
+        public void subscribeValidatedOperationAdded(
+            final OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber) {}
+
+        @Override
         public SafeFuture<InternalValidationResult> addLocal(
             final PayloadAttestationMessage payloadAttestationMessage) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
@@ -50,9 +55,17 @@ public interface PayloadAttestationPool {
             final BeaconState blockSlotState, final Bytes32 parentRoot) {
           return null;
         }
+
+        @Override
+        public List<PayloadAttestation> getPayloadAttestations(final BeaconState state) {
+          return List.of();
+        }
       };
 
   void subscribeOperationAdded(OperationAddedSubscriber<PayloadAttestationMessage> subscriber);
+
+  void subscribeValidatedOperationAdded(
+      OperationAddedSubscriber<ValidatablePayloadAttestationMessage> subscriber);
 
   SafeFuture<InternalValidationResult> addLocal(
       PayloadAttestationMessage payloadAttestationMessage);
@@ -62,4 +75,6 @@ public interface PayloadAttestationPool {
 
   SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       BeaconState blockSlotState, Bytes32 parentRoot);
+
+  List<PayloadAttestation> getPayloadAttestations(BeaconState state);
 }

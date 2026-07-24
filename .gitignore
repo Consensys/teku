@@ -13,6 +13,7 @@ db.version
 .gradletasknamecache
 .externalToolBuilders/
 .gradle/
+.gradle-local/*
 .idea/
 .loadpath
 .metadata
@@ -57,4 +58,8 @@ eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
 .jqwik-database
 /teku.db
 node_modules
-.claude/*.local.*
+.claude/
+.codex/
+.agents/
+skills-lock.json
+.worktrees

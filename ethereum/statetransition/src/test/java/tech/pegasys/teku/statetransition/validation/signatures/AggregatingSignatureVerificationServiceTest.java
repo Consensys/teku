@@ -278,6 +278,66 @@ public class AggregatingSignatureVerificationServiceTest {
     }
   }
 
+  @Test
+  public void verifyTasksIndividually_completesPendingTasksAndSkipsCompletedOnes() {
+    startService();
+
+    final SafeFuture<Boolean> alreadyCompleted = executeValidVerify(0, 0);
+    final SafeFuture<Boolean> pendingValid = executeValidVerify(1, 1);
+    // Mismatched key / message / signature list sizes make verification throw for this task.
+    final SafeFuture<Boolean> pendingMalformed =
+        service.verify(
+            List.of(List.of(KEYS.get(2).getPublicKey())), List.of(Bytes.of(2)), List.of());
+    final List<SignatureTask> tasks = getPendingTasks();
+
+    // Complete the first task up front, as if it had already been verified earlier in the batch.
+    tasks.getFirst().completeAsync(true);
+    completionRunner.executeQueuedActions();
+    assertThat(alreadyCompleted).isCompletedWithValue(true);
+
+    service.verifyTasksIndividually(tasks);
+    completionRunner.executeQueuedActions();
+
+    // The already-completed task is left untouched, the pending valid one is verified, and the
+    // malformed one fails in isolation without affecting the others.
+    assertThat(alreadyCompleted).isCompletedWithValue(true);
+    assertThat(pendingValid).isCompletedWithValue(true);
+    assertThat(pendingMalformed).isCompletedExceptionally();
+  }
+
+  @Test
+  public void run_isolatesFailureAndKeepsWorkerAliveWhenBatchVerificationThrows() throws Exception {
+    final MetricsSystem metrics = new StubMetricsSystem();
+    final AsyncRunnerFactory realRunnerFactory =
+        AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metrics));
+    service =
+        new AggregatingSignatureVerificationService(
+            metrics,
+            realRunnerFactory,
+            realRunnerFactory.create("completion", 1),
+            // Single worker thread: if a thrown batch permanently killed the worker, the following
+            // valid task would hang and the test would time out.
+            1,
+            queueCapacity,
+            batchSize,
+            minBatchSizeToSplit,
+            strictThreadLimitEnabled);
+    startService();
+
+    // Mismatched public key / message / signature list sizes make the underlying BLS batch
+    // verification throw. This used to kill the worker thread permanently.
+    final SafeFuture<Boolean> malformed =
+        service.verify(
+            List.of(List.of(KEYS.get(0).getPublicKey())), List.of(Bytes.of(1)), List.of());
+    Waiter.waitFor(malformed.exceptionally(err -> false), Duration.ofSeconds(5));
+    assertThat(malformed).isCompletedExceptionally();
+
+    // The worker survived the failure, so a subsequent valid signature is still verified.
+    final SafeFuture<Boolean> valid = executeValidVerify(0, 0);
+    Waiter.waitFor(valid, Duration.ofSeconds(5));
+    assertThat(valid).isCompletedWithValue(true);
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   public void splitTasks_evenNumber() {

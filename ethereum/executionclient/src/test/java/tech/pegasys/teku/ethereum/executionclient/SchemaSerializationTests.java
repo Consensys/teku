@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
@@ -255,6 +257,26 @@ public class SchemaSerializationTests {
         objectMapper.readValue(payloadAttributesV1OrigSerialized, PayloadAttributesV1.class);
 
     assertThat(payloadAttributesV1Orig).isEqualTo(payloadAttributesV1New);
+  }
+
+  @TestTemplate
+  void shouldSerializeDeserializePayloadAttributesV4() throws IOException {
+    PayloadAttributesV4 payloadAttributesV4Orig =
+        new PayloadAttributesV4(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes20(),
+            List.of(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+
+    String payloadAttributesV4OrigSerialized =
+        objectMapper.writeValueAsString(payloadAttributesV4Orig);
+    PayloadAttributesV4 payloadAttributesV4New =
+        objectMapper.readValue(payloadAttributesV4OrigSerialized, PayloadAttributesV4.class);
+
+    assertThat(payloadAttributesV4Orig).isEqualTo(payloadAttributesV4New);
   }
 
   @TestTemplate

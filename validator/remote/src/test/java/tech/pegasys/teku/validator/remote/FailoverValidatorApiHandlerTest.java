@@ -785,6 +785,12 @@ class FailoverValidatorApiHandlerTest {
                 apiChannel -> apiChannel.registerValidators(validatorRegistrations),
                 apiChannel -> verify(apiChannel).registerValidators(validatorRegistrations),
                 BeaconNodeRequestLabels.REGISTER_VALIDATORS_METHOD,
+                null),
+            getArguments(
+                "sendSignedProposerPreferences",
+                apiChannel -> apiChannel.sendSignedProposerPreferences(List.of()),
+                apiChannel -> verify(apiChannel).sendSignedProposerPreferences(List.of()),
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD,
                 null)));
   }
 

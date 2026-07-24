@@ -21,27 +21,37 @@ import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSche
 
 public class SszByte extends AbstractSszPrimitive<Byte> {
 
-  public static final SszByte ZERO = SszByte.of(0);
+  // There are only 256 possible byte values and SszByte is immutable (see AbstractSszPrimitive),
+  // so all instances are interned. This removes the per-element SszByte (and boxed Byte) allocation
+  // that dominated SSZ deserialization of byte collections. Two caches are needed because a SszByte
+  // carries its schema: of(..) uses BYTE_SCHEMA, asUInt8(..) uses UINT8_SCHEMA.
+  private static final SszByte[] BYTE_CACHE = new SszByte[256];
+  private static final SszByte[] UINT8_CACHE = new SszByte[256];
+
+  static {
+    for (int i = 0; i < 256; i++) {
+      BYTE_CACHE[i] = new SszByte((byte) i, SszPrimitiveSchemas.BYTE_SCHEMA);
+      UINT8_CACHE[i] = new SszByte((byte) i, SszPrimitiveSchemas.UINT8_SCHEMA);
+    }
+  }
+
+  public static final SszByte ZERO = BYTE_CACHE[0];
 
   public static SszByte of(final int value) {
-    return new SszByte((byte) value);
+    return BYTE_CACHE[value & 0xFF];
   }
 
   public static SszByte asUInt8(final byte value) {
-    return new SszByte(value, SszPrimitiveSchemas.UINT8_SCHEMA);
+    return UINT8_CACHE[value & 0xFF];
   }
 
   public static SszByte asUInt8(final int value) {
     checkArgument(value >= 0 && value <= 255, "value must be in uint8 range (0–255)");
-    return new SszByte((byte) value, SszPrimitiveSchemas.UINT8_SCHEMA);
+    return UINT8_CACHE[value];
   }
 
   public static SszByte of(final byte value) {
-    return new SszByte(value);
-  }
-
-  private SszByte(final Byte value) {
-    this(value, SszPrimitiveSchemas.BYTE_SCHEMA);
+    return BYTE_CACHE[value & 0xFF];
   }
 
   private SszByte(final Byte value, final AbstractSszPrimitiveSchema<Byte, SszByte> schema) {

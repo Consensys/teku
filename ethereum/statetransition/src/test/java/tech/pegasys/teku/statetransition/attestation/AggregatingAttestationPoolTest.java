@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -839,13 +840,14 @@ abstract class AggregatingAttestationPoolTest {
     }
     if (addIndexedAttestation) {
       validatableAttestation.setIndexedAttestation(
-          dataStructureUtil.randomIndexedAttestation(
-              finalAttestation.getData(),
-              finalAttestation
-                  .getAggregationBits()
-                  .streamAllSetBits()
-                  .mapToObj(this::validatorBitToValidatorIndex)
-                  .toArray(UInt64[]::new)));
+          IndexedAttestationLight.fromSsz(
+              dataStructureUtil.randomIndexedAttestation(
+                  finalAttestation.getData(),
+                  finalAttestation
+                      .getAggregationBits()
+                      .streamAllSetBits()
+                      .mapToObj(this::validatorBitToValidatorIndex)
+                      .toArray(UInt64[]::new))));
     }
 
     return validatableAttestation;

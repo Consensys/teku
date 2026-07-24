@@ -111,7 +111,7 @@ class AsyncChainStateGenerator {
             throw new IllegalArgumentException("Unable to find base state to build on");
           }
 
-          if (chain.size() == 0) {
+          if (chain.isEmpty()) {
             throw new IllegalStateException("Failed to retrieve chain");
           }
 
@@ -129,7 +129,7 @@ class AsyncChainStateGenerator {
               targetRoot,
               chain.size(),
               baseState.get().getSlot(),
-              chain.get(0));
+              chain.getFirst());
 
           // Process chain in batches
           final List<List<Bytes32>> blockBatches = Lists.partition(chain, blockBatchSize);

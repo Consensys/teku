@@ -15,7 +15,11 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -24,15 +28,20 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSecond
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -40,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
@@ -49,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
@@ -70,6 +81,8 @@ class StoreTest extends AbstractStoreTest {
                     new StubMetricsSystem(),
                     spec,
                     blockProviderFromChainBuilder(),
+                    ExecutionPayloadProvider.NOOP,
+                    BlindedExecutionPayloadProvider.NOOP,
                     StateAndBlockSummaryProvider.NOOP,
                     EarliestBlobSidecarSlotProvider.NOOP,
                     Optional.empty(),
@@ -103,88 +116,20 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void isHeadWeak_withoutNodeData() {
+  public void computeBalanceThresholds_setsHeadThreshold() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
           store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isFalse();
+          assertThat(store.getReorgThreshold()).isEqualTo(UInt64.valueOf("2400000000"));
         });
   }
 
   @Test
-  public void isHeadWeak_withSufficientWeightIsFalse() {
+  public void computeBalanceThresholds_setsParentThreshold() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2400000001"), UInt64.MAX_VALUE);
           store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isFalse();
-        });
-  }
-
-  @Test
-  public void isHeadWeak_Boundary() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2399999999"), UInt64.MAX_VALUE);
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isHeadWeak_withLowWeightIsTrue() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("1000000000"), UInt64.MAX_VALUE);
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isHeadWeak(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isParentStrong_withoutNodeData() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isParentStrong_withSufficientWeight() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000001"));
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isTrue();
-        });
-  }
-
-  @Test
-  public void isParentStrong_wityBoundaryWeight() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000000"));
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isFalse();
-        });
-  }
-
-  @Test
-  public void isParentStrong_wityZeroWeight() {
-    processChainHeadWithMockForkChoiceStrategy(
-        (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.ZERO);
-          store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isFalse();
+          assertThat(store.getParentThreshold()).isEqualTo(UInt64.valueOf("19200000000"));
         });
   }
 
@@ -422,7 +367,8 @@ class StoreTest extends AbstractStoreTest {
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             headCheckpoint,
-            UInt64.ZERO);
+            UInt64.ZERO,
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     final ProtoNodeData parentNodeData =
         new ProtoNodeData(
             UInt64.ZERO,
@@ -433,37 +379,8 @@ class StoreTest extends AbstractStoreTest {
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             parentCheckpoint,
-            UInt64.ZERO);
-    when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
-    when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
-  }
-
-  private void setProtoNodeDataForBlock(
-      final SignedBlockAndState blockAndState, final UInt64 headValue, final UInt64 parentValue) {
-    final Bytes32 root = blockAndState.getRoot();
-    final Bytes32 parentRoot = blockAndState.getParentRoot();
-    final ProtoNodeData protoNodeData =
-        new ProtoNodeData(
-            UInt64.ONE,
-            root,
-            blockAndState.getParentRoot(),
-            blockAndState.getStateRoot(),
             UInt64.ZERO,
-            Bytes32.random(),
-            ProtoNodeValidationStatus.VALID,
-            null,
-            headValue);
-    final ProtoNodeData parentNodeData =
-        new ProtoNodeData(
-            UInt64.ZERO,
-            parentRoot,
-            Bytes32.random(),
-            blockAndState.getStateRoot(),
-            UInt64.ZERO,
-            Bytes32.random(),
-            ProtoNodeValidationStatus.VALID,
-            null,
-            parentValue);
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
     when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
   }
@@ -547,6 +464,75 @@ class StoreTest extends AbstractStoreTest {
               .describedAs("State at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState.getState()));
         });
+  }
+
+  @Test
+  public void retrieveBlockState_shouldReuseGeneratedStateForSameSlotAndParentRoot()
+      throws Exception {
+    final Spec spec = spy(TestSpecFactory.createMinimalDeneb());
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    final UpdatableStore store =
+        StoreBuilder.create()
+            .asyncRunner(SYNC_RUNNER)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(
+                roots ->
+                    SafeFuture.completedFuture(
+                        roots.stream()
+                            .map(chainBuilder::getBlock)
+                            .flatMap(Optional::stream)
+                            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, block -> block))))
+            .earliestBlobSidecarSlotProvider(
+                () -> SafeFuture.completedFuture(chainBuilder.getEarliestBlobSidecarSlot()))
+            .stateProvider(StateAndBlockSummaryProvider.NOOP)
+            .anchor(Optional.empty())
+            .genesisTime(genesis.getState().getGenesisTime())
+            .time(genesis.getState().getGenesisTime())
+            .latestFinalized(AnchorPoint.create(spec, genesisCheckpoint, genesis))
+            .justifiedCheckpoint(genesisCheckpoint)
+            .bestJustifiedCheckpoint(genesisCheckpoint)
+            .blockInformation(
+                Map.of(
+                    genesis.getRoot(),
+                    new StoredBlockMetadata(
+                        genesis.getSlot(),
+                        genesis.getRoot(),
+                        genesis.getParentRoot(),
+                        genesis.getStateRoot(),
+                        genesis.getExecutionBlockNumber(),
+                        genesis.getExecutionBlockHash(),
+                        Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
+            .storeConfig(defaultStoreConfig)
+            .votes(Collections.emptyMap())
+            .latestCanonicalBlockRoot(Optional.empty())
+            .build();
+    final SignedBlockAndState parentBlock = chainBuilder.generateBlockAtSlot(UInt64.ONE);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    transaction.putBlockAndState(
+        parentBlock, spec.calculateBlockCheckpoints(parentBlock.getState()));
+    assertThat(transaction.commit()).isCompletedWithValue(null);
+    clearInvocations(spec);
+
+    final UInt64 productionSlot = parentBlock.getSlot().plus(2);
+    final SlotAndBlockRoot productionStateKey =
+        new SlotAndBlockRoot(productionSlot, parentBlock.getRoot());
+
+    // First call mirrors block production generating state for the selected proposer parent.
+    final Optional<BeaconState> productionState =
+        safeJoin(store.retrieveBlockState(productionStateKey));
+    // Second call mirrors block import requesting the same generated state by the same key.
+    final Optional<BeaconState> importState =
+        safeJoin(store.retrieveBlockState(productionStateKey));
+
+    final BeaconState generatedProductionState = productionState.orElseThrow();
+    final BeaconState generatedImportState = importState.orElseThrow();
+    assertThat(generatedProductionState.getSlot()).isEqualTo(productionSlot);
+    assertThat(generatedImportState.getSlot()).isEqualTo(productionSlot);
+    assertThat(generatedImportState).isSameAs(generatedProductionState);
+    verify(spec, times(1)).processSlots(parentBlock.getState(), productionSlot);
   }
 
   @Test

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,6 +59,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
     verify(delegate)
         .chainHeadUpdated(
@@ -68,6 +70,7 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            Optional.empty(),
             reorgContext);
   }
 
@@ -92,6 +95,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
     verify(delegate)
         .chainHeadUpdated(
@@ -102,6 +106,7 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            Optional.empty(),
             reorgContext);
   }
 
@@ -126,6 +131,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
     verifyNoInteractions(delegate);
   }
@@ -151,6 +157,7 @@ class CoalescingChainHeadChannelTest {
         true,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
+        Optional.empty(),
         Optional.empty());
 
     channel.chainHeadUpdated(
@@ -161,6 +168,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
 
     verifyNoInteractions(delegate);
@@ -175,6 +183,48 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            Optional.empty(),
+            reorgContext);
+    verifyNoMoreInteractions(delegate);
+  }
+
+  @Test
+  void shouldPreservePayloadStatusWhenSyncingCompletes() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
+    final boolean epochTransition = true;
+    final boolean executionOptimistic = false;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Optional<ReorgContext> reorgContext = Optional.empty();
+
+    channel.onSyncingChange(true);
+
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        executionOptimistic,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        Optional.of(PAYLOAD_STATUS_FULL),
+        reorgContext);
+
+    verifyNoInteractions(delegate);
+
+    channel.onSyncingChange(false);
+    verify(delegate)
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            executionOptimistic,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            Optional.of(PAYLOAD_STATUS_FULL),
             reorgContext);
     verifyNoMoreInteractions(delegate);
   }
@@ -198,6 +248,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
     verify(delegate)
         .chainHeadUpdated(
@@ -208,6 +259,7 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            Optional.empty(),
             reorgContext);
 
     channel.onSyncingChange(true);
@@ -236,6 +288,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
     channel.onSyncingChange(false);
     verify(delegate)
@@ -247,6 +300,7 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            Optional.empty(),
             reorgContext);
 
     channel.onSyncingChange(true);
@@ -289,6 +343,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext);
 
     verify(eventLogger, times(1))
@@ -337,6 +392,7 @@ class CoalescingChainHeadChannelTest {
         false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
+        Optional.empty(),
         reorgContext2);
 
     channel.chainHeadUpdated(
@@ -347,6 +403,7 @@ class CoalescingChainHeadChannelTest {
         executionOptimistic,
         previousDutyDependentRoot,
         currentDutyDependentRoot,
+        Optional.empty(),
         reorgContext1);
 
     verifyNoInteractions(delegate);
@@ -361,6 +418,7 @@ class CoalescingChainHeadChannelTest {
             executionOptimistic,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
+            Optional.empty(),
             reorgContext2);
     verifyNoMoreInteractions(delegate);
   }

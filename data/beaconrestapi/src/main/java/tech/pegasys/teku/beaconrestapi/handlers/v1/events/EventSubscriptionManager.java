@@ -47,6 +47,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -114,6 +116,7 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) -> onNewDataColumnSidecar(dataColumnSidecar));
     nodeDataProvider.subscribeToPayloadAttestationMessages(this::onNewPayloadAttestationMessage);
+    nodeDataProvider.subscribeToProposerPreferences(this::onNewProposerPreferences);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -144,8 +147,8 @@ public class EventSubscriptionManager
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
-
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
@@ -171,6 +174,19 @@ public class EventSubscriptionManager
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
+
+    final HeadV2Event headV2Event =
+        HeadV2Event.create(
+            spec.atSlot(slot).getMilestone(),
+            slot,
+            bestBlockRoot,
+            stateRoot,
+            epochTransition,
+            executionOptimistic,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            payloadStatus.orElse(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
+    notifySubscribersOfEvent(EventType.head_v2, headV2Event);
   }
 
   @Override
@@ -197,7 +213,16 @@ public class EventSubscriptionManager
   }
 
   @Override
-  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void onExecutionPayloadValidated(final SignedExecutionPayloadEnvelope executionPayload) {
+    onNewExecutionPayloadGossip(executionPayload);
+  }
+
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    onNewExecutionPayload(executionPayload, executionOptimistic);
+    // TODO-GLOAS: potentially we can emit this event earlier when blob availability and
+    // verification is complete (before importing)
     onExecutionPayloadAvailable(executionPayload);
   }
 
@@ -296,7 +321,7 @@ public class EventSubscriptionManager
         .ifPresent(
             payloadAttributes -> {
               final SpecMilestone milestone =
-                  spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
+                  spec.atSlot(payloadAttributes.proposalSlot()).getMilestone();
               final PayloadAttributesEvent payloadAttributesEvent =
                   PayloadAttributesEvent.create(
                       milestone,
@@ -308,6 +333,20 @@ public class EventSubscriptionManager
 
   protected void onSyncStateChange(final SyncState syncState) {
     notifySubscribersOfEvent(EventType.sync_state, new SyncStateChangeEvent(syncState.name()));
+  }
+
+  protected void onNewExecutionPayloadGossip(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    final ExecutionPayloadGossipEvent executionPayloadGossipEvent =
+        new ExecutionPayloadGossipEvent(executionPayload);
+    notifySubscribersOfEvent(EventType.execution_payload_gossip, executionPayloadGossipEvent);
+  }
+
+  protected void onNewExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    final ExecutionPayloadEvent executionPayloadEvent =
+        new ExecutionPayloadEvent(executionPayload, executionOptimistic);
+    notifySubscribersOfEvent(EventType.execution_payload, executionPayloadEvent);
   }
 
   protected void onExecutionPayloadAvailable(
@@ -331,6 +370,16 @@ public class EventSubscriptionManager
       notifySubscribersOfEvent(
           EventType.payload_attestation_message,
           new PayloadAttestationMessageEvent(payloadAttestationMessage));
+    }
+  }
+
+  protected void onNewProposerPreferences(
+      final SignedProposerPreferences proposerPreferences,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.proposer_preferences, new ProposerPreferencesEvent(proposerPreferences));
     }
   }
 

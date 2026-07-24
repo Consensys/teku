@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -50,6 +51,14 @@ public class ChainHeadTest {
     final ChainHead otherChainHead = ChainHead.create(otherBlock);
 
     assertThat(chainHead).isNotEqualTo(otherChainHead);
+  }
+
+  @Test
+  public void create_shouldDefaultToPendingPayloadStatusForBlockStateSummaries() {
+    final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+
+    assertThat(ChainHead.create(block).getPayloadStatus())
+        .isEqualTo(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
   }
 
   @SuppressWarnings("unchecked")

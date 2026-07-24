@@ -37,14 +37,15 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider.St
 
 public class DatabaseCompatibilityTest {
 
+  private static Spec spec;
   private static StorageSystem expectedData;
 
   @TempDir File dataDirectory;
-  private final Spec spec = TestSpecFactory.createDefault();
 
   @BeforeAll
   static void createExpected() {
-    final StorageSystem expectedSystem = InMemoryStorageSystemBuilder.buildDefault();
+    spec = TestSpecFactory.createDefault();
+    final StorageSystem expectedSystem = InMemoryStorageSystemBuilder.buildDefault(3, spec);
     populateDatabaseWithTestData(expectedSystem);
     expectedData = expectedSystem;
   }

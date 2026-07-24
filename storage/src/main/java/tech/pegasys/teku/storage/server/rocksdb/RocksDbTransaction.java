@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
@@ -31,7 +31,8 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class RocksDbTransaction implements KvStoreTransaction {
   private final ColumnFamilyHandle defaultHandle;
-  private final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles;
+  private final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandleForWrite;
+  private final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandle;
   private final Transaction rocksDbTx;
   private final WriteOptions writeOptions;
 
@@ -43,10 +44,12 @@ public class RocksDbTransaction implements KvStoreTransaction {
   RocksDbTransaction(
       final TransactionDB db,
       final ColumnFamilyHandle defaultHandle,
-      final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+      final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandleForWrite,
+      final Function<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandle,
       final Consumer<RocksDbTransaction> onClosed) {
     this.defaultHandle = defaultHandle;
-    this.columnHandles = columnHandles;
+    this.columnHandleForWrite = columnHandleForWrite;
+    this.columnHandle = columnHandle;
     this.writeOptions = new WriteOptions();
     this.rocksDbTx = db.beginTransaction(writeOptions);
     this.onClosed = onClosed;
@@ -82,7 +85,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
       final KvStoreColumn<K, V> column, final Bytes keyBytes, final Bytes valueBytes) {
     applyUpdate(
         () -> {
-          final ColumnFamilyHandle handle = columnHandles.get(column);
+          final ColumnFamilyHandle handle = columnHandleForWrite.apply(column);
           try {
             rocksDbTx.put(handle, keyBytes.toArrayUnsafe(), valueBytes.toArrayUnsafe());
           } catch (RocksDBException e) {
@@ -95,7 +98,10 @@ public class RocksDbTransaction implements KvStoreTransaction {
   public <K, V> void put(final KvStoreColumn<K, V> column, final Map<K, V> data) {
     applyUpdate(
         () -> {
-          final ColumnFamilyHandle handle = columnHandles.get(column);
+          if (data.isEmpty()) {
+            return;
+          }
+          final ColumnFamilyHandle handle = columnHandleForWrite.apply(column);
           for (Map.Entry<K, V> kvEntry : data.entrySet()) {
             final byte[] key = column.getKeySerializer().serialize(kvEntry.getKey());
             final byte[] value = column.getValueSerializer().serialize(kvEntry.getValue());
@@ -112,7 +118,10 @@ public class RocksDbTransaction implements KvStoreTransaction {
   public <K, V> void delete(final KvStoreColumn<K, V> column, final K key) {
     applyUpdate(
         () -> {
-          final ColumnFamilyHandle handle = columnHandles.get(column);
+          final ColumnFamilyHandle handle = columnHandle.apply(column);
+          if (handle == null) {
+            return;
+          }
           try {
             rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));
           } catch (RocksDBException e) {

@@ -77,6 +77,11 @@ public class DelegatingSpecConfigElectra extends DelegatingSpecConfigDeneb
   }
 
   @Override
+  public int getMaxAttestations() {
+    return getMaxAttestationsElectra();
+  }
+
+  @Override
   public int getMaxAttestationsElectra() {
     return specConfigElectra.getMaxAttestationsElectra();
   }

@@ -28,6 +28,15 @@ public class BeaconRestApiOptions {
   private int maxUrlLength = BeaconRestApiConfig.DEFAULT_MAX_URL_LENGTH;
 
   @Option(
+      names = {"--Xrest-api-async-timeout-seconds"},
+      paramLabel = "<INTEGER>",
+      description = "Timeout for asynchronous Beacon REST API requests in seconds",
+      arity = "1",
+      hidden = true)
+  private long restApiAsyncTimeoutSeconds =
+      BeaconRestApiConfig.DEFAULT_REST_API_ASYNC_TIMEOUT.toSeconds();
+
+  @Option(
       names = {"--rest-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Beacon Rest API",
@@ -131,6 +140,24 @@ public class BeaconRestApiOptions {
   private Integer validatorThreads;
 
   @Option(
+      names = {"--Xrest-api-virtual-threads-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables virtual threads for REST API request handling",
+      fallbackValue = "true",
+      arity = "0..1",
+      hidden = true)
+  private boolean restApiVirtualThreadsEnabled =
+      BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_ENABLED;
+
+  @Option(
+      names = {"--Xrest-api-virtual-threads-max-concurrent-tasks"},
+      paramLabel = "<INTEGER>",
+      hidden = true)
+  private int restApiVirtualThreadsMaxConcurrentTasks =
+      BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS;
+
+  @Option(
       names = {"--rest-api-getblobs-sidecars-download-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -168,6 +195,7 @@ public class BeaconRestApiOptions {
                 .restApiDocsEnabled(restApiDocsEnabled)
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
+                .restApiAsyncTimeoutSeconds(restApiAsyncTimeoutSeconds)
                 .restApiHostAllowlist(restApiHostAllowlist)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
@@ -175,6 +203,8 @@ public class BeaconRestApiOptions {
                 .getBlobsSidecarsDownloadEnabled(getBlobsSidecarsDownloadEnabled)
                 .getBlobsSidecarsDownloadTimeoutSeconds(getBlobsSidecarsDownloadTimeoutSeconds)
                 .maxPendingEvents(maxPendingEvents)
-                .validatorThreads(Optional.ofNullable(validatorThreads)));
+                .validatorThreads(Optional.ofNullable(validatorThreads))
+                .restApiVirtualThreadsEnabled(restApiVirtualThreadsEnabled)
+                .restApiVirtualThreadsMaxConcurrentTasks(restApiVirtualThreadsMaxConcurrentTasks));
   }
 }

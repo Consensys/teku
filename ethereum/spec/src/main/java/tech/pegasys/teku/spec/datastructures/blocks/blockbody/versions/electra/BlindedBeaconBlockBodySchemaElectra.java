@@ -17,12 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 
 public interface BlindedBeaconBlockBodySchemaElectra<T extends BlindedBeaconBlockBodyElectra>
     extends BlindedBeaconBlockBodySchemaDeneb<T> {
 
-  ExecutionRequestsSchema getExecutionRequestsSchema();
+  ExecutionRequestsSchema<?> getExecutionRequestsSchema();
 
   static BlindedBeaconBlockBodySchemaElectra<?> required(final BeaconBlockBodySchema<?> schema) {
     checkArgument(

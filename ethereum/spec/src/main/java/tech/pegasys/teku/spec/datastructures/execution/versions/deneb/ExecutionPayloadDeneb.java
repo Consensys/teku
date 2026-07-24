@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 
-public interface ExecutionPayloadDeneb extends ExecutionPayload, ExecutionPayloadCapella {
+public interface ExecutionPayloadDeneb extends ExecutionPayloadCapella {
 
   static ExecutionPayloadDeneb required(final ExecutionPayload payload) {
     return payload

@@ -46,10 +46,13 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
@@ -181,7 +184,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final Supplier<Optional<BeaconState>> stateSupplier) {
     return attestation
         .getIndexedAttestation()
-        .map(indexedAttestation -> indexedAttestation.getAttestingIndices().asListUnboxed())
+        .map(IndexedAttestationLight::attestingIndices)
         .or(
             () ->
                 stateSupplier
@@ -190,10 +193,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
                         state ->
                             spec.atSlot(attestation.getData().getSlot())
                                 .getAttestationUtil()
-                                .getAttestingIndices(state, attestation.getAttestation())
-                                .intStream()
-                                .mapToObj(UInt64::valueOf)
-                                .toList()));
+                                .getAttestingIndices(state, attestation.getAttestation())));
   }
 
   /**
@@ -381,7 +381,17 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
 
-    final int blockAttestationCapacity = Math.toIntExact(attestationsSchema.getMaxLength());
+    // The per-block attestation count limit comes from the spec config rather than the SSZ list
+    // bound: from Gloas the attestations list is a progressive list with no SSZ max length, so
+    // attestationsSchema.getMaxLength() is unbounded. For Electra and later (incl. Gloas) the limit
+    // is MAX_ATTESTATIONS_ELECTRA; before Electra it is MAX_ATTESTATIONS. For bounded forks this
+    // equals the list's max length.
+    final SpecConfig config = spec.atSlot(stateAtBlockSlot.getSlot()).getConfig();
+    final int blockAttestationCapacity =
+        config
+            .toVersionElectra()
+            .map(SpecConfigElectra::getMaxAttestationsElectra)
+            .orElseGet(config::getMaxAttestations);
 
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitions.getAttestationSchema();

@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 
 public class VersionProvider {
   public static final String ENV_XDG_DATA_HOME = "XDG_DATA_HOME";
-  public static final String ENV_LOCALAPPDATA = "LOCALAPPDATA";
   public static final String ENV_HOME = "HOME";
   public static final String CLIENT_IDENTITY = "teku";
   public static final String IMPLEMENTATION_VERSION = "v" + getImplementationVersion();
@@ -75,9 +74,7 @@ public class VersionProvider {
 
   static String defaultStoragePathForNormalizedOS(
       final String detectedOS, final Map<String, String> env) {
-    if (detectedOS.equals("windows")) {
-      return env.get(ENV_LOCALAPPDATA) + "\\teku";
-    } else if (detectedOS.equals("osx")) {
+    if (detectedOS.equals("osx")) {
       return env.get(ENV_HOME) + "/Library/teku";
     }
     String dataHome = env.get(ENV_XDG_DATA_HOME);
@@ -117,9 +114,6 @@ public class VersionProvider {
     }
     if (osName.startsWith("solaris") || osName.startsWith("sunos")) {
       return "sunos";
-    }
-    if (osName.startsWith("windows")) {
-      return "windows";
     }
 
     return osName;

@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -136,7 +137,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomBytes32());
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
     // headBlockSlot in ForkChoiceState is still in Bellatrix

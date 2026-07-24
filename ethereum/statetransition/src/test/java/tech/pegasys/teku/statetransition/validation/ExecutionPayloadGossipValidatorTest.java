@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class ExecutionPayloadGossipValidatorTest {
   private final Spec spec = mock(Spec.class);
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
+  private final BlockGossipValidator blockGossipValidator = mock(BlockGossipValidator.class);
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
   private ExecutionPayloadGossipValidator validator;
   private DataStructureUtil dataStructureUtil;
@@ -65,7 +67,8 @@ public class ExecutionPayloadGossipValidatorTest {
   void setUp(final SpecContext specContext) {
     dataStructureUtil = specContext.getDataStructureUtil();
     validator =
-        new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
+        new ExecutionPayloadGossipValidator(
+            spec, gossipValidationHelper, blockGossipValidator, invalidBlockRoots);
 
     slot = dataStructureUtil.randomSlot();
     signedEnvelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(slot.longValue());
@@ -77,7 +80,10 @@ public class ExecutionPayloadGossipValidatorTest {
     final SignedExecutionPayloadBid matchingBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                slot, envelope.getBuilderIndex(), envelope.getPayload().getBlockHash()));
+                slot,
+                envelope.getBuilderIndex(),
+                envelope.getPayload().getBlockHash(),
+                envelope.getExecutionRequests().hashTreeRoot()));
     beaconBlock =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -155,7 +161,10 @@ public class ExecutionPayloadGossipValidatorTest {
     final SignedExecutionPayloadBid mismatchedBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                slot, envelope.getBuilderIndex().plus(1), envelope.getPayload().getBlockHash()));
+                slot,
+                envelope.getBuilderIndex().plus(1),
+                envelope.getPayload().getBlockHash(),
+                envelope.getExecutionRequests().hashTreeRoot()));
     final BeaconBlock blockWithMismatchedBid =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -176,7 +185,10 @@ public class ExecutionPayloadGossipValidatorTest {
     final SignedExecutionPayloadBid mismatchedBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                slot, envelope.getBuilderIndex(), dataStructureUtil.randomBytes32()));
+                slot,
+                envelope.getBuilderIndex(),
+                dataStructureUtil.randomBytes32(),
+                envelope.getExecutionRequests().hashTreeRoot()));
     final BeaconBlock blockWithMismatchedBid =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -190,6 +202,31 @@ public class ExecutionPayloadGossipValidatorTest {
             reject(
                 "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
                 envelope.getPayload().getBlockHash(), mismatchedBid.getMessage().getBlockHash()));
+  }
+
+  @TestTemplate
+  void shouldRejectIfExecutionRequestsMismatch() {
+    final SignedExecutionPayloadBid mismatchedBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                slot,
+                envelope.getBuilderIndex(),
+                envelope.getPayload().getBlockHash(),
+                dataStructureUtil.randomBytes32()));
+    final BeaconBlock blockWithMismatchedBid =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBody(
+                builder -> builder.signedExecutionPayloadBid(mismatchedBid)));
+    when(gossipValidationHelper.retrieveBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithMismatchedBid)));
+
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            reject(
+                "Invalid execution requests. Execution Payload Envelope had execution requests root of %s but ExecutionPayload Bid had %s",
+                envelope.getExecutionRequests().hashTreeRoot(),
+                mismatchedBid.getMessage().getExecutionRequestsRoot()));
   }
 
   @TestTemplate
@@ -221,5 +258,73 @@ public class ExecutionPayloadGossipValidatorTest {
         .thenReturn(true);
 
     assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
+  }
+
+  @TestTemplate
+  void shouldIgnoreIfAlreadySeenWithGossipLevel() {
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.GOSSIP)))
+        .isCompletedWithValue(ACCEPT);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            ignore(
+                "Already received execution payload envelope with block root %s from builder with index %s",
+                blockRoot, envelope.getBuilderIndex()));
+  }
+
+  @TestTemplate
+  void shouldRejectIfSignatureIsInvalidWithGossipLevel() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.GOSSIP)))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
+  }
+
+  @TestTemplate
+  void shouldRejectIfSignatureIsInvalidWithConsensusBroadcastValidationLevel() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.CONSENSUS)))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
+  }
+
+  @TestTemplate
+  void shouldRejectIfSignatureIsInvalidWithConsensusAndEquivocationBroadcastValidationLevel() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+
+    assertThatSafeFuture(
+            validator.validate(
+                signedEnvelope, Optional.of(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION)))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
+  }
+
+  @TestTemplate
+  void shouldRejectIfBeaconBlockIsEquivocationWithConsensusAndEquivocationLevel() {
+    when(blockGossipValidator.isBlockEquivocating(
+            beaconBlock.getSlot(), beaconBlock.getProposerIndex(), beaconBlock.getRoot()))
+        .thenReturn(true);
+
+    assertThatSafeFuture(
+            validator.validate(
+                signedEnvelope, Optional.of(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION)))
+        .isCompletedWithValue(
+            reject(
+                "Execution payload envelope's beacon block with root %s is an equivocation",
+                blockRoot));
+  }
+
+  @TestTemplate
+  void shouldAcceptIfBeaconBlockIsNotEquivocationWithConsensusAndEquivocationLevel() {
+    assertThatSafeFuture(
+            validator.validate(
+                signedEnvelope, Optional.of(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION)))
+        .isCompletedWithValue(ACCEPT);
   }
 }

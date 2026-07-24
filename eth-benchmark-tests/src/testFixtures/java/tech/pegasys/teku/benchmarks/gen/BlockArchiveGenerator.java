@@ -39,7 +39,7 @@ public class BlockArchiveGenerator {
   private final int epochCount;
   private final Spec spec =
       TestSpecFactory.createMainnetAltair(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final List<BLSKeyPair> validatorKeys;
   private final RecentChainData localStorage;
   private final AttestationGenerator attestationGenerator;

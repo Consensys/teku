@@ -23,14 +23,24 @@ public class KvStoreColumn<TKey, TValue> {
   private final Bytes id;
   private final KvStoreSerializer<TKey> keySerializer;
   private final KvStoreSerializer<TValue> valueSerializer;
+  private final boolean containsStaticData;
 
   private KvStoreColumn(
       final Bytes id,
       final KvStoreSerializer<TKey> keySerializer,
       final KvStoreSerializer<TValue> valueSerializer) {
+    this(id, keySerializer, valueSerializer, false);
+  }
+
+  private KvStoreColumn(
+      final Bytes id,
+      final KvStoreSerializer<TKey> keySerializer,
+      final KvStoreSerializer<TValue> valueSerializer,
+      final boolean containsStaticData) {
     this.id = id;
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
+    this.containsStaticData = containsStaticData;
   }
 
   public static <K, V> KvStoreColumn<K, V> create(
@@ -38,6 +48,14 @@ public class KvStoreColumn<TKey, TValue> {
       final KvStoreSerializer<K> keySerializer,
       final KvStoreSerializer<V> valueSerializer) {
     return new KvStoreColumn<>(asColumnId(id), keySerializer, valueSerializer);
+  }
+
+  public static <K, V> KvStoreColumn<K, V> create(
+      final int id,
+      final KvStoreSerializer<K> keySerializer,
+      final KvStoreSerializer<V> valueSerializer,
+      final boolean containsStaticData) {
+    return new KvStoreColumn<>(asColumnId(id), keySerializer, valueSerializer, containsStaticData);
   }
 
   public static Bytes asColumnId(final int id) {
@@ -56,6 +74,10 @@ public class KvStoreColumn<TKey, TValue> {
     return valueSerializer;
   }
 
+  public boolean containsStaticData() {
+    return containsStaticData;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -67,11 +89,12 @@ public class KvStoreColumn<TKey, TValue> {
     final KvStoreColumn<?, ?> that = (KvStoreColumn<?, ?>) o;
     return Objects.equals(id, that.id)
         && Objects.equals(keySerializer, that.keySerializer)
-        && Objects.equals(valueSerializer, that.valueSerializer);
+        && Objects.equals(valueSerializer, that.valueSerializer)
+        && containsStaticData == that.containsStaticData;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, keySerializer, valueSerializer);
+    return Objects.hash(id, keySerializer, valueSerializer, containsStaticData);
   }
 }

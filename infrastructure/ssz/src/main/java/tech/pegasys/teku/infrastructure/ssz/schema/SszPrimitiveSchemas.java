@@ -120,7 +120,7 @@ public final class SszPrimitiveSchemas {
         }
 
         @Override
-        protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
+        public LeafNode createNodeFromSszBytes(final Bytes bytes) {
           final byte data = bytes.get(0);
           if (data != 0 && data != 1) {
             throw new SszDeserializeException("Invalid bit value: " + bytes);
@@ -363,7 +363,7 @@ public final class SszPrimitiveSchemas {
     }
 
     @Override
-    protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
+    public LeafNode createNodeFromSszBytes(final Bytes bytes) {
       for (byte current : bytes.toArrayUnsafe()) {
         if (current != 0 && current != 1) {
           throw new SszDeserializeException("Invalid serialized boolean value: " + current);

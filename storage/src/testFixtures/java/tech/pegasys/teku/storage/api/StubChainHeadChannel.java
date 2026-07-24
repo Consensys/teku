@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.api;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 
 public class StubChainHeadChannel implements ChainHeadChannel {
   @Override
@@ -27,5 +28,6 @@ public class StubChainHeadChannel implements ChainHeadChannel {
       final boolean executionOptimistic,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {}
 }

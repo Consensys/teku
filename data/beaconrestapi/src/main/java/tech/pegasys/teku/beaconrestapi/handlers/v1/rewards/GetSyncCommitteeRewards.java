@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.rewards;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.BODY_STRING_LIST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
@@ -22,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.HashSet;
@@ -32,7 +32,6 @@ import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -82,7 +81,7 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
             .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(PARAMETER_BLOCK_ID)
             .optionalRequestBody()
-            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
+            .requestBodyType(BODY_STRING_LIST)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .withInternalErrorResponse()

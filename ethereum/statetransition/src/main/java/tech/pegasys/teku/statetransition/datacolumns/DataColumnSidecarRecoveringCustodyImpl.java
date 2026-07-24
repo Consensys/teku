@@ -57,7 +57,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private final DataColumnSidecarCustody delegate;
   private final AsyncRunner asyncRunner;
-  private final MiscHelpersFulu miscHelpers;
   private final Spec spec;
   private final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher;
   private final CustodyGroupCountManager custodyGroupCountManager;
@@ -87,7 +86,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final DataColumnSidecarCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
-      final MiscHelpersFulu miscHelpers,
       final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
       final CustodyGroupCountManager custodyGroupCountManager,
       final int columnCount,
@@ -99,7 +97,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final int completedSlotsSizeTarget) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
-    this.miscHelpers = miscHelpers;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
@@ -131,7 +128,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final DataColumnSidecarCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
-      final MiscHelpersFulu miscHelpers,
       final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
       final CustodyGroupCountManager custodyGroupCountManager,
       final int columnCount,
@@ -143,7 +139,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         delegate,
         asyncRunner,
         spec,
-        miscHelpers,
         dataColumnSidecarPublisher,
         custodyGroupCountManager,
         columnCount,
@@ -305,7 +300,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final Collection<DataColumnSidecar> sidecars,
       final MetricsHistogram.Timer timer) {
     final List<DataColumnSidecar> recoveredSidecars =
-        miscHelpers.reconstructAllDataColumnSidecars(sidecars);
+        MiscHelpersFulu.required(spec.atSlot(recoveryTask.slotAndBlockRoot.getSlot()).miscHelpers())
+            .reconstructAllDataColumnSidecars(sidecars);
     timer.closeUnchecked().run();
 
     final Set<UInt64> existingSidecarsIndices =

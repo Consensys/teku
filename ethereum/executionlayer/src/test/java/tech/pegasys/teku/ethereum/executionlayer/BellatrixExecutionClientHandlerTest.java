@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -101,7 +102,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.empty(),
-            dataStructureUtil.randomBytes32());
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
     final Optional<PayloadAttributesV1> payloadAttributes =
         PayloadAttributesV1.fromInternalPayloadBuildingAttributes(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =

@@ -13,27 +13,20 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
-
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
-import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionRequestsBuilderElectra implements ExecutionRequestsBuilder {
 
-  private final ExecutionRequestsSchema executionRequestsSchemaElectra;
+  private final ExecutionRequestsSchemaElectra executionRequestsSchema;
+
   private List<DepositRequest> deposits = List.of();
   private List<WithdrawalRequest> withdrawals = List.of();
   private List<ConsolidationRequest> consolidations = List.of();
 
-  @VisibleForTesting
-  public ExecutionRequestsBuilderElectra(final SchemaRegistry schemaRegistry) {
-    this(schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA));
-  }
-
-  public ExecutionRequestsBuilderElectra(final ExecutionRequestsSchema executionRequestsSchema) {
-    this.executionRequestsSchemaElectra = executionRequestsSchema;
+  public ExecutionRequestsBuilderElectra(
+      final ExecutionRequestsSchemaElectra executionRequestsSchema) {
+    this.executionRequestsSchema = executionRequestsSchema;
   }
 
   @Override
@@ -55,8 +48,8 @@ public class ExecutionRequestsBuilderElectra implements ExecutionRequestsBuilder
   }
 
   @Override
-  public ExecutionRequests build() {
-    return new ExecutionRequests(
-        executionRequestsSchemaElectra, deposits, withdrawals, consolidations);
+  public ExecutionRequestsElectra build() {
+    return new ExecutionRequestsElectra(
+        executionRequestsSchema, deposits, withdrawals, consolidations);
   }
 }

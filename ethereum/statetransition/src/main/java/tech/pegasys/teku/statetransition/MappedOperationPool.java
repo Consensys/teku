@@ -50,7 +50,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 public class MappedOperationPool<T extends MessageWithValidatorId> implements OperationPool<T> {
   private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_OPERATION_POOL_SIZE = 10_000;
-  private final Map<Integer, OperationPoolEntry<T>> operations;
+  private final Map<UInt64, OperationPoolEntry<T>> operations;
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
@@ -151,7 +151,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   private static InternalValidationResult rejectForDuplicatedMessage(
-      final String metricType, final int validatorIndex) {
+      final String metricType, final UInt64 validatorIndex) {
     final String logMessage =
         String.format(
             "Cannot add to %s as validator %s is already in this pool.",
@@ -187,7 +187,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
       if (!filter.test(item)) {
         continue;
       }
-      final int validatorIndex = item.getValidatorId();
+      final UInt64 validatorIndex = item.getValidatorId();
       if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, item).isEmpty()) {
         selected.add(item);
         includedItemConsumer.accept(item);
@@ -204,7 +204,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
 
   @Override
   public SafeFuture<InternalValidationResult> addLocal(final T item) {
-    final int validatorIndex = item.getValidatorId();
+    final UInt64 validatorIndex = item.getValidatorId();
     LOG.debug("Adding local validator id {} to {}", validatorIndex, metricType);
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))
@@ -216,7 +216,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   @Override
   public SafeFuture<InternalValidationResult> addRemote(
       final T item, final Optional<UInt64> arrivalTimestamp) {
-    final int validatorIndex = item.getValidatorId();
+    final UInt64 validatorIndex = item.getValidatorId();
     LOG.debug("Adding remote validator id {} to {}", validatorIndex, metricType);
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))
@@ -229,7 +229,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   public void addAll(final SszCollection<T> items) {
     items.forEach(
         item -> {
-          final int validatorIndex = item.getValidatorId();
+          final UInt64 validatorIndex = item.getValidatorId();
           operations.putIfAbsent(
               validatorIndex,
               new OperationPoolEntry<>(item, false, timeProvider.getTimeInSeconds()));
@@ -240,7 +240,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   public void removeAll(final SszCollection<T> items) {
     items.forEach(
         item -> {
-          final int validatorIndex = item.getValidatorId();
+          final UInt64 validatorIndex = item.getValidatorId();
           operations.remove(validatorIndex);
         });
   }
@@ -266,7 +266,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   private SafeFuture<InternalValidationResult> add(final T item, final boolean fromNetwork) {
-    final int validatorIndex = item.getValidatorId();
+    final UInt64 validatorIndex = item.getValidatorId();
     return operationValidator
         .validateForGossip(item)
         .thenApply(

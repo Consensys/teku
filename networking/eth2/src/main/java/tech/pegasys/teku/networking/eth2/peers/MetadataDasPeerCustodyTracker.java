@@ -32,16 +32,18 @@ public class MetadataDasPeerCustodyTracker
   }
 
   private void peerDisconnected(final Eth2Peer peer) {
-    connectedPeerSubnetCount.remove(peer.getDiscoveryNodeId().orElseThrow());
+    peer.getDiscoveryNodeId().ifPresent(connectedPeerSubnetCount::remove);
   }
 
   private void onPeerMetadataUpdate(final Eth2Peer peer, final MetadataMessage metadata) {
+    if (peer.getDiscoveryNodeId().isEmpty()) {
+      return;
+    }
+
+    final UInt256 nodeId = peer.getDiscoveryNodeId().get();
     metadata
         .getOptionalCustodyGroupCount()
-        .ifPresent(
-            subnetCount ->
-                connectedPeerSubnetCount.put(
-                    peer.getDiscoveryNodeId().orElseThrow(), subnetCount.intValue()));
+        .ifPresent(subnetCount -> connectedPeerSubnetCount.put(nodeId, subnetCount.intValue()));
   }
 
   @Override

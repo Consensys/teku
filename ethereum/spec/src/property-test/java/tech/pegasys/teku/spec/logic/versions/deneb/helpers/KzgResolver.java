@@ -28,7 +28,7 @@ import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
  * trusted setup when all the property tests are finished.
  */
-class KzgResolver implements ResolveParameterHook {
+public class KzgResolver implements ResolveParameterHook {
   public static final Tuple.Tuple2<Class<KzgResolver.KzgAutoLoadFree>, String> STORE_IDENTIFIER =
       Tuple.of(KzgResolver.KzgAutoLoadFree.class, "KZGs that automatically load & free");
 

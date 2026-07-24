@@ -54,6 +54,7 @@ public class KvStoreConfiguration {
   public static final long DEFAULT_CACHE_CAPACITY = 128 << 20; // 128MB
   public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
   private static final boolean DEFAULT_OPTIMISE_FOR_SMALL_DB = false;
+  private static final boolean DEFAULT_BLOBDB_ENABLED = false;
 
   /** RocksDb number of log files to keep on disk */
   public static final long NUMBER_OF_LOG_FILES_TO_KEEP = 5;
@@ -99,6 +100,9 @@ public class KvStoreConfiguration {
   @JsonProperty(value = "optimizeForSmallDb")
   private boolean optimizeForSmallDb = DEFAULT_OPTIMISE_FOR_SMALL_DB;
 
+  @JsonProperty(value = "blobDbEnabled", access = Access.WRITE_ONLY)
+  private boolean blobDbEnabled = DEFAULT_BLOBDB_ENABLED;
+
   /* ---------------     Fixed Properties     ------------ */
 
   @JsonProperty("compressionType")
@@ -129,6 +133,11 @@ public class KvStoreConfiguration {
 
   public KvStoreConfiguration withDatabaseDir(final Path databaseDir) {
     this.databaseDir = databaseDir;
+    return this;
+  }
+
+  public KvStoreConfiguration withBlobDbEnabled(final boolean blobDbEnabled) {
+    this.blobDbEnabled = blobDbEnabled;
     return this;
   }
 
@@ -180,6 +189,10 @@ public class KvStoreConfiguration {
     return optimizeForSmallDb;
   }
 
+  public boolean blobDbEnabled() {
+    return blobDbEnabled;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -191,6 +204,7 @@ public class KvStoreConfiguration {
         .add("compressionType", compressionType)
         .add("bottomMostCompressionType", bottomMostCompressionType)
         .add("databaseDir", databaseDir)
+        .add("blobDbEnabled", blobDbEnabled)
         .toString();
   }
 }

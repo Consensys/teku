@@ -140,8 +140,8 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
         .streamBlocksAndStates()
         .forEach(blockAndState -> localPeerStorage.chainUpdater().saveBlock(blockAndState));
 
-    // make sure we have 2 heads
-    assertThat(peerStorage.recentChainData().getChainHeads().size()).isEqualTo(2);
+    // make sure we have 2 or more heads (post-Gloas, we may have more heads)
+    assertThat(peerStorage.recentChainData().getChainHeads().size()).isGreaterThanOrEqualTo(2);
 
     // lets get data columns starting from 5 slots prior to finalized slot
     final UInt64 startSlot = finalizedSlot.minus(5);

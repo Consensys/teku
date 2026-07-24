@@ -44,14 +44,6 @@ public interface BlockProvider {
                 .collect(Collectors.toMap(Function.identity(), blockMap::get)));
   }
 
-  static BlockProvider fromList(final List<SignedBeaconBlock> blockAndStates) {
-    final Map<Bytes32, SignedBeaconBlock> blocks =
-        blockAndStates.stream()
-            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
-
-    return fromMap(blocks);
-  }
-
   static BlockProvider withKnownBlocks(
       final BlockProvider blockProvider, final Map<Bytes32, SignedBeaconBlock> knownBlocks) {
     return combined(fromMap(knownBlocks), blockProvider);

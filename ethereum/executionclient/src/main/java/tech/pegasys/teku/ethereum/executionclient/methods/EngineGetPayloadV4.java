@@ -21,35 +21,26 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class EngineGetPayloadV4 extends AbstractEngineJsonRpcMethod<GetPayloadResponse> {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final ExecutionRequestsDataCodec executionRequestsDataDecoder;
 
   public EngineGetPayloadV4(final ExecutionEngineClient executionEngineClient, final Spec spec) {
     super(executionEngineClient);
     this.spec = spec;
-    this.executionRequestsDataDecoder =
-        new ExecutionRequestsDataCodec(
-            SchemaDefinitionsElectra.required(
-                    spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
-                .getExecutionRequestsSchema());
   }
 
   @Override
@@ -87,7 +78,7 @@ public class EngineGetPayloadV4 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                   response.executionPayload.asInternalExecutionPayload(payloadSchema);
               final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
               final ExecutionRequests executionRequests =
-                  executionRequestsDataDecoder.decode(response.executionRequests);
+                  spec.getExecutionRequestsDataCodec(slot).decode(response.executionRequests);
               return new GetPayloadResponse(
                   executionPayload,
                   response.blockValue,

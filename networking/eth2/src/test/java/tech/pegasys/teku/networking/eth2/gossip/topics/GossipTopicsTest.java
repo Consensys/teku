@@ -61,7 +61,7 @@ public class GossipTopicsTest {
     final Spec spec = TestSpecFactory.createMainnet(latestMilestone);
     final P2PConfig p2pConfig = P2PConfig.builder().specProvider(spec).build();
 
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(32, spec);
     storageSystem.chainUpdater().initializeGenesis();
     final Bytes32 genesisValidatorsRoot =
         storageSystem.recentChainData().getGenesisData().orElseThrow().getGenesisValidatorsRoot();

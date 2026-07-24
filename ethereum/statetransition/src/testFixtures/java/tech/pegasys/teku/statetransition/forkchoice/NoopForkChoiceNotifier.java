@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public class NoopForkChoiceNotifier implements ForkChoiceNotifier {
@@ -41,7 +42,7 @@ public class NoopForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
+      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
     return null;
   }
 

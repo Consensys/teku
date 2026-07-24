@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 
 public interface BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
   static BlindedBeaconBlockBodyElectra required(final BeaconBlockBody body) {

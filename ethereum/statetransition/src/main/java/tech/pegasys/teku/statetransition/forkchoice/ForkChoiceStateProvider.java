@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceStateProvider {
@@ -29,19 +31,20 @@ public class ForkChoiceStateProvider {
   }
 
   public SafeFuture<ForkChoiceState> getForkChoiceStateAsync() {
-    return forkChoiceExecutor.execute(this::internalGetForkChoiceState);
+    return forkChoiceExecutor.execute(() -> internalGetForkChoiceState(Optional.empty()));
   }
 
-  public ForkChoiceState getForkChoiceStateSync() {
+  public ForkChoiceState getForkChoiceStateSync(final Optional<ChainHead> proposingOnHead) {
     forkChoiceExecutor.checkOnEventThread();
-    return internalGetForkChoiceState();
+    return internalGetForkChoiceState(proposingOnHead);
   }
 
-  private ForkChoiceState internalGetForkChoiceState() {
+  private ForkChoiceState internalGetForkChoiceState(final Optional<ChainHead> proposingOnHead) {
     return recentChainData
         .getUpdatableForkChoiceStrategy()
         .orElseThrow()
         .getForkChoiceState(
+            proposingOnHead,
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
             recentChainData.getFinalizedCheckpoint().orElseThrow());

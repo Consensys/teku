@@ -13,15 +13,11 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,36 +45,17 @@ public class BlockFactoryPhase0 implements BlockFactory {
 
   @Override
   public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
-      final BeaconState blockSlotState,
-      final UInt64 proposalSlot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final BlockProductionPerformance blockProductionPerformance) {
-    checkArgument(
-        blockSlotState.getSlot().equals(proposalSlot),
-        "Block slot state for slot %s but should be for slot %s",
-        blockSlotState.getSlot(),
-        proposalSlot);
-
-    // Process empty slots up to the one before the new block slot
-    final UInt64 slotBeforeBlock = proposalSlot.minus(UInt64.ONE);
-
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
+      final BlockProductionContext blockProductionContext) {
+    final BeaconState blockSlotState = blockProductionContext.blockSlotState();
+    final UInt64 proposalSlot = blockProductionContext.proposalSlot();
 
     return spec.createNewUnsignedBlock(
             proposalSlot,
             spec.getBeaconProposerIndex(blockSlotState, proposalSlot),
             blockSlotState,
-            parentRoot,
-            operationSelector.createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                optionalGraffiti,
-                requestedBuilderBoostFactor,
-                blockProductionPerformance),
-            blockProductionPerformance)
+            blockProductionContext.parentRoot(),
+            operationSelector.createSelector(blockProductionContext),
+            blockProductionContext.blockProductionPerformance())
         .thenApply(this::blockAndStateToBlockContainerAndMetaData);
   }
 

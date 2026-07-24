@@ -29,7 +29,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.ethereum.pow.api.Deposit;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -71,9 +70,7 @@ public class DepositProviderBenchmark {
           new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec)),
           mock(StorageUpdateChannel.class),
           mock(Eth1DepositStorageChannel.class),
-          spec,
-          EventLogger.EVENT_LOG,
-          false);
+          spec);
 
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)

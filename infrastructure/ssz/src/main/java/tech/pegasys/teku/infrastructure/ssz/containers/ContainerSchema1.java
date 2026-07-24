@@ -46,6 +46,14 @@ public abstract class ContainerSchema1<C extends SszContainer, V0 extends SszDat
     super(containerName, List.of(fieldNamedSchema0));
   }
 
+  protected ContainerSchema1(
+      final String containerName,
+      final boolean[] activeFields,
+      final NamedSchema<V0> fieldNamedSchema0) {
+
+    super(containerName, activeFields, List.of(fieldNamedSchema0));
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(0);

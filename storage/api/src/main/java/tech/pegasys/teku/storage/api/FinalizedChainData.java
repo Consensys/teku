@@ -19,7 +19,9 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -30,16 +32,19 @@ public class FinalizedChainData {
   private final Map<Bytes32, Bytes32> finalizedChildToParentMap;
   private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks;
   private final Map<Bytes32, BeaconState> finalizedStates;
+  private final Optional<BlockAndCheckpoints> finalizedExecutionPayloadBoundaryBlock;
 
   private FinalizedChainData(
       final AnchorPoint latestFinalized,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, BeaconState> finalizedStates) {
+      final Map<Bytes32, BeaconState> finalizedStates,
+      final Optional<BlockAndCheckpoints> finalizedExecutionPayloadBoundaryBlock) {
     this.latestFinalized = latestFinalized;
     this.finalizedChildToParentMap = finalizedChildToParentMap;
     this.finalizedBlocks = finalizedBlocks;
     this.finalizedStates = finalizedStates;
+    this.finalizedExecutionPayloadBoundaryBlock = finalizedExecutionPayloadBoundaryBlock;
   }
 
   public static Builder builder() {
@@ -70,16 +75,36 @@ public class FinalizedChainData {
     return latestFinalized;
   }
 
+  /**
+   * Returns the newly finalized beacon block when it is still needed as the hot fork-choice anchor
+   * for execution payload handling.
+   *
+   * <p>Finalization applies to the beacon block root. In Gloas, fork choice tracks the associated
+   * execution payload separately via the block's FULL variant, and that payload remains hot even
+   * when it refers to a finalized beacon block. When the finalized checkpoint is at this boundary,
+   * descendants may still need to attach to the finalized beacon block's FULL or EMPTY variant.
+   * Keeping this block in the update lets protoarray insert it as an anchor before pruning older
+   * finalized nodes.
+   */
+  public Optional<BlockAndCheckpoints> getFinalizedExecutionPayloadBoundaryBlock() {
+    return finalizedExecutionPayloadBoundaryBlock;
+  }
+
   public static class Builder {
     private AnchorPoint latestFinalized;
     private final Map<Bytes32, Bytes32> finalizedChildToParentMap = new HashMap<>();
     private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks = new HashMap<>();
     private final Map<Bytes32, BeaconState> finalizedStates = new HashMap<>();
+    private Optional<BlockAndCheckpoints> finalizedExecutionPayloadBoundaryBlock = Optional.empty();
 
     public FinalizedChainData build() {
       assertValid();
       return new FinalizedChainData(
-          latestFinalized, finalizedChildToParentMap, finalizedBlocks, finalizedStates);
+          latestFinalized,
+          finalizedChildToParentMap,
+          finalizedBlocks,
+          finalizedStates,
+          finalizedExecutionPayloadBoundaryBlock);
     }
 
     private void assertValid() {
@@ -88,6 +113,11 @@ public class FinalizedChainData {
       checkState(
           finalizedChildToParentMap.containsKey(latestFinalized.getRoot()),
           "Must supply finalized parent");
+      finalizedExecutionPayloadBoundaryBlock.ifPresent(
+          boundaryBlock ->
+              checkState(
+                  boundaryBlock.getRoot().equals(latestFinalized.getRoot()),
+                  "Finalized execution payload boundary must match latest finalized root"));
     }
 
     public Builder latestFinalized(final AnchorPoint latestFinalized) {
@@ -139,6 +169,13 @@ public class FinalizedChainData {
       checkNotNull(child);
       checkNotNull(parent);
       this.finalizedChildToParentMap.put(child, parent);
+      return this;
+    }
+
+    public Builder finalizedExecutionPayloadBoundaryBlock(
+        final BlockAndCheckpoints finalizedExecutionPayloadBoundaryBlock) {
+      this.finalizedExecutionPayloadBoundaryBlock =
+          Optional.of(checkNotNull(finalizedExecutionPayloadBoundaryBlock));
       return this;
     }
   }

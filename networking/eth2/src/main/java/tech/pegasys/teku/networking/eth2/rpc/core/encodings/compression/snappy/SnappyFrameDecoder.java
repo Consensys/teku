@@ -16,9 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy;
 import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyUtil.validateChecksum;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.DecompressionException;
-import io.netty.handler.codec.compression.Snappy;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
@@ -33,7 +31,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
  * <p>See <a href="https://github.com/google/snappy/blob/master/framing_format.txt">Snappy framing
  * format</a>.
  */
-public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, CompressionException> {
+public abstract class SnappyFrameDecoder
+    extends AbstractByteBufDecoder<ByteBuf, CompressionException> {
 
   private enum ChunkType {
     STREAM_IDENTIFIER,
@@ -47,11 +46,10 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
   // See https://github.com/google/snappy/blob/1.1.9/framing_format.txt#L95
   private static final int MAX_UNCOMPRESSED_DATA_SIZE = 65536 + 4;
   // See https://github.com/google/snappy/blob/1.1.9/framing_format.txt#L82
-  private static final int MAX_DECOMPRESSED_DATA_SIZE = 65536;
+  protected static final int MAX_DECOMPRESSED_DATA_SIZE = 65536;
   // See https://github.com/google/snappy/blob/1.1.9/framing_format.txt#L82
   private static final int MAX_COMPRESSED_CHUNK_SIZE = 16777216 - 1;
 
-  private final Snappy snappy = new Snappy();
   private final boolean validateChecksums;
 
   private boolean started;
@@ -183,20 +181,12 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
           }
 
           in.skipBytes(4);
-          int checksum = in.readIntLE();
-          ByteBuf uncompressed = Unpooled.buffer(chunkLength, MAX_DECOMPRESSED_DATA_SIZE);
+          final int checksum = in.readIntLE();
+          ByteBuf uncompressed = null;
           try {
+            uncompressed = decodeCompressedData(in, chunkLength - 4);
             if (validateChecksums) {
-              int oldWriterIndex = in.writerIndex();
-              try {
-                in.writerIndex(in.readerIndex() + chunkLength - 4);
-                snappy.decode(in, uncompressed);
-              } finally {
-                in.writerIndex(oldWriterIndex);
-              }
               validateChecksum(checksum, uncompressed, 0, uncompressed.writerIndex());
-            } else {
-              snappy.decode(in.readSlice(chunkLength - 4), uncompressed);
             }
             ret = uncompressed;
             uncompressed = null;
@@ -205,7 +195,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
               uncompressed.release();
             }
           }
-          snappy.reset();
+          reset();
         }
       }
     } catch (CompressionException e) {
@@ -247,4 +237,9 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
       return ChunkType.RESERVED_UNSKIPPABLE;
     }
   }
+
+  protected abstract ByteBuf decodeCompressedData(ByteBuf input, int compressedLength)
+      throws CompressionException;
+
+  protected void reset() {}
 }

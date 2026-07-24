@@ -27,23 +27,70 @@ import tech.pegasys.teku.infrastructure.ssz.TestContainers.ImmutableSubContainer
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.WritableContainer;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.WritableMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.WritableMutableSubContainer;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchemaTest;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszContainerTest implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
+
+  // ===== Progressive container schemas =====
+
+  private static final SszContainerSchema<SszContainer> PROGRESSIVE_ALL_FIXED_SCHEMA =
+      SszContainerSchema.createProgressive(
+          "AllFixed",
+          new boolean[] {true, true, true},
+          List.of(
+              NamedSchema.of("a", SszPrimitiveSchemas.UINT64_SCHEMA),
+              NamedSchema.of("b", SszPrimitiveSchemas.BYTE_SCHEMA),
+              NamedSchema.of("c", SszPrimitiveSchemas.UINT64_SCHEMA)));
+
+  private static final SszContainerSchema<SszContainer> PROGRESSIVE_MIXED_SCHEMA =
+      SszContainerSchema.createProgressive(
+          "Mixed",
+          new boolean[] {true, true},
+          List.of(
+              NamedSchema.of("fixed", SszPrimitiveSchemas.UINT64_SCHEMA),
+              NamedSchema.of("var", SszBitlistSchema.create(100))));
+
+  private static final SszContainerSchema<SszContainer> PROGRESSIVE_GAPPED_SCHEMA =
+      SszContainerSchema.createProgressive(
+          "Gapped",
+          new boolean[] {true, false, true},
+          List.of(
+              NamedSchema.of("first", SszPrimitiveSchemas.UINT64_SCHEMA),
+              NamedSchema.of("third", SszPrimitiveSchemas.BYTE_SCHEMA)));
 
   @Override
   public Stream<SszContainer> sszData() {
     RandomSszDataGenerator smallListsGen = new RandomSszDataGenerator().withMaxListSize(1);
     RandomSszDataGenerator largeListsGen = new RandomSszDataGenerator().withMaxListSize(1024);
-    return SszContainerSchemaTest.testContainerSchemas()
-        .flatMap(
-            schema ->
-                Stream.of(
-                    schema.getDefault(),
-                    smallListsGen.randomData(schema),
-                    largeListsGen.randomData(schema)));
+    Stream<SszContainer> regularContainers =
+        SszContainerSchemaTest.testContainerSchemas()
+            .flatMap(
+                schema ->
+                    Stream.of(
+                        schema.getDefault(),
+                        smallListsGen.randomData(schema),
+                        largeListsGen.randomData(schema)));
+    Stream<SszContainer> progressiveContainers =
+        Stream.of(
+            PROGRESSIVE_ALL_FIXED_SCHEMA.createFromBackingNode(
+                PROGRESSIVE_ALL_FIXED_SCHEMA.getDefaultTree()),
+            createProgressiveAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3)),
+            createProgressiveAllFixed(UInt64.valueOf(100), (byte) 0, UInt64.valueOf(200)),
+            PROGRESSIVE_MIXED_SCHEMA.createFromBackingNode(
+                PROGRESSIVE_MIXED_SCHEMA.getDefaultTree()),
+            createProgressiveMixed(UInt64.valueOf(5), 10, 0, 3, 9),
+            PROGRESSIVE_GAPPED_SCHEMA.createFromBackingNode(
+                PROGRESSIVE_GAPPED_SCHEMA.getDefaultTree()),
+            createProgressiveGapped(UInt64.valueOf(42), (byte) 7));
+    return Stream.concat(regularContainers, progressiveContainers);
   }
 
   @Test
@@ -268,5 +315,201 @@ public class SszContainerTest implements SszCompositeTestBase, SszMutableRefComp
 
     assertThat(modified)
         .allSatisfy(c -> SszDataAssert.assertThatSszData(c).isEqualByAllMeansTo(c3r));
+  }
+
+  // ===== Progressive container helpers =====
+
+  private static SszContainer createProgressiveAllFixed(
+      final UInt64 a, final byte b, final UInt64 c) {
+    final TreeNode tree =
+        PROGRESSIVE_ALL_FIXED_SCHEMA.createTreeFromFieldValues(
+            List.of(SszUInt64.of(a), SszPrimitiveSchemas.BYTE_SCHEMA.boxed(b), SszUInt64.of(c)));
+    return PROGRESSIVE_ALL_FIXED_SCHEMA.createFromBackingNode(tree);
+  }
+
+  private static SszContainer createProgressiveMixed(
+      final UInt64 fixedVal, final int bitlistSize, final int... setBits) {
+    final TreeNode tree =
+        PROGRESSIVE_MIXED_SCHEMA.createTreeFromFieldValues(
+            List.of(
+                SszUInt64.of(fixedVal), SszBitlistSchema.create(100).ofBits(bitlistSize, setBits)));
+    return PROGRESSIVE_MIXED_SCHEMA.createFromBackingNode(tree);
+  }
+
+  private static SszContainer createProgressiveGapped(final UInt64 first, final byte third) {
+    final TreeNode tree =
+        PROGRESSIVE_GAPPED_SCHEMA.createTreeFromFieldValues(
+            List.of(SszUInt64.of(first), SszPrimitiveSchemas.BYTE_SCHEMA.boxed(third)));
+    return PROGRESSIVE_GAPPED_SCHEMA.createFromBackingNode(tree);
+  }
+
+  // ===== Progressive container immutable tests =====
+
+  @Test
+  void progressive_fieldAccess_allFixed() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
+    assertThat(((SszUInt64) container.get(0)).get()).isEqualTo(UInt64.valueOf(10));
+    assertThat(((SszByte) container.get(1)).get()).isEqualTo((byte) 20);
+    assertThat(((SszUInt64) container.get(2)).get()).isEqualTo(UInt64.valueOf(30));
+  }
+
+  @Test
+  void progressive_fieldAccess_gapped() {
+    final SszContainer container = createProgressiveGapped(UInt64.valueOf(99), (byte) 3);
+    assertThat(((SszUInt64) container.get(0)).get()).isEqualTo(UInt64.valueOf(99));
+    assertThat(((SszByte) container.get(1)).get()).isEqualTo((byte) 3);
+  }
+
+  @Test
+  void progressive_createWritableCopy_shouldSucceed() {
+    final SszContainer container = createProgressiveAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
+    assertThat(container.createWritableCopy()).isNotNull();
+  }
+
+  @Test
+  void progressive_isWritableSupported_shouldReturnTrue() {
+    final SszContainer container = createProgressiveAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
+    assertThat(container.isWritableSupported()).isTrue();
+  }
+
+  @Test
+  void progressive_toString_shouldIncludeContainerNameAndFieldValues() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final String str = container.toString();
+    assertThat(str).contains("AllFixed");
+    assertThat(str).contains("a=");
+    assertThat(str).contains("b=");
+    assertThat(str).contains("c=");
+  }
+
+  // ===== Progressive container mutable tests =====
+
+  @Test
+  void progressive_mutable_createWritableCopy_shouldSucceed() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    assertThat(mutable.size()).isEqualTo(3);
+    assertThat(((SszUInt64) mutable.get(0)).get()).isEqualTo(UInt64.valueOf(10));
+  }
+
+  @Test
+  void progressive_mutable_setAndGet_roundtrip() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+
+    mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
+
+    assertThat(((SszUInt64) mutable.get(0)).get()).isEqualTo(UInt64.valueOf(100));
+    assertThat(((SszByte) mutable.get(1)).get()).isEqualTo((byte) 2);
+    assertThat(((SszUInt64) mutable.get(2)).get()).isEqualTo(UInt64.valueOf(3));
+  }
+
+  @Test
+  void progressive_mutable_commitChanges_producesCorrectImmutable() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+
+    mutable.set(1, SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 99));
+    final SszContainer committed = mutable.commitChanges();
+
+    assertThat(((SszUInt64) committed.get(0)).get()).isEqualTo(UInt64.ONE);
+    assertThat(((SszByte) committed.get(1)).get()).isEqualTo((byte) 99);
+    assertThat(((SszUInt64) committed.get(2)).get()).isEqualTo(UInt64.valueOf(3));
+  }
+
+  @Test
+  void progressive_mutable_commitChanges_hashTreeRootMatchesFreshCreation() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+
+    mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
+    mutable.set(2, SszUInt64.of(UInt64.valueOf(300)));
+    final SszContainer committed = mutable.commitChanges();
+
+    final SszContainer expected =
+        createProgressiveAllFixed(UInt64.valueOf(100), (byte) 2, UInt64.valueOf(300));
+    assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
+  }
+
+  @Test
+  void progressive_mutable_unchangedFields_remainUntouched() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+
+    mutable.set(1, SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 99));
+    final SszContainer committed = mutable.commitChanges();
+
+    assertThat(((SszUInt64) committed.get(0)).get()).isEqualTo(UInt64.valueOf(10));
+    assertThat(((SszByte) committed.get(1)).get()).isEqualTo((byte) 99);
+    assertThat(((SszUInt64) committed.get(2)).get()).isEqualTo(UInt64.valueOf(30));
+  }
+
+  @Test
+  void progressive_mutable_gappedContainer_setAndCommit() {
+    final SszContainer container = createProgressiveGapped(UInt64.valueOf(42), (byte) 7);
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+
+    mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
+    final SszContainer committed = mutable.commitChanges();
+
+    assertThat(((SszUInt64) committed.get(0)).get()).isEqualTo(UInt64.valueOf(100));
+    assertThat(((SszByte) committed.get(1)).get()).isEqualTo((byte) 7);
+
+    final SszContainer expected = createProgressiveGapped(UInt64.valueOf(100), (byte) 7);
+    assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
+  }
+
+  @Test
+  void progressive_mutable_multipleCommits() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
+
+    final SszMutableContainer mutable1 = (SszMutableContainer) container.createWritableCopy();
+    mutable1.set(0, SszUInt64.of(UInt64.valueOf(10)));
+    final SszContainer committed1 = mutable1.commitChanges();
+
+    final SszMutableContainer mutable2 = (SszMutableContainer) committed1.createWritableCopy();
+    mutable2.set(2, SszUInt64.of(UInt64.valueOf(30)));
+    final SszContainer committed2 = mutable2.commitChanges();
+
+    assertThat(((SszUInt64) committed2.get(0)).get()).isEqualTo(UInt64.valueOf(10));
+    assertThat(((SszByte) committed2.get(1)).get()).isEqualTo((byte) 2);
+    assertThat(((SszUInt64) committed2.get(2)).get()).isEqualTo(UInt64.valueOf(30));
+
+    final SszContainer expected =
+        createProgressiveAllFixed(UInt64.valueOf(10), (byte) 2, UInt64.valueOf(30));
+    assertThat(committed2.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
+  }
+
+  @Test
+  void progressive_mutable_commitWithNoChanges_returnsSameData() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+
+    final SszContainer committed = mutable.commitChanges();
+    assertThat(committed.hashTreeRoot()).isEqualTo(container.hashTreeRoot());
+  }
+
+  @Test
+  void progressive_mutable_sszSerializationRoundtrip_afterMutation() {
+    final SszContainer container =
+        createProgressiveAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    mutable.set(0, SszUInt64.of(UInt64.valueOf(42)));
+    final SszContainer committed = mutable.commitChanges();
+
+    final Bytes serialized = committed.sszSerialize();
+    final SszContainer deserialized = PROGRESSIVE_ALL_FIXED_SCHEMA.sszDeserialize(serialized);
+
+    assertThat(deserialized.hashTreeRoot()).isEqualTo(committed.hashTreeRoot());
+    assertThat(((SszUInt64) deserialized.get(0)).get()).isEqualTo(UInt64.valueOf(42));
   }
 }

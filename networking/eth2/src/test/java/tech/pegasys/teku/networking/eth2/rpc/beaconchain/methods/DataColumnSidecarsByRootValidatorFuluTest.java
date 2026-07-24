@@ -59,7 +59,7 @@ public class DataColumnSidecarsByRootValidatorFuluTest
             timeProvider,
             dataColumnSidecarSignatureValidator,
             List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     assertThatSafeFuture(validator.validate(dataColumnSidecar1_0_modified))
         .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)

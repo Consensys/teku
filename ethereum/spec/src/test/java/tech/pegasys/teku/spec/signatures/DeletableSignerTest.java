@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -322,6 +323,27 @@ public class DeletableSignerTest {
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
 
     verify(delegate, never()).signPayloadAttestationData(payloadAttestationData, forkInfo);
+  }
+
+  @Test
+  void signProposerPreferences_shouldSignWhenActive() {
+    final ProposerPreferences proposerPreferences = dataStructureUtil.randomProposerPreferences();
+    when(delegate.signProposerPreferences(proposerPreferences, forkInfo))
+        .thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signProposerPreferences(proposerPreferences, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signProposerPreferences_shouldNotSignWhenDisabled() {
+    final ProposerPreferences proposerPreferences = dataStructureUtil.randomProposerPreferences();
+    signer.delete();
+
+    assertThatSafeFuture(signer.signProposerPreferences(proposerPreferences, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+
+    verify(delegate, never()).signProposerPreferences(proposerPreferences, forkInfo);
   }
 
   @Test

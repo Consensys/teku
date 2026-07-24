@@ -42,7 +42,7 @@ class ForkChoicePayloadExecutorTest {
 
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
       spec.getGenesisSchemaDefinitions().toVersionBellatrix().orElseThrow();
   private final ExecutionPayload defaultPayload =

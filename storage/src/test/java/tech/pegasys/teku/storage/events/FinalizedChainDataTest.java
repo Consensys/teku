@@ -14,12 +14,14 @@
 package tech.pegasys.teku.storage.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -45,5 +47,34 @@ public class FinalizedChainDataTest {
     assertThat(result.getStates()).isEqualTo(Map.of(genesis.getRoot(), genesis.getState()));
     assertThat(result.getFinalizedChildToParentMap())
         .isEqualTo(Map.of(genesis.getRoot(), genesis.getParentRoot()));
+    assertThat(result.getFinalizedExecutionPayloadBoundaryBlock()).isEmpty();
+  }
+
+  @Test
+  public void build_withFinalizedExecutionPayloadBoundaryBlock() {
+    final BlockAndCheckpoints boundaryBlock = BlockAndCheckpoints.fromBlockAndState(spec, genesis);
+
+    final FinalizedChainData result =
+        FinalizedChainData.builder()
+            .latestFinalized(genesisAnchor)
+            .finalizedExecutionPayloadBoundaryBlock(boundaryBlock)
+            .build();
+
+    assertThat(result.getFinalizedExecutionPayloadBoundaryBlock()).contains(boundaryBlock);
+  }
+
+  @Test
+  public void build_shouldRejectFinalizedExecutionPayloadBoundaryBlockForDifferentRoot() {
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(1);
+    final BlockAndCheckpoints boundaryBlock = BlockAndCheckpoints.fromBlockAndState(spec, block);
+
+    assertThatThrownBy(
+            () ->
+                FinalizedChainData.builder()
+                    .latestFinalized(genesisAnchor)
+                    .finalizedExecutionPayloadBoundaryBlock(boundaryBlock)
+                    .build())
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("boundary must match latest finalized root");
   }
 }

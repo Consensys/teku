@@ -35,8 +35,7 @@ public class ValidatorKeysOptions {
       description =
           "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
               + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
-              + "and the file containing the password for it is <PASS_FILE>.\n"
-              + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
+              + "and the file containing the password for it is <PASS_FILE>.",
       split = ",",
       arity = "1..*")
   private List<String> validatorKeys = new ArrayList<>();

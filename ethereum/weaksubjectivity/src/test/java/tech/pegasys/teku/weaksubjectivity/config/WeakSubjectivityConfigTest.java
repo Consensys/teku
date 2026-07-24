@@ -59,7 +59,6 @@ public class WeakSubjectivityConfigTest {
   public void updated_shouldCloneAllProperties() {
     WeakSubjectivityConfig configA =
         configBuilder()
-            .safetyDecay(UInt64.valueOf(123))
             .weakSubjectivityCheckpoint(checkpoint)
             .suppressWSPeriodChecksUntilEpoch(UInt64.ONE)
             .build();

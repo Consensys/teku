@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszPrimitiveListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
@@ -38,7 +39,14 @@ public class SszPrimitiveListSchemaImpl<
 
   public SszPrimitiveListSchemaImpl(
       final SszPrimitiveSchema<ElementT, SszElementT> elementSchema, final long maxLength) {
-    super(elementSchema, maxLength);
+    this(elementSchema, maxLength, SszSchemaHints.none());
+  }
+
+  public SszPrimitiveListSchemaImpl(
+      final SszPrimitiveSchema<ElementT, SszElementT> elementSchema,
+      final long maxLength,
+      final SszSchemaHints hints) {
+    super(elementSchema, maxLength, hints);
   }
 
   @Override

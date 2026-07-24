@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class LoggingOptions {
-  private static final String WINDOWS_SEP = "\\";
   private static final String LINUX_SEP = "/";
 
   @Option(
@@ -150,7 +149,7 @@ public class LoggingOptions {
   private int dbOpAlertThresholdMillis = LoggingConfig.DEFAULT_DB_OP_ALERT_THRESHOLD_MILLIS;
 
   private boolean containsPath(final String file) {
-    return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
+    return file.contains(LINUX_SEP);
   }
 
   public TekuConfiguration.Builder configureWireLogs(final TekuConfiguration.Builder builder) {

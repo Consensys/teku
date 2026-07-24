@@ -108,7 +108,7 @@ public class AttestationProductionDuty implements Duty {
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating attestations at slot {}", slot);
     if (validatorsByCommitteeIndex.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     return forkProvider
         .getForkInfo(slot)

@@ -14,6 +14,8 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;

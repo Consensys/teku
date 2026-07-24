@@ -1,0 +1,77 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.storage.store;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.Mockito.mock;
+
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteSnapshot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+
+class StoreVoteSnapshotTest extends AbstractStoreTest {
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
+  private final VoteUpdateChannel voteUpdateChannel = mock(VoteUpdateChannel.class);
+  private final UpdatableStore store = createGenesisStore();
+
+  @Test
+  void shouldSnapshotVotesUpToHighestVotedValidatorIndex() {
+    final VoteTracker vote0 = dataStructureUtil.randomVoteTracker();
+    final VoteTracker vote2 = dataStructureUtil.randomVoteTracker();
+    setVote(UInt64.ZERO, vote0);
+    setVote(UInt64.valueOf(2), vote2);
+
+    final VoteSnapshot snapshot = store.getVoteSnapshot();
+
+    assertThat(snapshot.getHighestVotedValidatorIndex()).isEqualTo(UInt64.valueOf(2));
+    assertThat(snapshot.size()).isEqualTo(3);
+    assertThat(snapshot.getVote(UInt64.ZERO)).isEqualTo(vote0);
+    assertThat(snapshot.getVote(UInt64.ONE)).isEqualTo(VoteTracker.DEFAULT);
+    assertThat(snapshot.getVote(UInt64.valueOf(2))).isEqualTo(vote2);
+    assertThat(snapshot.getVote(UInt64.valueOf(3))).isEqualTo(VoteTracker.DEFAULT);
+  }
+
+  @Test
+  void shouldNotReflectVotesCommittedAfterSnapshotIsCreated() {
+    final VoteTracker originalVote = dataStructureUtil.randomVoteTracker();
+    final VoteTracker updatedVote = dataStructureUtil.randomVoteTracker();
+    setVote(UInt64.ZERO, originalVote);
+
+    final VoteSnapshot snapshot = store.getVoteSnapshot();
+    setVote(UInt64.ZERO, updatedVote);
+
+    assertThat(snapshot.getVote(UInt64.ZERO)).isEqualTo(originalVote);
+    assertThat(store.getVoteSnapshot().getVote(UInt64.ZERO)).isEqualTo(updatedVote);
+  }
+
+  @Test
+  void shouldRejectNegativeValidatorIndex() {
+    final VoteSnapshot snapshot = store.getVoteSnapshot();
+
+    assertThatIllegalArgumentException().isThrownBy(() -> snapshot.getVote(-1));
+  }
+
+  private void setVote(final UInt64 validatorIndex, final VoteTracker vote) {
+    final VoteUpdater voteUpdater = store.startVoteUpdate(voteUpdateChannel);
+    voteUpdater.putVote(validatorIndex, vote);
+    voteUpdater.commit();
+  }
+}

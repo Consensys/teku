@@ -53,7 +53,8 @@ public interface LimitedMap<K, V> extends Map<K, V> {
    * Creates a limited map.
    *
    * <p>The returned map is safe for concurrent access <strong>except iteration</strong> and evicts
-   * the oldest inserted items. Iteration requires synchronizing on the map instance.
+   * the oldest inserted or updated items. Reads do not refresh the eviction order. Iteration
+   * requires synchronizing on the map instance.
    *
    * <p>Synchronized instances are generally faster than iterable versions.
    *

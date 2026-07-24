@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -36,9 +37,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -145,7 +146,8 @@ public class BeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.BLOB_KZG_COMMITMENTS, schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)),
         namedSchema(
-            BlockBodyFields.EXECUTION_REQUESTS, schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA)));
+            BlockBodyFields.EXECUTION_REQUESTS,
+            SszSchema.as(ExecutionRequests.class, schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA))));
   }
 
   @Override
@@ -225,8 +227,8 @@ public class BeaconBlockBodySchemaElectraImpl
   }
 
   @Override
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
-    return (ExecutionRequestsSchema)
+  public ExecutionRequestsSchema<?> getExecutionRequestsSchema() {
+    return (ExecutionRequestsSchema<?>)
         getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_REQUESTS));
   }
 

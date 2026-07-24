@@ -30,7 +30,7 @@ class ForkChoicePayloadExecutorGloas implements OptimisticExecutionPayloadExecut
   private final SignedExecutionPayloadEnvelope signedEnvelope;
   private final ExecutionLayerChannel executionLayer;
 
-  private Optional<SafeFuture<PayloadValidationResult>> result = Optional.empty();
+  private Optional<SafeFuture<PayloadStatus>> result = Optional.empty();
 
   ForkChoicePayloadExecutorGloas(
       final SignedExecutionPayloadEnvelope signedEnvelope,
@@ -45,9 +45,8 @@ class ForkChoicePayloadExecutorGloas implements OptimisticExecutionPayloadExecut
     return new ForkChoicePayloadExecutorGloas(signedEnvelope, executionLayer);
   }
 
-  public SafeFuture<PayloadValidationResult> getExecutionResult() {
-    return result.orElse(
-        SafeFuture.completedFuture(new PayloadValidationResult(PayloadStatus.VALID)));
+  public SafeFuture<PayloadStatus> getExecutionResult() {
+    return result.orElse(SafeFuture.completedFuture(PayloadStatus.VALID));
   }
 
   @Override
@@ -58,11 +57,10 @@ class ForkChoicePayloadExecutorGloas implements OptimisticExecutionPayloadExecut
         Optional.of(
             executionLayer
                 .engineNewPayload(payloadToExecute, signedEnvelope.getSlot())
-                .thenApply(PayloadValidationResult::new)
                 .exceptionally(
                     error -> {
                       LOG.error("Error while validating payload", error);
-                      return new PayloadValidationResult(PayloadStatus.failedExecution(error));
+                      return PayloadStatus.failedExecution(error);
                     }));
     return true;
   }

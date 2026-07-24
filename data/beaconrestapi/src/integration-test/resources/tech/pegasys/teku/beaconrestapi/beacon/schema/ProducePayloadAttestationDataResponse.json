@@ -1,0 +1,14 @@
+{
+  "title" : "ProducePayloadAttestationDataResponse",
+  "type" : "object",
+  "required" : [ "version", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/PayloadAttestationData"
+    }
+  }
+}

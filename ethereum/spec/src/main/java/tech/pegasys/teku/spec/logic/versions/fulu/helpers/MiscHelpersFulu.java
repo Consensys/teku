@@ -48,13 +48,13 @@ import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -113,6 +113,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @Override
   public Optional<MiscHelpersFulu> toVersionFulu() {
     return Optional.of(this);
+  }
+
+  // modified to remove support for the former deposit mechanism
+  @Override
+  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
+    return true;
   }
 
   // compute_fork_digest
@@ -283,7 +289,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
+    return verifyDataColumnSidecarKzgProofs(
+        dataColumnSidecar, DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments());
+  }
 
+  public boolean verifyDataColumnSidecarKzgProofs(
+      final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getColumn().size())
             .mapToObj(
@@ -294,9 +305,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
             .collect(Collectors.toList());
     return getKzg()
         .verifyCellProofBatch(
-            DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments().stream()
-                .map(SszKZGCommitment::getKZGCommitment)
-                .toList(),
+            kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList(),
             cellWithIds,
             dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }

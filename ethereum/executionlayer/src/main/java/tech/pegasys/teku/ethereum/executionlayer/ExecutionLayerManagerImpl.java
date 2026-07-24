@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
@@ -245,6 +246,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         blobVersionedHashes,
         slot);
     return executionClientHandler.engineGetBlobsV2(blobVersionedHashes, slot);
+  }
+
+  @Override
+  public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
+      final List<Bytes32> blockHashes) {
+    LOG.trace("calling engineGetPayloadBodiesByHash(blockHashes={})", blockHashes);
+    return executionClientHandler.engineGetPayloadBodiesByHash(blockHashes);
   }
 
   @Override

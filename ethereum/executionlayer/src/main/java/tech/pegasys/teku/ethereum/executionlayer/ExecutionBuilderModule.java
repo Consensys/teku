@@ -96,7 +96,7 @@ public class ExecutionBuilderModule {
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> localGetPayloadResponse) {
     final Optional<SignedValidatorRegistration> validatorRegistration =
-        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
+        executionPayloadContext.getPayloadBuildingAttributes().validatorRegistration();
 
     // fallback conditions
     final FallbackReason fallbackReason;
@@ -150,7 +150,7 @@ public class ExecutionBuilderModule {
     final UInt64 slot = state.getSlot();
 
     final Optional<SignedValidatorRegistration> validatorRegistration =
-        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
+        executionPayloadContext.getPayloadBuildingAttributes().validatorRegistration();
 
     final BLSPublicKey validatorPublicKey =
         validatorRegistration.orElseThrow().getMessage().getPublicKey();
@@ -358,7 +358,7 @@ public class ExecutionBuilderModule {
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
-    return executionPayloadContext.getForkChoiceState().getFinalizedExecutionBlockHash().isZero();
+    return executionPayloadContext.getForkChoiceState().finalizedExecutionBlockHash().isZero();
   }
 
   private boolean isCircuitBreakerEngaged(final BeaconState state) {

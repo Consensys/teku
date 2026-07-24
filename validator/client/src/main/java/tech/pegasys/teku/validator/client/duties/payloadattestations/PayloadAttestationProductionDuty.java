@@ -84,7 +84,7 @@ public class PayloadAttestationProductionDuty implements Duty {
     LOG.trace("Creating payload attestations at slot {}", slot);
 
     if (validators.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
 
     return forkProvider
@@ -134,12 +134,8 @@ public class PayloadAttestationProductionDuty implements Duty {
                     .orElseGet(
                         () ->
                             SafeFuture.completedFuture(
-                                ProductionResult.failure(
-                                    validatorWithIndex.validator.getPublicKey(),
-                                    new IllegalStateException(
-                                        "Unable to produce payload attestation for slot "
-                                            + slot
-                                            + " because chain data was unavailable")))))
+                                ProductionResult.noop(
+                                    validatorWithIndex.validator.getPublicKey()))))
         .exceptionally(
             error -> ProductionResult.failure(validatorWithIndex.validator.getPublicKey(), error));
   }

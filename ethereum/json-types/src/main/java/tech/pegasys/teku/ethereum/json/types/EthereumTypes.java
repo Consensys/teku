@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_INCLUDE_PAYLOAD;
 
 import java.math.BigInteger;
 import java.util.Locale;
@@ -135,6 +136,16 @@ public class EthereumTypes {
               .example("1")
               .required(true)
               .build();
+
+  public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE =
+      new BooleanHeaderTypeDefinition(
+          HEADER_INCLUDE_PAYLOAD,
+          Optional.of(false),
+          """
+                          Indicates whether the execution payload envelope is included in the response.
+                          When `true`, the `data` field contains the full
+                          execution payload envelope, blobs, and KZG proofs. When `false`, the `data`
+                          field contains only a `BeaconBlock`.""");
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {

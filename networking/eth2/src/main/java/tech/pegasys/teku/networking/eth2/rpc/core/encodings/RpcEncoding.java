@@ -16,15 +16,24 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 
 public interface RpcEncoding {
   static RpcEncoding createSszSnappyEncoding(final int maxChunkSize) {
+    return createSszSnappyEncoding(maxChunkSize, false);
+  }
+
+  static RpcEncoding createSszSnappyEncoding(
+      final int maxChunkSize, final boolean useAircompressor) {
+    return createSszSnappyEncoding(
+        maxChunkSize,
+        useAircompressor ? SnappyFramedCompressor.AIRCOMPRESSOR : SnappyFramedCompressor.NETTY);
+  }
+
+  static RpcEncoding createSszSnappyEncoding(final int maxChunkSize, final Compressor compressor) {
     return new LengthPrefixedEncoding(
-        "ssz_snappy",
-        RpcPayloadEncoders.createSszEncoders(),
-        new SnappyFramedCompressor(),
-        maxChunkSize);
+        "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), compressor, maxChunkSize);
   }
 
   /**

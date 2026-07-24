@@ -42,8 +42,11 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -57,7 +60,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface {
-  ValidatorApiChannel NO_OP =
+  ValidatorApiChannel NOOP =
       new ValidatorApiChannel() {
         @Override
         public SafeFuture<Optional<GenesisData>> getGenesisData() {
@@ -196,6 +199,12 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
+        public SafeFuture<Void> sendSignedProposerPreferences(
+            final List<SignedProposerPreferences> signedProposerPreferences) {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
         public SafeFuture<Void> prepareBeaconProposer(
             final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
           return SafeFuture.COMPLETE;
@@ -245,10 +254,29 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
         @Override
         public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-            final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+            final SignedExecutionPayloadEnvelope signedExecutionPayload,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
           return SafeFuture.completedFuture(
               PublishSignedExecutionPayloadResult.success(
                   signedExecutionPayload.getBeaconBlockRoot()));
+        }
+
+        @Override
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+            final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot()));
+        }
+
+        @Override
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+            final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedBlindedExecutionPayload.getBeaconBlockRoot()));
         }
       };
 
@@ -313,6 +341,9 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
   SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       List<PayloadAttestationMessage> payloadAttestationMessages);
+
+  SafeFuture<Void> sendSignedProposerPreferences(
+      List<SignedProposerPreferences> signedProposerPreferences);
 
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);

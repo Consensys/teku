@@ -35,6 +35,13 @@ public class BeaconStateGloasImpl extends AbstractBeaconState<MutableBeaconState
   }
 
   BeaconStateGloasImpl(
+      final BeaconStateSchema<BeaconStateGloas, MutableBeaconStateGloas> schema,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
+    super(schema, schema.getDefaultTree(), null, transitionCaches, slotCaches);
+  }
+
+  BeaconStateGloasImpl(
       final SszCompositeSchema<?> type,
       final TreeNode backingNode,
       final IntCache<SszData> cache,

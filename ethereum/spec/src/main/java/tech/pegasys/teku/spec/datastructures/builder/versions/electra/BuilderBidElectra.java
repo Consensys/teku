@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.builder.versions.electra;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 
 public interface BuilderBidElectra extends BuilderBidDeneb {
 

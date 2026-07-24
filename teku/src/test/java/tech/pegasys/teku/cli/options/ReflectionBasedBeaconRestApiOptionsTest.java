@@ -102,6 +102,36 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThat(config.isRestApiEnabled()).isTrue();
   }
 
+  @Test
+  void restApiAsyncTimeout_shouldDefaultToThirtySeconds() {
+    final BeaconRestApiConfig config = getConfig(getTekuConfigurationFromArguments());
+
+    assertThat(config.getRestApiAsyncTimeout()).isEqualTo(Duration.ofSeconds(30));
+  }
+
+  @Test
+  void restApiAsyncTimeout_canBeOverridden() {
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--Xrest-api-async-timeout-seconds", "12"));
+
+    assertThat(config.getRestApiAsyncTimeout()).isEqualTo(Duration.ofSeconds(12));
+  }
+
+  @Test
+  void restApiAsyncTimeout_shouldBeHidden() {
+    beaconNodeCommand.parse(new String[] {"--help"});
+
+    assertThat(getCommandLineOutput()).doesNotContain("--Xrest-api-async-timeout-seconds");
+  }
+
+  @Test
+  void restApiAsyncTimeout_shouldRejectNonPositiveValues() {
+    assertThatThrownBy(
+        () -> getTekuConfigurationFromArguments("--Xrest-api-async-timeout-seconds", "0"));
+    assertThatThrownBy(
+        () -> getTekuConfigurationFromArguments("--Xrest-api-async-timeout-seconds", "-1"));
+  }
+
   @ParameterizedTest
   @MethodSource("getRestApiOptionParams")
   public void restApiEnabledAndPortOptions_shouldProvideExpectedOutcome(
@@ -238,6 +268,69 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
         getTekuConfigurationFromArguments("--Xrest-api-validator-threads=15");
     final int validatorThreads = getConfig(tekuConfiguration).getValidatorThreads();
     assertThat(validatorThreads).isEqualTo(15);
+  }
+
+  @Test
+  void restApiVirtualThreadsEnabled_disabledByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isFalse();
+  }
+
+  @Test
+  void restApiVirtualThreadsEnabled_shouldNotRequireAValue() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isTrue();
+  }
+
+  @Test
+  void restApiVirtualThreadsEnabled_canBeEnabled() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-enabled=true");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isTrue();
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxConcurrentTasks_defaultValue() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getRestApiVirtualThreadsMaxConcurrentTasks())
+        .isEqualTo(BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS);
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxConcurrentTasks_canBeOverridden() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-concurrent-tasks=64");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getRestApiVirtualThreadsMaxConcurrentTasks()).isEqualTo(64);
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_shouldRejectZero() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=0"));
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_shouldRejectNegative() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=-1"));
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_shouldRejectAboveUpperBound() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=5001"));
   }
 
   @Test

@@ -70,6 +70,7 @@ public class RpcHandler<
 
   private final AsyncRunner asyncRunner;
   private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private final InboundRpcStreamLimiter inboundRpcStreamLimiter;
 
   final Counter rpcRequestsTotalCounter;
   final Counter rpcRequestsFailedCounter;
@@ -78,9 +79,11 @@ public class RpcHandler<
   public RpcHandler(
       final AsyncRunner asyncRunner,
       final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final InboundRpcStreamLimiter inboundRpcStreamLimiter) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
+    this.inboundRpcStreamLimiter = inboundRpcStreamLimiter;
 
     rpcRequestsTotalCounter =
         metricsSystem.createCounter(
@@ -202,16 +205,41 @@ public class RpcHandler<
   @Override
   public SafeFuture<Controller<TOutgoingHandler>> initChannel(
       final P2PChannel channel, final String selectedProtocol) {
-    final Connection connection = ((Stream) channel).getConnection();
+    final Stream streamChannel = (Stream) channel;
+    final Connection connection = streamChannel.getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
 
-    final Controller<TOutgoingHandler> controller = new Controller<>(nodeId, channel);
-    if (!channel.isInitiator()) {
-      controller.setIncomingRequestHandler(
-          rpcMethod.createIncomingRequestHandler(selectedProtocol));
+    final boolean isIncomingStream = !channel.isInitiator();
+    if (isIncomingStream && !inboundRpcStreamLimiter.tryAcquire()) {
+      LOG.debug(
+          "Rejecting inbound RPC stream for protocol {} from {} because the global active stream limit of {} has been reached",
+          selectedProtocol,
+          nodeId,
+          inboundRpcStreamLimiter.getMaximumActiveStreams());
+      ignoreFuture(streamChannel.close());
+      return SafeFuture.failedFuture(
+          new IllegalStateException("Maximum active inbound RPC streams reached"));
     }
-    channel.pushHandler(controller);
-    return controller.activeFuture;
+
+    try {
+      final Controller<TOutgoingHandler> controller =
+          new Controller<>(
+              nodeId,
+              streamChannel,
+              isIncomingStream ? inboundRpcStreamLimiter::release : () -> {});
+      if (isIncomingStream) {
+        controller.setIncomingRequestHandler(
+            rpcMethod.createIncomingRequestHandler(selectedProtocol));
+      }
+      channel.pushHandler(controller);
+      return controller.activeFuture;
+    } catch (final Throwable t) {
+      if (isIncomingStream) {
+        inboundRpcStreamLimiter.release();
+      }
+      ignoreFuture(streamChannel.close());
+      return SafeFuture.failedFuture(t);
+    }
   }
 
   static class Controller<TOutgoingHandler extends RpcRequestHandler>
@@ -219,7 +247,8 @@ public class RpcHandler<
       implements RpcStreamController<TOutgoingHandler> {
 
     private final NodeId nodeId;
-    private final P2PChannel p2pChannel;
+    private final Stream p2pStream;
+    private final Runnable releaseStreamPermit;
     private Optional<TOutgoingHandler> outgoingRequestHandler = Optional.empty();
     private Optional<RpcRequestHandler> rpcRequestHandler = Optional.empty();
     private RpcStream rpcStream;
@@ -227,14 +256,16 @@ public class RpcHandler<
 
     protected final SafeFuture<Controller<TOutgoingHandler>> activeFuture = new SafeFuture<>();
 
-    private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
+    private Controller(
+        final NodeId nodeId, final Stream p2pStream, final Runnable releaseStreamPermit) {
       this.nodeId = nodeId;
-      this.p2pChannel = p2pChannel;
+      this.p2pStream = p2pStream;
+      this.releaseStreamPermit = releaseStreamPermit;
     }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-      rpcStream = new LibP2PRpcStream(nodeId, p2pChannel, ctx);
+      rpcStream = new LibP2PRpcStream(nodeId, p2pStream, ctx);
       activeFuture.complete(this);
     }
 
@@ -320,6 +351,7 @@ public class RpcHandler<
         runHandler(h -> h.closed(nodeId, rpcStream));
       } finally {
         rpcRequestHandler = Optional.empty();
+        releaseStreamPermit.run();
       }
     }
 
@@ -330,7 +362,7 @@ public class RpcHandler<
     @VisibleForTesting
     void closeAbruptly() {
       // We're listening for the result of the close future above, so we can ignore this future
-      ignoreFuture(p2pChannel.close());
+      ignoreFuture(p2pStream.close());
 
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());

@@ -49,6 +49,12 @@ class GetExecutionPayloadEnvelopeTest
   }
 
   @Test
+  void metadata_shouldUsePluralExecutionPayloadEnvelopesRoute() {
+    assertThat(handler.getMetadata().getPath())
+        .isEqualTo("/eth/v1/beacon/execution_payload_envelopes/{block_id}");
+  }
+
+  @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }

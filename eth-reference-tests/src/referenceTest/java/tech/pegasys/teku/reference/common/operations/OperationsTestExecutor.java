@@ -42,11 +42,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -60,7 +63,6 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
@@ -95,8 +97,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     DEPOSIT_REQUEST,
     WITHDRAWAL_REQUEST,
     CONSOLIDATION_REQUEST,
+    PARENT_EXECUTION_PAYLOAD,
     EXECUTION_PAYLOAD_BID,
-    PAYLOAD_ATTESTATION
+    PAYLOAD_ATTESTATION,
+    BUILDER_DEPOSIT_REQUEST,
+    BUILDER_EXIT_REQUEST;
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -117,6 +122,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>("deposit.ssz_snappy", Operation.DEPOSIT))
           .put(
               "operations/voluntary_exit",
+              new OperationsTestExecutor<>("voluntary_exit.ssz_snappy", Operation.VOLUNTARY_EXIT))
+          .put(
+              "operations/voluntary_exit_churn",
               new OperationsTestExecutor<>("voluntary_exit.ssz_snappy", Operation.VOLUNTARY_EXIT))
           .put(
               "operations/attestation",
@@ -149,12 +157,24 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>(
                   "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
           .put(
+              "operations/parent_execution_payload",
+              new OperationsTestExecutor<>("block.ssz_snappy", Operation.PARENT_EXECUTION_PAYLOAD))
+          .put(
               "operations/execution_payload_bid",
-              new OperationsTestExecutor<>("block.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
+              new OperationsTestExecutor<>(
+                  "execution_payload_bid.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
           .put(
               "operations/payload_attestation",
               new OperationsTestExecutor<>(
                   "payload_attestation.ssz_snappy", Operation.PAYLOAD_ATTESTATION))
+          .put(
+              "operations/builder_deposit_request",
+              new OperationsTestExecutor<>(
+                  "builder_deposit_request.ssz_snappy", Operation.BUILDER_DEPOSIT_REQUEST))
+          .put(
+              "operations/builder_exit_request",
+              new OperationsTestExecutor<>(
+                  "builder_exit_request.ssz_snappy", Operation.BUILDER_EXIT_REQUEST))
           .build();
 
   private final String dataFileName;
@@ -274,7 +294,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final OperationProcessor processor,
       final BeaconState preState) {
     assertThatThrownBy(() -> applyOperation(testDefinition, processor, preState))
-        .isInstanceOfAny(BlockProcessingException.class, ExecutionPayloadProcessingException.class);
+        .isInstanceOf(BlockProcessingException.class);
   }
 
   private BeaconState applyOperation(
@@ -345,43 +365,36 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
         final SchemaDefinitions schemaDefinitions =
             testDefinition.getSpec().getGenesisSchemaDefinitions();
-
-        if (schemaDefinitions.toVersionGloas().isPresent()) {
-          final SignedExecutionPayloadEnvelope signedEnvelope =
-              loadSsz(
-                  testDefinition,
-                  "signed_envelope.ssz_snappy",
-                  SchemaDefinitionsGloas.required(schemaDefinitions)
-                      .getSignedExecutionPayloadEnvelopeSchema());
-          processor.processExecutionPayload(
-              state,
-              signedEnvelope,
-              Optional.of(
-                  (latestExecutionPayloadHeader, payloadToExecute) ->
-                      executionMeta.executionValid));
-        } else {
-          final BeaconBlockBody beaconBlockBody =
-              loadSsz(testDefinition, dataFileName, schemaDefinitions.getBeaconBlockBodySchema());
-          processor.processExecutionPayload(
-              state,
-              beaconBlockBody,
-              Optional.of(
-                  (latestExecutionPayloadHeader, payloadToExecute) ->
-                      executionMeta.executionValid));
-        }
+        final BeaconBlockBody beaconBlockBody =
+            loadSsz(testDefinition, dataFileName, schemaDefinitions.getBeaconBlockBodySchema());
+        processor.processExecutionPayload(
+            state,
+            beaconBlockBody,
+            Optional.of(
+                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
       }
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
       case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
       case CONSOLIDATION_REQUEST -> processConsolidations(testDefinition, state, processor);
-      case EXECUTION_PAYLOAD_BID -> {
+      case PARENT_EXECUTION_PAYLOAD -> {
         final BeaconBlock beaconBlock =
             loadSsz(
                 testDefinition,
                 dataFileName,
                 testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
-        processor.processExecutionPayloadBid(state, beaconBlock);
+        processor.processParentExecutionPayload(state, beaconBlock);
+      }
+      case EXECUTION_PAYLOAD_BID -> {
+        final SignedExecutionPayloadBid signedBid =
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                SchemaDefinitionsGloas.required(
+                        testDefinition.getSpec().getGenesisSchemaDefinitions())
+                    .getSignedExecutionPayloadBidSchema());
+        processor.processExecutionPayloadBid(state, signedBid);
       }
       case PAYLOAD_ATTESTATION -> {
         final PayloadAttestation payloadAttestation =
@@ -393,6 +406,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                     .getPayloadAttestationSchema());
         processor.processPayloadAttestation(state, payloadAttestation);
       }
+      case BUILDER_DEPOSIT_REQUEST ->
+          processBuilderDepositRequest(testDefinition, state, processor);
+      case BUILDER_EXIT_REQUEST -> processBuilderExitRequest(testDefinition, state, processor);
       default ->
           throw new UnsupportedOperationException(
               "Operation " + operation + " not implemented in OperationTestExecutor");
@@ -473,6 +489,36 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     processor.processConsolidationRequests(state, consolidationRequests.asList());
   }
 
+  private void processBuilderDepositRequest(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor) {
+    final SszListSchema<BuilderDepositRequest, ?> builderDepositRequestsSchema =
+        ExecutionRequestsSchemaGloas.required(
+                SchemaDefinitionsGloas.required(
+                        testDefinition.getSpec().getGenesisSchemaDefinitions())
+                    .getExecutionRequestsSchema())
+            .getBuilderDepositRequestsSchema();
+    final SszList<BuilderDepositRequest> builderDepositRequests =
+        loadSsz(testDefinition, dataFileName, builderDepositRequestsSchema);
+    processor.processBuilderDepositRequest(state, builderDepositRequests.asList());
+  }
+
+  private void processBuilderExitRequest(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor) {
+    final SszListSchema<BuilderExitRequest, ?> builderExitRequestsSchema =
+        ExecutionRequestsSchemaGloas.required(
+                SchemaDefinitionsGloas.required(
+                        testDefinition.getSpec().getGenesisSchemaDefinitions())
+                    .getExecutionRequestsSchema())
+            .getBuilderExitRequestsSchema();
+    final SszList<BuilderExitRequest> builderExitRequests =
+        loadSsz(testDefinition, dataFileName, builderExitRequestsSchema);
+    processor.processBuilderExitRequest(state, builderExitRequests.asList());
+  }
+
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
     return loadSsz(testDefinition, dataFileName, SignedVoluntaryExit.SSZ_SCHEMA);
   }
@@ -540,8 +586,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           DEPOSIT_REQUEST,
           WITHDRAWAL_REQUEST,
           CONSOLIDATION_REQUEST,
+          PARENT_EXECUTION_PAYLOAD,
           EXECUTION_PAYLOAD_BID,
-          PAYLOAD_ATTESTATION -> {}
+          PAYLOAD_ATTESTATION,
+          BUILDER_DEPOSIT_REQUEST,
+          BUILDER_EXIT_REQUEST -> {}
     }
   }
 
@@ -590,12 +639,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     validatableAttestation.saveCommitteesSize(preState);
 
     var attestationIndices =
-        specVersion
-            .getAttestationUtil()
-            .getAttestingIndices(preState, attestation)
-            .intStream()
-            .mapToObj(UInt64::valueOf)
-            .toList();
+        specVersion.getAttestationUtil().getAttestingIndices(preState, attestation);
     var pooledAttestation =
         new PooledAttestationWithData(
             attestation.getData(),

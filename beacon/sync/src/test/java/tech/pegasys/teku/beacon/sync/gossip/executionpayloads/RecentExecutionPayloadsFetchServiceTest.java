@@ -26,19 +26,28 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.beacon.sync.fetch.FetchExecutionPayloadTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
+import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
+import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PendingPool.RequiredBlockRootDroppedSubscriber;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 class RecentExecutionPayloadsFetchServiceTest {
 
@@ -52,6 +61,12 @@ class RecentExecutionPayloadsFetchServiceTest {
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
   private final ForwardSync forwardSync = mock(ForwardSync.class);
+
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+
+  @SuppressWarnings("unchecked")
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool =
+      mock(PendingPool.class);
 
   private final int maxConcurrentRequests = 2;
 
@@ -72,7 +87,9 @@ class RecentExecutionPayloadsFetchServiceTest {
             maxConcurrentRequests,
             forwardSync,
             fetchTaskFactory,
-            executionPayloadManager);
+            executionPayloadManager,
+            payloadAttestationPool,
+            pendingPayloadAttestationsPool);
 
     lenient()
         .when(fetchTaskFactory.createFetchExecutionPayloadTask(any()))
@@ -233,12 +250,109 @@ class RecentExecutionPayloadsFetchServiceTest {
   }
 
   @Test
+  void onPayloadAttestationAdded_requestsExecutionPayloadWhenPayloadPresent() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    captureOperationAddedSubscriber()
+        .onOperationAdded(
+            mockMessage(beaconBlockRoot, true), InternalValidationResult.ACCEPT, true);
+
+    assertTaskCounts(1, 1, 0);
+  }
+
+  @Test
+  void onPayloadAttestationAdded_ignoresWhenPayloadNotPresent() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+
+    captureOperationAddedSubscriber()
+        .onOperationAdded(
+            mockMessage(dataStructureUtil.randomBytes32(), false),
+            InternalValidationResult.ACCEPT,
+            true);
+
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
+  void shouldCancelRequestWhenRequiredBlockRootDropped() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(beaconBlockRoot);
+    assertTaskCounts(1, 1, 0);
+
+    final ArgumentCaptor<RequiredBlockRootDroppedSubscriber> captor =
+        ArgumentCaptor.forClass(RequiredBlockRootDroppedSubscriber.class);
+    verify(pendingPayloadAttestationsPool).subscribeRequiredBlockRootDropped(captor.capture());
+    captor.getValue().onRequiredBlockRootDropped(beaconBlockRoot);
+
+    verify(tasks.getFirst()).cancel();
+  }
+
+  @Test
+  void onSyncStopped_replaysRequestsMadeDuringSync() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+    when(forwardSync.isSyncActive()).thenReturn(true);
+
+    final Bytes32 firstRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 secondRoot = dataStructureUtil.randomBytes32();
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(firstRoot);
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(secondRoot);
+    assertTaskCounts(0, 0, 0);
+
+    when(forwardSync.isSyncActive()).thenReturn(false);
+    captureSyncSubscriber().onSyncingChange(false);
+
+    assertTaskCounts(2, 2, 0);
+  }
+
+  @Test
+  void onSyncStopped_doesNotReplayCanceledRequests() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+    when(forwardSync.isSyncActive()).thenReturn(true);
+
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(beaconBlockRoot);
+    recentExecutionPayloadsFetchService.cancelRecentExecutionPayloadRequest(beaconBlockRoot);
+
+    when(forwardSync.isSyncActive()).thenReturn(false);
+    captureSyncSubscriber().onSyncingChange(false);
+
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
   void shouldNotFetchBlocksWhileForwardSyncIsInProgress() {
     when(forwardSync.isSyncActive()).thenReturn(true);
 
     recentExecutionPayloadsFetchService.requestRecentExecutionPayload(
         dataStructureUtil.randomBytes32());
     assertTaskCounts(0, 0, 0);
+  }
+
+  private SyncSubscriber captureSyncSubscriber() {
+    final ArgumentCaptor<SyncSubscriber> captor = ArgumentCaptor.forClass(SyncSubscriber.class);
+    verify(forwardSync).subscribeToSyncChanges(captor.capture());
+    return captor.getValue();
+  }
+
+  @SuppressWarnings("unchecked")
+  private OperationAddedSubscriber<PayloadAttestationMessage> captureOperationAddedSubscriber() {
+    final ArgumentCaptor<OperationAddedSubscriber<PayloadAttestationMessage>> captor =
+        ArgumentCaptor.forClass(OperationAddedSubscriber.class);
+    verify(payloadAttestationPool).subscribeOperationAdded(captor.capture());
+    return captor.getValue();
+  }
+
+  private PayloadAttestationMessage mockMessage(
+      final Bytes32 beaconBlockRoot, final boolean payloadPresent) {
+    final PayloadAttestationMessage message = mock(PayloadAttestationMessage.class);
+    final PayloadAttestationData data = mock(PayloadAttestationData.class);
+    when(message.getData()).thenReturn(data);
+    when(data.isPayloadPresent()).thenReturn(payloadPresent);
+    lenient().when(data.getBeaconBlockRoot()).thenReturn(beaconBlockRoot);
+    return message;
   }
 
   private FetchExecutionPayloadTask createMockTask(final InvocationOnMock invocationOnMock) {

@@ -72,8 +72,8 @@ public class BlobSidecarGossipValidator {
         invalidBlockRoots,
         validationHelper,
         miscHelpersDeneb,
-        LimitedSet.createSynchronized(validInfoSize),
-        LimitedSet.createSynchronized(validSignedBlockHeadersSize));
+        LimitedSet.createSynchronizedLRU(validInfoSize),
+        LimitedSet.createSynchronizedLRU(validSignedBlockHeadersSize));
   }
 
   @VisibleForTesting

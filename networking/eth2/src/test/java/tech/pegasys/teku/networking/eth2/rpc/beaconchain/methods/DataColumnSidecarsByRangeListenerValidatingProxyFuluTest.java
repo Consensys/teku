@@ -86,7 +86,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyFuluTest
             ONE,
             UInt64.valueOf(1),
             columns,
-            combinedChainDataClient);
+            blobKzgCommitmentsProvider);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecar(block1, ZERO);

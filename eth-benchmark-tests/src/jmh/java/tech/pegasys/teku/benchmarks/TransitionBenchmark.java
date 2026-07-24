@@ -42,13 +42,14 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -62,9 +63,8 @@ public abstract class TransitionBenchmark {
   Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
-
-  @SuppressWarnings("deprecation")
-  BeaconChainUtil localChain;
+  ChainBuilder chainBuilder;
+  ChainUpdater chainUpdater;
 
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
@@ -75,11 +75,10 @@ public abstract class TransitionBenchmark {
   int validatorsCount;
 
   @Setup(Level.Trial)
-  @SuppressWarnings("deprecation")
   public void init() throws Exception {
     spec =
         TestSpecFactory.createMainnetAltair(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
     String blocksFile =
@@ -105,8 +104,9 @@ public abstract class TransitionBenchmark {
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());
-    localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
-    localChain.initializeStorage();
+    chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+    chainUpdater.initializeGenesis(false);
 
     blockImporter =
         new BlockImporter(
@@ -136,7 +136,7 @@ public abstract class TransitionBenchmark {
       block = prefetchedBlock;
       prefetchedBlock = null;
     }
-    localChain.setSlot(block.getSlot());
+    chainUpdater.setCurrentSlot(block.getSlot());
     lastResult = blockImporter.importBlock(block).join();
     if (!lastResult.isSuccessful()) {
       throw new RuntimeException("Unable to import block: " + lastResult);

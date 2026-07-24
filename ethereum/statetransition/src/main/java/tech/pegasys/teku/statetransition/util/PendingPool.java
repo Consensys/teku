@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,11 +54,15 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
   private final NavigableSet<SlotAndRoot> orderedPendingItems =
       new TreeSet<>(SLOT_AND_ROOT_COMPARATOR);
   private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot = new HashMap<>();
+  private final Map<Bytes32, Long> pendingItemWeights = new HashMap<>();
   private final int maxItems;
+  private final long maxTotalWeight;
+  private long totalWeight = 0;
 
   private final Function<T, Bytes32> hashTreeRootFunction;
   private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
   private final Function<T, UInt64> targetSlotFunction;
+  private final ToLongFunction<T> itemWeightFunction;
   private final SettableLabelledGauge sizeGauge;
 
   PendingPool(
@@ -70,32 +75,90 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UInt64> targetSlotFunction) {
+    this(
+        sizeGauge,
+        itemType,
+        spec,
+        historicalSlotTolerance,
+        futureSlotTolerance,
+        maxItems,
+        Long.MAX_VALUE,
+        __ -> 1L,
+        hashTreeRootFunction,
+        requiredBlockRootsFunction,
+        targetSlotFunction);
+  }
+
+  PendingPool(
+      final SettableLabelledGauge sizeGauge,
+      final String itemType,
+      final Spec spec,
+      final UInt64 historicalSlotTolerance,
+      final UInt64 futureSlotTolerance,
+      final int maxItems,
+      final long maxTotalWeight,
+      final ToLongFunction<T> itemWeightFunction,
+      final Function<T, Bytes32> hashTreeRootFunction,
+      final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
+      final Function<T, UInt64> targetSlotFunction) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
+    if (maxTotalWeight < 0) {
+      throw new IllegalArgumentException("Max total pending pool weight must not be negative");
+    }
     this.itemType = itemType;
     this.maxItems = maxItems;
+    this.maxTotalWeight = maxTotalWeight;
+    this.itemWeightFunction = itemWeightFunction;
     this.hashTreeRootFunction = hashTreeRootFunction;
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
     this.sizeGauge = sizeGauge;
-    sizeGauge.set(0, itemType); // Init the label so it appears in metrics immediately
+    initMetricsLabel(); // Init the label so it appears in metrics immediately
+  }
+
+  public void initMetricsLabel() {
+    sizeGauge.set(0, itemType);
   }
 
   public synchronized void add(final T item) {
-    if (shouldIgnoreItemAtSlot(targetSlotFunction.apply(item))) {
+    final UInt64 slot = targetSlotFunction.apply(item);
+    if (shouldIgnoreItemAtSlot(slot)) {
       // Ignore items outside of the range we care about
       return;
     }
 
-    // Make room for the new item
-    while (pendingItems.size() > (maxItems - 1)) {
-      final SlotAndRoot toRemove = orderedPendingItems.pollFirst();
-      if (toRemove == null) {
-        break;
-      }
-      remove(pendingItems.get(toRemove.getRoot()));
+    if (maxItems <= 0) {
+      return;
     }
 
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
+    if (pendingItems.containsKey(itemRoot)) {
+      return;
+    }
+
+    final long itemWeight = getItemWeight(item);
+    if (itemWeight > maxTotalWeight) {
+      LOG.trace(
+          "Dropping unattached item at slot {} because its weight {} exceeds the pending pool limit {}",
+          slot,
+          itemWeight,
+          maxTotalWeight);
+      return;
+    }
+
+    while (shouldRemoveOldestItemBeforeAdding(itemWeight)) {
+      if (!removeOldestItem()) {
+        break;
+      }
+    }
+
+    if (shouldRemoveOldestItemBeforeAdding(itemWeight)) {
+      LOG.trace(
+          "Dropping unattached item at slot {} because no pending pool capacity is available",
+          slot);
+      return;
+    }
+
     final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
     final ArrayList<Bytes32> newRequiredRoots = new ArrayList<>();
 
@@ -112,28 +175,37 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
                     })
                 .add(itemRoot));
 
+    pendingItems.put(itemRoot, item);
+    pendingItemWeights.put(itemRoot, itemWeight);
+    totalWeight += itemWeight;
+    orderedPendingItems.add(toSlotAndRoot(item));
+    LOG.trace("Save unattached item at slot {} for future import: {}", slot, item);
+    sizeGauge.set(pendingItems.size(), itemType);
+
     newRequiredRoots.forEach(
         requiredRoot ->
             requiredBlockRootSubscribers.forEach(s -> s.onRequiredBlockRoot(requiredRoot)));
-
-    // Index item by root
-    if (pendingItems.putIfAbsent(itemRoot, item) == null) {
-      LOG.trace(
-          "Save unattached item at slot {} for future import: {}",
-          targetSlotFunction.apply(item),
-          item);
-      sizeGauge.set(pendingItems.size(), itemType);
-    }
-
-    orderedPendingItems.add(toSlotAndRoot(item));
   }
 
   public synchronized void remove(final T item) {
-    final SlotAndRoot itemSlotAndRoot = toSlotAndRoot(item);
-    orderedPendingItems.remove(itemSlotAndRoot);
-    pendingItems.remove(itemSlotAndRoot.getRoot());
+    if (item == null) {
+      return;
+    }
 
-    final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
+    final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
+    final T removedItem = pendingItems.remove(itemRoot);
+    if (removedItem == null) {
+      return;
+    }
+
+    final SlotAndRoot itemSlotAndRoot = toSlotAndRoot(removedItem);
+    orderedPendingItems.remove(itemSlotAndRoot);
+    final Long removedWeight = pendingItemWeights.remove(itemRoot);
+    if (removedWeight != null) {
+      totalWeight -= removedWeight;
+    }
+
+    final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(removedItem);
     requiredRoots.forEach(
         requiredRoot -> {
           Set<Bytes32> childSet = pendingItemsByRequiredBlockRoot.get(requiredRoot);
@@ -147,6 +219,16 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
           }
         });
     sizeGauge.set(pendingItems.size(), itemType);
+  }
+
+  @VisibleForTesting
+  synchronized long getTotalWeight() {
+    return totalWeight;
+  }
+
+  @VisibleForTesting
+  long getMaxTotalWeight() {
+    return maxTotalWeight;
   }
 
   public synchronized int size() {
@@ -261,6 +343,27 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
     final UInt64 slot = targetSlotFunction.apply(item);
     final Bytes32 root = hashTreeRootFunction.apply(item);
     return new SlotAndRoot(slot, root);
+  }
+
+  private long getItemWeight(final T item) {
+    final long itemWeight = itemWeightFunction.applyAsLong(item);
+    if (itemWeight < 0) {
+      throw new IllegalArgumentException("Pending pool item weight must not be negative");
+    }
+    return itemWeight;
+  }
+
+  private boolean shouldRemoveOldestItemBeforeAdding(final long itemWeight) {
+    return pendingItems.size() > (maxItems - 1) || maxTotalWeight - totalWeight < itemWeight;
+  }
+
+  private boolean removeOldestItem() {
+    final SlotAndRoot toRemove = orderedPendingItems.pollFirst();
+    if (toRemove == null) {
+      return false;
+    }
+    remove(pendingItems.get(toRemove.getRoot()));
+    return true;
   }
 
   public interface RequiredBlockRootSubscriber {

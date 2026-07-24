@@ -89,7 +89,7 @@ public class GetAttestationData extends RestApiEndpoint {
                 EthereumTypes.sszResponseType(
                     attestationData -> spec.atSlot(attestationData.getSlot()).getMilestone()))
             .withNotFoundResponse()
-            .withNotAcceptedResponse()
+            .withNotAcceptableResponse()
             .withChainDataResponses()
             .build());
     this.provider = provider;

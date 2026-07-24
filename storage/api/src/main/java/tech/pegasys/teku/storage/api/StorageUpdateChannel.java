@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -35,6 +36,7 @@ public interface StorageUpdateChannel extends ChannelInterface {
   SafeFuture<Void> onFinalizedBlocks(
       Collection<SignedBeaconBlock> finalizedBlocks,
       Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       Optional<UInt64> maybeEarliestBlobSidecarSlot);
 
   SafeFuture<Void> onReconstructedFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);

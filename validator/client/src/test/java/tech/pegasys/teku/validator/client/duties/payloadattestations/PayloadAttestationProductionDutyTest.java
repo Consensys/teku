@@ -21,8 +21,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
@@ -122,6 +124,44 @@ class PayloadAttestationProductionDutyTest {
             List.of(createExpectedMessage(data, validatorIndex, signature)));
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(data.getBeaconBlockRoot()), Optional.empty());
+  }
+
+  @TestTemplate
+  void shouldTreatEmptyPayloadAttestationDataFutureAsNoop() {
+    final Validator validator = createValidator();
+    final UInt64 validatorIndex = UInt64.valueOf(23);
+
+    duty.addValidator(validator, validatorIndex);
+
+    when(validatorApiChannel.createPayloadAttestationData(SLOT))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    performAndReportDuty();
+
+    verify(validatorApiChannel).createPayloadAttestationData(SLOT);
+    verifyNoMoreInteractions(validatorApiChannel);
+    verifyNoInteractions(validator.getSigner());
+    verifyNoInteractions(validatorLogger);
+  }
+
+  @TestTemplate
+  void shouldFailWhenPayloadAttestationDataFutureIsExceptional() {
+    final Validator validator = createValidator();
+    final UInt64 validatorIndex = UInt64.valueOf(23);
+    final RuntimeException failure = new RuntimeException("Unable to create payload attestation");
+
+    duty.addValidator(validator, validatorIndex);
+
+    when(validatorApiChannel.createPayloadAttestationData(SLOT)).thenReturn(failedFuture(failure));
+
+    performAndReportDuty();
+
+    verify(validatorApiChannel).createPayloadAttestationData(SLOT);
+    verifyNoMoreInteractions(validatorApiChannel);
+    verifyNoInteractions(validator.getSigner());
+    verify(validatorLogger)
+        .dutyFailed(TYPE, SLOT, Set.of(validator.getPublicKey().toAbbreviatedString()), failure);
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @TestTemplate

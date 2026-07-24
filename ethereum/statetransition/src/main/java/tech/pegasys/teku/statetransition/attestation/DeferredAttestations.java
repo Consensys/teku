@@ -13,22 +13,15 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.newSetFromMap;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.BiConsumer;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
 /**
@@ -46,17 +39,18 @@ import tech.pegasys.teku.storage.protoarray.DeferredVotes;
  */
 public class DeferredAttestations {
 
-  private final ConcurrentNavigableMap<UInt64, DeferredVoteUpdates> deferredVoteUpdatesBySlot =
+  private final ConcurrentNavigableMap<UInt64, VoteUpdates> deferredVoteUpdatesBySlot =
       new ConcurrentSkipListMap<>();
 
-  public void addAttestation(final IndexedAttestation attestation) {
+  public void addAttestation(
+      final IndexedAttestationLight attestation, final boolean fullPayloadHint) {
     deferredVoteUpdatesBySlot
-        .computeIfAbsent(attestation.getData().getSlot(), DeferredVoteUpdates::new)
-        .addAttestation(attestation);
+        .computeIfAbsent(attestation.data().getSlot(), VoteUpdates::new)
+        .addAttestation(attestation, fullPayloadHint);
   }
 
   public Collection<DeferredVotes> prune(final UInt64 currentSlot) {
-    final ConcurrentNavigableMap<UInt64, DeferredVoteUpdates> removedVotes =
+    final ConcurrentNavigableMap<UInt64, VoteUpdates> removedVotes =
         deferredVoteUpdatesBySlot.headMap(currentSlot, false);
     final List<DeferredVotes> votesToApply = new ArrayList<>(removedVotes.values());
     removedVotes.clear();
@@ -66,40 +60,5 @@ public class DeferredAttestations {
   @VisibleForTesting
   Optional<DeferredVotes> getDeferredVotesFromSlot(final UInt64 slot) {
     return Optional.ofNullable(deferredVoteUpdatesBySlot.get(slot));
-  }
-
-  public static class DeferredVoteUpdates implements DeferredVotes {
-    private final UInt64 slot;
-    private final Map<Bytes32, Collection<UInt64>> votingIndicesByBlockRoot =
-        new ConcurrentHashMap<>();
-
-    private DeferredVoteUpdates(final UInt64 slot) {
-      this.slot = slot;
-    }
-
-    @Override
-    public UInt64 getSlot() {
-      return slot;
-    }
-
-    @Override
-    public void forEachDeferredVote(final BiConsumer<Bytes32, UInt64> consumer) {
-      votingIndicesByBlockRoot.forEach(
-          (blockRoot, indices) ->
-              indices.forEach(validatorIndex -> consumer.accept(blockRoot, validatorIndex)));
-    }
-
-    private void addAttestation(final IndexedAttestation attestation) {
-      checkArgument(
-          attestation.getData().getSlot().equals(slot),
-          "Attempting to store deferred attestation for wrong slot. Expected %s but got %s",
-          slot,
-          attestation.getData().getSlot());
-      final Bytes32 blockRoot = attestation.getData().getBeaconBlockRoot();
-      final Collection<UInt64> attestingIndices =
-          votingIndicesByBlockRoot.computeIfAbsent(
-              blockRoot, __ -> newSetFromMap(new ConcurrentHashMap<>()));
-      attestingIndices.addAll(attestation.getAttestingIndices().asListUnboxed());
-    }
   }
 }

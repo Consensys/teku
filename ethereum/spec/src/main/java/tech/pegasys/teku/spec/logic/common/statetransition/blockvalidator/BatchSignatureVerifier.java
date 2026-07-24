@@ -21,7 +21,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 
 public interface BatchSignatureVerifier extends BLSSignatureVerifier {
 
-  BatchSignatureVerifier NO_OP =
+  BatchSignatureVerifier NOOP =
       new BatchSignatureVerifier() {
         @Override
         public boolean verify(

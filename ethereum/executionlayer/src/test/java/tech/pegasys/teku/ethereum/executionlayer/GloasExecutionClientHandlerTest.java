@@ -32,8 +32,8 @@ import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV6Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -71,20 +72,20 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayloadContext context = randomContext();
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
-    final GetPayloadV5Response responseData =
-        new GetPayloadV5Response(
+    final GetPayloadV6Response responseData =
+        new GetPayloadV6Response(
             ExecutionPayloadV4.fromInternalExecutionPayload(
-                dataStructureUtil.randomExecutionPayload(slot), slot),
+                dataStructureUtil.randomExecutionPayload(slot)),
             UInt256.MAX_VALUE,
             BlobsBundleV2.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
             true,
             dataStructureUtil.randomEncodedExecutionRequests());
-    final SafeFuture<Response<GetPayloadV5Response>> dummyResponse =
+    final SafeFuture<Response<GetPayloadV6Response>> dummyResponse =
         SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
-    when(executionEngineClient.getPayloadV5(context.getPayloadId())).thenReturn(dummyResponse);
+    when(executionEngineClient.getPayloadV6(context.getPayloadId())).thenReturn(dummyResponse);
 
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
-    verify(executionEngineClient).getPayloadV5(context.getPayloadId());
+    verify(executionEngineClient).getPayloadV6(context.getPayloadId());
     final SchemaDefinitionsFulu schemaDefinitionGloas =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionPayloadSchema<?> executionPayloadSchema =
@@ -92,7 +93,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final BlobSchema blobSchema = schemaDefinitionGloas.getBlobSchema();
     final GetPayloadResponse expectedGetPayloadResponse =
         responseData.asInternalGetPayloadResponse(
-            executionPayloadSchema, blobSchema, schemaDefinitionGloas.getExecutionRequestsSchema());
+            executionPayloadSchema, blobSchema, spec.getExecutionRequestsDataCodec(slot));
     assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 
@@ -107,8 +108,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final NewPayloadRequest newPayloadRequest =
         new NewPayloadRequest(
             payload, versionedHashes, parentBeaconBlockRoot, encodedExecutionRequests);
-    final ExecutionPayloadV4 payloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(payload, slot);
+    final ExecutionPayloadV4 payloadV4 = ExecutionPayloadV4.fromInternalExecutionPayload(payload);
     final PayloadStatusV1 responseData =
         new PayloadStatusV1(
             ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
@@ -136,6 +136,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final UInt64 targetGasLimit = dataStructureUtil.randomUInt64();
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
@@ -143,12 +144,13 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
+            targetGasLimit,
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomBytes32());
-    final PayloadAttributesV3 payloadAttributes =
-        PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes))
-            .orElseThrow();
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
+    final PayloadAttributesV4 payloadAttributes =
+        PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(attributes);
+    assertThat(payloadAttributes.targetGasLimit).isEqualTo(targetGasLimit);
     final ForkChoiceUpdatedResult responseData =
         new ForkChoiceUpdatedResult(
             new PayloadStatusV1(
@@ -156,13 +158,13 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
         SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
-    when(executionEngineClient.forkChoiceUpdatedV3(
+    when(executionEngineClient.forkChoiceUpdatedV4(
             forkChoiceStateV1, Optional.of(payloadAttributes)))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient)
-        .forkChoiceUpdatedV3(forkChoiceStateV1, Optional.of(payloadAttributes));
+        .forkChoiceUpdatedV4(forkChoiceStateV1, Optional.of(payloadAttributes));
     assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 

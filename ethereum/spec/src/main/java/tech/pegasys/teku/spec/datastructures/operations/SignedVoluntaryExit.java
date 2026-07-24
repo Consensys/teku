@@ -18,6 +18,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -73,7 +74,7 @@ public class SignedVoluntaryExit
   }
 
   @Override
-  public int getValidatorId() {
-    return getMessage().getValidatorIndex().intValue();
+  public UInt64 getValidatorId() {
+    return getMessage().getValidatorIndex();
   }
 }

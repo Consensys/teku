@@ -81,13 +81,19 @@ public class BlobSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
+    final UInt64 maxSlot;
+    try {
+      maxSlot = request.getMaxSlot();
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
 
     final SpecConfigDeneb specConfig =
-        SpecConfigDeneb.required(
-            spec.atSlot(getEndSlotBeforeFulu(request.getMaxSlot())).getConfig());
+        SpecConfigDeneb.required(spec.atSlot(getEndSlotBeforeFulu(maxSlot)).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
-    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(request.getMaxSlot()).orElseThrow();
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(maxSlot).orElseThrow();
 
     final int requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
@@ -123,12 +129,19 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
+    if (!peer.approveRequest()) {
+      requestCounter.labels("rate_limited").inc();
+      return;
+    }
+
     if (startSlot.isGreaterThan(spec.blobSidecarsDeprecationSlot())) {
       LOG.trace(
           "Peer {} requested {} slots of blob sidecars starting at slot {} after Fulu. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
           peer.getId(),
           message.getCount(),
           startSlot);
+      requestCounter.labels("ignored").inc();
+      callback.completeSuccessfully();
       return;
     }
 
@@ -141,7 +154,7 @@ public class BlobSidecarsByRangeMessageHandler
     final Optional<RequestKey> maybeRequestKey =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
 
-    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
+    if (maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }

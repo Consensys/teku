@@ -26,6 +26,7 @@ public enum ValidatorApiMethod {
   SEND_SIGNED_BLOCK_V2("eth/v2/beacon/blocks"),
   SEND_SIGNED_BLINDED_BLOCK_V2("eth/v2/beacon/blinded_blocks"),
   GET_ATTESTATION_DATA("eth/v1/validator/attestation_data"),
+  GET_PAYLOAD_ATTESTATION_DATA("eth/v1/validator/payload_attestation_data"),
   SEND_SIGNED_ATTESTATION("eth/v1/beacon/pool/attestations"),
   SEND_SIGNED_ATTESTATION_V2("eth/v2/beacon/pool/attestations"),
   SEND_SIGNED_VOLUNTARY_EXIT("eth/v1/beacon/pool/voluntary_exits"),
@@ -50,7 +51,8 @@ public enum ValidatorApiMethod {
   EVENTS("eth/v1/events"),
   SEND_VALIDATOR_LIVENESS("/eth/v1/validator/liveness/:epoch"),
   BEACON_COMMITTEE_SELECTIONS("/eth/v1/validator/beacon_committee_selections"),
-  SYNC_COMMITTEE_SELECTIONS("/eth/v1/validator/sync_committee_selections");
+  SYNC_COMMITTEE_SELECTIONS("/eth/v1/validator/sync_committee_selections"),
+  SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE("eth/v1/beacon/execution_payload_envelopes");
 
   private final String path;
 

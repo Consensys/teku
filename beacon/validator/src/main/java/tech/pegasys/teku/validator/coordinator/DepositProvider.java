@@ -27,13 +27,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ethereum.pow.merkletree.DepositTree;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
@@ -52,12 +50,9 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DepositProvider
-    implements SlotEventsChannel, Eth1EventsChannel, FinalizedCheckpointChannel {
+public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final EventLogger eventLogger;
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
@@ -68,10 +63,7 @@ public class DepositProvider
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
   private final Spec spec;
-  private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
   private final DepositUtil depositUtil;
-  private final boolean useMissingDepositEventLogging;
-  private boolean inSync = false;
 
   public DepositProvider(
       final MetricsSystem metricsSystem,
@@ -79,10 +71,7 @@ public class DepositProvider
       final Eth1DataCache eth1DataCache,
       final StorageUpdateChannel storageUpdateChannel,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
-      final Spec spec,
-      final EventLogger eventLogger,
-      final boolean useMissingDepositEventLogging) {
-    this.eventLogger = eventLogger;
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -95,7 +84,6 @@ public class DepositProvider
             TekuMetricCategory.BEACON,
             "eth1_deposit_total",
             "Total number of received ETH1 deposits");
-    this.useMissingDepositEventLogging = useMissingDepositEventLogging;
   }
 
   @Override
@@ -173,44 +161,10 @@ public class DepositProvider
   @Override
   public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
-  @Override
-  public void onSlot(final UInt64 slot) {
-    if (!inSync || !useMissingDepositEventLogging || recentChainData.getBestState().isEmpty()) {
-      return;
-    }
-
-    recentChainData
-        .getBestState()
-        .get()
-        .thenAccept(
-            state -> {
-              if (spec.isFormerDepositMechanismDisabled(state)) {
-                return;
-              }
-              // We want to verify our Beacon Node view of the eth1 deposits.
-              // So we want to check if it has the necessary deposit data to propose a block
-              final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
-
-              final UInt64 lastAvailableDepositIndex =
-                  depositNavigableMap.isEmpty()
-                      ? state.getEth1DepositIndex()
-                      : state.getEth1DepositIndex().max(depositNavigableMap.lastKey().plus(ONE));
-              if (lastAvailableDepositIndex.isLessThan(eth1DepositCount)) {
-                eventLogger.eth1DepositDataNotAvailable(
-                    lastAvailableDepositIndex.plus(UInt64.ONE), eth1DepositCount);
-              }
-            })
-        .finishStackTrace();
-  }
-
-  public void onSyncingStatusChanged(final boolean inSync) {
-    this.inSync = inSync;
-  }
-
   public synchronized SszList<Deposit> getDeposits(
       final BeaconState state, final Eth1Data eth1Data) {
-    final long maxDeposits = spec.getMaxDeposits(state);
-    final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    final SszListSchema<Deposit, ?> depositsSchema =
+        spec.atSlot(state.getSlot()).getSchemaDefinitions().getDepositsSchema();
     return getDepositsWithIndex(state, eth1Data).stream()
         .map(DepositWithIndex::deposit)
         .collect(depositsSchema.collector());
@@ -325,18 +279,5 @@ public class DepositProvider
   public synchronized void onInitialDepositTreeSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
     this.depositMerkleTree = DepositTree.fromSnapshot(depositTreeSnapshot);
-  }
-
-  private static class DepositsSchemaCache {
-    private SszListSchema<Deposit, ?> cachedSchema;
-
-    public SszListSchema<Deposit, ?> get(final long maxDeposits) {
-      SszListSchema<Deposit, ?> cachedSchemaLoc = cachedSchema;
-      if (cachedSchemaLoc == null || maxDeposits != cachedSchemaLoc.getMaxLength()) {
-        cachedSchemaLoc = SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits);
-        cachedSchema = cachedSchemaLoc;
-      }
-      return cachedSchemaLoc;
-    }
   }
 }

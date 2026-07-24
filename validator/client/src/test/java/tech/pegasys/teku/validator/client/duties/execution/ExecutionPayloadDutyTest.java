@@ -18,9 +18,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadDuty.EXECUTION_PAYLOAD_DUTY_DELAY_FOR_SELF_BUILT_BID;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
@@ -58,8 +55,7 @@ class ExecutionPayloadDutyTest {
               Optional.of(dataStructureUtil.randomBytes32()), Optional.empty()));
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private ExecutionPayloadDuty duty;
 
@@ -87,13 +83,6 @@ class ExecutionPayloadDutyTest {
 
     duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid);
 
-    // delayed
-    asyncRunner.executeDueActions();
-
-    verifyNoInteractions(validatorApiChannel, validatorLogger);
-
-    timeProvider.advanceTimeBy(EXECUTION_PAYLOAD_DUTY_DELAY_FOR_SELF_BUILT_BID);
-
     // should execute now
     asyncRunner.executeDueActions();
 
@@ -115,8 +104,6 @@ class ExecutionPayloadDutyTest {
         .thenReturn(SafeFuture.failedFuture(exception));
 
     duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid);
-
-    timeProvider.advanceTimeBy(EXECUTION_PAYLOAD_DUTY_DELAY_FOR_SELF_BUILT_BID);
     asyncRunner.executeDueActions();
 
     verify(validatorLogger)

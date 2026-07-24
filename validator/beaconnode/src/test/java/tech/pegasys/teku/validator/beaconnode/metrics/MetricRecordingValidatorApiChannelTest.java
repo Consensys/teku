@@ -169,7 +169,11 @@ class MetricRecordingValidatorApiChannelTest {
         noResponseTest(
             "subscribeToPersistentSubnets",
             channel -> channel.subscribeToPersistentSubnets(emptySet()),
-            BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD));
+            BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD),
+        noResponseTest(
+            "sendSignedProposerPreferences",
+            channel -> channel.sendSignedProposerPreferences(emptyList()),
+            BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD));
   }
 
   private static Arguments noResponseTest(

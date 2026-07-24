@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -66,7 +65,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   /**
    * Perform slot timing gossip validation checks Gossip rule: [IGNORE] The sidecar is not from a
    * future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. validate that
-   * block_header.slot <= current_slot (a client MAY queue future sidecars for processing at the
+   * block_header.slot &lt;= current_slot (a client MAY queue future sidecars for processing at the
    * appropriate slot).
    *
    * @param dataColumnSidecar the data column sidecar to validate
@@ -316,42 +315,28 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return Optional.of(proofInfo);
   }
 
-  /**
-   * Perform async KZG proof validation for Fulu data column sidecars.
-   *
-   * <p>Gossip rule:
-   *
-   * <ul>
-   *   <li>[REJECT] The sidecar's column data is valid as verified by
-   *       verify_data_column_sidecar_kzg_proofs(sidecar).
-   * </ul>
-   *
-   * <p>Note: In Fulu, the KZG commitments are embedded directly in the sidecar (via the inclusion
-   * proof), so block retrieval is not required. Structural verification of the sidecar (commitments
-   * count, cells count, etc.) is performed separately in {@link
-   * #verifyDataColumnSidecarStructure(DataColumnSidecar)}, which must be called before this method.
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param retrieveSignedBlockByRoot unused in Fulu — block retrieval is not needed since KZG
-   *     commitments are available directly from the sidecar
-   * @return SafeFuture with optional validation error. Empty means validation passed, present means
-   *     validation found an issue.
-   */
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofs(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
-    try {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
-        return SafeFuture.completedFuture(
-            Optional.of(
-                DataColumnSidecarValidationError.Critical.format(
-                    "Invalid DataColumnSidecar KZG Proofs")));
-      }
-      return SafeFuture.completedFuture(Optional.empty());
-    } catch (final Throwable t) {
-      return SafeFuture.failedFuture(t);
-    }
+      final Function<DataColumnSidecar, SafeFuture<Optional<SszList<SszKZGCommitment>>>>
+          retrieveBlobKzgCommitments) {
+    return retrieveBlobKzgCommitments
+        .apply(dataColumnSidecar)
+        .thenApply(
+            maybeBlobKzgCommitments -> {
+              if (maybeBlobKzgCommitments.isEmpty()) {
+                return Optional.of(
+                    DataColumnSidecarValidationError.BadTiming.format(
+                        "DataColumnSidecar's KZG commitments are unavailable"));
+              }
+              if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(
+                  dataColumnSidecar, maybeBlobKzgCommitments.get())) {
+                return Optional.of(
+                    DataColumnSidecarValidationError.Critical.format(
+                        "Invalid DataColumnSidecar KZG Proofs"));
+              }
+              return Optional.empty();
+            });
   }
 
   /**

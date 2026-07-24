@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,7 +31,9 @@ import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -60,13 +65,22 @@ class ExecutionPayloadPublisherGloasTest {
 
   final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
+  final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload =
+      signedExecutionPayload.blind(spec);
   final List<DataColumnSidecar> dataColumnSidecars =
       List.of(dataStructureUtil.randomDataColumnSidecar());
 
   @BeforeEach
   public void setUp() {
-    when(executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.ACCEPT,
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            ExecutionPayloadImportResult.successful(signedExecutionPayload))))));
     when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
     when(executionPayloadGossipChannel.publishExecutionPayload(signedExecutionPayload))
@@ -87,15 +101,76 @@ class ExecutionPayloadPublisherGloasTest {
   }
 
   @Test
-  public void publishSignedExecutionPayload_shouldReturnRejectedResultIfGossipValidationFails() {
-    when(executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("oopsy")));
+  public void publishSignedBlindedExecutionPayload_shouldReconstructFromCacheAndPublish() {
+    when(executionPayloadFactory.unblindSignedExecutionPayload(signedBlindedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(signedExecutionPayload));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(
+                signedBlindedExecutionPayload, Optional.empty()))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.success(
+                signedBlindedExecutionPayload.getBeaconBlockRoot()));
+
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
+  }
+
+  @Test
+  public void publishSignedBlindedExecutionPayload_shouldRejectWhenNotCached() {
+    when(executionPayloadFactory.unblindSignedExecutionPayload(signedBlindedExecutionPayload))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("not cached")));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(
+                signedBlindedExecutionPayload, Optional.empty()))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedBlindedExecutionPayload.getBeaconBlockRoot(),
+                "No cached execution payload envelope found for blinded envelope"));
+
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldReturnRejectedResultIfBroadcastValidationFails() {
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.reject("oopsy"), Optional.empty())));
     SafeFutureAssert.assertThatSafeFuture(
             executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
         .isCompletedWithValue(
             PublishSignedExecutionPayloadResult.rejected(
-                signedExecutionPayload.getBeaconBlockRoot(), "Failed gossip validation: oopsy"));
+                signedExecutionPayload.getBeaconBlockRoot(), "Failed broadcast validation: oopsy"));
 
     verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldReturnNotImportedWhenIntegrationFails() {
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.ACCEPT,
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            ExecutionPayloadImportResult.failedExecution(
+                                new RuntimeException("el error")))))));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.notImported(
+                signedExecutionPayload.getBeaconBlockRoot(), "FAILED_EXECUTION"));
+
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
 }

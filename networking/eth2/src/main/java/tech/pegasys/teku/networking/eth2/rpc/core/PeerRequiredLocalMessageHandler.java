@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import com.google.common.base.Throwables;
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullExc
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
 public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMessageHandler<I, O> {
   private static final Logger LOG = LogManager.getLogger();
@@ -63,7 +65,12 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
       return;
     }
 
-    if (rootCause instanceof StreamClosedException || rootCause instanceof ClosedChannelException) {
+    // a closed/half-closed stream is expected peer churn; ChannelOutputShutdownException (e.g. the
+    // peer sent STOP_SENDING) is not a ClosedChannelException so it must be matched separately.
+    if (rootCause instanceof StreamClosedException
+        || rootCause instanceof ClosedChannelException
+        || rootCause instanceof ChannelOutputShutdownException
+        || rootCause instanceof StreamTimeoutException) {
       LOG.trace("Stream closed while sending requested {}", type, error);
       callback.completeWithUnexpectedError(error);
       return;

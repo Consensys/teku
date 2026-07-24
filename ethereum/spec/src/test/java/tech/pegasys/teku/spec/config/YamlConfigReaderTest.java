@@ -28,7 +28,7 @@ public class YamlConfigReaderTest {
   @Test
   void shouldReadSimpleObjectToStringMap() {
     final String testData =
-        """
+"""
 version: 250
 info: the info
 """;
@@ -40,7 +40,7 @@ info: the info
   @Test
   void shouldReadObjectWithListOfObjects() {
     final String testData =
-        """
+"""
 data:
   - a: 1
     aa: 11
@@ -62,7 +62,7 @@ data:
   @Test
   void shouldReadEth1Address() {
     final String testData =
-        """
+"""
 DEPOSIT_CONTRACT_ADDRESS: 0x4242424242424242424242424242424242424242
     """;
     final Map<String, Object> objData = reader.readValues(IOUtils.toInputStream(testData, UTF_8));

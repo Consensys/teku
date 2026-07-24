@@ -20,7 +20,9 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,25 +45,29 @@ public class PayloadAttestationMessageGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final SigningRootUtil signingRootUtil;
 
   private final Set<ValidatorIndexAndSlot> seenPayloadAttestations =
-      LimitedSet.createSynchronized(VALID_PAYLOAD_ATTESTATION_SET_SIZE);
+      LimitedSet.createSynchronizedLRU(VALID_PAYLOAD_ATTESTATION_SET_SIZE);
 
   public PayloadAttestationMessageGossipValidator(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
+    this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
     signingRootUtil = new SigningRootUtil(spec);
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final PayloadAttestationMessage payloadAttestationMessage) {
-    final PayloadAttestationData data = payloadAttestationMessage.getData();
+      final ValidatablePayloadAttestationMessage validatablePayloadAttestationMessage) {
+    final PayloadAttestationMessage payloadAttestationMessage =
+        validatablePayloadAttestationMessage.getMessage();
+    final PayloadAttestationData data = validatablePayloadAttestationMessage.getData();
 
     /*
      * [IGNORE] The message's slot is for the current slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance),
@@ -101,6 +107,31 @@ public class PayloadAttestationMessageGossipValidator {
     }
 
     /*
+     * [IGNORE] The block referenced by data.beacon_block_root is at slot data.slot,
+     * i.e. the block has block.slot == data.slot.
+     */
+    final Optional<UInt64> maybeBlockSlot =
+        gossipValidationHelper.getSlotForBlockRoot(data.getBeaconBlockRoot());
+    if (maybeBlockSlot.isEmpty()) {
+      LOG.trace(
+          "Payload attestations's block with root {} has no known slot. Saving for future processing",
+          data.getBeaconBlockRoot());
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+    final UInt64 blockSlot = maybeBlockSlot.get();
+    if (!blockSlot.equals(data.getSlot())) {
+      LOG.trace(
+          "Payload attestations's block with root {} is at slot {} but attestation is for slot {}",
+          data.getBeaconBlockRoot(),
+          blockSlot,
+          data.getSlot());
+      return completedFuture(
+          ignore(
+              "Payload attestations's block with root %s is at slot %s but attestation is for slot %s",
+              data.getBeaconBlockRoot(), blockSlot, data.getSlot()));
+    }
+
+    /*
      * [REJECT] The message's block data.beacon_block_root passes validation.
      */
     if (invalidBlockRoots.containsKey(data.getBeaconBlockRoot())) {
@@ -127,8 +158,9 @@ public class PayloadAttestationMessageGossipValidator {
                * The state is the head state corresponding to processing the block up to the current slot as determined
                * by the fork choice.
                */
-              if (!gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
-                  payloadAttestationMessage.getValidatorIndex(), state, data.getSlot())) {
+              final IntSet ptcPositions =
+                  validatablePayloadAttestationMessage.calculatePtcPositions(spec, state);
+              if (ptcPositions.isEmpty()) {
                 LOG.trace(
                     "Payload attestation's validator index {} is not in the payload committee for slot {}",
                     payloadAttestationMessage.getValidatorIndex(),

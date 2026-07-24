@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
 
 public class DataColumnSidecarsByRootListenerValidatingProxy
     extends DataColumnSidecarsByRootValidator implements RpcResponseListener<DataColumnSidecar> {
@@ -40,7 +40,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
       final TimeProvider timeProvider,
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
       final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider) {
     super(
         peer,
         spec,
@@ -55,7 +55,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
                             column ->
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .toList(),
-        combinedChainDataClient);
+        blobKzgCommitmentsProvider);
     this.listener = listener;
   }
 

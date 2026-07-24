@@ -35,6 +35,13 @@ import org.junit.jupiter.api.Test;
 class SwaggerWebjarIntegrityTest {
   private static final String VENDOR_COPY_PATH = "/swagger-ui/vendor";
 
+  @Test
+  public void swaggerUiBuilderShouldReferenceAvailableSwaggerUiWebjarVersion() {
+    assertThat(SwaggerUIBuilder.class.getResource(RESOURCES_WEBJARS_SWAGGER_UI + "swagger-ui.css"))
+        .as("SwaggerUIBuilder swagger-ui version should match org.webjars:swagger-ui")
+        .isNotNull();
+  }
+
   /**
    * `infrastructure/restapi/src/main/resources/swagger-ui/vendor` contains several files which
    * should match files with the same names in 'org.webjars:swagger-ui'.
@@ -58,7 +65,9 @@ class SwaggerWebjarIntegrityTest {
   }
 
   private byte[] getClasspathFile(final String path) throws IOException {
-    try (InputStream in = getClass().getResourceAsStream(path)) {
+    final InputStream in = getClass().getResourceAsStream(path);
+    assertThat(in).as("Classpath resource %s", path).isNotNull();
+    try (in) {
       return in.readAllBytes();
     }
   }

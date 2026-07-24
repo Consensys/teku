@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -32,6 +33,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -46,6 +53,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -130,6 +138,19 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedAttestations(attestations);
   }
 
+  public SafeFuture<List<SubmitDataError>> submitPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> messages) {
+    return validatorApiChannel.sendPayloadAttestationMessages(messages);
+  }
+
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    if (!isStoreAvailable()) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    }
+    return validatorApiChannel.createPayloadAttestationData(slot);
+  }
+
   public SafeFuture<SendSignedBlockResult> submitSignedBlock(
       final SignedBlockContainer signedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
@@ -141,6 +162,11 @@ public class ValidatorDataProvider {
       final BroadcastValidationLevel broadcastValidationLevel) {
     return validatorApiChannel.sendSignedBlock(
         signedBlindedBlockContainer, broadcastValidationLevel);
+  }
+
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return validatorApiChannel.publishSignedExecutionPayloadBid(signedExecutionPayloadBid);
   }
 
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(
@@ -198,6 +224,10 @@ public class ValidatorDataProvider {
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indices));
   }
 
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(final UInt64 epoch, final IntList indices) {
+    return SafeFuture.of(() -> validatorApiChannel.getPtcDuties(epoch, indices));
+  }
+
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch, true));
   }
@@ -225,6 +255,26 @@ public class ValidatorDataProvider {
   public SafeFuture<Void> prepareBeaconProposer(
       final List<BeaconPreparableProposer> beaconPreparableProposers) {
     return validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
+  }
+
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope envelope,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.publishSignedExecutionPayload(envelope, broadcastValidationLevel);
+  }
+
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents envelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.publishSignedExecutionPayload(
+        envelopeContents, broadcastValidationLevel);
+  }
+
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope blindedEnvelope,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.publishSignedExecutionPayload(
+        blindedEnvelope, broadcastValidationLevel);
   }
 
   public SafeFuture<Void> registerValidators(

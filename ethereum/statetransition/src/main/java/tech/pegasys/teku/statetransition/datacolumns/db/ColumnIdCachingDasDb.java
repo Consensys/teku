@@ -44,7 +44,7 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
     this.delegateDb = delegateDb;
     this.slotToNumberOfColumns = slotToNumberOfColumns;
     this.readSlotCaches = LimitedMap.createSynchronizedLRU(slotReadCacheSize);
-    this.latestAdded = LimitedSet.createSynchronized(sidecarsWriteCacheSize);
+    this.latestAdded = LimitedSet.createSynchronizedLRU(sidecarsWriteCacheSize);
   }
 
   private SlotCache getOrCreateSlotCache(final UInt64 slot) {

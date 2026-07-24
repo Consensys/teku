@@ -85,7 +85,10 @@ public class BlockProductionDuty implements Duty {
   @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
+    return forkProvider
+        .getForkInfo(slot)
+        .thenCompose(this::produceBlock)
+        .exceptionally(this::handleBlockProductionError);
   }
 
   private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
@@ -106,16 +109,16 @@ public class BlockProductionDuty implements Duty {
                 validatorDutyMetrics.record(
                     () -> sendBlock(signedBlockContainer, forkInfo),
                     this,
-                    ValidatorDutyMetricsSteps.SEND))
-        .exceptionally(
-            error -> {
-              LOG.debug(
-                  "Block production error for validator {} at slot {}: {}",
-                  validator.getPublicKey().toAbbreviatedString(),
-                  slot,
-                  error);
-              return DutyResult.forError(validator.getPublicKey(), error);
-            });
+                    ValidatorDutyMetricsSteps.SEND));
+  }
+
+  private DutyResult handleBlockProductionError(final Throwable error) {
+    LOG.debug(
+        "Block production error for validator {} at slot {}: {}",
+        validator.getPublicKey().toAbbreviatedString(),
+        slot,
+        error);
+    return DutyResult.forError(validator.getPublicKey(), error);
   }
 
   private SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {

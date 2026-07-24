@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -24,10 +25,13 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
+import io.libp2p.core.PeerId;
 import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,11 +59,14 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 @SuppressWarnings("unchecked")
 public class RpcHandlerTest {
 
+  private static final PeerId REMOTE_PEER_ID =
+      PeerId.fromBase58("16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5");
+
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
   StubMetricsSystem metricsSystem = new StubMetricsSystem();
   RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> rpcHandler =
-      new RpcHandler<>(asyncRunner, rpcMethod, metricsSystem);
+      new RpcHandler<>(asyncRunner, rpcMethod, metricsSystem, new InboundRpcStreamLimiter(128));
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);
@@ -86,6 +93,97 @@ public class RpcHandlerTest {
     when(controller.getRpcStream()).thenReturn(rpcStream);
     when(rpcStream.writeBytes(any())).thenReturn(writeFuture);
     when(stream.getProtocol()).thenReturn(protocolIdFuture);
+  }
+
+  @Test
+  void shouldRejectInboundStreamsAtLimitAndReleasePermitWhenStreamCloses() {
+    final InboundRpcStreamLimiter limiter = new InboundRpcStreamLimiter(1);
+    final RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> handler =
+        createRpcHandler(limiter);
+    final RpcRequestHandler requestHandler = mock(RpcRequestHandler.class);
+    when(rpcMethod.createIncomingRequestHandler(protocolId)).thenReturn(requestHandler);
+
+    final Stream firstStream = createP2PStream(false);
+    final AtomicReference<Controller<RpcRequestHandler>> firstController =
+        captureController(firstStream);
+    final SafeFuture<Controller<RpcRequestHandler>> firstInit =
+        handler.initChannel(firstStream, protocolId);
+    final ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+    firstController.get().channelActive(context);
+
+    assertThat(firstInit).isCompletedWithValue(firstController.get());
+    assertThat(limiter.getActiveStreams()).isOne();
+
+    final Stream rejectedStream = createP2PStream(false);
+    final SafeFuture<Controller<RpcRequestHandler>> rejectedInit =
+        handler.initChannel(rejectedStream, protocolId);
+
+    assertThatSafeFuture(rejectedInit).isCompletedExceptionallyWith(IllegalStateException.class);
+    verify(rejectedStream).close();
+    assertThat(limiter.getActiveStreams()).isOne();
+
+    firstController.get().handlerRemoved(context);
+
+    assertThat(limiter.getActiveStreams()).isZero();
+
+    final Stream replacementStream = createP2PStream(false);
+    final AtomicReference<Controller<RpcRequestHandler>> replacementController =
+        captureController(replacementStream);
+    final SafeFuture<Controller<RpcRequestHandler>> replacementInit =
+        handler.initChannel(replacementStream, protocolId);
+    replacementController.get().channelActive(context);
+
+    assertThat(replacementInit).isCompletedWithValue(replacementController.get());
+    assertThat(limiter.getActiveStreams()).isOne();
+    verify(replacementStream, never()).close();
+
+    replacementController.get().handlerRemoved(context);
+    assertThat(limiter.getActiveStreams()).isZero();
+  }
+
+  @Test
+  void shouldReleaseInboundPermitWhenHandlerInitializationFails() {
+    final InboundRpcStreamLimiter limiter = new InboundRpcStreamLimiter(1);
+    final RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> handler =
+        createRpcHandler(limiter);
+    final Stream inboundStream = createP2PStream(false);
+    when(rpcMethod.createIncomingRequestHandler(protocolId))
+        .thenThrow(new IllegalArgumentException("Invalid protocol"));
+
+    final SafeFuture<Controller<RpcRequestHandler>> initFuture =
+        handler.initChannel(inboundStream, protocolId);
+
+    assertThatSafeFuture(initFuture).isCompletedExceptionallyWith(IllegalArgumentException.class);
+    assertThat(limiter.getActiveStreams()).isZero();
+    verify(inboundStream).close();
+  }
+
+  @Test
+  void shouldNotApplyInboundLimitToOutboundStreams() {
+    final InboundRpcStreamLimiter limiter = new InboundRpcStreamLimiter(1);
+    assertThat(limiter.tryAcquire()).isTrue();
+    final RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> handler =
+        createRpcHandler(limiter);
+    final Stream outboundStream = createP2PStream(true);
+    final AtomicReference<Controller<RpcRequestHandler>> outboundController =
+        captureController(outboundStream);
+    final ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+
+    final SafeFuture<Controller<RpcRequestHandler>> initFuture =
+        handler.initChannel(outboundStream, protocolId);
+    outboundController.get().channelActive(context);
+
+    assertThat(initFuture).isCompletedWithValue(outboundController.get());
+    assertThat(limiter.getActiveStreams()).isOne();
+    verify(outboundStream, never()).close();
+    verify(rpcMethod, never()).createIncomingRequestHandler(any());
+
+    outboundController.get().handlerRemoved(context);
+
+    assertThat(limiter.getActiveStreams()).isOne();
+
+    limiter.release();
+    assertThat(limiter.getActiveStreams()).isZero();
   }
 
   @Test
@@ -405,5 +503,35 @@ public class RpcHandlerTest {
   private void assertRequestsFailedCounterValue(final long expectedValue) {
     assertThat(metricsSystem.getCounterValue(TekuMetricCategory.LIBP2P, "rpc_requests_failed"))
         .isEqualTo(expectedValue);
+  }
+
+  private RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> createRpcHandler(
+      final InboundRpcStreamLimiter limiter) {
+    return new RpcHandler<>(asyncRunner, rpcMethod, new StubMetricsSystem(), limiter);
+  }
+
+  private Stream createP2PStream(final boolean initiator) {
+    final Stream p2pStream = mock(Stream.class);
+    final io.libp2p.core.security.SecureChannel.Session secureSession =
+        mock(io.libp2p.core.security.SecureChannel.Session.class);
+    when(p2pStream.isInitiator()).thenReturn(initiator);
+    when(p2pStream.getConnection()).thenReturn(connection);
+    when(p2pStream.close()).thenReturn(CompletableFuture.completedFuture(Unit.INSTANCE));
+    when(connection.secureSession()).thenReturn(secureSession);
+    when(secureSession.getRemoteId()).thenReturn(REMOTE_PEER_ID);
+    return p2pStream;
+  }
+
+  private AtomicReference<Controller<RpcRequestHandler>> captureController(final Stream p2pStream) {
+    final AtomicReference<Controller<RpcRequestHandler>> capturedController =
+        new AtomicReference<>();
+    doAnswer(
+            invocation -> {
+              capturedController.set(invocation.getArgument(0));
+              return null;
+            })
+        .when(p2pStream)
+        .pushHandler(any(ChannelHandler.class));
+    return capturedController;
   }
 }

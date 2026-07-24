@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.StubSyncSource;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
@@ -290,9 +292,9 @@ class BatchImporterTest {
 
     when(blockImporter.importBlock(block1)).thenReturn(blockImportResult1);
     when(blockImporter.importBlock(block2)).thenReturn(blockImportResult2);
-    when(executionPayloadManager.importExecutionPayload(executionPayload1))
+    when(executionPayloadManager.importExecutionPayload(executionPayload1, false))
         .thenReturn(executionPayloadImportResult1);
-    when(executionPayloadManager.importExecutionPayload(executionPayload2))
+    when(executionPayloadManager.importExecutionPayload(executionPayload2, false))
         .thenReturn(executionPayloadImportResult2);
 
     final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
@@ -322,6 +324,215 @@ class BatchImporterTest {
     verifyNoMoreInteractions(batch);
   }
 
+  @Test
+  void shouldImportBlobSidecarsAndExecutionPayloadForSameBlock() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(1));
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
+
+    final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> executionPayloadImportResult =
+        new SafeFuture<>();
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+    when(batch.getBlobSidecarsByBlockRoot()).thenReturn(Map.of(block.getRoot(), blobSidecars));
+    when(batch.getExecutionPayloadsByBlockRoot())
+        .thenReturn(Map.of(block.getRoot(), executionPayload));
+
+    when(blockImporter.importBlock(block)).thenReturn(blockImportResult);
+    when(executionPayloadManager.importExecutionPayload(executionPayload, false))
+        .thenReturn(executionPayloadImportResult);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+
+    verifyNoInteractions(blockImporter);
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
+    verifyNoInteractions(executionPayloadManager);
+
+    asyncRunner.executeQueuedActions();
+
+    blobSidecarsImportedSuccessfully(block, blobSidecars);
+    blockImportedSuccessfully(block, blockImportResult);
+    executionPayloadImportedSuccessfully(executionPayload, executionPayloadImportResult);
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
+  }
+
+  @Test
+  void shouldRecoverMissingParentExecutionPayloadByRootAndRetryImport() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(gloasFirstSlot.plus(1).longValue());
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    final SafeFuture<Optional<SignedExecutionPayloadEnvelope>> parentFetch = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> parentImport = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> retryImport = new SafeFuture<>();
+
+    when(blockImporter.importBlock(block)).thenReturn(firstImport).thenReturn(retryImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(parentFetch);
+    when(executionPayloadManager.importExecutionPayload(parentExecutionPayload, false))
+        .thenReturn(parentImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    // First import fails because the parent's execution payload envelope was not delivered
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    // The parent's execution payload envelope is fetched by root and imported
+    verify(syncSource).requestExecutionPayloadEnvelopeByRoot(block.getParentRoot());
+    parentFetch.complete(Optional.of(parentExecutionPayload));
+    ignoreFuture(
+        verify(executionPayloadManager).importExecutionPayload(parentExecutionPayload, false));
+    parentImport.complete(ExecutionPayloadImportResult.successful(parentExecutionPayload));
+
+    // The block import is retried and now succeeds
+    ignoreFuture(verify(blockImporter, times(2)).importBlock(block));
+    retryImport.complete(BlockImportResult.successful(block));
+
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
+  }
+
+  @Test
+  void shouldFailBatchWhenMissingParentExecutionPayloadCannotBeRecovered() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+
+    // StubSyncSource returns Optional.empty() for by-root requests, simulating a parent execution
+    // payload envelope that cannot be recovered
+    final StubSyncSource stubSyncSource = new StubSyncSource();
+    when(batch.getSource()).thenReturn(Optional.of(stubSyncSource));
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    when(blockImporter.importBlock(block)).thenReturn(firstImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    // No envelope available: the block is not retried and the batch import fails
+    stubSyncSource.assertRequestedExecutionPayloadEnvelopeByRoot(block.getParentRoot());
+    ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
+  }
+
+  @Test
+  void shouldNotRetryBlockWhenRecoveredParentExecutionPayloadFailsToImport() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(gloasFirstSlot.plus(1).longValue());
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> parentImport = new SafeFuture<>();
+    when(blockImporter.importBlock(block)).thenReturn(firstImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentExecutionPayload)));
+    when(executionPayloadManager.importExecutionPayload(parentExecutionPayload, false))
+        .thenReturn(parentImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    // Envelope is fetched but fails to import: the block must NOT be re-imported
+    ignoreFuture(
+        verify(executionPayloadManager).importExecutionPayload(parentExecutionPayload, false));
+    parentImport.complete(
+        ExecutionPayloadImportResult.failedVerification(new IllegalStateException("bad payload")));
+
+    // Didn't retry block import because execution payload import failed
+    ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
+  }
+
+  @Test
+  void shouldForwardRecoveredParentExecutionPayloadExecutionFailure() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(gloasFirstSlot.plus(1).longValue());
+    final RuntimeException executionFailure = new RuntimeException("execution failed");
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> parentImport = new SafeFuture<>();
+    when(blockImporter.importBlock(block)).thenReturn(firstImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentExecutionPayload)));
+    when(executionPayloadManager.importExecutionPayload(parentExecutionPayload, false))
+        .thenReturn(parentImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    ignoreFuture(
+        verify(executionPayloadManager).importExecutionPayload(parentExecutionPayload, false));
+    parentImport.complete(ExecutionPayloadImportResult.failedExecution(executionFailure));
+
+    ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
+    assertThat(result).isCompletedWithValue(BatchImportResult.EXECUTION_CLIENT_OFFLINE);
+  }
+
+  @Test
+  void shouldForwardRecoveredParentExecutionPayloadDataUnavailableFailure() {
+    final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(gloasFirstSlot.plus(2));
+    final SignedExecutionPayloadEnvelope parentExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(gloasFirstSlot.plus(1).longValue());
+    final RuntimeException dataUnavailableFailure = new RuntimeException("data unavailable");
+
+    when(batch.getBlocks()).thenReturn(List.of(block));
+
+    final SafeFuture<BlockImportResult> firstImport = new SafeFuture<>();
+    final SafeFuture<ExecutionPayloadImportResult> parentImport = new SafeFuture<>();
+    when(blockImporter.importBlock(block)).thenReturn(firstImport);
+    when(syncSource.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentExecutionPayload)));
+    when(executionPayloadManager.importExecutionPayload(parentExecutionPayload, false))
+        .thenReturn(parentImport);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block));
+    firstImport.complete(BlockImportResult.FAILED_UNKNOWN_PARENT_EXECUTION_PAYLOAD);
+
+    ignoreFuture(
+        verify(executionPayloadManager).importExecutionPayload(parentExecutionPayload, false));
+    parentImport.complete(
+        ExecutionPayloadImportResult.failedDataAvailabilityCheckNotAvailable(
+            Optional.of(dataUnavailableFailure)));
+
+    ignoreFuture(verify(blockImporter, times(1)).importBlock(block));
+    assertThat(result).isCompletedWithValue(BatchImportResult.DATA_NOT_AVAILABLE);
+  }
+
   private void blobSidecarsImportedSuccessfully(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     verify(blockBlobSidecarsTrackersPool).onCompletedBlockAndBlobSidecars(block, blobSidecars);
@@ -338,7 +549,7 @@ class BatchImporterTest {
   private void executionPayloadImportedSuccessfully(
       final SignedExecutionPayloadEnvelope executionPayload,
       final SafeFuture<ExecutionPayloadImportResult> importResult) {
-    ignoreFuture(verify(executionPayloadManager).importExecutionPayload(executionPayload));
+    ignoreFuture(verify(executionPayloadManager).importExecutionPayload(executionPayload, false));
     verifyNoMoreInteractions(executionPayloadManager);
     importResult.complete(ExecutionPayloadImportResult.successful(executionPayload));
   }

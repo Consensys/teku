@@ -23,6 +23,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
@@ -204,5 +205,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<Response<List<BlobAndProofV2>>> getBlobsV2(
       final List<VersionedHash> blobVersionedHashes) {
     return taskQueue.queueTask(() -> delegate.getBlobsV2(blobVersionedHashes));
+  }
+
+  @Override
+  public SafeFuture<Response<List<ExecutionPayloadBodyV2>>> getPayloadBodiesByHashV2(
+      final List<Bytes32> blockHashes) {
+    return taskQueue.queueTask(() -> delegate.getPayloadBodiesByHashV2(blockHashes));
   }
 }

@@ -22,13 +22,10 @@ dependencies {
 	implementation project(':beacon:sync')
 	implementation project(':validator:api')
 
-	implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 	implementation 'com.google.guava:guava'
-	implementation 'io.swagger.core.v3:swagger-core'
 	implementation 'io.swagger.core.v3:swagger-annotations'
 	implementation 'io.javalin:javalin'
 	implementation 'io.consensys.tuweni:tuweni-units'
-	implementation 'org.webjars:swagger-ui'
 
 	testImplementation testFixtures(project(':storage'))
 	testImplementation testFixtures(project(':ethereum:spec'))

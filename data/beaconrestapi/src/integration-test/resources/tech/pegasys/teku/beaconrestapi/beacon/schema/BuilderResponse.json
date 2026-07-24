@@ -1,0 +1,19 @@
+{
+  "title" : "BuilderResponse",
+  "type" : "object",
+  "required" : [ "index", "status", "builder" ],
+  "properties" : {
+    "index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "status" : {
+      "type" : "string"
+    },
+    "builder" : {
+      "$ref" : "#/components/schemas/Builder"
+    }
+  }
+}

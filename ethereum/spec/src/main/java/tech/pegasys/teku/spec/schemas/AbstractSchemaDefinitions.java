@@ -19,10 +19,12 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BAT
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
@@ -44,6 +46,11 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   }
 
   abstract long getMaxValidatorsPerAttestation(SpecConfig specConfig);
+
+  @Override
+  public SszListSchema<Deposit, ?> getDepositsSchema() {
+    return getBeaconBlockSchema().getBodySchema().getDepositsSchema();
+  }
 
   @Override
   public SchemaRegistry getSchemaRegistry() {

@@ -103,6 +103,7 @@ public class BeaconBlocksByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalBlocksRequestedCounter.inc(message.size());
     final AtomicInteger sentBlocks = new AtomicInteger(0);
+    final UInt64 minServableEpoch = computeMinServableEpoch();
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
 
@@ -113,18 +114,10 @@ public class BeaconBlocksByRootMessageHandler
                   retrieveBlock(blockRoot.get())
                       .thenCompose(
                           maybeBlock ->
-                              maybeBlock
-                                  .flatMap(response -> validateResponse(protocolId, response))
-                                  .<SafeFuture<Void>>map(SafeFuture::failedFuture)
-                                  .or(
-                                      () ->
-                                          maybeBlock.map(
-                                              block ->
-                                                  callback
-                                                      .respond(block)
-                                                      .thenRun(sentBlocks::incrementAndGet)))
-                                  .orElse(SafeFuture.COMPLETE)));
+                              processBlockRequest(
+                                  protocolId, maybeBlock, callback, sentBlocks, minServableEpoch)));
     }
+
     future.finish(
         () -> {
           if (sentBlocks.get() != message.size()) {
@@ -133,6 +126,27 @@ public class BeaconBlocksByRootMessageHandler
           callback.completeSuccessfully();
         },
         err -> handleError(err, callback, "blocks by root"));
+  }
+
+  private SafeFuture<Void> processBlockRequest(
+      final String protocolId,
+      final Optional<SignedBeaconBlock> maybeBlock,
+      final ResponseCallback<SignedBeaconBlock> callback,
+      final AtomicInteger sentBlocks,
+      final UInt64 minServableEpoch) {
+    final Optional<SignedBeaconBlock> maybeBlockWithinRange =
+        maybeBlock.filter(block -> isBlockWithinServableRange(block, minServableEpoch));
+    if (maybeBlockWithinRange.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+
+    final SignedBeaconBlock block = maybeBlockWithinRange.get();
+    final Optional<RpcException> maybeError = validateResponse(protocolId, block);
+    if (maybeError.isPresent()) {
+      return SafeFuture.failedFuture(maybeError.get());
+    }
+
+    return callback.respond(block).thenRun(sentBlocks::incrementAndGet);
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
@@ -148,6 +162,16 @@ public class BeaconBlocksByRootMessageHandler
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
     return spec.forMilestone(milestone).miscHelpers().getMaxRequestBlocks();
+  }
+
+  private UInt64 computeMinServableEpoch() {
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
+    return currentEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+  }
+
+  private boolean isBlockWithinServableRange(
+      final SignedBeaconBlock block, final UInt64 minServableEpoch) {
+    return spec.computeEpochAtSlot(block.getSlot()).isGreaterThanOrEqualTo(minServableEpoch);
   }
 
   @VisibleForTesting

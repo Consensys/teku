@@ -84,7 +84,7 @@ public class SidecarRetrieverTest {
     this.retriever =
         new SidecarRetriever(
             delegateRetriever,
-            miscHelpers,
+            spec,
             dbAccessor,
             stubAsyncRunner,
             RECOVERY_TIMEOUT,

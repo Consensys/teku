@@ -53,22 +53,27 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
   @Override
   public AddValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
-    AddValidatorResult delegateResult = delegate.addValidator(keyStoreData, password, publicKey);
-
-    if (delegateResult.getSigner().isEmpty()) {
-      return delegateResult;
-    }
-
-    final Signer signer = delegateResult.getSigner().get();
-    return new AddValidatorResult(
-        delegateResult.getResult(),
-        Optional.of(new SlashingProtectedSigner(publicKey, slashingProtector, signer)));
+    final AddValidatorResult delegateResult =
+        delegate.addValidator(keyStoreData, password, publicKey);
+    return addSlashingProtectedValidator(publicKey, delegateResult);
   }
 
   @Override
   public AddValidatorResult addValidator(
       final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
-    return delegate.addValidator(publicKey, signerUrl);
+    final AddValidatorResult delegateResult = delegate.addValidator(publicKey, signerUrl);
+    return addSlashingProtectedValidator(publicKey, delegateResult);
+  }
+
+  private AddValidatorResult addSlashingProtectedValidator(
+      final BLSPublicKey publicKey, final AddValidatorResult delegateResult) {
+    if (delegateResult.getSigner().isEmpty()) {
+      return delegateResult;
+    }
+    final Signer signer = delegateResult.getSigner().get();
+    return new AddValidatorResult(
+        delegateResult.getResult(),
+        Optional.of(new SlashingProtectedSigner(publicKey, slashingProtector, signer)));
   }
 
   private class SlashingProtectedValidatorProvider implements ValidatorProvider {

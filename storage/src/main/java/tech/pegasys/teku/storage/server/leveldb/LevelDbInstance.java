@@ -326,6 +326,16 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public void compact() {
+    assertOpen();
+    LOG.info("Compacting LevelDB");
+    final long startTime = System.currentTimeMillis();
+    // Passing null bounds compacts the entire key range.
+    db.compactRange(null, null);
+    LOG.info("LevelDB compaction completed in {} ms", System.currentTimeMillis() - startTime);
+  }
+
+  @Override
   public void close() throws Exception {
     if (!closed.compareAndSet(false, true)) {
       return;

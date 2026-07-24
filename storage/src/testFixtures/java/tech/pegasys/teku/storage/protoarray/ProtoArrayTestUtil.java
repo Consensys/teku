@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.protoarray;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -58,8 +59,8 @@ public class ProtoArrayTestUtil {
             new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO)),
-        ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        Optional.empty(),
+        Optional.empty());
 
     return forkChoice;
   }

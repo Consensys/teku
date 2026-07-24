@@ -28,6 +28,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadHeaderSchemaCapella
     extends ContainerSchema15<
@@ -71,7 +73,8 @@ public class ExecutionPayloadHeaderSchemaCapella
   private final ExecutionPayloadHeaderCapellaImpl defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderCapellaImpl executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaCapella(final SpecConfigCapella specConfig) {
+  public ExecutionPayloadHeaderSchemaCapella(
+      final SpecConfigCapella specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadHeaderCapella",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -90,9 +93,8 @@ public class ExecutionPayloadHeaderSchemaCapella
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
-    final ExecutionPayloadCapellaImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaCapella(specConfig).getDefault();
-
+    final ExecutionPayload defaultExecutionPayload =
+        schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).toVersionCapellaRequired().getDefault();
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
 

@@ -76,6 +76,9 @@ public class Eth2NetworkConfiguration {
   // on all subnets, you may receive and have to cache that number of messages
   public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 70_000;
 
+  // should fit payload attestations for an epoch given PTC size
+  public static final int DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS = 1000;
+
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
   public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
@@ -104,7 +107,6 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
       Math.max(Runtime.getRuntime().availableProcessors(), DEFAULT_VALIDATOR_EXECUTOR_THREADS);
 
-  // TODO: consider switching to 512 after tests
   public static final int DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS =
       Integer.MAX_VALUE;
 
@@ -156,6 +158,7 @@ public class Eth2NetworkConfiguration {
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
   private final int attestationWaitLimitMillis;
   private final int dataColumnSidecarExtensionRetentionEpochs;
+  private final int pendingPayloadAttestationsMaxQueue;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -195,7 +198,8 @@ public class Eth2NetworkConfiguration {
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
       final int attestationWaitLimitMillis,
-      final int dataColumnSidecarExtensionRetentionEpochs) {
+      final int dataColumnSidecarExtensionRetentionEpochs,
+      final int pendingPayloadAttestationsMaxQueue) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -240,6 +244,7 @@ public class Eth2NetworkConfiguration {
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
     this.attestationWaitLimitMillis = attestationWaitLimitMillis;
     this.dataColumnSidecarExtensionRetentionEpochs = dataColumnSidecarExtensionRetentionEpochs;
+    this.pendingPayloadAttestationsMaxQueue = pendingPayloadAttestationsMaxQueue;
 
     LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
 
@@ -402,6 +407,10 @@ public class Eth2NetworkConfiguration {
     return dataColumnSidecarExtensionRetentionEpochs;
   }
 
+  public int getPendingPayloadAttestationsMaxQueue() {
+    return pendingPayloadAttestationsMaxQueue;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -544,6 +553,7 @@ public class Eth2NetworkConfiguration {
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
+    private OptionalInt pendingPayloadAttestationsMaxQueue = OptionalInt.empty();
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -645,7 +655,9 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis,
-          dataColumnSidecarExtensionRetentionEpochs);
+          dataColumnSidecarExtensionRetentionEpochs,
+          pendingPayloadAttestationsMaxQueue.orElse(
+              DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS));
     }
 
     private boolean resolvePrepareBlockProductionAbility(
@@ -1316,6 +1328,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder pendingAttestationsMaxQueue(final int pendingAttestationsMaxQueue) {
       this.pendingAttestationsMaxQueue = OptionalInt.of(pendingAttestationsMaxQueue);
+      return this;
+    }
+
+    public Builder pendingPayloadAttestationsMaxQueue(
+        final int pendingPayloadAttestationsMaxQueue) {
+      this.pendingPayloadAttestationsMaxQueue = OptionalInt.of(pendingPayloadAttestationsMaxQueue);
       return this;
     }
 

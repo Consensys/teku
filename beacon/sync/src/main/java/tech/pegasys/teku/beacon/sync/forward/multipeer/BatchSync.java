@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
+import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.SyncSourceBatch.isParentBlockFull;
 import static tech.pegasys.teku.infrastructure.async.ExceptionHandlers.exceptionHandlingConsumer;
 import static tech.pegasys.teku.infrastructure.async.ExceptionHandlers.exceptionHandlingRunnable;
 
@@ -322,6 +323,13 @@ public class BatchSync implements Sync {
 
   private void checkBatchesFormChain(final Batch firstBatch, final Batch secondBatch) {
     if (batchesFormChain(firstBatch, secondBatch)) {
+      if (isRequiredBoundaryExecutionPayloadMissing(firstBatch, secondBatch)) {
+        LOG.debug(
+            "Marking batch {} as invalid because the boundary block requires an execution payload envelope that was missing",
+            firstBatch);
+        firstBatch.markAsInvalid();
+        return;
+      }
       markBatchesAsFormingChain(
           firstBatch, secondBatch, activeBatches.batchesBetweenExclusive(firstBatch, secondBatch));
       return;
@@ -481,6 +489,23 @@ public class BatchSync implements Sync {
   private Boolean blocksForChain(
       final SignedBeaconBlock lastBlock, final SignedBeaconBlock firstBlock) {
     return lastBlock.getRoot().equals(firstBlock.getParentRoot());
+  }
+
+  private boolean isRequiredBoundaryExecutionPayloadMissing(
+      final Batch firstBatch, final Batch secondBatch) {
+    return firstBatch
+        .getLastBlock()
+        .flatMap(
+            lastBlock ->
+                secondBatch
+                    .getFirstBlock()
+                    .filter(
+                        firstBlock ->
+                            isParentBlockFull(lastBlock, firstBlock)
+                                && !firstBatch
+                                    .getExecutionPayloadsByBlockRoot()
+                                    .containsKey(lastBlock.getRoot())))
+        .isPresent();
   }
 
   private void progressSync() {

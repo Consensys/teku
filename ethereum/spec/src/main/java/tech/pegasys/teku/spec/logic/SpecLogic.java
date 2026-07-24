@@ -14,8 +14,9 @@
 package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -34,8 +35,10 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
@@ -76,15 +79,21 @@ public interface SpecLogic {
 
   OperationSignatureVerifier operationSignatureVerifier();
 
+  WeakSubjectivityCalculator weakSubjectivityCalculator();
+
   Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers();
 
   Optional<WithdrawalsHelpers> getWithdrawalsHelpers();
 
   Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor();
 
-  Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor();
+  Optional<ExecutionRequestsDataCodec> getExecutionRequestsDataCodec();
+
+  Optional<ExecutionPayloadVerifier> getExecutionPayloadVerifier();
 
   Optional<ExecutionPayloadProposalUtil> getExecutionPayloadProposalUtil();
 
   Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil();
+
+  ProposerPreferencesUtil getProposerPreferencesUtil();
 }

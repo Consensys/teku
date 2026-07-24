@@ -228,6 +228,33 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void rocksdbBlobDbEnabled_shouldDefaultToFalse() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.storageConfiguration().isRocksdbBlobDbEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  void rocksdbBlobDbEnabled_shouldAcceptTrue() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--Xdata-storage-rocksdb-blob-db-enabled=true");
+    assertThat(tekuConfig.storageConfiguration().isRocksdbBlobDbEnabled()).isEqualTo(true);
+  }
+
+  @Test
+  void rocksdbBlobDbEnabled_shouldAcceptFalse() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--Xdata-storage-rocksdb-blob-db-enabled=false");
+    assertThat(tekuConfig.storageConfiguration().isRocksdbBlobDbEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  void rocksdbBlobDbEnabled_shouldUseFallbackValue() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--Xdata-storage-rocksdb-blob-db-enabled");
+    assertThat(tekuConfig.storageConfiguration().isRocksdbBlobDbEnabled()).isEqualTo(true);
+  }
+
+  @Test
   void forceClearDb_shouldDefaultToFalse() {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
     assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(false);

@@ -48,9 +48,11 @@ public class DasPreSamplerTest {
   private final DataColumnSidecarCustody custody = mock(DataColumnSidecarCustody.class);
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
+  private final BlobKzgCommitmentsProvider blobKzgCommitmentsProvider =
+      mock(BlobKzgCommitmentsProvider.class);
 
   private final DasPreSampler dasPreSampler =
-      new DasPreSampler(sampler, custody, custodyGroupCountManager);
+      new DasPreSampler(sampler, custody, custodyGroupCountManager, blobKzgCommitmentsProvider);
 
   @Test
   void onNewPreImportBlocks_shouldNotSampleWhenEligibilityIsNotRequired() {
@@ -59,6 +61,7 @@ public class DasPreSamplerTest {
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
+    verify(blobKzgCommitmentsProvider).onNewBlock(block);
     verify(sampler).checkSamplingEligibility(block.getMessage());
     verify(sampler).flush();
     verifyNoMoreInteractions(sampler);
@@ -70,6 +73,7 @@ public class DasPreSamplerTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     blocks.add(null);
     assertDoesNotThrow(() -> dasPreSampler.onNewPreImportBlocks(blocks));
+    verifyNoInteractions(blobKzgCommitmentsProvider);
   }
 
   @Test
@@ -91,6 +95,8 @@ public class DasPreSamplerTest {
     // Verify filtering
     verify(sampler).checkSamplingEligibility(blockToSample.getMessage());
     verify(sampler).checkSamplingEligibility(blockToSkip.getMessage());
+    verify(blobKzgCommitmentsProvider).onNewBlock(blockToSample);
+    verify(blobKzgCommitmentsProvider).onNewBlock(blockToSkip);
 
     // Verify processing for the required block
     verify(sampler).checkDataAvailability(blockToSample.getSlot(), blockToSample.getRoot());
@@ -118,6 +124,7 @@ public class DasPreSamplerTest {
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
+    verify(blobKzgCommitmentsProvider).onNewBlock(block);
     verify(custody).hasCustodyDataColumnSidecar(col1);
     verify(custody).hasCustodyDataColumnSidecar(col5);
     verify(sampler, never())
@@ -147,6 +154,7 @@ public class DasPreSamplerTest {
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
+    verify(blobKzgCommitmentsProvider).onNewBlock(block);
     // Verify sampler is notified about the column in custody
     verify(sampler).onNewValidatedDataColumnSidecar(col2, RemoteOrigin.CUSTODY);
     verify(sampler, never())

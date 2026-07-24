@@ -51,11 +51,11 @@ public class PayloadAttributesV3 extends PayloadAttributesV2 {
     return payloadBuildingAttributes.map(
         payloadAttributes ->
             new PayloadAttributesV3(
-                payloadAttributes.getTimestamp(),
-                payloadAttributes.getPrevRandao(),
-                payloadAttributes.getFeeRecipient(),
+                payloadAttributes.timestamp(),
+                payloadAttributes.prevRandao(),
+                payloadAttributes.feeRecipient(),
                 getWithdrawals(payloadAttributes),
-                payloadAttributes.getParentBeaconBlockRoot()));
+                payloadAttributes.parentBeaconBlock().blockRoot()));
   }
 
   @Override
