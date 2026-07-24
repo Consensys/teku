@@ -22,8 +22,8 @@ public class LightClientHeaderSchemaAltair
     extends ContainerSchema1<LightClientHeaderAltair, BeaconBlockHeader>
     implements LightClientHeaderSchema<LightClientHeaderAltair> {
 
-  public LightClientHeaderSchemaAltair() {
-    super("LightClientHeader", namedSchema("beacon", BeaconBlockHeader.SSZ_SCHEMA));
+  public LightClientHeaderSchemaAltair(final String schemaName) {
+    super(schemaName, namedSchema("beacon", BeaconBlockHeader.SSZ_SCHEMA));
   }
 
   @Override

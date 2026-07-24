@@ -32,9 +32,10 @@ public class LightClientBootstrapSchema
   protected LightClientBootstrapSchema(
       final SpecConfigAltair specConfigAltair,
       final int syncCommitteeGindex,
-      final SchemaRegistry registry) {
+      final SchemaRegistry registry,
+      final String schemaName) {
     super(
-        "LightClientBootstrap",
+        schemaName,
         namedSchema(
             "header",
             SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
@@ -46,8 +47,10 @@ public class LightClientBootstrapSchema
   }
 
   public LightClientBootstrapSchema(
-      final SpecConfigAltair specConfigAltair, final SchemaRegistry registry) {
-    this(specConfigAltair, CURRENT_SYNC_COMMITTEE_GINDEX, registry);
+      final SpecConfigAltair specConfigAltair,
+      final SchemaRegistry registry,
+      final String schemaName) {
+    this(specConfigAltair, CURRENT_SYNC_COMMITTEE_GINDEX, registry, schemaName);
   }
 
   public LightClientBootstrap create(

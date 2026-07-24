@@ -22,11 +22,14 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientUpdateSchemaGloas extends LightClientUpdateSchema {
   public LightClientUpdateSchemaGloas(
-      final SpecConfigGloas specConfigGloas, final SchemaRegistry schemaRegistry) {
+      final SpecConfigGloas specConfigGloas,
+      final SchemaRegistry schemaRegistry,
+      final String schemaName) {
     super(
         specConfigGloas,
         schemaRegistry,
         NEXT_SYNC_COMMITTEE_GINDEX_GLOAS,
-        FINALIZED_ROOT_GINDEX_GLOAS);
+        FINALIZED_ROOT_GINDEX_GLOAS,
+        schemaName);
   }
 }

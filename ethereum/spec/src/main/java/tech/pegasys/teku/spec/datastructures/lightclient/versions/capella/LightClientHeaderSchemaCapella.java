@@ -31,9 +31,9 @@ public class LightClientHeaderSchemaCapella
     extends ContainerSchema3<
         LightClientHeaderCapella, BeaconBlockHeader, ExecutionPayloadHeader, SszBytes32Vector>
     implements LightClientHeaderSchema<LightClientHeaderCapella> {
-  public LightClientHeaderSchemaCapella(final SchemaRegistry registry) {
+  public LightClientHeaderSchemaCapella(final SchemaRegistry registry, final String schemaName) {
     super(
-        "LightClientHeader",
+        schemaName,
         namedSchema("beacon", BeaconBlockHeader.SSZ_SCHEMA),
         namedSchema(
             "execution",

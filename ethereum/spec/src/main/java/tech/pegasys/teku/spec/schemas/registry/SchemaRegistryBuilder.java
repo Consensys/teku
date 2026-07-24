@@ -1047,28 +1047,33 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ALTAIR,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchema(SpecConfigAltair.required(specConfig), registry))
+                new LightClientBootstrapSchema(
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new LightClientBootstrapSchemaElectra(
-                    SpecConfigElectra.required(specConfig), registry))
+                    SpecConfigElectra.required(specConfig), registry, schemaName))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
-                new LightClientBootstrapSchemaGloas(SpecConfigGloas.required(specConfig), registry))
+                new LightClientBootstrapSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
         .build();
   }
 
   private static SchemaProvider<?> createLightClientHeaderSchemaProvider() {
     return providerBuilder(LIGHT_CLIENT_HEADER_SCHEMA)
         .withCreator(
-            ALTAIR, (registry, specConfig, schemaName) -> new LightClientHeaderSchemaAltair())
+            ALTAIR,
+            (registry, specConfig, schemaName) -> new LightClientHeaderSchemaAltair(schemaName))
         .withCreator(
             CAPELLA,
-            (registry, specConfig, schemaName) -> new LightClientHeaderSchemaCapella(registry))
+            (registry, specConfig, schemaName) ->
+                new LightClientHeaderSchemaCapella(registry, schemaName))
         .withCreator(
-            GLOAS, (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas())
+            GLOAS,
+            (registry, specConfig, schemaName) -> new LightClientHeaderSchemaGloas(schemaName))
         .build();
   }
 
@@ -1077,16 +1082,18 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ALTAIR,
             (registry, specConfig, schemaName) ->
-                new LightClientUpdateSchema(SpecConfigAltair.required(specConfig), registry))
+                new LightClientUpdateSchema(
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new LightClientUpdateSchemaElectra(
-                    SpecConfigElectra.required(specConfig), registry))
+                    SpecConfigElectra.required(specConfig), registry, schemaName))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
-                new LightClientUpdateSchemaGloas(SpecConfigGloas.required(specConfig), registry))
+                new LightClientUpdateSchemaGloas(
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
         .build();
   }
 
@@ -1096,17 +1103,17 @@ public class SchemaRegistryBuilder {
             ALTAIR,
             (registry, specConfig, schemaName) ->
                 new LightClientFinalityUpdateSchema(
-                    SpecConfigAltair.required(specConfig), registry))
+                    SpecConfigAltair.required(specConfig), registry, schemaName))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new LightClientFinalityUpdateSchemaElectra(
-                    SpecConfigElectra.required(specConfig), registry))
+                    SpecConfigElectra.required(specConfig), registry, schemaName))
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new LightClientFinalityUpdateSchemaGloas(
-                    SpecConfigGloas.required(specConfig), registry))
+                    SpecConfigGloas.required(specConfig), registry, schemaName))
         .build();
   }
 

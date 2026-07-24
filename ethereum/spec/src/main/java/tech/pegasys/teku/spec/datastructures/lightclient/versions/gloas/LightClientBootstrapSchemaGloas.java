@@ -21,7 +21,9 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientBootstrapSchemaGloas extends LightClientBootstrapSchema {
   public LightClientBootstrapSchemaGloas(
-      final SpecConfigGloas specConfigGloas, final SchemaRegistry schemaRegistry) {
-    super(specConfigGloas, CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS, schemaRegistry);
+      final SpecConfigGloas specConfigGloas,
+      final SchemaRegistry schemaRegistry,
+      final String schemaName) {
+    super(specConfigGloas, CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS, schemaRegistry, schemaName);
   }
 }

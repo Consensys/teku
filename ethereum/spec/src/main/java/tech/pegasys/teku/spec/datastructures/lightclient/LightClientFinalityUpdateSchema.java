@@ -40,9 +40,10 @@ public class LightClientFinalityUpdateSchema
   protected LightClientFinalityUpdateSchema(
       final SpecConfigAltair specConfigAltair,
       final int finalizedBranchGIndex,
-      final SchemaRegistry registry) {
+      final SchemaRegistry registry,
+      final String schemaName) {
     super(
-        "LightClientFinalityUpdate",
+        schemaName,
         namedSchema(
             "attested_header",
             SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
@@ -58,8 +59,10 @@ public class LightClientFinalityUpdateSchema
   }
 
   public LightClientFinalityUpdateSchema(
-      final SpecConfigAltair specConfigAltair, final SchemaRegistry registry) {
-    this(specConfigAltair, FINALIZED_ROOT_GINDEX, registry);
+      final SpecConfigAltair specConfigAltair,
+      final SchemaRegistry registry,
+      final String schemaName) {
+    this(specConfigAltair, FINALIZED_ROOT_GINDEX, registry, schemaName);
   }
 
   public LightClientFinalityUpdate create(

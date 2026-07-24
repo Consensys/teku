@@ -21,7 +21,9 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientBootstrapSchemaElectra extends LightClientBootstrapSchema {
   public LightClientBootstrapSchemaElectra(
-      final SpecConfigElectra specConfigElectra, final SchemaRegistry registry) {
-    super(specConfigElectra, CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA, registry);
+      final SpecConfigElectra specConfigElectra,
+      final SchemaRegistry registry,
+      final String schemaName) {
+    super(specConfigElectra, CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA, registry, schemaName);
   }
 }

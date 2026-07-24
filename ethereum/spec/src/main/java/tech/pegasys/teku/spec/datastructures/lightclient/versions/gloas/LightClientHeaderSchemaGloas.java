@@ -30,9 +30,9 @@ public class LightClientHeaderSchemaGloas
         LightClientHeaderGloas, BeaconBlockHeader, SszBytes32, SszBytes32Vector>
     implements LightClientHeaderSchema<LightClientHeaderGloas> {
 
-  public LightClientHeaderSchemaGloas() {
+  public LightClientHeaderSchemaGloas(final String schemaName) {
     super(
-        "LightClientHeader",
+        schemaName,
         namedSchema("beacon", BeaconBlockHeader.SSZ_SCHEMA),
         namedSchema("execution_block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
