@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -336,6 +337,64 @@ public class PendingPoolTest {
         .isEqualTo(blockPendingPool.getMaxTotalWeight());
   }
 
+  @Test
+  public void createPendingPoolForExecutionPayloadBids_shouldConfigureBidFieldsAndCapacity() {
+    final Spec gloasSpec = TestSpecFactory.createMainnetGloas();
+    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid firstBid =
+        gloasDataStructureUtil.randomSignedExecutionPayloadBid(
+            gloasDataStructureUtil.randomExecutionPayloadBid(
+                gloasDataStructureUtil.randomBytes32(),
+                slot,
+                gloasDataStructureUtil.randomUInt64(),
+                gloasDataStructureUtil.randomUInt64(),
+                UInt64.ZERO));
+    final SignedExecutionPayloadBid secondBid =
+        gloasDataStructureUtil.randomSignedExecutionPayloadBid(
+            gloasDataStructureUtil.randomExecutionPayloadBid(
+                firstBid.getMessage().getParentBlockHash(),
+                slot,
+                gloasDataStructureUtil.randomUInt64(),
+                gloasDataStructureUtil.randomUInt64(),
+                UInt64.ZERO));
+    final SignedExecutionPayloadBid staleBid =
+        gloasDataStructureUtil.randomSignedExecutionPayloadBid(
+            gloasDataStructureUtil.randomExecutionPayloadBid(
+                gloasDataStructureUtil.randomBytes32(),
+                slot.minus(UInt64.ONE),
+                gloasDataStructureUtil.randomUInt64(),
+                gloasDataStructureUtil.randomUInt64(),
+                UInt64.ZERO));
+    final SignedExecutionPayloadBid farFutureBid =
+        gloasDataStructureUtil.randomSignedExecutionPayloadBid(
+            gloasDataStructureUtil.randomExecutionPayloadBid(
+                gloasDataStructureUtil.randomBytes32(),
+                slot.plus(2),
+                gloasDataStructureUtil.randomUInt64(),
+                gloasDataStructureUtil.randomUInt64(),
+                UInt64.ZERO));
+    final PendingPool<SignedExecutionPayloadBid> pendingBidPool =
+        new PoolFactory(metricsSystem).createPendingPoolForExecutionPayloadBids(gloasSpec, 1);
+    pendingBidPool.onSlot(slot);
+
+    pendingBidPool.add(firstBid);
+
+    assertThat(pendingBidPool.contains(firstBid.hashTreeRoot())).isTrue();
+    assertThat(
+            pendingBidPool.getItemsDependingOn(firstBid.getMessage().getParentBlockRoot(), false))
+        .containsExactly(firstBid);
+
+    pendingBidPool.add(secondBid);
+    pendingBidPool.add(staleBid);
+    pendingBidPool.add(farFutureBid);
+
+    assertThat(pendingBidPool.size()).isEqualTo(1);
+    assertThat(pendingBidPool.contains(secondBid.hashTreeRoot())).isTrue();
+    assertThat(pendingBidPool.contains(staleBid.hashTreeRoot())).isFalse();
+    assertThat(pendingBidPool.contains(farFutureBid.hashTreeRoot())).isFalse();
+  }
+
   private Checkpoint finalizedCheckpoint(final SignedBeaconBlock block) {
     final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot()).plus(UInt64.ONE);
     final Bytes32 root = block.getMessage().hashTreeRoot();
@@ -456,6 +515,45 @@ public class PendingPoolTest {
         .containsExactlyInAnyOrder(blockB);
     assertThat(requiredRootEvents).containsExactly(parentRoot);
     assertThat(requiredRootDroppedEvents).isEmpty();
+  }
+
+  @Test
+  public void removeItemsMatching_removesAndReturnsOnlyMatchingItems() {
+    final SignedBeaconBlock matchingBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock otherBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.plus(UInt64.ONE).longValue());
+    pendingPool.add(matchingBlock);
+    pendingPool.add(otherBlock);
+
+    final List<SignedBeaconBlock> removedItems =
+        pendingPool.removeItemsMatching(block -> block.getSlot().equals(currentSlot));
+
+    assertThat(removedItems).containsExactly(matchingBlock);
+    assertThat(pendingPool.contains(matchingBlock)).isFalse();
+    assertThat(pendingPool.contains(otherBlock)).isTrue();
+  }
+
+  @Test
+  public void removeItemsDependingOn_removesAndReturnsOnlyDependentItems() {
+    final Bytes32 requiredRoot = dataStructureUtil.randomBytes32();
+    final SignedBeaconBlock firstDependentBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), requiredRoot);
+    final SignedBeaconBlock secondDependentBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), requiredRoot);
+    final SignedBeaconBlock independentBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    pendingPool.add(firstDependentBlock);
+    pendingPool.add(secondDependentBlock);
+    pendingPool.add(independentBlock);
+
+    final List<SignedBeaconBlock> removedItems =
+        pendingPool.removeItemsDependingOn(requiredRoot, false);
+
+    assertThat(removedItems).containsExactlyInAnyOrder(firstDependentBlock, secondDependentBlock);
+    assertThat(pendingPool.contains(firstDependentBlock)).isFalse();
+    assertThat(pendingPool.contains(secondDependentBlock)).isFalse();
+    assertThat(pendingPool.contains(independentBlock)).isTrue();
   }
 
   @Test

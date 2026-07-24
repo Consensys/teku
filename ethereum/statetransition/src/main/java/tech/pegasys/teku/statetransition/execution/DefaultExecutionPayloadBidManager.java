@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatAbbreviatedHashRoot;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -38,17 +39,25 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class DefaultExecutionPayloadBidManager
-    implements ExecutionPayloadBidManager, SlotEventsChannel, ReceivedBlockEventsChannel {
+    implements ExecutionPayloadBidManager,
+        SlotEventsChannel,
+        ReceivedBlockEventsChannel,
+        OperationAddedSubscriber<SignedProposerPreferences>,
+        ReceivedExecutionPayloadEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -65,6 +74,7 @@ public class DefaultExecutionPayloadBidManager
   private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
+  private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids;
 
   // bids are valid for the current and next slot, so they're indexed by bid.slot for pruning;
   // the inner set is sorted by value descending for cheap best-bid lookup
@@ -76,45 +86,75 @@ public class DefaultExecutionPayloadBidManager
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator,
       final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker,
       final ReceivedExecutionPayloadBidEventsChannel
-          receivedExecutionPayloadBidEventsChannelPublisher) {
+          receivedExecutionPayloadBidEventsChannelPublisher,
+      final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids) {
     this.spec = spec;
     this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
     this.executionPayloadBidCircuitBreaker = executionPayloadBidCircuitBreaker;
     this.receivedExecutionPayloadBidEventsChannelPublisher =
         receivedExecutionPayloadBidEventsChannelPublisher;
+    this.pendingExecutionPayloadBids = pendingExecutionPayloadBids;
   }
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndAddBid(
       final SignedExecutionPayloadBid signedBid, final RemoteBidOrigin remoteBidOrigin) {
+    return validateAndAddBid(signedBid, remoteBidOrigin.toString());
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private SafeFuture<InternalValidationResult> validateAndAddBid(
+      final SignedExecutionPayloadBid signedBid, final String bidOrigin) {
     final SafeFuture<InternalValidationResult> validationResult =
         executionPayloadBidGossipValidator.validate(signedBid);
-    validationResult.thenAccept(
-        result -> {
-          switch (result.code()) {
-            case ACCEPT -> {
-              addBid(signedBid);
-              receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
-                  signedBid);
-            }
-            case SAVE_FOR_FUTURE -> {}
-            case REJECT, IGNORE ->
-                LOG.debug(
-                    "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
-                    remoteBidOrigin,
-                    signedBid.getMessage().getSlot(),
-                    signedBid.getMessage().getBuilderIndex(),
-                    result);
-          }
-        });
+    validationResult.thenAccept(result -> processValidationResult(signedBid, bidOrigin, result));
     return validationResult;
+  }
+
+  private void processValidationResult(
+      final SignedExecutionPayloadBid signedBid,
+      final String bidOrigin,
+      final InternalValidationResult result) {
+    switch (result.code()) {
+      case ACCEPT -> {
+        addBid(signedBid);
+        receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(signedBid);
+      }
+      case SAVE_FOR_FUTURE -> pendingExecutionPayloadBids.add(signedBid);
+      case REJECT, IGNORE ->
+          LOG.debug(
+              "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
+              bidOrigin,
+              signedBid.getMessage().getSlot(),
+              signedBid.getMessage().getBuilderIndex(),
+              result);
+    }
+  }
+
+  private void retryPendingBids(final Collection<SignedExecutionPayloadBid> pendingBids) {
+    pendingBids.forEach(pendingBid -> validateAndAddBid(pendingBid, "pending").finishError(LOG));
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
     // bids are valid for the current and next slot, so anything below the current slot is stale
     bidsBySlot.headMap(slot, false).clear();
+    pendingExecutionPayloadBids.onSlot(slot);
+    pendingExecutionPayloadBids.removeItemsMatching(
+        pendingBid -> pendingBid.getMessage().getSlot().isLessThan(slot));
+    retryPendingBids(pendingExecutionPayloadBids.removeItemsMatching(__ -> true));
+  }
+
+  @Override
+  public void onOperationAdded(
+      final SignedProposerPreferences proposerPreferences,
+      final InternalValidationResult validationStatus,
+      final boolean fromNetwork) {
+    final UInt64 proposalSlot = proposerPreferences.getMessage().getProposalSlot();
+    retryPendingBids(
+        pendingExecutionPayloadBids.removeItemsMatching(
+            pendingBid -> pendingBid.getMessage().getSlot().equals(proposalSlot)));
   }
 
   @Override
@@ -123,6 +163,18 @@ public class DefaultExecutionPayloadBidManager
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     executionPayloadBidCircuitBreaker.observeImportedBlock(block);
+    retryPendingBids(pendingExecutionPayloadBids.removeItemsDependingOn(block.getRoot(), false));
+  }
+
+  @Override
+  public void onExecutionPayloadValidated(final SignedExecutionPayloadEnvelope executionPayload) {}
+
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    retryPendingBids(
+        pendingExecutionPayloadBids.removeItemsDependingOn(
+            executionPayload.getBeaconBlockRoot(), false));
   }
 
   @Override
