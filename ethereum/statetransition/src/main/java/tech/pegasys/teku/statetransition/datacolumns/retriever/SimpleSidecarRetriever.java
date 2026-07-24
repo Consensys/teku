@@ -96,6 +96,8 @@ public class SimpleSidecarRetriever
       new ConcurrentHashMap<>();
   private final Map<UInt256, ConnectedPeer> connectedPeers = new ConcurrentHashMap<>();
   private final AtomicBoolean started = new AtomicBoolean(false);
+  // Ensures only one nextRound() body runs at a time (see nextRound()).
+  private final AtomicBoolean roundInProgress = new AtomicBoolean(false);
   private final AtomicLong retrieveCounter = new AtomicLong();
   private final AtomicLong errorCounter = new AtomicLong();
   private final AtomicLong hedgeCounter = new AtomicLong();
@@ -364,29 +366,44 @@ public class SimpleSidecarRetriever
   }
 
   private void nextRound() {
-    disposeCompletedRequests();
-
-    final long activatedMatches =
-        matchRequestsAndPeers().stream()
-            .map(this::activateMatchedRequest)
-            .filter(activated -> activated)
-            .count();
-
-    if (LOG.isTraceEnabled()) {
-      final long activeRequestCount =
-          pendingRequests.values().stream().filter(r -> !r.attemptingPeers.isEmpty()).count();
-      LOG.trace(
-          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {}, hedged: {}, total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
-          retrieveCounter,
-          errorCounter,
-          hedgeCounter,
-          pendingRequests.size(),
-          activeRequestCount,
-          activatedMatches,
-          gatherAvailableCustodiesInfo());
+    // Serialize round bodies. nextRound is invoked both on the fixed-delay schedule and from
+    // flush(), and the DAS async runner is multi-threaded, so two rounds could otherwise run
+    // concurrently. The matching logic (primary-vs-hedge selection, the overlap budget, the shared
+    // RequestTracker) all assume a single round observes and mutates the pending set atomically;
+    // overlapping rounds could dispatch multiple "primary" attempts for the same column (exceeding
+    // the two-attempt cap and bypassing hedgeDelay) and double-spend the overlap budget. A skipped
+    // round is harmless: the in-progress round already reflects the current state, and the next
+    // scheduled round runs within roundPeriod.
+    if (!roundInProgress.compareAndSet(false, true)) {
+      return;
     }
+    try {
+      disposeCompletedRequests();
 
-    reqResp.flush();
+      final long activatedMatches =
+          matchRequestsAndPeers().stream()
+              .map(this::activateMatchedRequest)
+              .filter(activated -> activated)
+              .count();
+
+      if (LOG.isTraceEnabled()) {
+        final long activeRequestCount =
+            pendingRequests.values().stream().filter(r -> !r.attemptingPeers.isEmpty()).count();
+        LOG.trace(
+            "SimpleSidecarRetriever.nextRound: completed: {}, errored: {}, hedged: {}, total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+            retrieveCounter,
+            errorCounter,
+            hedgeCounter,
+            pendingRequests.size(),
+            activeRequestCount,
+            activatedMatches,
+            gatherAvailableCustodiesInfo());
+      }
+
+      reqResp.flush();
+    } finally {
+      roundInProgress.set(false);
+    }
   }
 
   private void reqRespSucceeded(final RetrieveRequest request, final DataColumnSidecar sidecar) {
