@@ -102,6 +102,36 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThat(config.isRestApiEnabled()).isTrue();
   }
 
+  @Test
+  void restApiAsyncTimeout_shouldDefaultToThirtySeconds() {
+    final BeaconRestApiConfig config = getConfig(getTekuConfigurationFromArguments());
+
+    assertThat(config.getRestApiAsyncTimeout()).isEqualTo(Duration.ofSeconds(30));
+  }
+
+  @Test
+  void restApiAsyncTimeout_canBeOverridden() {
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--Xrest-api-async-timeout-seconds", "12"));
+
+    assertThat(config.getRestApiAsyncTimeout()).isEqualTo(Duration.ofSeconds(12));
+  }
+
+  @Test
+  void restApiAsyncTimeout_shouldBeHidden() {
+    beaconNodeCommand.parse(new String[] {"--help"});
+
+    assertThat(getCommandLineOutput()).doesNotContain("--Xrest-api-async-timeout-seconds");
+  }
+
+  @Test
+  void restApiAsyncTimeout_shouldRejectNonPositiveValues() {
+    assertThatThrownBy(
+        () -> getTekuConfigurationFromArguments("--Xrest-api-async-timeout-seconds", "0"));
+    assertThatThrownBy(
+        () -> getTekuConfigurationFromArguments("--Xrest-api-async-timeout-seconds", "-1"));
+  }
+
   @ParameterizedTest
   @MethodSource("getRestApiOptionParams")
   public void restApiEnabledAndPortOptions_shouldProvideExpectedOutcome(
