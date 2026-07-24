@@ -197,6 +197,8 @@ public class LightClientUtil {
   }
 
   private LightClientHeader headerFromBlock(final SignedBeaconBlock block) {
+    // TODO: block_to_light_client_header is Altair-only here. For Capella+ blocks the
+    // execution payload header and execution_branch are left empty instead of being populated.
     return schemaDefinitionsAltair
         .getLightClientHeaderSchema()
         .create(BeaconBlockHeader.fromBlock(block.getMessage()));
