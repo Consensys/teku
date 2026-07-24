@@ -174,7 +174,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .thenReturn(Optional.of(mismatchedPreferences));
 
     assertThatSafeFuture(bidValidator.validate(signedBid))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(ignore(
+                "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
+                bid.getFeeRecipient(), mismatchedPreferences.getFeeRecipient()));
   }
 
   @TestTemplate
@@ -188,7 +190,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .thenReturn(Optional.of(parentGasLimit));
 
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(ignore(
+                "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+                bid.getGasLimit(), parentGasLimit, targetGasLimit));
   }
 
   @TestTemplate
@@ -436,7 +440,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
     // First bid should be ignored because builder was added by second bid
     assertThatSafeFuture(firstBidResult)
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(ignore(
+                "Another payload execution bid from Builder with index %s already processed while validating bid for slot %s",
+                bid.getBuilderIndex(), bid.getSlot()));
   }
 
   @TestTemplate
