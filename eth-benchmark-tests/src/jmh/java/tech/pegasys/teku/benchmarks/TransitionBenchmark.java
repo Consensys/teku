@@ -105,7 +105,7 @@ public abstract class TransitionBenchmark {
             transitionBlockValidator,
             new StubMetricsSystem());
     chainBuilder = ChainBuilder.create(spec, validatorKeys);
-    chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     chainUpdater.initializeGenesis(false);
 
     blockImporter =
