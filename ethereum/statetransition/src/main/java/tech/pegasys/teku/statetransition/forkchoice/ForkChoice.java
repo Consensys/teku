@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
@@ -95,6 +96,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.attestation.VoteUpdates;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.ForkChoiceFastConfirmation;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
@@ -125,6 +128,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
+  private final FastConfirmationTracker fastConfirmationTracker;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
@@ -144,6 +148,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
+      final FastConfirmationTracker fastConfirmationTracker,
       final boolean forkChoiceLateBlockReorgEnabled,
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
       final DebugDataDumper debugDataDumper,
@@ -158,9 +163,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.attestationStateSelector =
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
+    this.fastConfirmationTracker = fastConfirmationTracker;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
+    LOG.debug("fastConfirmationEnabled is set to {}", fastConfirmationTracker.isEnabled());
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
     this.signatureVerifier = signatureVerifier;
@@ -170,7 +177,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             "get_proposer_head_selection_total",
             "when late_block_reorg is enabled, counts based on the proposer parent being based on fork choice, head, or parent of head.",
             "selected_source");
-    recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
+    recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
 
@@ -190,6 +197,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
+        FastConfirmationTracker.NOOP,
         false,
         LateBlockReorgPreparationHandler.NOOP,
         DebugDataDumper.NOOP,
@@ -402,9 +410,23 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
     final UInt64 currentSlot = spec.getCurrentSlot(store);
     if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
-      applyDeferredAttestations(currentSlot).finishStackTrace();
+      final SafeFuture<Void> deferredAttestationsFuture = applyDeferredAttestations(currentSlot);
+      // When fast confirmation is disabled this is exactly the master behaviour. When enabled, the
+      // slot-start work runs entirely off the fork-choice thread (on the fast confirmation runner)
+      // with no blocking join; it never gates tick processing.
+      if (fastConfirmationTracker.isEnabled()) {
+        ForkChoiceFastConfirmation.processForSlot(
+            fastConfirmationTracker, currentSlot, deferredAttestationsFuture, this::processHead);
+      } else {
+        deferredAttestationsFuture.finishStackTrace();
+      }
     }
     performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
+  }
+
+  private void onStoreInitialized() {
+    fastConfirmationTracker.initialize(recentChainData.getStore());
+    initializeProtoArrayForkChoice();
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -1292,6 +1314,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public UInt64 getLastProcessHeadSlot() {
     return lastProcessHeadSlot.get();
+  }
+
+  @VisibleForTesting
+  boolean isFastConfirmationEnabled() {
+    return fastConfirmationTracker.isEnabled();
+  }
+
+  @VisibleForTesting
+  Optional<FastConfirmationStore> getFastConfirmationStore() {
+    return fastConfirmationTracker.getFastConfirmationStore();
   }
 
   SafeFuture<ChainHead> prepareForBlockProduction(

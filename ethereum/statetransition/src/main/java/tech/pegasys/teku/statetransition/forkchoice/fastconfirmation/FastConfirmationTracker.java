@@ -1,0 +1,406 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
+
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+
+public class FastConfirmationTracker {
+  private static final Logger LOG = LogManager.getLogger();
+
+  public static final FastConfirmationTracker NOOP =
+      new FastConfirmationTracker(
+          false,
+          null,
+          Optional.empty(),
+          FastConfirmationEventChannel.NOOP,
+          new NoOpMetricsSystem(),
+          () -> UInt64.ZERO);
+
+  private final boolean enabled;
+  private final Spec spec;
+  private final FastConfirmationEventChannel fastConfirmationEventChannel;
+
+  /** Slot of the most recent confirmed block * */
+  private final AtomicInteger latestConfirmedSlot = new AtomicInteger(0);
+
+  /** Total number of confirmed block reorganizations */
+  private final Counter reorgsCounter;
+
+  /** Total number of fallbacks to finality */
+  private final Counter fallbacksCounter;
+
+  /** Total number of restarts from a safe unrealized justified block */
+  private final Counter restartsCounter;
+
+  /** Wall-clock duration of a single per-slot fast confirmation run; {@code null} when disabled. */
+  private final MetricsHistogram calculationTimer;
+
+  /** Incremented when a per-slot run does not finish within {@link #updateTimeout}. */
+  private final Counter timeoutCounter;
+
+  private final AtomicReference<FastConfirmationStore> fastConfirmationStore =
+      new AtomicReference<>();
+
+  /**
+   * Slot of the most recently applied update. Guards against stale or duplicate async tasks
+   * clobbering a newer store: {@code update_fast_confirmation_variables} MUST run exactly once per
+   * slot and slot heads rotate in slot order, so an update is applied only when its slot is
+   * strictly greater than this value. {@code null} until the first update after (re)initialization.
+   */
+  private final AtomicReference<UInt64> lastProcessedSlot = new AtomicReference<>();
+
+  private final Optional<AsyncRunner> asyncRunner;
+
+  private FastConfirmationTracker(
+      final boolean enabled,
+      final Spec spec,
+      final Optional<AsyncRunner> asyncRunner,
+      final FastConfirmationEventChannel fastConfirmationEventChannel,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
+    this.enabled = enabled;
+    this.spec = spec;
+    this.asyncRunner = asyncRunner;
+    this.fastConfirmationEventChannel = fastConfirmationEventChannel;
+
+    // Setting up metrics
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        "fast_confirmation_slot",
+        "Slot of the most recent confirmed block",
+        latestConfirmedSlot::get);
+    this.reorgsCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_reorgs_total",
+            "Total number of confirmed block reorganizations");
+    this.fallbacksCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_fallbacks_total",
+            "Total number of fallbacks to finality");
+    this.restartsCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_restarts_total",
+            "Total number of restarts from a safe unrealized justified block");
+    this.calculationTimer =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_calculation_seconds",
+            "Time taken to run the fast confirmation algorithm (incl. source-state loading) each slot");
+    this.timeoutCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "fast_confirmation_timeout_total",
+            "Number of slots where the fast confirmation update did not complete within its timeout");
+  }
+
+  public static FastConfirmationTracker create(
+      final Spec spec,
+      final Optional<AsyncRunner> asyncRunner,
+      final FastConfirmationEventChannel fastConfirmationEventChannel,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
+    return new FastConfirmationTracker(
+        true, spec, asyncRunner, fastConfirmationEventChannel, metricsSystem, timeProvider);
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void initialize(final ReadOnlyStore store) {
+    if (!enabled) {
+      return;
+    }
+    lastProcessedSlot.set(null);
+    fastConfirmationStore.set(FastConfirmationStore.create(store));
+  }
+
+  /**
+   * Hands off the per-slot head snapshot to the dedicated runner. Only the head root is captured on
+   * the (latency-critical) fork-choice thread; the epoch-boundary flags, greatest unrealized
+   * justified checkpoint, source states and the confirmation computation are all derived on the
+   * runner.
+   */
+  public SafeFuture<Void> onSlot(final UInt64 slot, final Bytes32 headRoot) {
+    if (!enabled) {
+      return SafeFuture.COMPLETE;
+    }
+
+    if (fastConfirmationStore.get() == null) {
+      LOG.debug("Skipping fast confirmation update because store is not initialized");
+      return SafeFuture.COMPLETE;
+    }
+
+    if (asyncRunner.isEmpty()) {
+      LOG.warn("Skipping fast confirmation update because no async runner is configured");
+      return SafeFuture.COMPLETE;
+    }
+
+    final FastConfirmationInput input = new FastConfirmationInput(slot, headRoot);
+    final Duration updateTimeout = updateTimeout(slot);
+    return asyncRunner
+        .orElseThrow()
+        .runAsync(() -> processFastConfirmationInput(input))
+        .orTimeout(updateTimeout)
+        .exceptionallyCompose(
+            error -> {
+              // A timeout means the side computation is lagging (e.g. slow state retrieval): log it
+              // and move on rather than failing the fork-choice tick. Real errors still propagate.
+              if (ExceptionUtil.hasCause(error, TimeoutException.class)) {
+                timeoutCounter.inc();
+                LOG.warn(
+                    "Fast confirmation update for slot {} timed out after {}", slot, updateTimeout);
+                return SafeFuture.COMPLETE;
+              }
+              return SafeFuture.failedFuture(error);
+            });
+  }
+
+  /**
+   * Whether the head is too far behind for {@code get_latest_confirmed} to do anything but revert
+   * to finalized: {@code true} when the head block is two or more epochs behind the current epoch,
+   * i.e. {@code head_epoch + 1 < current_epoch}. In that case the confirmed block (an ancestor of
+   * the head) is more than one epoch old (reverts), the observed-justified checkpoint is at most
+   * the head's epoch (no restart), and the advance gate (confirmed within one epoch of current)
+   * cannot pass — so the result is always the finalized block. One epoch of lag is tolerated so the
+   * rule keeps confirming through slow-following and non-finality. Treats a head not in fork choice
+   * as stale.
+   */
+  private boolean isHeadStale(
+      final UInt64 slot, final Bytes32 headRoot, final FastConfirmationStore store) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+    return store
+        .store()
+        .getForkChoiceStrategy()
+        .blockSlot(headRoot)
+        .map(headSlot -> spec.computeEpochAtSlot(headSlot).plus(1).isLessThan(currentEpoch))
+        .orElse(true);
+  }
+
+  /**
+   * Upper bound for a single per-slot update: half a slot. The confirmation computation should
+   * finish well within a slot; this only guards against a hung or very slow state retrieval
+   * monopolizing the dedicated single-thread runner. Applied via the default scheduler so it fires
+   * independently of that runner thread.
+   */
+  private Duration updateTimeout(final UInt64 slot) {
+    return Duration.ofMillis(spec.getSlotDurationMillis(slot) / 2L);
+  }
+
+  private void processFastConfirmationInput(final FastConfirmationInput input) {
+    final FastConfirmationStore currentStore = fastConfirmationStore.get();
+    if (currentStore == null) {
+      LOG.debug("Skipping fast confirmation update because store is not initialized");
+      return;
+    }
+
+    // Drop stale or duplicate updates. Tasks run on a dedicated single-thread runner so this
+    // read-modify-write is serialized; the guard additionally ensures that an out-of-order or
+    // repeated slot never overwrites a newer store (and enforces the spec's once-per-slot rule for
+    // update_fast_confirmation_variables).
+    final UInt64 lastSlot = lastProcessedSlot.get();
+    if (lastSlot != null && input.slot().isLessThanOrEqualTo(lastSlot)) {
+      LOG.debug(
+          "Skipping fast confirmation update for slot {}: already processed slot {}",
+          input.slot(),
+          lastSlot);
+      return;
+    }
+
+    // Time the actual per-slot computation (state loading + get_latest_confirmed), which is what
+    // the timeout bounds; the cheap guards above are deliberately left out of the measurement.
+    final MetricsHistogram.Timer calculationTimerContext = calculationTimer.startTimer();
+    try {
+      runFastConfirmation(input, currentStore);
+    } finally {
+      calculationTimerContext.closeUnchecked().run();
+    }
+  }
+
+  private void runFastConfirmation(
+      final FastConfirmationInput input, final FastConfirmationStore currentStore) {
+    final ReadOnlyStore store = currentStore.store();
+
+    // Stale-head short-circuit (during sync, or whenever the head stops progressing): when the head
+    // is two or more epochs behind the current epoch, get_latest_confirmed could only revert to the
+    // finalized block, so skip the whole update this slot — no source-state loads, no
+    // update_fast_confirmation_variables (including its greatest-unrealized-justified scan over all
+    // blocks), no event, no metrics churn. The store is left untouched and re-establishes itself on
+    // the first non-stale slot; the FCU safe hash falls back to the justified block while this (now
+    // stale) confirmed root is no longer in fork choice (see
+    // ForkChoiceStrategy#getForkChoiceState).
+    if (isHeadStale(input.slot(), input.headRoot(), currentStore)) {
+      LOG.debug(
+          "Fast confirmation update for slot {}: head is more than one epoch behind; skipping",
+          input.slot());
+      return;
+    }
+
+    // Derived off the fork-choice thread. The greatest unrealized justified checkpoint is only
+    // needed on the last slot of an epoch (when the next slot starts a new epoch); otherwise it is
+    // left at the finalized checkpoint and unused by update_fast_confirmation_variables.
+    final boolean currentSlotIsEpochStart =
+        FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, input.slot());
+    final boolean nextSlotIsEpochStart =
+        FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, input.slot().plus(1));
+    final Checkpoint greatestUnrealizedJustifiedCheckpoint =
+        nextSlotIsEpochStart
+            ? FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store)
+            : store.getFinalizedCheckpoint();
+
+    final FastConfirmationStore withUpdatedVariables =
+        FastConfirmationRuleUtil.updateFastConfirmationVariables(
+            currentStore,
+            input.headRoot(),
+            greatestUnrealizedJustifiedCheckpoint,
+            currentSlotIsEpochStart,
+            nextSlotIsEpochStart);
+
+    // on_fast_confirmation: fcr_store.confirmed_root = get_latest_confirmed(fcr_store).
+    final FastConfirmationStore updatedStore =
+        updateConfirmedRoot(withUpdatedVariables, input.slot(), currentSlotIsEpochStart);
+    fastConfirmationStore.set(updatedStore);
+    lastProcessedSlot.set(input.slot());
+
+    final Bytes32 confirmedRoot = updatedStore.confirmedRoot();
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+    final UInt64 confirmedSlot = forkChoiceStrategy.blockSlot(confirmedRoot).orElse(UInt64.ZERO);
+    latestConfirmedSlot.set(confirmedSlot.intValue());
+    if (isConfirmedRootReorg(
+        input.slot(), forkChoiceStrategy, currentStore.confirmedRoot(), confirmedRoot)) {
+      reorgsCounter.inc();
+    }
+
+    LOG.info(
+        "Fast confirmation update for slot {}: head={}, confirmed_root={}, confirmed_slot={}",
+        input.slot(),
+        input.headRoot(),
+        confirmedRoot,
+        confirmedSlot);
+
+    // The fast_confirmation event is emitted every time the algorithm runs, regardless of whether
+    // the confirmed block changed (per the Beacon API event stream spec).
+    fastConfirmationEventChannel.onFastConfirmation(confirmedRoot, confirmedSlot, input.slot());
+  }
+
+  /**
+   * Runs {@code get_latest_confirmed} against the loaded source states. The state loads are
+   * composed concurrently and joined here; in practice the required states are cache-resident (the
+   * head state and the justified checkpoint state), so the join is effectively non-blocking, and
+   * the overall task is bounded by {@link #updateTimeout}. When a required state is unavailable the
+   * confirmed root is left unchanged for this slot.
+   */
+  private FastConfirmationStore updateConfirmedRoot(
+      final FastConfirmationStore fcrStore, final UInt64 slot, final boolean atEpochStart) {
+    final Optional<FastConfirmationStates> maybeStates =
+        FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart).join();
+    final Bytes32 finalizedRoot = fcrStore.store().getFinalizedCheckpoint().getRoot();
+    if (maybeStates.isEmpty()) {
+      // The source states could not be loaded (e.g. the observed-justified checkpoint state has
+      // been pruned, which happens for a short window after startup before that checkpoint has
+      // advanced to a still-hot one). We cannot run get_latest_confirmed, so fall back to the
+      // finalized block: it is always safe to consider confirmed, its root is known without a state
+      // load, and this keeps confirmed_root tracking finality rather than going stale.
+      LOG.debug(
+          "Fast confirmation for slot {}: source states unavailable, falling back to finalized {}",
+          slot,
+          finalizedRoot);
+      fallbacksCounter.inc();
+      return fcrStore.withConfirmedRoot(finalizedRoot);
+    }
+
+    final Bytes32 confirmedRoot =
+        new FastConfirmationCalculator(spec, fcrStore, maybeStates.get(), slot)
+            .getLatestConfirmed();
+    recordConfirmationOutcome(fcrStore, confirmedRoot, finalizedRoot);
+
+    return fcrStore.withConfirmedRoot(confirmedRoot);
+  }
+
+  void recordConfirmationOutcome(
+      final FastConfirmationStore fcrStore,
+      final Bytes32 confirmedRoot,
+      final Bytes32 finalizedRoot) {
+    if (confirmedRoot.equals(finalizedRoot)) {
+      fallbacksCounter.inc();
+    } else if (confirmedRoot.equals(fcrStore.currentEpochObservedJustifiedCheckpoint().getRoot())) {
+      restartsCounter.inc();
+    }
+  }
+
+  /**
+   * Returns whether changing between two confirmed block roots switches chains. Advancing to a
+   * descendant or falling back to an ancestor is not a reorg.
+   *
+   * <p>Confirmed roots are resolved through {@code get_node_for_root}, which deliberately produces
+   * PENDING nodes under Gloas. Unlike an attestation latest message, a confirmed root has no vote
+   * slot or payload hint with which to call {@code get_supported_node}.
+   */
+  boolean isConfirmedRootReorg(
+      final UInt64 slot,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 previousConfirmedRoot,
+      final Bytes32 confirmedRoot) {
+    if (confirmedRoot.equals(previousConfirmedRoot)) {
+      return false;
+    }
+    return !isAncestor(slot, forkChoiceStrategy, confirmedRoot, previousConfirmedRoot)
+        && !isAncestor(slot, forkChoiceStrategy, previousConfirmedRoot, confirmedRoot);
+  }
+
+  private boolean isAncestor(
+      final UInt64 slot,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 descendantRoot,
+      final Bytes32 ancestorRoot) {
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(slot).getForkChoiceUtil();
+    return forkChoiceUtil.isAncestor(
+        forkChoiceStrategy,
+        ForkChoiceNode.createBase(descendantRoot),
+        ForkChoiceNode.createBase(ancestorRoot));
+  }
+
+  public Optional<FastConfirmationStore> getFastConfirmationStore() {
+    return Optional.ofNullable(fastConfirmationStore.get());
+  }
+}

@@ -153,6 +153,8 @@ public interface ReadOnlyStore extends TimeProvider {
 
   VoteTracker getVote(UInt64 validatorIndex);
 
+  VoteSnapshot getVoteSnapshot();
+
   void computeBalanceThresholds(BeaconState justifiedState);
 
   UInt64 getReorgThreshold();

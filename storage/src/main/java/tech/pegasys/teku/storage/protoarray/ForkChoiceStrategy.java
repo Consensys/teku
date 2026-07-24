@@ -250,7 +250,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Optional<ChainHead> proposingOnHead,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
-      final Checkpoint finalizedCheckpoint) {
+      final Checkpoint finalizedCheckpoint,
+      final Optional<Bytes32> fastConfirmationSafeBlockRoot) {
     protoArrayLock.readLock().lock();
     try {
       final ProtoNode headNode =
@@ -269,8 +270,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       // Pre-Gloas has only BASE, so this is the normal execution payload block hash.
       // In Gloas, BASE/EMPTY carry the effective EL parent hash from the bid
       // parent_block_hash; FULL carries the revealed payload hash for the selected head.
+      //
+      // safe_block_hash implements get_safe_execution_block_hash(fcr_store): when fast
+      // confirmation is enabled it is the confirmed block's hash, otherwise the justified block's
+      // hash (the pre-fast-confirmation default). The BASE-node hash already matches the spec per
+      // fork: pre-Gloas the confirmed block's execution_payload.block_hash, in Gloas its
+      // signed_execution_payload_bid.message.parent_block_hash.
       final Bytes32 safeExecutionHash =
-          getBaseNodeData(justifiedCheckpoint.getRoot())
+          fastConfirmationSafeBlockRoot
+              .flatMap(this::getBaseNodeData)
+              .or(() -> getBaseNodeData(justifiedCheckpoint.getRoot()))
               .map(ProtoNodeData::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
@@ -564,6 +573,21 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   @Override
   public Optional<ForkChoiceNode> getAncestorNode(final ForkChoiceNode node, final UInt64 slot) {
     return getAncestorProtoNode(node, slot).map(ProtoNode::getForkChoiceNode);
+  }
+
+  @Override
+  public Optional<ForkChoiceNode> getSupportedNode(
+      final UInt64 currentSlot,
+      final Bytes32 voteRoot,
+      final UInt64 voteSlot,
+      final boolean payloadPresent) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModel(currentSlot)
+          .getSupportedNode(voteRoot, voteSlot, payloadPresent, protoArray, blockNodeIndex);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
   }
 
   @Override

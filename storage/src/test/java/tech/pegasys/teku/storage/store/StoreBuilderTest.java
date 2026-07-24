@@ -162,7 +162,8 @@ class StoreBuilderTest {
                 Optional.empty(),
                 finalizedCheckpoint.getEpoch(),
                 finalizedCheckpoint,
-                finalizedCheckpoint);
+                finalizedCheckpoint,
+                Optional.empty());
 
     assertThat(forkChoiceState.safeExecutionBlockHash()).isEqualTo(latestBid.getParentBlockHash());
     assertThat(forkChoiceState.finalizedExecutionBlockHash())

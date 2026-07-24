@@ -207,6 +207,21 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void getSupportedNode_shouldResolveGloasVoteVariant() {
+    final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
+    final Bytes32 blockRoot = fixture.block().getRoot();
+    final UInt64 blockSlot = fixture.block().getSlot();
+    final UInt64 laterSlot = blockSlot.plus(ONE);
+
+    assertThat(fixture.strategy().getSupportedNode(laterSlot, blockRoot, blockSlot, true))
+        .contains(ForkChoiceNode.createBase(blockRoot));
+    assertThat(fixture.strategy().getSupportedNode(laterSlot, blockRoot, laterSlot, false))
+        .contains(ForkChoiceNode.createEmpty(blockRoot));
+    assertThat(fixture.strategy().getSupportedNode(laterSlot, blockRoot, laterSlot, true))
+        .contains(ForkChoiceNode.createFull(blockRoot));
+  }
+
+  @Test
   void shouldBuildOnFull_shouldReturnFalseWhenPtcVotesPayloadUntimely() {
     final GloasPayloadDecisionFixture fixture = createGloasPayloadDecisionFixture();
     final Bytes32 blockRoot = fixture.block().getRoot();
@@ -944,7 +959,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             Optional.empty(),
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
-            recentChainData.getFinalizedCheckpoint().orElseThrow());
+            recentChainData.getFinalizedCheckpoint().orElseThrow(),
+            Optional.empty());
 
     // Should have reverted to the justified checkpoint as head
     assertThat(forkChoiceState.headBlock().blockRoot()).isEqualTo(currentJustified.getRoot());
@@ -975,7 +991,11 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         fixture
             .strategy()
             .getForkChoiceState(
-                Optional.of(proposingHead), currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
+                Optional.of(proposingHead),
+                currentEpoch,
+                justifiedCheckpoint,
+                finalizedCheckpoint,
+                Optional.empty());
 
     assertThat(proposingForkChoiceState.headBlock())
         .isEqualTo(ForkChoiceNode.createFull(fixture.block1().getRoot()));
@@ -1015,11 +1035,87 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                 Optional.empty(),
                 fixture.spec().computeEpochAtSlot(fixture.child().getSlot()),
                 justifiedCheckpoint,
-                fixture.finalizedCheckpoint());
+                fixture.finalizedCheckpoint(),
+                Optional.empty());
 
     assertThat(boundaryBidParentBlockHash).isNotEqualTo(boundaryPayloadBlockHash);
     assertThat(forkChoiceState.safeExecutionBlockHash()).isEqualTo(boundaryBidParentBlockHash);
     assertThat(forkChoiceState.finalizedExecutionBlockHash()).isEqualTo(boundaryBidParentBlockHash);
+  }
+
+  @Test
+  void getForkChoiceState_shouldUseFastConfirmationConfirmedRootForSafeBlockHash() {
+    final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
+    fixture
+        .strategy()
+        .applyUpdate(
+            List.of(
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
+            Map.of(fixture.boundary().getRoot(), fixture.boundaryExecutionPayload()),
+            emptySet(),
+            emptyMap(),
+            fixture.finalizedCheckpoint(),
+            Optional.of(fixture.boundaryBlockAndCheckpoints()));
+
+    final Checkpoint justifiedCheckpoint = fixture.finalizedCheckpoint();
+    final UInt64 currentEpoch = fixture.spec().computeEpochAtSlot(fixture.child().getSlot());
+
+    // BASE-node execution hash is the get_safe_execution_block_hash source; boundary and child
+    // carry distinct hashes (in Gloas each is the block's bid parent_block_hash).
+    final Bytes32 boundarySafeHash =
+        fixture
+            .strategy()
+            .getBlockData(fixture.boundary().getRoot())
+            .orElseThrow()
+            .getExecutionBlockHash();
+    final Bytes32 childSafeHash =
+        fixture
+            .strategy()
+            .getBlockData(fixture.child().getRoot())
+            .orElseThrow()
+            .getExecutionBlockHash();
+    assertThat(childSafeHash).isNotEqualTo(boundarySafeHash);
+
+    // Fast confirmation disabled (no confirmed root): safe hash comes from the justified block.
+    assertThat(
+            fixture
+                .strategy()
+                .getForkChoiceState(
+                    Optional.empty(),
+                    currentEpoch,
+                    justifiedCheckpoint,
+                    fixture.finalizedCheckpoint(),
+                    Optional.empty())
+                .safeExecutionBlockHash())
+        .isEqualTo(boundarySafeHash);
+
+    // Fast confirmation confirming the child: safe hash is get_safe_execution_block_hash of the
+    // confirmed (child) block instead of the justified block.
+    assertThat(
+            fixture
+                .strategy()
+                .getForkChoiceState(
+                    Optional.empty(),
+                    currentEpoch,
+                    justifiedCheckpoint,
+                    fixture.finalizedCheckpoint(),
+                    Optional.of(fixture.child().getRoot()))
+                .safeExecutionBlockHash())
+        .isEqualTo(childSafeHash);
+
+    // If the supplied confirmed root is no longer in protoarray, use the justified block.
+    assertThat(
+            fixture
+                .strategy()
+                .getForkChoiceState(
+                    Optional.empty(),
+                    currentEpoch,
+                    justifiedCheckpoint,
+                    fixture.finalizedCheckpoint(),
+                    Optional.of(Bytes32.random()))
+                .safeExecutionBlockHash())
+        .isEqualTo(boundarySafeHash);
   }
 
   private StorageSystem initStorageSystem() {

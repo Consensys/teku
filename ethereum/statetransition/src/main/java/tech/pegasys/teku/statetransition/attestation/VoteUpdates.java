@@ -14,11 +14,9 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.newSetFromMap;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.NavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
@@ -26,8 +24,16 @@ import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
 public class VoteUpdates implements DeferredVotes {
   private final UInt64 slot;
-  private final Map<BlockRootAndFullPayloadHint, Collection<UInt64>>
-      votingIndicesByBlockRootAndFullPayloadHint = new ConcurrentHashMap<>();
+
+  // Keyed by validator index so that each validator holds a single vote for the slot. A validator's
+  // first vote wins (putIfAbsent), mirroring the spec's update_latest_messages, which only
+  // overwrites a latest message when the new attestation's target epoch is strictly greater (a
+  // same-epoch vote never overwrites). This is why a validator that attests to two competing blocks
+  // in one slot (equivocation) is applied to its first-received vote rather than to whichever block
+  // root a root-keyed map happened to iterate first. A navigable map keeps iteration deterministic
+  // (ordered by validator index).
+  private final NavigableMap<UInt64, BlockRootAndFullPayloadHint> voteByValidatorIndex =
+      new ConcurrentSkipListMap<>();
 
   public VoteUpdates(final UInt64 slot) {
     this.slot = slot;
@@ -40,16 +46,13 @@ public class VoteUpdates implements DeferredVotes {
 
   @Override
   public void forEachDeferredVote(final DeferredVoteConsumer consumer) {
-    votingIndicesByBlockRootAndFullPayloadHint.forEach(
-        (key, indices) ->
-            indices.forEach(
-                validatorIndex ->
-                    consumer.accept(key.blockRoot(), validatorIndex, key.fullPayloadHint())));
+    voteByValidatorIndex.forEach(
+        (validatorIndex, vote) ->
+            consumer.accept(vote.blockRoot(), validatorIndex, vote.fullPayloadHint()));
   }
 
   public boolean isEmpty() {
-    return votingIndicesByBlockRootAndFullPayloadHint.values().stream()
-        .allMatch(Collection::isEmpty);
+    return voteByValidatorIndex.isEmpty();
   }
 
   public void addAttestation(
@@ -59,21 +62,15 @@ public class VoteUpdates implements DeferredVotes {
         "Attempting to store vote update for wrong slot. Expected %s but got %s",
         slot,
         attestation.data().getSlot());
-    final Bytes32 blockRoot = attestation.data().getBeaconBlockRoot();
-    votingIndicesByBlockRootAndFullPayloadHint
-        .computeIfAbsent(
-            new BlockRootAndFullPayloadHint(blockRoot, fullPayloadHint),
-            __ -> newSetFromMap(new ConcurrentHashMap<>()))
-        .addAll(attestation.attestingIndices());
+    final BlockRootAndFullPayloadHint vote =
+        new BlockRootAndFullPayloadHint(attestation.data().getBeaconBlockRoot(), fullPayloadHint);
+    attestation.attestingIndices().forEach(index -> voteByValidatorIndex.putIfAbsent(index, vote));
   }
 
   public void addVote(
       final Bytes32 blockRoot, final UInt64 validatorIndex, final boolean fullPayloadHint) {
-    votingIndicesByBlockRootAndFullPayloadHint
-        .computeIfAbsent(
-            new BlockRootAndFullPayloadHint(blockRoot, fullPayloadHint),
-            __ -> newSetFromMap(new ConcurrentHashMap<>()))
-        .add(validatorIndex);
+    voteByValidatorIndex.putIfAbsent(
+        validatorIndex, new BlockRootAndFullPayloadHint(blockRoot, fullPayloadHint));
   }
 
   private record BlockRootAndFullPayloadHint(Bytes32 blockRoot, boolean fullPayloadHint) {}

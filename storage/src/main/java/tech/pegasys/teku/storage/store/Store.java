@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteSnapshot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -966,6 +967,16 @@ class Store extends CacheableStore {
       }
       final VoteTracker vote = votes[validatorIndex.intValue()];
       return vote != null ? vote : VoteTracker.DEFAULT;
+    } finally {
+      readVotesLock.unlock();
+    }
+  }
+
+  @Override
+  public VoteSnapshot getVoteSnapshot() {
+    readVotesLock.lock();
+    try {
+      return VoteSnapshot.create(highestVotedValidatorIndex, votes);
     } finally {
       readVotesLock.unlock();
     }
