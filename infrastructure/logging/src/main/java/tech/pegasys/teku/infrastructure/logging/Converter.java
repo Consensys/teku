@@ -17,24 +17,27 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.web3j.utils.Convert;
-import org.web3j.utils.Convert.Unit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Converter {
 
+  private static final int WEI_TO_ETH_DECIMALS = 18;
+  private static final int WEI_TO_GWEI_DECIMALS = 9;
+
   public static String weiToEth(final UInt256 wei) {
-    final BigDecimal eth = Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
+    final BigDecimal eth = new BigDecimal(wei.toDecimalString()).movePointLeft(WEI_TO_ETH_DECIMALS);
     return eth.setScale(6, RoundingMode.HALF_UP).toString();
   }
 
   public static String gweiToEth(final UInt64 gwei) {
-    final BigDecimal wei = Convert.toWei(gwei.toString(), Unit.GWEI);
+    final BigDecimal wei =
+        new BigDecimal(gwei.bigIntegerValue()).movePointRight(WEI_TO_GWEI_DECIMALS);
     return weiToEth(UInt256.valueOf(wei.toBigInteger()));
   }
 
   public static UInt64 weiToGwei(final UInt256 wei) {
-    final BigInteger gwei = Convert.fromWei(wei.toDecimalString(), Unit.GWEI).toBigInteger();
+    final BigInteger gwei =
+        new BigDecimal(wei.toDecimalString()).movePointLeft(WEI_TO_GWEI_DECIMALS).toBigInteger();
     return UInt64.valueOf(gwei);
   }
 }
