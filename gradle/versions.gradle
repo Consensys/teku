@@ -121,7 +121,7 @@ dependencyManagement {
 		dependency 'org.fusesource.leveldbjni:leveldbjni:1.8'
 		dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-		dependencySet(group: "org.web3j", version: "4.14.0") {
+		dependencySet(group: "org.web3j", version: "6.0.0") {
 			entry 'core'
 		}
 
