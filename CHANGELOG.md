@@ -14,3 +14,4 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+ - Fixed Beacon REST API socket retention when clients cancel pending asynchronous requests. Requests now time out after 30 seconds.
