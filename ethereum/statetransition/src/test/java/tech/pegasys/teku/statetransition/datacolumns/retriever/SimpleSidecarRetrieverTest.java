@@ -44,14 +44,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
 @SuppressWarnings({"JavaCase"})
 public class SimpleSidecarRetrieverTest {
@@ -106,19 +102,9 @@ public class SimpleSidecarRetrieverTest {
   final Iterator<UInt256> nonCustodyNodeIds = craftNodeIdsNotCustodyOf(columnIndex).iterator();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
-  final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
 
   public SimpleSidecarRetrieverTest() {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-  }
-
-  private SignedBeaconBlock createSigned(final BeaconBlock block) {
-    return dataStructureUtil.signedBlock(block);
-  }
-
-  private DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
-    return new DataColumnSlotAndIdentifier(
-        block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
 
   Set<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
@@ -146,19 +132,13 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData = createCustodyPeer();
     final TestPeer custodyPeerHavingData = createCustodyPeer();
     final TestPeer nonCustodyPeer = createNonCustodyPeer();
 
-    final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
-    final BeaconBlock block = blockResolver.addBlock(10, 1);
-    final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
-    final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
-
-    final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, custodyPeerHavingData);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
 
     testPeerManager.connectPeer(custodyPeerMissingData);
     testPeerManager.connectPeer(nonCustodyPeer);
@@ -182,7 +162,6 @@ public class SimpleSidecarRetrieverTest {
                 .getResponseScore())
         .isEqualTo(3);
 
-    custodyPeerHavingData.addSidecar(sidecar0);
     testPeerManager.connectPeer(custodyPeerHavingData);
     assertThat(
             simpleSidecarRetriever
@@ -335,14 +314,8 @@ public class SimpleSidecarRetrieverTest {
         new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
             .currentRequestLimit(1000);
 
-    final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
-    final BeaconBlock block = blockResolver.addBlock(10, 1);
-    final DataColumnSidecar sidecar0 =
-        miscHelpers
-            .constructDataColumnSidecarsOld(createSigned(block), blobs)
-            .get(columnIndex.intValue());
-    final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());
-    fastAlternatePeer.addSidecar(sidecar0);
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, fastAlternatePeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
 
     // Only the slow peer is available when the request starts, so the primary attempt lands on it.
     testPeerManager.connectPeer(slowPeer);
@@ -372,14 +345,8 @@ public class SimpleSidecarRetrieverTest {
         new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
             .currentRequestLimit(1000);
 
-    final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
-    final BeaconBlock block = blockResolver.addBlock(10, 1);
-    final DataColumnSidecar sidecar0 =
-        miscHelpers
-            .constructDataColumnSidecarsOld(createSigned(block), blobs)
-            .get(columnIndex.intValue());
-    final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());
-    fastAlternatePeer.addSidecar(sidecar0);
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, fastAlternatePeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
 
     testPeerManager.connectPeer(slowPeer);
     // default retriever has hedging disabled (overlapFraction == 0)
