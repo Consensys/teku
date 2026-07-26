@@ -50,22 +50,28 @@ public class LightClientUtilTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private LightClientUtil lightClientUtil;
+  private TestSpecInvocationContextProvider.SpecContext specContext;
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    this.specContext = specContext;
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     lightClientUtil = spec.getLightClientUtilRequired(UInt64.ZERO);
   }
 
   @TestTemplate
-  public void getBoostrap_shouldReturnValidBootstrap() {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
+  public void createLightClientBootstrap_shouldReturnValidBootstrap() {
+    assumePreCapella();
+    final SignedBlockAndState blockAndState =
+        blockWithPostState(1, dataStructureUtil.randomBytes32());
+    final BeaconState state = blockAndState.getState();
     final LightClientHeader expectedHeader =
         SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
             .getLightClientHeaderSchema()
             .create(BeaconBlockHeader.fromState(state));
-    final LightClientBootstrap bootstrap = lightClientUtil.getLightClientBootstrap(state);
+    final LightClientBootstrap bootstrap =
+        lightClientUtil.createLightClientBootstrap(state, blockAndState.getBlock());
 
     assertThat(bootstrap.getLightClientHeader()).isEqualTo(expectedHeader);
     assertThat(bootstrap.getCurrentSyncCommittee())
@@ -115,6 +121,7 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldProveNextSyncCommitteeWithinSamePeriod() {
+    assumePreCapella();
     final SignedBlockAndState attested = blockWithPostState(1, dataStructureUtil.randomBytes32());
     final SignedBlockAndState signature = blockWithPostState(2, attested.getBlock().getRoot());
 
@@ -140,6 +147,7 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldUseDefaultsWhenSignatureSlotInLaterPeriod() {
+    assumePreCapella();
     final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
     final long nextPeriodSlot =
         (long) config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1;
@@ -166,6 +174,7 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldProveFinalizedHeaderFromAttestedState() {
+    assumePreCapella();
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBlockAndState attested =
         blockWithPostState(
@@ -197,6 +206,7 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldRejectFinalizedBlockNotMatchingCheckpoint() {
+    assumePreCapella();
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBlockAndState attested = blockWithPostState(2, dataStructureUtil.randomBytes32());
     final SignedBlockAndState signature = blockWithPostState(3, attested.getBlock().getRoot());
@@ -215,6 +225,7 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldUseDefaultHeaderForGenesisFinalizedBlock() {
+    assumePreCapella();
     final SignedBeaconBlock genesisBlock = dataStructureUtil.randomSignedBeaconBlock(0);
     final SignedBlockAndState attested =
         blockWithPostState(
@@ -246,6 +257,7 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldRejectStateThatIsNotThePostStateOfTheBlock() {
+    assumePreCapella();
     final SignedBlockAndState attested = blockWithPostState(1, dataStructureUtil.randomBytes32());
     final SignedBlockAndState signature = blockWithPostState(2, attested.getBlock().getRoot());
     final SignedBlockAndState unrelated = blockWithPostState(2, attested.getBlock().getRoot());
@@ -286,6 +298,42 @@ public class LightClientUtilTest {
     assertThat(optimisticUpdate.getAttestedHeader()).isEqualTo(update.getAttestedHeader());
     assertThat(optimisticUpdate.getSyncAggregate()).isEqualTo(update.getSyncAggregate());
     assertThat(optimisticUpdate.getSignatureSlot()).isEqualTo(update.getSignatureSlot());
+  }
+
+  @TestTemplate
+  public void createLightClientBootstrap_shouldThrowFromCapella() {
+    assumeCapellaOrLater();
+    final SignedBlockAndState blockAndState =
+        blockWithPostState(1, dataStructureUtil.randomBytes32());
+    assertThatThrownBy(
+            () ->
+                lightClientUtil.createLightClientBootstrap(
+                    blockAndState.getState(), blockAndState.getBlock()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @TestTemplate
+  public void createLightClientUpdate_shouldThrowFromCapella() {
+    assumeCapellaOrLater();
+    final SignedBlockAndState attested = blockWithPostState(1, dataStructureUtil.randomBytes32());
+    final SignedBlockAndState signature = blockWithPostState(2, attested.getBlock().getRoot());
+    assertThatThrownBy(
+            () ->
+                lightClientUtil.createLightClientUpdate(
+                    signature.getState(),
+                    signature.getBlock(),
+                    attested.getState(),
+                    attested.getBlock(),
+                    Optional.empty()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  private void assumePreCapella() {
+    specContext.assumeIsOneOf(SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
+  }
+
+  private void assumeCapellaOrLater() {
+    specContext.assumeIsNotOneOf(SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
   }
 
   private SignedBlockAndState blockWithPostState(final long slot, final Bytes32 parentRoot) {
