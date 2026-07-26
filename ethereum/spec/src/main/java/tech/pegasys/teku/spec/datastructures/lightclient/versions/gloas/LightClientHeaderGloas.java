@@ -43,7 +43,7 @@ public class LightClientHeaderGloas
     return getField0();
   }
 
-  public SszBytes32 getExecutionHash() {
+  public SszBytes32 getExecutionBlockHash() {
     return getField1();
   }
 

@@ -43,7 +43,7 @@ public class LightClientHeaderCapella
     return getField0();
   }
 
-  public ExecutionPayloadHeader getExecutionPayload() {
+  public ExecutionPayloadHeader getExecution() {
     return getField1();
   }
 

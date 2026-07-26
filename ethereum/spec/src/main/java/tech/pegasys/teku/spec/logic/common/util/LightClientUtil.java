@@ -59,25 +59,36 @@ public class LightClientUtil {
     this.specConfig = specConfig;
   }
 
-  public LightClientBootstrap getLightClientBootstrap(final BeaconState state) {
+  /** {@code create_light_client_bootstrap}. */
+  public LightClientBootstrap createLightClientBootstrap(
+      final BeaconState state, final SignedBeaconBlock block) {
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
 
-    // Requires rehashing the state. See
-    // https://github.com/ethereum/consensus-specs/blob/master/specs/altair/light-client/full-node.md#create_light_client_bootstrap
-    final LightClientHeader lightClientHeader =
-        schemaDefinitionsAltair
-            .getLightClientHeaderSchema()
-            .create(BeaconBlockHeader.fromState(state));
+    checkArgument(
+        currentEpoch.isGreaterThanOrEqualTo(specConfig.getAltairForkEpoch()),
+        "Current epoch must be at or after the Altair fork.");
 
-    final SyncCommittee currentSyncCommittee =
-        syncCommitteeUtil.getSyncCommittee(state, currentEpoch);
+    if (currentEpoch.isGreaterThanOrEqualTo(specConfig.getCapellaForkEpoch())) {
+      throw new UnsupportedOperationException(
+          "headerFromBlock currently does not support Capella and onwards.");
+    }
 
-    final SszBytes32Vector currentSyncCommitteeProof =
-        BeaconStateAltair.required(state).createCurrentSyncCommitteeProof();
+    checkArgument(
+        state.getSlot().equals(state.getLatestBlockHeader().getSlot()),
+        "State must be processed upto its latest block header.");
+
+    checkArgument(
+        BeaconBlockHeader.fromState(state).hashTreeRoot().equals(block.getRoot()),
+        "State must be the post-state of the signature block");
+
+    final BeaconStateAltair stateAltair = BeaconStateAltair.required(state);
 
     return schemaDefinitionsAltair
         .getLightClientBootstrapSchema()
-        .create(lightClientHeader, currentSyncCommittee, currentSyncCommitteeProof);
+        .create(
+            headerFromBlock(block),
+            stateAltair.getCurrentSyncCommittee(),
+            stateAltair.createCurrentSyncCommitteeProof());
   }
 
   /**
@@ -90,11 +101,16 @@ public class LightClientUtil {
       final BeaconState attestedState,
       final SignedBeaconBlock attestedBlock,
       final Optional<SignedBeaconBlock> finalizedBlock) {
+
+    final UInt64 attestedEpoch = miscHelpers.computeEpochAtSlot(attestedBlock.getSlot());
     checkArgument(
-        miscHelpers
-            .computeEpochAtSlot(attestedState.getSlot())
-            .isGreaterThanOrEqualTo(specConfig.getAltairForkEpoch()),
+        attestedEpoch.isGreaterThanOrEqualTo(specConfig.getAltairForkEpoch()),
         "Attested state must be at or after the Altair fork");
+
+    if (attestedEpoch.isGreaterThanOrEqualTo(specConfig.getCapellaForkEpoch())) {
+      throw new UnsupportedOperationException(
+          "headerFromBlock currently does not support Capella and onwards.");
+    }
 
     final SyncAggregate syncAggregate =
         BeaconBlockBodyAltair.required(block.getMessage().getBody()).getSyncAggregate();
