@@ -2310,7 +2310,7 @@
 - name: create_light_client_bootstrap#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/LightClientUtil.java
-      search: public LightClientBootstrap getLightClientBootstrap(
+      search: public LightClientBootstrap createLightClientBootstrap(
   spec: |
     <spec fn="create_light_client_bootstrap" fork="altair" hash="54e41304">
     def create_light_client_bootstrap(
