@@ -599,6 +599,8 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
     verify(executionPayloadBidCircuitBreaker).observeImportedBlock(parentBlock);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
   }
 
   @Test
@@ -618,6 +620,8 @@ public class DefaultExecutionPayloadBidManagerTest {
     executionPayloadBidManager.onExecutionPayloadImported(executionPayload, false);
 
     verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
   }
 
   @Test
