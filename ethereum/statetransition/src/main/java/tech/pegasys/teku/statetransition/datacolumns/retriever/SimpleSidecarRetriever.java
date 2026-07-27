@@ -551,9 +551,9 @@ public class SimpleSidecarRetriever
 
     void cancelActiveRequests() {
       // Only ever called on a request that the caller has already removed (or is removing) from
-      // pendingRequests, so this RetrieveRequest - together with attemptingPeers/activeRequests - is
-      // discarded right after. We therefore only cancel the in-flight futures and deliberately do
-      // NOT clear the two collections: clearing them in sequence is not atomic and could briefly
+      // pendingRequests, so this RetrieveRequest - together with attemptingPeers/activeRequests -
+      // is discarded right after. We therefore only cancel the in-flight futures and deliberately
+      // do NOT clear the two collections: clearing them in sequence is not atomic and could briefly
       // expose an inconsistent (attemptingPeers, activeRequests) view to a concurrent round.
       activeRequests.values().forEach(activeRequest -> activeRequest.promise().cancel(true));
     }
