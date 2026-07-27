@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteSnapshot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -294,6 +295,15 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public VoteTracker getVote(final UInt64 validatorIndex) {
     return store.getVote(validatorIndex);
+  }
+
+  /**
+   * Intentionally delegates to the committed store: uncommitted vote changes staged in this
+   * transaction are excluded so the fast confirmation rule sees only committed vote state.
+   */
+  @Override
+  public VoteSnapshot getVoteSnapshot() {
+    return store.getVoteSnapshot();
   }
 
   @Override

@@ -181,7 +181,9 @@
     </spec>
 
 - name: CONFIRMATION_BYZANTINE_THRESHOLD#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationRuleUtil.java
+      search: CONFIRMATION_BYZANTINE_THRESHOLD =
   spec: |
     <spec config_var="CONFIRMATION_BYZANTINE_THRESHOLD" fork="phase0" hash="60de2e33">
     CONFIRMATION_BYZANTINE_THRESHOLD: uint64 = 25
