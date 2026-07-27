@@ -253,6 +253,13 @@ public class SimpleSidecarRetriever
     // attempt (size() == 1), and a hedge takes it to two. So a request never has more than two
     // concurrent attempts, and counting requests with size() > 1 counts each hedged request exactly
     // once against the budget (there are no extra attempts to miss).
+    //
+    // This accounting is best-effort and approximate: completion callbacks (reqRespCompleted /
+    // reqRespSucceeded) run outside the roundInProgress guard, so attemptingPeers can shrink
+    // concurrently while we compute the budget and scan for eligible requests. A request that drops
+    // from 2 -> 1 attempts mid-round may still be counted here, or picked as eligible with a stale
+    // size; the only effect is slightly conservative hedging that self-corrects next round.
+    // Correctness never depends on an exact count.
     final long currentOverlap =
         pendingRequests.values().stream().filter(r -> r.attemptingPeers.size() > 1).count();
     int budget = maxOverlap - (int) currentOverlap;
@@ -434,8 +441,8 @@ public class SimpleSidecarRetriever
       reqRespSucceeded(request, maybeResult);
       return;
     }
-    // This attempt failed. Release just this peer's attempt so the request can be re-dispatched next
-    // round if still pending.
+    // This attempt failed. Release just this peer's attempt so the request can be re-dispatched
+    // next round if still pending.
     request.attemptingPeers.remove(peer.nodeId);
     request.activeRequests.remove(peer.nodeId);
     if (request.attemptingPeers.isEmpty()) {
