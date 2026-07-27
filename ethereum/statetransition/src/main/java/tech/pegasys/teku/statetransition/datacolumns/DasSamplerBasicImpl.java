@@ -337,6 +337,17 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
     return true;
   }
 
+  @Override
+  public boolean isDataAvailable(final UInt64 slot, final Bytes32 blockRoot) {
+    if (isDataAvailabilityAlreadySatisfied(slot, blockRoot)) {
+      return true;
+    }
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(blockRoot);
+    return tracker != null
+        && tracker.completionFuture().isDone()
+        && !tracker.completionFuture().isCompletedExceptionally();
+  }
+
   private boolean isInCustodyPeriod(final BeaconBlock block) {
     final MiscHelpersFulu miscHelpersFulu =
         MiscHelpersFulu.required(spec.atSlot(block.getSlot()).miscHelpers());

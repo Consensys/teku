@@ -109,6 +109,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -171,6 +172,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
   private final PayloadAttestationPool payloadAttestationPool;
+  private final DataAvailabilitySampler dataAvailabilitySampler;
   private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
@@ -203,6 +205,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
       final PayloadAttestationPool payloadAttestationPool,
+      final DataAvailabilitySampler dataAvailabilitySampler,
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
@@ -231,6 +234,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
     this.payloadAttestationPool = payloadAttestationPool;
+    this.dataAvailabilitySampler = dataAvailabilitySampler;
     this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
@@ -673,12 +677,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final SignedBeaconBlock block = maybeBlock.get();
               final boolean payloadPresent =
                   executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot());
-              // if execution payload is in the store, blob data is available
               final boolean blobDataAvailable =
-                  combinedChainDataClient
-                      .getStore()
-                      .getExecutionPayloadIfAvailable(block.getRoot())
-                      .isPresent();
+                  dataAvailabilitySampler.isDataAvailable(slot, block.getRoot());
               final PayloadAttestationData payloadAttestationData =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getPayloadAttestationDataSchema()

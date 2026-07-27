@@ -122,6 +122,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
@@ -171,6 +172,8 @@ class ValidatorApiHandlerTest {
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+  private final DataAvailabilitySampler dataAvailabilitySampler =
+      mock(DataAvailabilitySampler.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
   private final ExecutionPayloadFactory executionPayloadFactory =
@@ -239,6 +242,7 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
@@ -534,6 +538,7 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,

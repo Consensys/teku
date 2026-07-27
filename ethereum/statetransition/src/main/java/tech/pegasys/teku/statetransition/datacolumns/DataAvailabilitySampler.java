@@ -45,6 +45,11 @@ public interface DataAvailabilitySampler
         }
 
         @Override
+        public boolean isDataAvailable(final UInt64 slot, final Bytes32 blockRoot) {
+          return false;
+        }
+
+        @Override
         public void flush() {}
 
         @Override
@@ -75,6 +80,9 @@ public interface DataAvailabilitySampler
    * the {@link #flush()} method
    */
   SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot);
+
+  /** Returns true if data availability has already been confirmed for the given block. */
+  boolean isDataAvailable(UInt64 slot, Bytes32 blockRoot);
 
   /**
    * Immediately initiates sampling. When doing batch sampling it would be more effective to invoke

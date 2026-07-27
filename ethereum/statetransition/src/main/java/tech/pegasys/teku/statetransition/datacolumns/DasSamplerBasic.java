@@ -41,6 +41,11 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
         }
 
         @Override
+        public boolean isDataAvailable(final UInt64 slot, final Bytes32 blockRoot) {
+          return false;
+        }
+
+        @Override
         public SamplingEligibilityStatus checkSamplingEligibility(final BeaconBlock block) {
           return SamplingEligibilityStatus.NOT_REQUIRED_NO_BLOBS;
         }
