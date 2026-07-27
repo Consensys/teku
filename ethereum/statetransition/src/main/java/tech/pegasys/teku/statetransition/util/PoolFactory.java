@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl;
+import tech.pegasys.teku.statetransition.execution.PendingProposerPreferences;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -58,6 +60,7 @@ public class PoolFactory {
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
   private static final int DEFAULT_MAX_BLOCKS_PENDING_PARENT_EXECUTION_PAYLOAD = 1024;
+  private static final int DEFAULT_MAX_PENDING_PROPOSER_PREFERENCES = 1000;
   private static final int DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER = 10;
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
@@ -205,6 +208,27 @@ public class PoolFactory {
         payloadAttestation ->
             Collections.singletonList(payloadAttestation.getData().getBeaconBlockRoot()),
         payloadAttestation -> payloadAttestation.getData().getSlot());
+  }
+
+  public PendingPool<PendingProposerPreferences> createPendingPoolForProposerPreferences(
+      final Spec spec) {
+    return createPendingPoolForProposerPreferences(spec, DEFAULT_MAX_PENDING_PROPOSER_PREFERENCES);
+  }
+
+  public PendingPool<PendingProposerPreferences> createPendingPoolForProposerPreferences(
+      final Spec spec, final int maxQueueSize) {
+    return new PendingPool<>(
+        pendingPoolsSizeGauge,
+        "proposer_preferences",
+        spec,
+        UInt64.ZERO,
+        UInt64.valueOf(MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES),
+        maxQueueSize,
+        proposerPreferences -> proposerPreferences.signedProposerPreferences().hashTreeRoot(),
+        proposerPreferences ->
+            Collections.singletonList(
+                proposerPreferences.signedProposerPreferences().getMessage().getDependentRoot()),
+        preferences -> preferences.signedProposerPreferences().getMessage().getProposalSlot());
   }
 
   public <T> PendingPool<T> createNoOpPendingPool(final Spec spec) {

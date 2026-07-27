@@ -15,29 +15,43 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
 
-public class DefaultProposerPreferencesManager implements ProposerPreferencesManager {
+public class DefaultProposerPreferencesManager
+    implements ProposerPreferencesManager, SlotEventsChannel, ReceivedBlockEventsChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator;
+  private final PendingPool<PendingProposerPreferences> pendingProposerPreferences;
   private final Map<UInt64, ProposerPreferences> acceptedProposerPreferences =
       LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES);
   private final Subscribers<OperationAddedSubscriber<SignedProposerPreferences>> subscribers =
       Subscribers.create(true);
 
   public DefaultProposerPreferencesManager(
-      final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator) {
+      final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator,
+      final PendingPool<PendingProposerPreferences> pendingProposerPreferences) {
     this.proposerPreferencesGossipValidator = proposerPreferencesGossipValidator;
+    this.pendingProposerPreferences = pendingProposerPreferences;
   }
 
   @Override
@@ -63,22 +77,74 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
     subscribers.subscribe(subscriber);
   }
 
+  @Override
+  public void onSlot(final UInt64 slot) {
+    pendingProposerPreferences.onSlot(slot);
+    pendingProposerPreferences.removeItemsMatching(
+        pendingPreferences ->
+            pendingPreferences
+                .signedProposerPreferences()
+                .getMessage()
+                .getProposalSlot()
+                .isLessThan(slot));
+    final List<PendingProposerPreferences> preferencesToRetry =
+        pendingProposerPreferences.removeItemsMatching(__ -> true);
+    retryPendingPreferences(preferencesToRetry);
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    retryPendingPreferences(
+        pendingProposerPreferences.removeItemsDependingOn(block.getRoot(), false));
+  }
+
   private SafeFuture<InternalValidationResult> validateAndAdd(
       final SignedProposerPreferences signedProposerPreferences, final boolean fromNetwork) {
     return proposerPreferencesGossipValidator
         .validate(signedProposerPreferences)
         .thenApply(
             result -> {
-              if (result.isAccept()) {
-                acceptedProposerPreferences.put(
-                    signedProposerPreferences.getMessage().getProposalSlot(),
-                    signedProposerPreferences.getMessage());
-                subscribers.forEach(
-                    subscriber ->
-                        subscriber.onOperationAdded(
-                            signedProposerPreferences, result, fromNetwork));
-              }
+              processValidationResult(signedProposerPreferences, fromNetwork, result);
               return result;
             });
+  }
+
+  private void processValidationResult(
+      final SignedProposerPreferences signedProposerPreferences,
+      final boolean fromNetwork,
+      final InternalValidationResult result) {
+    switch (result.code()) {
+      case ACCEPT -> {
+        removePendingPreferences(signedProposerPreferences);
+        acceptedProposerPreferences.put(
+            signedProposerPreferences.getMessage().getProposalSlot(),
+            signedProposerPreferences.getMessage());
+        subscribers.forEach(
+            subscriber ->
+                subscriber.onOperationAdded(signedProposerPreferences, result, fromNetwork));
+      }
+      case SAVE_FOR_FUTURE ->
+          pendingProposerPreferences.add(
+              new PendingProposerPreferences(signedProposerPreferences, fromNetwork));
+      case REJECT, IGNORE -> removePendingPreferences(signedProposerPreferences);
+    }
+  }
+
+  private void retryPendingPreferences(
+      final Collection<PendingProposerPreferences> proposerPreferences) {
+    proposerPreferences.forEach(
+        pendingPreferences ->
+            validateAndAdd(
+                    pendingPreferences.signedProposerPreferences(),
+                    pendingPreferences.fromNetwork())
+                .finishError(LOG));
+  }
+
+  private void removePendingPreferences(final SignedProposerPreferences signedProposerPreferences) {
+    pendingProposerPreferences.remove(
+        new PendingProposerPreferences(signedProposerPreferences, false));
   }
 }
