@@ -319,10 +319,18 @@ public class SimpleSidecarRetriever
     activeRpcRequest.ignoreCancelException().finishStackTrace();
 
     // Safe to install after firing: reqResp buffers the request and only completes it on flush(),
-    // which happens at the end of this round, so the handle callback above cannot run before this
-    // assignment.
+    // which happens at the end of this round, so the RPC handle callback above cannot run before
+    // this assignment.
     match.request.activeRequests.put(
         match.peer.nodeId, new ActiveRequest(activeRpcRequest, match.peer));
+    // The gossip completion path (reqRespSucceeded -> cancelActiveRequests) is NOT gated on flush,
+    // so it could have removed this request between claiming the peer slot above and registering
+    // the future here, leaving it un-cancelled. If the request is no longer pending, cancel now and
+    // don't count this as an activation.
+    if (!pendingRequests.containsKey(match.request.columnId)) {
+      activeRpcRequest.cancel(true);
+      return false;
+    }
     return true;
   }
 
