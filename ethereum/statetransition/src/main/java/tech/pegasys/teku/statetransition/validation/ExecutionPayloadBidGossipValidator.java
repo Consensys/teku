@@ -195,11 +195,11 @@ public class ExecutionPayloadBidGossipValidator {
         gossipValidationHelper.getSlotForBlockRoot(bid.getParentBlockRoot());
     if (maybeParentBlockSlot.isEmpty()) {
       LOG.trace(
-          "Bid's parent block with root {} does not exist. The bid will be saved for future processing",
+          "Bid's parent block with root {} is unknown. The bid will be saved for future processing",
           bid.getParentBlockRoot());
       return completedFuture(
           saveForFuture(
-              "Bid's parent block with root %s does not exist. The bid will be saved for future processing",
+              "Bid's parent block with root %s is unknown. The bid will be saved for future processing",
               bid.getParentBlockRoot()));
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();

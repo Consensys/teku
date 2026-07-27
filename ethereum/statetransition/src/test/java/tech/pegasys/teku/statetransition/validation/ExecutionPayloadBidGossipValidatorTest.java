@@ -312,7 +312,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             saveForFuture(
-                "Bid's parent block with root %s does not exist. The bid will be saved for future processing",
+                "Bid's parent block with root %s is unknown. The bid will be saved for future processing",
                 parentBlockRoot));
   }
 
