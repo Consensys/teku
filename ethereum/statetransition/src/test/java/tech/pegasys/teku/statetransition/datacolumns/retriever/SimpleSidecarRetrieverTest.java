@@ -422,6 +422,42 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  void shouldReHedgeToThirdPeerWhenPrimaryFailsWhileHedgeInFlight() {
+    // Primary attempt (highest score) stays in-flight past hedgeDelay, then fails; the first hedge
+    // peer keeps hanging; a freed slot must be re-hedged to a third (data-holding) peer.
+    final TestPeer primaryPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), retrieverRound.multipliedBy(3))
+            .currentRequestLimit(1); // one attempt, then no budget -> excluded from re-selection
+    final TestPeer hangingHedgePeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
+    final TestPeer thirdPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    // Only the third peer has the data.
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, thirdPeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    connectPeers(primaryPeer, hangingHedgePeer, thirdPeer);
+    // Scores drive selection order: primary first, hanging peer as the first hedge, third peer
+    // last.
+    setRequestScore(hedgingRetriever, primaryPeer, 10);
+    setRequestScore(hedgingRetriever, hangingHedgePeer, 5);
+    setRequestScore(hedgingRetriever, thirdPeer, 1);
+
+    final SafeFuture<DataColumnSidecar> resp = hedgingRetriever.retrieve(id0);
+    advanceTimeGradually(retrieverRound.multipliedBy(7));
+
+    assertThat(resp).isCompletedWithValue(sidecar0);
+    // Two hedges: the hanging peer, then the third peer after the primary attempt freed its slot.
+    assertThat(hedgingRetriever.getHedgeCount()).isEqualTo(2);
+    assertThat(primaryPeer.getRequests()).hasSize(1);
+    assertThat(hangingHedgePeer.getRequests()).hasSize(1);
+    assertThat(thirdPeer.getRequests()).hasSize(1);
+  }
+
+  @Test
   @SuppressWarnings("unused")
   void performanceTest() {
     final List<TestPeer> testNodes =
@@ -564,15 +600,16 @@ public class SimpleSidecarRetrieverTest {
    * @param score in 0 to 10 range
    */
   private void setRequestScore(final TestPeer peer, final int score) {
+    setRequestScore(simpleSidecarRetriever, peer, score);
+  }
+
+  private void setRequestScore(
+      final SimpleSidecarRetriever retriever, final TestPeer peer, final int score) {
     assertThat(score >= 0).isTrue();
     assertThat(score <= 10).isTrue();
 
-    simpleSidecarRetriever
-        .getConnectedPeers()
-        .get(peer.getNodeId())
-        .getSidecarsRequested()
-        .set(10_000_000);
-    simpleSidecarRetriever
+    retriever.getConnectedPeers().get(peer.getNodeId()).getSidecarsRequested().set(10_000_000);
+    retriever
         .getConnectedPeers()
         .get(peer.getNodeId())
         .getSidecarsReceived()
