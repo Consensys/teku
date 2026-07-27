@@ -78,7 +78,9 @@
     </spec>
 
 - name: FastConfirmationStore#phase0
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/FastConfirmationStore.java
+      search: public record FastConfirmationStore(
   spec: |
     <spec dataclass="FastConfirmationStore" fork="phase0" hash="e667d4ee">
     class FastConfirmationStore:
