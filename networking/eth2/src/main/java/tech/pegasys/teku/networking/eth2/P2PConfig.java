@@ -627,6 +627,13 @@ public class P2PConfig {
     }
 
     public Builder sidecarRetrievalOverlapFraction(final Double sidecarRetrievalOverlapFraction) {
+      checkNotNull(sidecarRetrievalOverlapFraction);
+      if (sidecarRetrievalOverlapFraction < 0.0 || sidecarRetrievalOverlapFraction > 1.0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid sidecarRetrievalOverlapFraction: %s (must be within [0, 1])",
+                sidecarRetrievalOverlapFraction));
+      }
       this.sidecarRetrievalOverlapFraction = sidecarRetrievalOverlapFraction;
       return this;
     }
