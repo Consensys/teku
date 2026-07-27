@@ -401,6 +401,15 @@ public class SimpleSidecarRetriever
     try {
       disposeCompletedRequests();
 
+      // Reset the in-flight clock for any request that currently has no attempt (all previous
+      // attempts drained), so a fresh attempt is timed from scratch. Done here rather than in the
+      // completion callbacks: markInFlightStart() also runs only within the round, so keeping every
+      // clock write inside the guard makes them fully serialized. Completions can only remove peers
+      // (never add), so observing attemptingPeers.isEmpty() here is safe.
+      pendingRequests.values().stream()
+          .filter(request -> request.attemptingPeers.isEmpty())
+          .forEach(RetrieveRequest::clearInFlightStart);
+
       final long activatedMatches =
           matchRequestsAndPeers().stream()
               .map(this::activateMatchedRequest)
@@ -448,13 +457,11 @@ public class SimpleSidecarRetriever
       return;
     }
     // This attempt failed. Release just this peer's attempt so the request can be re-dispatched
-    // next round if still pending.
+    // next round if still pending. The in-flight clock is intentionally not touched here: it is
+    // reset only from within the round guard (see nextRound), so it can never race with a
+    // concurrent markInFlightStart().
     request.attemptingPeers.remove(peer.nodeId);
     request.activeRequests.remove(peer.nodeId);
-    if (request.attemptingPeers.isEmpty()) {
-      // No attempts left: restart the in-flight clock so a fresh attempt is measured from scratch.
-      request.clearInFlightStart();
-    }
     errorCounter.incrementAndGet();
   }
 
