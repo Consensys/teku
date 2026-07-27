@@ -458,6 +458,42 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  void requestIsEventuallyClearedRegardlessOfAttemptOrdering() {
+    // No peer can serve the column initially: one attempt hangs forever, another keeps failing, so
+    // attempts rotate/hedge in whatever order across rounds. The request must stay pending - never
+    // lost, never wrongly completed - and once any peer can serve it, it is eventually completed
+    // and removed from the pending set.
+    final TestPeer hangingPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
+    final TestPeer failingPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    // Build the sidecar but don't hand it to any connected peer yet.
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    connectPeers(hangingPeer, failingPeer);
+    final SafeFuture<DataColumnSidecar> resp = hedgingRetriever.retrieve(id0);
+
+    advanceTimeGradually(retrieverRound.multipliedBy(10));
+    assertThat(resp).isNotDone();
+    assertThat(hedgingRetriever.getPendingRequestCount()).isEqualTo(1);
+
+    // A capable peer appears; regardless of the earlier attempt ordering the request clears.
+    final TestPeer dataPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+    dataPeer.addSidecar(sidecar0);
+    testPeerManager.connectPeer(dataPeer);
+
+    advanceTimeGradually(retrieverRound.multipliedBy(10));
+    assertThat(resp).isCompletedWithValue(sidecar0);
+    assertThat(hedgingRetriever.getPendingRequestCount()).isZero();
+  }
+
+  @Test
   @SuppressWarnings("unused")
   void performanceTest() {
     final List<TestPeer> testNodes =
