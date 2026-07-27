@@ -677,8 +677,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final SignedBeaconBlock block = maybeBlock.get();
               final boolean payloadPresent =
                   executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot());
-              final boolean blobDataAvailable =
-                  dataAvailabilitySampler.isDataAvailable(slot, block.getRoot());
+              final boolean blobDataAvailable = dataAvailabilitySampler.isDataAvailable(block);
               final PayloadAttestationData payloadAttestationData =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getPayloadAttestationDataSchema()
