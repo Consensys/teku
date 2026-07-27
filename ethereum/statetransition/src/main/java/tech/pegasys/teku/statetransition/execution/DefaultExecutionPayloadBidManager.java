@@ -163,7 +163,7 @@ public class DefaultExecutionPayloadBidManager
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     executionPayloadBidCircuitBreaker.observeImportedBlock(block);
-    retryPendingBids(pendingExecutionPayloadBids.removeItemsDependingOn(block.getRoot(), false));
+    retryPendingBids(pendingExecutionPayloadBids.removeItemsDependingOn(block.getRoot()));
   }
 
   @Override
@@ -173,8 +173,7 @@ public class DefaultExecutionPayloadBidManager
   public void onExecutionPayloadImported(
       final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     retryPendingBids(
-        pendingExecutionPayloadBids.removeItemsDependingOn(
-            executionPayload.getBeaconBlockRoot(), false));
+        pendingExecutionPayloadBids.removeItemsDependingOn(executionPayload.getBeaconBlockRoot()));
   }
 
   @Override

@@ -547,8 +547,7 @@ public class PendingPoolTest {
     pendingPool.add(secondDependentBlock);
     pendingPool.add(independentBlock);
 
-    final List<SignedBeaconBlock> removedItems =
-        pendingPool.removeItemsDependingOn(requiredRoot, false);
+    final List<SignedBeaconBlock> removedItems = pendingPool.removeItemsDependingOn(requiredRoot);
 
     assertThat(removedItems).containsExactlyInAnyOrder(firstDependentBlock, secondDependentBlock);
     assertThat(pendingPool.contains(firstDependentBlock)).isFalse();
