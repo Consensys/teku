@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -133,6 +135,10 @@ public class SimpleSidecarRetriever
       final Duration roundPeriod,
       final double overlapFraction,
       final Duration hedgeDelay) {
+    checkArgument(
+        overlapFraction >= 0.0 && overlapFraction <= 1.0,
+        "overlapFraction must be within [0, 1] but was %s",
+        overlapFraction);
     this.spec = spec;
     this.miscHelpersFulu =
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());

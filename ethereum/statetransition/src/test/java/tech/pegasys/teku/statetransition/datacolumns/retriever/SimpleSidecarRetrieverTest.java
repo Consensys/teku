@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -129,6 +130,23 @@ public class SimpleSidecarRetrieverTest {
       stubTimeProvider.advanceTimeBy(Duration.ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
     }
+  }
+
+  @Test
+  void constructorRejectsOutOfRangeOverlapFraction() {
+    assertThatThrownBy(
+            () ->
+                new SimpleSidecarRetriever(
+                    spec,
+                    testPeerManager,
+                    custodyCountSupplier,
+                    testPeerManager,
+                    stubAsyncRunner,
+                    stubTimeProvider,
+                    retrieverRound,
+                    1.5,
+                    hedgeDelay))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
