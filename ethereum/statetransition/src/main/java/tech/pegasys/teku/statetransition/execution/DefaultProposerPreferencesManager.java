@@ -97,8 +97,7 @@ public class DefaultProposerPreferencesManager
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    retryPendingPreferences(
-        pendingProposerPreferences.removeItemsDependingOn(block.getRoot(), false));
+    retryPendingPreferences(pendingProposerPreferences.removeItemsDependingOn(block.getRoot()));
   }
 
   private SafeFuture<InternalValidationResult> validateAndAdd(
