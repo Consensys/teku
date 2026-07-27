@@ -141,6 +141,7 @@ public class DefaultExecutionPayloadBidManager
     // bids are valid for the current and next slot, so anything below the current slot is stale
     bidsBySlot.headMap(slot, false).clear();
     pendingExecutionPayloadBids.onSlot(slot);
+    // PendingPool prunes historical items only once per epoch, so remove stale bids before retrying
     pendingExecutionPayloadBids.removeItemsMatching(
         pendingBid -> pendingBid.getMessage().getSlot().isLessThan(slot));
     retryPendingBids(pendingExecutionPayloadBids.removeItemsMatching(__ -> true));
