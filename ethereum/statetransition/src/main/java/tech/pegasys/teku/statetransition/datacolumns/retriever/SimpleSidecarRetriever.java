@@ -427,24 +427,22 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request,
       final ConnectedPeer peer,
       final DataColumnSidecar maybeResult) {
-    if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
-      request.result.completeAsync(maybeResult, asyncRunner);
-      retrieveCounter.incrementAndGet();
-      // cancel any redundant/hedged in-flight attempts for this column
-      request.cancelActiveRequests();
+    if (maybeResult != null) {
+      // Same completion handling as the gossip path. If another (hedged) attempt already won,
+      // reqRespSucceeded is a no-op and that winner's cancelActiveRequests() releases this peer's
+      // attempt, so no per-peer cleanup is needed here.
+      reqRespSucceeded(request, maybeResult);
       return;
     }
-    // Either this attempt failed, or another (hedged) attempt already won the race. Release just
-    // this peer's attempt so the request can be re-dispatched next round if still pending.
+    // This attempt failed. Release just this peer's attempt so the request can be re-dispatched next
+    // round if still pending.
     request.attemptingPeers.remove(peer.nodeId);
     request.activeRequests.remove(peer.nodeId);
     if (request.attemptingPeers.isEmpty()) {
       // No attempts left: restart the in-flight clock so a fresh attempt is measured from scratch.
       request.clearInFlightStart();
     }
-    if (maybeResult == null) {
-      errorCounter.incrementAndGet();
-    }
+    errorCounter.incrementAndGet();
   }
 
   private String gatherAvailableCustodiesInfo() {
