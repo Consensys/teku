@@ -20,18 +20,22 @@ import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
@@ -41,10 +45,11 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 
-@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA})
+@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, FULU})
 public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   private Eth2Peer peer;
+  private Spec spec;
   private SpecMilestone specMilestone;
 
   @BeforeEach
@@ -56,6 +61,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
             AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
             NoOpKZG.INSTANCE);
     peer = createPeer(specContext.getSpec());
+    spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
   }
 
@@ -91,9 +97,28 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @TestTemplate
+  public void requestBlobSidecars_shouldCompleteAfterFuluDeprecation()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    assumeThat(specMilestone).isEqualTo(FULU);
+
+    final List<BlobSidecar> blobSidecars = new ArrayList<>();
+    final UInt64 startSlot = spec.blobSidecarsDeprecationSlot().increment();
+    final SafeFuture<Void> requestFuture =
+        peer.requestBlobSidecarsByRange(
+            startSlot, UInt64.ONE, RpcResponseListener.from(blobSidecars::add));
+
+    waitFor(requestFuture);
+    assertThat(blobSidecars).isEmpty();
+    waitFor(() -> assertThat(peer.getOutstandingRequests()).isEqualTo(0));
+
+    assertThat(peer.requestMetadata().get(10, TimeUnit.SECONDS)).isNotNull();
+  }
+
+  @TestTemplate
   public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    assumeThat(specMilestone).isLessThan(FULU);
 
     // finalize chain 2 blobs per block
     finalizeChainWithBlobs(2);

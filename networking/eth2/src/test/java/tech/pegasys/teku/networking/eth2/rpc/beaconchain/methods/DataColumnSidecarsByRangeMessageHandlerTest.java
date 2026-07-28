@@ -273,7 +273,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     verify(peer)
         .adjustDataColumnSidecarsRequest(
             eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
-    verify(combinedChainDataClient, never()).getDataColumnSidecars(any(), any());
+    verify(combinedChainDataClient, never()).getDataColumnSidecars(any(UInt64.class), any());
     verify(listener, never()).respond(any());
     verify(listener).completeSuccessfully();
   }

@@ -86,8 +86,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -1032,14 +1034,44 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return executionPayloadPublisher
-        .publishSignedExecutionPayload(signedExecutionPayload)
+        .publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel)
         .exceptionally(
             ex -> {
               final String reason = getRootCauseMessage(ex);
               return PublishSignedExecutionPayloadResult.rejected(
                   signedExecutionPayload.getBeaconBlockRoot(), reason);
+            });
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return executionPayloadPublisher
+        .publishSignedExecutionPayload(
+            signedExecutionPayloadEnvelopeContents, broadcastValidationLevel)
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return PublishSignedExecutionPayloadResult.rejected(
+                  signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot(), reason);
+            });
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return executionPayloadPublisher
+        .publishSignedExecutionPayload(signedBlindedExecutionPayload, broadcastValidationLevel)
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return PublishSignedExecutionPayloadResult.rejected(
+                  signedBlindedExecutionPayload.getBeaconBlockRoot(), reason);
             });
   }
 

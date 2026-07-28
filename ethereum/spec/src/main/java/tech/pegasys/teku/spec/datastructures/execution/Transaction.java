@@ -14,16 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class Transaction extends SszByteListImpl {
 
-  Transaction(final TransactionSchema schema, final TreeNode backingNode) {
+  Transaction(final SszByteListSchema<?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
-  }
-
-  @Override
-  public TransactionSchema getSchema() {
-    return (TransactionSchema) super.getSchema();
   }
 }

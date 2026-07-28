@@ -46,6 +46,8 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -379,7 +381,17 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
 
-    final int blockAttestationCapacity = Math.toIntExact(attestationsSchema.getMaxLength());
+    // The per-block attestation count limit comes from the spec config rather than the SSZ list
+    // bound: from Gloas the attestations list is a progressive list with no SSZ max length, so
+    // attestationsSchema.getMaxLength() is unbounded. For Electra and later (incl. Gloas) the limit
+    // is MAX_ATTESTATIONS_ELECTRA; before Electra it is MAX_ATTESTATIONS. For bounded forks this
+    // equals the list's max length.
+    final SpecConfig config = spec.atSlot(stateAtBlockSlot.getSlot()).getConfig();
+    final int blockAttestationCapacity =
+        config
+            .toVersionElectra()
+            .map(SpecConfigElectra::getMaxAttestationsElectra)
+            .orElseGet(config::getMaxAttestations);
 
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitions.getAttestationSchema();

@@ -18,5 +18,6 @@ public class LightClientConstants {
   public static final int FINALIZED_ROOT_GINDEX = 105;
   public static final int CURRENT_SYNC_COMMITTEE_GINDEX = 54;
   public static final int CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA = 86;
+  public static final int CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS = 2945;
   public static final int NEXT_SYNC_COMMITTEE_GINDEX = 55;
 }

@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-24.04
     environment: security
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Run renovatebot
-        uses: ConsenSys/github-actions/renovatebot@68e0677c7c567c2447fc82d43dc4fceb4b31a680 # main
+        uses: ConsenSys/github-actions/renovatebot@31dbb917dd78b1dc18b4838a2d7d598b359b834f # main
         with:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}

@@ -15,7 +15,16 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -32,5 +41,28 @@ class BeaconStateFieldsTest {
         source.updated(target -> BeaconStateFields.copyCommonFieldsFromSource(target, source));
 
     assertThat(result).isEqualTo(source);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void toProgressiveListSchema_shouldPreserveUInt8JsonArrayShape() throws JsonProcessingException {
+    final SszListSchema<?, ?> boundedSchema =
+        SszListSchema.create(SszPrimitiveSchemas.UINT8_SCHEMA, 4);
+
+    final SszSchema<?> progressiveSchema = BeaconStateFields.toProgressiveListSchema(boundedSchema);
+
+    assertThat(progressiveSchema).isInstanceOf(SszByteListSchema.class);
+    assertThat(((SszListSchema<?, ?>) progressiveSchema).getElementSchema())
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA);
+
+    final SszByteListSchema<SszByteList> byteListSchema =
+        (SszByteListSchema<SszByteList>) progressiveSchema;
+    final SszByteList byteList =
+        byteListSchema.createFromElements(
+            List.of(SszByte.asUInt8(1), SszByte.asUInt8(2), SszByte.asUInt8(3)));
+
+    assertThat(byteList.get(0).getSchema()).isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA);
+    assertThat(JsonUtil.serialize(byteList, byteListSchema.getJsonTypeDefinition()))
+        .isEqualTo("[\"1\",\"2\",\"3\"]");
   }
 }

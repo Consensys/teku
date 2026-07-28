@@ -17,12 +17,14 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.storage.server.DatabaseVersion.LEVELDB_TREE;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.collect.Streams;
@@ -106,6 +108,7 @@ import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiv
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseContext;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
@@ -139,6 +142,7 @@ public class DatabaseTest {
   private Checkpoint checkpoint1;
   private Checkpoint checkpoint2;
   private Checkpoint checkpoint3;
+  private DatabaseVersion databaseVersion;
   private StateStorageMode storageMode;
   private StorageSystem storageSystem;
   private Database database;
@@ -148,7 +152,8 @@ public class DatabaseTest {
   private final List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup(final DatabaseContext context) throws IOException {
+    databaseVersion = context.getDatabaseVersion();
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
   }
 
@@ -158,6 +163,13 @@ public class DatabaseTest {
 
   private void setupWithSpec(final Spec spec, final List<BLSKeyPair> validatorKeys)
       throws IOException {
+    // TODO refer to https://github.com/Consensys/teku/issues/10978
+    assumeFalse(
+        databaseVersion == LEVELDB_TREE
+            && spec.getGenesisSpecConfig()
+                .getMilestone()
+                .isGreaterThanOrEqualTo(SpecMilestone.GLOAS),
+        "Progressive SSZ containers do not support LEVELDB_TREE storage");
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.chainBuilder = ChainBuilder.create(spec, validatorKeys);
