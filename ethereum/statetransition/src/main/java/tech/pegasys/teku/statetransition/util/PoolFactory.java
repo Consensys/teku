@@ -61,7 +61,8 @@ public class PoolFactory {
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
   private static final int DEFAULT_MAX_BLOCKS_PENDING_PARENT_EXECUTION_PAYLOAD = 1024;
-  private static final int DEFAULT_MAX_PENDING_PROPOSER_PREFERENCES = 64;
+  // Two mainnet epochs for the current lookahead, with 4x overhead for dependent-root reorgs
+  private static final int DEFAULT_MAX_PENDING_PROPOSER_PREFERENCES = 256;
   private static final int DEFAULT_MAX_PENDING_EXECUTION_PAYLOAD_BIDS = 1000;
   private static final int DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER = 10;
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;

@@ -41,7 +41,8 @@ public class ProposerPreferencesGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE = 64;
+  // Two mainnet epochs for the current lookahead, with 4x overhead for dependent-root reorgs
+  private static final int RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE = 256;
 
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
