@@ -134,10 +134,19 @@ class FastConfirmationCalculator {
 
   /**
    * Implements {@code get_slot_committee}: all validators assigned to any committee in {@code
-   * slot}, using the raw head state as the shuffling source.
+   * slot}.
+   *
+   * <p>Uses the pulled-up head state — the head state advanced to the start of the current epoch —
+   * as the shuffling source rather than the raw head state. All committee queries target slots at
+   * or before {@code currentSlot - 1} (epoch {@code <= currentEpoch}), and Teku restricts committee
+   * queries to within {@code MIN_SEED_LOOKAHEAD} of the source state's slot ({@code
+   * BeaconStateAccessors.validateStateForCommitteeQuery}). A raw head state that lags more than one
+   * epoch behind (a long run of empty slots) would therefore throw {@code StateTooOldException} for
+   * current-epoch slots and abort confirmation. The intervening slots are empty, so advancing the
+   * head state through them is deterministic and yields the same shuffling the real chain would.
    */
   IntSet getSlotCommittee(final UInt64 slot) {
-    final BeaconState shufflingSource = states.headBlockState();
+    final BeaconState shufflingSource = getPulledUpHeadState();
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final int committeesCount = spec.getCommitteeCountPerSlot(shufflingSource, epoch).intValue();
     final IntSet participants = new IntOpenHashSet();
