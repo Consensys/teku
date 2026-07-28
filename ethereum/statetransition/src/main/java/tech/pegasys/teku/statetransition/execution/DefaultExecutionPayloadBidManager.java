@@ -253,7 +253,7 @@ public class DefaultExecutionPayloadBidManager
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
     return getPayloadResponseFuture.thenApply(
         getPayloadResponse ->
-            createAndPublishLocalBid(
+            createLocalBid(
                 validateLocalResponse(getPayloadResponse, parentBlockHash, slot),
                 slot,
                 parentRoot));
@@ -316,7 +316,7 @@ public class DefaultExecutionPayloadBidManager
             LOG.info(
                 "Selected self-built bid for block at slot {} because shouldOverrideBuilder is true",
                 slot);
-            return publishLocalBid(localBid, slot);
+            return selectLocalBid(localBid, slot);
           }
 
           final UInt256 remoteValueInWei =
@@ -335,7 +335,7 @@ public class DefaultExecutionPayloadBidManager
               remoteBid.getMessage(),
               slot);
           return localValueWins
-              ? publishLocalBid(localBid, slot)
+              ? selectLocalBid(localBid, slot)
               : selectRemoteBid(remoteBid, slot, blockProductionPerformance);
         });
   }
@@ -360,9 +360,9 @@ public class DefaultExecutionPayloadBidManager
     return response;
   }
 
-  private SignedExecutionPayloadBid createAndPublishLocalBid(
+  private SignedExecutionPayloadBid createLocalBid(
       final GetPayloadResponse getPayloadResponse, final UInt64 slot, final Bytes32 parentRoot) {
-    return publishLocalBid(createLocalBidCandidate(getPayloadResponse, slot, parentRoot), slot);
+    return selectLocalBid(createLocalBidCandidate(getPayloadResponse, slot, parentRoot), slot);
   }
 
   private LocalBidCandidate createLocalBidCandidate(
@@ -371,15 +371,13 @@ public class DefaultExecutionPayloadBidManager
         getPayloadResponse, createLocalSelfBuiltSignedBid(getPayloadResponse, slot, parentRoot));
   }
 
-  private SignedExecutionPayloadBid publishLocalBid(
+  private SignedExecutionPayloadBid selectLocalBid(
       final LocalBidCandidate localBid, final UInt64 slot) {
     LOG.info(
         "Considering self-built bid (value: {} ETH, EL block: {}) for block at slot {}",
         weiToEth(localBid.response().getExecutionPayloadValue()),
         formatAbbreviatedHashRoot(localBid.signedBid().getMessage().getBlockHash()),
         slot);
-    receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
-        localBid.signedBid());
     return localBid.signedBid();
   }
 

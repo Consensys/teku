@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 import static tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
@@ -98,7 +99,7 @@ public class DefaultExecutionPayloadBidManagerTest {
   }
 
   @Test
-  public void createsLocalBidForBlock() {
+  public void createsLocalBidForBlockWithoutPublishingReceivedBidEvent() {
     final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
 
     final ExecutionPayload executionPayload =
@@ -150,9 +151,7 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     assertThat(bid).isEqualTo(expectedBid);
 
-    // verify event is triggered to subscribers
-    verify(receivedExecutionPayloadBidEventsChannelPublisher)
-        .onExecutionPayloadBidValidated(signedBid);
+    verifyNoInteractions(receivedExecutionPayloadBidEventsChannelPublisher);
   }
 
   @Test
