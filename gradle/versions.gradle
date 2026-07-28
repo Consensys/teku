@@ -1,6 +1,10 @@
 dependencyManagement {
 	imports {
 		mavenBom 'io.netty:netty-bom:4.2.15.Final'
+		// Remove these pins when Javalin uses Jetty 12.1.11 or later.
+		// Jetty 12.1.11 fixes https://github.com/jetty/jetty.project/issues/15226.
+		mavenBom 'org.eclipse.jetty:jetty-bom:12.1.11'
+		mavenBom 'org.eclipse.jetty.ee10:jetty-ee10-bom:12.1.11'
 	}
 	dependencies {
 		dependency 'com.fasterxml.jackson.core:jackson-databind:2.22.0'

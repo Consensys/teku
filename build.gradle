@@ -18,6 +18,12 @@ buildscript {
 	repositories {
 		mavenCentral()
 	}
+	// JReleaser 1.23.0 uses GpgObjectSigner from JGit 5.x/6.x, which was removed in JGit 7.x.
+	// Spotless 8.7.0 pulls in JGit 7.7.0, which wins resolution and breaks jreleaserFullRelease.
+	// Spotless does not use ratchetFrom, so it never actually calls JGit at runtime.
+	configurations.classpath.resolutionStrategy {
+		force 'org.eclipse.jgit:org.eclipse.jgit:5.13.5.202508271544-r'
+	}
 	dependencies {
 		classpath 'io.consensys.protocols:license-reporter:1.2.0'
 	}
