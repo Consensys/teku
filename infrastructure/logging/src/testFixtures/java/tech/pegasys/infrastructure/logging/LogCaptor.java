@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -86,6 +87,14 @@ public class LogCaptor implements AutoCloseable {
 
   public List<String> getErrorLogs() {
     return getMessages(Level.ERROR).collect(Collectors.toList());
+  }
+
+  public List<Throwable> getErrorThrowables() {
+    return appender.logs.stream()
+        .filter(log -> log.getLevel().equals(Level.ERROR))
+        .map(LogEvent::getThrown)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   public List<String> getDebugLogs() {
