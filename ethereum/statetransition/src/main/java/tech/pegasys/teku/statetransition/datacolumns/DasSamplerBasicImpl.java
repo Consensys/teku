@@ -339,6 +339,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
 
   @Override
   public boolean isDataAvailable(final SignedBeaconBlock block) {
+    // if there are no blobs for this block, consider the data as available
     if (!hasBlobs(block.getMessage())) {
       return true;
     }
@@ -346,9 +347,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
       return true;
     }
     final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(block.getRoot());
-    return tracker != null
-        && tracker.completionFuture().isDone()
-        && !tracker.completionFuture().isCompletedExceptionally();
+    return tracker != null && tracker.completionFuture().isCompletedNormally();
   }
 
   private boolean isInCustodyPeriod(final BeaconBlock block) {
