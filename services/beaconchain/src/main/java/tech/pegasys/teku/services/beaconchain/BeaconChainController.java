@@ -963,8 +963,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator =
           new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, recentChainData);
-      proposerPreferencesManager =
-          new DefaultProposerPreferencesManager(proposerPreferencesGossipValidator);
+      final DefaultProposerPreferencesManager defaultProposerPreferencesManager =
+          new DefaultProposerPreferencesManager(
+              proposerPreferencesGossipValidator,
+              poolFactory.createPendingPoolForProposerPreferences(spec));
+      eventChannels.subscribe(SlotEventsChannel.class, defaultProposerPreferencesManager);
+      eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultProposerPreferencesManager);
+      proposerPreferencesManager = defaultProposerPreferencesManager;
     } else {
       proposerPreferencesManager = ProposerPreferencesManager.NOOP;
     }
