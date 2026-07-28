@@ -143,6 +143,8 @@ public class DefaultProposerPreferencesManager
   }
 
   private void removePendingPreferences(final SignedProposerPreferences signedProposerPreferences) {
+    // PendingPool identifies preferences by their hash tree root, so this removes the entry
+    // regardless of its stored fromNetwork value.
     pendingProposerPreferences.remove(
         new PendingProposerPreferences(signedProposerPreferences, false));
   }

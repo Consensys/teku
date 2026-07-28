@@ -41,7 +41,7 @@ public class ProposerPreferencesGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE = 1024;
+  private static final int RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE = 64;
 
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
