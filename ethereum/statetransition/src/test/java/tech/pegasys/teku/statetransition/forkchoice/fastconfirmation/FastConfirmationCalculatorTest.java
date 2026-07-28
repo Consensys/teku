@@ -195,6 +195,19 @@ class FastConfirmationCalculatorTest {
   }
 
   @Test
+  void shouldQueryCommitteesFromPulledUpStateWhenHeadLagsMultipleEpochs() {
+    // Head state at genesis (slot 0, epoch 0) while currentSlot 20 -> epoch 2, so the head lags two
+    // epochs. Shuffling from the raw head state would throw StateTooOldException for a
+    // current-epoch
+    // committee query; the calculator must shuffle from the pulled-up head state instead.
+    final BeaconState headState = genesisState();
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(headState, 20);
+
+    // Slot 19 is in epoch 2 (SLOTS_PER_EPOCH == 8), unreachable from the genesis head state.
+    assertThat(calculator.getSlotCommittee(UInt64.valueOf(19))).isNotEmpty();
+  }
+
+  @Test
   void shouldSumAttestationScoreForNonEquivocatingUnslashedVotersSupportingADescendant() {
     buildLinearChain(6);
     // Validator 5 votes for a descendant too, but is slashed, so it must be excluded.
