@@ -133,6 +133,8 @@ public class DefaultExecutionPayloadBidManager
   }
 
   private void retryPendingBids(final Collection<SignedExecutionPayloadBid> pendingBids) {
+    // As with non-deferred bids, gossip validation accepts the first valid bid for each
+    // (slot, builder index). Reconsider ordering if the spec allows multiple bids per tuple.
     pendingBids.forEach(pendingBid -> validateAndAddBid(pendingBid, "pending").finishError(LOG));
   }
 
