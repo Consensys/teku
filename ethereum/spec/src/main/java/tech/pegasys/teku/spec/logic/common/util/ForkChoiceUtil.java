@@ -227,52 +227,39 @@ public class ForkChoiceUtil {
     final boolean isProposingOnTime = isProposingOnTime(store, slot);
     final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headNode.blockRoot()));
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headNode.blockRoot());
-    if (maybeHead.isEmpty()) {
-      LOG.debug("getProposerHead head - maybeHead empty.");
+    if (!isHeadLate
+        || !isShufflingStableAndForkChoiceOk
+        || !isProposingOnTime
+        || isProposerBoostActive
+        || maybeHead.isEmpty()) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
+          isHeadLate,
+          isShufflingStableAndForkChoiceOk,
+          isProposingOnTime,
+          isProposerBoostActive,
+          maybeHead.isEmpty());
       return headNode;
     }
+
     final SignedBeaconBlock head = maybeHead.orElseThrow();
     final boolean isFfgCompetitive =
         isFfgCompetitive(store, headNode.blockRoot(), head.getParentRoot());
     final boolean isParentSlotOk = isParentSlotOk(store, head);
     final boolean isCurrentSlotOk = isCurrentSlotOk(head, slot);
-    final boolean isHeadWeak = isHeadWeak(store, headNode.blockRoot(), store.getReorgThreshold());
-    final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
-    if (isHeadLate
-        && isShufflingStableAndForkChoiceOk
-        && isFfgCompetitive
-        && isParentSlotOk
-        && isCurrentSlotOk
-        && isProposingOnTime
-        && isHeadWeak
-        && isParentStrong
-        && !isProposerBoostActive) {
+    if (!isFfgCompetitive || !isParentSlotOk || !isCurrentSlotOk) {
       LOG.debug(
-          "getProposerHead - return parentRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}, isProposingOnTime {}, isHeadWeak {}, isParentStrong {}, isProposerBoostActive {}",
-          isHeadLate,
-          isShufflingStableAndForkChoiceOk,
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}",
           isFfgCompetitive,
           isParentSlotOk,
-          isCurrentSlotOk,
-          isProposingOnTime,
-          isHeadWeak,
-          isParentStrong,
-          isProposerBoostActive);
-      return context
-          .getStore()
-          .getForkChoiceStrategy()
-          .getParentBeaconBlockNode(headNode)
-          .orElse(headNode);
+          isCurrentSlotOk);
+      return headNode;
     }
 
-    final boolean isProposerEquivocation = isProposerEquivocation(store, headNode.blockRoot());
-    if (isHeadWeak && isCurrentSlotOk && isProposerEquivocation && !isProposerBoostActive) {
-      LOG.debug(
-          "getProposerHead - return parentRoot - isHeadWeak {}, isCurrentSlotOk {}, isProposerEquivocation {}, isProposerBoostActive {}",
-          isHeadWeak,
-          isCurrentSlotOk,
-          isProposerEquivocation,
-          isProposerBoostActive);
+    final boolean isHeadWeak = isHeadWeak(store, headNode.blockRoot(), store.getReorgThreshold());
+    final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
+    if (isHeadWeak && isParentStrong) {
+      LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
       return context
           .getStore()
           .getForkChoiceStrategy()
@@ -281,41 +268,10 @@ public class ForkChoiceUtil {
     }
 
     LOG.debug(
-        "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}, isProposingOnTime {}, isHeadWeak {}, isParentStrong {}, isProposerEquivocation {}, isProposerBoostActive {}",
-        isHeadLate,
-        isShufflingStableAndForkChoiceOk,
-        isFfgCompetitive,
-        isParentSlotOk,
-        isCurrentSlotOk,
-        isProposingOnTime,
+        "getProposerHead - return headRoot - isHeadWeak {}, isParentStrong {}",
         isHeadWeak,
-        isParentStrong,
-        isProposerEquivocation,
-        isProposerBoostActive);
+        isParentStrong);
     return headNode;
-  }
-
-  /**
-   * Spec reference: is_proposer_equivocation.
-   *
-   * <p>Counts fork choice blocks at the head's slot proposed by the head's proposer. Competing
-   * branches that diverged before the proposer shuffling was pinned can assign different proposers
-   * to the same slot, so matching the proposer index is required. Blocks that are not immediately
-   * available are not counted, failing closed towards keeping the head.
-   */
-  boolean isProposerEquivocation(final ReadOnlyStore store, final Bytes32 blockRoot) {
-    final Optional<SignedBeaconBlock> maybeBlock = store.getBlockIfAvailable(blockRoot);
-    if (maybeBlock.isEmpty()) {
-      LOG.debug("isProposerEquivocation - block not available.");
-      return false;
-    }
-    final SignedBeaconBlock block = maybeBlock.orElseThrow();
-    return store.getForkChoiceStrategy().getBlockRootsAtSlot(block.getSlot()).stream()
-            .map(store::getBlockIfAvailable)
-            .flatMap(Optional::stream)
-            .filter(other -> other.getProposerIndex().equals(block.getProposerIndex()))
-            .count()
-        > 1;
   }
 
   /** Spec reference: should_override_forkchoice_update. */
