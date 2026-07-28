@@ -61,7 +61,7 @@ public class DenebRemoteSignerAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
 
     signerApi.addLocalValidatorsAndExpect(validatorKeys, "imported");
     signerApi.assertLocalValidatorListing(validatorKeys.getPublicKeys());

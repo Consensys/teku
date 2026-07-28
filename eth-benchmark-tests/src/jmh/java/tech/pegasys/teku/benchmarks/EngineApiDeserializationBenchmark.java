@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.benchmarks;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +35,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.web3j.protocol.ObjectMapperFactory;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
@@ -42,7 +44,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 /**
  * Benchmarks Jackson deserialization for Engine API engine_getBlobsV2 and engine_getPayloadV5. Uses
- * the same ObjectMapper used by Web3jHttpClient
+ * the same ObjectMapper configuration as AbstractExecutionEngineClient
  *
  * <p>Run with: ./gradlew :eth-benchmark-tests:jmh --tests "*.EngineApiDeserializationBenchmark"
  */
@@ -59,13 +61,13 @@ public class EngineApiDeserializationBenchmark {
   private static final int BYTES_PER_BLOB = 131072;
   private static final int BYTES_PER_PROOF = 48;
 
-  // Using the same ObjectMapper used by Web3jHttpClient
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
-
-  static {
-    // Same module we register on Web3jHttpClient
-    OBJECT_MAPPER.registerModule(new BlackbirdModule());
-  }
+  // Same ObjectMapper configuration as AbstractExecutionEngineClient
+  private static final ObjectMapper OBJECT_MAPPER =
+      JsonMapper.builder()
+          .addModule(new BlackbirdModule())
+          .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .build();
 
   private static final TypeReference<List<BlobAndProofV2>> BLOBS_V2_TYPE = new TypeReference<>() {};
   private static final TypeReference<GetPayloadV5Response> GET_PAYLOAD_V5_RESPONSE_TYPE =

@@ -53,7 +53,7 @@ public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
     // 192 validators (32 eth each) is the minimum number required to enable us to have enough limit
     // to consolidate
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME)
+        createValidatorKeyGenerator()
             .generateValidatorKeys(192, Eth1Address.fromHexString(eth1Address));
 
     final InitialStateData initialStateData =
