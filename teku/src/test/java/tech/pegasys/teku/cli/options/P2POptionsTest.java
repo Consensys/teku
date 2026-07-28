@@ -432,6 +432,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             "--p2p-udp-port-ipv6=9091", "--p2p-advertised-port-ipv6=7070");
     assertThat(tekuConfig.discovery().getAdvertisedUdpPortIpv6()).isEqualTo(7070);
     assertThat(tekuConfig.network().getAdvertisedPortIpv6()).isEqualTo(7070);
+    assertThat(tekuConfig.discovery().getListenUpdPortIpv6()).isEqualTo(9091);
   }
 
   @Test
