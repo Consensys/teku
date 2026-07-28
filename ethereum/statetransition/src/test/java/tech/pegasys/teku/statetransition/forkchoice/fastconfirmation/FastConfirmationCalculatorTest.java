@@ -423,31 +423,30 @@ class FastConfirmationCalculatorTest {
   }
 
   @Test
-  void shouldConfirmGloasBlockThatIsPresentEvenWhenNotFullyValidated() {
+  void shouldNotConfirmGloasBlockThatIsNotFullyValidated() {
     buildLinearChain(11);
     final BeaconState balanceSource = gloasGenesisState();
-    // A Gloas block stays OPTIMISTIC (not fully validated) until its execution payload envelope is
-    // revealed, but the rule confirms the PENDING (block-level) node, so presence in fork choice is
-    // enough. contains() defaults to true from buildLinearChain.
+    // The is_one_confirmed spec MUST return false when the block is not VALID per optimistic sync.
+    // A Gloas block that is present in fork choice but still OPTIMISTIC (e.g. inheriting an
+    // unvalidated execution parent) must not be confirmed, even with full attestation support.
     when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(false);
     when(store.getVoteSnapshot())
         .thenReturn(voteSnapshot(allValidatorsVotingFor(balanceSource, chain.get(3))));
     final FastConfirmationCalculator calculator = gloasCalculator(balanceSource, chain.get(5), 5);
 
-    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isTrue();
+    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isFalse();
   }
 
   @Test
-  void shouldNotConfirmGloasBlockThatIsAbsentFromForkChoice() {
+  void shouldConfirmGloasBlockWhenFullyValidatedAndSupportExceedsThreshold() {
     buildLinearChain(11);
-    // An execution-invalid Gloas block is pruned from fork choice, so contains() is false and it
-    // must never be confirmed even though isFullyValidated would report true here.
+    final BeaconState balanceSource = gloasGenesisState();
     when(forkChoice.isFullyValidated(chain.get(3))).thenReturn(true);
-    when(forkChoice.contains(chain.get(3))).thenReturn(false);
-    final FastConfirmationCalculator calculator =
-        gloasCalculator(mock(BeaconState.class), chain.get(5), 5);
+    when(store.getVoteSnapshot())
+        .thenReturn(voteSnapshot(allValidatorsVotingFor(balanceSource, chain.get(3))));
+    final FastConfirmationCalculator calculator = gloasCalculator(balanceSource, chain.get(5), 5);
 
-    assertThat(calculator.isOneConfirmed(mock(BeaconState.class), chain.get(3))).isFalse();
+    assertThat(calculator.isOneConfirmed(balanceSource, chain.get(3))).isTrue();
   }
 
   @Test
