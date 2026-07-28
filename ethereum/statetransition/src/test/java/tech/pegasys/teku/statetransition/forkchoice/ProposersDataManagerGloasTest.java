@@ -137,7 +137,10 @@ class ProposersDataManagerGloasTest {
                 UInt64.ZERO,
                 parentPayloadValue,
                 UInt64.ZERO,
-                data.randomBlobKzgCommitments(),
+                schemaDefinitions
+                    .getExecutionPayloadBidSchema()
+                    .getBlobKzgCommitmentsSchema()
+                    .createFromElements(data.randomBlobKzgCommitments().asList()),
                 parentExecutionRequests.hashTreeRoot());
 
     return data.randomBeaconState(blockSlot)

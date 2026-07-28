@@ -420,6 +420,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public VoteSnapshot getVoteSnapshot() {
+    final UInt64 highestVotedValidatorIndex = getHighestVotedValidatorIndex();
+    final VoteTracker[] voteArray = new VoteTracker[highestVotedValidatorIndex.intValue() + 1];
+    votes.forEach((validatorIndex, vote) -> voteArray[validatorIndex.intValue()] = vote);
+    return VoteSnapshot.create(highestVotedValidatorIndex, voteArray);
+  }
+
+  @Override
   public void putVote(final UInt64 validatorIndex, final VoteTracker vote) {
     votes.put(validatorIndex, vote);
   }

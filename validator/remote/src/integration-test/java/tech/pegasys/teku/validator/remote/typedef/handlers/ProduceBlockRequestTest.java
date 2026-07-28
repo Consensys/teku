@@ -195,6 +195,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetBlindedBeaconBlockAsSsz() {
+    assumeThat(specMilestone).isBetween(BELLATRIX, FULU);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blindedBeaconBlock);

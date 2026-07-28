@@ -28,70 +28,6 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
-  @Test
-  public void shouldReadDepositOptionsFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("depositOptions_config.yaml");
-
-    assertThat(config.powchain().isEnabled()).isTrue();
-    assertThat(config.powchain().getEth1Endpoints())
-        .containsExactly("http://example.com:1234/path/");
-  }
-
-  @Test
-  public void shouldReportEth1EnabledIfEndpointSpecified() {
-    final String[] args = {"--eth1-endpoint", "http://example.com:1234/path/"};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isEnabled()).isTrue();
-  }
-
-  @Test
-  public void shouldReportEth1DisabledIfEndpointNotSpecified() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.powchain().isEnabled()).isFalse();
-  }
-
-  @Test
-  public void shouldReportEth1DisabledIfEndpointIsEmpty() {
-    final String[] args = {"--eth1-endpoint", "   "};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isEnabled()).isFalse();
-  }
-
-  @Test
-  public void multiple_eth1Endpoints_areSupported() {
-    final String[] args = {
-      "--eth1-endpoints",
-      "http://example.com:1234/path/,http://example-2.com:1234/path/",
-      "http://example-3.com:1234/path/"
-    };
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().getEth1Endpoints())
-        .containsExactlyInAnyOrder(
-            "http://example.com:1234/path/",
-            "http://example-2.com:1234/path/",
-            "http://example-3.com:1234/path/");
-    assertThat(config.powchain().isEnabled()).isTrue();
-  }
-
-  @Test
-  public void multiple_eth1Endpoints_areSupported_mixedParams() {
-    final String[] args = {
-      "--eth1-endpoint",
-      "http://example-single.com:1234/path/",
-      "--eth1-endpoints",
-      "http://example.com:1234/path/,http://example-2.com:1234/path/",
-      "http://example-3.com:1234/path/"
-    };
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().getEth1Endpoints())
-        .containsExactlyInAnyOrder(
-            "http://example-single.com:1234/path/",
-            "http://example.com:1234/path/",
-            "http://example-2.com:1234/path/",
-            "http://example-3.com:1234/path/");
-    assertThat(config.powchain().isEnabled()).isTrue();
-  }
-
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "holesky", "gnosis", "sepolia"})
   public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
@@ -182,12 +118,5 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isFalse();
     assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
         .hasValue("/foo/bar");
-  }
-
-  @Test
-  public void shouldHaveDepositContractLogsSyncingEnabledByDefault() {
-    final String[] args = {};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isDepositContractLogsSyncingEnabled()).isTrue();
   }
 }

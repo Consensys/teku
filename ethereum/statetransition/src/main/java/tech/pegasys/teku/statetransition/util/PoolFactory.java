@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -58,6 +59,7 @@ public class PoolFactory {
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
   private static final int DEFAULT_MAX_BLOCKS_PENDING_PARENT_EXECUTION_PAYLOAD = 1024;
+  private static final int DEFAULT_MAX_PENDING_EXECUTION_PAYLOAD_BIDS = 1000;
   private static final int DEFAULT_PENDING_BLOCK_BYTES_MULTIPLIER = 10;
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
@@ -205,6 +207,26 @@ public class PoolFactory {
         payloadAttestation ->
             Collections.singletonList(payloadAttestation.getData().getBeaconBlockRoot()),
         payloadAttestation -> payloadAttestation.getData().getSlot());
+  }
+
+  public PendingPool<SignedExecutionPayloadBid> createPendingPoolForExecutionPayloadBids(
+      final Spec spec) {
+    return createPendingPoolForExecutionPayloadBids(
+        spec, DEFAULT_MAX_PENDING_EXECUTION_PAYLOAD_BIDS);
+  }
+
+  public PendingPool<SignedExecutionPayloadBid> createPendingPoolForExecutionPayloadBids(
+      final Spec spec, final int maxQueueSize) {
+    return new PendingPool<>(
+        pendingPoolsSizeGauge,
+        "execution_payload_bids",
+        spec,
+        UInt64.ZERO,
+        UInt64.ONE,
+        maxQueueSize,
+        SignedExecutionPayloadBid::hashTreeRoot,
+        pendingBid -> Collections.singletonList(pendingBid.getMessage().getParentBlockRoot()),
+        pendingBid -> pendingBid.getMessage().getSlot());
   }
 
   public <T> PendingPool<T> createNoOpPendingPool(final Spec spec) {

@@ -34,6 +34,13 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 public class LibP2PParamsFactory {
 
   public static final int MAX_SUBSCRIPTIONS_PER_MESSAGE = 200;
+  private static final int MAX_PUBLISHED_MESSAGES = 1000;
+  private static final int MAX_TOPICS_PER_PUBLISHED_MESSAGE = 1;
+  private static final int MAX_GRAFT_MESSAGES = 200;
+  private static final int MAX_PRUNE_MESSAGES = 200;
+  private static final int MAX_IHAVE_MESSAGE_IDS = 5000;
+  private static final int MAX_IWANT_MESSAGE_IDS = 5000;
+  private static final int MAX_IDONTWANT_MESSAGE_IDS = 5000;
 
   public static GossipParams createGossipParams(
       final GossipConfig gossipConfig, final NetworkingSpecConfig networkingSpecConfig) {
@@ -81,15 +88,16 @@ public class LibP2PParamsFactory {
     final int maxPayloadSize = networkingSpecConfig.getMaxPayloadSize();
     builder
         .maxGossipMessageSize(maxMessageSize(maxPayloadSize))
-        .maxPublishedMessages(1000)
-        .maxTopicsPerPublishedMessage(1)
+        .maxPublishedMessages(MAX_PUBLISHED_MESSAGES)
+        .maxTopicsPerPublishedMessage(MAX_TOPICS_PER_PUBLISHED_MESSAGE)
         .maxSubscriptions(MAX_SUBSCRIPTIONS_PER_MESSAGE)
-        .maxGraftMessages(200)
-        .maxPruneMessages(200)
+        .maxGraftMessages(MAX_GRAFT_MESSAGES)
+        .maxPruneMessages(MAX_PRUNE_MESSAGES)
         .maxPeersSentInPruneMsg(0)
         .maxPeersAcceptedInPruneMsg(0)
-        .maxIHaveLength(5000)
-        .maxIWantMessageIds(5000);
+        .maxIHaveLength(MAX_IHAVE_MESSAGE_IDS)
+        .maxIWantMessageIds(MAX_IWANT_MESSAGE_IDS)
+        .maxIDontWantMessageIds(MAX_IDONTWANT_MESSAGE_IDS);
   }
 
   public static GossipScoreParams createGossipScoreParams(final GossipScoringConfig config) {

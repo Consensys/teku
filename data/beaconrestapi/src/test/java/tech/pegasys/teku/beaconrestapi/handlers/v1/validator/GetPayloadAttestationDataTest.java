@@ -19,10 +19,11 @@ import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
@@ -32,7 +33,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,13 +53,13 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
     payloadAttestationDataResponse =
         new ObjectAndMetaData<>(payloadAttestationData, SpecMilestone.GLOAS, false, true, false);
     setHandler(new GetPayloadAttestationData(validatorDataProvider, schemaDefinitionCache));
-    request.setPathParameter(RestApiConstants.SLOT, ONE.toString());
+    request.setQueryParameter(RestApiConstants.SLOT, ONE.toString());
   }
 
   @Test
   void metadata_shouldUsePayloadAttestationDataRoute() {
     assertThat(handler.getMetadata().getPath())
-        .isEqualTo("/eth/v1/validator/payload_attestation_data/{slot}");
+        .isEqualTo("/eth/v1/validator/payload_attestation_data");
   }
 
   @Test
@@ -78,7 +78,7 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
     setSpec(TestSpecFactory.createMinimalWithHezeForkEpoch(ONE));
     setHandler(new GetPayloadAttestationData(validatorDataProvider, schemaDefinitionCache));
     final UInt64 hezeSlot = spec.computeStartSlotAtEpoch(ONE);
-    request.setPathParameter(RestApiConstants.SLOT, hezeSlot.toString());
+    request.setQueryParameter(RestApiConstants.SLOT, hezeSlot.toString());
     final PayloadAttestationData hezePayloadAttestationData =
         dataStructureUtil.randomPayloadAttestationData(hezeSlot);
     when(validatorDataProvider.createPayloadAttestationData(hezeSlot))
@@ -95,15 +95,13 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void shouldReturnNotFoundWhenNoCanonicalBlockExistsAtSlot() throws Exception {
+  void shouldReturnNoContentWhenNoBlockSeenAtSlot() throws Exception {
     when(validatorDataProvider.createPayloadAttestationData(ONE))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handleRequest(request);
 
-    assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
-    assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "No canonical block found at slot=1"));
+    assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
   }
 
   @Test
@@ -112,8 +110,8 @@ class GetPayloadAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle404() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
+  void metadata_shouldHandle204() throws JsonProcessingException {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
 
   @Test

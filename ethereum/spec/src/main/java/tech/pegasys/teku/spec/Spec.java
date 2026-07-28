@@ -1421,11 +1421,14 @@ public class Spec {
 
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (getSpecConfigFulu().isEmpty()) {
+    final Optional<SpecConfigFulu> maybeSpecConfigFulu = getSpecConfigFulu();
+    if (maybeSpecConfigFulu.isEmpty()) {
       return false;
     }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
+    final SpecConfigFulu specConfigFulu = maybeSpecConfigFulu.get();
+    if (epoch.isLessThan(specConfigFulu.getFuluForkEpoch())) {
+      return false;
+    }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());

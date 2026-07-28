@@ -50,7 +50,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
     final GenesisGenerator.InitialStateData initialStateData =
         createInitialState(genesisTime, besuNode, validatorKeys);
 
@@ -102,7 +102,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
     final GenesisGenerator.InitialStateData initialStateData =
         createInitialState(genesisTime, besuNode, validatorKeys);
 
@@ -152,7 +152,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+        createValidatorKeyGenerator().generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
     final GenesisGenerator.InitialStateData initialStateData =
         createInitialState(genesisTime, besuNode, validatorKeys);
 

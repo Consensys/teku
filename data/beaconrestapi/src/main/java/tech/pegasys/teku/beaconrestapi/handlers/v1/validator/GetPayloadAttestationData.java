@@ -17,12 +17,11 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -44,7 +43,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetPayloadAttestationData extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/payload_attestation_data/{slot}";
+  public static final String ROUTE = "/eth/v1/validator/payload_attestation_data";
 
   private final ValidatorDataProvider provider;
   private final SchemaDefinitionCache schemaDefinitionCache;
@@ -76,7 +75,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 A 503 error must be returned if the beacon node is currently syncing.
                 """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .pathParam(SLOT_PARAM)
+            .queryParamRequired(SLOT_PARAM)
             .response(
                 SC_OK,
                 "Success response",
@@ -84,13 +83,12 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                 sszResponseType(),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withBadRequestResponse(Optional.of("Invalid request - the slot is invalid"))
-            .response(
-                SC_NOT_FOUND,
-                "No canonical block has been seen for the requested slot.",
-                HTTP_ERROR_RESPONSE_TYPE)
             .withNotAcceptableResponse()
             .withInternalErrorResponse()
             .withChainDataResponses()
+            .response(
+                SC_NO_CONTENT,
+                "No block has been seen for the requested slot. Used to signal validator to not cast any payload attestation.")
             .build());
     this.provider = validatorDataProvider;
     this.schemaDefinitionCache = schemaDefinitionCache;
@@ -98,7 +96,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final UInt64 slot = request.getPathParameter(SLOT_PARAM);
+    final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
     final SafeFuture<Optional<PayloadAttestationData>> future =
         provider.createPayloadAttestationData(slot);
 
@@ -115,11 +113,7 @@ public class GetPayloadAttestationData extends RestApiEndpoint {
                               new ObjectAndMetaData<>(
                                   payloadAttestationData, milestone, false, true, false));
                         })
-                    .orElseGet(
-                        () ->
-                            AsyncApiResponse.respondWithError(
-                                SC_NOT_FOUND,
-                                "No canonical block found at slot=" + slot.toString()))));
+                    .orElseGet(() -> AsyncApiResponse.respondWithCode(SC_NO_CONTENT))));
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<PayloadAttestationData>>

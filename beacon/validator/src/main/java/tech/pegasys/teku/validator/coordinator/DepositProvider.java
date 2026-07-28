@@ -63,7 +63,6 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
   private final Spec spec;
-  private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
   private final DepositUtil depositUtil;
 
   public DepositProvider(
@@ -164,8 +163,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   public synchronized SszList<Deposit> getDeposits(
       final BeaconState state, final Eth1Data eth1Data) {
-    final long maxDeposits = spec.getMaxDeposits(state);
-    final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    final SszListSchema<Deposit, ?> depositsSchema =
+        spec.atSlot(state.getSlot()).getSchemaDefinitions().getDepositsSchema();
     return getDepositsWithIndex(state, eth1Data).stream()
         .map(DepositWithIndex::deposit)
         .collect(depositsSchema.collector());
@@ -280,18 +279,5 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   public synchronized void onInitialDepositTreeSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
     this.depositMerkleTree = DepositTree.fromSnapshot(depositTreeSnapshot);
-  }
-
-  private static class DepositsSchemaCache {
-    private SszListSchema<Deposit, ?> cachedSchema;
-
-    public SszListSchema<Deposit, ?> get(final long maxDeposits) {
-      SszListSchema<Deposit, ?> cachedSchemaLoc = cachedSchema;
-      if (cachedSchemaLoc == null || maxDeposits != cachedSchemaLoc.getMaxLength()) {
-        cachedSchemaLoc = SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits);
-        cachedSchema = cachedSchemaLoc;
-      }
-      return cachedSchemaLoc;
-    }
   }
 }

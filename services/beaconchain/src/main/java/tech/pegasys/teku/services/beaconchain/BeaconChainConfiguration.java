@@ -21,6 +21,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidCircuitBreakerFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -36,6 +37,7 @@ public class BeaconChainConfiguration {
   private final BeaconRestApiConfig beaconRestApiConfig;
   private final StoreConfig storeConfig;
   private final PowchainConfiguration powchainConfiguration;
+  private final ExecutionPayloadBidCircuitBreakerFactory executionPayloadBidCircuitBreakerFactory;
   private final Spec spec;
   private final ZkChainConfiguration zkChainConfiguration;
 
@@ -51,6 +53,7 @@ public class BeaconChainConfiguration {
       final SyncConfig syncConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
       final PowchainConfiguration powchainConfiguration,
+      final ExecutionPayloadBidCircuitBreakerFactory executionPayloadBidCircuitBreakerFactory,
       final StoreConfig storeConfig,
       final Spec spec,
       final BeaconChainControllerFactory beaconChainControllerFactory,
@@ -64,6 +67,7 @@ public class BeaconChainConfiguration {
     this.syncConfig = syncConfig;
     this.beaconRestApiConfig = beaconRestApiConfig;
     this.powchainConfiguration = powchainConfiguration;
+    this.executionPayloadBidCircuitBreakerFactory = executionPayloadBidCircuitBreakerFactory;
     this.storeConfig = storeConfig;
     this.spec = spec;
     this.beaconChainControllerFactory = beaconChainControllerFactory;
@@ -105,6 +109,10 @@ public class BeaconChainConfiguration {
 
   public PowchainConfiguration powchainConfig() {
     return powchainConfiguration;
+  }
+
+  public ExecutionPayloadBidCircuitBreakerFactory executionPayloadBidCircuitBreakerFactory() {
+    return executionPayloadBidCircuitBreakerFactory;
   }
 
   public StoreConfig storeConfig() {
