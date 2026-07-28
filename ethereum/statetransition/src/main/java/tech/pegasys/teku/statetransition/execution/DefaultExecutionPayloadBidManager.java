@@ -259,6 +259,25 @@ public class DefaultExecutionPayloadBidManager
                 parentRoot));
   }
 
+  /**
+   * Selects between the highest eligible remote bid and the locally built execution payload.
+   *
+   * <p>If the local payload is unavailable or invalid, the remote bid wins. When both are viable,
+   * selection follows this precedence:
+   *
+   * <ol>
+   *   <li>If {@code useShouldOverrideBuilderFlag} is enabled and the EL returns {@code
+   *       shouldOverrideBuilder}, the local payload wins.
+   *   <li>Otherwise, {@code requestedBuilderBoostFactor}, supplied by the validator client through
+   *       the Produce Block API, is used when present.
+   *   <li>If the validator client does not supply a factor, {@code builderBidCompareFactor} from
+   *       the beacon node's {@code --builder-bid-compare-factor} configuration is used.
+   * </ol>
+   *
+   * <p>A factor of {@code 0} always prefers a viable local payload, {@code UInt64.MAX_VALUE} always
+   * prefers the remote bid, and other factors scale the remote value as a percentage. Equal
+   * adjusted values select the local payload.
+   */
   private SafeFuture<SignedExecutionPayloadBid> selectRemoteOrLocalBid(
       final SignedExecutionPayloadBid remoteBid,
       final Bytes32 parentRoot,
