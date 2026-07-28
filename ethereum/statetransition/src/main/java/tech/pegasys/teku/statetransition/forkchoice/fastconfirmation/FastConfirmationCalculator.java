@@ -24,7 +24,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
@@ -66,7 +65,6 @@ class FastConfirmationCalculator {
   private final Bytes32 head;
   private final UInt64 currentSlot;
   private final UInt64 currentEpoch;
-  private final boolean isGloas;
 
   // Lazily computed once per instance (single-threaded per slot); see getPulledUpHeadState.
   private BeaconState pulledUpHeadState;
@@ -87,8 +85,6 @@ class FastConfirmationCalculator {
     this.head = fcrStore.currentSlotHead();
     this.currentSlot = currentSlot;
     this.currentEpoch = spec.computeEpochAtSlot(currentSlot);
-    this.isGloas =
-        spec.atSlot(currentSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS);
   }
 
   /** Implements {@code get_block_slot}. */
@@ -345,16 +341,16 @@ class FastConfirmationCalculator {
    * From the {@code is_one_confirmed} spec: "This function MUST return {@code False} if {@code
    * block_root} status is not {@code VALID} according to the Optimistic sync specification."
    *
-   * <p>Pre-Gloas this maps directly to {@code isFullyValidated} (protoarray {@code VALID}), so an
-   * optimistically-imported block is never confirmed. In Gloas the rule confirms the {@code
-   * PENDING} (block-level) node — see {@code get_node_for_root} — which is reached before the
-   * execution payload envelope is revealed. Such a block is {@code OPTIMISTIC} in Teku's protoarray
-   * purely because its payload has not been validated yet, whereas an execution-invalid block is
-   * pruned from fork choice entirely. Block-level presence ({@code contains}) is therefore the
-   * correct notion of {@code VALID} for Gloas confirmation.
+   * <p>This maps directly to {@code isFullyValidated} (protoarray {@code VALID}) across all forks,
+   * so an optimistically-imported block is never confirmed. Both pre-Gloas and Gloas resolve the
+   * block-level (Gloas {@code PENDING}) base node — see {@code get_node_for_root} — and {@code
+   * isFullyValidated} additionally requires that node to be {@code VALID}. A weaker presence check
+   * ({@code contains}) would confirm nodes that are still {@code OPTIMISTIC}, including a block
+   * that inherited optimistic status from an unvalidated execution parent, violating the spec's
+   * MUST.
    */
   private boolean isValidForConfirmation(final Bytes32 blockRoot) {
-    return isGloas ? forkChoice.contains(blockRoot) : forkChoice.isFullyValidated(blockRoot);
+    return forkChoice.isFullyValidated(blockRoot);
   }
 
   /**
