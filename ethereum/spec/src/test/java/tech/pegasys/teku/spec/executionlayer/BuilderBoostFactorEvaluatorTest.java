@@ -64,4 +64,22 @@ class BuilderBoostFactorEvaluatorTest {
                 localValue, builderValue, UInt64.valueOf(200)))
         .isTrue();
   }
+
+  @Test
+  void evaluatesLargestBoostFactor() {
+    final UInt64 builderBoostFactor = UInt64.MAX_VALUE.minus(UInt64.ONE);
+    final UInt256 localValueAtThreshold = UInt256.valueOf(builderBoostFactor.bigIntegerValue());
+    final UInt256 localValueBelowThreshold =
+        UInt256.valueOf(builderBoostFactor.bigIntegerValue().subtract(BigInteger.ONE));
+    final UInt256 builderValue = UInt256.valueOf(100);
+
+    assertThat(
+            BuilderBoostFactorEvaluator.isLocalValueWinning(
+                localValueAtThreshold, builderValue, builderBoostFactor))
+        .isTrue();
+    assertThat(
+            BuilderBoostFactorEvaluator.isLocalValueWinning(
+                localValueBelowThreshold, builderValue, builderBoostFactor))
+        .isFalse();
+  }
 }
