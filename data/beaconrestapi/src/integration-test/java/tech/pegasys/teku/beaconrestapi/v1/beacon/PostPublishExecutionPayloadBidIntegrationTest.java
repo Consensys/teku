@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Optional;
 import okhttp3.Response;
@@ -84,14 +85,17 @@ public class PostPublishExecutionPayloadBidIntegrationTest
   }
 
   @Test
-  public void shouldReturnBadRequestWhenValidationFails() throws Exception {
+  public void shouldReturnBadRequestWithRejectionDescriptionWhenValidationFails() throws Exception {
     final SignedExecutionPayloadBid bid = dataStructureUtil.randomSignedExecutionPayloadBid();
+    final String rejectionDescription = "Invalid payload execution bid signature";
+    final String validationError = "Invalid execution payload bid: " + rejectionDescription;
     when(validatorApiChannel.publishSignedExecutionPayloadBid(any()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("bid is too low")));
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException(validationError)));
 
     final Response response = postJsonBid(bid);
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.body().string()).contains("bid is too low");
+    final JsonNode responseBody = OBJECT_MAPPER.readTree(response.body().string());
+    assertThat(responseBody.get("message").asText()).isEqualTo(validationError);
   }
 
   private Response postJsonBid(final SignedExecutionPayloadBid bid) throws IOException {

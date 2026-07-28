@@ -41,7 +41,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "swift";
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(8);
+        createValidatorKeyGenerator().generateValidatorKeys(8);
 
     final InitialStateData genesis =
         createGenesisGenerator()

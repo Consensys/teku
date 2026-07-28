@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.web3j.utils.Strings;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.IPVersionResolver;
 import tech.pegasys.teku.infrastructure.io.IPVersionResolver.IPVersion;
@@ -189,7 +188,6 @@ public class NetworkConfig {
     return wireLogsConfig;
   }
 
-  @SuppressWarnings("AddressSelection")
   private String resolveAnyLocalAddress(final String ipAddress) {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
@@ -376,7 +374,7 @@ public class NetworkConfig {
           ips -> {
             ips.forEach(
                 ip -> {
-                  if (Strings.isBlank(ip)) {
+                  if (ip == null || ip.isBlank()) {
                     throw new InvalidConfigurationException("Advertised ip is blank");
                   }
                   if (!isInetAddress(ip)) {

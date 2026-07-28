@@ -259,6 +259,19 @@ public class CombinedChainDataClient {
         .thenCompose(this::getDataColumnSidecars);
   }
 
+  public SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    return historicalChainData
+        .getDataColumnIdentifiers(slotAndBlockRoot.getSlot())
+        .thenApply(
+            identifiers ->
+                filterDataColumnSidecarKeys(identifiers, indices)
+                    .filter(
+                        identifier ->
+                            identifier.blockRoot().equals(slotAndBlockRoot.getBlockRoot())))
+        .thenCompose(this::getDataColumnSidecars);
+  }
+
   public SafeFuture<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
     return historicalChainData
         .getDataColumnSidecarsProofs(slot)

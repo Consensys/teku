@@ -14,26 +14,34 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
@@ -44,6 +52,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
+import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -57,16 +67,28 @@ public class DefaultExecutionPayloadBidManagerTest {
 
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
       mock(ExecutionPayloadBidGossipValidator.class);
+  private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker =
+      mock(ExecutionPayloadBidCircuitBreaker.class);
 
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher =
           mock(ReceivedExecutionPayloadBidEventsChannel.class);
+  private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids =
+      new PoolFactory(new StubMetricsSystem()).createPendingPoolForExecutionPayloadBids(spec);
 
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
       new DefaultExecutionPayloadBidManager(
           spec,
           executionPayloadBidGossipValidator,
-          receivedExecutionPayloadBidEventsChannelPublisher);
+          executionPayloadBidCircuitBreaker,
+          receivedExecutionPayloadBidEventsChannelPublisher,
+          pendingExecutionPayloadBids);
+
+  @BeforeEach
+  public void setup() {
+    when(executionPayloadBidCircuitBreaker.isEngaged(any(), any())).thenReturn(false);
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(any(), any())).thenReturn(true);
+  }
 
   @Test
   public void createsLocalBidForBlock() {
@@ -250,6 +272,92 @@ public class DefaultExecutionPayloadBidManagerTest {
   }
 
   @Test
+  public void skipsRemoteBidsFromBannedBuilders() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+
+    final SignedExecutionPayloadBid bannedHigherBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(1_000), UInt64.valueOf(12));
+    final SignedExecutionPayloadBid allowedLowerBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500), UInt64.valueOf(13));
+    final BeaconStateGloas state = stateAtSlot(slot);
+
+    addAcceptedBid(bannedHigherBid);
+    addAcceptedBid(allowedLowerBid);
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state))
+        .thenReturn(false);
+
+    final SignedExecutionPayloadBid signedBid =
+        SafeFutureAssert.safeJoin(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                parentBlockHash,
+                state,
+                new SafeFuture<>(),
+                blockProductionPerformance));
+
+    assertThat(signedBid).isEqualTo(allowedLowerBid);
+  }
+
+  @Test
+  public void fallsBackToLocalSelfBuiltBidWhenAllMatchingRemoteBidsAreFromBannedBuilders() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+
+    final SignedExecutionPayloadBid firstBannedBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(1_000), UInt64.valueOf(12));
+    final SignedExecutionPayloadBid secondBannedBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500), UInt64.valueOf(13));
+    final BeaconStateGloas state = stateAtSlot(slot);
+
+    addAcceptedBid(firstBannedBid);
+    addAcceptedBid(secondBannedBid);
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(12), state))
+        .thenReturn(false);
+    when(executionPayloadBidCircuitBreaker.isBuilderAllowed(UInt64.valueOf(13), state))
+        .thenReturn(false);
+
+    final SignedExecutionPayloadBid signedBid =
+        SafeFutureAssert.safeJoin(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                parentBlockHash,
+                state,
+                SafeFuture.completedFuture(randomGetPayloadResponse(slot, parentBlockHash)),
+                blockProductionPerformance));
+
+    assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
+    verify(blockProductionPerformance, never()).builderBidValidated();
+  }
+
+  @Test
+  public void fallsBackToLocalSelfBuiltBidWhenCircuitBreakerIsEngaged() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+    final BeaconStateGloas state = stateAtSlot(slot);
+    final SignedExecutionPayloadBid remoteBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(500));
+
+    addAcceptedBid(remoteBid);
+    when(executionPayloadBidCircuitBreaker.isEngaged(parentRoot, state)).thenReturn(true);
+
+    final SignedExecutionPayloadBid signedBid =
+        SafeFutureAssert.safeJoin(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                parentBlockHash,
+                state,
+                SafeFuture.completedFuture(randomGetPayloadResponse(slot, parentBlockHash)),
+                blockProductionPerformance));
+
+    assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
+    verify(blockProductionPerformance, never()).builderBidValidated();
+  }
+
+  @Test
   public void filtersRemoteBidsByParentBlockRoot() {
     final UInt64 slot = UInt64.valueOf(10);
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
@@ -357,6 +465,190 @@ public class DefaultExecutionPayloadBidManagerTest {
   }
 
   @Test
+  public void onSlotRetriesBidSavedForFuture() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
+    assertThat(pendingExecutionPayloadBids.get(signedBid.hashTreeRoot())).contains(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher, never())
+        .onExecutionPayloadBidValidated(signedBid);
+
+    executionPayloadBidManager.onSlot(slot);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
+  public void onSlotKeepsBidPendingWhenRetryIsStillForFuture() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    executionPayloadBidManager.onSlot(slot);
+    executionPayloadBidManager.onSlot(slot);
+
+    verify(executionPayloadBidGossipValidator, times(3)).validate(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
+  public void onSlotDropsPendingBidsForPriorSlots() {
+    final UInt64 bidSlot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(bidSlot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(bidSlot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    executionPayloadBidManager.onSlot(bidSlot.plus(1));
+
+    verify(executionPayloadBidGossipValidator).validate(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher, never())
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
+  public void ignoredRetryIsNotRetained() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    executionPayloadBidManager.onSlot(slot);
+    executionPayloadBidManager.onSlot(slot);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+  }
+
+  @Test
+  public void rejectedRetryIsNotRetained() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("invalid")));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
+    executionPayloadBidManager.onSlot(slot);
+    executionPayloadBidManager.onSlot(slot);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+  }
+
+  @Test
+  public void proposerPreferencesRetryBidsForMatchingSlot() {
+    final SignedProposerPreferences preferences =
+        dataStructureUtil.randomSignedProposerPreferences();
+    final UInt64 slot = preferences.getMessage().getProposalSlot();
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
+    executionPayloadBidManager.onOperationAdded(preferences, ACCEPT, true);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
+  public void importedParentBlockRetriesMatchingBid() {
+    final SignedBeaconBlock parentBlock = dataStructureUtil.randomSignedBeaconBlock(9);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(UInt64.valueOf(10), parentBlock.getRoot(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(signedBid.getMessage().getSlot());
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    executionPayloadBidManager.onBlockImported(parentBlock, false);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+    verify(executionPayloadBidCircuitBreaker).observeImportedBlock(parentBlock);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
+  public void importedParentExecutionPayloadRetriesMatchingBid() {
+    final SignedBeaconBlock parentBlock = dataStructureUtil.randomSignedBeaconBlock(9);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(parentBlock);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(UInt64.valueOf(10), parentBlock.getRoot(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(signedBid.getMessage().getSlot());
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    executionPayloadBidManager.onExecutionPayloadImported(executionPayload, false);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
+  public void overlappingDependencyEventsDoNotRetryOnePendingBidTwice() {
+    final SignedBeaconBlock parentBlock = dataStructureUtil.randomSignedBeaconBlock(9);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(parentBlock);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(UInt64.valueOf(10), parentBlock.getRoot(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(signedBid.getMessage().getSlot());
+    final SafeFuture<InternalValidationResult> retryResult = new SafeFuture<>();
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(retryResult);
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    executionPayloadBidManager.onBlockImported(parentBlock, false);
+    executionPayloadBidManager.onExecutionPayloadImported(executionPayload, false);
+
+    verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
+    retryResult.complete(ACCEPT);
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
+  }
+
+  @Test
   public void onSlotPrunesBidsForPriorSlots() {
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
@@ -408,6 +700,15 @@ public class DefaultExecutionPayloadBidManagerTest {
         .isEqualTo(nextSlotBid);
   }
 
+  @Test
+  public void observeImportedBlocksForCircuitBreakerBuilderTracking() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
+
+    executionPayloadBidManager.onBlockImported(block, false);
+
+    verify(executionPayloadBidCircuitBreaker).observeImportedBlock(block);
+  }
+
   private GetPayloadResponse randomGetPayloadResponse(
       final UInt64 slot, final Bytes32 parentBlockHash) {
     return new GetPayloadResponse(
@@ -429,6 +730,16 @@ public class DefaultExecutionPayloadBidManagerTest {
       final Bytes32 parentBlockRoot,
       final Bytes32 parentBlockHash,
       final UInt64 value) {
+    return createBid(
+        slot, parentBlockRoot, parentBlockHash, value, dataStructureUtil.randomUInt64());
+  }
+
+  private SignedExecutionPayloadBid createBid(
+      final UInt64 slot,
+      final Bytes32 parentBlockRoot,
+      final Bytes32 parentBlockHash,
+      final UInt64 value,
+      final UInt64 builderIndex) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionPayloadBidSchema schema = schemaDefinitions.getExecutionPayloadBidSchema();
@@ -440,7 +751,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
             dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
+            builderIndex,
             slot,
             value,
             UInt64.ZERO,
