@@ -323,11 +323,11 @@ public class ForkChoiceUtil {
     final boolean isCurrentTimeOk =
         head.getSlot().equals(currentSlot)
             || (currentSlot.equals(proposalSlot) && isProposingOnTime);
-    final boolean isSingleSlotReorg = isParentSlotOk(store, head);
-    if (!isSingleSlotReorg || !isCurrentTimeOk) {
+    final boolean isParentSlotOk = isParentSlotOk(store, head);
+    if (!isParentSlotOk || !isCurrentTimeOk) {
       LOG.debug(
-          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isCurrentTimeOk {}",
-          isSingleSlotReorg,
+          "shouldOverrideForkChoiceUpdate isParentSlotOk {}, isCurrentTimeOk {}",
+          isParentSlotOk,
           isCurrentTimeOk);
       return false;
     }
