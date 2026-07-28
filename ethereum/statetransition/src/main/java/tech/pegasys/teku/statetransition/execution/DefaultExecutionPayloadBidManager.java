@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator;
+import tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorFormatter;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -385,8 +386,11 @@ public class DefaultExecutionPayloadBidManager
       final UInt256 localValue,
       final ExecutionPayloadBid remoteBid,
       final UInt64 slot) {
+    final String comparisonFactor =
+        BuilderBoostFactorFormatter.formatBuilderBoostFactor(builderBoostFactor);
+
     LOG.info(
-        "{} - builder compare factor: {}%, source: {}.",
+        "{} - builder compare factor: {}, source: {}.",
         localValueWins
             ? String.format(
                 "Local execution payload (%s ETH) is chosen over remote bid (%s ETH) for block at slot %s",
@@ -394,7 +398,7 @@ public class DefaultExecutionPayloadBidManager
             : String.format(
                 "Remote bid (%s ETH) is chosen over local execution payload (%s ETH) for block at slot %s",
                 gweiToEth(remoteBid.getValue()), weiToEth(localValue), slot),
-        builderBoostFactor,
+        comparisonFactor,
         isRequestedBuilderBoostFactor ? "VC" : "BN");
   }
 

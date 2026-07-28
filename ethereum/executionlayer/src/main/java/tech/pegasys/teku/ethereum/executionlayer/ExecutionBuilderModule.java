@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator;
+import tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorFormatter;
 
 public class ExecutionBuilderModule {
 
@@ -529,21 +530,9 @@ public class ExecutionBuilderModule {
       final UInt256 localPayloadValue,
       final boolean isRequestedBuilderBoostFactor,
       final UInt64 actualBuilderBoostFactor) {
-    final String actualComparisonFactorString;
     final String comparisonFactorSource = isRequestedBuilderBoostFactor ? "VC" : "BN";
-
-    if (actualBuilderBoostFactor.equals(
-        BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_MAX_PROFIT)) {
-      actualComparisonFactorString = "MAX_PROFIT";
-    } else if (actualBuilderBoostFactor.equals(
-        BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
-      actualComparisonFactorString = "PREFER_EXECUTION";
-    } else if (actualBuilderBoostFactor.equals(
-        BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
-      actualComparisonFactorString = "PREFER_BUILDER";
-    } else {
-      actualComparisonFactorString = actualBuilderBoostFactor + "%";
-    }
+    final String actualComparisonFactorString =
+        BuilderBoostFactorFormatter.formatBuilderBoostFactor(actualBuilderBoostFactor);
 
     final String winningSideText;
     final String winningSideValue;

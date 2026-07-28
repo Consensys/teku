@@ -20,6 +20,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_MAX_PROFIT;
+import static tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
+import static tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_EXECUTION;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
@@ -709,6 +712,58 @@ public class DefaultExecutionPayloadBidManagerTest {
                   log.contains(
                       "Remote bid (0.100000 ETH) is chosen over local execution payload (0.089000 ETH)"))
           .anyMatch(log -> log.contains("builder compare factor: 90%, source: BN."));
+    }
+  }
+
+  @Test
+  void logsBuilderBoostFactorsWithExpectedFormatting() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+    final SignedExecutionPayloadBid remoteBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(100_000_000));
+    addAcceptedBid(remoteBid);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(DefaultExecutionPayloadBidManager.class)) {
+      selectBid(
+          executionPayloadBidManager,
+          remoteBid,
+          parentRoot,
+          parentBlockHash,
+          UInt256.valueOf(100_000_000_000_000_000L),
+          false,
+          Optional.of(BUILDER_BOOST_FACTOR_MAX_PROFIT));
+      selectBid(
+          executionPayloadBidManager,
+          remoteBid,
+          parentRoot,
+          parentBlockHash,
+          UInt256.ONE,
+          false,
+          Optional.of(BUILDER_BOOST_FACTOR_PREFER_EXECUTION));
+      selectBid(
+          executionPayloadBidManager,
+          remoteBid,
+          parentRoot,
+          parentBlockHash,
+          UInt256.ONE,
+          false,
+          Optional.of(BUILDER_BOOST_FACTOR_PREFER_BUILDER));
+      selectBid(
+          executionPayloadBidManager,
+          remoteBid,
+          parentRoot,
+          parentBlockHash,
+          UInt256.valueOf(80_000_000_000_000_000L),
+          false,
+          Optional.of(UInt64.valueOf(80)));
+
+      assertThat(logCaptor.getInfoLogs())
+          .contains(
+              "Local execution payload (0.100000 ETH) is chosen over remote bid (0.100000 ETH) for block at slot 10 - builder compare factor: MAX_PROFIT, source: VC.",
+              "Local execution payload (0.000000 ETH) is chosen over remote bid (0.100000 ETH) for block at slot 10 - builder compare factor: PREFER_EXECUTION, source: VC.",
+              "Remote bid (0.100000 ETH) is chosen over local execution payload (0.000000 ETH) for block at slot 10 - builder compare factor: PREFER_BUILDER, source: VC.",
+              "Local execution payload (0.080000 ETH) is chosen over remote bid (0.100000 ETH) for block at slot 10 - builder compare factor: 80%, source: VC.");
     }
   }
 
