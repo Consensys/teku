@@ -183,7 +183,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
   @TestTemplate
   void shouldIgnore_whenGasLimitIsNotCompatibleWithTargetGasLimit() {
     final UInt64 parentGasLimit = UInt64.valueOf(60_000_000);
-    final UInt64 bidGasLimit = UInt64.valueOf(60_000_000);
+    final UInt64 bidGasLimit = UInt64.valueOf(59_999_999);
     final UInt64 targetGasLimit = UInt64.valueOf(60_000_001);
     final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
     mockProposerPreferences(bidWithGasLimit, targetGasLimit);
@@ -194,7 +194,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .isCompletedWithValue(
             ignore(
                 "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
-                bid.getGasLimit(), parentGasLimit, targetGasLimit));
+                bidWithGasLimit.getMessage().getGasLimit(), parentGasLimit, targetGasLimit));
   }
 
   @TestTemplate
