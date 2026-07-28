@@ -522,12 +522,23 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
-  void isParentStrong_shouldSubtractProposerBoostFromPendingParentNode() {
+  void isParentStrong_shouldExcludeProposerBoostFromPendingParentWeight() {
+    assertParentStrengthWithProposerBoost(UInt64.ONE, UInt64.ONE, false);
+  }
+
+  @Test
+  void isParentStrong_shouldReturnTrueWhenUnboostedPendingParentWeightExceedsThreshold() {
+    assertParentStrengthWithProposerBoost(UInt64.valueOf(2), UInt64.ONE, true);
+  }
+
+  private void assertParentStrengthWithProposerBoost(
+      final UInt64 attestationWeight,
+      final UInt64 parentThreshold,
+      final boolean expectedToBeStrong) {
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final SignedBeaconBlock signedHead = mock(SignedBeaconBlock.class);
     final UInt64 proposerBoostAmount = spec.getProposerBoostAmount(justifiedState);
-    final UInt64 parentThreshold = UInt64.ONE;
-    final UInt64 boostedWeight = proposerBoostAmount.plus(parentThreshold).plus(1);
+    final UInt64 boostedWeight = proposerBoostAmount.plus(attestationWeight);
     final ProtoNodeData parentNode = mock(ProtoNodeData.class);
     final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
@@ -543,7 +554,8 @@ class ForkChoiceUtilGloasTest {
     when(strategy.getAncestorNode(ForkChoiceNode.createBase(parentRoot), gloasSlot))
         .thenReturn(Optional.of(ForkChoiceNode.createBase(parentRoot)));
 
-    assertThat(forkChoiceUtil.isParentStrong(store, signedHead, parentThreshold)).isTrue();
+    assertThat(forkChoiceUtil.isParentStrong(store, signedHead, parentThreshold))
+        .isEqualTo(expectedToBeStrong);
   }
 
   @Test
