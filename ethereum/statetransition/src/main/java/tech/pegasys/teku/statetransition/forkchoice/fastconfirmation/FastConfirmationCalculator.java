@@ -58,7 +58,9 @@ class FastConfirmationCalculator {
 
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
+
   private final FastConfirmationStore fcrStore;
+
   private final ReadOnlyStore store;
   private final ReadOnlyForkChoiceStrategy forkChoice;
   private final VoteSnapshot votes;

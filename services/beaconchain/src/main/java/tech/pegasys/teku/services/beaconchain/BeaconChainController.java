@@ -980,8 +980,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator =
           new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, recentChainData);
-      proposerPreferencesManager =
-          new DefaultProposerPreferencesManager(proposerPreferencesGossipValidator);
+      final DefaultProposerPreferencesManager defaultProposerPreferencesManager =
+          new DefaultProposerPreferencesManager(
+              proposerPreferencesGossipValidator,
+              poolFactory.createPendingPoolForProposerPreferences(spec));
+      eventChannels.subscribe(SlotEventsChannel.class, defaultProposerPreferencesManager);
+      eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultProposerPreferencesManager);
+      proposerPreferencesManager = defaultProposerPreferencesManager;
     } else {
       proposerPreferencesManager = ProposerPreferencesManager.NOOP;
     }
@@ -1007,9 +1012,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
               spec,
               executionPayloadBidGossipValidator,
               executionPayloadBidCircuitBreaker,
-              receivedExecutionPayloadBidEventsChannelPublisher);
+              receivedExecutionPayloadBidEventsChannelPublisher,
+              poolFactory.createPendingPoolForExecutionPayloadBids(spec));
+      proposerPreferencesManager.subscribeOperationAdded(defaultExecutionPayloadBidManager);
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultExecutionPayloadBidManager);
+      eventChannels.subscribe(
+          ReceivedExecutionPayloadEventsChannel.class, defaultExecutionPayloadBidManager);
       executionPayloadBidManager = defaultExecutionPayloadBidManager;
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
@@ -1919,6 +1928,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,

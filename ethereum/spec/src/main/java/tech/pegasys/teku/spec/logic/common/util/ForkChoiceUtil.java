@@ -236,12 +236,14 @@ public class ForkChoiceUtil {
     final SignedBeaconBlock head = maybeHead.orElseThrow();
     final boolean isFfgCompetitive =
         isFfgCompetitive(store, headNode.blockRoot(), head.getParentRoot());
-    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, slot);
-    if (!isFfgCompetitive || !isSingleSlotReorg) {
+    final boolean isParentSlotOk = isParentSlotOk(store, head);
+    final boolean isCurrentSlotOk = isCurrentSlotOk(head, slot);
+    if (!isFfgCompetitive || !isParentSlotOk || !isCurrentSlotOk) {
       LOG.debug(
-          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}",
           isFfgCompetitive,
-          isSingleSlotReorg);
+          isParentSlotOk,
+          isCurrentSlotOk);
       return headNode;
     }
 
@@ -312,11 +314,11 @@ public class ForkChoiceUtil {
     final boolean isCurrentTimeOk =
         head.getSlot().equals(currentSlot)
             || (currentSlot.equals(proposalSlot) && isProposingOnTime);
-    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, proposalSlot);
-    if (!isSingleSlotReorg || !isCurrentTimeOk) {
+    final boolean isParentSlotOk = isParentSlotOk(store, head);
+    if (!isParentSlotOk || !isCurrentTimeOk) {
       LOG.debug(
-          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isCurrentTimeOk {}",
-          isSingleSlotReorg,
+          "shouldOverrideForkChoiceUpdate isParentSlotOk {}, isCurrentTimeOk {}",
+          isParentSlotOk,
           isCurrentTimeOk);
       return false;
     }
@@ -360,16 +362,16 @@ public class ForkChoiceUtil {
     }
   }
 
-  boolean isSingleSlotReorg(
-      final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 proposalSlot) {
+  boolean isParentSlotOk(final ReadOnlyStore store, final SignedBeaconBlock head) {
     final Optional<UInt64> maybeParentSlot =
         store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
     return maybeParentSlot
-        .map(
-            parentSlot ->
-                parentSlot.increment().equals(head.getSlot())
-                    && proposalSlot.equals(head.getSlot().increment()))
+        .map(parentSlot -> parentSlot.increment().equals(head.getSlot()))
         .orElse(false);
+  }
+
+  boolean isCurrentSlotOk(final SignedBeaconBlock head, final UInt64 proposalSlot) {
+    return proposalSlot.equals(head.getSlot().increment());
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
