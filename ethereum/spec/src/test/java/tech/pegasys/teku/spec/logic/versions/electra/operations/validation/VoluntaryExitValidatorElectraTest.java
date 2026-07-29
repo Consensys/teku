@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -53,7 +54,7 @@ class VoluntaryExitValidatorElectraTest {
       mock(BeaconStateAccessorsElectra.class);
 
   @BeforeEach
-  void setup() throws Exception {
+  void setup() {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
     final ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
@@ -61,7 +62,9 @@ class VoluntaryExitValidatorElectraTest {
         new VoluntaryExitValidatorElectra(spec.getGenesisSpecConfig(), predicates, stateAccessors);
 
     chainUpdater.initializeGenesis(true);
-    chainUpdater.saveBlock(chainBuilder.generateBlockAtSlot(6));
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.saveBlock(blockAndState);
+    chainUpdater.updateBestBlock(blockAndState);
   }
 
   @Test

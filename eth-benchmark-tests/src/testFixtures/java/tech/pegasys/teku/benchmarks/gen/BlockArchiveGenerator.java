@@ -145,6 +145,7 @@ public class BlockArchiveGenerator {
           ChainBuilder.BlockOptions options =
               ChainBuilder.BlockOptions.create().setAttestations(aggregates);
           SignedBlockAndState blockAndState = chainUpdater.advanceChain(currentSlot, options);
+          chainUpdater.updateBestBlock(blockAndState);
           final SignedBeaconBlock block = blockAndState.getSignedBeaconBlock().orElseThrow();
           writer.accept(block);
 
