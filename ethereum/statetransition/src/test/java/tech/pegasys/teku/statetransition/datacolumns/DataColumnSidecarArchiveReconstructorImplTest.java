@@ -313,6 +313,33 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
   }
 
   @TestTemplate
+  public void shouldNotSignalPrunableSlotWithDefaultRetentionEpochs() {
+    // Integer.MAX_VALUE is DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS: all extension
+    // columns are retained forever, so archiving is disabled by default even on a supernode.
+    final DataColumnSidecarArchiveReconstructorImpl defaultRetention =
+        newReconstructor(spec, () -> true, Integer.MAX_VALUE);
+    when(store.getTimeSeconds()).thenReturn(UInt64.valueOf(10000));
+
+    defaultRetention.onNewFinalizedCheckpoint(
+        new Checkpoint(UInt64.valueOf(10), dataStructureUtil.randomBytes32()), false);
+
+    verify(sidecarArchivePrunableChannel, never()).onSidecarArchivePrunableSlot(any());
+  }
+
+  @TestTemplate
+  public void shouldNotSignalPrunableSlotWhenNotSuperNode() {
+    // a default (non-supernode) node never archives extension columns
+    final DataColumnSidecarArchiveReconstructorImpl nonSuperNode =
+        newReconstructor(spec, () -> false, 0);
+    when(store.getTimeSeconds()).thenReturn(UInt64.valueOf(10000));
+
+    nonSuperNode.onNewFinalizedCheckpoint(
+        new Checkpoint(UInt64.valueOf(10), dataStructureUtil.randomBytes32()), false);
+
+    verify(sidecarArchivePrunableChannel, never()).onSidecarArchivePrunableSlot(any());
+  }
+
+  @TestTemplate
   public void isSidecarPruned_falseWhenNotSuperNode() {
     final DataColumnSidecarArchiveReconstructorImpl nonSuperNode =
         newReconstructor(spec, () -> false, 0);
