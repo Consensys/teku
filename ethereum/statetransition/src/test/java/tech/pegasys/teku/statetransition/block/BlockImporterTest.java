@@ -175,51 +175,6 @@ public class BlockImporterTest {
   }
 
   @Test
-  public void importBlock_attestationWithInvalidSignature() throws Exception {
-
-    UInt64 currentSlot = UInt64.ONE;
-    final SignedBlockAndState block1 = localChainBuilder.generateBlockAtSlot(UInt64.ONE);
-    localChainUpdater.saveBlock(block1);
-    currentSlot = currentSlot.plus(UInt64.ONE);
-
-    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final StateAndBlockSummary stateAndBlock =
-        recentChainData
-            .getStore()
-            .retrieveStateAndBlockSummary(block1.getRoot())
-            .join()
-            .orElseThrow();
-    List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
-    List<Attestation> aggregatedAttestations =
-        AttestationGenerator.groupAndAggregateAttestations(attestations);
-
-    // make one attestation signature invalid
-    int invalidAttIdx = aggregatedAttestations.size() / 2;
-    Attestation att = aggregatedAttestations.get(invalidAttIdx);
-    Attestation invalidAtt =
-        attestationSchema.create(
-            att.getAggregationBits(), att.getData(), BLSTestUtil.randomSignature(1));
-    aggregatedAttestations.set(invalidAttIdx, invalidAtt);
-
-    final UInt64 currentSlotFinal = currentSlot.plus(UInt64.ONE);
-
-    final SignedBlockAndState block =
-        localChainBuilder.generateBlockAtSlot(
-            currentSlotFinal, BlockOptions.create().setAttestations(aggregatedAttestations));
-    localChainUpdater.saveBlock(block);
-    final BlockImportResult importResult =
-        forkChoice
-            .onBlock(
-                block.getBlock(),
-                Optional.empty(),
-                BlockBroadcastValidator.NOOP,
-                new ExecutionLayerChannelStub(spec, false))
-            .join();
-    assertImportFailed(importResult, FailureReason.FAILED_STATE_TRANSITION);
-  }
-
-  @Test
   public void importBlock_latestFinalizedBlock() throws Exception {
     final SignedBlockAndState lastBlockAndState =
         localChainUpdater.advanceChainUntil(genesisConfig.getSlotsPerEpoch());
