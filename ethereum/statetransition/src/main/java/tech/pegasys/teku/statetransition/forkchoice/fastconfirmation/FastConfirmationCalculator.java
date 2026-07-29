@@ -602,11 +602,10 @@ class FastConfirmationCalculator {
               ? getUnrealizedJustification(head).getEpoch()
               : "n/a";
       LOG.trace(
-          "FCR getLatestConfirmed slot={} epoch={} atEpochStart={} isGloas={} headFullyValidated={} finalizedEpoch={} observedJustifiedEpoch={} headUnrealizedJustifiedEpoch={} confirmedEpochBeforeAdvance={} advanceRan={} resultEpoch={}",
+          "FCR getLatestConfirmed slot={} epoch={} atEpochStart={} headFullyValidated={} finalizedEpoch={} observedJustifiedEpoch={} headUnrealizedJustifiedEpoch={} confirmedEpochBeforeAdvance={} advanceRan={} resultEpoch={}",
           currentSlot,
           currentEpoch,
           atEpochStart,
-          isGloas,
           forkChoice.isFullyValidated(head),
           getBlockEpoch(store.getFinalizedCheckpoint().getRoot()),
           observedJustified.getEpoch(),

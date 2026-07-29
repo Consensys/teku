@@ -6073,7 +6073,7 @@
 - name: get_safe_execution_block_hash#bellatrix
   sources:
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
-      search: getBaseNodeData(safeBlockRoot)
+      search: final Bytes32 safeExecutionHash
   spec: |
     <spec fn="get_safe_execution_block_hash" fork="bellatrix" hash="ccd5f801">
     def get_safe_execution_block_hash(fcr_store: FastConfirmationStore) -> Hash32:
@@ -6084,7 +6084,7 @@
 - name: get_safe_execution_block_hash#gloas
   sources:
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
-      search: getBaseNodeData(safeBlockRoot)
+      search: final Bytes32 safeExecutionHash
   spec: |
     <spec fn="get_safe_execution_block_hash" fork="gloas" hash="4884e9d5">
     def get_safe_execution_block_hash(fcr_store: FastConfirmationStore) -> Hash32:
