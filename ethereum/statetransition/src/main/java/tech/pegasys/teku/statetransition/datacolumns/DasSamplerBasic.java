@@ -42,7 +42,7 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
 
         @Override
         public boolean isDataAvailable(final SignedBeaconBlock block) {
-          return false;
+          return true;
         }
 
         @Override

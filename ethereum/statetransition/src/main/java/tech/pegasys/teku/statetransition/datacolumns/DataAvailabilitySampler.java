@@ -40,26 +40,27 @@ public interface DataAvailabilitySampler
   DataAvailabilitySampler NOOP =
       new DataAvailabilitySampler() {
         @Override
-        public SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot) {
+        public SafeFuture<List<UInt64>> checkDataAvailability(
+            final UInt64 slot, final Bytes32 blockRoot) {
           return SafeFuture.completedFuture(List.of());
         }
 
         @Override
         public boolean isDataAvailable(final SignedBeaconBlock block) {
-          return false;
+          return true;
         }
 
         @Override
         public void flush() {}
 
         @Override
-        public SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block) {
+        public SamplingEligibilityStatus checkSamplingEligibility(final BeaconBlock block) {
           return SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
         }
 
         @Override
         public void onNewValidatedDataColumnSidecar(
-            final DataColumnSlotAndIdentifier columnId, RemoteOrigin origin) {}
+            final DataColumnSlotAndIdentifier columnId, final RemoteOrigin origin) {}
 
         @Override
         public void onNewBlock(
