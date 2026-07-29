@@ -151,25 +151,13 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
-     * [IGNORE] bid.parent_block_hash is the block hash of a known execution payload in fork choice.
-     */
-    if (!gossipValidationHelper.isBlockHashKnown(
-        bid.getParentBlockHash(), bid.getParentBlockRoot())) {
-      LOG.trace(
-          "Bid's parent block hash {} is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
-          bid.getParentBlockHash());
-      return completedFuture(
-          saveForFuture(
-              "Bid's parent block hash %s is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
-              bid.getParentBlockHash()));
-    }
-
-    /*
-     * [IGNORE] bid.gas_limit is compatible with proposer_preferences.target_gas_limit under the
-     * EIP-1559 transition rule from the parent execution payload gas limit.
+     * [IGNORE] bid.parent_block_hash is the block hash of a known execution payload in fork choice
+     * and is_gas_limit_target_compatible(parent_gas_limit, bid.gas_limit, proposer_preferences.target_gas_limit)
+     * is True where parent_gas_limit is the gas_limit of that execution payload.
      */
     final Optional<UInt64> maybeParentGasLimit =
-        gossipValidationHelper.getGasLimitForExecutionPayload(bid.getParentBlockRoot());
+        gossipValidationHelper.getGasLimitForExecutionPayload(
+            bid.getParentBlockRoot(), bid.getParentBlockHash());
     if (maybeParentGasLimit.isEmpty()) {
       LOG.trace(
           "Gas limit for parent execution payload with block hash {} is unavailable. It will be saved for future processing",

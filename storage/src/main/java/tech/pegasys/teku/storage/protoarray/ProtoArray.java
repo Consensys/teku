@@ -138,6 +138,30 @@ public class ProtoArray {
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final boolean optimisticallyProcessed) {
+    addNode(
+        nodeIdentity,
+        blockSlot,
+        parentRoot,
+        parentNodeIdentity,
+        stateRoot,
+        checkpoints,
+        executionBlockNumber,
+        executionBlockHash,
+        ProtoNode.NO_EXECUTION_GAS_LIMIT,
+        optimisticallyProcessed);
+  }
+
+  public void addNode(
+      final ForkChoiceNode nodeIdentity,
+      final UInt64 blockSlot,
+      final Bytes32 parentRoot,
+      final Optional<ForkChoiceNode> parentNodeIdentity,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash,
+      final UInt64 executionGasLimit,
+      final boolean optimisticallyProcessed) {
     if (indices.contains(nodeIdentity)) {
       return;
     }
@@ -154,6 +178,7 @@ public class ProtoArray {
             checkpoints,
             executionBlockNumber,
             executionBlockHash,
+            executionGasLimit,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
