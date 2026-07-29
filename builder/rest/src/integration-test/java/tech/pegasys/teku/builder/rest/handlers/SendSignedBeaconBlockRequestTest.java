@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
+import java.util.Locale;
 import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -41,7 +42,7 @@ class SendSignedBeaconBlockRequestTest extends AbstractBuilderRequestTestBase {
 
   @BeforeEach
   void setupRequest() {
-    request = new SendSignedBeaconBlockRequest(mockWebServer.url("/"), okHttpClient);
+    request = new SendSignedBeaconBlockRequest(spec, mockWebServer.url("/"), okHttpClient);
     signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
   }
 
@@ -74,6 +75,18 @@ class SendSignedBeaconBlockRequestTest extends AbstractBuilderRequestTestBase {
     assertThat(recorded.getHeader("Content-Type")).isEqualTo("application/octet-stream");
     final byte[] body = recorded.getBody().readByteArray();
     assertThat(body).isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
+  }
+
+  @TestTemplate
+  void shouldIncludeConsensusVersionHeader() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
+
+    request.submit(signedBeaconBlock);
+
+    final RecordedRequest recorded = mockWebServer.takeRequest();
+    final String expectedMilestone =
+        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().name().toLowerCase(Locale.ROOT);
+    assertThat(recorded.getHeader("Eth-Consensus-Version")).isEqualTo(expectedMilestone);
   }
 
   @TestTemplate
