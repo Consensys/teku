@@ -29,7 +29,10 @@ public record BuilderIdentity(BLSPublicKey pubkey, boolean needsAuth) {
               .initializer(BuilderIdentityBuilder::new)
               .finisher(BuilderIdentityBuilder::build)
               .withField(
-                  "pubkey", PUBLIC_KEY_TYPE, BuilderIdentity::pubkey, BuilderIdentityBuilder::pubkey)
+                  "pubkey",
+                  PUBLIC_KEY_TYPE,
+                  BuilderIdentity::pubkey,
+                  BuilderIdentityBuilder::pubkey)
               .withField(
                   "needs_auth",
                   BOOLEAN_PRIMITIVE_TYPE,

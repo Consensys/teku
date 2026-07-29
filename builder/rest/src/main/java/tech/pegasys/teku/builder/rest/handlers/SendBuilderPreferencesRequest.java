@@ -25,8 +25,7 @@ import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
 public class SendBuilderPreferencesRequest extends AbstractBuilderRequest {
 
-  public SendBuilderPreferencesRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
+  public SendBuilderPreferencesRequest(final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
     super(baseEndpoint, httpClient);
   }
 

@@ -90,13 +90,11 @@ public class ResponseHandler<T> {
   }
 
   private Optional<T> badRequestHandler(final Request request, final Response response) {
-    throw new BuilderClientException(
-        "Bad request: " + getErrorMessage(response), SC_BAD_REQUEST);
+    throw new BuilderClientException("Bad request: " + getErrorMessage(response), SC_BAD_REQUEST);
   }
 
   private Optional<T> unauthorizedHandler(final Request request, final Response response) {
-    throw new BuilderClientException(
-        "Unauthorized: " + getErrorMessage(response), SC_UNAUTHORIZED);
+    throw new BuilderClientException("Unauthorized: " + getErrorMessage(response), SC_UNAUTHORIZED);
   }
 
   private Optional<T> serverErrorHandler(final Request request, final Response response) {

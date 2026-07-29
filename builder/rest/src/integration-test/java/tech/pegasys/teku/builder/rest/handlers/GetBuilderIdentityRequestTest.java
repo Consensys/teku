@@ -47,8 +47,7 @@ class GetBuilderIdentityRequestTest extends AbstractBuilderRequestTestBase {
   void shouldReturnBuilderIdentityOn200() throws Exception {
     final BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
     final String body =
-        String.format(
-            "{\"data\":{\"pubkey\":\"%s\",\"needs_auth\":true}}", pubkey.toHexString());
+        String.format("{\"data\":{\"pubkey\":\"%s\",\"needs_auth\":true}}", pubkey.toHexString());
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
     final Optional<BuilderIdentity> result = request.submit();
