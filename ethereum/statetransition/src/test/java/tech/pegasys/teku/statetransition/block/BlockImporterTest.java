@@ -33,7 +33,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
@@ -56,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -68,7 +66,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -84,8 +81,6 @@ public class BlockImporterTest {
       TestSpecFactory.createMinimalPhase0(
           builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
-  private final AttestationSchema<?> attestationSchema =
-      spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
       mock(ReceivedBlockEventsChannel.class);
