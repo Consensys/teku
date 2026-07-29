@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,6 +31,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -51,6 +54,8 @@ class BlockProcessorGloasTest {
       ExecutionRequestsSchemaGloas.required(
           SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
               .getExecutionRequestsSchema());
+  private final SchemaDefinitionsGloas schemaDefinitions =
+      SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions());
   private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
 
   private BlockProcessorGloas blockProcessor() {
@@ -169,6 +174,42 @@ class BlockProcessorGloasTest {
     when(tooManyPayloadAttestations.getPayloadAttestations())
         .thenReturn(sszList(config.getMaxPayloadAttestations() + 1));
     assertTooManyOperationsAreRejected(tooManyPayloadAttestations, "Too many payload attestations");
+  }
+
+  @Test
+  void processExecutionPayloadBid_shouldReturnPreviousBidSlot() throws BlockProcessingException {
+    final UInt64 currentSlot = UInt64.valueOf(8);
+    final UInt64 previousBidSlot = UInt64.valueOf(3);
+    final MutableBeaconStateGloas mutableState =
+        BeaconStateGloas.required(dataStructureUtil.randomBeaconState(currentSlot))
+            .createWritableCopy();
+    mutableState.setLatestExecutionPayloadBid(
+        dataStructureUtil.randomExecutionPayloadBid(previousBidSlot, UInt64.ZERO));
+
+    final ExecutionPayloadBid bid =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .create(
+                mutableState.getLatestBlockHash(),
+                spec.getBlockRootAtSlot(mutableState, mutableState.getSlot().minusMinZero(1)),
+                dataStructureUtil.randomBytes32(),
+                spec.getRandaoMix(mutableState, spec.getCurrentEpoch(mutableState)),
+                dataStructureUtil.randomBytes20(),
+                UInt64.ZERO,
+                SpecConfigGloas.BUILDER_INDEX_SELF_BUILD,
+                mutableState.getSlot(),
+                UInt64.ZERO,
+                UInt64.ZERO,
+                schemaDefinitions.getExecutionPayloadBidSchema().getBlobKzgCommitmentsSchema().of(),
+                dataStructureUtil.randomBytes32());
+    final SignedExecutionPayloadBid signedBid =
+        schemaDefinitions.getSignedExecutionPayloadBidSchema().create(bid, BLSSignature.infinity());
+
+    final UInt64 returnedParentSlot =
+        blockProcessor().processExecutionPayloadBid(mutableState, signedBid);
+
+    assertThat(returnedParentSlot).isEqualTo(previousBidSlot);
+    assertThat(mutableState.getLatestExecutionPayloadBid()).isEqualTo(bid);
   }
 
   private void assertTooManyRequestsAreRejected(

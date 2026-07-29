@@ -255,7 +255,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
   // process_execution_payload_bid
   @Override
-  public void processExecutionPayloadBid(
+  public UInt64 processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
 
@@ -347,7 +347,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Cache the execution payload bid
+    final UInt64 parentSlot = stateGloas.getLatestExecutionPayloadBid().getSlot();
     stateGloas.setLatestExecutionPayloadBid(bid);
+    return parentSlot;
   }
 
   @Override

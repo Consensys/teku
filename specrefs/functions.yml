@@ -10729,7 +10729,7 @@
 - name: process_execution_payload_bid#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void processExecutionPayloadBid(
+      search: // process_execution_payload_bid
   spec: |
     <spec fn="process_execution_payload_bid" fork="gloas" hash="ba18a784">
     def process_execution_payload_bid(

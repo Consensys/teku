@@ -380,7 +380,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processExecutionPayloadBid(
+  public UInt64 processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
