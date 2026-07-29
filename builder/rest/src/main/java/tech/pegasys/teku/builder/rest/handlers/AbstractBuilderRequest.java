@@ -1,0 +1,130 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.builder.rest.handlers;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Collections.emptyMap;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Map;
+import java.util.Optional;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.builder.rest.BuilderApiMethod;
+import tech.pegasys.teku.builder.rest.ResponseHandler;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+
+public abstract class AbstractBuilderRequest {
+
+  private static final MediaType APPLICATION_JSON =
+      MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final HttpUrl baseEndpoint;
+  private final OkHttpClient httpClient;
+
+  protected AbstractBuilderRequest(
+      final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
+    this.baseEndpoint = baseEndpoint;
+    this.httpClient = httpClient;
+  }
+
+  protected HttpUrl buildUrl(
+      final BuilderApiMethod apiMethod, final Map<String, String> urlParams) {
+    checkNotNull(apiMethod, "apiMethod not defined");
+    final HttpUrl url = baseEndpoint.resolve(apiMethod.getPath(urlParams));
+    checkNotNull(url, "Could not create URL from baseEndpoint for: %s", apiMethod);
+    return url;
+  }
+
+  protected <T> Optional<T> get(
+      final BuilderApiMethod apiMethod, final ResponseHandler<T> responseHandler) {
+    return get(apiMethod, emptyMap(), responseHandler);
+  }
+
+  protected <T> Optional<T> get(
+      final BuilderApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final ResponseHandler<T> responseHandler) {
+    final Request request =
+        new Request.Builder().url(buildUrl(apiMethod, urlParams)).get().build();
+    return executeCall(request, responseHandler);
+  }
+
+  protected <T, TObject> Optional<T> postJson(
+      final BuilderApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final TObject requestBodyObj,
+      final SerializableTypeDefinition<TObject> objectTypeDefinition,
+      final ResponseHandler<T> responseHandler) {
+    final String requestBody;
+    try {
+      requestBody = JsonUtil.serialize(requestBodyObj, objectTypeDefinition);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    final Request request =
+        new Request.Builder()
+            .url(buildUrl(apiMethod, urlParams))
+            .post(RequestBody.create(requestBody, APPLICATION_JSON))
+            .build();
+    return executeCall(request, responseHandler);
+  }
+
+  protected <T> Optional<T> postEmpty(
+      final BuilderApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final ResponseHandler<T> responseHandler) {
+    final Request request =
+        new Request.Builder()
+            .url(buildUrl(apiMethod, urlParams))
+            .post(RequestBody.create(new byte[0], APPLICATION_JSON))
+            .build();
+    return executeCall(request, responseHandler);
+  }
+
+  protected <T> Optional<T> postOctetStream(
+      final BuilderApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final byte[] body,
+      final ResponseHandler<T> responseHandler) {
+    final Request request =
+        new Request.Builder()
+            .url(buildUrl(apiMethod, urlParams))
+            .post(RequestBody.create(body, OCTET_STREAM))
+            .build();
+    return executeCall(request, responseHandler);
+  }
+
+  private <T> Optional<T> executeCall(
+      final Request request, final ResponseHandler<T> responseHandler) {
+    try (final Response response = httpClient.newCall(request).execute()) {
+      LOG.trace("{} {} {}", request.method(), request.url(), response.code());
+      return responseHandler.handleResponse(request, response);
+    } catch (IOException e) {
+      throw new UncheckedIOException(
+          "Error communicating with builder: " + e.getMessage(), e);
+    }
+  }
+}
