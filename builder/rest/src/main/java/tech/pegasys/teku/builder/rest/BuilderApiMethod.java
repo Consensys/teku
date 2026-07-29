@@ -23,7 +23,7 @@ public enum BuilderApiMethod {
   GET_EXECUTION_PAYLOAD_BID(
       "eth/v1/builder/execution_payload_bid/{slot}/{parent_hash}/{parent_root}/{proposer_pubkey}"),
   SEND_BUILDER_PREFERENCES("eth/v1/builder/builder_preferences/{validator_pubkey}"),
-  SEND_SIGNED_BEACON_BLOCK("eth/v1/builder/beacon_block");
+  SEND_SIGNED_BEACON_BLOCK("eth/v1/builder/beacon_blocks");
 
   private final String path;
 
