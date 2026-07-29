@@ -168,10 +168,6 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             pubkeys.stream().map(SszPublicKey::new).toList(), new SszPublicKey(aggregatePubkey));
   }
 
-  public UInt64 getAttestationParentSlot(final BeaconState state) {
-    return state.getLatestBlockHeader().getSlot();
-  }
-
   /**
    * Return the flag indices that are satisfied by an attestation.
    *

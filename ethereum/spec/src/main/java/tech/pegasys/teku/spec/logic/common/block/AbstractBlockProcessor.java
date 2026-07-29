@@ -74,7 +74,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
@@ -605,7 +604,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         state,
         attestations,
         indexedAttestationCache,
-        BeaconStateAccessorsAltair.required(beaconStateAccessors).getAttestationParentSlot(state));
+        beaconStateAccessors.getAttestationParentSlot(state));
   }
 
   protected void processAttestationsNoVerification(
