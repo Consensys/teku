@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.executionlayer;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -31,12 +29,10 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 public class ExecutionLayerServiceTest {
   private static final Logger LOG = LogManager.getLogger();
   private final EventChannels eventChannels = mock(EventChannels.class);
-  private final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
-      mock(ExecutionWeb3jClientProvider.class);
   private final ExecutionLayerManager executionLayerManager = mock(ExecutionLayerManager.class);
 
   private final ExecutionLayerService underTest =
-      new ExecutionLayerService(eventChannels, engineWeb3jClientProvider, executionLayerManager);
+      new ExecutionLayerService(eventChannels, executionLayerManager);
 
   @Test
   public void addsSubscribersToTheEventChannelOnServiceStart() {
@@ -48,17 +44,5 @@ public class ExecutionLayerServiceTest {
     verify(eventChannels).subscribe(ExecutionLayerChannel.class, executionLayerManager);
 
     underTest.stop().finishDebug(LOG);
-  }
-
-  @Test
-  public void engineClientProviderIsEmptyIfStub() {
-    when(engineWeb3jClientProvider.isStub()).thenReturn(true);
-    assertThat(underTest.getEngineWeb3jClientProvider()).isEmpty();
-  }
-
-  @Test
-  public void engineClientProviderIsPresentIfNotStub() {
-    when(engineWeb3jClientProvider.isStub()).thenReturn(false);
-    assertThat(underTest.getEngineWeb3jClientProvider()).hasValue(engineWeb3jClientProvider);
   }
 }

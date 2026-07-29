@@ -47,22 +47,49 @@ class ConverterTest {
 
   private static Stream<Arguments> getWeiToEthArguments() {
     return Stream.of(
+        Arguments.of(UInt256.ZERO, "0.000000"),
         Arguments.of(UInt256.valueOf(1), "0.000000"),
         Arguments.of(UInt256.valueOf(1000), "0.000000"),
         Arguments.of(UInt256.valueOf(3401220000000000L), "0.003401"),
-        Arguments.of(UInt256.valueOf(889999203452340000L), "0.889999"));
+        Arguments.of(UInt256.valueOf(889999203452340000L), "0.889999"),
+        // exactly 1 ETH
+        Arguments.of(UInt256.valueOf(1_000_000_000_000_000_000L), "1.000000"),
+        // HALF_UP rounding at the 6th decimal (0.0000015 -> 0.000002)
+        Arguments.of(UInt256.valueOf(1_500_000_000_000L), "0.000002"),
+        // just below the HALF_UP boundary (0.0000014 -> 0.000001)
+        Arguments.of(UInt256.valueOf(1_400_000_000_000L), "0.000001"),
+        // UInt256 max value
+        Arguments.of(
+            UInt256.MAX_VALUE,
+            "115792089237316195423570985008687907853269984665640564039457.584008"));
   }
 
   private static Stream<Arguments> getWeiToGweiArguments() {
     return Stream.of(
+        Arguments.of(UInt256.ZERO, UInt64.valueOf(0)),
         Arguments.of(UInt256.valueOf(1), UInt64.valueOf(0)),
         Arguments.of(UInt256.valueOf(1000), UInt64.valueOf(0)),
         Arguments.of(UInt256.valueOf(3401220000000000L), UInt64.valueOf(3401220)),
         Arguments.of(UInt256.valueOf(889999203452340000L), UInt64.valueOf(889999203)),
-        Arguments.of(UInt256.valueOf(424242424242424242L), UInt64.valueOf(424242424)));
+        Arguments.of(UInt256.valueOf(424242424242424242L), UInt64.valueOf(424242424)),
+        // exactly 1 Gwei
+        Arguments.of(UInt256.valueOf(1_000_000_000L), UInt64.valueOf(1)),
+        // sub-Gwei is truncated, not rounded
+        Arguments.of(UInt256.valueOf(1_999_999_999L), UInt64.valueOf(1)),
+        Arguments.of(UInt256.valueOf(999_999_999L), UInt64.valueOf(0)),
+        // largest wei value that still fits in a UInt64 number of Gwei
+        Arguments.of(
+            UInt256.valueOf(UInt64.MAX_VALUE.bigIntegerValue()).multiply(1_000_000_000L),
+            UInt64.MAX_VALUE));
   }
 
   private static Stream<Arguments> getGweiToEthArguments() {
-    return Stream.of(Arguments.of(UInt64.valueOf(424242424), "0.424242"));
+    return Stream.of(
+        Arguments.of(UInt64.valueOf(0), "0.000000"),
+        Arguments.of(UInt64.valueOf(424242424), "0.424242"),
+        // exactly 1 ETH
+        Arguments.of(UInt64.valueOf(1_000_000_000L), "1.000000"),
+        // UInt64 max value
+        Arguments.of(UInt64.MAX_VALUE, "18446744073.709552"));
   }
 }
