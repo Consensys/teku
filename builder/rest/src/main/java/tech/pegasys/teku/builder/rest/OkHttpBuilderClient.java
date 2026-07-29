@@ -81,6 +81,8 @@ public class OkHttpBuilderClient implements BuilderClient {
   @Override
   public SafeFuture<Void> sendSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
     return asyncRunner.runAsync(
-        () -> new SendSignedBeaconBlockRequest(baseEndpoint, httpClient).submit(signedBeaconBlock));
+        () ->
+            new SendSignedBeaconBlockRequest(spec, baseEndpoint, httpClient)
+                .submit(signedBeaconBlock));
   }
 }

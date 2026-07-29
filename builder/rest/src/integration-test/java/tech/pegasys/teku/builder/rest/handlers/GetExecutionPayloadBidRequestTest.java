@@ -97,7 +97,7 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
   }
 
   @TestTemplate
-  void shouldPostEmptyBodyWhenNoAuth() throws Exception {
+  void shouldPostEmptyBodyWithNoContentTypeWhenNoAuth() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     request.submit(slot, parentHash, parentRoot, proposerPubkey, Optional.empty());
@@ -105,6 +105,7 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
     final RecordedRequest recorded = mockWebServer.takeRequest();
     assertThat(recorded.getMethod()).isEqualTo("POST");
     assertThat(recorded.getBody().size()).isEqualTo(0);
+    assertThat(recorded.getHeader("Content-Type")).isNull();
   }
 
   @TestTemplate

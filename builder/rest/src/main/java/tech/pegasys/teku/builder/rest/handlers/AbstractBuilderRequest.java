@@ -97,7 +97,7 @@ public abstract class AbstractBuilderRequest {
     final Request request =
         new Request.Builder()
             .url(buildUrl(apiMethod, urlParams))
-            .post(RequestBody.create(new byte[0], APPLICATION_JSON))
+            .post(RequestBody.create(new byte[0], (MediaType) null))
             .build();
     return executeCall(request, responseHandler);
   }
@@ -105,14 +105,15 @@ public abstract class AbstractBuilderRequest {
   protected <T> Optional<T> postOctetStream(
       final BuilderApiMethod apiMethod,
       final Map<String, String> urlParams,
+      final Map<String, String> headers,
       final byte[] body,
       final ResponseHandler<T> responseHandler) {
-    final Request request =
+    final Request.Builder builder =
         new Request.Builder()
             .url(buildUrl(apiMethod, urlParams))
-            .post(RequestBody.create(body, OCTET_STREAM))
-            .build();
-    return executeCall(request, responseHandler);
+            .post(RequestBody.create(body, OCTET_STREAM));
+    headers.forEach(builder::addHeader);
+    return executeCall(builder.build(), responseHandler);
   }
 
   private <T> Optional<T> executeCall(
