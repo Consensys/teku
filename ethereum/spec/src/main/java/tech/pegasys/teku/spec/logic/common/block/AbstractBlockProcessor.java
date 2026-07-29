@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
@@ -334,11 +335,16 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
+    final UInt64 parentSlot = state.getLatestBlockHeader().getSlot();
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(
-        state, block.getBody(), indexedAttestationCache, getValidatorExitContextSupplier(state));
+        state,
+        block.getBody(),
+        indexedAttestationCache,
+        getValidatorExitContextSupplier(state),
+        parentSlot);
   }
 
   protected Supplier<ValidatorExitContext> getValidatorExitContextSupplier(
@@ -435,7 +441,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlot)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -445,7 +452,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               state, body.getProposerSlashings(), validatorExitContextSupplier);
           processAttesterSlashings(
               state, body.getAttesterSlashings(), validatorExitContextSupplier);
-          processAttestationsNoVerification(state, body.getAttestations(), indexedAttestationCache);
+          processAttestationsNoVerification(
+              state, body.getAttestations(), indexedAttestationCache, parentSlot);
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
@@ -593,6 +601,19 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SszList<Attestation> attestations,
       final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
+    processAttestationsNoVerification(
+        state,
+        attestations,
+        indexedAttestationCache,
+        BeaconStateAccessorsAltair.required(beaconStateAccessors).getAttestationParentSlot(state));
+  }
+
+  protected void processAttestationsNoVerification(
+      final MutableBeaconState state,
+      final SszList<Attestation> attestations,
+      final IndexedAttestationCache indexedAttestationCache,
+      final UInt64 parentSlot)
+      throws BlockProcessingException {
     final IndexedAttestationProvider indexedAttestationProvider =
         createIndexedAttestationProvider(state, indexedAttestationCache);
     safelyProcess(
@@ -600,7 +621,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           for (Attestation attestation : attestations) {
             // Validate
             assertAttestationValid(state, attestation);
-            processAttestation(state, attestation, indexedAttestationProvider);
+            processAttestation(state, attestation, indexedAttestationProvider, parentSlot);
           }
         });
   }
@@ -625,7 +646,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected abstract void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider);
+      final IndexedAttestationProvider indexedAttestationProvider,
+      final UInt64 parentSlot);
 
   @CheckReturnValue
   protected BlockValidationResult verifyAttestationSignatures(
@@ -856,6 +878,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  protected <T> T safelyProcessAndReturn(final BlockProcessingSupplier<T> action)
+      throws BlockProcessingException {
+    try {
+      return action.get();
+    } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
+      if (Throwables.getRootCause(e) instanceof IllegalArgumentException) {
+        LOG.warn("Failed to process block: {}", e.getMessage());
+      } else {
+        LOG.warn("Failed to process block", e);
+      }
+      throw new BlockProcessingException(e);
+    }
+  }
+
   public interface IndexedAttestationProvider {
 
     IndexedAttestationLight getIndexedAttestation(final Attestation attestation);
@@ -864,5 +900,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected interface BlockProcessingAction {
 
     void run() throws BlockProcessingException;
+  }
+
+  @FunctionalInterface
+  protected interface BlockProcessingSupplier<T> {
+
+    T get() throws BlockProcessingException;
   }
 }

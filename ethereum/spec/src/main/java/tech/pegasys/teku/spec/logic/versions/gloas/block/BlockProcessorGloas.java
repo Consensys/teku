@@ -121,17 +121,18 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
-  public void executionProcessing(
+  public UInt64 executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlotFallback)
       throws BlockProcessingException {
     safelyProcess(
         () ->
             processParentExecutionPayload(genericState, beaconBlock, validatorExitContextSupplier));
     processWithdrawals(genericState, Optional.empty());
-    safelyProcess(
+    return safelyProcessAndReturn(
         () ->
             processExecutionPayloadBid(
                 genericState,
@@ -446,7 +447,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlot)
       throws BlockProcessingException {
     final BeaconBlockBodyGloas bodyGloas = BeaconBlockBodyGloas.required(body);
     safelyProcess(
@@ -475,7 +477,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         });
 
     super.processOperationsNoValidation(
-        state, body, indexedAttestationCache, validatorExitContextSupplier);
+        state, body, indexedAttestationCache, validatorExitContextSupplier, parentSlot);
 
     safelyProcess(
         () ->
