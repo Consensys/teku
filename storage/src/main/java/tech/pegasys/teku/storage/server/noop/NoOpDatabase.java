@@ -450,7 +450,7 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void archiveSidecarsProofs(
-      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int pruneLimit) {}
+      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int archiveLimit) {}
 
   @Override
   public void close() {}

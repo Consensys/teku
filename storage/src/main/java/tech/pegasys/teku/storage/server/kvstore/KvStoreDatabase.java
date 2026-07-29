@@ -1308,8 +1308,15 @@ public class KvStoreDatabase implements Database {
   @Override
   public void archiveSidecarsProofs(
       final UInt64 startSlot, final UInt64 tillSlotInclusive, final int archiveLimit) {
-    // TODO: inject halfColumns here
-    final int halfColumns = 64;
+    // Extension columns (indices >= NUMBER_OF_COLUMNS / 2) are the reconstructable half whose
+    // proofs we retain while dropping the columns themselves.
+    final int halfColumns =
+        spec.getNumberOfDataColumns()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Cannot archive data column sidecar proofs before the Fulu milestone"))
+            / 2;
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnSidecars =
         streamDataColumnIdentifiers(startSlot, tillSlotInclusive)) {
 
@@ -1329,7 +1336,7 @@ public class KvStoreDatabase implements Database {
 
       if (!slots.isEmpty()) {
         LOG.debug(
-            "Archiving data column sidecar proofs from slots {} to {}",
+            "Archiving data column sidecars to proofs from slots {} to {}",
             slots.getFirst(),
             slots.getLast());
         try (final FinalizedUpdater updater = finalizedUpdater()) {
@@ -1362,15 +1369,20 @@ public class KvStoreDatabase implements Database {
                 updater.removeSidecar(key);
               }
               ++archivedSlots;
+              LOG.trace(
+                  "Pruned {} extension data column sidecars, keeping their proofs, at slot {}",
+                  keys.size(),
+                  slot);
             }
           }
           updater.commit();
         }
-        LOG.debug("Archived data column sidecars in {} slots", archivedSlots);
+        LOG.debug("Archived data column sidecars to proofs across {} slots", archivedSlots);
       }
 
       if (archivedSlots >= archiveLimit) {
-        LOG.debug("Data column sidecars archivation reached the limit of {}", archiveLimit);
+        LOG.debug(
+            "Data column sidecars-to-proofs archiving reached the limit of {} slots", archiveLimit);
       }
     }
   }
@@ -1434,10 +1446,14 @@ public class KvStoreDatabase implements Database {
       // supported slot.
       if (sidecarType == DataColumnSidecarType.CANONICAL) {
         updater.setLastDataColumnSidecarPrunedSlot(toPrune.keys().getLast().slot());
-        toPrune.keys().stream()
-            .map(id -> id.slot())
-            .distinct()
-            .forEach(slot -> updater.removeDataColumnSidecarsProofs(slot));
+        final List<UInt64> prunedSlots =
+            toPrune.keys().stream().map(DataColumnSlotAndIdentifier::slot).distinct().toList();
+        LOG.debug(
+            "Removing archived data column sidecar proofs for {} pruned canonical slots ({}..{})",
+            prunedSlots.size(),
+            prunedSlots.getFirst(),
+            prunedSlots.getLast());
+        prunedSlots.forEach(updater::removeDataColumnSidecarsProofs);
       }
       updater.commit();
     }

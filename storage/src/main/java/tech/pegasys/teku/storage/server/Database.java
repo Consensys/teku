@@ -316,6 +316,9 @@ public interface Database extends AutoCloseable {
   // space left behind by pruning. Expensive and I/O-heavy; intended for offline/CLI use.
   void compactStorage();
 
-  // prunes extension sidecars, storing proofs from them
-  void archiveSidecarsProofs(UInt64 startSlot, UInt64 tillSlotInclusive, int pruneLimit);
+  // Archives the reconstructable extension data column sidecars (column indices >=
+  // NUMBER_OF_COLUMNS / 2) in [startSlot, tillSlotInclusive]: for each fully populated slot it
+  // persists their KZG proofs and drops the sidecars themselves, retaining only enough data to
+  // reconstruct them on demand. Processes at most archiveLimit slots per call, oldest-first.
+  void archiveSidecarsProofs(UInt64 startSlot, UInt64 tillSlotInclusive, int archiveLimit);
 }

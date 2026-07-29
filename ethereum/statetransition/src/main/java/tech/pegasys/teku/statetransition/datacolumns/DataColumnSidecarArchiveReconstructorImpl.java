@@ -122,6 +122,12 @@ public class DataColumnSidecarArchiveReconstructorImpl
         "Only second-half column indices (>= %s) can be reconstructed, got %s",
         halfColumns,
         index);
+    LOG.trace(
+        "Reconstruction requested for slot {} index {} blockRoot {} (requestId {})",
+        block.getSlot(),
+        index,
+        block.getRoot(),
+        requestId);
     final Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>> slotAndBlockRootSafeFutureMap =
         recoveryTasks.computeIfAbsent(requestId, __ -> new ConcurrentHashMap<>());
     return slotAndBlockRootSafeFutureMap
@@ -197,6 +203,14 @@ public class DataColumnSidecarArchiveReconstructorImpl
             dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
                 block.getMessage().getBody()),
             blobAndCellProofsList);
+
+    LOG.debug(
+        "Reconstructed {} extension data column sidecars (indices {}..{}) for slot {} blockRoot {}",
+        halfColumns,
+        halfColumns,
+        (halfColumns * 2) - 1,
+        block.getSlot(),
+        slotAndBlockRoot.getBlockRoot());
 
     return new ReconstructionResult(
         Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
@@ -296,6 +310,13 @@ public class DataColumnSidecarArchiveReconstructorImpl
     }
     final UInt64 lastPrunableSlot =
         spec.computeStartSlotAtEpoch(pruningBoundaryEpoch).minusMinZero(1);
+    LOG.debug(
+        "Signalling data column sidecar archive-prunable slot {} "
+            + "(finalizedEpoch {}, currentEpoch {}, retentionEpochs {})",
+        lastPrunableSlot,
+        finalizedEpoch,
+        currentEpoch,
+        dataColumnSidecarExtensionRetentionEpochs);
     sidecarArchivePrunableChannel.onSidecarArchivePrunableSlot(lastPrunableSlot);
   }
 

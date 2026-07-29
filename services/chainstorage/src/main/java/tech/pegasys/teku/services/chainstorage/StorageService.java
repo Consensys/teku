@@ -308,6 +308,11 @@ public class StorageService extends Service implements StorageServiceFacade {
     return statePruner;
   }
 
+  @VisibleForTesting
+  public Optional<DataColumnSidecarPruner> getDataColumnSidecarPruner() {
+    return dataColumnSidecarPruner;
+  }
+
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(

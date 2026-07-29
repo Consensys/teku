@@ -24,8 +24,10 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.Optional;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -81,6 +83,49 @@ public class DataColumnSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneAllSidecars(any(), anyInt());
+  }
+
+  @Test
+  void shouldNotArchiveSidecarsProofsWhenNoPrunableSlotReceived() {
+    asyncRunner.executeDueActions();
+
+    verify(database, never()).archiveSidecarsProofs(any(), any(), anyInt());
+  }
+
+  @Test
+  void shouldArchiveSidecarsProofsFromLastArchivedSlot() {
+    final UInt64 lastArchivedSlot = UInt64.valueOf(5);
+    final UInt64 prunableSlot = UInt64.valueOf(20);
+    when(database.getLastDataColumnSidecarsProofsSlot()).thenReturn(Optional.of(lastArchivedSlot));
+
+    dataColumnSidecarPruner.onSidecarArchivePrunableSlot(prunableSlot);
+
+    try (final LogCaptor logCaptor =
+        LogCaptor.forClass(DataColumnSidecarPruner.class, Level.DEBUG)) {
+      asyncRunner.executeDueActions();
+
+      // the archiving run is observable in the logs at debug level
+      assertThat(logCaptor.getDebugLogs())
+          .anySatisfy(
+              log ->
+                  assertThat(log)
+                      .contains("Archiving data column sidecars to proofs")
+                      .contains("from slot " + lastArchivedSlot)
+                      .contains("up to slot " + prunableSlot));
+    }
+
+    verify(database).archiveSidecarsProofs(lastArchivedSlot, prunableSlot, PRUNE_LIMIT);
+  }
+
+  @Test
+  void shouldArchiveSidecarsProofsFromGenesisWhenNothingArchivedYet() {
+    final UInt64 prunableSlot = UInt64.valueOf(20);
+    when(database.getLastDataColumnSidecarsProofsSlot()).thenReturn(Optional.empty());
+
+    dataColumnSidecarPruner.onSidecarArchivePrunableSlot(prunableSlot);
+    asyncRunner.executeDueActions();
+
+    verify(database).archiveSidecarsProofs(UInt64.ZERO, prunableSlot, PRUNE_LIMIT);
   }
 
   @Test
