@@ -56,12 +56,10 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
             "proposer_pubkey", proposerPubkey.toString());
 
     final SchemaDefinitionsGloas schemaDefinitions =
-        SchemaDefinitionsGloas.required(
-            spec.atSlot(slot).getSchemaDefinitions());
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
 
     final ResponseHandler<ExecutionPayloadBid> responseHandler =
-        new ResponseHandler<>(
-                withDataWrapper(schemaDefinitions.getExecutionPayloadBidSchema()))
+        new ResponseHandler<>(withDataWrapper(schemaDefinitions.getExecutionPayloadBidSchema()))
             .withHandler(SC_NO_CONTENT, (req, resp) -> Optional.empty());
 
     if (signedRequestAuth.isPresent()) {

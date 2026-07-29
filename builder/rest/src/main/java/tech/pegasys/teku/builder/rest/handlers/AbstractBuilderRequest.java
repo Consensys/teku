@@ -44,8 +44,7 @@ public abstract class AbstractBuilderRequest {
   private final HttpUrl baseEndpoint;
   private final OkHttpClient httpClient;
 
-  protected AbstractBuilderRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
+  protected AbstractBuilderRequest(final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = httpClient;
   }
@@ -67,8 +66,7 @@ public abstract class AbstractBuilderRequest {
       final BuilderApiMethod apiMethod,
       final Map<String, String> urlParams,
       final ResponseHandler<T> responseHandler) {
-    final Request request =
-        new Request.Builder().url(buildUrl(apiMethod, urlParams)).get().build();
+    final Request request = new Request.Builder().url(buildUrl(apiMethod, urlParams)).get().build();
     return executeCall(request, responseHandler);
   }
 
@@ -123,8 +121,7 @@ public abstract class AbstractBuilderRequest {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
       return responseHandler.handleResponse(request, response);
     } catch (IOException e) {
-      throw new UncheckedIOException(
-          "Error communicating with builder: " + e.getMessage(), e);
+      throw new UncheckedIOException("Error communicating with builder: " + e.getMessage(), e);
     }
   }
 }
