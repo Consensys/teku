@@ -168,6 +168,10 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             pubkeys.stream().map(SszPublicKey::new).toList(), new SszPublicKey(aggregatePubkey));
   }
 
+  public UInt64 getAttestationParentSlot(final BeaconState state) {
+    return state.getLatestBlockHeader().getSlot();
+  }
+
   /**
    * Return the flag indices that are satisfied by an attestation.
    *
@@ -178,6 +182,16 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    */
   public List<Integer> getAttestationParticipationFlagIndices(
       final BeaconState state, final AttestationData data, final UInt64 inclusionDelay) {
+    return getAttestationParticipationFlagIndices(
+        state, data, inclusionDelay, getAttestationParentSlot(state));
+  }
+
+  // get_attestation_participation_flag_indices
+  public List<Integer> getAttestationParticipationFlagIndices(
+      final BeaconState state,
+      final AttestationData data,
+      final UInt64 inclusionDelay,
+      final UInt64 parentSlot) {
     final Checkpoint justifiedCheckpoint;
     // Matching source
     if (data.getTarget().getEpoch().equals(getCurrentEpoch(state))) {
@@ -197,7 +211,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     final Bytes32 headRoot = getBlockRootAtSlot(state, data.getSlot());
     final boolean headRootMatches = data.getBeaconBlockRoot().equals(headRoot);
     final boolean isMatchingHead =
-        computeIsMatchingHead(isMatchingTarget, headRootMatches, data, state);
+        computeIsMatchingHead(isMatchingTarget, headRootMatches, data, state, parentSlot);
 
     // Participation flag indices
     final IntList participationFlagIndices = new IntArrayList();
@@ -219,7 +233,8 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       final boolean isMatchingTarget,
       final boolean headRootMatches,
       final AttestationData data,
-      final BeaconState state) {
+      final BeaconState state,
+      final UInt64 parentSlot) {
     return isMatchingTarget && headRootMatches;
   }
 

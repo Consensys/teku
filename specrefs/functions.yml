@@ -3127,7 +3127,7 @@
 - name: get_attestation_participation_flag_indices#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
+      search: // get_attestation_participation_flag_indices
   spec: |
     <spec fn="get_attestation_participation_flag_indices" fork="altair" hash="d697ae39">
     def get_attestation_participation_flag_indices(
@@ -3169,7 +3169,7 @@
 - name: get_attestation_participation_flag_indices#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
+      search: // get_attestation_participation_flag_indices
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/helpers/BeaconStateAccessorsDeneb.java
       search: protected boolean shouldSetTargetTimelinessFlag(
   spec: |
@@ -3214,7 +3214,7 @@
 - name: get_attestation_participation_flag_indices#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
+      search: // get_attestation_participation_flag_indices
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
       search: protected boolean computeIsMatchingHead(
   spec: |
