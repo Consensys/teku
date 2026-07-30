@@ -256,7 +256,13 @@ public class SyncingNodeManager {
     syncService.start().join();
 
     return new SyncingNodeManager(
-        asyncRunner, eventChannels, recentChainData, chainBuilder, chainUpdater, eth2P2PNetwork, syncService);
+        asyncRunner,
+        eventChannels,
+        recentChainData,
+        chainBuilder,
+        chainUpdater,
+        eth2P2PNetwork,
+        syncService);
   }
 
   public SafeFuture<Peer> connect(final SyncingNodeManager peer) {

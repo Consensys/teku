@@ -98,7 +98,8 @@ public class BlockPropagationIntegrationTest {
     node2.setSlot(currentSlot);
 
     // Propagate new block
-    final SignedBeaconBlock newBlock = node1.getChainBuilder().generateBlockAtSlot(currentSlot).getBlock();
+    final SignedBeaconBlock newBlock =
+        node1.getChainBuilder().generateBlockAtSlot(currentSlot).getBlock();
     node1.gossipBlock(newBlock);
 
     // Verify that node2 fetches required blocks in response
