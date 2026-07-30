@@ -342,7 +342,10 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int count = 1;
     final int skip = 1;
     withCanonicalHeadBlock(blocksWStates.get(10));
-    withAncestorRoots(startBlock, count, skip, allBlocks());
+    // getAncestorRoots for a count=1 request only returns the single root at startSlot
+    // (endSlot = startSlot + step*count - 1 == startSlot), so hotRoots.lastKey() == startSlot.
+    // This reproduces the real behaviour where startSlot == headSlot for the request state.
+    withAncestorRoots(startBlock, count, skip, hotBlocks(startBlock));
 
     requestBlocks(startBlock, count, skip);
 

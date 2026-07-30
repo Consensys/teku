@@ -996,7 +996,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadBidGossipValidator,
               executionPayloadBidCircuitBreaker,
               receivedExecutionPayloadBidEventsChannelPublisher,
-              poolFactory.createPendingPoolForExecutionPayloadBids(spec));
+              poolFactory.createPendingPoolForExecutionPayloadBids(spec),
+              beaconConfig.executionLayerConfig().getBuilderBidCompareFactor(),
+              beaconConfig.executionLayerConfig().getUseShouldOverrideBuilderFlag());
       proposerPreferencesManager.subscribeOperationAdded(defaultExecutionPayloadBidManager);
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultExecutionPayloadBidManager);
@@ -1910,6 +1912,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,

@@ -192,9 +192,11 @@ public class BeaconBlocksByRangeMessageHandler
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
               final RequestState initialState =
                   new RequestState(startSlot, step, count, headSlot, hotRoots, callback);
-              // there is an edge case when startSlot == headSlot in which case we don't return
-              // anything
-              if (initialState.isComplete()) {
+              // Only short-circuit when there is genuinely nothing to send: a zero-length request
+              // or a start slot strictly beyond our head. When startSlot == headSlot we must still
+              // return the block at that slot, since the spec requires returning at least the first
+              // block in the requested range if we have it.
+              if (count.isZero() || startSlot.isGreaterThan(headSlot)) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendNextBlock(initialState);
