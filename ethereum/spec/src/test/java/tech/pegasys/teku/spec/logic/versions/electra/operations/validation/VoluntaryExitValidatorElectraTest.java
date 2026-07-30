@@ -26,14 +26,16 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -52,15 +54,17 @@ class VoluntaryExitValidatorElectraTest {
       mock(BeaconStateAccessorsElectra.class);
 
   @BeforeEach
-  void setup() throws Exception {
+  void setup() {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
-    final BeaconChainUtil beaconChainUtil =
-        BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    final ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     validatorElectra =
         new VoluntaryExitValidatorElectra(spec.getGenesisSpecConfig(), predicates, stateAccessors);
 
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+    chainUpdater.initializeGenesis(true);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.saveBlock(blockAndState);
+    chainUpdater.updateBestBlock(blockAndState);
   }
 
   @Test
