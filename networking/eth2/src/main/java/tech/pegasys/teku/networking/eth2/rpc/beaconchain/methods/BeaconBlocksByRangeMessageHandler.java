@@ -196,7 +196,7 @@ public class BeaconBlocksByRangeMessageHandler
               // or a start slot strictly beyond our head. When startSlot == headSlot we must still
               // return the block at that slot, since the spec requires returning at least the first
               // block in the requested range if we have it.
-              if (count.equals(ZERO) || startSlot.isGreaterThan(headSlot)) {
+              if (count.isZero() || startSlot.isGreaterThan(headSlot)) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendNextBlock(initialState);
