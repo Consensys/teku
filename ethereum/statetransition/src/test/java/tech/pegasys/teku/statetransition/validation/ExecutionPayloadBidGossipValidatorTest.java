@@ -162,7 +162,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             saveForFuture(
-                "No proposer preferences available. The bid will be saved for future processing."));
+                "No proposer preferences available at slot %s. The bid from the builder with index %s will be saved for future processing.",
+                slot, builderIndex));
   }
 
   @TestTemplate
@@ -176,7 +177,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             ignore(
-                "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
+                "Bid fee recipient %s does not match proposer preferences fee recipient %s",
                 bid.getFeeRecipient(), mismatchedPreferences.getFeeRecipient()));
   }
 
@@ -193,7 +194,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
         .isCompletedWithValue(
             ignore(
-                "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+                "Bid gas limit %s is not compatible with parent gas limit %s and proposer preferences target gas limit %s",
                 bidWithGasLimit.getMessage().getGasLimit(), parentGasLimit, targetGasLimit));
   }
 
@@ -223,7 +224,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
         .isCompletedWithValue(
             ignore(
-                "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+                "Bid gas limit %s is not compatible with parent gas limit %s and proposer preferences target gas limit %s",
                 bidGasLimit, parentGasLimit, targetGasLimit));
   }
 
@@ -344,7 +345,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             reject(
-                "Bid prev_randao %s does not match expected RANDAO mix %s",
+                "Bid prev randao %s does not match expected RANDAO mix %s",
                 bid.getPrevRandao(), incorrectRandaoMix));
   }
 

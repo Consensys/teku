@@ -96,9 +96,14 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<ProposerPreferences> proposerPreferences =
         proposerPreferencesManager.getProposerPreferences(bid.getSlot());
     if (proposerPreferences.isEmpty()) {
+      LOG.trace(
+          "No proposer preferences available at slot {}. The bid from the builder with index {} will be saved for future processing.",
+          bid.getSlot(),
+          bid.getBuilderIndex());
       return completedFuture(
           saveForFuture(
-              "No proposer preferences available. The bid will be saved for future processing."));
+              "No proposer preferences available at slot %s. The bid from the builder with index %s will be saved for future processing.",
+              bid.getSlot(), bid.getBuilderIndex()));
     }
 
     /*
@@ -106,9 +111,13 @@ public class ExecutionPayloadBidGossipValidator {
      * SignedProposerPreferences associated with bid.slot
      */
     if (!bid.getFeeRecipient().equals(proposerPreferences.get().getFeeRecipient())) {
+      LOG.trace(
+          "Bid fee recipient {} does not match proposer preferences fee recipient {}",
+          bid.getFeeRecipient(),
+          proposerPreferences.get().getFeeRecipient());
       return completedFuture(
           ignore(
-              "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
+              "Bid fee recipient %s does not match proposer preferences fee recipient %s",
               bid.getFeeRecipient(), proposerPreferences.get().getFeeRecipient()));
     }
 
@@ -118,6 +127,10 @@ public class ExecutionPayloadBidGossipValidator {
     if (seenExecutionPayloadBids
         .getOrDefault(bid.getSlot(), Set.of())
         .contains(bid.getBuilderIndex())) {
+      LOG.trace(
+          "Already received a bid from builder with index {} at slot {}",
+          bid.getBuilderIndex(),
+          bid.getSlot());
       return completedFuture(
           ignore(
               "Already received a bid from builder with index %s at slot %s",
@@ -182,9 +195,14 @@ public class ExecutionPayloadBidGossipValidator {
     final UInt64 parentGasLimit = maybeParentGasLimit.get();
     final UInt64 targetGasLimit = proposerPreferences.get().getTargetGasLimit();
     if (!isGasLimitTargetCompatible(parentGasLimit, bid.getGasLimit(), targetGasLimit)) {
+      LOG.trace(
+          "Bid gas limit {} is not compatible with parent gas limit {} and proposer preferences target gas limit {}",
+          bid.getGasLimit(),
+          parentGasLimit,
+          targetGasLimit);
       return completedFuture(
           ignore(
-              "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+              "Bid gas limit %s is not compatible with parent gas limit %s and proposer preferences target gas limit %s",
               bid.getGasLimit(), parentGasLimit, targetGasLimit));
     }
 
@@ -239,11 +257,11 @@ public class ExecutionPayloadBidGossipValidator {
                   gossipValidationHelper.getRandaoMixForCurrentEpoch(state, bid.getSlot());
               if (!bid.getPrevRandao().equals(expectedRandaoMix)) {
                 LOG.trace(
-                    "Bid prev_randao {} does not match expected RANDAO mix {}",
+                    "Bid prev randao {} does not match expected RANDAO mix {}",
                     bid.getPrevRandao(),
                     expectedRandaoMix);
                 return reject(
-                    "Bid prev_randao %s does not match expected RANDAO mix %s",
+                    "Bid prev randao %s does not match expected RANDAO mix %s",
                     bid.getPrevRandao(), expectedRandaoMix);
               }
 
