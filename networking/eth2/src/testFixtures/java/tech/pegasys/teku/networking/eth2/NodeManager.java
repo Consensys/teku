@@ -30,28 +30,31 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-@SuppressWarnings("deprecation")
 public class NodeManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final Spec DEFAULT_SPEC = TestSpecFactory.createMinimalPhase0();
 
   private final BlockGossipChannel blockGossipChannel;
   private final RecentChainData storageClient;
-  private final BeaconChainUtil chainUtil;
+  private final ChainBuilder chainBuilder;
+  private final ChainUpdater chainUpdater;
   private final Eth2P2PNetwork eth2P2PNetwork;
 
   private NodeManager(
       final BlockGossipChannel blockGossipChannel,
       final RecentChainData storageClient,
-      final BeaconChainUtil chainUtil,
+      final ChainBuilder chainBuilder,
+      final ChainUpdater chainUpdater,
       final Eth2P2PNetwork eth2P2PNetwork) {
     this.blockGossipChannel = blockGossipChannel;
     this.storageClient = storageClient;
-    this.chainUtil = chainUtil;
+    this.chainBuilder = chainBuilder;
+    this.chainUpdater = chainUpdater;
     this.eth2P2PNetwork = eth2P2PNetwork;
   }
 
@@ -82,9 +85,10 @@ public class NodeManager {
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
-    chainUtil.initializeStorage();
-    return create(spec, asyncRunner, networkFactory, configureNetwork, storageClient, chainUtil);
+    ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    ChainUpdater chainUpdater = new ChainUpdater(storageClient, chainBuilder, spec);
+    chainUpdater.initializeGenesis();
+    return create(spec, asyncRunner, networkFactory, configureNetwork, storageClient, chainBuilder, chainUpdater);
   }
 
   public static NodeManager create(
@@ -93,7 +97,8 @@ public class NodeManager {
       final Eth2P2PNetworkFactory networkFactory,
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork,
       final RecentChainData storageClient,
-      final BeaconChainUtil chainUtil)
+      final ChainBuilder chainBuilder,
+      final ChainUpdater chainUpdater)
       throws Exception {
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(
@@ -112,7 +117,7 @@ public class NodeManager {
         eventChannels.getPublisher(BlockGossipChannel.class, asyncRunner);
 
     final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
-    return new NodeManager(blockGossipChannel, storageClient, chainUtil, eth2P2PNetwork);
+    return new NodeManager(blockGossipChannel, storageClient, chainBuilder, chainUpdater, eth2P2PNetwork);
   }
 
   public SafeFuture<Peer> connect(final NodeManager peer) {
@@ -121,8 +126,12 @@ public class NodeManager {
     return eth2P2PNetwork.connect(peerAddress);
   }
 
-  public BeaconChainUtil chainUtil() {
-    return chainUtil;
+  public ChainUpdater getChainUpdater() {
+    return chainUpdater;
+  }
+
+  public ChainBuilder getChainBuilder() {
+    return chainBuilder;
   }
 
   public Eth2P2PNetwork network() {
