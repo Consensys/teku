@@ -89,6 +89,26 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
+  public void shouldRespondWithSingleHotBlockWhenCountIsOne() throws Exception {
+    // Regression test for #10985: a count=1 request for an available (hot) slot must return the
+    // block at that slot rather than an empty response. This is the exact scenario from the issue:
+    // start_slot = <available hot block slot>, count = 1, step = 1.
+    final Eth2Peer peer = createPeer();
+
+    peerStorage.chainUpdater().advanceChain();
+    final SignedBlockAndState headBlock = peerStorage.chainUpdater().advanceChain();
+    peerStorage.chainUpdater().updateBestBlock(headBlock);
+
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    waitFor(
+        peer.requestBlocksByRange(
+            headBlock.getSlot(), UInt64.ONE, RpcResponseListener.from(blocks::add)));
+    waitFor(() -> assertThat(peer.getOutstandingRequests()).isEqualTo(0));
+
+    assertThat(blocks).containsExactly(headBlock.getBlock());
+  }
+
+  @Test
   public void requestBlocksByRangeAfterPeerDisconnectedImmediately() {
     final Eth2Peer peer = createPeer();
 
