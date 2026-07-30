@@ -88,7 +88,14 @@ public class NodeManager {
     ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
     ChainUpdater chainUpdater = new ChainUpdater(storageClient, chainBuilder, spec);
     chainUpdater.initializeGenesis();
-    return create(spec, asyncRunner, networkFactory, configureNetwork, storageClient, chainBuilder, chainUpdater);
+    return create(
+        spec,
+        asyncRunner,
+        networkFactory,
+        configureNetwork,
+        storageClient,
+        chainBuilder,
+        chainUpdater);
   }
 
   public static NodeManager create(
@@ -117,7 +124,8 @@ public class NodeManager {
         eventChannels.getPublisher(BlockGossipChannel.class, asyncRunner);
 
     final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
-    return new NodeManager(blockGossipChannel, storageClient, chainBuilder, chainUpdater, eth2P2PNetwork);
+    return new NodeManager(
+        blockGossipChannel, storageClient, chainBuilder, chainUpdater, eth2P2PNetwork);
   }
 
   public SafeFuture<Peer> connect(final NodeManager peer) {

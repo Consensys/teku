@@ -109,6 +109,12 @@ public class BlsToExecutionChangeGossipIntegrationTest {
     chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     return NodeManager.create(
-        spec, asyncRunner, networkFactory, networkBuilder, storageClient, chainBuilder, chainUpdater);
+        spec,
+        asyncRunner,
+        networkFactory,
+        networkBuilder,
+        storageClient,
+        chainBuilder,
+        chainUpdater);
   }
 }
