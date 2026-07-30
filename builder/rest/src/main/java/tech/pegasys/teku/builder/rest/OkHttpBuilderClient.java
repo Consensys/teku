@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
 public class OkHttpBuilderClient implements BuilderClient {
 
@@ -56,7 +56,7 @@ public class OkHttpBuilderClient implements BuilderClient {
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayloadBid>> getExecutionPayloadBid(
+  public SafeFuture<Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid(
       final UInt64 slot,
       final Bytes32 parentHash,
       final Bytes32 parentRoot,

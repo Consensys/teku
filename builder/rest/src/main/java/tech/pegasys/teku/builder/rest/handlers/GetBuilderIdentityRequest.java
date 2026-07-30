@@ -28,6 +28,6 @@ public class GetBuilderIdentityRequest extends AbstractBuilderRequest {
   }
 
   public Optional<BuilderIdentity> submit() {
-    return get(GET_BUILDER_IDENTITY, new ResponseHandler<>(BuilderIdentity.TYPE));
+    return get(GET_BUILDER_IDENTITY, new ResponseHandler<>(BuilderIdentity.TYPE_DEFINITION));
   }
 }

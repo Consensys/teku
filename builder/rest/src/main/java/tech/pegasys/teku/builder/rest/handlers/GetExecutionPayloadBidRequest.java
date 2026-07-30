@@ -27,7 +27,7 @@ import tech.pegasys.teku.builder.rest.ResponseHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -41,7 +41,7 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
     this.spec = spec;
   }
 
-  public Optional<ExecutionPayloadBid> submit(
+  public Optional<SignedExecutionPayloadBid> submit(
       final UInt64 slot,
       final Bytes32 parentHash,
       final Bytes32 parentRoot,
@@ -58,8 +58,9 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
 
-    final ResponseHandler<ExecutionPayloadBid> responseHandler =
-        new ResponseHandler<>(withDataWrapper(schemaDefinitions.getExecutionPayloadBidSchema()))
+    final ResponseHandler<SignedExecutionPayloadBid> responseHandler =
+        new ResponseHandler<>(
+                withDataWrapper(schemaDefinitions.getSignedExecutionPayloadBidSchema()))
             .withHandler(SC_NO_CONTENT, (req, resp) -> Optional.empty());
 
     if (signedRequestAuth.isPresent()) {
