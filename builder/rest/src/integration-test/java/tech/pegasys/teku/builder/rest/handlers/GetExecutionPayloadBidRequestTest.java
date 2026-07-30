@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -60,14 +60,15 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
 
   @TestTemplate
   void shouldReturnExecutionPayloadBidOn200() throws Exception {
-    final ExecutionPayloadBid expected = dataStructureUtil.randomExecutionPayloadBid();
-    final SchemaDefinitionsGloas schemas =
+    final SignedExecutionPayloadBid expected = dataStructureUtil.randomSignedExecutionPayloadBid();
+    final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final String body =
-        JsonUtil.serialize(expected, withDataWrapper(schemas.getExecutionPayloadBidSchema()));
+        JsonUtil.serialize(
+            expected, withDataWrapper(schemaDefinitions.getSignedExecutionPayloadBidSchema()));
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
-    final Optional<ExecutionPayloadBid> result =
+    final Optional<SignedExecutionPayloadBid> result =
         request.submit(slot, parentHash, parentRoot, proposerPubkey, Optional.empty());
 
     assertThat(result).isPresent();
@@ -78,7 +79,7 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
   void shouldReturnEmptyOn204() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    final Optional<ExecutionPayloadBid> result =
+    final Optional<SignedExecutionPayloadBid> result =
         request.submit(slot, parentHash, parentRoot, proposerPubkey, Optional.empty());
 
     assertThat(result).isEmpty();

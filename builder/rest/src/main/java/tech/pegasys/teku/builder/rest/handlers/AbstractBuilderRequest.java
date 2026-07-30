@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.builder.rest.handlers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,6 +38,7 @@ public abstract class AbstractBuilderRequest {
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
   private static final MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final HttpUrl baseEndpoint;
@@ -51,10 +51,7 @@ public abstract class AbstractBuilderRequest {
 
   protected HttpUrl buildUrl(
       final BuilderApiMethod apiMethod, final Map<String, String> urlParams) {
-    checkNotNull(apiMethod, "apiMethod not defined");
-    final HttpUrl url = baseEndpoint.resolve(apiMethod.getPath(urlParams));
-    checkNotNull(url, "Could not create URL from baseEndpoint for: %s", apiMethod);
-    return url;
+    return baseEndpoint.resolve(apiMethod.getPath(urlParams));
   }
 
   protected <T> Optional<T> get(
@@ -121,8 +118,8 @@ public abstract class AbstractBuilderRequest {
     try (final Response response = httpClient.newCall(request).execute()) {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
       return responseHandler.handleResponse(request, response);
-    } catch (IOException e) {
-      throw new UncheckedIOException("Error communicating with builder: " + e.getMessage(), e);
+    } catch (final IOException ex) {
+      throw new UncheckedIOException("Error communicating with builder: " + ex.getMessage(), ex);
     }
   }
 }

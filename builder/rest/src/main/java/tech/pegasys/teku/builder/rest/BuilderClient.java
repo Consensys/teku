@@ -21,13 +21,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
 public interface BuilderClient {
 
   SafeFuture<Optional<BuilderIdentity>> getBuilderIdentity();
 
-  SafeFuture<Optional<ExecutionPayloadBid>> getExecutionPayloadBid(
+  SafeFuture<Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid(
       UInt64 slot,
       Bytes32 parentHash,
       Bytes32 parentRoot,
