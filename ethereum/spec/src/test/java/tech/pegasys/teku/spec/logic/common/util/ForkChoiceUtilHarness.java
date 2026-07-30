@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 class ForkChoiceUtilHarness extends ForkChoiceUtil {
   boolean headWeak;
   boolean parentStrong;
+  int headWeakChecks;
+  int parentStrongChecks;
 
   ForkChoiceUtilHarness(
       final SpecConfig specConfig,
@@ -39,12 +41,14 @@ class ForkChoiceUtilHarness extends ForkChoiceUtil {
   @Override
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
+    headWeakChecks++;
     return headWeak;
   }
 
   @Override
   public boolean isParentStrong(
       final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 parentThreshold) {
+    parentStrongChecks++;
     return parentStrong;
   }
 

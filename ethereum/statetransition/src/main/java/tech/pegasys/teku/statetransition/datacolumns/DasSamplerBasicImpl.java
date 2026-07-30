@@ -337,6 +337,19 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
     return true;
   }
 
+  @Override
+  public boolean isDataAvailable(final SignedBeaconBlock block) {
+    // if there are no blobs for this block, consider the data as available
+    if (!hasBlobs(block.getMessage())) {
+      return true;
+    }
+    if (isDataAvailabilityAlreadySatisfied(block.getSlot(), block.getRoot())) {
+      return true;
+    }
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(block.getRoot());
+    return tracker != null && tracker.completionFuture().isCompletedNormally();
+  }
+
   private boolean isInCustodyPeriod(final BeaconBlock block) {
     final MiscHelpersFulu miscHelpersFulu =
         MiscHelpersFulu.required(spec.atSlot(block.getSlot()).miscHelpers());

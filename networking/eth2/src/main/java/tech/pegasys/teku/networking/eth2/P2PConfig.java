@@ -19,6 +19,8 @@ import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAUL
 import java.time.Duration;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -32,6 +34,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class P2PConfig {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   public static final int DEFAULT_PEER_BLOCKS_RATE_LIMIT = 500;
   // 250 MB per peer per minute (~ 4.16 MB/s)
@@ -353,6 +357,13 @@ public class P2PConfig {
     public P2PConfig build() {
       validate();
 
+      if (gossipSnappyAircompressorEnabled) {
+        LOG.info("Experimental aircompressor Snappy encoding is enabled for gossip");
+      }
+      if (rpcSnappyAircompressorEnabled) {
+        LOG.info("Experimental aircompressor Snappy encoding is enabled for RPC");
+      }
+
       final GossipConfigurator gossipConfigurator =
           isGossipScoringEnabled
               ? GossipConfigurator.scoringEnabled(spec)
@@ -379,9 +390,8 @@ public class P2PConfig {
       final NetworkConfig networkConfig = this.networkConfig.build();
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
       discoveryConfig.listenUdpPortIpv6Default(networkConfig.getListenPortIpv6());
-      discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
-      discoveryConfig.advertisedUdpPortIpv6Default(
-          OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
+      discoveryConfig.advertisedUdpPortDefault(networkConfig.getOptionalAdvertisedPort());
+      discoveryConfig.advertisedUdpPortIpv6Default(networkConfig.getOptionalAdvertisedPortIpv6());
 
       if (subscribeAllCustodySubnetsEnabled) {
         custodyGroupCountOverride = Integer.MAX_VALUE;

@@ -79,6 +79,8 @@ class ForkChoiceUtilReorgTest {
     final ForkChoiceNode head = ForkChoiceNode.createBase(setup.signedBlockAndState.getRoot());
     assertThat(setup.harness.getProposerHead(setup.context, head, UInt64.valueOf(2)))
         .isEqualTo(head);
+    assertThat(setup.harness.headWeakChecks).isZero();
+    assertThat(setup.harness.parentStrongChecks).isZero();
   }
 
   @Test
@@ -452,24 +454,29 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
-  void isSingleSlotReorgReturnsTrueWhenParentAndProposalSlotsMatch() {
+  void isParentSlotOkReturnsTrueWhenParentIsOneSlotBeforeHead() {
     final ReorgTestSetup setup = new ReorgTestSetup();
     setup.withParentSlot(Optional.of(UInt64.ZERO));
 
-    assertThat(
-            setup.harness.isSingleSlotReorg(
-                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+    assertThat(setup.harness.isParentSlotOk(setup.store, setup.signedBlockAndState.getBlock()))
         .isTrue();
   }
 
   @Test
-  void isSingleSlotReorgReturnsFalseWhenProposalSlotSkipsAhead() {
+  void isCurrentSlotOkReturnsTrueWhenProposalIsOneSlotAfterHead() {
     final ReorgTestSetup setup = new ReorgTestSetup();
-    setup.withParentSlot(Optional.of(UInt64.ZERO));
 
     assertThat(
-            setup.harness.isSingleSlotReorg(
-                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
+            setup.harness.isCurrentSlotOk(setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+        .isTrue();
+  }
+
+  @Test
+  void isCurrentSlotOkReturnsFalseWhenProposalSlotSkipsAhead() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+
+    assertThat(
+            setup.harness.isCurrentSlotOk(setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
         .isFalse();
   }
 

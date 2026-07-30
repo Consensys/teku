@@ -34,6 +34,7 @@ dependencyManagement {
 
 		dependencySet(group: 'com.squareup.okhttp3', version: '4.12.0') {
 			entry 'okhttp'
+			entry 'logging-interceptor'
 			entry 'mockwebserver'
 		}
 
@@ -124,11 +125,8 @@ dependencyManagement {
 		dependency 'org.fusesource.leveldbjni:leveldbjni:1.8'
 		dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-		dependencySet(group: "org.web3j", version: "4.14.0") {
+		dependencySet(group: "org.web3j", version: "6.0.0") {
 			entry 'core'
-			entry 'abi'
-			entry 'crypto'
-			entry 'utils'
 		}
 
 		dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
