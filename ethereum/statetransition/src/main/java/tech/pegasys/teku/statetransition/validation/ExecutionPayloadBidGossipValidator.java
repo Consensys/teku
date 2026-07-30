@@ -156,10 +156,10 @@ public class ExecutionPayloadBidGossipValidator {
       if (bid.getValue().isLessThan(minRequiredBid)) {
         LOG.trace(
             "Bid value {} ETH does not meet minimum increment threshold ({}%). Current highest: {} ETH, minimum required: {} ETH",
-            gweiToEth(bid.getValue()),
-            minBidIncrementPercentage,
-            gweiToEth(existingBidValue),
-            gweiToEth(minRequiredBid));
+            () -> gweiToEth(bid.getValue()),
+            () -> minBidIncrementPercentage,
+            () -> gweiToEth(existingBidValue),
+            () -> gweiToEth(minRequiredBid));
         return completedFuture(
             ignore(
                 "Bid value %s ETH does not meet minimum increment threshold (%s%%). Current highest: %s ETH, minimum required: %s ETH",
@@ -293,8 +293,8 @@ public class ExecutionPayloadBidGossipValidator {
                   bid.getValue(), bid.getBuilderIndex(), state, bid.getSlot())) {
                 LOG.trace(
                     "Bid value {} ETH exceeds builder with index {} excess balance",
-                    gweiToEth(bid.getValue()),
-                    bid.getBuilderIndex());
+                    () -> gweiToEth(bid.getValue()),
+                    bid::getBuilderIndex);
                 return ignore(
                     "Bid value %s ETH exceeds builder with index %s excess balance",
                     gweiToEth(bid.getValue()), bid.getBuilderIndex());
@@ -336,10 +336,10 @@ public class ExecutionPayloadBidGossipValidator {
                 final UInt64 minRequired = calculateMinimumRequiredBid(actualHighestBid);
                 LOG.trace(
                     "Bid value {} ETH does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {} ETH, minimum required: {} ETH",
-                    gweiToEth(bidValue),
-                    minBidIncrementPercentage,
-                    gweiToEth(actualHighestBid),
-                    gweiToEth(minRequired));
+                    () -> gweiToEth(bidValue),
+                    () -> minBidIncrementPercentage,
+                    () -> gweiToEth(actualHighestBid),
+                    () -> gweiToEth(minRequired));
                 return ignore(
                     "Bid value %s ETH does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s ETH, minimum required: %s ETH",
                     gweiToEth(bidValue),
