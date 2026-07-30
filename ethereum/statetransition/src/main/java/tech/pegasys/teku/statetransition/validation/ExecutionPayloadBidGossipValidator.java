@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.spec.config.Constants.HIGHEST_BID_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_BUILDERS_BIDS;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -154,12 +155,18 @@ public class ExecutionPayloadBidGossipValidator {
 
       if (bid.getValue().isLessThan(minRequiredBid)) {
         LOG.trace(
-            "Bid value {} does not meet minimum increment threshold ({}%). Current highest: {}, minimum required: {}",
-            bid.getValue(), minBidIncrementPercentage, existingBidValue, minRequiredBid);
+            "Bid value {} ETH does not meet minimum increment threshold ({}%). Current highest: {} ETH, minimum required: {} ETH",
+            gweiToEth(bid.getValue()),
+            minBidIncrementPercentage,
+            gweiToEth(existingBidValue),
+            gweiToEth(minRequiredBid));
         return completedFuture(
             ignore(
-                "Bid value %s does not meet minimum increment threshold (%s%%). Current highest: %s, minimum required: %s",
-                bid.getValue(), minBidIncrementPercentage, existingBidValue, minRequiredBid));
+                "Bid value %s ETH does not meet minimum increment threshold (%s%%). Current highest: %s ETH, minimum required: %s ETH",
+                gweiToEth(bid.getValue()),
+                minBidIncrementPercentage,
+                gweiToEth(existingBidValue),
+                gweiToEth(minRequiredBid)));
       }
     }
 
@@ -285,12 +292,12 @@ public class ExecutionPayloadBidGossipValidator {
               if (!gossipValidationHelper.builderHasEnoughBalanceForBid(
                   bid.getValue(), bid.getBuilderIndex(), state, bid.getSlot())) {
                 LOG.trace(
-                    "Bid value {} exceeds builder with index {} excess balance",
-                    bid.getValue(),
+                    "Bid value {} ETH exceeds builder with index {} excess balance",
+                    gweiToEth(bid.getValue()),
                     bid.getBuilderIndex());
                 return ignore(
-                    "Bid value %s exceeds builder with index %s excess balance",
-                    bid.getValue(), bid.getBuilderIndex());
+                    "Bid value %s ETH exceeds builder with index %s excess balance",
+                    gweiToEth(bid.getValue()), bid.getBuilderIndex());
               }
 
               /*
@@ -328,11 +335,17 @@ public class ExecutionPayloadBidGossipValidator {
               if (!wasBidAccepted(bidValue, existingBidRef.get(), actualHighestBid)) {
                 final UInt64 minRequired = calculateMinimumRequiredBid(actualHighestBid);
                 LOG.trace(
-                    "Bid value {} does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {}, minimum required: {}",
-                    bidValue, minBidIncrementPercentage, actualHighestBid, minRequired);
+                    "Bid value {} ETH does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {} ETH, minimum required: {} ETH",
+                    gweiToEth(bidValue),
+                    minBidIncrementPercentage,
+                    gweiToEth(actualHighestBid),
+                    gweiToEth(minRequired));
                 return ignore(
-                    "Bid value %s does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s, minimum required: %s",
-                    bidValue, minBidIncrementPercentage, actualHighestBid, minRequired);
+                    "Bid value %s ETH does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s ETH, minimum required: %s ETH",
+                    gweiToEth(bidValue),
+                    minBidIncrementPercentage,
+                    gweiToEth(actualHighestBid),
+                    gweiToEth(minRequired));
               }
 
               return ACCEPT;
