@@ -171,7 +171,10 @@ public class GossipMessageHandlerIntegrationTest {
     Thread.sleep(2000);
 
     // Propagate invalid block from network 1
-    final SignedBlockAndState newBlockAndState = node1.getChainBuilder().generateBlockAtSlot(blockSlot, BlockOptions.create().setWrongProposer(true));
+    final SignedBlockAndState newBlockAndState =
+        node1
+            .getChainBuilder()
+            .generateBlockAtSlot(blockSlot, BlockOptions.create().setWrongProposer(true));
     node1.getChainUpdater().saveBlock(newBlockAndState);
     node1.getChainUpdater().updateBestBlock(newBlockAndState);
     node1.gossipBlock(newBlockAndState.getBlock());

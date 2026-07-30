@@ -37,7 +37,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -93,7 +92,8 @@ public class VoluntaryExitGossipIntegrationTest {
     Thread.sleep(2000);
 
     // Create voluntary exit
-    final SignedBlockAndState blockAndState = node1.getChainBuilder().generateBlockAtSlot(blockSlot);
+    final SignedBlockAndState blockAndState =
+        node1.getChainBuilder().generateBlockAtSlot(blockSlot);
     node1.getChainUpdater().saveBlock(blockAndState);
     node1.getChainUpdater().updateBestBlock(blockAndState);
     final SafeFuture<Optional<BeaconState>> stateFuture =
