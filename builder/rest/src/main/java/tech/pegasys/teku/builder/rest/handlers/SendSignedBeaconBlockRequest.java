@@ -16,7 +16,6 @@ package tech.pegasys.teku.builder.rest.handlers;
 import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SEND_SIGNED_BEACON_BLOCK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
-import java.util.Locale;
 import java.util.Map;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -35,12 +34,12 @@ public class SendSignedBeaconBlockRequest extends AbstractBuilderRequest {
   }
 
   public void submit(final SignedBeaconBlock signedBeaconBlock) {
-    final String consensusVersion =
-        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().name().toLowerCase(Locale.ROOT);
+    final String milestone =
+        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().lowerCaseName();
     postOctetStream(
         SEND_SIGNED_BEACON_BLOCK,
         Map.of(),
-        Map.of(HEADER_CONSENSUS_VERSION, consensusVersion),
+        Map.of(HEADER_CONSENSUS_VERSION, milestone),
         signedBeaconBlock.sszSerialize().toArrayUnsafe(),
         new ResponseHandler<>());
   }

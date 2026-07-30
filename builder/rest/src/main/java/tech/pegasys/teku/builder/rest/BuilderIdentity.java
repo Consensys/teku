@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public record BuilderIdentity(BLSPublicKey pubkey, boolean needsAuth) {
 
-  public static final DeserializableTypeDefinition<BuilderIdentity> TYPE =
+  public static final DeserializableTypeDefinition<BuilderIdentity> TYPE_DEFINITION =
       withDataWrapper(
           "GetBuilderIdentityResponse",
           DeserializableTypeDefinition.object(BuilderIdentity.class, BuilderIdentityBuilder.class)
@@ -41,6 +41,7 @@ public record BuilderIdentity(BLSPublicKey pubkey, boolean needsAuth) {
               .build());
 
   static class BuilderIdentityBuilder {
+
     private BLSPublicKey pubkey;
     private boolean needsAuth;
 
