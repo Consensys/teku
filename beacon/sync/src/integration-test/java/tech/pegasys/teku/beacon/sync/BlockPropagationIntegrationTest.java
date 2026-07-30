@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class BlockPropagationIntegrationTest {
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -60,14 +61,16 @@ public class BlockPropagationIntegrationTest {
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding));
-    node1.chainUtil().setSlot(currentSlot);
+    node1.getChainUpdater().setCurrentSlot(currentSlot);
 
     // Add some blocks to node1, which node 2 will need to fetch
     final List<SignedBeaconBlock> blocksToFetch = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
       currentSlot = currentSlot.plus(UInt64.ONE);
-      final SignedBeaconBlock block = node1.chainUtil().createAndImportBlockAtSlot(currentSlot);
-      blocksToFetch.add(block);
+      final SignedBlockAndState block = node1.getChainBuilder().generateBlockAtSlot(currentSlot);
+      node1.getChainUpdater().saveBlock(block);
+      node1.getChainUpdater().updateBestBlock(block);
+      blocksToFetch.add(block.getBlock());
     }
 
     // Setup node 2
@@ -95,7 +98,7 @@ public class BlockPropagationIntegrationTest {
     node2.setSlot(currentSlot);
 
     // Propagate new block
-    final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(currentSlot);
+    final SignedBeaconBlock newBlock = node1.getChainBuilder().generateBlockAtSlot(currentSlot).getBlock();
     node1.gossipBlock(newBlock);
 
     // Verify that node2 fetches required blocks in response
