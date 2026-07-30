@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -90,6 +92,22 @@ public class BeaconStateAccessorsGloasTest {
     final Optional<BLSPublicKey> index =
         beaconStateAccessors.getBuilderPubKey(state, UInt64.valueOf(999));
     assertThat(index).isEmpty();
+  }
+
+  @Test
+  void computeIsMatchingHead_shouldRejectNonZeroIndexForSameSlotWhenTargetDoesNotMatch() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final AttestationData data =
+        new AttestationData(
+            UInt64.ZERO,
+            UInt64.ONE,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomCheckpoint(),
+            dataStructureUtil.randomCheckpoint());
+
+    assertThatThrownBy(() -> beaconStateAccessors.computeIsMatchingHead(false, false, data, state))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Index must be set to zero");
   }
 
   // EIP-8061 churn limit coverage --------------------------------------------------------------
