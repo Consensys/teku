@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -28,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -104,6 +106,26 @@ class PostProposerPreferencesTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(requestBody).isInstanceOf(List.class);
     assertThat(((List<?>) requestBody).getFirst()).isInstanceOf(SignedProposerPreferences.class);
+  }
+
+  @Test
+  void shouldRejectJsonRequestBodyExceedingMaximumItems() throws IOException {
+    final SignedProposerPreferences preferences =
+        dataStructureUtil.randomSignedProposerPreferences();
+    final SpecConfigGloas specConfig =
+        SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig());
+    final int maxItems = (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch();
+    final String json =
+        JsonUtil.serialize(
+            Collections.nCopies(maxItems + 1, preferences),
+            DeserializableTypeDefinition.listOf(preferences.getSchema().getJsonTypeDefinition()));
+
+    assertThatThrownBy(
+            () ->
+                getRequestBodyFromMetadata(
+                    handler, Map.of(HEADER_CONSENSUS_VERSION, SpecMilestone.GLOAS.name()), json))
+        .hasMessageContaining(
+            "Provided array has more than " + maxItems + " maximum required items");
   }
 
   @Test

@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.io.function.IOFunction;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
@@ -103,7 +104,9 @@ public class PostProposerPreferences extends RestApiEndpoint {
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             DeserializableTypeDefinition.listOf(
-                signedProposerPreferencesSchema.getJsonTypeDefinition()),
+                signedProposerPreferencesSchema.getJsonTypeDefinition(),
+                Optional.empty(),
+                Optional.of(maxItems)),
             octetStreamParser)
         .headerRequired(
             ETH_CONSENSUS_VERSION_TYPE.withDescription(
