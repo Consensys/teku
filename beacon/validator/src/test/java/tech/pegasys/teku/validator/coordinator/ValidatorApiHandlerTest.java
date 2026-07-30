@@ -122,6 +122,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
@@ -171,6 +172,8 @@ class ValidatorApiHandlerTest {
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+  private final DataAvailabilitySampler dataAvailabilitySampler =
+      mock(DataAvailabilitySampler.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
   private final ExecutionPayloadFactory executionPayloadFactory =
@@ -239,6 +242,7 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
@@ -534,6 +538,7 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
@@ -1494,6 +1499,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
         .thenReturn(true);
+    when(dataAvailabilitySampler.isDataAvailable(block)).thenReturn(true);
 
     final Optional<PayloadAttestationData> result =
         SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
@@ -1504,30 +1510,7 @@ class ValidatorApiHandlerTest {
               assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
               assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
               assertThat(payloadAttestationData.isPayloadPresent()).isTrue();
-              assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
-            });
-  }
-
-  @Test
-  public void createPayloadAttestationData_shouldSetPayloadPresentFalseWhenPayloadWasNotEarly() {
-    final UInt64 newSlot = UInt64.valueOf(25);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(newSlot);
-
-    when(chainDataClient.getBlockAtSlotExact(eq(newSlot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
-        .thenReturn(false);
-
-    final Optional<PayloadAttestationData> result =
-        SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
-
-    assertThat(result)
-        .hasValueSatisfying(
-            payloadAttestationData -> {
-              assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
-              assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
-              assertThat(payloadAttestationData.isPayloadPresent()).isFalse();
-              assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
+              assertThat(payloadAttestationData.isBlobDataAvailable()).isTrue();
             });
   }
 
@@ -1543,6 +1526,7 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isEmpty();
     verify(executionPayloadManager, never()).isExecutionPayloadSeenBeforeDeadline(any());
+    verify(dataAvailabilitySampler, never()).isDataAvailable(any());
   }
 
   @Test
