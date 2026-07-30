@@ -1912,6 +1912,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,

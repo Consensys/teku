@@ -15,3 +15,4 @@
 
 ### Bug Fixes
  - Fixed Beacon REST API socket retention when clients cancel pending asynchronous requests. Requests now time out after 30 seconds.
+ - Fix an edge case on BeaconBlocksByRange where a request for a single block would return an empty response instead of the block.
