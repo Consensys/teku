@@ -847,7 +847,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void getExecutionContextForBlockRootAndHash_shouldPreserveFinalizedGloasContextsAfterRestart() {
+  void getExecutionContextForBlockRootAndHash_shouldSurviveGloasFinalizationAndRestart() {
     final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
     final StorageSystem storageSystem = initStorageSystem(gloasSpec);
     storageSystem
@@ -877,6 +877,12 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .orElseThrow();
 
     storageSystem.chainUpdater().finalizeEpoch(UInt64.ONE);
+
+    assertExecutionGasLimit(
+        storageSystem, finalizedBlock, finalizedBid.getParentBlockHash(), emptyGasLimit);
+    assertExecutionGasLimit(
+        storageSystem, finalizedBlock, finalizedBid.getBlockHash(), fullGasLimit);
+
     final StorageSystem restartedStorageSystem = storageSystem.restarted();
 
     assertExecutionGasLimit(

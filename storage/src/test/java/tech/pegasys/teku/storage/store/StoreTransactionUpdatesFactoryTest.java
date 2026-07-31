@@ -19,13 +19,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
-import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,9 +34,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -46,66 +42,11 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 class StoreTransactionUpdatesFactoryTest {
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
-
-  @Test
-  void finalizedGloasBoundaryShouldUsePendingExecutionContext() {
-    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
-    final ChainBuilder gloasChainBuilder = ChainBuilder.create(gloasSpec);
-    final SignedBlockAndState genesis = gloasChainBuilder.generateGenesis();
-    final Checkpoint genesisCheckpoint = gloasChainBuilder.getCurrentCheckpointForEpoch(0);
-    final UInt64 finalizedSlot = gloasSpec.computeStartSlotAtEpoch(UInt64.ONE);
-    gloasChainBuilder.generateBlocksUpToSlot(finalizedSlot);
-    final SignedBlockAndState finalizedBlock = gloasChainBuilder.getLatestBlockAndState();
-    final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
-    final AnchorPoint latestFinalized =
-        AnchorPoint.create(gloasSpec, finalizedCheckpoint, finalizedBlock);
-
-    final Store store = mock(Store.class);
-    final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
-    final ProtoNodeData pendingNode = mock(ProtoNodeData.class);
-    final UInt64 executionBlockNumber = UInt64.valueOf(123);
-    final UInt64 executionGasLimit = UInt64.valueOf(60_000_000);
-    when(pendingNode.getExecutionBlockNumber()).thenReturn(executionBlockNumber);
-    when(pendingNode.getExecutionGasLimit()).thenReturn(executionGasLimit);
-    when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
-    when(store.getLatestFinalized())
-        .thenReturn(AnchorPoint.create(gloasSpec, genesisCheckpoint, genesis));
-    when(store.containsBlock(finalizedBlock.getRoot())).thenReturn(false);
-    when(store.containsBlock(finalizedBlock.getParentRoot())).thenReturn(true);
-    when(store.getForkChoiceStrategy()).thenReturn(forkChoiceStrategy);
-    when(forkChoiceStrategy.getBlockData(finalizedBlock.getRoot(), PAYLOAD_STATUS_PENDING))
-        .thenReturn(Optional.of(pendingNode));
-
-    final StoreTransaction tx =
-        new StoreTransaction(
-            gloasSpec,
-            store,
-            mock(ReadWriteLock.class),
-            mock(StorageUpdateChannel.class),
-            UpdatableStore.StoreUpdateHandler.NOOP);
-    tx.putBlockAndState(
-        finalizedBlock, gloasSpec.calculateBlockCheckpoints(finalizedBlock.getState()));
-    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
-
-    final StoreTransactionUpdates updates =
-        StoreTransactionUpdatesFactory.create(gloasSpec, store, tx, latestFinalized);
-    updates.applyToStore(store, UpdateResult.EMPTY);
-
-    @SuppressWarnings("unchecked")
-    final ArgumentCaptor<Optional<BlockAndCheckpoints>> boundaryCaptor =
-        ArgumentCaptor.forClass(Optional.class);
-    verify(forkChoiceStrategy)
-        .applyUpdate(any(), any(), any(), any(), any(), boundaryCaptor.capture());
-    final BlockAndCheckpoints boundaryBlock = boundaryCaptor.getValue().orElseThrow();
-    assertThat(boundaryBlock.getExecutionBlockNumber()).contains(executionBlockNumber);
-    assertThat(boundaryBlock.getExecutionGasLimit()).contains(executionGasLimit);
-  }
 
   @Test
   void hotBlocksShouldNotContainPrunedRoots() {
