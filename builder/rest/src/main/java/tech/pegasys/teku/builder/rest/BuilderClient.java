@@ -23,6 +23,11 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPrefe
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
+/**
+ * REST client for the Staked Builder API.
+ *
+ * @see <a href="https://github.com/ethereum/builder-specs/pull/138">builder-specs#138</a>
+ */
 public interface BuilderClient {
 
   SafeFuture<Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid(
