@@ -16,13 +16,22 @@ package tech.pegasys.teku.services.beaconchain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class BeaconChainControllerTest {
@@ -35,6 +44,32 @@ class BeaconChainControllerTest {
     final BeaconChainController controller = createController(spec);
 
     assertThat(controller.isSafeToDeactivateDenebFeatures()).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void subscribeExecutionPayloadBidToP2PNetworkPublishesAcceptedLocalBidsOnly() {
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final BeaconChainController controller = createController(spec);
+    final ExecutionPayloadBidManager executionPayloadBidManager =
+        mock(ExecutionPayloadBidManager.class);
+    final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
+    controller.executionPayloadBidManager = executionPayloadBidManager;
+    controller.p2pNetwork = p2pNetwork;
+
+    controller.subscribeExecutionPayloadBidToP2PNetwork();
+
+    final ArgumentCaptor<OperationAddedSubscriber<SignedExecutionPayloadBid>> subscriberCaptor =
+        ArgumentCaptor.forClass(OperationAddedSubscriber.class);
+    verify(executionPayloadBidManager).subscribeOperationAdded(subscriberCaptor.capture());
+    final SignedExecutionPayloadBid localBid = dataStructureUtil.randomSignedExecutionPayloadBid();
+    final SignedExecutionPayloadBid p2pBid = dataStructureUtil.randomSignedExecutionPayloadBid();
+    subscriberCaptor.getValue().onOperationAdded(localBid, ACCEPT, false);
+    subscriberCaptor.getValue().onOperationAdded(p2pBid, ACCEPT, true);
+
+    verify(p2pNetwork).publishExecutionPayloadBid(localBid);
+    verify(p2pNetwork, never()).publishExecutionPayloadBid(p2pBid);
   }
 
   @Test

@@ -35,6 +35,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -78,7 +79,9 @@ public class DefaultExecutionPayloadBidManager
   private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
-  private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids;
+  private final PendingPool<PendingExecutionPayloadBid> pendingExecutionPayloadBids;
+  private final Subscribers<OperationAddedSubscriber<SignedExecutionPayloadBid>> subscribers =
+      Subscribers.create(true);
   private final UInt64 builderBidCompareFactor;
   private final boolean useShouldOverrideBuilderFlag;
 
@@ -93,7 +96,7 @@ public class DefaultExecutionPayloadBidManager
       final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker,
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher,
-      final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids,
+      final PendingPool<PendingExecutionPayloadBid> pendingExecutionPayloadBids,
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
@@ -107,31 +110,44 @@ public class DefaultExecutionPayloadBidManager
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndAddBid(
       final SignedExecutionPayloadBid signedBid, final RemoteBidOrigin remoteBidOrigin) {
-    return validateAndAddBid(signedBid, remoteBidOrigin.toString());
+    return validateAndAddBid(
+        signedBid, remoteBidOrigin.toString(), remoteBidOrigin == RemoteBidOrigin.P2P);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  @Override
+  public void subscribeOperationAdded(
+      final OperationAddedSubscriber<SignedExecutionPayloadBid> subscriber) {
+    subscribers.subscribe(subscriber);
+  }
+
   private SafeFuture<InternalValidationResult> validateAndAddBid(
-      final SignedExecutionPayloadBid signedBid, final String bidOrigin) {
-    final SafeFuture<InternalValidationResult> validationResult =
-        executionPayloadBidGossipValidator.validate(signedBid);
-    validationResult.thenAccept(result -> processValidationResult(signedBid, bidOrigin, result));
-    return validationResult;
+      final SignedExecutionPayloadBid signedBid,
+      final String bidOrigin,
+      final boolean fromNetwork) {
+    return executionPayloadBidGossipValidator
+        .validate(signedBid)
+        .thenApply(
+            result -> {
+              processValidationResult(signedBid, bidOrigin, fromNetwork, result);
+              return result;
+            });
   }
 
   private void processValidationResult(
       final SignedExecutionPayloadBid signedBid,
       final String bidOrigin,
+      final boolean fromNetwork,
       final InternalValidationResult result) {
     switch (result.code()) {
       case ACCEPT -> {
         addBid(signedBid);
         receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(signedBid);
+        subscribers.forEach(
+            subscriber -> subscriber.onOperationAdded(signedBid, result, fromNetwork));
       }
-      case SAVE_FOR_FUTURE -> pendingExecutionPayloadBids.add(signedBid);
+      case SAVE_FOR_FUTURE -> savePendingBid(signedBid, fromNetwork);
       case REJECT, IGNORE ->
           LOG.debug(
               "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
@@ -142,10 +158,27 @@ public class DefaultExecutionPayloadBidManager
     }
   }
 
-  private void retryPendingBids(final Collection<SignedExecutionPayloadBid> pendingBids) {
+  private void savePendingBid(
+      final SignedExecutionPayloadBid signedBid, final boolean fromNetwork) {
+    // Merge origin atomically with the pending pool's root-based deduplication.
+    synchronized (pendingExecutionPayloadBids) {
+      pendingExecutionPayloadBids.add(new PendingExecutionPayloadBid(signedBid, fromNetwork));
+      if (!fromNetwork) {
+        pendingExecutionPayloadBids
+            .get(signedBid.hashTreeRoot())
+            .ifPresent(PendingExecutionPayloadBid::markAsLocal);
+      }
+    }
+  }
+
+  private void retryPendingBids(final Collection<PendingExecutionPayloadBid> pendingBids) {
     // As with non-deferred bids, gossip validation accepts the first valid bid for each
     // (slot, builder index). Reconsider ordering if the spec allows multiple bids per tuple.
-    pendingBids.forEach(pendingBid -> validateAndAddBid(pendingBid, "pending").finishError(LOG));
+    pendingBids.forEach(
+        pendingBid ->
+            validateAndAddBid(
+                    pendingBid.signedExecutionPayloadBid(), "pending", pendingBid.fromNetwork())
+                .finishError(LOG));
   }
 
   @Override
@@ -155,7 +188,8 @@ public class DefaultExecutionPayloadBidManager
     pendingExecutionPayloadBids.onSlot(slot);
     // PendingPool prunes historical items only once per epoch, so remove stale bids before retrying
     pendingExecutionPayloadBids.removeItemsMatching(
-        pendingBid -> pendingBid.getMessage().getSlot().isLessThan(slot));
+        pendingBid ->
+            pendingBid.signedExecutionPayloadBid().getMessage().getSlot().isLessThan(slot));
     retryPendingBids(pendingExecutionPayloadBids.removeItemsMatching(__ -> true));
   }
 
@@ -167,7 +201,12 @@ public class DefaultExecutionPayloadBidManager
     final UInt64 proposalSlot = proposerPreferences.getMessage().getProposalSlot();
     retryPendingBids(
         pendingExecutionPayloadBids.removeItemsMatching(
-            pendingBid -> pendingBid.getMessage().getSlot().equals(proposalSlot)));
+            pendingBid ->
+                pendingBid
+                    .signedExecutionPayloadBid()
+                    .getMessage()
+                    .getSlot()
+                    .equals(proposalSlot)));
   }
 
   @Override
