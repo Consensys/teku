@@ -41,31 +41,6 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       final Bytes32 stateRoot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
-      final ProtoNodeValidationStatus validationStatus,
-      final BlockCheckpoints checkpoints,
-      final UInt64 weight,
-      final ForkChoicePayloadStatus payloadStatus) {
-    this(
-        slot,
-        root,
-        parentRoot,
-        stateRoot,
-        executionBlockNumber,
-        executionBlockHash,
-        UInt64.ZERO,
-        validationStatus,
-        checkpoints,
-        weight,
-        payloadStatus);
-  }
-
-  public ProtoNodeData(
-      final UInt64 slot,
-      final Bytes32 root,
-      final Bytes32 parentRoot,
-      final Bytes32 stateRoot,
-      final UInt64 executionBlockNumber,
-      final Bytes32 executionBlockHash,
       final UInt64 executionGasLimit,
       final ProtoNodeValidationStatus validationStatus,
       final BlockCheckpoints checkpoints,

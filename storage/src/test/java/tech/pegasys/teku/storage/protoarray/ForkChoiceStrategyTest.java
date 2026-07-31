@@ -465,6 +465,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getStateRoot(),
                     head.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
                     head.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+                    ZERO,
                     ProtoNodeValidationStatus.VALID,
                     spec.calculateBlockCheckpoints(head.getState()),
                     ZERO,

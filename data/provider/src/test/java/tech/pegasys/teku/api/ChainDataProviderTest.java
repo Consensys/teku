@@ -162,6 +162,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             Bytes32.fromHexString("0x5555"),
             UInt64.valueOf(42),
             Bytes32.fromHexString("0x6666"),
+            ZERO,
             ProtoNodeValidationStatus.OPTIMISTIC,
             new BlockCheckpoints(
                 justifiedCheckpoint, finalizedCheckpoint, justifiedCheckpoint, finalizedCheckpoint),
