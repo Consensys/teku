@@ -38,6 +38,8 @@ public class ResponseHandler<T> {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  public static final ResponseHandler<Void> VOID = new ResponseHandler<>();
+
   private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
   private final Optional<DeserializableTypeDefinition<T>> maybeTypeDefinition;
 

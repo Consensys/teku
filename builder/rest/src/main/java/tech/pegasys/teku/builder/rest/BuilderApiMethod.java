@@ -19,11 +19,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Map;
 
 public enum BuilderApiMethod {
-  GET_BUILDER_IDENTITY("eth/v1/builder/identity"),
   GET_EXECUTION_PAYLOAD_BID(
       "eth/v1/builder/execution_payload_bid/{slot}/{parent_hash}/{parent_root}/{proposer_pubkey}"),
-  SEND_BUILDER_PREFERENCES("eth/v1/builder/builder_preferences/{validator_pubkey}"),
-  SEND_SIGNED_BEACON_BLOCK("eth/v1/builder/beacon_blocks");
+  SUBMIT_BUILDER_PREFERENCES("eth/v1/builder/builder_preferences/{validator_pubkey}"),
+  SUBMIT_SIGNED_BEACON_BLOCK("eth/v1/builder/beacon_blocks");
 
   private final String path;
 

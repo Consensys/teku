@@ -94,7 +94,7 @@ public abstract class AbstractBuilderRequest {
     final Request request =
         new Request.Builder()
             .url(buildUrl(apiMethod, urlParams))
-            .post(RequestBody.create(new byte[0], (MediaType) null))
+            .post(RequestBody.create(new byte[0], null))
             .build();
     return executeCall(request, responseHandler);
   }

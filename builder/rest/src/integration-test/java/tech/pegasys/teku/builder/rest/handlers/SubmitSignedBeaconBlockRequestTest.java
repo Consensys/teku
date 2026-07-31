@@ -35,14 +35,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 @TestSpecContext(milestone = SpecMilestone.GLOAS, network = Eth2Network.MINIMAL)
-class SendSignedBeaconBlockRequestTest extends AbstractBuilderRequestTestBase {
+class SubmitSignedBeaconBlockRequestTest extends AbstractBuilderRequestTestBase {
 
-  private SendSignedBeaconBlockRequest request;
+  private SubmitSignedBeaconBlockRequest request;
   private SignedBeaconBlock signedBeaconBlock;
 
   @BeforeEach
   void setupRequest() {
-    request = new SendSignedBeaconBlockRequest(spec, mockWebServer.url("/"), okHttpClient);
+    request = new SubmitSignedBeaconBlockRequest(spec, mockWebServer.url("/"), okHttpClient);
     signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
   }
 
@@ -62,11 +62,11 @@ class SendSignedBeaconBlockRequestTest extends AbstractBuilderRequestTestBase {
     final RecordedRequest recorded = mockWebServer.takeRequest();
     assertThat(recorded.getMethod()).isEqualTo("POST");
     assertThat(recorded.getRequestUrl().encodedPath())
-        .isEqualTo("/" + BuilderApiMethod.SEND_SIGNED_BEACON_BLOCK.getPath(Map.of()));
+        .isEqualTo("/" + BuilderApiMethod.SUBMIT_SIGNED_BEACON_BLOCK.getPath(Map.of()));
   }
 
   @TestTemplate
-  void shouldSendSszEncodedBody() throws Exception {
+  void shouldSubmitSszEncodedBody() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
 
     request.submit(signedBeaconBlock);

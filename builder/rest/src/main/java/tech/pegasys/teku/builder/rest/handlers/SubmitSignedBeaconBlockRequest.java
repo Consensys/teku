@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.builder.rest.handlers;
 
-import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SEND_SIGNED_BEACON_BLOCK;
+import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SUBMIT_SIGNED_BEACON_BLOCK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.util.Map;
@@ -23,24 +23,24 @@ import tech.pegasys.teku.builder.rest.ResponseHandler;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class SendSignedBeaconBlockRequest extends AbstractBuilderRequest {
+public class SubmitSignedBeaconBlockRequest extends AbstractBuilderRequest {
 
   private final Spec spec;
 
-  public SendSignedBeaconBlockRequest(
+  public SubmitSignedBeaconBlockRequest(
       final Spec spec, final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
     super(baseEndpoint, httpClient);
     this.spec = spec;
   }
 
   public void submit(final SignedBeaconBlock signedBeaconBlock) {
-    final String milestone =
-        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().lowerCaseName();
     postOctetStream(
-        SEND_SIGNED_BEACON_BLOCK,
+        SUBMIT_SIGNED_BEACON_BLOCK,
         Map.of(),
-        Map.of(HEADER_CONSENSUS_VERSION, milestone),
+        Map.of(
+            HEADER_CONSENSUS_VERSION,
+            spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().lowerCaseName()),
         signedBeaconBlock.sszSerialize().toArrayUnsafe(),
-        new ResponseHandler<>());
+        ResponseHandler.VOID);
   }
 }

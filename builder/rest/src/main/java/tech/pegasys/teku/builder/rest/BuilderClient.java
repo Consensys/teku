@@ -25,8 +25,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 
 public interface BuilderClient {
 
-  SafeFuture<Optional<BuilderIdentity>> getBuilderIdentity();
-
   SafeFuture<Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid(
       UInt64 slot,
       Bytes32 parentHash,
@@ -34,8 +32,8 @@ public interface BuilderClient {
       BLSPublicKey proposerPubkey,
       Optional<SignedRequestAuth> signedRequestAuth);
 
-  SafeFuture<Void> sendBuilderPreferences(
+  SafeFuture<Void> submitBuilderPreferences(
       BLSPublicKey validatorPubkey, BuilderPreferencesRequest builderPreferencesRequest);
 
-  SafeFuture<Void> sendSignedBeaconBlock(SignedBeaconBlock signedBeaconBlock);
+  SafeFuture<Void> submitSignedBeaconBlock(SignedBeaconBlock signedBeaconBlock);
 }
