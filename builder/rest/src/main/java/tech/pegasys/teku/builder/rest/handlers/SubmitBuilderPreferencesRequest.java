@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.builder.rest.handlers;
 
-import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SEND_BUILDER_PREFERENCES;
+import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SUBMIT_BUILDER_PREFERENCES;
 
 import java.util.Map;
 import okhttp3.HttpUrl;
@@ -23,9 +23,10 @@ import tech.pegasys.teku.builder.rest.ResponseHandler;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
-public class SendBuilderPreferencesRequest extends AbstractBuilderRequest {
+public class SubmitBuilderPreferencesRequest extends AbstractBuilderRequest {
 
-  public SendBuilderPreferencesRequest(final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
+  public SubmitBuilderPreferencesRequest(
+      final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
     super(baseEndpoint, httpClient);
   }
 
@@ -33,10 +34,10 @@ public class SendBuilderPreferencesRequest extends AbstractBuilderRequest {
       final BLSPublicKey validatorPubkey,
       final BuilderPreferencesRequest builderPreferencesRequest) {
     postJson(
-        SEND_BUILDER_PREFERENCES,
+        SUBMIT_BUILDER_PREFERENCES,
         Map.of("validator_pubkey", validatorPubkey.toString()),
         builderPreferencesRequest,
         ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA.getJsonTypeDefinition(),
-        new ResponseHandler<>());
+        ResponseHandler.VOID);
   }
 }
