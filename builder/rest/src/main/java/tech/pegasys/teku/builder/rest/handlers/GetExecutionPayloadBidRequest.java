@@ -60,8 +60,7 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
 
     final ResponseHandler<SignedExecutionPayloadBid> responseHandler =
         new ResponseHandler<>(
-                withDataWrapper(schemaDefinitions.getSignedExecutionPayloadBidSchema()))
-            .withHandler(SC_NO_CONTENT, (req, resp) -> Optional.empty());
+            withDataWrapper(schemaDefinitions.getSignedExecutionPayloadBidSchema()));
 
     if (signedRequestAuth.isPresent()) {
       return postJson(
