@@ -18,10 +18,9 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.builder.rest.handlers.GetBuilderIdentityRequest;
 import tech.pegasys.teku.builder.rest.handlers.GetExecutionPayloadBidRequest;
-import tech.pegasys.teku.builder.rest.handlers.SendBuilderPreferencesRequest;
-import tech.pegasys.teku.builder.rest.handlers.SendSignedBeaconBlockRequest;
+import tech.pegasys.teku.builder.rest.handlers.SubmitBuilderPreferencesRequest;
+import tech.pegasys.teku.builder.rest.handlers.SubmitSignedBeaconBlockRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,12 +49,6 @@ public class OkHttpBuilderClient implements BuilderClient {
   }
 
   @Override
-  public SafeFuture<Optional<BuilderIdentity>> getBuilderIdentity() {
-    return asyncRunner.runAsync(
-        () -> new GetBuilderIdentityRequest(baseEndpoint, httpClient).submit());
-  }
-
-  @Override
   public SafeFuture<Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid(
       final UInt64 slot,
       final Bytes32 parentHash,
@@ -69,20 +62,20 @@ public class OkHttpBuilderClient implements BuilderClient {
   }
 
   @Override
-  public SafeFuture<Void> sendBuilderPreferences(
+  public SafeFuture<Void> submitBuilderPreferences(
       final BLSPublicKey validatorPubkey,
       final BuilderPreferencesRequest builderPreferencesRequest) {
     return asyncRunner.runAsync(
         () ->
-            new SendBuilderPreferencesRequest(baseEndpoint, httpClient)
+            new SubmitBuilderPreferencesRequest(baseEndpoint, httpClient)
                 .submit(validatorPubkey, builderPreferencesRequest));
   }
 
   @Override
-  public SafeFuture<Void> sendSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
+  public SafeFuture<Void> submitSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
     return asyncRunner.runAsync(
         () ->
-            new SendSignedBeaconBlockRequest(spec, baseEndpoint, httpClient)
+            new SubmitSignedBeaconBlockRequest(spec, baseEndpoint, httpClient)
                 .submit(signedBeaconBlock));
   }
 }

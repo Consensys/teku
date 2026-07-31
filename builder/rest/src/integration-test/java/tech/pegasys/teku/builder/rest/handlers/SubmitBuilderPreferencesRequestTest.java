@@ -36,15 +36,15 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPrefe
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 @TestSpecContext(milestone = SpecMilestone.GLOAS, network = Eth2Network.MINIMAL)
-class SendBuilderPreferencesRequestTest extends AbstractBuilderRequestTestBase {
+class SubmitBuilderPreferencesRequestTest extends AbstractBuilderRequestTestBase {
 
-  private SendBuilderPreferencesRequest request;
+  private SubmitBuilderPreferencesRequest request;
   private BLSPublicKey validatorPubkey;
   private BuilderPreferencesRequest builderPreferencesRequest;
 
   @BeforeEach
   void setupRequest() {
-    request = new SendBuilderPreferencesRequest(mockWebServer.url("/"), okHttpClient);
+    request = new SubmitBuilderPreferencesRequest(mockWebServer.url("/"), okHttpClient);
     validatorPubkey = dataStructureUtil.randomPublicKey();
     builderPreferencesRequest = dataStructureUtil.randomBuilderPreferencesRequest();
   }
@@ -67,7 +67,7 @@ class SendBuilderPreferencesRequestTest extends AbstractBuilderRequestTestBase {
     assertThat(recorded.getMethod()).isEqualTo("POST");
     assertThat(recorded.getRequestUrl().encodedPath())
         .contains(
-            BuilderApiMethod.SEND_BUILDER_PREFERENCES
+            BuilderApiMethod.SUBMIT_BUILDER_PREFERENCES
                 .getPath(Map.of())
                 .replace("{validator_pubkey}", ""));
     assertThat(recorded.getRequestUrl().encodedPath()).contains(validatorPubkey.toString());
