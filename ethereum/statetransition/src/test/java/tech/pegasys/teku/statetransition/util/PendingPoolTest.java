@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.execution.PendingExecutionPayloadBid;
 
 public class PendingPoolTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -375,24 +374,20 @@ public class PendingPoolTest {
                 gloasDataStructureUtil.randomUInt64(),
                 gloasDataStructureUtil.randomUInt64(),
                 UInt64.ZERO));
-    final PendingPool<PendingExecutionPayloadBid> pendingBidPool =
+    final PendingPool<SignedExecutionPayloadBid> pendingBidPool =
         new PoolFactory(metricsSystem).createPendingPoolForExecutionPayloadBids(gloasSpec, 1);
     pendingBidPool.onSlot(slot);
 
-    final PendingExecutionPayloadBid firstPendingBid =
-        new PendingExecutionPayloadBid(firstBid, false);
-    final PendingExecutionPayloadBid secondPendingBid =
-        new PendingExecutionPayloadBid(secondBid, true);
-    pendingBidPool.add(firstPendingBid);
+    pendingBidPool.add(firstBid);
 
     assertThat(pendingBidPool.contains(firstBid.hashTreeRoot())).isTrue();
     assertThat(
             pendingBidPool.getItemsDependingOn(firstBid.getMessage().getParentBlockRoot(), false))
-        .containsExactly(firstPendingBid);
+        .containsExactly(firstBid);
 
-    pendingBidPool.add(secondPendingBid);
-    pendingBidPool.add(new PendingExecutionPayloadBid(staleBid, true));
-    pendingBidPool.add(new PendingExecutionPayloadBid(farFutureBid, true));
+    pendingBidPool.add(secondBid);
+    pendingBidPool.add(staleBid);
+    pendingBidPool.add(farFutureBid);
 
     assertThat(pendingBidPool.size()).isEqualTo(1);
     assertThat(pendingBidPool.contains(secondBid.hashTreeRoot())).isTrue();

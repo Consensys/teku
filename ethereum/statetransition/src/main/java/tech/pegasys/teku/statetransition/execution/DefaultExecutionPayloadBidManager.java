@@ -79,7 +79,7 @@ public class DefaultExecutionPayloadBidManager
   private final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker;
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher;
-  private final PendingPool<PendingExecutionPayloadBid> pendingExecutionPayloadBids;
+  private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids;
   private final Subscribers<OperationAddedSubscriber<SignedExecutionPayloadBid>> subscribers =
       Subscribers.create(true);
   private final UInt64 builderBidCompareFactor;
@@ -96,7 +96,7 @@ public class DefaultExecutionPayloadBidManager
       final ExecutionPayloadBidCircuitBreaker executionPayloadBidCircuitBreaker,
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher,
-      final PendingPool<PendingExecutionPayloadBid> pendingExecutionPayloadBids,
+      final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids,
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
@@ -143,8 +143,7 @@ public class DefaultExecutionPayloadBidManager
         subscribers.forEach(
             subscriber -> subscriber.onOperationAdded(signedBid, result, fromNetwork));
       }
-      case SAVE_FOR_FUTURE ->
-          pendingExecutionPayloadBids.add(new PendingExecutionPayloadBid(signedBid, fromNetwork));
+      case SAVE_FOR_FUTURE -> pendingExecutionPayloadBids.add(signedBid);
       case REJECT, IGNORE ->
           LOG.debug(
               "Wouldn't consider bid for slot {} from builder {} because it didn't pass gossip validation: {}",
@@ -154,13 +153,11 @@ public class DefaultExecutionPayloadBidManager
     }
   }
 
-  private void retryPendingBids(final Collection<PendingExecutionPayloadBid> pendingBids) {
+  private void retryPendingBids(final Collection<SignedExecutionPayloadBid> pendingBids) {
     // As with non-deferred bids, gossip validation accepts the first valid bid for each
     // (slot, builder index). Reconsider ordering if the spec allows multiple bids per tuple.
-    pendingBids.forEach(
-        pendingBid ->
-            validateAndAddBid(pendingBid.signedExecutionPayloadBid(), pendingBid.fromNetwork())
-                .finishError(LOG));
+    // Deferred gossip was ignored by gossipsub, so accepted retries must be explicitly published.
+    pendingBids.forEach(pendingBid -> validateAndAddBid(pendingBid, false).finishError(LOG));
   }
 
   @Override
@@ -170,8 +167,7 @@ public class DefaultExecutionPayloadBidManager
     pendingExecutionPayloadBids.onSlot(slot);
     // PendingPool prunes historical items only once per epoch, so remove stale bids before retrying
     pendingExecutionPayloadBids.removeItemsMatching(
-        pendingBid ->
-            pendingBid.signedExecutionPayloadBid().getMessage().getSlot().isLessThan(slot));
+        pendingBid -> pendingBid.getMessage().getSlot().isLessThan(slot));
     retryPendingBids(pendingExecutionPayloadBids.removeItemsMatching(__ -> true));
   }
 
@@ -183,12 +179,7 @@ public class DefaultExecutionPayloadBidManager
     final UInt64 proposalSlot = proposerPreferences.getMessage().getProposalSlot();
     retryPendingBids(
         pendingExecutionPayloadBids.removeItemsMatching(
-            pendingBid ->
-                pendingBid
-                    .signedExecutionPayloadBid()
-                    .getMessage()
-                    .getSlot()
-                    .equals(proposalSlot)));
+            pendingBid -> pendingBid.getMessage().getSlot().equals(proposalSlot)));
   }
 
   @Override

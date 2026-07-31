@@ -82,7 +82,7 @@ public class DefaultExecutionPayloadBidManagerTest {
   private final ReceivedExecutionPayloadBidEventsChannel
       receivedExecutionPayloadBidEventsChannelPublisher =
           mock(ReceivedExecutionPayloadBidEventsChannel.class);
-  private final PendingPool<PendingExecutionPayloadBid> pendingExecutionPayloadBids =
+  private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids =
       new PoolFactory(new StubMetricsSystem()).createPendingPoolForExecutionPayloadBids(spec);
 
   @SuppressWarnings("unchecked")
@@ -957,13 +957,7 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     SafeFutureAssert.safeJoin(
         executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
-    assertThat(pendingExecutionPayloadBids.get(signedBid.hashTreeRoot()))
-        .get()
-        .satisfies(
-            pendingBid -> {
-              assertThat(pendingBid.signedExecutionPayloadBid()).isEqualTo(signedBid);
-              assertThat(pendingBid.fromNetwork()).isFalse();
-            });
+    assertThat(pendingExecutionPayloadBids.get(signedBid.hashTreeRoot())).contains(signedBid);
     verify(receivedExecutionPayloadBidEventsChannelPublisher, never())
         .onExecutionPayloadBidValidated(signedBid);
 
@@ -994,7 +988,29 @@ public class DefaultExecutionPayloadBidManagerTest {
     verify(executionPayloadBidGossipValidator, times(3)).validate(signedBid);
     verify(receivedExecutionPayloadBidEventsChannelPublisher)
         .onExecutionPayloadBidValidated(signedBid);
-    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, true);
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
+    verify(operationAddedSubscriber, never()).onOperationAdded(signedBid, ACCEPT, true);
+  }
+
+  @Test
+  public void builderSubmittedPendingP2pBidIsPublishedWhenAccepted() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
+    executionPayloadBidManager.onSlot(slot);
+
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
+    verify(operationAddedSubscriber, never()).onOperationAdded(signedBid, ACCEPT, true);
   }
 
   @Test
