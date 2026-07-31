@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.builder.rest.handlers;
 
-import static java.util.Collections.emptyMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -53,19 +52,6 @@ public abstract class AbstractBuilderRequest {
   protected HttpUrl buildUrl(
       final BuilderApiMethod apiMethod, final Map<String, String> urlParams) {
     return baseEndpoint.resolve(apiMethod.getPath(urlParams));
-  }
-
-  protected <T> Optional<T> get(
-      final BuilderApiMethod apiMethod, final ResponseHandler<T> responseHandler) {
-    return get(apiMethod, emptyMap(), responseHandler);
-  }
-
-  protected <T> Optional<T> get(
-      final BuilderApiMethod apiMethod,
-      final Map<String, String> urlParams,
-      final ResponseHandler<T> responseHandler) {
-    final Request request = new Request.Builder().url(buildUrl(apiMethod, urlParams)).get().build();
-    return executeCall(request, responseHandler);
   }
 
   protected <T, TObject> Optional<T> postJson(
