@@ -15,25 +15,5 @@ package tech.pegasys.teku.statetransition.execution;
 
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
-public class PendingExecutionPayloadBid {
-  private final SignedExecutionPayloadBid signedExecutionPayloadBid;
-  private volatile boolean fromNetwork;
-
-  public PendingExecutionPayloadBid(
-      final SignedExecutionPayloadBid signedExecutionPayloadBid, final boolean fromNetwork) {
-    this.signedExecutionPayloadBid = signedExecutionPayloadBid;
-    this.fromNetwork = fromNetwork;
-  }
-
-  public SignedExecutionPayloadBid signedExecutionPayloadBid() {
-    return signedExecutionPayloadBid;
-  }
-
-  public boolean fromNetwork() {
-    return fromNetwork;
-  }
-
-  public void markAsLocal() {
-    fromNetwork = false;
-  }
-}
+public record PendingExecutionPayloadBid(
+    SignedExecutionPayloadBid signedExecutionPayloadBid, boolean fromNetwork) {}

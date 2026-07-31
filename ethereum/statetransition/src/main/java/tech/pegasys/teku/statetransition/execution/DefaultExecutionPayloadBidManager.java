@@ -112,8 +112,7 @@ public class DefaultExecutionPayloadBidManager
   @Override
   public SafeFuture<InternalValidationResult> validateAndAddBid(
       final SignedExecutionPayloadBid signedBid, final RemoteBidOrigin remoteBidOrigin) {
-    return validateAndAddBid(
-        signedBid, remoteBidOrigin.toString(), remoteBidOrigin == RemoteBidOrigin.P2P);
+    return validateAndAddBid(signedBid, remoteBidOrigin == RemoteBidOrigin.P2P);
   }
 
   @Override
@@ -123,21 +122,18 @@ public class DefaultExecutionPayloadBidManager
   }
 
   private SafeFuture<InternalValidationResult> validateAndAddBid(
-      final SignedExecutionPayloadBid signedBid,
-      final String bidOrigin,
-      final boolean fromNetwork) {
+      final SignedExecutionPayloadBid signedBid, final boolean fromNetwork) {
     return executionPayloadBidGossipValidator
         .validate(signedBid)
         .thenApply(
             result -> {
-              processValidationResult(signedBid, bidOrigin, fromNetwork, result);
+              processValidationResult(signedBid, fromNetwork, result);
               return result;
             });
   }
 
   private void processValidationResult(
       final SignedExecutionPayloadBid signedBid,
-      final String bidOrigin,
       final boolean fromNetwork,
       final InternalValidationResult result) {
     switch (result.code()) {
@@ -147,27 +143,14 @@ public class DefaultExecutionPayloadBidManager
         subscribers.forEach(
             subscriber -> subscriber.onOperationAdded(signedBid, result, fromNetwork));
       }
-      case SAVE_FOR_FUTURE -> savePendingBid(signedBid, fromNetwork);
+      case SAVE_FOR_FUTURE ->
+          pendingExecutionPayloadBids.add(new PendingExecutionPayloadBid(signedBid, fromNetwork));
       case REJECT, IGNORE ->
           LOG.debug(
-              "Wouldn't consider a {} bid for slot {} from builder {} because it didn't pass gossip validation: {}",
-              bidOrigin,
+              "Wouldn't consider bid for slot {} from builder {} because it didn't pass gossip validation: {}",
               signedBid.getMessage().getSlot(),
               signedBid.getMessage().getBuilderIndex(),
               result);
-    }
-  }
-
-  private void savePendingBid(
-      final SignedExecutionPayloadBid signedBid, final boolean fromNetwork) {
-    // Merge origin atomically with the pending pool's root-based deduplication.
-    synchronized (pendingExecutionPayloadBids) {
-      pendingExecutionPayloadBids.add(new PendingExecutionPayloadBid(signedBid, fromNetwork));
-      if (!fromNetwork) {
-        pendingExecutionPayloadBids
-            .get(signedBid.hashTreeRoot())
-            .ifPresent(PendingExecutionPayloadBid::markAsLocal);
-      }
     }
   }
 
@@ -176,8 +159,7 @@ public class DefaultExecutionPayloadBidManager
     // (slot, builder index). Reconsider ordering if the spec allows multiple bids per tuple.
     pendingBids.forEach(
         pendingBid ->
-            validateAndAddBid(
-                    pendingBid.signedExecutionPayloadBid(), "pending", pendingBid.fromNetwork())
+            validateAndAddBid(pendingBid.signedExecutionPayloadBid(), pendingBid.fromNetwork())
                 .finishError(LOG));
   }
 

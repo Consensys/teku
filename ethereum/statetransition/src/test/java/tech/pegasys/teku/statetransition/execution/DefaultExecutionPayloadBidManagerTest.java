@@ -998,27 +998,6 @@ public class DefaultExecutionPayloadBidManagerTest {
   }
 
   @Test
-  public void builderSubmissionUpgradesPendingP2pBidToLocalOrigin() {
-    final UInt64 slot = UInt64.valueOf(10);
-    final SignedExecutionPayloadBid signedBid =
-        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
-    executionPayloadBidManager.onSlot(slot);
-    when(executionPayloadBidGossipValidator.validate(signedBid))
-        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
-        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
-        .thenReturn(SafeFuture.completedFuture(ACCEPT));
-
-    SafeFutureAssert.safeJoin(
-        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
-    SafeFutureAssert.safeJoin(
-        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
-    executionPayloadBidManager.onSlot(slot);
-
-    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
-    verify(operationAddedSubscriber, never()).onOperationAdded(signedBid, ACCEPT, true);
-  }
-
-  @Test
   public void onSlotDropsPendingBidsForPriorSlots() {
     final UInt64 bidSlot = UInt64.valueOf(10);
     final SignedExecutionPayloadBid signedBid =
