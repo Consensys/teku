@@ -1,6 +1,6 @@
 dependencyManagement {
 	imports {
-		mavenBom 'io.netty:netty-bom:4.2.15.Final'
+		mavenBom 'io.netty:netty-bom:4.2.16.Final'
 		// Remove these pins when Javalin uses Jetty 12.1.11 or later.
 		// Jetty 12.1.11 fixes https://github.com/jetty/jetty.project/issues/15226.
 		mavenBom 'org.eclipse.jetty:jetty-bom:12.1.11'
@@ -96,7 +96,7 @@ dependencyManagement {
 
 		dependency 'org.awaitility:awaitility:4.3.0'
 
-		dependencySet(group: 'org.bouncycastle', version: '1.85') {
+		dependencySet(group: 'org.bouncycastle', version: '1.84') {
 			entry 'bcprov-jdk18on'
 			entry 'bcpkix-jdk18on'
 			entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
