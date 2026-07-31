@@ -38,6 +38,7 @@ public abstract class AbstractBuilderRequest {
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
   private static final MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
+  private static final RequestBody EMPTY_REQUEST_BODY = RequestBody.create(new byte[0], null);
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -92,10 +93,7 @@ public abstract class AbstractBuilderRequest {
       final Map<String, String> urlParams,
       final ResponseHandler<T> responseHandler) {
     final Request request =
-        new Request.Builder()
-            .url(buildUrl(apiMethod, urlParams))
-            .post(RequestBody.create(new byte[0], null))
-            .build();
+        new Request.Builder().url(buildUrl(apiMethod, urlParams)).post(EMPTY_REQUEST_BODY).build();
     return executeCall(request, responseHandler);
   }
 
