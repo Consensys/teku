@@ -109,8 +109,6 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate block from network 1
     final SignedBlockAndState newBlock = node1.getChainBuilder().generateBlockAtSlot(blockSlot);
-    node1.getChainUpdater().saveBlock(newBlock);
-    node1.getChainUpdater().updateBestBlock(newBlock);
     node1.gossipBlock(newBlock.getBlock());
 
     // Verify the expected block was gossiped across the network
