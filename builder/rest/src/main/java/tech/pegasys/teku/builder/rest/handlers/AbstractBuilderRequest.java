@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.builder.rest.handlers;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
