@@ -46,6 +46,7 @@ interface ForkChoiceModel {
       BlockCheckpoints checkpoints,
       Optional<UInt64> executionBlockNumber,
       Optional<Bytes32> executionBlockHash,
+      Optional<UInt64> executionGasLimit,
       boolean optimisticallyProcessed);
 
   void processAnchorBlock(
@@ -58,6 +59,7 @@ interface ForkChoiceModel {
       BlockCheckpoints checkpoints,
       Optional<UInt64> executionBlockNumber,
       Optional<Bytes32> executionBlockHash,
+      Optional<UInt64> executionGasLimit,
       boolean optimisticallyProcessed);
 
   void onExecutionPayload(
@@ -66,6 +68,7 @@ interface ForkChoiceModel {
       Bytes32 blockRoot,
       UInt64 executionBlockNumber,
       Bytes32 executionBlockHash,
+      UInt64 executionGasLimit,
       boolean isOptimistic);
 
   void rebuildBlockNodesFromMetadata(
@@ -159,6 +162,14 @@ interface ForkChoiceModel {
 
   Optional<ProtoNodeData> getExecutionNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
+
+  default Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final Bytes32 blockRoot,
+      final Bytes32 blockHash) {
+    return Optional.empty();
+  }
 
   void pullUpBlockCheckpoints(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);

@@ -298,10 +298,9 @@ public class GossipValidationHelper {
     return recentChainData.getStore().getExecutionPayloadIfAvailable(blockRoot);
   }
 
-  public Optional<UInt64> getGasLimitForExecutionPayload(final Bytes32 blockRoot) {
-    return getRecentlyImportedExecutionPayload(blockRoot)
-        .map(SignedExecutionPayloadEnvelope::getMessage)
-        .map(envelope -> envelope.getPayload().getGasLimit());
+  public Optional<UInt64> getGasLimitForExecutionPayload(
+      final Bytes32 blockRoot, final Bytes32 blockHash) {
+    return recentChainData.getExecutionGasLimitForBlockRootAndHash(blockRoot, blockHash);
   }
 
   private static InternalValidationResult reject(final String reason) {
