@@ -15,7 +15,6 @@ package tech.pegasys.teku.builder.rest.handlers;
 
 import static tech.pegasys.teku.builder.rest.BuilderApiMethod.GET_EXECUTION_PAYLOAD_BID;
 import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 
 import java.util.Map;
 import java.util.Optional;
