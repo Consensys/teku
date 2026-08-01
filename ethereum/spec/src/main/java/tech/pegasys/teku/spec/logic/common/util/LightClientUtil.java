@@ -14,23 +14,43 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_BLOCK_HASH_GINDEX;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_BLOCK_HASH_GINDEX_DENEB;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_BLOCK_HASH_GINDEX_GLOAS;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_PAYLOAD_GINDEX;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -212,11 +232,101 @@ public class LightClientUtil {
     return syncCommitteeUtil.computeSyncCommitteePeriod(miscHelpers.computeEpochAtSlot(slot));
   }
 
+  /** {@code block_to_light_client_header}. */
   private LightClientHeader headerFromBlock(final SignedBeaconBlock block) {
-    // TODO: block_to_light_client_header is Altair-only here. For Capella+ blocks the
-    // execution payload header and execution_branch are left empty instead of being populated.
+    final LightClientHeaderSchema<?> schema = schemaDefinitionsAltair.getLightClientHeaderSchema();
+    final BeaconBlock message = block.getMessage();
+    final BeaconBlockHeader header = BeaconBlockHeader.fromBlock(message);
+    final BeaconBlockBody body = message.getBody();
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(block.getSlot());
+
+    if (schema instanceof LightClientHeaderSchemaGloas lightClientHeaderSchemaGloas) {
+      final Bytes32 executionBlockHash;
+      final long gIndex;
+      if (epoch.isGreaterThanOrEqualTo(specConfig.getGloasForkEpoch())) {
+        executionBlockHash =
+            BeaconBlockBodyGloas.required(body)
+                .getSignedExecutionPayloadBid()
+                .getMessage()
+                .getParentBlockHash();
+        gIndex = EXECUTION_BLOCK_HASH_GINDEX_GLOAS;
+      } else if (epoch.isGreaterThanOrEqualTo(specConfig.getCapellaForkEpoch())) {
+        executionBlockHash =
+            BeaconBlockBodyBellatrix.required(body).getExecutionPayload().getBlockHash();
+        gIndex =
+            epoch.isGreaterThanOrEqualTo(specConfig.getDenebForkEpoch())
+                ? EXECUTION_BLOCK_HASH_GINDEX_DENEB
+                : EXECUTION_BLOCK_HASH_GINDEX;
+      } else {
+        return lightClientHeaderSchemaGloas.create(header);
+      }
+      return lightClientHeaderSchemaGloas.create(
+          header,
+          SszBytes32.of(executionBlockHash),
+          createProof(lightClientHeaderSchemaGloas.getExecutionBranchSchema(), body, gIndex));
+    }
+
+    if (schema instanceof LightClientHeaderSchemaCapella lightClientHeaderSchemaCapella) {
+      if (epoch.isLessThan(specConfig.getCapellaForkEpoch())) {
+        return lightClientHeaderSchemaCapella.create(header);
+      }
+      final ExecutionPayloadHeader executionPayloadHeader =
+          executionHeaderFromPayload(body.getOptionalExecutionPayload().orElseThrow());
+      return lightClientHeaderSchemaCapella.create(
+          header,
+          executionPayloadHeader,
+          createProof(
+              lightClientHeaderSchemaCapella.getExecutionBranchSchema(),
+              body,
+              EXECUTION_PAYLOAD_GINDEX));
+    }
+
+    return schema.create(header);
+  }
+
+  /** {@code compute_merkle_proof}. */
+  private SszBytes32Vector createProof(
+      final SszBytes32VectorSchema<SszBytes32Vector> branchSchema,
+      final BeaconBlockBody body,
+      final long gIndex) {
+    final List<Bytes32> proof = MerkleUtil.constructMerkleProof(body.getBackingNode(), gIndex);
+    final List<SszBytes32> branch =
+        new ArrayList<>(
+            Collections.nCopies(
+                branchSchema.getLength() - proof.size(), SszBytes32.of(Bytes32.ZERO)));
+    proof.forEach(node -> branch.add(SszBytes32.of(node)));
+    return branchSchema.createFromElements(branch);
+  }
+
+  private ExecutionPayloadHeader executionHeaderFromPayload(final ExecutionPayload payload) {
+    final Optional<ExecutionPayloadDeneb> denebPayload = payload.toVersionDeneb();
+    final UInt64 blobGasUsed =
+        denebPayload.map(ExecutionPayloadDeneb::getBlobGasUsed).orElse(UInt64.ZERO);
+    final UInt64 excessBlobGas =
+        denebPayload.map(ExecutionPayloadDeneb::getExcessBlobGas).orElse(UInt64.ZERO);
     return schemaDefinitionsAltair
-        .getLightClientHeaderSchema()
-        .create(BeaconBlockHeader.fromBlock(block.getMessage()));
+        .toVersionCapella()
+        .orElseThrow()
+        .getExecutionPayloadHeaderSchema()
+        .createExecutionPayloadHeader(
+            builder ->
+                builder
+                    .parentHash(payload.getParentHash())
+                    .feeRecipient(payload.getFeeRecipient())
+                    .stateRoot(payload.getStateRoot())
+                    .receiptsRoot(payload.getReceiptsRoot())
+                    .logsBloom(payload.getLogsBloom())
+                    .prevRandao(payload.getPrevRandao())
+                    .blockNumber(payload.getBlockNumber())
+                    .gasLimit(payload.getGasLimit())
+                    .gasUsed(payload.getGasUsed())
+                    .timestamp(payload.getTimestamp())
+                    .extraData(payload.getExtraData())
+                    .baseFeePerGas(payload.getBaseFeePerGas())
+                    .blockHash(payload.getBlockHash())
+                    .transactionsRoot(payload.getTransactions().hashTreeRoot())
+                    .withdrawalsRoot(() -> payload.getOptionalWithdrawalsRoot().orElseThrow())
+                    .blobGasUsed(() -> blobGasUsed)
+                    .excessBlobGas(() -> excessBlobGas));
   }
 }
