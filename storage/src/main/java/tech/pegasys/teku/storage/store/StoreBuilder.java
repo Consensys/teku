@@ -86,6 +86,7 @@ public class StoreBuilder {
             anchor.getState().hashTreeRoot(),
             anchor.getExecutionBlockNumber(),
             anchor.getExecutionBlockHash(),
+            anchor.getExecutionGasLimit(),
             Optional.of(spec.calculateBlockCheckpoints(anchor.getState())),
             StoredBlockMetadata.extractGloasForkChoiceRebuildData(anchor)));
 

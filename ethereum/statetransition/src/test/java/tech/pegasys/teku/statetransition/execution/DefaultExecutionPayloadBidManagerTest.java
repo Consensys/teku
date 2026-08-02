@@ -28,6 +28,8 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Mu
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -82,6 +85,10 @@ public class DefaultExecutionPayloadBidManagerTest {
   private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids =
       new PoolFactory(new StubMetricsSystem()).createPendingPoolForExecutionPayloadBids(spec);
 
+  @SuppressWarnings("unchecked")
+  private final OperationAddedSubscriber<SignedExecutionPayloadBid> operationAddedSubscriber =
+      mock(OperationAddedSubscriber.class);
+
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
       new DefaultExecutionPayloadBidManager(
           spec,
@@ -96,6 +103,7 @@ public class DefaultExecutionPayloadBidManagerTest {
   public void setup() {
     when(executionPayloadBidCircuitBreaker.isEngaged(any(), any())).thenReturn(false);
     when(executionPayloadBidCircuitBreaker.isBuilderAllowed(any(), any())).thenReturn(true);
+    executionPayloadBidManager.subscribeOperationAdded(operationAddedSubscriber);
   }
 
   @Test
@@ -874,6 +882,67 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     verify(receivedExecutionPayloadBidEventsChannelPublisher, never())
         .onExecutionPayloadBidValidated(signedBid);
+    verifyNoInteractions(operationAddedSubscriber);
+  }
+
+  @Test
+  public void acceptedBuilderBidNotifiesSubscriberAsLocal() {
+    final SignedExecutionPayloadBid signedBid =
+        createBid(UInt64.valueOf(10), dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
+
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
+  }
+
+  @Test
+  public void acceptedP2pBidNotifiesSubscriberAsFromNetwork() {
+    final SignedExecutionPayloadBid signedBid =
+        createBid(UInt64.valueOf(10), dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, true);
+  }
+
+  @Test
+  public void validationFutureCompletesAfterAcceptanceIsProcessed() throws InterruptedException {
+    final SignedExecutionPayloadBid signedBid =
+        createBid(UInt64.valueOf(10), dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    final SafeFuture<InternalValidationResult> validationFuture = new SafeFuture<>();
+    final CountDownLatch processingStarted = new CountDownLatch(1);
+    final CountDownLatch continueProcessing = new CountDownLatch(1);
+    executionPayloadBidManager.subscribeOperationAdded(
+        (operation, validationStatus, fromNetwork) -> {
+          processingStarted.countDown();
+          try {
+            continueProcessing.await();
+          } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+          }
+        });
+    when(executionPayloadBidGossipValidator.validate(signedBid)).thenReturn(validationFuture);
+
+    final SafeFuture<InternalValidationResult> result =
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER);
+    final Thread validationThread = new Thread(() -> validationFuture.complete(ACCEPT));
+    validationThread.start();
+
+    try {
+      assertThat(processingStarted.await(5, TimeUnit.SECONDS)).isTrue();
+      assertThat(result).isNotDone();
+    } finally {
+      continueProcessing.countDown();
+      validationThread.join();
+    }
+    assertThat(result).isCompletedWithValue(ACCEPT);
   }
 
   @Test
@@ -897,6 +966,7 @@ public class DefaultExecutionPayloadBidManagerTest {
     verify(executionPayloadBidGossipValidator, times(2)).validate(signedBid);
     verify(receivedExecutionPayloadBidEventsChannelPublisher)
         .onExecutionPayloadBidValidated(signedBid);
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
   }
 
   @Test
@@ -918,6 +988,29 @@ public class DefaultExecutionPayloadBidManagerTest {
     verify(executionPayloadBidGossipValidator, times(3)).validate(signedBid);
     verify(receivedExecutionPayloadBidEventsChannelPublisher)
         .onExecutionPayloadBidValidated(signedBid);
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
+    verify(operationAddedSubscriber, never()).onOperationAdded(signedBid, ACCEPT, true);
+  }
+
+  @Test
+  public void builderSubmittedPendingP2pBidIsPublishedWhenAccepted() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final SignedExecutionPayloadBid signedBid =
+        createBid(slot, dataStructureUtil.randomBytes32(), UInt64.valueOf(100));
+    executionPayloadBidManager.onSlot(slot);
+    when(executionPayloadBidGossipValidator.validate(signedBid))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P));
+    SafeFutureAssert.safeJoin(
+        executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.BUILDER));
+    executionPayloadBidManager.onSlot(slot);
+
+    verify(operationAddedSubscriber).onOperationAdded(signedBid, ACCEPT, false);
+    verify(operationAddedSubscriber, never()).onOperationAdded(signedBid, ACCEPT, true);
   }
 
   @Test
