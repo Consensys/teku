@@ -88,11 +88,6 @@ public class LightClientUtil {
         currentEpoch.isGreaterThanOrEqualTo(specConfig.getAltairForkEpoch()),
         "Current epoch must be at or after the Altair fork.");
 
-    if (currentEpoch.isGreaterThanOrEqualTo(specConfig.getCapellaForkEpoch())) {
-      throw new UnsupportedOperationException(
-          "headerFromBlock currently does not support Capella and onwards.");
-    }
-
     checkArgument(
         state.getSlot().equals(state.getLatestBlockHeader().getSlot()),
         "State must be processed upto its latest block header.");
@@ -126,11 +121,6 @@ public class LightClientUtil {
     checkArgument(
         attestedEpoch.isGreaterThanOrEqualTo(specConfig.getAltairForkEpoch()),
         "Attested state must be at or after the Altair fork");
-
-    if (attestedEpoch.isGreaterThanOrEqualTo(specConfig.getCapellaForkEpoch())) {
-      throw new UnsupportedOperationException(
-          "headerFromBlock currently does not support Capella and onwards.");
-    }
 
     final SyncAggregate syncAggregate =
         BeaconBlockBodyAltair.required(block.getMessage().getBody()).getSyncAggregate();

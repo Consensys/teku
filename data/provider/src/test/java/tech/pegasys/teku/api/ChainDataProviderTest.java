@@ -693,17 +693,13 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     doReturn(blockSelector).when(blockSelectorFactory).createSelectorForBlockId(any());
   }
 
-  /** This currently only supports pre-Capella forks. */
   @Test
   public void getLightClientBootstrap_shouldGetBootstrap() {
-    final Spec altairSpec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil altairData = new DataStructureUtil(altairSpec);
-    final ChainDataProvider provider = setupBySpec(altairSpec, altairData, 16);
+    final ChainDataProvider provider = setupBySpec(spec, data, 16);
 
-    final SignedBeaconBlock candidate = altairData.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock candidate = data.randomSignedBeaconBlock(1);
     final BeaconState internalState =
-        altairData
-            .randomBeaconState(ONE)
+        data.randomBeaconState(ONE)
             .updated(
                 mutableState ->
                     mutableState.setLatestBlockHeader(
@@ -715,7 +711,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
                             candidate.getMessage().getBodyRoot())));
     final SignedBeaconBlock block =
         SignedBeaconBlock.create(
-            altairSpec,
+            spec,
             candidate.getMessage().withStateRoot(internalState.hashTreeRoot()),
             candidate.getSignature());
     final BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
