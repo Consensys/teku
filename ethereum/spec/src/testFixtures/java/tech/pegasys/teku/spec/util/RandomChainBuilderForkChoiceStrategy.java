@@ -173,8 +173,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
 
   @Override
   public boolean shouldBuildOnFull(
-      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
-    return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
+      final ReadOnlyStore store, final UInt64 slot, final ForkChoiceNode head) {
+    return shouldExtendPayload(store, new SlotAndBlockRoot(slot, head.blockRoot()));
   }
 
   @Override

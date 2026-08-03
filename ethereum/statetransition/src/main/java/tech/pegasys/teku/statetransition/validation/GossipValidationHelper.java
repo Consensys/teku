@@ -27,7 +27,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -39,6 +42,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -301,6 +305,49 @@ public class GossipValidationHelper {
   public Optional<UInt64> getGasLimitForExecutionPayload(
       final Bytes32 blockRoot, final Bytes32 blockHash) {
     return recentChainData.getExecutionGasLimitForBlockRootAndHash(blockRoot, blockHash);
+  }
+
+  public boolean isBidCompatibleWithHead(final ExecutionPayloadBid bid) {
+    final Optional<ChainHead> maybeHead = recentChainData.getChainHead();
+    if (maybeHead.isEmpty()) {
+      return false;
+    }
+
+    final ChainHead head = maybeHead.get();
+    final ReadOnlyStore store = recentChainData.getStore();
+    final Optional<SignedBeaconBlock> maybeHeadBlock = store.getBlockIfAvailable(head.getRoot());
+    if (maybeHeadBlock.isEmpty()) {
+      return false;
+    }
+    final Optional<ExecutionPayloadBid> maybeHeadBid =
+        maybeHeadBlock
+            .get()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .map(SignedExecutionPayloadBid::getMessage);
+    if (maybeHeadBid.isEmpty()) {
+      // A pre-Gloas head has no bid, so the first Gloas bid builds on its execution payload
+      return bid.getParentBlockRoot().equals(head.getRoot())
+          && bid.getParentBlockHash().equals(head.getExecutionBlockHash());
+    }
+
+    final ExecutionPayloadBid headBid = maybeHeadBid.get();
+    final boolean buildsOnParentBlock = bid.getParentBlockRoot().equals(head.getParentRoot());
+    final boolean buildsOnParentPayload =
+        bid.getParentBlockHash().equals(headBid.getParentBlockHash());
+    if (buildsOnParentBlock && buildsOnParentPayload) {
+      return true;
+    }
+    if (!bid.getParentBlockRoot().equals(head.getRoot())) {
+      return false;
+    }
+
+    final boolean buildsOnHeadPayload = bid.getParentBlockHash().equals(headBid.getBlockHash());
+    if (getForkChoiceStrategy().shouldBuildOnFull(store, bid.getSlot(), head.getForkChoiceNode())) {
+      return buildsOnHeadPayload;
+    }
+    return buildsOnParentPayload;
   }
 
   private static InternalValidationResult reject(final String reason) {
