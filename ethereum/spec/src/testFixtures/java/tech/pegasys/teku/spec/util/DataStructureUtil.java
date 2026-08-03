@@ -2457,11 +2457,9 @@ public final class DataStructureUtil {
   public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
     final LightClientBootstrapSchema bootstrapSchema =
         getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
-    final LightClientHeaderSchema<?> headerSchema =
-        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return bootstrapSchema.create(
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
         randomSyncCommittee(),
         randomSszBytes32Vector(
             bootstrapSchema.getSyncCommitteeBranchSchema(), this::randomBytes32));
@@ -2470,14 +2468,12 @@ public final class DataStructureUtil {
   public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
     final LightClientUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
-    final LightClientHeaderSchema<?> headerSchema =
-        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
         randomSyncCommittee(),
         randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32),
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
         randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
@@ -2486,12 +2482,10 @@ public final class DataStructureUtil {
   public LightClientFinalityUpdate randomLightClientFinalityUpdate(final UInt64 slot) {
     final LightClientFinalityUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientFinalityUpdateSchema();
-    final LightClientHeaderSchema<?> headerSchema =
-        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(
-        headerSchema.create(randomBeaconBlockHeader()),
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
+        randomLightClientHeader(slot),
         randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
@@ -2500,13 +2494,9 @@ public final class DataStructureUtil {
   public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(final UInt64 slot) {
     final LightClientOptimisticUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientOptimisticUpdateSchema();
-    final LightClientHeaderSchema<?> headerSchema =
-        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(
-        headerSchema.create(randomBeaconBlockHeader()),
-        randomSyncAggregate(),
-        SszUInt64.of(randomUInt64()));
+        randomLightClientHeader(slot), randomSyncAggregate(), SszUInt64.of(randomUInt64()));
   }
 
   public LightClientUpdateResponse randomLightClientUpdateResponse(final UInt64 slot) {
