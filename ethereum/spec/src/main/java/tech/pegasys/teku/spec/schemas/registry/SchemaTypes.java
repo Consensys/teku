@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContentsSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -292,6 +293,9 @@ public class SchemaTypes {
           create("BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
       SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<SignedExecutionPayloadEnvelopeContentsSchema>
+      SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA =
+          create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA");
   public static final SchemaId<SignedBlindedExecutionPayloadEnvelopeSchema>
       SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
           create("SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");

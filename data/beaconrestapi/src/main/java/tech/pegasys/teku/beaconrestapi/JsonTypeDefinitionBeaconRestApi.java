@@ -51,7 +51,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedCheckpointState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
@@ -127,6 +126,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetAggregateAttesta
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetProposerDutiesV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.PostAggregateAndProofsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v3.validator.GetNewBlockV3;
+import tech.pegasys.teku.beaconrestapi.handlers.v4.validator.GetNewBlockV4;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -199,6 +199,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .listenAddress(config.getRestApiInterface())
             .port(config.getRestApiPort())
             .maxUrlLength(config.getMaxUrlLength())
+            .asyncTimeoutMillis(config.getRestApiAsyncTimeout().toMillis())
             .virtualThreadsEnabled(config.isRestApiVirtualThreadsEnabled())
             .virtualThreadsMaxThreads(config.getRestApiVirtualThreadsMaxConcurrentTasks())
             .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
@@ -272,7 +273,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetStatePendingDeposits(dataProvider, schemaCache))
             .endpoint(new GetStatePendingPartialWithdrawals(dataProvider, schemaCache))
             .endpoint(new GetStateProposerLookahead(dataProvider, schemaCache))
-            .endpoint(new GetDepositSnapshot(eth1DataProvider))
             // Event Handler
             .endpoint(
                 new GetEvents(
@@ -300,6 +300,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetProposerDuties(dataProvider))
             .endpoint(new GetProposerDutiesV2(dataProvider))
             .endpoint(new GetNewBlockV3(dataProvider, schemaCache))
+            .endpoint(new GetNewBlockV4(dataProvider, schemaCache))
             .endpoint(new GetAttestationData(dataProvider, spec))
             .endpoint(new GetAggregateAttestation(dataProvider, spec))
             .endpoint(new GetAggregateAttestationV2(dataProvider, schemaCache))

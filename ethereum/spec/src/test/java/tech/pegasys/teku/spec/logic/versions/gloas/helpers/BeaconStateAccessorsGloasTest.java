@@ -14,7 +14,10 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
@@ -24,12 +27,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateAccessorsGloasTest {
@@ -83,6 +92,22 @@ public class BeaconStateAccessorsGloasTest {
     final Optional<BLSPublicKey> index =
         beaconStateAccessors.getBuilderPubKey(state, UInt64.valueOf(999));
     assertThat(index).isEmpty();
+  }
+
+  @Test
+  void computeIsMatchingHead_shouldRejectNonZeroIndexForSameSlotWhenTargetDoesNotMatch() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final AttestationData data =
+        new AttestationData(
+            UInt64.ZERO,
+            UInt64.ONE,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomCheckpoint(),
+            dataStructureUtil.randomCheckpoint());
+
+    assertThatThrownBy(() -> beaconStateAccessors.computeIsMatchingHead(false, false, data, state))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Index must be set to zero");
   }
 
   // EIP-8061 churn limit coverage --------------------------------------------------------------
@@ -142,6 +167,52 @@ public class BeaconStateAccessorsGloasTest {
     assertThat(beaconStateAccessors.getExitChurnLimit(state)).isEqualTo(expectedExit);
     assertThat(beaconStateAccessors.getConsolidationChurnLimit(state))
         .isNotEqualTo(beaconStateAccessors.getExitChurnLimit(state));
+  }
+
+  @Test
+  public void getIndexedPayloadAttestation_selectsPtcMembersForSetBitsAndSortsIndices() {
+    final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
+    final UInt64 slot = state.getSlot();
+    final IntList ptc = beaconStateAccessors.getPtc(state, slot);
+
+    // Set the first three PTC positions; their validator indices are not necessarily ascending, so
+    // this also exercises the sort.
+    final PayloadAttestation payloadAttestation = payloadAttestation(slot, 0, 1, 2);
+
+    final IndexedPayloadAttestationLight indexed =
+        beaconStateAccessors.getIndexedPayloadAttestation(state, payloadAttestation);
+
+    final List<UInt64> expected =
+        IntStream.of(ptc.getInt(0), ptc.getInt(1), ptc.getInt(2))
+            .mapToObj(UInt64::valueOf)
+            .sorted()
+            .toList();
+    assertThat(indexed.attestingIndices()).containsExactlyElementsOf(expected);
+    assertThat(indexed.attestingIndices()).isSorted();
+    assertThat(indexed.data()).isEqualTo(payloadAttestation.getData());
+    assertThat(indexed.signature()).isEqualTo(payloadAttestation.getSignature());
+  }
+
+  @Test
+  public void getIndexedPayloadAttestation_returnsEmptyIndicesWhenNoBitsSet() {
+    final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
+    final PayloadAttestation payloadAttestation = payloadAttestation(state.getSlot());
+
+    final IndexedPayloadAttestationLight indexed =
+        beaconStateAccessors.getIndexedPayloadAttestation(state, payloadAttestation);
+
+    assertThat(indexed.attestingIndices()).isEmpty();
+  }
+
+  private PayloadAttestation payloadAttestation(final UInt64 slot, final int... setBits) {
+    final PayloadAttestationSchema schema =
+        SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
+            .getPayloadAttestationSchema();
+    final PayloadAttestationData data = dataStructureUtil.randomPayloadAttestationData(slot);
+    return schema.create(
+        schema.getAggregationBitsSchema().ofBits(setBits),
+        data,
+        dataStructureUtil.randomSignature());
   }
 
   private SpecConfigGloas configGloas() {

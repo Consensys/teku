@@ -99,6 +99,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_C
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_PROPOSER_PREFERENCES_SCHEMA;
@@ -182,6 +183,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContentsSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
@@ -207,6 +209,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientBootstrapSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientBootstrapSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -247,7 +250,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPending
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.PtcWindowSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-// Error Prone's JavaCase check doesn't yet recognize Java 25 unnamed lambda parameters.
+// TODO Error Prone's JavaCase check doesn't yet recognize Java 25 unnamed lambda parameters.
 @SuppressWarnings("JavaCase")
 public class SchemaRegistryBuilder {
 
@@ -349,6 +352,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
+        .addProvider(createSignedExecutionPayloadEnvelopeContentsSchemaProvider())
         .addProvider(createSignedBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
         .addProvider(createBuilderPendingPaymentsSchemaProvider())
@@ -1014,11 +1018,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createAggregateAndProofSchemaProvider() {
     return providerBuilder(AGGREGATE_AND_PROOF_SCHEMA)
         .withCreator(
-            PHASE0,
-            (registry, specConfig, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
-        .withCreator(
-            ELECTRA,
-            (registry, specConfig, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
+            PHASE0, (registry, _, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
         .build();
   }
 
@@ -1032,6 +1032,10 @@ public class SchemaRegistryBuilder {
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new LightClientBootstrapSchemaElectra(SpecConfigElectra.required(specConfig)))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new LightClientBootstrapSchemaGloas(SpecConfigGloas.required(specConfig)))
         .build();
   }
 
@@ -1090,7 +1094,6 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new DataColumnSidecarSchemaGloas(
                     registry.get(DATA_COLUMN_SCHEMA),
-                    SpecConfigGloas.required(specConfig),
                     OptionalLong.of(
                         SpecConfigGloas.required(specConfig).getMaxDataColumnSidecarSize())))
         .build();
@@ -1295,6 +1298,16 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new SignedBlindedExecutionPayloadEnvelopeSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedExecutionPayloadEnvelopeContentsSchemaProvider() {
+    return providerBuilder(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadEnvelopeContentsSchema(
+                    SpecConfigFulu.required(specConfig), registry))
         .build();
   }
 

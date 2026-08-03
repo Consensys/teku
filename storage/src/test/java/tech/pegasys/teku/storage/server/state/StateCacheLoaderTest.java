@@ -25,7 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
-import tech.pegasys.teku.beacon.pow.TimeBasedEth1HeadTracker;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -52,7 +51,7 @@ public class StateCacheLoaderTest {
             .removalListener((k) -> LOG.info(String.format("removed %s", k.getKey())));
     this.cache =
         cacheBuilder.build(new StateCacheLoader(spec, database, 1, 2, finalizedStateCache));
-    try (LogCaptor logCaptor = LogCaptor.forClass(TimeBasedEth1HeadTracker.class)) {
+    try (LogCaptor logCaptor = LogCaptor.forClass(StateCacheLoader.class)) {
       assertThatThrownBy(() -> cache.get(UInt64.valueOf(4)))
           .hasCauseInstanceOf(FinalizedStateCache.StateUnavailableException.class);
       logCaptor.assertErrorLog(

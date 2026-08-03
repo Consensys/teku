@@ -26,11 +26,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
-    subcommands = {
-      GenerateKeysCommand.class,
-      GenerateKeysAndSendDepositsCommand.class,
-      SendDepositsCommand.class
-    },
+    subcommands = {GenerateKeysCommand.class},
     versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",

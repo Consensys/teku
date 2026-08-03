@@ -51,6 +51,7 @@ dependencies {
 	testFixturesApi project(':ethereum:spec')
 
 	testFixturesImplementation testFixtures(project(':beacon:pow'))
+	testFixturesImplementation 'com.fasterxml.jackson.core:jackson-annotations'
 	testFixturesImplementation project(':ethereum:dataproviders')
 	testFixturesImplementation testFixtures(project(':infrastructure:bls'))
 	testFixturesImplementation testFixtures(project(':infrastructure:metrics'))

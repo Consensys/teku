@@ -70,7 +70,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   void bn_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
     final String networkName = "swift";
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+        createValidatorKeyGenerator().generateValidatorKeys(2, true);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
@@ -89,7 +89,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   void vc_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
     final String networkName = "swift";
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+        createValidatorKeyGenerator().generateValidatorKeys(2, true);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
@@ -115,7 +115,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "swift";
     // keys aren't locked, but we're on readonly filesystem, so will cause unchecked io exception
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2, false);
+        createValidatorKeyGenerator().generateValidatorKeys(2, false);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
@@ -136,7 +136,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final String networkName = "swift";
     // keys aren't locked, but we have no access to write
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+        createValidatorKeyGenerator().generateValidatorKeys(2, true);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();

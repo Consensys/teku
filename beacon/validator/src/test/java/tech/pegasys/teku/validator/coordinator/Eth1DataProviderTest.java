@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -58,7 +57,6 @@ public class Eth1DataProviderTest {
       mock(Eth1DepositStorageChannel.class);
   private final StateAndMetaData stateAndMetaData =
       new StateAndMetaData(state, SpecMilestone.PHASE0, false, true, false);
-  private final EventLogger eventLogger = mock(EventLogger.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private Eth1DataProvider eth1DataProvider;
 
@@ -78,10 +76,7 @@ public class Eth1DataProviderTest {
             eth1DataCache,
             storageUpdateChannel,
             eth1DepositStorageChannel,
-            spec,
-            eventLogger,
-            true);
-    depositProvider.onSyncingStatusChanged(true);
+            spec);
     eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
     // Defaults

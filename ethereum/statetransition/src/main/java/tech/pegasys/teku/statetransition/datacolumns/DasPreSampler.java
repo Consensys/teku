@@ -95,7 +95,7 @@ public class DasPreSampler {
                 sampler
                     .checkDataAvailability(block.getSlot(), block.getRoot())
                     .finish(
-                        succ ->
+                        ignored ->
                             LOG.debug(
                                 "DasPreSampler: success pre-sampling block {} ({})",
                                 block.getSlot(),

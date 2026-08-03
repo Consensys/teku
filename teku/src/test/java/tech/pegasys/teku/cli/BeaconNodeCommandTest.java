@@ -568,8 +568,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "true",
       "--eth1-deposit-contract-address",
       "0x77f7bED277449F51505a4C54550B074030d989bC",
-      "--eth1-endpoint",
-      "http://localhost:8545",
       "--ee-endpoint",
       "http://localhost:8550",
       "--metrics-enabled",
@@ -615,8 +613,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
-              b.eth1Endpoints(new ArrayList<>())
-                  .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
+              b.depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
             b ->
@@ -651,11 +648,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     return TekuConfiguration.builder()
         .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
         .executionLayer(b -> b.engineEndpoint("http://localhost:8550"))
-        .powchain(
-            b ->
-                b.eth1Endpoints(List.of("http://localhost:8545"))
-                    .depositContract(address)
-                    .eth1LogsMaxBlockRange(10_000))
+        .powchain(b -> b.depositContract(address))
         .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
         .storageConfiguration(
             b ->

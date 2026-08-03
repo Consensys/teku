@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.ValidatorIndexCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -107,6 +109,37 @@ class GloasStateUpgradeTest {
                 .getCurrentEpochParticipation()
                 .getSchema()
                 .sszDeserialize(postState.getCurrentEpochParticipation().sszSerialize()));
+  }
+
+  @Test
+  void shouldCarryBoundedHistoricalSummariesAcrossUpgrade() {
+    final BeaconStateFulu initialState =
+        BeaconStateFulu.required(
+            dataStructureUtil
+                .stateBuilder(SpecMilestone.FULU, 64, 1)
+                .setSlotToStartOfEpoch(GLOAS_EPOCH)
+                .build()
+                .updated(this::activateAllValidators));
+    final BeaconStateFulu preState =
+        BeaconStateFulu.required(
+            initialState.updated(
+                state ->
+                    ((MutableBeaconStateCapella) state)
+                        .setHistoricalSummaries(
+                            initialState
+                                .getHistoricalSummaries()
+                                .getSchema()
+                                .createFromElements(
+                                    List.of(dataStructureUtil.randomHistoricalSummary())))));
+
+    final BeaconStateGloas postState =
+        BeaconStateGloas.required(createStateUpgrade().upgrade(preState));
+
+    assertThat(postState.getHistoricalSummaries().size()).isEqualTo(1);
+    assertThat(postState.getHistoricalSummaries().sszSerialize())
+        .isEqualTo(preState.getHistoricalSummaries().sszSerialize());
+    assertThat(postState.getHistoricalSummaries().getSchema().getMaxLength())
+        .isEqualTo(preState.getHistoricalSummaries().getSchema().getMaxLength());
   }
 
   private GloasStateUpgrade createStateUpgrade() {

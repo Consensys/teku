@@ -18,6 +18,12 @@ buildscript {
 	repositories {
 		mavenCentral()
 	}
+	// JReleaser 1.23.0 uses GpgObjectSigner from JGit 5.x/6.x, which was removed in JGit 7.x.
+	// Spotless 8.7.0 pulls in JGit 7.7.0, which wins resolution and breaks jreleaserFullRelease.
+	// Spotless does not use ratchetFrom, so it never actually calls JGit at runtime.
+	configurations.classpath.resolutionStrategy {
+		force 'org.eclipse.jgit:org.eclipse.jgit:5.13.5.202508271544-r'
+	}
 	dependencies {
 		classpath 'io.consensys.protocols:license-reporter:1.2.0'
 	}
@@ -231,14 +237,6 @@ def isNonStable = { String version ->
 	return !stableKeyword && !(version ==~ regex)
 }
 
-def isWeb3jMajorUpgrade = { candidate ->
-	if (candidate.group != 'org.web3j') {
-		return false
-	}
-	def majorVersion = candidate.version.tokenize('.')[0]
-	return majorVersion.isInteger() && majorVersion.toInteger() >= 5
-}
-
 def versionComponents = { String version ->
 	version.tokenize('.-').collect { part -> part.isInteger() ? part.toInteger() : 0 }
 }
@@ -282,7 +280,6 @@ def isRejectedDependencyUpdate = { candidate ->
 tasks.named("dependencyUpdates").configure {
 	rejectVersionIf {
 		isNonStable(it.candidate.version) ||
-		isWeb3jMajorUpgrade(it.candidate) ||
 		isRejectedDependencyUpdate(it.candidate)
 	}
 }
@@ -1107,13 +1104,19 @@ tasks.register('manifestDocker') {
 	}
 }
 
-def ciJacocoConfigurations = [
+def ciDependencyConfigurations = [
 	'jacocoAgent',
 	'jacocoAnt',
+	'runtimeClasspath',
+	'testRuntimeClasspath',
+	'integrationTestRuntimeClasspath',
+	'acceptanceTestRuntimeClasspath',
+	'propertyTestRuntimeClasspath',
+	'referenceTestRuntimeClasspath',
 ]
 
-def resolveCiJacocoConfigurations = { targetProject ->
-	ciJacocoConfigurations.each { configurationName ->
+def resolveCiDependencyConfigurations = { targetProject ->
+	ciDependencyConfigurations.each { configurationName ->
 		def configuration = targetProject.configurations.findByName(configurationName)
 		if (configuration != null && configuration.canBeResolved) {
 			logger.info("Resolving ${targetProject.path}:${configurationName}")
@@ -1429,23 +1432,23 @@ subprojects {
 		jvmArgs '--enable-native-access=ALL-UNNAMED'
 	}
 
-	tasks.register('resolveCiJacocoDependencies') {
+	tasks.register('resolveCiDependencies') {
 		group = 'build setup'
-		description = 'Resolves Jacoco configurations used by CI shards to warm the Gradle cache.'
+		description = 'Resolves test runtime configurations used by CI shards to warm the Gradle cache.'
 
 		doLast {
-			resolveCiJacocoConfigurations(project)
+			resolveCiDependencyConfigurations(project)
 		}
 	}
 }
 
-tasks.register('resolveCiJacocoDependencies') {
+tasks.register('resolveCiDependencies') {
 	group = 'build setup'
-	description = 'Resolves Jacoco configurations used by CI shards to warm the Gradle cache.'
-	dependsOn subprojects.collect { it.tasks.named('resolveCiJacocoDependencies') }
+	description = 'Resolves test runtime configurations used by CI shards to warm the Gradle cache.'
+	dependsOn subprojects.collect { it.tasks.named('resolveCiDependencies') }
 
 	doLast {
-		resolveCiJacocoConfigurations(project)
+		resolveCiDependencyConfigurations(project)
 	}
 }
 
