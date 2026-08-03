@@ -55,6 +55,7 @@ class GetForkChoiceTest extends AbstractMigratedBeaconHandlerTest {
                   Bytes32.fromHexString("0x5555"),
                   UInt64.valueOf(42),
                   Bytes32.fromHexString("0x6666"),
+                  UInt64.ZERO,
                   ProtoNodeValidationStatus.OPTIMISTIC,
                   new BlockCheckpoints(
                       new Checkpoint(UInt64.valueOf(10), Bytes32.fromHexString("0x7777")),

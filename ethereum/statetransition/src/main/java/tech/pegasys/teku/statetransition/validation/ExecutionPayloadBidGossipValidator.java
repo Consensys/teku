@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.spec.config.Constants.HIGHEST_BID_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_BUILDERS_BIDS;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -96,9 +97,14 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<ProposerPreferences> proposerPreferences =
         proposerPreferencesManager.getProposerPreferences(bid.getSlot());
     if (proposerPreferences.isEmpty()) {
+      LOG.trace(
+          "No proposer preferences available at slot {}. The bid from the builder with index {} will be saved for future processing.",
+          bid.getSlot(),
+          bid.getBuilderIndex());
       return completedFuture(
           saveForFuture(
-              "No proposer preferences available. The bid will be saved for future processing."));
+              "No proposer preferences available at slot %s. The bid from the builder with index %s will be saved for future processing.",
+              bid.getSlot(), bid.getBuilderIndex()));
     }
 
     /*
@@ -106,9 +112,13 @@ public class ExecutionPayloadBidGossipValidator {
      * SignedProposerPreferences associated with bid.slot
      */
     if (!bid.getFeeRecipient().equals(proposerPreferences.get().getFeeRecipient())) {
+      LOG.trace(
+          "Bid fee recipient {} does not match proposer preferences fee recipient {}",
+          bid.getFeeRecipient(),
+          proposerPreferences.get().getFeeRecipient());
       return completedFuture(
           ignore(
-              "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
+              "Bid fee recipient %s does not match proposer preferences fee recipient %s",
               bid.getFeeRecipient(), proposerPreferences.get().getFeeRecipient()));
     }
 
@@ -118,6 +128,10 @@ public class ExecutionPayloadBidGossipValidator {
     if (seenExecutionPayloadBids
         .getOrDefault(bid.getSlot(), Set.of())
         .contains(bid.getBuilderIndex())) {
+      LOG.trace(
+          "Already received a bid from builder with index {} at slot {}",
+          bid.getBuilderIndex(),
+          bid.getSlot());
       return completedFuture(
           ignore(
               "Already received a bid from builder with index %s at slot %s",
@@ -141,35 +155,29 @@ public class ExecutionPayloadBidGossipValidator {
 
       if (bid.getValue().isLessThan(minRequiredBid)) {
         LOG.trace(
-            "Bid value {} does not meet minimum increment threshold ({}%). Current highest: {}, minimum required: {}",
-            bid.getValue(), minBidIncrementPercentage, existingBidValue, minRequiredBid);
+            "Bid value {} ETH does not meet minimum increment threshold ({}%). Current highest: {} ETH, minimum required: {} ETH",
+            () -> gweiToEth(bid.getValue()),
+            () -> minBidIncrementPercentage,
+            () -> gweiToEth(existingBidValue),
+            () -> gweiToEth(minRequiredBid));
         return completedFuture(
             ignore(
-                "Bid value %s does not meet minimum increment threshold (%s%%). Current highest: %s, minimum required: %s",
-                bid.getValue(), minBidIncrementPercentage, existingBidValue, minRequiredBid));
+                "Bid value %s ETH does not meet minimum increment threshold (%s%%). Current highest: %s ETH, minimum required: %s ETH",
+                gweiToEth(bid.getValue()),
+                minBidIncrementPercentage,
+                gweiToEth(existingBidValue),
+                gweiToEth(minRequiredBid)));
       }
     }
 
     /*
-     * [IGNORE] bid.parent_block_hash is the block hash of a known execution payload in fork choice.
-     */
-    if (!gossipValidationHelper.isBlockHashKnown(
-        bid.getParentBlockHash(), bid.getParentBlockRoot())) {
-      LOG.trace(
-          "Bid's parent block hash {} is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
-          bid.getParentBlockHash());
-      return completedFuture(
-          saveForFuture(
-              "Bid's parent block hash %s is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
-              bid.getParentBlockHash()));
-    }
-
-    /*
-     * [IGNORE] bid.gas_limit is compatible with proposer_preferences.target_gas_limit under the
-     * EIP-1559 transition rule from the parent execution payload gas limit.
+     * [IGNORE] bid.parent_block_hash is the block hash of a known execution payload in fork choice
+     * and is_gas_limit_target_compatible(parent_gas_limit, bid.gas_limit, proposer_preferences.target_gas_limit)
+     * is True where parent_gas_limit is the gas_limit of that execution payload.
      */
     final Optional<UInt64> maybeParentGasLimit =
-        gossipValidationHelper.getGasLimitForExecutionPayload(bid.getParentBlockRoot());
+        gossipValidationHelper.getGasLimitForExecutionPayload(
+            bid.getParentBlockRoot(), bid.getParentBlockHash());
     if (maybeParentGasLimit.isEmpty()) {
       LOG.trace(
           "Gas limit for parent execution payload with block hash {} is unavailable. It will be saved for future processing",
@@ -182,9 +190,14 @@ public class ExecutionPayloadBidGossipValidator {
     final UInt64 parentGasLimit = maybeParentGasLimit.get();
     final UInt64 targetGasLimit = proposerPreferences.get().getTargetGasLimit();
     if (!isGasLimitTargetCompatible(parentGasLimit, bid.getGasLimit(), targetGasLimit)) {
+      LOG.trace(
+          "Bid gas limit {} is not compatible with parent gas limit {} and proposer preferences target gas limit {}",
+          bid.getGasLimit(),
+          parentGasLimit,
+          targetGasLimit);
       return completedFuture(
           ignore(
-              "Bid gas_limit %s is not compatible with parent gas_limit %s and proposer preferences target_gas_limit %s",
+              "Bid gas limit %s is not compatible with parent gas limit %s and proposer preferences target gas limit %s",
               bid.getGasLimit(), parentGasLimit, targetGasLimit));
     }
 
@@ -239,11 +252,11 @@ public class ExecutionPayloadBidGossipValidator {
                   gossipValidationHelper.getRandaoMixForCurrentEpoch(state, bid.getSlot());
               if (!bid.getPrevRandao().equals(expectedRandaoMix)) {
                 LOG.trace(
-                    "Bid prev_randao {} does not match expected RANDAO mix {}",
+                    "Bid prev randao {} does not match expected RANDAO mix {}",
                     bid.getPrevRandao(),
                     expectedRandaoMix);
                 return reject(
-                    "Bid prev_randao %s does not match expected RANDAO mix %s",
+                    "Bid prev randao %s does not match expected RANDAO mix %s",
                     bid.getPrevRandao(), expectedRandaoMix);
               }
 
@@ -267,12 +280,12 @@ public class ExecutionPayloadBidGossipValidator {
               if (!gossipValidationHelper.builderHasEnoughBalanceForBid(
                   bid.getValue(), bid.getBuilderIndex(), state, bid.getSlot())) {
                 LOG.trace(
-                    "Bid value {} exceeds builder with index {} excess balance",
-                    bid.getValue(),
-                    bid.getBuilderIndex());
+                    "Bid value {} ETH exceeds builder with index {} excess balance",
+                    () -> gweiToEth(bid.getValue()),
+                    bid::getBuilderIndex);
                 return ignore(
-                    "Bid value %s exceeds builder with index %s excess balance",
-                    bid.getValue(), bid.getBuilderIndex());
+                    "Bid value %s ETH exceeds builder with index %s excess balance",
+                    gweiToEth(bid.getValue()), bid.getBuilderIndex());
               }
 
               /*
@@ -310,11 +323,17 @@ public class ExecutionPayloadBidGossipValidator {
               if (!wasBidAccepted(bidValue, existingBidRef.get(), actualHighestBid)) {
                 final UInt64 minRequired = calculateMinimumRequiredBid(actualHighestBid);
                 LOG.trace(
-                    "Bid value {} does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {}, minimum required: {}",
-                    bidValue, minBidIncrementPercentage, actualHighestBid, minRequired);
+                    "Bid value {} ETH does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {} ETH, minimum required: {} ETH",
+                    () -> gweiToEth(bidValue),
+                    () -> minBidIncrementPercentage,
+                    () -> gweiToEth(actualHighestBid),
+                    () -> gweiToEth(minRequired));
                 return ignore(
-                    "Bid value %s does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s, minimum required: %s",
-                    bidValue, minBidIncrementPercentage, actualHighestBid, minRequired);
+                    "Bid value %s ETH does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s ETH, minimum required: %s ETH",
+                    gweiToEth(bidValue),
+                    minBidIncrementPercentage,
+                    gweiToEth(actualHighestBid),
+                    gweiToEth(minRequired));
               }
 
               return ACCEPT;
