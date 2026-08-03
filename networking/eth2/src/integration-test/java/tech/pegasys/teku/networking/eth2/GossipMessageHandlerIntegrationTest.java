@@ -92,7 +92,7 @@ public class GossipMessageHandlerIntegrationTest {
                       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
     NodeManager node3 = createNodeManager(networkBuilder3);
-    node2.getChainUpdater().setCurrentSlot(blockSlot);
+    node3.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
     waitFor(node1.connect(node2));
