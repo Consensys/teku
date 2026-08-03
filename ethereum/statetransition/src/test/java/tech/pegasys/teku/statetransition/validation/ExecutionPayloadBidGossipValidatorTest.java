@@ -106,9 +106,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .thenReturn(Optional.of(proposerPreferences));
 
     when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(true);
-    when(gossipValidationHelper.isBlockHashKnown(parentBlockHash, parentBlockRoot))
-        .thenReturn(true);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
         .thenReturn(Optional.of(bid.getGasLimit()));
     when(gossipValidationHelper.getSlotForBlockRoot(parentBlockRoot))
         .thenReturn(Optional.of(slot.decrement()));
@@ -189,7 +187,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final UInt64 targetGasLimit = UInt64.valueOf(60_000_001);
     final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
     mockProposerPreferences(bidWithGasLimit, targetGasLimit);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
         .thenReturn(Optional.of(parentGasLimit));
 
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
@@ -206,7 +204,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final UInt64 targetGasLimit = UInt64.valueOf(100_000_000);
     final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
     mockProposerPreferences(bidWithGasLimit, targetGasLimit);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
         .thenReturn(Optional.of(parentGasLimit));
 
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit)).isCompletedWithValue(ACCEPT);
@@ -219,7 +217,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final UInt64 targetGasLimit = UInt64.valueOf(100_000_000);
     final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
     mockProposerPreferences(bidWithGasLimit, targetGasLimit);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
         .thenReturn(Optional.of(parentGasLimit));
 
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit))
@@ -236,7 +234,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final UInt64 targetGasLimit = UInt64.valueOf(30_000_000);
     final SignedExecutionPayloadBid bidWithGasLimit = signedBidWithGasLimit(bidGasLimit);
     mockProposerPreferences(bidWithGasLimit, targetGasLimit);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
         .thenReturn(Optional.of(parentGasLimit));
 
     assertThatSafeFuture(bidValidator.validate(bidWithGasLimit)).isCompletedWithValue(ACCEPT);
@@ -244,7 +242,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
   @TestTemplate
   void shouldSaveForFuture_whenParentGasLimitIsUnavailable() {
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
         .thenReturn(Optional.empty());
 
     assertThatSafeFuture(bidValidator.validate(signedBid))
@@ -298,13 +296,13 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldSaveForFuture_whenParentBlockHashIsUnknown() {
-    when(gossipValidationHelper.isBlockHashKnown(parentBlockHash, parentBlockRoot))
-        .thenReturn(false);
+  void shouldSaveForFuture_whenParentExecutionContextIsUnknown() {
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash))
+        .thenReturn(Optional.empty());
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             saveForFuture(
-                "Bid's parent block hash %s is not the block hash of a known execution payload in fork choice. The bid will be saved for future processing",
+                "Gas limit for parent execution payload with block hash %s is unavailable. The bid will be saved for future processing",
                 parentBlockHash));
   }
 
@@ -387,7 +385,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
   @TestTemplate
   void shouldIgnoreSeenBid() {
     assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
-    verify(gossipValidationHelper).isBlockHashKnown(parentBlockHash, parentBlockRoot);
+    verify(gossipValidationHelper).getGasLimitForExecutionPayload(parentBlockRoot, parentBlockHash);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper)
         .isSignatureValidWithRespectToBuilderIndex(any(), any(), any(), any());
@@ -602,10 +600,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(proposerPreferencesManager.getProposerPreferences(slot))
         .thenReturn(Optional.of(matchingPreferences));
     when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(true);
-    when(gossipValidationHelper.isBlockHashKnown(
-            message.getParentBlockHash(), message.getParentBlockRoot()))
-        .thenReturn(true);
-    when(gossipValidationHelper.getGasLimitForExecutionPayload(message.getParentBlockRoot()))
+    when(gossipValidationHelper.getGasLimitForExecutionPayload(
+            message.getParentBlockRoot(), message.getParentBlockHash()))
         .thenReturn(Optional.of(message.getGasLimit()));
     when(gossipValidationHelper.getSlotForBlockRoot(message.getParentBlockRoot()))
         .thenReturn(Optional.of(slot.decrement()));

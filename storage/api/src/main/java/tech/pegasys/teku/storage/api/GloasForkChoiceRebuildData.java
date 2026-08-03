@@ -22,11 +22,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  * restart.
  *
  * <p>{@code payloadParentBlockHash} replays the modified {@code on_block(...)} parent resolution.
- * {@code payloadBlockHash} identifies the committed/revealed payload. {@code payloadBlockNumber} is
- * only present when the execution payload has also been persisted and a FULL node can be recreated
- * during rebuild.
+ * {@code payloadBlockHash} identifies the committed/revealed payload. {@code payloadBlockNumber}
+ * and {@code payloadGasLimit} are only present when the execution payload has also been persisted
+ * and a FULL node can be recreated during rebuild.
  */
 public record GloasForkChoiceRebuildData(
     Bytes32 payloadParentBlockHash,
     Bytes32 payloadBlockHash,
-    Optional<UInt64> payloadBlockNumber) {}
+    Optional<UInt64> payloadBlockNumber,
+    Optional<UInt64> payloadGasLimit) {
+
+  public GloasForkChoiceRebuildData(
+      final Bytes32 payloadParentBlockHash,
+      final Bytes32 payloadBlockHash,
+      final Optional<UInt64> payloadBlockNumber) {
+    this(payloadParentBlockHash, payloadBlockHash, payloadBlockNumber, Optional.empty());
+  }
+}
