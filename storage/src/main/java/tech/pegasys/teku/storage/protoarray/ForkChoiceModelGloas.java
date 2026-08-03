@@ -637,7 +637,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   /**
-   * Spec mapping: `should_build_on_full(store, head)`.
+   * Spec mapping: `should_build_on_full(store, head, slot)`.
    *
    * <p>The proposer calls this after fork choice has selected a non-pending head, before choosing
    * whether block production should use the parent's FULL payload variant or reorg to its EMPTY
@@ -653,7 +653,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   public boolean shouldBuildOnFull(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
-      final UInt64 currentSlot,
+      final UInt64 slot,
       final ForkChoiceNode head) {
     checkArgument(
         head.payloadStatus() != ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING,
@@ -673,7 +673,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         .orElse(true)) {
       return false;
     }
-    if (!headIsFromPreviousSlot(head, protoArray, currentSlot)) {
+    if (!headIsFromPreviousSlot(head, protoArray, slot)) {
       return true;
     }
     if (payloadDataAvailability(headNodeVariants.get(), false)) {
@@ -686,11 +686,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   private boolean headIsFromPreviousSlot(
-      final ForkChoiceNode head, final ProtoArray protoArray, final UInt64 currentSlot) {
+      final ForkChoiceNode head, final ProtoArray protoArray, final UInt64 slot) {
     return protoArray
         .getNode(head)
         .map(ProtoNode::getBlockSlot)
-        .map(blockSlot -> blockSlot.plus(1).equals(currentSlot))
+        .map(blockSlot -> blockSlot.plus(1).equals(slot))
         .orElse(false);
   }
 

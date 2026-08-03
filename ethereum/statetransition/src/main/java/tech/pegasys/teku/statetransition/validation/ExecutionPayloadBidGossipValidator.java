@@ -49,9 +49,9 @@ public class ExecutionPayloadBidGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final SigningRootUtil signingRootUtil;
   private final int minBidIncrementPercentage;
-  private final Map<UInt64, Set<UInt64>> seenExecutionPayloadBids =
+  private final Map<UInt64, Set<BuilderAndParent>> seenExecutionPayloadBids =
       LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_BUILDERS_BIDS);
-  private final Map<SlotAndBlockHash, UInt64> highestBids =
+  private final Map<BidParent, UInt64> highestBids =
       LimitedMap.createSynchronizedLRU(HIGHEST_BID_SET_SIZE);
 
   private final ProposerPreferencesManager proposerPreferencesManager;
@@ -123,15 +123,19 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
-     * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.
+     * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for the tuple
+     * (bid.slot, bid.parent_block_hash, bid.parent_block_root).
      */
-    if (seenExecutionPayloadBids
-        .getOrDefault(bid.getSlot(), Set.of())
-        .contains(bid.getBuilderIndex())) {
+    final BuilderAndParent builderAndParent =
+        new BuilderAndParent(
+            bid.getBuilderIndex(), bid.getParentBlockHash(), bid.getParentBlockRoot());
+    if (seenExecutionPayloadBids.getOrDefault(bid.getSlot(), Set.of()).contains(builderAndParent)) {
       LOG.trace(
-          "Already received a bid from builder with index {} at slot {}",
+          "Already received a bid from builder with index {} at slot {} for parent hash {} and parent root {}",
           bid.getBuilderIndex(),
-          bid.getSlot());
+          bid.getSlot(),
+          bid.getParentBlockHash(),
+          bid.getParentBlockRoot());
       return completedFuture(
           ignore(
               "Already received a bid from builder with index %s at slot %s",
@@ -139,7 +143,8 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
-     * [IGNORE] this bid is the highest value bid seen for the corresponding slot and the given parent block hash.
+     * [IGNORE] this bid is the highest value bid seen for the tuple
+     * (bid.slot, bid.parent_block_hash, bid.parent_block_root).
      *
      * Note: Implementations SHOULD include DoS prevention measures to
      * mitigate spam from malicious builders submitting numerous bids with minimal value increments.
@@ -147,8 +152,8 @@ public class ExecutionPayloadBidGossipValidator {
      * minimum threshold, or (2) forwarding only the highest observed bid at regular time intervals.
      *
      */
-    final SlotAndBlockHash bidValueKey =
-        new SlotAndBlockHash(bid.getSlot(), bid.getParentBlockHash());
+    final BidParent bidValueKey =
+        new BidParent(bid.getSlot(), bid.getParentBlockHash(), bid.getParentBlockRoot());
     final UInt64 existingBidValue = highestBids.getOrDefault(bidValueKey, UInt64.ZERO);
     if (!existingBidValue.isZero()) {
       final UInt64 minRequiredBid = calculateMinimumRequiredBid(existingBidValue);
@@ -202,7 +207,16 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
-     * [IGNORE] bid.parent_block_root is the hash tree root of a known beacon block in fork choice.
+     * [IGNORE] The bid is compatible with the current head branch, i.e.
+     * is_bid_compatible_with_head(store, bid) returns True.
+     */
+    if (!gossipValidationHelper.isBidCompatibleWithHead(bid)) {
+      LOG.trace("Bid is not compatible with the current head branch");
+      return completedFuture(ignore("Bid is not compatible with the current head branch"));
+    }
+
+    /*
+     * Retrieve the bid's parent block slot for the remaining validation rules.
      */
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(bid.getParentBlockRoot());
@@ -298,11 +312,13 @@ public class ExecutionPayloadBidGossipValidator {
 
               if (!seenExecutionPayloadBids
                   .computeIfAbsent(bid.getSlot(), __ -> ConcurrentHashMap.newKeySet())
-                  .add(bid.getBuilderIndex())) {
+                  .add(builderAndParent)) {
                 LOG.trace(
-                    "Another payload execution bid from Builder with index {} already processed while validating bid for slot {}",
+                    "Another payload execution bid from Builder with index {} already processed while validating bid for slot {}, parent hash {}, and parent root {}",
                     bid.getBuilderIndex(),
-                    bid.getSlot());
+                    bid.getSlot(),
+                    bid.getParentBlockHash(),
+                    bid.getParentBlockRoot());
                 return ignore(
                     "Another payload execution bid from Builder with index %s already processed while validating bid for slot %s",
                     bid.getBuilderIndex(), bid.getSlot());
@@ -431,5 +447,7 @@ public class ExecutionPayloadBidGossipValidator {
     return gasLimit.equals(minGasLimit);
   }
 
-  record SlotAndBlockHash(UInt64 slot, Bytes32 blockHash) {}
+  record BuilderAndParent(UInt64 builderIndex, Bytes32 parentBlockHash, Bytes32 parentBlockRoot) {}
+
+  record BidParent(UInt64 slot, Bytes32 parentBlockHash, Bytes32 parentBlockRoot) {}
 }

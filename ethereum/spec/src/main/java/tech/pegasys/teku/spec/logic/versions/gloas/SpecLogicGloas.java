@@ -190,7 +190,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
-        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+        new LightClientUtil(
+            beaconStateAccessors, syncCommitteeUtil, schemaDefinitions, miscHelpers, config);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
     final WithdrawalsHelpersGloas withdrawalsHelpers =

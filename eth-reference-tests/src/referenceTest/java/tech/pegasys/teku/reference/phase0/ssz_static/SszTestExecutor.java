@@ -141,13 +141,35 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas)
                           .getSyncAggregatorSelectionDataSchema()))
-          .put("ssz_static/LightClientBootstrap", IGNORE_TESTS)
-          .put("ssz_static/LightClientFinalityUpdate", IGNORE_TESTS)
-          .put("ssz_static/LightClientHeader", IGNORE_TESTS)
-          .put("ssz_static/LightClientOptimisticUpdate", IGNORE_TESTS)
+          .put(
+              "ssz_static/LightClientBootstrap",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas).getLightClientBootstrapSchema()))
+          .put(
+              "ssz_static/LightClientFinalityUpdate",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas)
+                          .getLightClientFinalityUpdateSchema()))
+          .put(
+              "ssz_static/LightClientHeader",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas).getLightClientHeaderSchema()))
+          .put(
+              "ssz_static/LightClientOptimisticUpdate",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas)
+                          .getLightClientOptimisticUpdateSchema()))
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
-          .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
+          .put(
+              "ssz_static/LightClientUpdate",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas).getLightClientUpdateSchema()))
 
           // TODO: Partial messages (not yet implemented)
           .put("ssz_static/PartialDataColumnHeader", IGNORE_TESTS)

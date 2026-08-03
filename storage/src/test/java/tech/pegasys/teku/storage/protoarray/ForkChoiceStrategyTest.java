@@ -1397,10 +1397,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   private boolean shouldBuildOnFull(
-      final GloasPayloadDecisionFixture fixture,
-      final UInt64 currentSlot,
-      final ForkChoiceNode head) {
-    return fixture.strategy().shouldBuildOnFull(fixture.store(), currentSlot, head);
+      final GloasPayloadDecisionFixture fixture, final UInt64 slot, final ForkChoiceNode head) {
+    return fixture.strategy().shouldBuildOnFull(fixture.store(), slot, head);
   }
 
   private IntSet ptcPositions(final int count) {
