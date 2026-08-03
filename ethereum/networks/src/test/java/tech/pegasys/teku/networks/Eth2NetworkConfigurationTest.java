@@ -42,7 +42,6 @@ public class Eth2NetworkConfigurationTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getDefinedNetworks")
-  @SuppressWarnings("deprecation")
   public void build_shouldBuildKnownNetworks(
       final Eth2Network network, final NetworkDefinition networkDefinition) {
     final Eth2NetworkConfiguration networkConfig =
@@ -51,34 +50,25 @@ public class Eth2NetworkConfigurationTest {
         Eth2NetworkConfiguration.builder();
     networkDefinition.configure(networkConfigBuilder);
 
-    if (!network.configName().equals(EPHEMERY.configName())) {
-      assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
-    } else {
-      assertThat(networkConfig.getConstants()).isEqualTo(EPHEMERY_CONFIG_URL);
-    }
     assertThat(networkConfigBuilder.build()).isEqualTo(networkConfig);
     assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   public void builder_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder(url.toString()).build();
-    assertThat(config.getConstants()).isEqualTo(url.toString());
     assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   public void constants_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder().constants(url.toString()).build();
-    assertThat(config.getConstants()).isEqualTo(url.toString());
     assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
   }
 
