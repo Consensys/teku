@@ -156,6 +156,7 @@ class BlockProductionContextTest {
             blockAndState.getStateRoot(),
             blockAndState.getExecutionBlockNumber().orElse(UInt64.ZERO),
             blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+            UInt64.ZERO,
             ProtoNodeValidationStatus.VALID,
             spec.calculateBlockCheckpoints(blockAndState.getState()),
             UInt64.ZERO,

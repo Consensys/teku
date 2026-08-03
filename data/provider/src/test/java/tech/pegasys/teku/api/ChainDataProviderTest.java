@@ -136,6 +136,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
                 bestBlock.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+                bestBlock.getExecutionGasLimit().orElse(ProtoNode.NO_EXECUTION_GAS_LIMIT),
                 ProtoNodeValidationStatus.VALID,
                 spec.calculateBlockCheckpoints(bestBlock.getState()),
                 ZERO,
@@ -161,6 +162,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             Bytes32.fromHexString("0x5555"),
             UInt64.valueOf(42),
             Bytes32.fromHexString("0x6666"),
+            ZERO,
             ProtoNodeValidationStatus.OPTIMISTIC,
             new BlockCheckpoints(
                 justifiedCheckpoint, finalizedCheckpoint, justifiedCheckpoint, finalizedCheckpoint),

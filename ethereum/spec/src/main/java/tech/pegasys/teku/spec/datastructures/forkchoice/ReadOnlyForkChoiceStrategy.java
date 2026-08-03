@@ -29,6 +29,11 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> executionBlockHash(Bytes32 blockRoot);
 
+  default Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final Bytes32 blockRoot, final Bytes32 blockHash) {
+    return Optional.empty();
+  }
+
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
   /**

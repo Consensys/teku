@@ -292,6 +292,7 @@ public class GloasExecutionPayloadBidCircuitBreakerTest {
         dataStructureUtil.randomBytes32(),
         UInt64.ZERO,
         dataStructureUtil.randomBytes32(),
+        UInt64.ZERO,
         validationStatus,
         mock(BlockCheckpoints.class),
         UInt64.ZERO,

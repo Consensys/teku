@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -53,6 +54,8 @@ class GossipForkManagerTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x12345678446687");
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil gloasDataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalGloas());
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
@@ -301,6 +304,25 @@ class GossipForkManagerTest {
     verify(firstFork, never()).publishBlock(thirdForkBlock);
     verify(secondFork, never()).publishBlock(thirdForkBlock);
     verify(thirdFork).publishBlock(thirdForkBlock);
+  }
+
+  @Test
+  void shouldPublishExecutionPayloadBidToForkForBidSlot() {
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(1);
+    final GossipForkSubscriptions thirdFork = forkAtEpoch(2);
+    final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
+    manager.configureGossipForEpoch(UInt64.ZERO);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final SignedExecutionPayloadBid bid =
+        gloasDataStructureUtil.randomSignedExecutionPayloadBid(
+            gloasDataStructureUtil.randomExecutionPayloadBid(slot, UInt64.ONE));
+
+    manager.publishExecutionPayloadBid(bid);
+
+    verify(firstFork, never()).publishExecutionPayloadBid(bid);
+    verify(secondFork).publishExecutionPayloadBid(bid);
+    verify(thirdFork, never()).publishExecutionPayloadBid(bid);
   }
 
   @Test
