@@ -94,7 +94,6 @@ public class VoluntaryExitGossipIntegrationTest {
     // Create voluntary exit
     final SignedBlockAndState blockAndState =
         node1.getChainBuilder().generateBlockAtSlot(blockSlot);
-    node1.getChainUpdater().saveBlock(blockAndState);
     node1.getChainUpdater().updateBestBlock(blockAndState);
     final SafeFuture<Optional<BeaconState>> stateFuture =
         node1.storageClient().getStore().retrieveBlockState(blockAndState.getRoot());

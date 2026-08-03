@@ -173,7 +173,6 @@ public class GossipMessageHandlerIntegrationTest {
         node1
             .getChainBuilder()
             .generateBlockAtSlot(blockSlot, BlockOptions.create().setWrongProposer(true));
-    node1.getChainUpdater().saveBlock(newBlockAndState);
     node1.getChainUpdater().updateBestBlock(newBlockAndState);
     node1.gossipBlock(newBlockAndState.getBlock());
 

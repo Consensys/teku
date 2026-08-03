@@ -106,7 +106,6 @@ public class BlsToExecutionChangeGossipIntegrationTest {
     chainUpdater.initializeGenesis();
     // Advancing chain to bypass "optimistic genesis" issue that prevents some gossip subscriptions
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(1);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     return NodeManager.create(
         spec,

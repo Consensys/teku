@@ -68,7 +68,6 @@ public class BlockPropagationIntegrationTest {
     for (int i = 0; i < 3; i++) {
       currentSlot = currentSlot.plus(UInt64.ONE);
       final SignedBlockAndState block = node1.getChainBuilder().generateBlockAtSlot(currentSlot);
-      node1.getChainUpdater().saveBlock(block);
       node1.getChainUpdater().updateBestBlock(block);
       blocksToFetch.add(block.getBlock());
     }

@@ -516,7 +516,6 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
         storageSystem
             .chainBuilder()
             .generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
-    storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
     final Optional<ObjectAndMetaData<List<Attestation>>> response =
