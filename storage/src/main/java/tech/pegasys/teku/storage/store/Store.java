@@ -789,18 +789,15 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
-    if (!containsBlock(blockRoot)) {
-      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
-    }
+    // No containsBlock check here: envelopes for canonical blocks are retained after finalization
+    // prunes their block root from fork choice, and the provider is backed by the in-memory hot
+    // envelopes plus the finalized DB column, so it can resolve both.
     return executionPayloadProvider.getExecutionPayload(blockRoot);
   }
 
   @Override
   public SafeFuture<Optional<SignedBlindedExecutionPayloadEnvelope>>
       retrieveSignedBlindedExecutionPayload(final Bytes32 blockRoot) {
-    if (!containsBlock(blockRoot)) {
-      return EmptyStoreResults.EMPTY_SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
-    }
     return blindedExecutionPayloadProvider.getBlindedExecutionPayload(blockRoot);
   }
 
