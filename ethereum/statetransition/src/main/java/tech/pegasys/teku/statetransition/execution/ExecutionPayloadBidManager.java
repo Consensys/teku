@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ExecutionPayloadBidManager {
@@ -40,6 +41,10 @@ public interface ExecutionPayloadBidManager {
         }
 
         @Override
+        public void subscribeOperationAdded(
+            final OperationAddedSubscriber<SignedExecutionPayloadBid> subscriber) {}
+
+        @Override
         public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
             final Bytes32 parentRoot,
             final Bytes32 parentBlockHash,
@@ -53,6 +58,8 @@ public interface ExecutionPayloadBidManager {
 
   SafeFuture<InternalValidationResult> validateAndAddBid(
       SignedExecutionPayloadBid signedBid, RemoteBidOrigin remoteBidOrigin);
+
+  void subscribeOperationAdded(OperationAddedSubscriber<SignedExecutionPayloadBid> subscriber);
 
   SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       Bytes32 parentRoot,
