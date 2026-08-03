@@ -305,18 +305,18 @@ public class GossipValidationHelperTest {
       final SpecContext specContext) {
     assumeThat(specContext.getSpecMilestone()).isEqualTo(SpecMilestone.GLOAS);
     final RecentChainData recentChainData = mock(RecentChainData.class);
-    final UpdatableStore store = mock(UpdatableStore.class);
     final SignedExecutionPayloadEnvelope executionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
     final Bytes32 blockRoot = executionPayload.getBeaconBlockRoot();
+    final Bytes32 blockHash = executionPayload.getMessage().getPayload().getBlockHash();
+    final UInt64 gasLimit = executionPayload.getMessage().getPayload().getGasLimit();
 
-    when(recentChainData.getStore()).thenReturn(store);
-    when(store.getExecutionPayloadIfAvailable(blockRoot)).thenReturn(Optional.of(executionPayload));
+    when(recentChainData.getExecutionGasLimitForBlockRootAndHash(blockRoot, blockHash))
+        .thenReturn(Optional.of(gasLimit));
 
     final GossipValidationHelper helper =
         new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
-    assertThat(helper.getGasLimitForExecutionPayload(blockRoot))
-        .contains(executionPayload.getMessage().getPayload().getGasLimit());
+    assertThat(helper.getGasLimitForExecutionPayload(blockRoot, blockHash)).contains(gasLimit);
   }
 
   @TestTemplate
@@ -324,15 +324,15 @@ public class GossipValidationHelperTest {
       final SpecContext specContext) {
     assumeThat(specContext.getSpecMilestone()).isEqualTo(SpecMilestone.GLOAS);
     final RecentChainData recentChainData = mock(RecentChainData.class);
-    final UpdatableStore store = mock(UpdatableStore.class);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 blockHash = dataStructureUtil.randomBytes32();
 
-    when(recentChainData.getStore()).thenReturn(store);
-    when(store.getExecutionPayloadIfAvailable(blockRoot)).thenReturn(Optional.empty());
+    when(recentChainData.getExecutionGasLimitForBlockRootAndHash(blockRoot, blockHash))
+        .thenReturn(Optional.empty());
 
     final GossipValidationHelper helper =
         new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
-    assertThat(helper.getGasLimitForExecutionPayload(blockRoot)).isEmpty();
+    assertThat(helper.getGasLimitForExecutionPayload(blockRoot, blockHash)).isEmpty();
   }
 
   @TestTemplate

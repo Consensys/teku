@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -211,6 +213,43 @@ class CombinedChainDataClientTest {
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
     assertThat(incorrectResult).isEmpty();
+  }
+
+  @Test
+  void getsDataColumnSidecarsBySlotAndBlockRoot() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final DataColumnSlotAndIdentifier firstIdentifier =
+        new DataColumnSlotAndIdentifier(slot, blockRoot, UInt64.ZERO);
+    final DataColumnSlotAndIdentifier secondIdentifier =
+        new DataColumnSlotAndIdentifier(slot, blockRoot, UInt64.ONE);
+    final DataColumnSlotAndIdentifier otherBlockIdentifier =
+        new DataColumnSlotAndIdentifier(slot, dataStructureUtil.randomBytes32(), UInt64.ZERO);
+    final DataColumnSidecar firstSidecar = mock(DataColumnSidecar.class);
+    final DataColumnSidecar secondSidecar = mock(DataColumnSidecar.class);
+
+    when(historicalChainData.getDataColumnIdentifiers(slot))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(firstIdentifier, otherBlockIdentifier, secondIdentifier)));
+    when(historicalChainData.getSidecar(any()))
+        .thenAnswer(
+            args -> {
+              final DataColumnSlotAndIdentifier identifier = args.getArgument(0);
+              if (identifier.equals(firstIdentifier)) {
+                return SafeFuture.completedFuture(Optional.of(firstSidecar));
+              } else if (identifier.equals(secondIdentifier)) {
+                return SafeFuture.completedFuture(Optional.of(secondSidecar));
+              }
+              return SafeFuture.completedFuture(Optional.empty());
+            });
+
+    final List<DataColumnSidecar> result =
+        SafeFutureAssert.safeJoin(
+            client.getDataColumnSidecars(new SlotAndBlockRoot(slot, blockRoot), List.of()));
+
+    assertThat(result).containsExactly(firstSidecar, secondSidecar);
+    verify(historicalChainData, never()).getSidecar(otherBlockIdentifier);
   }
 
   @Test

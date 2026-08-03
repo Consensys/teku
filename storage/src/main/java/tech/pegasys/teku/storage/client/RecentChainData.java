@@ -683,6 +683,13 @@ public abstract class RecentChainData
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
   }
 
+  public Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final Bytes32 blockRoot, final Bytes32 blockHash) {
+    return getForkChoiceStrategy()
+        .flatMap(
+            forkChoice -> forkChoice.getExecutionGasLimitForBlockRootAndHash(blockRoot, blockHash));
+  }
+
   public Optional<Bytes32> getExecutionBlockHashForBlock(final ForkChoiceNode block) {
     return getForkChoiceStrategy()
         .flatMap(forkChoice -> forkChoice.getNodeData(block))

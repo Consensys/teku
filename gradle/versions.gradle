@@ -1,6 +1,10 @@
 dependencyManagement {
 	imports {
 		mavenBom 'io.netty:netty-bom:4.2.15.Final'
+		// Remove these pins when Javalin uses Jetty 12.1.11 or later.
+		// Jetty 12.1.11 fixes https://github.com/jetty/jetty.project/issues/15226.
+		mavenBom 'org.eclipse.jetty:jetty-bom:12.1.11'
+		mavenBom 'org.eclipse.jetty.ee10:jetty-ee10-bom:12.1.11'
 	}
 	dependencies {
 		dependency 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
@@ -30,6 +34,7 @@ dependencyManagement {
 
 		dependencySet(group: 'com.squareup.okhttp3', version: '4.12.0') {
 			entry 'okhttp'
+			entry 'logging-interceptor'
 			entry 'mockwebserver'
 		}
 
@@ -120,11 +125,8 @@ dependencyManagement {
 		dependency 'org.fusesource.leveldbjni:leveldbjni:1.8'
 		dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-		dependencySet(group: "org.web3j", version: "4.14.0") {
+		dependencySet(group: "org.web3j", version: "6.0.0") {
 			entry 'core'
-			entry 'abi'
-			entry 'crypto'
-			entry 'utils'
 		}
 
 		dependency 'org.xerial.snappy:snappy-java:1.1.10.7'

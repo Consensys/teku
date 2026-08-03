@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ExecutionPayloadBidManager {
@@ -38,11 +41,16 @@ public interface ExecutionPayloadBidManager {
         }
 
         @Override
+        public void subscribeOperationAdded(
+            final OperationAddedSubscriber<SignedExecutionPayloadBid> subscriber) {}
+
+        @Override
         public SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
             final Bytes32 parentRoot,
             final Bytes32 parentBlockHash,
             final BeaconState state,
             final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
+            final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           return SafeFuture.completedFuture(null);
         }
@@ -51,10 +59,13 @@ public interface ExecutionPayloadBidManager {
   SafeFuture<InternalValidationResult> validateAndAddBid(
       SignedExecutionPayloadBid signedBid, RemoteBidOrigin remoteBidOrigin);
 
+  void subscribeOperationAdded(OperationAddedSubscriber<SignedExecutionPayloadBid> subscriber);
+
   SafeFuture<SignedExecutionPayloadBid> getBidForBlock(
       Bytes32 parentRoot,
       Bytes32 parentBlockHash,
       BeaconState state,
       SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
+      Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 }

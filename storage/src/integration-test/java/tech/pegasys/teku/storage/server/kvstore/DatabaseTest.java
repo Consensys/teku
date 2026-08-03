@@ -682,7 +682,8 @@ public class DatabaseTest {
             new GloasForkChoiceRebuildData(
                 bid.getParentBlockHash(),
                 bid.getBlockHash(),
-                Optional.of(executionPayload.getMessage().getPayload().getBlockNumber())));
+                Optional.of(executionPayload.getMessage().getPayload().getBlockNumber()),
+                Optional.of(executionPayload.getMessage().getPayload().getGasLimit())));
   }
 
   @TestTemplate
