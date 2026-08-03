@@ -13,17 +13,23 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas;
 
-import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX_GLOAS;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.NEXT_SYNC_COMMITTEE_GINDEX_GLOAS;
 
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class LightClientBootstrapSchemaGloas extends LightClientBootstrapSchema {
-  public LightClientBootstrapSchemaGloas(
+public class LightClientUpdateSchemaGloas extends LightClientUpdateSchema {
+  public LightClientUpdateSchemaGloas(
       final SpecConfigGloas specConfigGloas,
       final SchemaRegistry schemaRegistry,
       final String schemaName) {
-    super(specConfigGloas, CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS, schemaRegistry, schemaName);
+    super(
+        specConfigGloas,
+        schemaRegistry,
+        NEXT_SYNC_COMMITTEE_GINDEX_GLOAS,
+        FINALIZED_ROOT_GINDEX_GLOAS,
+        schemaName);
   }
 }
