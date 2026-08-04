@@ -15,14 +15,23 @@ package tech.pegasys.teku.statetransition.lightclient;
 
 import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 
 public class LightClientUpdateStore {
-//  private final ConcurrentSkipListMap<UInt64, LightClientUpdate> lightClientUpdateCache =
-//      new ConcurrentSkipListMap<>();
+  private final ConcurrentSkipListMap<UInt64, LightClientUpdate> lightClientUpdateCache =
+      new ConcurrentSkipListMap<>();
+
+  private final Spec spec;
+
+  public LightClientUpdateStore(final Spec spec) {
+    this.spec = spec;
+  }
+
+  public
 
   /** {@code is_better_update}. */
-  public boolean isBetterUpdate(
+  private boolean isBetterUpdate(
       final LightClientUpdate newUpdate, final LightClientUpdate oldUpdate) {
     final int maxActiveParticipants = newUpdate.getSyncAggregate().getSyncCommitteeBits().size();
     final int newUpdateActiveParticipants =
@@ -43,6 +52,68 @@ public class LightClientUpdateStore {
       return newUpdateActiveParticipants > oldUpdateActiveParticipants;
     }
 
-    return true;
+    UInt64 newUpdateSignatureSlot = newUpdate.getSignatureSlot().get();
+    UInt64 oldUpdateSignatureSlot = oldUpdate.getSignatureSlot().get();
+    UInt64 newUpdateAttestedSlot = newUpdate.getAttestedHeader().getBeacon().getSlot();
+    UInt64 oldUpdateAttestedSlot = oldUpdate.getAttestedHeader().getBeacon().getSlot();
+
+    boolean newUpdateHasRelevantSyncCommittee =
+        isSyncCommitteeUpdate(newUpdate)
+            && (syncCommitteePeriodAtSlot(newUpdateAttestedSlot)
+                == syncCommitteePeriodAtSlot(newUpdateSignatureSlot));
+    boolean oldUpdateHasRelevantSyncCommittee =
+        isSyncCommitteeUpdate(oldUpdate)
+            && (syncCommitteePeriodAtSlot(oldUpdateAttestedSlot)
+                == syncCommitteePeriodAtSlot(oldUpdateSignatureSlot));
+
+    if (newUpdateHasRelevantSyncCommittee != oldUpdateHasRelevantSyncCommittee) {
+      return newUpdateHasRelevantSyncCommittee;
+    }
+
+    boolean newUpdateHasFinality = isFinalityUpdate(newUpdate);
+    boolean oldUpdateHasFinality = isFinalityUpdate(oldUpdate);
+
+    if (newUpdateHasFinality != oldUpdateHasFinality) {
+      return newUpdateHasFinality;
+    }
+
+    if (newUpdateHasFinality) {
+      boolean newUpdateHasSyncCommitteeFinality =
+          syncCommitteePeriodAtSlot(newUpdate.getFinalizedHeader().getBeacon().getSlot())
+              == syncCommitteePeriodAtSlot(newUpdateSignatureSlot);
+      boolean oldUpdateHasSyncCommitteeFinality =
+          syncCommitteePeriodAtSlot(oldUpdate.getFinalizedHeader().getBeacon().getSlot())
+              == syncCommitteePeriodAtSlot(oldUpdateSignatureSlot);
+
+      if (newUpdateHasSyncCommitteeFinality != oldUpdateHasSyncCommitteeFinality) {
+        return newUpdateHasSyncCommitteeFinality;
+      }
+    }
+
+    if (newUpdateActiveParticipants != oldUpdateActiveParticipants) {
+      return newUpdateActiveParticipants > oldUpdateActiveParticipants;
+    }
+
+    if (newUpdateAttestedSlot == oldUpdateAttestedSlot) {
+      return newUpdateAttestedSlot.intValue() < oldUpdateAttestedSlot.intValue();
+    }
+
+    return newUpdate.getSignatureSlot().get().intValue()
+        < oldUpdate.getSignatureSlot().get().intValue();
+  }
+
+  private UInt64 syncCommitteePeriodAtSlot(final UInt64 slot) {
+    return spec.getSyncCommitteeUtilRequired(slot)
+        .computeSyncCommitteePeriod(spec.computeEpochAtSlot(slot));
+  }
+
+  /** {@code is_sync_committee_update}. */
+  private boolean isSyncCommitteeUpdate(final LightClientUpdate update) {
+    return !update.getNextSyncCommitteeBranch().isDefault();
+  }
+
+  /** {@code is_finality_update}. */
+  private boolean isFinalityUpdate(final LightClientUpdate update) {
+    return !update.getFinalityBranch().isDefault();
   }
 }
