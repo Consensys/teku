@@ -30,6 +30,15 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
+  @Test
+  public void shouldReadFromConfigurationFile() {
+    final Eth2NetworkConfiguration eth2NetworkConfig =
+            Eth2NetworkConfiguration.builder("holesky").build();
+    final TekuConfiguration config = getTekuConfigurationFromFile("networkOptions_config.yaml");
+    assertThat(config.eth2NetworkConfiguration())
+            .isEqualTo(eth2NetworkConfig);
+  }
+
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "minimal", "swift", "holesky"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
