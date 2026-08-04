@@ -62,8 +62,8 @@ public abstract class AbstractBuilderRequest {
     final String requestBody;
     try {
       requestBody = JsonUtil.serialize(requestBodyObj, objectTypeDefinition);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
+    } catch (JsonProcessingException ex) {
+      throw new UncheckedIOException("Failed to serialize request body to JSON", ex);
     }
     final Request request =
         new Request.Builder()
