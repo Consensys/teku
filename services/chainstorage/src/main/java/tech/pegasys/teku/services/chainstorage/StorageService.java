@@ -274,9 +274,9 @@ public class StorageService extends Service implements StorageServiceFacade {
       final Duration pruningInterval,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
-    if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE) {
-      throw new InvalidConfigurationException(
-          "State pruning is not supported with leveldb_tree database.");
+    if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE
+        || config.getDataStorageCreateDbVersion() == DatabaseVersion.ROCKSDB_TREE) {
+      throw new InvalidConfigurationException("State pruning is not supported with tree database.");
     }
 
     LOG.info(

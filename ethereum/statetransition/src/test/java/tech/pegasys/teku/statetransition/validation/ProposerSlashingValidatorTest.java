@@ -34,12 +34,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -50,20 +52,23 @@ public class ProposerSlashingValidatorTest {
   private final Spec mockSpec = mock(Spec.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RecentChainData recentChainData;
-  private BeaconChainUtil beaconChainUtil;
+  private ChainBuilder chainBuilder;
+  private ChainUpdater chainUpdater;
   private ProposerSlashingValidator proposerSlashingValidator;
 
   @BeforeEach
   void beforeEach() {
     recentChainData = MemoryOnlyRecentChainData.builder().specProvider(spec).build();
-    beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
+    chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     proposerSlashingValidator = new ProposerSlashingValidator(mockSpec, recentChainData);
   }
 
   @Test
-  public void shouldAcceptValidProposerSlashing() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldAcceptValidProposerSlashing() {
+    chainUpdater.initializeGenesis(true);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(getBestState(), slashing)).thenReturn(Optional.empty());
     when(mockSpec.verifyProposerSlashingSignature(
@@ -73,9 +78,10 @@ public class ProposerSlashingValidatorTest {
   }
 
   @Test
-  public void shouldRejectInvalidProposerSlashing() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldRejectInvalidProposerSlashing() {
+    chainUpdater.initializeGenesis(true);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(getBestState(), slashing))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.PROPOSER_INDICES_DIFFERENT));
@@ -86,9 +92,10 @@ public class ProposerSlashingValidatorTest {
   }
 
   @Test
-  public void shouldRejectProposerSlashingWithInvalidSignature() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldRejectProposerSlashingWithInvalidSignature() {
+    chainUpdater.initializeGenesis(true);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(getBestState(), slashing)).thenReturn(Optional.empty());
     when(mockSpec.verifyProposerSlashingSignature(
@@ -98,9 +105,10 @@ public class ProposerSlashingValidatorTest {
   }
 
   @Test
-  public void shouldIgnoreProposerSlashingForTheSameProposer() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldIgnoreProposerSlashingForTheSameProposer() {
+    chainUpdater.initializeGenesis(true);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 =
         new ProposerSlashing(slashing1.getHeader1(), slashing1.getHeader2());
@@ -113,10 +121,11 @@ public class ProposerSlashingValidatorTest {
   }
 
   @Test
-  public void shouldRejectProposerSlashingForTwoSignedHeadersWithSameMessageButDifferentSignature()
-      throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void
+      shouldRejectProposerSlashingForTwoSignedHeadersWithSameMessageButDifferentSignature() {
+    chainUpdater.initializeGenesis(true);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
+    chainUpdater.updateBestBlock(blockAndState);
     SignedBeaconBlockHeader header1 = dataStructureUtil.randomSignedBeaconBlockHeader();
     SignedBeaconBlockHeader header2 =
         new SignedBeaconBlockHeader(header1.getMessage(), BLSTestUtil.randomSignature(100));
