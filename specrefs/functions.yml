@@ -3346,7 +3346,9 @@
     </spec>
 
 - name: get_current_balance_source#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationStateLoader.java
+      search: store.retrieveCheckpointState(fcrStore.currentEpochObservedJustifiedCheckpoint())
   spec: |
     <spec fn="get_current_balance_source" fork="phase0" hash="75c0851b">
     def get_current_balance_source(fcr_store: FastConfirmationStore) -> BeaconState:
@@ -5100,7 +5102,9 @@
     </spec>
 
 - name: get_previous_balance_source#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationStateLoader.java
+      search: store.retrieveCheckpointState(fcrStore.previousEpochObservedJustifiedCheckpoint())
   spec: |
     <spec fn="get_previous_balance_source" fork="phase0" hash="18421690">
     def get_previous_balance_source(fcr_store: FastConfirmationStore) -> BeaconState:
@@ -5350,6 +5354,29 @@
         Return the randao mix at a recent ``epoch``.
         """
         return state.randao_mixes[epoch % EPOCHS_PER_HISTORICAL_VECTOR]
+    </spec>
+
+- name: get_safe_execution_block_hash#bellatrix
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
+      search: final Bytes32 safeExecutionHash
+  spec: |
+    <spec fn="get_safe_execution_block_hash" fork="bellatrix" hash="ccd5f801">
+    def get_safe_execution_block_hash(fcr_store: FastConfirmationStore) -> Hash32:
+        safe_block = fcr_store.store.blocks[fcr_store.confirmed_root]
+        return safe_block.body.execution_payload.block_hash
+    </spec>
+
+- name: get_safe_execution_block_hash#gloas
+  sources:
+    - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceStrategy.java
+      search: final Bytes32 safeExecutionHash
+  spec: |
+    <spec fn="get_safe_execution_block_hash" fork="gloas" hash="4884e9d5">
+    def get_safe_execution_block_hash(fcr_store: FastConfirmationStore) -> Hash32:
+        safe_block = fcr_store.store.blocks[fcr_store.confirmed_root]
+        # [Modified in Gloas:EIP7732]
+        return safe_block.body.signed_execution_payload_bid.message.parent_block_hash
     </spec>
 
 - name: get_safety_threshold#altair
@@ -8398,7 +8425,9 @@
     </spec>
 
 - name: on_fast_confirmation#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationTracker.java
+      search: private void runFastConfirmation(
   spec: |
     <spec fn="on_fast_confirmation" fork="phase0" hash="f1f1a4c3">
     def on_fast_confirmation(fcr_store: FastConfirmationStore) -> None:

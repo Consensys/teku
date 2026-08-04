@@ -229,6 +229,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageGossipValidator;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
@@ -352,6 +353,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
+  private final FastConfirmationTracker fastConfirmationTracker;
   protected final AtomicReference<DataColumnSidecarRecoveringCustody> dataColumnSidecarCustodyRef =
       new AtomicReference<>(DataColumnSidecarRecoveringCustody.NOOP);
 
@@ -468,6 +470,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // larger default size. das runner should be separate to the operation pool runner as it's a
     // bunch of tasks, not just operation pool activities
     this.dasAsyncRunner = serviceConfig.createAsyncRunner("das", 4, 20_000);
+    this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
@@ -1660,6 +1663,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
+            fastConfirmationTracker,
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             (slot, blockRoot) ->
                 beaconAsyncRunner.runAsync(
