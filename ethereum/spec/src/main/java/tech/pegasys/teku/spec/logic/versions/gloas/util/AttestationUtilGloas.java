@@ -54,8 +54,7 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
       final BeaconState state,
       final IndexedAttestationLight indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
-    final int maxAttestingIndices =
-        specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+    final long maxAttestingIndices = specConfig.getMaxValidatorsPerAttestation();
     if (indexedAttestation.attestingIndices().size() > maxAttestingIndices) {
       return SafeFuture.completedFuture(
           AttestationProcessingResult.invalid("Too many attesting indices"));

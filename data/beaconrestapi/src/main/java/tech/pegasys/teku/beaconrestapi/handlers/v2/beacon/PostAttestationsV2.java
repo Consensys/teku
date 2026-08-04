@@ -131,9 +131,7 @@ public class PostAttestationsV2 extends RestApiEndpoint {
                     final SszSchema<Attestation> attestationSchema =
                         getAttestationSchema(schemaDefinitions);
                     return SszListSchema.create(
-                            attestationSchema,
-                            (long) specConfig.getMaxValidatorsPerCommittee()
-                                * specConfig.getMaxCommitteesPerSlot())
+                            attestationSchema, specConfig.getMaxValidatorsPerAttestation())
                         .sszDeserialize(bytes)
                         .asList();
                   });

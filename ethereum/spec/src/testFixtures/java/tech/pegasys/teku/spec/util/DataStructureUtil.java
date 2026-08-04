@@ -3706,11 +3706,7 @@ public final class DataStructureUtil {
   }
 
   private int getMaxValidatorsPerCommittee(final UInt64 slot) {
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
-          * getConstant(SpecConfig::getMaxCommitteesPerSlot);
-    }
-    return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
+    return Math.toIntExact(spec.atSlot(slot).getConfig().getMaxValidatorsPerAttestation());
   }
 
   private int getMaxCommitteesPerSlot() {

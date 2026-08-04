@@ -396,7 +396,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ELECTRA,
             (_, specConfig, _) ->
-                SszBitlistSchema.create(getMaxValidatorsPerAttestationElectra(specConfig)))
+                SszBitlistSchema.create(specConfig.getMaxValidatorsPerAttestation()))
         .withCreator(GLOAS, (_, _, _) -> new SszProgressiveBitlistSchema())
         .build();
   }
@@ -406,11 +406,11 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (_, specConfig, _) ->
-                SszUInt64ListSchema.create(getMaxValidatorsPerAttestationPhase0(specConfig)))
+                SszUInt64ListSchema.create(specConfig.getMaxValidatorsPerAttestation()))
         .withCreator(
             ELECTRA,
             (_, specConfig, _) ->
-                SszUInt64ListSchema.create(getMaxValidatorsPerAttestationElectra(specConfig)))
+                SszUInt64ListSchema.create(specConfig.getMaxValidatorsPerAttestation()))
         .withCreator(GLOAS, (_, _, _) -> SszProgressiveUInt64ListSchema.create())
         .build();
   }
@@ -1020,7 +1020,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (registry, specConfig, schemaName) ->
-                new AttestationPhase0Schema(getMaxValidatorsPerAttestationPhase0(specConfig))
+                new AttestationPhase0Schema(specConfig.getMaxValidatorsPerAttestation())
                     .castTypeToAttestationSchema())
         .withCreator(
             ELECTRA,
@@ -1263,14 +1263,6 @@ public class SchemaRegistryBuilder {
     return providerBuilder(EXECUTION_PROOF_SCHEMA)
         .withCreator(ELECTRA, (registry, specConfig, schemaName) -> new ExecutionProofSchema())
         .build();
-  }
-
-  private static long getMaxValidatorsPerAttestationPhase0(final SpecConfig specConfig) {
-    return specConfig.getMaxValidatorsPerCommittee();
-  }
-
-  private static long getMaxValidatorsPerAttestationElectra(final SpecConfig specConfig) {
-    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 
   private static SchemaProvider<?> createBuilderPendingPaymentSchemaProvider() {

@@ -182,9 +182,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
   }
 
   protected byte[] serializeAttestationsToSsz(final List<Attestation> attestations) {
-    return SszListSchema.create(
-            getAttestationSchema(),
-            (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot())
+    return SszListSchema.create(getAttestationSchema(), specConfig.getMaxValidatorsPerAttestation())
         .createFromElements(attestations)
         .sszSerialize()
         .toArrayUnsafe();
