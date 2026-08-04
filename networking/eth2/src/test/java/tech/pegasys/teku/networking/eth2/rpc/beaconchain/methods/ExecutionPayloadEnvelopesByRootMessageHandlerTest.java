@@ -84,6 +84,9 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveExecutionPayloadEnvelopesRequest(any(), anyLong()))
         .thenReturn(Optional.of(new RequestKey(ZERO, 42)));
+    // Slot is unknown by default, so the pre-flight range check lets every root through
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     // Forward execution payload envelope requests from the mock to the ChainBuilder
     when(combinedChainDataClient.getExecutionPayloadByBlockRoot(any()))
         .thenAnswer(
@@ -321,6 +324,47 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     verify(callback).respond(mockedEnvelope);
     verify(callback).completeSuccessfully();
     verify(peer, never()).adjustExecutionPayloadEnvelopesRequest(any(), anyLong());
+  }
+
+  @Test
+  public void onIncomingMessage_shouldNotRetrieveEnvelopesForRootsOutsideServableRange() {
+    final UInt64 minEpochsForBlockRequests =
+        UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+    final UInt64 currentEpoch = minEpochsForBlockRequests.plus(10);
+
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
+
+    final List<SignedExecutionPayloadEnvelope> envelopes = buildChain(2);
+    final Bytes32 oldRoot = envelopes.get(0).getMessage().getBeaconBlockRoot();
+    final Bytes32 newRoot = envelopes.get(1).getMessage().getBeaconBlockRoot();
+
+    final UInt64 oldSlot =
+        spec.computeStartSlotAtEpoch(currentEpoch.minus(minEpochsForBlockRequests).minus(1));
+    final UInt64 newSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+    when(combinedChainDataClient.getSlotByBlockRoot(oldRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(oldSlot)));
+    when(combinedChainDataClient.getSlotByBlockRoot(newRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(newSlot)));
+
+    final SignedExecutionPayloadEnvelope mockedNewEnvelope =
+        mock(SignedExecutionPayloadEnvelope.class);
+    final ExecutionPayloadEnvelope mockedNewMessage = mock(ExecutionPayloadEnvelope.class);
+    when(mockedNewEnvelope.getMessage()).thenReturn(mockedNewMessage);
+    when(mockedNewMessage.getSlot()).thenReturn(newSlot);
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(newRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(mockedNewEnvelope)));
+
+    final ExecutionPayloadEnvelopesByRootRequestMessage message =
+        createRequestFromBeaconBlockRoots(List.of(oldRoot, newRoot));
+
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    // the out of range root is dropped without touching the database or the execution layer
+    verify(combinedChainDataClient, never()).getExecutionPayloadByBlockRoot(oldRoot);
+    verify(combinedChainDataClient).getExecutionPayloadByBlockRoot(newRoot);
+    verify(callback).respond(mockedNewEnvelope);
+    verify(callback).completeSuccessfully();
+    verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(1L));
   }
 
   private ExecutionPayloadEnvelopesByRootRequestMessage createRequestFromExecutionPayloadEnvelopes(

@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -107,21 +108,11 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
       future =
           future.thenCompose(
               __ ->
-                  combinedChainDataClient
-                      .getExecutionPayloadByBlockRoot(beaconBlockRoot.get())
-                      .thenCompose(
-                          maybeExecutionPayloadEnvelope ->
-                              maybeExecutionPayloadEnvelope
-                                  .filter(
-                                      envelope ->
-                                          isEnvelopeWithinServableRange(envelope, minServableEpoch))
-                                  .map(
-                                      executionPayloadEnvelope ->
-                                          callback
-                                              .respond(executionPayloadEnvelope)
-                                              .thenRun(
-                                                  sentExecutionPayloadEnvelopes::incrementAndGet))
-                                  .orElse(SafeFuture.COMPLETE)));
+                  respondToBlockRoot(
+                      beaconBlockRoot.get(),
+                      minServableEpoch,
+                      callback,
+                      sentExecutionPayloadEnvelopes));
     }
 
     future.finish(
@@ -135,9 +126,45 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
         err -> handleError(err, callback, "execution payload envelopes by root"));
   }
 
-  private boolean isEnvelopeWithinServableRange(
-      final SignedExecutionPayloadEnvelope envelope, final UInt64 minServableEpoch) {
-    return spec.computeEpochAtSlot(envelope.getMessage().getSlot())
-        .isGreaterThanOrEqualTo(minServableEpoch);
+  /**
+   * Resolves the slot for the requested root before retrieving the envelope. Retrieving an envelope
+   * for a finalized block requires reading the blinded envelope from the database and unblinding it
+   * with an execution layer round trip, so a root already known to be outside the servable range is
+   * rejected up front rather than after that work has been done. A root whose slot can't be
+   * resolved still goes through retrieval, where the range is enforced against the envelope itself.
+   */
+  private SafeFuture<Void> respondToBlockRoot(
+      final Bytes32 beaconBlockRoot,
+      final UInt64 minServableEpoch,
+      final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      final AtomicInteger sentExecutionPayloadEnvelopes) {
+    return combinedChainDataClient
+        .getSlotByBlockRoot(beaconBlockRoot)
+        .thenCompose(
+            maybeSlot -> {
+              if (maybeSlot.isPresent()
+                  && !isWithinServableRange(maybeSlot.get(), minServableEpoch)) {
+                return SafeFuture.COMPLETE;
+              }
+              return combinedChainDataClient
+                  .getExecutionPayloadByBlockRoot(beaconBlockRoot)
+                  .thenCompose(
+                      maybeExecutionPayloadEnvelope ->
+                          maybeExecutionPayloadEnvelope
+                              .filter(
+                                  envelope ->
+                                      isWithinServableRange(
+                                          envelope.getMessage().getSlot(), minServableEpoch))
+                              .map(
+                                  executionPayloadEnvelope ->
+                                      callback
+                                          .respond(executionPayloadEnvelope)
+                                          .thenRun(sentExecutionPayloadEnvelopes::incrementAndGet))
+                              .orElse(SafeFuture.COMPLETE));
+            });
+  }
+
+  private boolean isWithinServableRange(final UInt64 slot, final UInt64 minServableEpoch) {
+    return spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(minServableEpoch);
   }
 }
