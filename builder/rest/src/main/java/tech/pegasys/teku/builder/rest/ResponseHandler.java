@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -81,7 +82,7 @@ public class ResponseHandler<T> {
       try {
         return Optional.of(JsonUtil.parse(responseBody.string(), maybeTypeDefinition.get()));
       } catch (JsonProcessingException ex) {
-        LOG.debug("Failed to decode builder response body", ex);
+        throw new UncheckedIOException("Failed to decode builder response body", ex);
       }
     }
     return Optional.empty();
