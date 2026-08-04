@@ -54,6 +54,24 @@ public class KeyStoreFilesLocatorTest {
   }
 
   @Test
+  public void shouldAcceptSamePasswordFile(@TempDir final Path tempDir) throws IOException {
+    createFolders(tempDir, Path.of("key", "1", "2", "3"), Path.of("pass", "1", "2", "3"));
+    createFiles(
+            tempDir,
+            Path.of("key", "a.json"),
+            Path.of("key", "b.json"),
+            Path.of("pass", "a.txt"));
+    final String p1 = generatePath(tempDir, PATH_SEP, List.of("key", "a.json"), List.of("pass", "a.txt"));
+    final String p2 = generatePath(tempDir, PATH_SEP, List.of("key", "b.json"), List.of("pass", "a.txt"));
+    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1, p2), PATH_SEP);
+
+    assertThat(locator.parse())
+            .containsExactlyInAnyOrder(
+                    tuple(tempDir, Path.of("key", "a.json"), Path.of("pass", "a.txt")),
+                    tuple(tempDir, Path.of("key", "b.json"), Path.of("pass", "a.txt")));
+  }
+
+  @Test
   public void shouldFindMissingPasswordAtDepth(@TempDir final Path tempDir) throws IOException {
     createFolders(tempDir, Path.of("key", "1", "2", "3"), Path.of("pass", "1", "2", "3"));
     createFiles(
