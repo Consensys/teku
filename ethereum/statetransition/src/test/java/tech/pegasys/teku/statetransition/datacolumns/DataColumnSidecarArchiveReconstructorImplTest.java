@@ -238,8 +238,39 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
   }
 
   @TestTemplate
+  public void shouldReuseReconstructionAcrossRequests() {
+    final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
+    final List<DataColumnSidecar> firstHalfSidecars = createFirstHalfSidecars(block);
+    final List<List<KZGProof>> secondHalfProofs = createSecondHalfProofs(block);
+
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
+        .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
+    when(chainDataClient.getDataColumnSidecarProofs(any()))
+        .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
+
+    final int firstRequest = reconstructor.onRequest();
+    final Optional<DataColumnSidecar> result1 =
+        reconstructor
+            .reconstructDataColumnSidecar(block, UInt64.valueOf(halfColumns), firstRequest)
+            .join();
+    reconstructor.onRequestCompleted(firstRequest);
+
+    // a separate, later request for the same block reuses the cached result
+    final int secondRequest = reconstructor.onRequest();
+    final Optional<DataColumnSidecar> result2 =
+        reconstructor
+            .reconstructDataColumnSidecar(block, UInt64.valueOf(halfColumns + 1), secondRequest)
+            .join();
+
+    assertThat(result1).isPresent();
+    assertThat(result2).isPresent();
+    // reconstruction ran only once despite two independent requests
+    verify(chainDataClient).getDataColumnSidecars(any(UInt64.class), anyList());
+  }
+
+  @TestTemplate
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void shouldCleanupOnRequestCompleted() {
+  public void shouldRetryReconstructionAfterEmptyResult() {
     final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
     when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
@@ -249,11 +280,35 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
     final int requestId = reconstructor.onRequest();
     reconstructor.reconstructDataColumnSidecar(block, UInt64.valueOf(halfColumns), requestId);
 
-    reconstructor.onRequestCompleted(requestId);
-    // Second call with new requestId should create a new task
+    // an empty (failed) reconstruction is not cached, so a later request retries it
     final int newRequestId = reconstructor.onRequest();
     reconstructor.reconstructDataColumnSidecar(block, UInt64.valueOf(halfColumns), newRequestId);
 
+    verify(chainDataClient, times(2)).getDataColumnSidecars(any(UInt64.class), anyList());
+  }
+
+  @TestTemplate
+  public void shouldReuseWithinRetentionWindowThenReconstructAfterExpiry() {
+    final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
+    final List<DataColumnSidecar> firstHalfSidecars = createFirstHalfSidecars(block);
+    final List<List<KZGProof>> secondHalfProofs = createSecondHalfProofs(block);
+
+    when(chainDataClient.getDataColumnSidecars(any(UInt64.class), anyList()))
+        .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
+    when(chainDataClient.getDataColumnSidecarProofs(any()))
+        .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
+
+    final UInt64 index = UInt64.valueOf(halfColumns);
+    reconstructor.reconstructDataColumnSidecar(block, index, reconstructor.onRequest()).join();
+
+    // 25s later, still within the 30s retention window: the cached result is reused
+    timeProvider.advanceTimeBySeconds(25);
+    reconstructor.reconstructDataColumnSidecar(block, index, reconstructor.onRequest()).join();
+    verify(chainDataClient, times(1)).getDataColumnSidecars(any(UInt64.class), anyList());
+
+    // 10s more (35s total, past retention): the cached result is pruned and reconstruction reruns
+    timeProvider.advanceTimeBySeconds(10);
+    reconstructor.reconstructDataColumnSidecar(block, index, reconstructor.onRequest()).join();
     verify(chainDataClient, times(2)).getDataColumnSidecars(any(UInt64.class), anyList());
   }
 
