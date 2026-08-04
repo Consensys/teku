@@ -1288,6 +1288,13 @@ public class Spec {
   }
 
   // Attestation helpers
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    return atState(state)
+        .getAttestationUtil()
+        .getStateForAttestationRewardCalculation(state, parentPayloadAvailable);
+  }
+
   public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()

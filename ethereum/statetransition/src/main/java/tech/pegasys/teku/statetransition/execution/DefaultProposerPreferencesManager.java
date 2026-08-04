@@ -13,17 +13,15 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES;
-
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -42,8 +40,8 @@ public class DefaultProposerPreferencesManager
 
   private final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator;
   private final PendingPool<PendingProposerPreferences> pendingProposerPreferences;
-  private final Map<UInt64, ProposerPreferences> acceptedProposerPreferences =
-      LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES);
+  private final ConcurrentNavigableMap<UInt64, ProposerPreferences> acceptedProposerPreferences =
+      new ConcurrentSkipListMap<>();
   private final Subscribers<OperationAddedSubscriber<SignedProposerPreferences>> subscribers =
       Subscribers.create(true);
 
@@ -79,6 +77,7 @@ public class DefaultProposerPreferencesManager
 
   @Override
   public void onSlot(final UInt64 slot) {
+    acceptedProposerPreferences.headMap(slot, false).clear();
     pendingProposerPreferences.onSlot(slot);
     pendingProposerPreferences.removeItemsMatching(
         pendingPreferences ->

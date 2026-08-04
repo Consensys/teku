@@ -151,6 +151,50 @@ public class DefaultProposerPreferencesManagerTest {
   }
 
   @TestTemplate
+  void shouldPruneAcceptedPreferencesBeforeCurrentSlot() {
+    when(gossipValidator.validate(any())).thenReturn(SafeFuture.completedFuture(ACCEPT));
+    for (int slot = 9; slot <= 11; slot++) {
+      safeJoin(
+          manager.addRemote(
+              createSignedProposerPreferences(
+                  UInt64.valueOf(slot), dataStructureUtil.randomBytes32())));
+    }
+
+    manager.onSlot(UInt64.valueOf(10));
+
+    assertThat(manager.getProposerPreferences(UInt64.valueOf(9))).isEmpty();
+    assertThat(manager.getProposerPreferences(UInt64.valueOf(10))).isPresent();
+    assertThat(manager.getProposerPreferences(UInt64.valueOf(11))).isPresent();
+  }
+
+  @TestTemplate
+  void shouldRetainCurrentPreferencesWhenAddingNextEpochPreferences() {
+    when(gossipValidator.validate(any())).thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    for (int slot = 0; slot < 64; slot++) {
+      safeJoin(
+          manager.addRemote(
+              createSignedProposerPreferences(
+                  UInt64.valueOf(slot), dataStructureUtil.randomBytes32())));
+    }
+    for (int slot = 0; slot < 32; slot++) {
+      assertThat(manager.getProposerPreferences(UInt64.valueOf(slot))).isPresent();
+    }
+
+    manager.onSlot(UInt64.valueOf(32));
+    for (int slot = 64; slot < 96; slot++) {
+      safeJoin(
+          manager.addRemote(
+              createSignedProposerPreferences(
+                  UInt64.valueOf(slot), dataStructureUtil.randomBytes32())));
+    }
+
+    for (int slot = 32; slot < 64; slot++) {
+      assertThat(manager.getProposerPreferences(UInt64.valueOf(slot))).isPresent();
+    }
+  }
+
+  @TestTemplate
   void shouldQueuePreferencesSavedForFuture() {
     final UInt64 slot = UInt64.valueOf(10);
     final SignedProposerPreferences preferences =

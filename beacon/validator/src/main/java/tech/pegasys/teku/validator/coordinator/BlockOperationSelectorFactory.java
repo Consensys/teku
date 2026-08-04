@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -197,9 +198,14 @@ public class BlockOperationSelectorFactory {
 
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      final BeaconState attestationRewardState =
+          spec.getStateForAttestationRewardCalculation(
+              blockSlotState,
+              blockProductionContext.parentPayloadStatus()
+                  == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
-              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+              attestationRewardState, new AttestationForkChecker(spec, blockSlotState));
       blockProductionContext.blockProductionPerformance().getAttestationsForBlock();
 
       // Collect slashings to include
