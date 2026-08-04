@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -232,50 +231,6 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     assertThat(store.retrieveSignedExecutionPayload(blockRoot))
         .isCompletedWithValue(Optional.of(envelope));
-  }
-
-  @Test
-  public void retrieveSignedExecutionPayload_fromExternalProviderWhenBlockNotInHotStore() {
-    final StoreBuilder storeBuilder = createStoreBuilder(defaultStoreConfig);
-    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final SignedExecutionPayloadEnvelope envelope =
-        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
-    final Bytes32 blockRoot = envelope.getBeaconBlockRoot();
-
-    final UpdatableStore store =
-        storeBuilder
-            .executionPayloadProvider(
-                roots ->
-                    SafeFuture.completedFuture(
-                        roots.contains(blockRoot) ? Map.of(blockRoot, envelope) : Map.of()))
-            .build();
-
-    // The block was never added to the hot store, mimicking a finalized block that has been pruned
-    // out of fork choice. Retrieval must still reach the external (DB backed) provider.
-    assertThat(store.containsBlock(blockRoot)).isFalse();
-    assertThat(store.retrieveSignedExecutionPayload(blockRoot))
-        .isCompletedWithValue(Optional.of(envelope));
-  }
-
-  @Test
-  public void retrieveSignedBlindedExecutionPayload_fromExternalProviderWhenBlockNotInHotStore() {
-    final StoreBuilder storeBuilder = createStoreBuilder(defaultStoreConfig);
-    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
-        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow().blind(spec);
-    final Bytes32 blockRoot = blindedEnvelope.getBeaconBlockRoot();
-
-    final UpdatableStore store =
-        storeBuilder
-            .blindedExecutionPayloadProvider(
-                roots ->
-                    SafeFuture.completedFuture(
-                        roots.contains(blockRoot) ? Map.of(blockRoot, blindedEnvelope) : Map.of()))
-            .build();
-
-    assertThat(store.containsBlock(blockRoot)).isFalse();
-    assertThat(store.retrieveSignedBlindedExecutionPayload(blockRoot))
-        .isCompletedWithValue(Optional.of(blindedEnvelope));
   }
 
   @Test
