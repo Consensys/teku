@@ -128,7 +128,7 @@ interface ForkChoiceModel {
   boolean shouldBuildOnFull(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
-      UInt64 currentSlot,
+      UInt64 slot,
       ForkChoiceNode head);
 
   /**

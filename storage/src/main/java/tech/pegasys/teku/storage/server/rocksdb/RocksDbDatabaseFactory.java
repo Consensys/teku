@@ -28,6 +28,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotSta
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class RocksDbDatabaseFactory {
 
@@ -70,6 +71,34 @@ public class RocksDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        spec);
+  }
+
+  public static Database createV6Tree(
+      final MetricsSystem metricsSystem,
+      final KvStoreConfiguration hotConfiguration,
+      final StateStorageMode stateStorageMode,
+      final boolean storeNonCanonicalBlocks,
+      final int maxKnownNodeCacheSize,
+      final Spec spec) {
+
+    final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
+    final KvStoreAccessor db =
+        RocksDbInstanceFactory.create(
+            metricsSystem,
+            STORAGE,
+            hotConfiguration,
+            schema.getAllColumns(),
+            schema.getDeletedColumnIds(),
+            schema.getAllVariables(),
+            schema.getDeletedVariableIds());
+    return KvStoreDatabase.createWithStateTree(
+        metricsSystem,
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        maxKnownNodeCacheSize,
         spec);
   }
 

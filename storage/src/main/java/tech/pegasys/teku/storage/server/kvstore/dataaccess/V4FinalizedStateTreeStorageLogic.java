@@ -17,6 +17,8 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 
 public class V4FinalizedStateTreeStorageLogic
     implements V4FinalizedStateStorageLogic<SchemaCombinedTreeState> {
+  private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_BRANCH_LEVELS_SKIPPED = 5;
   private final LabelledMetric<Counter> branchNodeStoredCounter;
   private final Counter statesStoredCounter;
@@ -136,6 +139,8 @@ public class V4FinalizedStateTreeStorageLogic
       }
       transaction.put(
           schema.getColumnFinalizedStateRootsBySlot(), state.getSlot(), state.hashTreeRoot());
+      final int branchesBefore = nodeStore.getStoredBranchNodeCount();
+      final int leavesBefore = nodeStore.getStoredLeafNodeCount();
       state
           .getSchema()
           .storeBackingNodes(
@@ -144,6 +149,12 @@ public class V4FinalizedStateTreeStorageLogic
               GIndexUtil.SELF_G_INDEX,
               state.getBackingNode());
       statesStored++;
+      LOG.debug(
+          "Wrote finalized state delta slot={} root={} branchNodes={} leafNodes={}",
+          state.getSlot(),
+          state.hashTreeRoot(),
+          nodeStore.getStoredBranchNodeCount() - branchesBefore,
+          nodeStore.getStoredLeafNodeCount() - leavesBefore);
     }
 
     @Override
