@@ -68,7 +68,14 @@ public class BlobReconstructionAbstractTest {
             .map(
                 b -> {
                   final var sidecars =
-                      miscHelpers.constructDataColumnSidecars(block, List.of(new BlobAndCellProofs(b, miscHelpers.getKzg().computeCellsAndProofs(b.getBytes()).stream().map(KZGCellAndProof::proof).toList())));
+                      miscHelpers.constructDataColumnSidecars(
+                          block,
+                          List.of(
+                              new BlobAndCellProofs(
+                                  b,
+                                  miscHelpers.getKzg().computeCellsAndProofs(b.getBytes()).stream()
+                                      .map(KZGCellAndProof::proof)
+                                      .toList())));
                   return new CellData(
                       b.getBytes().toHexString(),
                       sidecars.stream()

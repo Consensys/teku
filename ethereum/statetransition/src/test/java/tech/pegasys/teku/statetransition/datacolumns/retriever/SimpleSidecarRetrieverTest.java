@@ -137,7 +137,17 @@ public class SimpleSidecarRetrieverTest {
     final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block = blockResolver.addBlock(10, 1);
     final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs.stream().map((b) -> new BlobAndCellProofs(b, miscHelpers.getKzg().computeCellsAndProofs(b.getBytes()).stream().map(KZGCellAndProof::proof).toList())).toList());
+        miscHelpers.constructDataColumnSidecars(
+            createSigned(block),
+            blobs.stream()
+                .map(
+                    (b) ->
+                        new BlobAndCellProofs(
+                            b,
+                            miscHelpers.getKzg().computeCellsAndProofs(b.getBytes()).stream()
+                                .map(KZGCellAndProof::proof)
+                                .toList()))
+                .toList());
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 
     final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());

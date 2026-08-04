@@ -307,11 +307,16 @@ public class MiscHelpersFuluTest {
 
     // Create test data once for all tests
     final List<BlobAndCellProofs> blobsAndCellProofs =
-        IntStream.range(0, 4).mapToObj(__ -> {
-          Blob blob = dataStructureUtil.randomValidBlob();
-          List<KZGCellAndProof> proofs = miscHelpersFulu.getKzg().computeCellsAndProofs(blob.getBytes());
-          return new BlobAndCellProofs(blob, proofs.stream().map(KZGCellAndProof::proof).toList());
-        }).toList();
+        IntStream.range(0, 4)
+            .mapToObj(
+                __ -> {
+                  Blob blob = dataStructureUtil.randomValidBlob();
+                  List<KZGCellAndProof> proofs =
+                      miscHelpersFulu.getKzg().computeCellsAndProofs(blob.getBytes());
+                  return new BlobAndCellProofs(
+                      blob, proofs.stream().map(KZGCellAndProof::proof).toList());
+                })
+            .toList();
 
     sharedSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobsAndCellProofs.size());
