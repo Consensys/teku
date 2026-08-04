@@ -116,6 +116,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
         .or(() -> getLatestExecutionPayloadBid().map(ExecutionPayloadBid::getBlockHash));
   }
 
+  public Optional<UInt64> getExecutionGasLimit() {
+    return getLatestExecutionPayloadHeader().map(ExecutionPayloadHeader::getGasLimit);
+  }
+
   @Override
   public Optional<BeaconBlock> getBeaconBlock() {
     return blockSummary.getBeaconBlock();

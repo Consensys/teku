@@ -57,8 +57,8 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
@@ -82,6 +82,7 @@ import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -89,7 +90,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 public class SyncingNodeManager {
   private final EventChannels eventChannels;
   private final RecentChainData recentChainData;
-  private final BeaconChainUtil chainUtil;
+  private final ChainBuilder chainBuilder;
+  private final ChainUpdater chainUpdater;
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final ForwardSync syncService;
   private final BlockGossipChannel blockGossipChannel;
@@ -98,12 +100,14 @@ public class SyncingNodeManager {
       final AsyncRunner asyncRunner,
       final EventChannels eventChannels,
       final RecentChainData recentChainData,
-      final BeaconChainUtil chainUtil,
+      final ChainBuilder chainBuilder,
+      final ChainUpdater chainUpdater,
       final Eth2P2PNetwork eth2P2PNetwork,
       final ForwardSync syncService) {
     this.eventChannels = eventChannels;
     this.recentChainData = recentChainData;
-    this.chainUtil = chainUtil;
+    this.chainBuilder = chainBuilder;
+    this.chainUpdater = chainUpdater;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.syncService = syncService;
     this.blockGossipChannel = eventChannels.getPublisher(BlockGossipChannel.class, asyncRunner);
@@ -121,8 +125,9 @@ public class SyncingNodeManager {
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
 
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, recentChainData, validatorKeys);
-    chainUtil.initializeStorage();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+    chainUpdater.initializeGenesis();
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
@@ -251,7 +256,13 @@ public class SyncingNodeManager {
     syncService.start().join();
 
     return new SyncingNodeManager(
-        asyncRunner, eventChannels, recentChainData, chainUtil, eth2P2PNetwork, syncService);
+        asyncRunner,
+        eventChannels,
+        recentChainData,
+        chainBuilder,
+        chainUpdater,
+        eth2P2PNetwork,
+        syncService);
   }
 
   public SafeFuture<Peer> connect(final SyncingNodeManager peer) {
@@ -264,12 +275,16 @@ public class SyncingNodeManager {
     return eventChannels;
   }
 
-  public BeaconChainUtil chainUtil() {
-    return chainUtil;
-  }
-
   public Eth2P2PNetwork network() {
     return eth2P2PNetwork;
+  }
+
+  public ChainBuilder getChainBuilder() {
+    return chainBuilder;
+  }
+
+  public ChainUpdater getChainUpdater() {
+    return chainUpdater;
   }
 
   public RecentChainData recentChainData() {
@@ -282,7 +297,7 @@ public class SyncingNodeManager {
 
   public void setSlot(final UInt64 slot) {
     eventChannels().getPublisher(SlotEventsChannel.class).onSlot(slot);
-    chainUtil().setSlot(slot);
+    getChainUpdater().setCurrentSlot(slot);
   }
 
   public void gossipBlock(final SignedBeaconBlock block) {

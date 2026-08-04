@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -185,8 +187,9 @@ public class KvStoreDatabase implements Database {
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
       final Spec spec) {
-    final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
+    final V4FinalizedStateTreeStorageLogic finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
+    finalizedStateStorageLogic.populateCacheFromExistingDb(db, schema);
     return create(
         db,
         schema,
@@ -351,6 +354,7 @@ public class KvStoreDatabase implements Database {
                     b.getStateRoot(),
                     executionPayload.map(ExecutionPayload::getBlockNumber),
                     executionPayload.map(ExecutionPayload::getBlockHash),
+                    executionPayload.map(ExecutionPayload::getGasLimit),
                     checkpointEpochs,
                     gloasForkChoiceRebuildData));
           });
@@ -861,6 +865,7 @@ public class KvStoreDatabase implements Database {
       blockInformation.put(
           anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(spec, latestFinalized));
     }
+    enrichFinalizedGloasBlockMetadata(blockInformation, finalizedCheckpoint.getRoot());
 
     final Optional<SignedBeaconBlock> finalizedBlock =
         getFinalizedBlock(finalizedCheckpoint.getRoot());
@@ -891,6 +896,87 @@ public class KvStoreDatabase implements Database {
             latestCanonicalBlockRoot,
             custodyGroupCount));
   }
+
+  private void enrichFinalizedGloasBlockMetadata(
+      final Map<Bytes32, StoredBlockMetadata> blockInformation, final Bytes32 finalizedBlockRoot) {
+    blockInformation.computeIfPresent(
+        finalizedBlockRoot,
+        (blockRoot, blockMetadata) ->
+            blockMetadata
+                .getGloasForkChoiceRebuildData()
+                .flatMap(
+                    rebuildData ->
+                        resolveExecutionPayloadContext(
+                            blockMetadata.getParentRoot(), rebuildData.payloadParentBlockHash()))
+                .map(
+                    executionContext ->
+                        new StoredBlockMetadata(
+                            blockMetadata.getBlockSlot(),
+                            blockMetadata.getBlockRoot(),
+                            blockMetadata.getParentRoot(),
+                            blockMetadata.getStateRoot(),
+                            Optional.of(executionContext.blockNumber()),
+                            blockMetadata.getExecutionBlockHash(),
+                            Optional.of(executionContext.gasLimit()),
+                            blockMetadata.getCheckpointEpochs(),
+                            blockMetadata.getGloasForkChoiceRebuildData()))
+                .orElse(blockMetadata));
+  }
+
+  private Optional<ExecutionPayloadContext> resolveExecutionPayloadContext(
+      final Bytes32 blockRoot, final Bytes32 executionBlockHash) {
+    final Set<Bytes32> visitedBlockRoots = new HashSet<>();
+    Bytes32 currentBlockRoot = blockRoot;
+    while (visitedBlockRoots.add(currentBlockRoot)) {
+      final Optional<SignedBeaconBlock> maybeBlock = getSignedBlock(currentBlockRoot);
+      if (maybeBlock.isEmpty()) {
+        return Optional.empty();
+      }
+      final SignedBeaconBlock block = maybeBlock.orElseThrow();
+
+      final Optional<ExecutionPayloadSummary> maybeExecutionPayload =
+          block.getMessage().getBody().getOptionalExecutionPayloadSummary();
+      if (maybeExecutionPayload.isPresent()) {
+        final ExecutionPayloadSummary executionPayload = maybeExecutionPayload.orElseThrow();
+        if (!executionPayload.getBlockHash().equals(executionBlockHash)) {
+          return Optional.empty();
+        }
+        return createExecutionPayloadContext(
+            executionPayload.getBlockNumber(), executionPayload.getGasLimit());
+      }
+
+      final Optional<GloasForkChoiceRebuildData> maybeRebuildData =
+          StoredBlockMetadata.extractGloasForkChoiceRebuildData(
+              block, dao.getBlindedExecutionPayloadEnvelope(currentBlockRoot));
+      if (maybeRebuildData.isEmpty()) {
+        return Optional.empty();
+      }
+      final GloasForkChoiceRebuildData rebuildData = maybeRebuildData.orElseThrow();
+      if (rebuildData.payloadBlockHash().equals(executionBlockHash)) {
+        return rebuildData
+            .payloadBlockNumber()
+            .flatMap(
+                blockNumber ->
+                    rebuildData
+                        .payloadGasLimit()
+                        .flatMap(gasLimit -> createExecutionPayloadContext(blockNumber, gasLimit)));
+      }
+      if (!rebuildData.payloadParentBlockHash().equals(executionBlockHash)) {
+        return Optional.empty();
+      }
+      currentBlockRoot = block.getParentRoot();
+    }
+    return Optional.empty();
+  }
+
+  private Optional<ExecutionPayloadContext> createExecutionPayloadContext(
+      final UInt64 blockNumber, final UInt64 gasLimit) {
+    return gasLimit.isZero()
+        ? Optional.empty()
+        : Optional.of(new ExecutionPayloadContext(blockNumber, gasLimit));
+  }
+
+  private record ExecutionPayloadContext(UInt64 blockNumber, UInt64 gasLimit) {}
 
   @Override
   public WeakSubjectivityState getWeakSubjectivityState() {

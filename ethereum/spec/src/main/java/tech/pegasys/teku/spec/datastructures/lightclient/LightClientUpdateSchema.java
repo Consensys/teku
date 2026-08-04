@@ -15,11 +15,13 @@ package tech.pegasys.teku.spec.datastructures.lightclient;
 
 import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX;
 import static tech.pegasys.teku.spec.constants.LightClientConstants.NEXT_SYNC_COMMITTEE_GINDEX;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_HEADER_SCHEMA;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema7;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientUpdateSchema
     extends ContainerSchema7<
@@ -39,21 +42,37 @@ public class LightClientUpdateSchema
         SyncAggregate,
         SszUInt64> {
 
-  public LightClientUpdateSchema(final SpecConfigAltair specConfigAltair) {
+  public LightClientUpdateSchema(
+      final SpecConfigAltair specConfigAltair,
+      final SchemaRegistry registry,
+      final int syncCommitteeGIndex,
+      final int finalizedBranchGindex,
+      final String schemaName) {
     super(
-        "LightClientUpdate",
-        namedSchema("attested_header", new LightClientHeaderSchema()),
+        schemaName,
+        namedSchema(
+            "attested_header",
+            SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
         namedSchema("next_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "next_sync_committee_branch",
-            SszBytes32VectorSchema.create(MathHelpers.floorLog2(NEXT_SYNC_COMMITTEE_GINDEX))),
-        namedSchema("finalized_header", new LightClientHeaderSchema()),
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(syncCommitteeGIndex))),
+        namedSchema(
+            "finalized_header",
+            SszSchema.as(LightClientHeader.class, registry.get(LIGHT_CLIENT_HEADER_SCHEMA))),
         namedSchema(
             "finality_branch",
-            SszBytes32VectorSchema.create(MathHelpers.floorLog2(FINALIZED_ROOT_GINDEX))),
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(finalizedBranchGindex))),
         namedSchema(
             "sync_aggregate", SyncAggregateSchema.create(specConfigAltair.getSyncCommitteeSize())),
         namedSchema("signature_slot", SszPrimitiveSchemas.UINT64_SCHEMA));
+  }
+
+  public LightClientUpdateSchema(
+      final SpecConfigAltair specConfigAltair,
+      final SchemaRegistry registry,
+      final String schemaName) {
+    this(specConfigAltair, registry, NEXT_SYNC_COMMITTEE_GINDEX, FINALIZED_ROOT_GINDEX, schemaName);
   }
 
   public LightClientUpdate create(
@@ -78,6 +97,10 @@ public class LightClientUpdateSchema
   @Override
   public LightClientUpdate createFromBackingNode(final TreeNode node) {
     return new LightClientUpdate(this, node);
+  }
+
+  public SyncCommittee.SyncCommitteeSchema getNextSyncCommitteeSchema() {
+    return (SyncCommittee.SyncCommitteeSchema) getChildSchema(1);
   }
 
   @SuppressWarnings("unchecked")
