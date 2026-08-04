@@ -33,7 +33,7 @@ public class Constants {
   public static final int MAX_SLOTS_TO_TRACK_BUILDERS_BIDS = 10;
   // Preferences are published for the next epoch and need to persist until that epoch completes
   public static final int MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES = 64;
-  // Maximum number of (slot, parentBlockHash) combinations to cache the highest bid values for
+  // Maximum number of (slot, parentBlockHash, parentBlockRoot) combinations to cache highest bids
   public static final int HIGHEST_BID_SET_SIZE = 10;
   // Target 2 different attestation data (aggregators normally agree) for two slots
   public static final int VALID_ATTESTATION_DATA_SET_SIZE = 2 * 64 * 2;

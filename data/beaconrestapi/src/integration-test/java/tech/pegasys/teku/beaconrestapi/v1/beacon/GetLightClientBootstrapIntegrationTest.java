@@ -44,13 +44,17 @@ public class GetLightClientBootstrapIntegrationTest
 
   final Bytes32 blockRoot = Bytes32.random();
 
+  private TestSpecInvocationContextProvider.SpecContext specContext;
+
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    this.specContext = specContext;
     startRestAPIAtGenesis(specContext.getSpecMilestone());
   }
 
   @TestTemplate
   void shouldReturnResultIfCreatedSuccessfully() throws IOException {
+    specContext.assumeIsOneOf(SpecMilestone.ALTAIR);
     final BeaconState state =
         safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
             .orElseThrow()

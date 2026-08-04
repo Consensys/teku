@@ -1,10 +1,10 @@
 {
-  "title" : "LightClientUpdate",
+  "title" : "LightClientUpdateAltair",
   "type" : "object",
   "required" : [ "attested_header", "next_sync_committee", "next_sync_committee_branch", "finalized_header", "finality_branch", "sync_aggregate", "signature_slot" ],
   "properties" : {
     "attested_header" : {
-      "$ref" : "#/components/schemas/LightClientHeader"
+      "$ref" : "#/components/schemas/LightClientHeaderAltair"
     },
     "next_sync_committee" : {
       "$ref" : "#/components/schemas/SyncCommittee"
@@ -19,7 +19,7 @@
       }
     },
     "finalized_header" : {
-      "$ref" : "#/components/schemas/LightClientHeader"
+      "$ref" : "#/components/schemas/LightClientHeaderAltair"
     },
     "finality_branch" : {
       "type" : "array",

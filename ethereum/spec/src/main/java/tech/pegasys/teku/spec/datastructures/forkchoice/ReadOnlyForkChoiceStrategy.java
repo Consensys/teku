@@ -138,14 +138,15 @@ public interface ReadOnlyForkChoiceStrategy {
   boolean shouldExtendPayload(ReadOnlyStore store, SlotAndBlockRoot slotAndBlockRoot);
 
   /**
-   * Returns whether block production should build on the FULL variant of {@code head}.
+   * Returns whether block production at {@code slot} should build on the FULL variant of {@code
+   * head}.
    *
    * <p>Pre-Gloas follows the existing {@link #shouldExtendPayload(ReadOnlyStore, SlotAndBlockRoot)}
    * decision. Gloas overrides this to account for PTC votes that signal data unavailability or an
    * untimely payload.
    */
   boolean shouldBuildOnFull(
-      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head);
+      final ReadOnlyStore store, final UInt64 slot, final ForkChoiceNode head);
 
   default Optional<Boolean> getPayloadTimelinessVote(
       final Bytes32 blockRoot, final int ptcPosition) {

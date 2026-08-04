@@ -725,13 +725,20 @@ public class ChainDataProvider {
     return stateSelectorFactory
         .blockRootSelector(blockRootParam)
         .getState()
-        .thenApply(maybeStateData -> maybeStateData.flatMap(this::getLightClientBootstrap));
+        .thenCombine(
+            combinedChainDataClient.getBlockByBlockRoot(blockRootParam),
+            (maybeStateData, maybeBlock) ->
+                maybeStateData.flatMap(
+                    stateData ->
+                        maybeBlock.flatMap(block -> getLightClientBootstrap(stateData, block))));
   }
 
   private Optional<ObjectAndMetaData<LightClientBootstrap>> getLightClientBootstrap(
-      final StateAndMetaData stateAndMetaData) {
+      final StateAndMetaData stateAndMetaData, final SignedBeaconBlock block) {
     return spec.getLightClientUtil(stateAndMetaData.getData().getSlot())
-        .map(clientUtil -> stateAndMetaData.map(clientUtil::getLightClientBootstrap));
+        .map(
+            clientUtil ->
+                stateAndMetaData.map(state -> clientUtil.createLightClientBootstrap(state, block)));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> getStateSyncCommittees(

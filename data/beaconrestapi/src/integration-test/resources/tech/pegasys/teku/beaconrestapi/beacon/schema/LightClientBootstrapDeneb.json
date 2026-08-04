@@ -1,10 +1,10 @@
 {
-  "title" : "LightClientBootstrap",
+  "title" : "LightClientBootstrapDeneb",
   "type" : "object",
   "required" : [ "header", "current_sync_committee", "current_sync_committee_branch" ],
   "properties" : {
     "header" : {
-      "$ref" : "#/components/schemas/LightClientHeader"
+      "$ref" : "#/components/schemas/LightClientHeaderDeneb"
     },
     "current_sync_committee" : {
       "$ref" : "#/components/schemas/SyncCommittee"

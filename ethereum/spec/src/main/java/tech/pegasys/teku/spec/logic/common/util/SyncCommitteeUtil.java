@@ -340,7 +340,7 @@ public class SyncCommitteeUtil {
     return nextSyncCommitteePeriodStart.plus(specConfig.getEpochsPerSyncCommitteePeriod()).minus(1);
   }
 
-  private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
+  public UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
     return epoch.dividedBy(specConfig.getEpochsPerSyncCommitteePeriod());
   }
 
