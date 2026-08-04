@@ -172,7 +172,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   public boolean shouldBuildOnFull(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
-      final UInt64 currentSlot,
+      final UInt64 slot,
       final ForkChoiceNode head) {
     return false;
   }

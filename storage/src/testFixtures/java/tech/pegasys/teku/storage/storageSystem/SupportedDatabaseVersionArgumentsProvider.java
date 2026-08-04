@@ -33,6 +33,7 @@ public class SupportedDatabaseVersionArgumentsProvider implements ArgumentsProvi
       supportedVersions.add(DatabaseVersion.V4);
       supportedVersions.add(DatabaseVersion.V5);
       supportedVersions.add(DatabaseVersion.V6);
+      supportedVersions.add(DatabaseVersion.ROCKSDB_TREE);
     }
     if (DatabaseVersion.tryLoadLeveldbNativeLibrary()) {
       supportedVersions.add(DatabaseVersion.LEVELDB1);
