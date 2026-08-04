@@ -67,6 +67,20 @@ public class V4FinalizedStateTreeStorageLogic
             "Number of finalized states stored");
   }
 
+  public void populateCacheFromExistingDb(
+      final KvStoreAccessor db, final SchemaCombinedTreeState schema) {
+    LOG.info("Rebuilding finalized state branch node cache from existing database...");
+    final long startMs = System.currentTimeMillis();
+    try (final Stream<Bytes32> keys =
+        db.streamKeys(schema.getColumnFinalizedStateMerkleTreeBranches())) {
+      keys.forEach(knownStoredBranchesCache::add);
+    }
+    LOG.info(
+        "Rebuilt finalized state branch cache with {} entries in {}ms",
+        knownStoredBranchesCache.size(),
+        System.currentTimeMillis() - startMs);
+  }
+
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(
       final KvStoreAccessor db, final SchemaCombinedTreeState dbSchema, final UInt64 maxSlot) {
@@ -150,10 +164,11 @@ public class V4FinalizedStateTreeStorageLogic
               state.getBackingNode());
       statesStored++;
       LOG.debug(
-          "Wrote finalized state delta slot={} root={} branchNodes={} leafNodes={}",
+          "Wrote finalized state delta slot={} root={} branchNodes={} skipped={} leafNodes={}",
           state.getSlot(),
           state.hashTreeRoot(),
           nodeStore.getStoredBranchNodeCount() - branchesBefore,
+          nodeStore.getSkippedBranchNodeCount(),
           nodeStore.getStoredLeafNodeCount() - leavesBefore);
     }
 
