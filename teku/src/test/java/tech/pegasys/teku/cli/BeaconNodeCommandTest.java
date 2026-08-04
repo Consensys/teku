@@ -656,7 +656,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageMode(PRUNE)
                     .dataStorageFrequency(StorageConfiguration.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION)
-                    .maxKnownNodeCacheSize(100_000))
+                    .maxKnownNodeCacheSize(StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
