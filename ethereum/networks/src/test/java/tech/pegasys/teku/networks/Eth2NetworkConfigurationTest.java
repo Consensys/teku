@@ -36,8 +36,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.platform.commons.util.ReflectionUtils;
-import org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -60,21 +58,23 @@ public class Eth2NetworkConfigurationTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getDefinedNetworks")
   public void testBuilderApplyNetworkDefaultsSetsContents(
-          final Eth2Network network, final NetworkDefinition unused) throws IllegalAccessException, NoSuchFieldException {
+      final Eth2Network network, final NetworkDefinition unused)
+      throws IllegalAccessException, NoSuchFieldException {
     final Eth2NetworkConfiguration.Builder networkConfigBuilder =
-            Eth2NetworkConfiguration.builder();
+        Eth2NetworkConfiguration.builder();
 
     networkConfigBuilder.applyNetworkDefaults(network);
 
     Field constantsField = Eth2NetworkConfiguration.Builder.class.getDeclaredField("constants");
     constantsField.setAccessible(true);
-    if(network == EPHEMERY) {
+    if (network == EPHEMERY) {
       assertThat(constantsField.get(networkConfigBuilder)).isEqualTo(EPHEMERY_CONFIG_URL);
     } else {
       assertThat(constantsField.get(networkConfigBuilder)).isEqualTo(network.configName());
     }
     constantsField.setAccessible(false);
   }
+
   @Test
   public void builder_usingConstantsUrl() {
     final URL url =
