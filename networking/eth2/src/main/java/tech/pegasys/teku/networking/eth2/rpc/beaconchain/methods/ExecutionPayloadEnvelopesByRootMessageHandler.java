@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
@@ -47,14 +47,16 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final RecentChainData recentChainData;
+  private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRootMessageHandler(
-      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
+      final Spec spec,
+      final CombinedChainDataClient combinedChainDataClient,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
+    this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -92,7 +94,8 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.size());
 
     final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
-    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
+    final UInt64 currentEpoch =
+        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
     final UInt64 minServableEpoch =
         currentEpoch
             .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
@@ -104,8 +107,8 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
       future =
           future.thenCompose(
               __ ->
-                  recentChainData
-                      .retrieveSignedExecutionPayloadByBlockRoot(beaconBlockRoot.get())
+                  combinedChainDataClient
+                      .getExecutionPayloadByBlockRoot(beaconBlockRoot.get())
                       .thenCompose(
                           maybeExecutionPayloadEnvelope ->
                               maybeExecutionPayloadEnvelope

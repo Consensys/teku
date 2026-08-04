@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
@@ -63,10 +64,13 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
   private final Spec spec = TestSpecFactory.createMinimalGloas();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   final ExecutionPayloadEnvelopesByRootMessageHandler handler =
-      new ExecutionPayloadEnvelopesByRootMessageHandler(spec, recentChainData, metricsSystem);
+      new ExecutionPayloadEnvelopesByRootMessageHandler(
+          spec, combinedChainDataClient, metricsSystem);
 
   final Eth2Peer peer = mock(Eth2Peer.class);
 
@@ -76,11 +80,12 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
   @BeforeEach
   public void setup() {
     chainBuilder.generateGenesis();
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveExecutionPayloadEnvelopesRequest(any(), anyLong()))
         .thenReturn(Optional.of(new RequestKey(ZERO, 42)));
     // Forward execution payload envelope requests from the mock to the ChainBuilder
-    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(any()))
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(any()))
         .thenAnswer(
             i -> SafeFuture.completedFuture(chainBuilder.getExecutionPayload(i.getArgument(0))));
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
@@ -168,7 +173,7 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     // handler has invoked the async unblinding path to mimic the DB + EL latency
     final List<SafeFuture<Optional<SignedExecutionPayloadEnvelope>>> pendingLookups =
         new ArrayList<>();
-    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(any()))
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(any()))
         .thenAnswer(
             invocationOnMock -> {
               final SafeFuture<Optional<SignedExecutionPayloadEnvelope>> future =
@@ -262,10 +267,10 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     when(mockedNewMessage.getBeaconBlockRoot())
         .thenReturn(newEnvelope.getMessage().getBeaconBlockRoot());
 
-    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(
             oldEnvelope.getMessage().getBeaconBlockRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(mockedOldEnvelope)));
-    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(
             newEnvelope.getMessage().getBeaconBlockRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(mockedNewEnvelope)));
 
@@ -305,7 +310,7 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     when(mockedMessage.getSlot()).thenReturn(exactBoundarySlot);
     when(mockedMessage.getBeaconBlockRoot()).thenReturn(envelope.getMessage().getBeaconBlockRoot());
 
-    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(
             envelope.getMessage().getBeaconBlockRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(mockedEnvelope)));
 
