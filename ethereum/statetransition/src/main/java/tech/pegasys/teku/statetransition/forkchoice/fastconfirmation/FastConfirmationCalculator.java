@@ -502,7 +502,14 @@ class FastConfirmationCalculator {
     final BeaconState currentBalanceSource = states.currentBalanceSource();
     Bytes32 confirmedRoot = latestConfirmedRoot;
 
-    if (getBlockEpoch(confirmedRoot).plus(1).equals(currentEpoch)
+    // The previous slot head is a root persisted in the FCR store across slots, so it may have been
+    // pruned from fork choice (protoarray only keeps finalized-onward blocks, while the spec
+    // assumes
+    // every block stays in store.blocks). When it is gone we cannot rely on it, so skip the
+    // previous-epoch advance rather than dereferencing it — mirrors the guard get_latest_confirmed
+    // applies to its other persisted roots.
+    if (forkChoice.contains(previousSlotHead)
+        && getBlockEpoch(confirmedRoot).plus(1).equals(currentEpoch)
         && epochPlusIsAtLeastCurrent(getVotingSource(previousSlotHead).getEpoch(), 2)
         && (atEpochStart
             || (willNoConflictingCheckpointBeJustified()

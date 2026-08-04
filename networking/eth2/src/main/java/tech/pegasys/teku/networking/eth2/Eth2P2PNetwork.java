@@ -17,6 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -65,6 +66,8 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
   void publishSignedBlsToExecutionChange(SignedBlsToExecutionChange signedBlsToExecutionChange);
 
   void publishPayloadAttestationMessage(PayloadAttestationMessage payloadAttestationMessage);
+
+  void publishExecutionPayloadBid(SignedExecutionPayloadBid executionPayloadBid);
 
   void publishProposerPreferences(SignedProposerPreferences signedProposerPreferences);
 }

@@ -37,10 +37,12 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 
 public class BlockRewardCalculatorUtil {
   private final Spec spec;
@@ -150,8 +152,21 @@ public class BlockRewardCalculatorUtil {
       final BeaconBlock block,
       final BlockProcessorAltair blockProcessor,
       final BeaconState preState) {
+    // In Gloas the child bid identifies whether it builds on the FULL or EMPTY parent.
+    final boolean parentPayloadAvailable =
+        block
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .map(
+                signedBid ->
+                    MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers())
+                        .isBidBuildingOnFullParent(
+                            BeaconStateGloas.required(preState), signedBid.getMessage()))
+            .orElse(false);
+    final BeaconState attestationRewardState =
+        spec.getStateForAttestationRewardCalculation(preState, parentPayloadAvailable);
     final MutableBeaconStateAltair mutableBeaconStateAltair =
-        BeaconStateAltair.required(preState).createWritableCopy();
+        BeaconStateAltair.required(attestationRewardState).createWritableCopy();
     final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
         blockProcessor.createIndexedAttestationProvider(
             mutableBeaconStateAltair, IndexedAttestationCache.capturing());

@@ -137,6 +137,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/on_payload_attestation_message", new ForkChoiceTestExecutor())
           .put("fork_choice/payload_data_availability", new ForkChoiceTestExecutor())
           .put("fork_choice/payload_timeliness", new ForkChoiceTestExecutor())
+          .put(
+              "fork_choice/should_apply_proposer_boost",
+              new ForkChoiceTestExecutor(
+                  // TODO this is skipped because it relies on equivocation, which is not
+                  // currently implemented. See https://github.com/Consensys/teku/issues/10608
+                  "should_apply_proposer_boost_withheld"))
           // Fork choice generated test types
           .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
           .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())
