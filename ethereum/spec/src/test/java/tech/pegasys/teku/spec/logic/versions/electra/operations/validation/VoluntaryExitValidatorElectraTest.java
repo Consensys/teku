@@ -63,7 +63,6 @@ class VoluntaryExitValidatorElectraTest {
 
     chainUpdater.initializeGenesis(true);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
   }
 

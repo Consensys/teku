@@ -693,23 +693,45 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     doReturn(blockSelector).when(blockSelectorFactory).createSelectorForBlockId(any());
   }
 
+  /** This currently only supports pre-Capella forks. */
   @Test
   public void getLightClientBootstrap_shouldGetBootstrap() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final BeaconState internalState = getHeadState();
+    final Spec altairSpec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil altairData = new DataStructureUtil(altairSpec);
+    final ChainDataProvider provider = setupBySpec(altairSpec, altairData, 16);
 
-    BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
+    final SignedBeaconBlock candidate = altairData.randomSignedBeaconBlock(1);
+    final BeaconState internalState =
+        altairData
+            .randomBeaconState(ONE)
+            .updated(
+                mutableState ->
+                    mutableState.setLatestBlockHeader(
+                        new BeaconBlockHeader(
+                            candidate.getSlot(),
+                            candidate.getMessage().getProposerIndex(),
+                            candidate.getParentRoot(),
+                            Bytes32.ZERO,
+                            candidate.getMessage().getBodyRoot())));
+    final SignedBeaconBlock block =
+        SignedBeaconBlock.create(
+            altairSpec,
+            candidate.getMessage().withStateRoot(internalState.hashTreeRoot()),
+            candidate.getSignature());
+    final BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
 
-    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(expectedBlockHeader.getRoot())))
+    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(block.getRoot())))
         .thenReturn(completedFuture(Optional.of(internalState)));
+    when(mockCombinedChainDataClient.getBlockByBlockRoot(eq(block.getRoot())))
+        .thenReturn(completedFuture(Optional.of(block)));
 
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+        provider.getLightClientBoostrap(block.getRoot());
 
     LightClientBootstrap bootstrap = safeJoin(future).orElseThrow().getData();
 
-    assertThat(bootstrap.get(0)).isEqualTo(expectedBlockHeader);
-    assertThat(bootstrap.get(1))
+    assertThat(bootstrap.getLightClientHeader().getBeacon()).isEqualTo(expectedBlockHeader);
+    assertThat(bootstrap.getCurrentSyncCommittee())
         .isEqualTo(BeaconStateAltair.required(internalState).getCurrentSyncCommittee());
   }
 
@@ -721,6 +743,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
 
     when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+    when(mockCombinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
@@ -999,7 +1023,6 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         storageSystem
             .chainBuilder()
             .generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
-    storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
     final Optional<ObjectAndMetaData<List<Attestation>>> response =

@@ -40,9 +40,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {
@@ -64,7 +66,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Setup network 1
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
     NodeManager node1 = createNodeManager(networkBuilder);
-    node1.chainUtil().setSlot(blockSlot);
+    node1.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Setup network 2
     Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
@@ -77,7 +79,7 @@ public class GossipMessageHandlerIntegrationTest {
                       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
     NodeManager node2 = createNodeManager(networkBuilder2);
-    node2.chainUtil().setSlot(blockSlot);
+    node2.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Setup network 3
     Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
@@ -90,7 +92,7 @@ public class GossipMessageHandlerIntegrationTest {
                       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
     NodeManager node3 = createNodeManager(networkBuilder3);
-    node2.chainUtil().setSlot(blockSlot);
+    node3.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
     waitFor(node1.connect(node2));
@@ -106,14 +108,14 @@ public class GossipMessageHandlerIntegrationTest {
     Thread.sleep(2000);
 
     // Propagate block from network 1
-    final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(blockSlot);
-    node1.gossipBlock(newBlock);
+    final SignedBlockAndState newBlock = node1.getChainBuilder().generateBlockAtSlot(blockSlot);
+    node1.gossipBlock(newBlock.getBlock());
 
     // Verify the expected block was gossiped across the network
     Waiter.waitFor(
         () -> {
-          assertThat(node2ReceivedBlocks).containsExactly(newBlock);
-          assertThat(node3ReceivedBlocks).containsExactly(newBlock);
+          assertThat(node2ReceivedBlocks).containsExactly(newBlock.getBlock());
+          assertThat(node3ReceivedBlocks).containsExactly(newBlock.getBlock());
         });
   }
 
@@ -126,7 +128,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 1
     NodeManager node1 = createNodeManager(b -> b.gossipEncoding(gossipEncoding));
-    node1.chainUtil().setSlot(blockSlot);
+    node1.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Setup network 2
     NodeManager node2 =
@@ -138,7 +140,7 @@ public class GossipMessageHandlerIntegrationTest {
                           // Report block as invalid
                           return SafeFuture.completedFuture(InternalValidationResult.reject("No"));
                         }));
-    node2.chainUtil().setSlot(blockSlot);
+    node2.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Setup network 3
     NodeManager node3 =
@@ -150,7 +152,7 @@ public class GossipMessageHandlerIntegrationTest {
                           node3ReceivedBlocks.add(block);
                           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                         }));
-    node3.chainUtil().setSlot(blockSlot);
+    node3.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
     waitFor(node1.connect(node2));
@@ -167,9 +169,12 @@ public class GossipMessageHandlerIntegrationTest {
     Thread.sleep(2000);
 
     // Propagate invalid block from network 1
-    final SignedBeaconBlock newBlock =
-        node1.chainUtil().createBlockAtSlotFromInvalidProposer(blockSlot);
-    node1.gossipBlock(newBlock);
+    final SignedBlockAndState newBlockAndState =
+        node1
+            .getChainBuilder()
+            .generateBlockAtSlot(blockSlot, BlockOptions.create().setWrongProposer(true));
+    node1.getChainUpdater().updateBestBlock(newBlockAndState);
+    node1.gossipBlock(newBlockAndState.getBlock());
 
     // Wait for blocks to propagate
     assertThat(node1.network().getPeerCount()).isEqualTo(1);
