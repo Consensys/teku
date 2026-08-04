@@ -3137,7 +3137,7 @@
 - name: get_attestation_participation_flag_indices#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
+      search: // get_attestation_participation_flag_indices
   spec: |
     <spec fn="get_attestation_participation_flag_indices" fork="altair" hash="d697ae39">
     def get_attestation_participation_flag_indices(
@@ -3179,7 +3179,7 @@
 - name: get_attestation_participation_flag_indices#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
+      search: // get_attestation_participation_flag_indices
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/deneb/helpers/BeaconStateAccessorsDeneb.java
       search: protected boolean shouldSetTargetTimelinessFlag(
   spec: |
@@ -3224,7 +3224,7 @@
 - name: get_attestation_participation_flag_indices#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public List<Integer> getAttestationParticipationFlagIndices(
+      search: // get_attestation_participation_flag_indices
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/BeaconStateAccessorsGloas.java
       search: protected boolean computeIsMatchingHead(
   spec: |
@@ -8961,7 +8961,7 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/protoarray/ForkChoiceModelGloas.java
       search: public void processBlock(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void executionProcessing(
+      search: public UInt64 executionProcessing(
   spec: |
     <spec fn="on_block" fork="gloas" hash="c370389d">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
@@ -9675,7 +9675,8 @@
 - name: process_attestation#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/block/BlockProcessorAltair.java
-      search: public AttestationProcessingResult processAttestation(
+      search: public AttestationProcessingResult processAttestation\(\s*final MutableBeaconStateAltair state,\s*final Attestation attestation,\s*final IndexedAttestationProvider indexedAttestationProvider,\s*final UInt64 parentSlot\)
+      regex: true
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: protected int getBuilderPaymentIndex(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
@@ -9895,7 +9896,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
       search: protected void processBlock(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void executionProcessing(
+      search: public UInt64 executionProcessing(
   spec: |
     <spec fn="process_block" fork="gloas" hash="7d98b5a3">
     def process_block(state: BeaconState, block: BeaconBlock) -> None:
@@ -10739,7 +10740,7 @@
 - name: process_execution_payload_bid#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
-      search: public void processExecutionPayloadBid(
+      search: // process_execution_payload_bid
   spec: |
     <spec fn="process_execution_payload_bid" fork="gloas" hash="ba18a784">
     def process_execution_payload_bid(

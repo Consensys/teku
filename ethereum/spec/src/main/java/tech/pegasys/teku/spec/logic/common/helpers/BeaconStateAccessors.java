@@ -60,6 +60,10 @@ public abstract class BeaconStateAccessors {
     return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
   }
 
+  public UInt64 getAttestationParentSlot(final BeaconState state) {
+    return state.getLatestBlockHeader().getSlot();
+  }
+
   public UInt64 getValidatorChurnLimit(final BeaconState state) {
     final int activeValidatorCount =
         getActiveValidatorIndices(state, getCurrentEpoch(state)).size();

@@ -174,7 +174,6 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
             .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
     finalizedBlocksAndStates.forEach(
         blockAndState -> {
-          peerStorage.chainUpdater().saveBlock(blockAndState);
           peerStorage.chainUpdater().updateBestBlock(blockAndState);
           peerStorage
               .chainBuilder()

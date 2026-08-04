@@ -21,7 +21,6 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.function.Supplier;
 import org.assertj.core.util.Files;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -93,16 +92,10 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void dataStorageCreateDbVersion_shouldOverrideIfFrequencyIsLowAndSupported() {
-    final Supplier<TekuConfiguration> tekuConfigurationSupplier =
-        () -> getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1");
-    if (DatabaseVersion.tryLoadLeveldbNativeLibrary()) {
-      final StorageConfiguration config = tekuConfigurationSupplier.get().storageConfiguration();
-      assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.LEVELDB_TREE);
-    } else {
-      assertThatThrownBy(tekuConfigurationSupplier::get)
-          .isInstanceOf(AssertionError.class)
-          .hasMessageContaining("Native LevelDB support is required");
-    }
+    final StorageConfiguration config =
+        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1")
+            .storageConfiguration();
+    assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.ROCKSDB_TREE);
   }
 
   @Test
