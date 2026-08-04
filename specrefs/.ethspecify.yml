@@ -138,15 +138,9 @@ specrefs:
       - upgrade_lc_update_to_gloas#gloas
 
       # Not implemented: fast confirmation
-      - compute_honest_ffg_support_for_current_target#phase0
-      - find_latest_confirmed_descendant#phase0
       - get_current_balance_source#phase0
-      - get_latest_confirmed#phase0
       - get_previous_balance_source#phase0
-      - is_confirmed_chain_safe#phase0
       - on_fast_confirmation#phase0
-      - will_current_target_be_justified#phase0
-      - will_no_conflicting_checkpoint_be_justified#phase0
       - get_safe_execution_block_hash#bellatrix
       - get_safe_execution_block_hash#gloas
 

@@ -1001,7 +1001,9 @@
     </spec>
 
 - name: compute_honest_ffg_support_for_current_target#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: UInt64 computeHonestFfgSupportForCurrentTarget() {
   spec: |
     <spec fn="compute_honest_ffg_support_for_current_target" fork="phase0" hash="3aa9e6a2">
     def compute_honest_ffg_support_for_current_target(store: Store) -> Gwei:
@@ -2092,7 +2094,9 @@
     </spec>
 
 - name: find_latest_confirmed_descendant#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: Bytes32 findLatestConfirmedDescendant(final Bytes32 latestConfirmedRoot) {
   spec: |
     <spec fn="find_latest_confirmed_descendant" fork="phase0" hash="f38db29f">
     def find_latest_confirmed_descendant(
@@ -4562,7 +4566,9 @@
     </spec>
 
 - name: get_latest_confirmed#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: Bytes32 getLatestConfirmed() {
   spec: |
     <spec fn="get_latest_confirmed" fork="phase0" hash="32f11e2b">
     def get_latest_confirmed(fcr_store: FastConfirmationStore) -> Root:
@@ -6640,7 +6646,9 @@
     </spec>
 
 - name: is_confirmed_chain_safe#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean isConfirmedChainSafe(final Bytes32 confirmedRoot) {
   spec: |
     <spec fn="is_confirmed_chain_safe" fork="phase0" hash="7e4d7c51">
     def is_confirmed_chain_safe(fcr_store: FastConfirmationStore, confirmed_root: Root) -> bool:
@@ -15677,7 +15685,9 @@
     </spec>
 
 - name: will_current_target_be_justified#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean willCurrentTargetBeJustified() {
   spec: |
     <spec fn="will_current_target_be_justified" fork="phase0" hash="c3ddf941">
     def will_current_target_be_justified(store: Store) -> bool:
@@ -15691,7 +15701,9 @@
     </spec>
 
 - name: will_no_conflicting_checkpoint_be_justified#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationCalculator.java
+      search: boolean willNoConflictingCheckpointBeJustified() {
   spec: |
     <spec fn="will_no_conflicting_checkpoint_be_justified" fork="phase0" hash="5dbf7eb2">
     def will_no_conflicting_checkpoint_be_justified(store: Store) -> bool:
