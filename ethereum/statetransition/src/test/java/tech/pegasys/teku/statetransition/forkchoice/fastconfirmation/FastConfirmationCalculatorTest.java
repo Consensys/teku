@@ -614,6 +614,32 @@ class FastConfirmationCalculatorTest {
   }
 
   @Test
+  void shouldKeepConfirmedRootWhenPreviousSlotHeadHasBeenPrunedFromForkChoice() {
+    buildLinearChain(18);
+    final Checkpoint zero = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+    // Head's unrealized justification is too old to trigger the current-epoch advance.
+    setCheckpoints(chain.get(17), zero, zero);
+    // Finalized at (epoch 1, chain[8]); the confirmed root starts there too.
+    when(store.getFinalizedCheckpoint()).thenReturn(new Checkpoint(UInt64.ONE, chain.get(8)));
+    // The previous slot head persisted in the FCR store is no longer tracked by fork choice
+    // (protoarray pruned it below the finalized anchor).
+    final Bytes32 prunedPreviousSlotHead = Bytes32.random();
+
+    final FastConfirmationStore fcrStore =
+        new FastConfirmationStore(
+            store, chain.get(8), zero, zero, zero, prunedPreviousSlotHead, chain.get(17));
+    final BeaconState state = genesisState();
+    final FastConfirmationStates states =
+        new FastConfirmationStates(Optional.of(state), state, state);
+    // currentSlot 17 -> currentEpoch 2. The previous-epoch advance would dereference the pruned
+    // previous slot head; the calculator must skip it and keep the finalized confirmed root.
+    final FastConfirmationCalculator calculator =
+        new FastConfirmationCalculator(spec, fcrStore, states, UInt64.valueOf(17));
+
+    assertThat(calculator.getLatestConfirmed()).isEqualTo(chain.get(8));
+  }
+
+  @Test
   void shouldAdvanceRecentConfirmedRootTowardHead() {
     buildLinearChain(11);
     // Head's unrealized justification (epoch 0) satisfies find_latest_confirmed_descendant phase 2.
