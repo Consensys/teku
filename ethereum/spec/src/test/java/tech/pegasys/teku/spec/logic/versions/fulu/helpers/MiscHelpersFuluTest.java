@@ -42,6 +42,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
@@ -304,17 +306,21 @@ public class MiscHelpersFuluTest {
         MiscHelpersFulu.required(SPEC.forMilestone(SpecMilestone.FULU).miscHelpers());
 
     // Create test data once for all tests
-    final List<Blob> blobs =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<BlobAndCellProofs> blobsAndCellProofs =
+        IntStream.range(0, 4).mapToObj(__ -> {
+          Blob blob = dataStructureUtil.randomValidBlob();
+          List<KZGCellAndProof> proofs = miscHelpersFulu.getKzg().computeCellsAndProofs(blob.getBytes());
+          return new BlobAndCellProofs(blob, proofs.stream().map(KZGCellAndProof::proof).toList());
+        }).toList();
 
     sharedSignedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobsAndCellProofs.size());
 
     sharedOriginalSidecars =
         miscHelpersFulu.constructDataColumnSidecars(
             sharedSignedBeaconBlock.getMessage(),
             sharedSignedBeaconBlock.asHeader(),
-            miscHelpersFulu.computeExtendedMatrixAndProofs(blobs));
+            miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs));
   }
 
   @ParameterizedTest(name = "{0} validator custody groups required")

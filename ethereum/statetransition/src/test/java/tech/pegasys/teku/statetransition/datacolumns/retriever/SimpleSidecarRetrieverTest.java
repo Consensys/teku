@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -127,7 +129,6 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData = createCustodyPeer();
     final TestPeer custodyPeerHavingData = createCustodyPeer();
@@ -136,7 +137,7 @@ public class SimpleSidecarRetrieverTest {
     final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block = blockResolver.addBlock(10, 1);
     final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
+        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs.stream().map((b) -> new BlobAndCellProofs(b, miscHelpers.getKzg().computeCellsAndProofs(b.getBytes()).stream().map(KZGCellAndProof::proof).toList())).toList());
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 
     final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());
