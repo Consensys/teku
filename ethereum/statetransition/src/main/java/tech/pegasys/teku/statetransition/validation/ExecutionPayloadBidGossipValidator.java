@@ -22,6 +22,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.saveForFuture;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -76,18 +77,16 @@ public class ExecutionPayloadBidGossipValidator {
      */
     final UInt64 executionPayment = bid.getExecutionPayment();
     if (!executionPayment.isZero()) {
-      LOG.trace("Bid's execution payment should be 0 but was {}", executionPayment);
       return completedFuture(
-          reject("Bid's execution payment should be 0 but was %s", executionPayment));
+          rejectBid(bid, "execution payment should be 0 but was %s", executionPayment));
     }
 
     /*
      * [IGNORE] bid.slot is the current slot or the next slot.
      */
     if (!gossipValidationHelper.isSlotCurrentOrNext(bid.getSlot())) {
-      LOG.trace("Bid must be for current or next slot but was for slot {}", bid.getSlot());
       return completedFuture(
-          ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
+          ignoreBid(bid, "must be for current or next slot but was for slot %s", bid.getSlot()));
     }
 
     /*
@@ -97,14 +96,8 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<ProposerPreferences> proposerPreferences =
         proposerPreferencesManager.getProposerPreferences(bid.getSlot());
     if (proposerPreferences.isEmpty()) {
-      LOG.trace(
-          "No proposer preferences available at slot {}. The bid from the builder with index {} will be saved for future processing.",
-          bid.getSlot(),
-          bid.getBuilderIndex());
       return completedFuture(
-          saveForFuture(
-              "No proposer preferences available at slot %s. The bid from the builder with index %s will be saved for future processing.",
-              bid.getSlot(), bid.getBuilderIndex()));
+          saveBidForFuture(bid, "no proposer preferences available; saving for future processing"));
     }
 
     /*
@@ -112,14 +105,12 @@ public class ExecutionPayloadBidGossipValidator {
      * SignedProposerPreferences associated with bid.slot
      */
     if (!bid.getFeeRecipient().equals(proposerPreferences.get().getFeeRecipient())) {
-      LOG.trace(
-          "Bid fee recipient {} does not match proposer preferences fee recipient {}",
-          bid.getFeeRecipient(),
-          proposerPreferences.get().getFeeRecipient());
       return completedFuture(
-          ignore(
-              "Bid fee recipient %s does not match proposer preferences fee recipient %s",
-              bid.getFeeRecipient(), proposerPreferences.get().getFeeRecipient()));
+          ignoreBid(
+              bid,
+              "fee recipient %s does not match proposer preferences fee recipient %s",
+              bid.getFeeRecipient(),
+              proposerPreferences.get().getFeeRecipient()));
     }
 
     /*
@@ -128,14 +119,7 @@ public class ExecutionPayloadBidGossipValidator {
     if (seenExecutionPayloadBids
         .getOrDefault(bid.getSlot(), Set.of())
         .contains(bid.getBuilderIndex())) {
-      LOG.trace(
-          "Already received a bid from builder with index {} at slot {}",
-          bid.getBuilderIndex(),
-          bid.getSlot());
-      return completedFuture(
-          ignore(
-              "Already received a bid from builder with index %s at slot %s",
-              bid.getBuilderIndex(), bid.getSlot()));
+      return completedFuture(ignoreBid(bid, "already received"));
     }
 
     /*
@@ -154,16 +138,10 @@ public class ExecutionPayloadBidGossipValidator {
       final UInt64 minRequiredBid = calculateMinimumRequiredBid(existingBidValue);
 
       if (bid.getValue().isLessThan(minRequiredBid)) {
-        LOG.trace(
-            "Bid value {} ETH does not meet minimum increment threshold ({}%). Current highest: {} ETH, minimum required: {} ETH",
-            () -> gweiToEth(bid.getValue()),
-            () -> minBidIncrementPercentage,
-            () -> gweiToEth(existingBidValue),
-            () -> gweiToEth(minRequiredBid));
         return completedFuture(
-            ignore(
-                "Bid value %s ETH does not meet minimum increment threshold (%s%%). Current highest: %s ETH, minimum required: %s ETH",
-                gweiToEth(bid.getValue()),
+            ignoreBid(
+                bid,
+                "does not meet minimum increment threshold (%s%%); current highest is %s ETH and minimum required is %s ETH",
                 minBidIncrementPercentage,
                 gweiToEth(existingBidValue),
                 gweiToEth(minRequiredBid)));
@@ -179,26 +157,22 @@ public class ExecutionPayloadBidGossipValidator {
         gossipValidationHelper.getGasLimitForExecutionPayload(
             bid.getParentBlockRoot(), bid.getParentBlockHash());
     if (maybeParentGasLimit.isEmpty()) {
-      LOG.trace(
-          "Gas limit for parent execution payload with block hash {} is unavailable. It will be saved for future processing",
-          bid.getParentBlockHash());
       return completedFuture(
-          saveForFuture(
-              "Gas limit for parent execution payload with block hash %s is unavailable. The bid will be saved for future processing",
+          saveBidForFuture(
+              bid,
+              "parent execution payload gas limit is unavailable for parent block hash %s; saving for future processing",
               bid.getParentBlockHash()));
     }
     final UInt64 parentGasLimit = maybeParentGasLimit.get();
     final UInt64 targetGasLimit = proposerPreferences.get().getTargetGasLimit();
     if (!isGasLimitTargetCompatible(parentGasLimit, bid.getGasLimit(), targetGasLimit)) {
-      LOG.trace(
-          "Bid gas limit {} is not compatible with parent gas limit {} and proposer preferences target gas limit {}",
-          bid.getGasLimit(),
-          parentGasLimit,
-          targetGasLimit);
       return completedFuture(
-          ignore(
-              "Bid gas limit %s is not compatible with parent gas limit %s and proposer preferences target gas limit %s",
-              bid.getGasLimit(), parentGasLimit, targetGasLimit));
+          ignoreBid(
+              bid,
+              "gas limit %s is not compatible with parent gas limit %s and proposer preferences target gas limit %s",
+              bid.getGasLimit(),
+              parentGasLimit,
+              targetGasLimit));
     }
 
     /*
@@ -207,12 +181,10 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(bid.getParentBlockRoot());
     if (maybeParentBlockSlot.isEmpty()) {
-      LOG.trace(
-          "Bid's parent block with root {} is unknown. The bid will be saved for future processing",
-          bid.getParentBlockRoot());
       return completedFuture(
-          saveForFuture(
-              "Bid's parent block with root %s is unknown. The bid will be saved for future processing",
+          saveBidForFuture(
+              bid,
+              "parent block with root %s is unknown; saving for future processing",
               bid.getParentBlockRoot()));
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
@@ -221,12 +193,12 @@ public class ExecutionPayloadBidGossipValidator {
      * [REJECT] The bid is for a higher slot than its parent block.
      */
     if (!bid.getSlot().isGreaterThan(parentBlockSlot)) {
-      LOG.trace(
-          "Bid slot {} is not greater than parent block slot {}", bid.getSlot(), parentBlockSlot);
       return completedFuture(
-          reject(
-              "Bid slot %s is not greater than parent block slot %s",
-              bid.getSlot(), parentBlockSlot));
+          rejectBid(
+              bid,
+              "slot %s is not greater than parent block slot %s",
+              bid.getSlot(),
+              parentBlockSlot));
     }
 
     return gossipValidationHelper
@@ -234,13 +206,11 @@ public class ExecutionPayloadBidGossipValidator {
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                LOG.trace(
-                    "State for block root {} and slot {} is unavailable.",
+                return saveBidForFuture(
+                    bid,
+                    "state for parent block root %s at slot %s is unavailable; saving for future processing",
                     bid.getParentBlockRoot(),
                     parentBlockSlot);
-                return saveForFuture(
-                    "State for block root %s and slot %s is unavailable. The bid will be saved for future processing.",
-                    bid.getParentBlockRoot(), parentBlockSlot);
               }
               final BeaconState state = maybeState.get();
 
@@ -251,13 +221,11 @@ public class ExecutionPayloadBidGossipValidator {
               final Bytes32 expectedRandaoMix =
                   gossipValidationHelper.getRandaoMixForCurrentEpoch(state, bid.getSlot());
               if (!bid.getPrevRandao().equals(expectedRandaoMix)) {
-                LOG.trace(
-                    "Bid prev randao {} does not match expected RANDAO mix {}",
+                return rejectBid(
+                    bid,
+                    "prev randao %s does not match expected RANDAO mix %s",
                     bid.getPrevRandao(),
                     expectedRandaoMix);
-                return reject(
-                    "Bid prev randao %s does not match expected RANDAO mix %s",
-                    bid.getPrevRandao(), expectedRandaoMix);
               }
 
               /*
@@ -265,11 +233,9 @@ public class ExecutionPayloadBidGossipValidator {
                */
               if (!gossipValidationHelper.isActiveBuilder(
                   bid.getBuilderIndex(), state, bid.getSlot())) {
-                LOG.trace(
-                    "Invalid builder index {}. Builder should be valid, active and non-slashed.",
-                    bid.getBuilderIndex());
-                return reject(
-                    "Invalid builder index %s. Builder should be valid, active and non-slashed.",
+                return rejectBid(
+                    bid,
+                    "builder index %s is not valid, active, and non-slashed",
                     bid.getBuilderIndex());
               }
 
@@ -279,33 +245,20 @@ public class ExecutionPayloadBidGossipValidator {
                */
               if (!gossipValidationHelper.builderHasEnoughBalanceForBid(
                   bid.getValue(), bid.getBuilderIndex(), state, bid.getSlot())) {
-                LOG.trace(
-                    "Bid value {} ETH exceeds builder with index {} excess balance",
-                    () -> gweiToEth(bid.getValue()),
-                    bid::getBuilderIndex);
-                return ignore(
-                    "Bid value %s ETH exceeds builder with index %s excess balance",
-                    gweiToEth(bid.getValue()), bid.getBuilderIndex());
+                return ignoreBid(bid, "value exceeds the builder's excess balance");
               }
 
               /*
                * [REJECT] signed_execution_payload_bid.signature is valid with respect to the bid.builder_index.
                */
               if (!isSignatureValid(signedExecutionPayloadBid, state)) {
-                LOG.trace("Invalid payload execution bid signature");
-                return reject("Invalid payload execution bid signature");
+                return rejectBid(bid, "invalid execution payload bid signature");
               }
 
               if (!seenExecutionPayloadBids
                   .computeIfAbsent(bid.getSlot(), __ -> ConcurrentHashMap.newKeySet())
                   .add(bid.getBuilderIndex())) {
-                LOG.trace(
-                    "Another payload execution bid from Builder with index {} already processed while validating bid for slot {}",
-                    bid.getBuilderIndex(),
-                    bid.getSlot());
-                return ignore(
-                    "Another payload execution bid from Builder with index %s already processed while validating bid for slot %s",
-                    bid.getBuilderIndex(), bid.getSlot());
+                return ignoreBid(bid, "another bid was processed concurrently");
               }
 
               // Atomically check threshold and update the highest bid
@@ -322,22 +275,58 @@ public class ExecutionPayloadBidGossipValidator {
               // Check if our bid was actually accepted
               if (!wasBidAccepted(bidValue, existingBidRef.get(), actualHighestBid)) {
                 final UInt64 minRequired = calculateMinimumRequiredBid(actualHighestBid);
-                LOG.trace(
-                    "Bid value {} ETH does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {} ETH, minimum required: {} ETH",
-                    () -> gweiToEth(bidValue),
-                    () -> minBidIncrementPercentage,
-                    () -> gweiToEth(actualHighestBid),
-                    () -> gweiToEth(minRequired));
-                return ignore(
-                    "Bid value %s ETH does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s ETH, minimum required: %s ETH",
-                    gweiToEth(bidValue),
+                return ignoreBid(
+                    bid,
+                    "does not meet minimum increment threshold (%s%%) after a concurrent update; current highest is %s ETH and minimum required is %s ETH",
                     minBidIncrementPercentage,
                     gweiToEth(actualHighestBid),
                     gweiToEth(minRequired));
               }
 
-              return ACCEPT;
+              return acceptBid(bid);
             });
+  }
+
+  private InternalValidationResult acceptBid(final ExecutionPayloadBid bid) {
+    LOG.trace(
+        "ExecutionPayloadBid Gossip Validation Result: ACCEPT, context: {}", formatBidContext(bid));
+    return ACCEPT;
+  }
+
+  @FormatMethod
+  private InternalValidationResult rejectBid(
+      final ExecutionPayloadBid bid, final String descriptionTemplate, final Object... args) {
+    final String message = formatBidMessage(bid, descriptionTemplate, args);
+    LOG.trace("ExecutionPayloadBid Gossip Validation Result: REJECT, reason: {}", message);
+    return reject("%s", message);
+  }
+
+  @FormatMethod
+  private InternalValidationResult ignoreBid(
+      final ExecutionPayloadBid bid, final String descriptionTemplate, final Object... args) {
+    final String message = formatBidMessage(bid, descriptionTemplate, args);
+    LOG.trace("ExecutionPayloadBid Gossip Validation Result: IGNORE, reason: {}", message);
+    return ignore("%s", message);
+  }
+
+  @FormatMethod
+  private InternalValidationResult saveBidForFuture(
+      final ExecutionPayloadBid bid, final String descriptionTemplate, final Object... args) {
+    final String message = formatBidMessage(bid, descriptionTemplate, args);
+    LOG.trace("ExecutionPayloadBid Gossip Validation Result: SAVE_FOR_FUTURE, reason: {}", message);
+    return saveForFuture("%s", message);
+  }
+
+  @FormatMethod
+  private String formatBidMessage(
+      final ExecutionPayloadBid bid, final String descriptionTemplate, final Object... args) {
+    return String.format("%s: %s", formatBidContext(bid), String.format(descriptionTemplate, args));
+  }
+
+  private String formatBidContext(final ExecutionPayloadBid bid) {
+    return String.format(
+        "Execution payload bid (builder index %s, slot %s, value %s ETH)",
+        bid.getBuilderIndex(), bid.getSlot(), gweiToEth(bid.getValue()));
   }
 
   /**
