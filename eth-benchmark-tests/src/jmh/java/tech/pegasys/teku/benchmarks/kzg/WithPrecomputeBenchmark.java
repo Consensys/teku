@@ -26,6 +26,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -55,7 +56,15 @@ public class WithPrecomputeBenchmark {
 
   @Benchmark
   public void computeExtendedMatrixAndProofs(final ExecutionPlan plan) {
-    plan.config.miscHelpersFulu.computeExtendedMatrixAndProofs(plan.config.blobs);
+    plan.config.miscHelpersFulu.computeExtendedMatrix(plan.config.blobs.stream()
+            .map(
+                    (b) ->
+                            new BlobAndCellProofs(
+                                    b,
+                                    plan.config.miscHelpersFulu.getKzg().computeCellsAndProofs(b.getBytes()).stream()
+                                            .map(KZGCellAndProof::proof)
+                                            .toList()))
+            .toList());
   }
 
   @Benchmark

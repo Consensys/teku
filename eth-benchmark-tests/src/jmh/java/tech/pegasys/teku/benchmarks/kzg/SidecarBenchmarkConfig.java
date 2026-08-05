@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -62,7 +64,16 @@ public class SidecarBenchmarkConfig {
             .map(SszKZGCommitment::new)
             .toList();
     miscHelpersFulu.setKzg(getKzg(useRustLibrary));
-    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs);
+    List<BlobAndCellProofs> blobsAndCellProofs = blobs.stream()
+            .map(
+                    (b) ->
+                            new BlobAndCellProofs(
+                                    b,
+                                    miscHelpersFulu.getKzg().computeCellsAndProofs(b.getBytes()).stream()
+                                            .map(KZGCellAndProof::proof)
+                                            .toList()))
+            .toList();
+    extendedMatrix = miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs);
     signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
