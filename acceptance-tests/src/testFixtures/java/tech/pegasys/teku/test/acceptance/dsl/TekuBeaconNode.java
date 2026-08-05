@@ -167,6 +167,32 @@ public class TekuBeaconNode extends TekuNode {
         .orElse(0L);
   }
 
+  /**
+   * Returns the most recent {@code fast_confirmation} SSE event, or empty if none received yet.
+   * Requires {@code startEventListener(EventType.fast_confirmation)} to have been called.
+   */
+  public Optional<FastConfirmationEventData> getLatestFastConfirmationEvent() throws IOException {
+    final Optional<Eth2EventHandler.PackedMessage> maybeMessage =
+        maybeEventStreamListener.flatMap(
+            listener ->
+                listener.getMessages().stream()
+                    .filter(
+                        packedMessage ->
+                            packedMessage.getEvent().equals(EventType.fast_confirmation.name()))
+                    .reduce((ignored, latest) -> latest));
+    if (maybeMessage.isEmpty()) {
+      return Optional.empty();
+    }
+    final JsonNode data = OBJECT_MAPPER.readTree(maybeMessage.get().getMessageEvent().getData());
+    return Optional.of(
+        new FastConfirmationEventData(
+            Bytes32.fromHexString(data.get("block").asText()),
+            UInt64.valueOf(data.get("slot").asText()),
+            UInt64.valueOf(data.get("current_slot").asText())));
+  }
+
+  public record FastConfirmationEventData(Bytes32 block, UInt64 slot, UInt64 currentSlot) {}
+
   public void waitForGenesis() {
     LOG.debug("Wait for genesis");
     waitFor(this::fetchGenesisTime);

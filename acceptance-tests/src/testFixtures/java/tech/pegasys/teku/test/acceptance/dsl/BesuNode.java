@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.google.common.io.Resources;
@@ -182,6 +183,22 @@ public class BesuNode extends Node {
         httpClient.post(
             baseUri, "", OBJECT_MAPPER.writeValueAsString(new Request("admin_addPeer", enode)));
     return OBJECT_MAPPER.readTree(response).get("result").asBoolean();
+  }
+
+  /**
+   * Returns the {@code result} of {@code eth_getBlockByNumber(blockLabel, false)}, e.g. the block
+   * the execution layer currently treats as {@code "safe"} or {@code "finalized"} (as set by the
+   * consensus layer via {@code engine_forkchoiceUpdated}). Fields such as {@code hash} and {@code
+   * number} are hex strings.
+   */
+  public JsonNode getExecutionBlock(final String blockLabel) throws Exception {
+    final URI baseUri = new URI(getExternalJsonRpcUrl());
+    final String body =
+        String.format(
+            "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getBlockByNumber\",\"params\":[\"%s\",false],\"id\":1}",
+            blockLabel);
+    final String response = httpClient.post(baseUri, "", body);
+    return OBJECT_MAPPER.readTree(response).get("result");
   }
 
   public String getRichBenefactorAddress() {
