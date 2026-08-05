@@ -671,12 +671,15 @@ jobs:
           echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
       - name: Run ReferenceTests (shard)
         if: steps.shard.outputs.args != ''
+        env:
+          GRADLE_ARGS: ${{ inputs.gradle_args }}
+          SHARD_ARGS: ${{ steps.shard.outputs.args }}
         run: |
           ./gradlew --no-daemon --parallel --info \
             -x generateReferenceTestClasses \
             -x processReferenceTestResources \
             -x cleanReferenceTestClasses \
-            referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
+            referenceTest ${GRADLE_ARGS} ${SHARD_ARGS}
       - name: Upload JUnit XML + HTML for ReferenceTests
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

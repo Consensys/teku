@@ -51,13 +51,20 @@ jobs:
       - name: get workflow_details
         id: jdkDetails
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          JDK_VERSION: ${{ inputs.jdk_version }}
+          INCLUDE_HASH_IN_DOCKER: ${{ inputs.include_hash_in_docker }}
+          GIT_SHA: ${{ github.sha }}
         run: |
           # on a release tag also add `latest` and `maj.min` version tags if it's not an `rc`
-          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref_type }}" == "tag" ]; then
-            echo "buildVersion=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            dockertags="consensys/teku:${{ github.ref_name }},consensys/teku:${{ github.ref_name }}-${{ inputs.jdk_version }}"
+          if [ "$EVENT_NAME" == "push" ] && [ "$REF_TYPE" == "tag" ]; then
+            echo "buildVersion=${REF_NAME}" >> $GITHUB_OUTPUT
+            dockertags="consensys/teku:${REF_NAME},consensys/teku:${REF_NAME}-${JDK_VERSION}"
             
-            semver=${{ github.ref_name }}
+            semver=${REF_NAME}
             if [[ ${semver,,} != *"-rc"* ]]; then
               echo "It's not an rc version, proceeding with extra tags..."
               # Extract major.minor 
@@ -67,27 +74,29 @@ jobs:
               else
                 echo "Invalid semver string"
               fi              
-              dockertags="${dockertags},consensys/teku:${major_minor},consensys/teku:${major_minor}-${{ inputs.jdk_version }}"
-              dockertags="${dockertags},consensys/teku:latest,consensys/teku:latest-${{ inputs.jdk_version }}"
+              dockertags="${dockertags},consensys/teku:${major_minor},consensys/teku:${major_minor}-${JDK_VERSION}"
+              dockertags="${dockertags},consensys/teku:latest,consensys/teku:latest-${JDK_VERSION}"
             fi
             echo "dockertags=${dockertags}" >> $GITHUB_OUTPUT
 
           else
             echo "buildVersion=develop" >> $GITHUB_OUTPUT
-            dockertags="consensys/teku:develop-${{ inputs.jdk_version }}"
-            if [ "${{ inputs.jdk_version }}" = "jdk25" ]; then
+            dockertags="consensys/teku:develop-${JDK_VERSION}"
+            if [ "$JDK_VERSION" = "jdk25" ]; then
               dockertags="$dockertags,consensys/teku:develop"
             fi
-            if [ "${{ inputs.include_hash_in_docker }}" = "true" ]; then
-              dockertags="$dockertags,consensys/teku:${{ github.sha }}"
+            if [ "$INCLUDE_HASH_IN_DOCKER" = "true" ]; then
+              dockertags="$dockertags,consensys/teku:${GIT_SHA}"
             fi
             echo "dockertags=${dockertags}" >> $GITHUB_OUTPUT
           fi
       - name: Get the artifacts in one place
+        env:
+          JDK_VERSION: ${{ inputs.jdk_version }}
         run: |
           mkdir -p build/docker-teku/
           ./gradlew dockerDistUntar
-          cp docker/${{ inputs.jdk_version }}/Dockerfile build/docker-teku/
+          cp "docker/${JDK_VERSION}/Dockerfile" build/docker-teku/
           echo "Creating buildVersion: ${{ steps.jdkDetails.outputs.buildVersion }}"
           echo "Creating dockertags: ${{ steps.jdkDetails.outputs.dockertags }}"
           # tree build/docker-teku/
