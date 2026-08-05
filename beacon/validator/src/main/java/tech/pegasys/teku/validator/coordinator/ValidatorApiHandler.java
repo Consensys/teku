@@ -925,23 +925,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Void> sendSignedProposerPreferences(
+  public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return SafeFuture.collectAll(
             signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
-        .thenAccept(
-            results -> {
-              final List<String> errorMessages =
-                  results.stream()
-                      .filter(InternalValidationResult::isReject)
-                      .flatMap(result -> result.getDescription().stream())
-                      .toList();
-              if (!errorMessages.isEmpty()) {
-                LOG.warn(
-                    "Some proposer preferences were rejected: {}",
-                    String.join("; ", errorMessages));
-              }
-            });
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
   @Override

@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -124,6 +125,57 @@ class MetricRecordingValidatorApiChannelTest {
         label -> assertThat(getDutiesOperationTimerDurations(label, "send")).hasSize(1));
   }
 
+  @Test
+  void shouldRecordSuccessfulSendSignedProposerPreferences() {
+    when(delegate.sendSignedProposerPreferences(emptyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        apiChannel.sendSignedProposerPreferences(emptyList());
+
+    assertThat(result).isCompletedWithValue(List.of());
+
+    assertThat(
+            getCounterValue(
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD, RequestOutcome.SUCCESS))
+        .isEqualTo(1);
+    assertThat(
+            getCounterValue(
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD, RequestOutcome.ERROR))
+        .isZero();
+    assertThat(
+            getCounterValue(
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD,
+                RequestOutcome.DATA_UNAVAILABLE))
+        .isZero();
+  }
+
+  @Test
+  void shouldRecordFailedSendSignedProposerPreferences() {
+    final List<SubmitDataError> failures = List.of(new SubmitDataError(UInt64.ZERO, "Nope"));
+    when(delegate.sendSignedProposerPreferences(emptyList()))
+        .thenReturn(SafeFuture.completedFuture(failures));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        apiChannel.sendSignedProposerPreferences(emptyList());
+
+    assertThat(result).isCompletedWithValue(failures);
+
+    assertThat(
+            getCounterValue(
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD, RequestOutcome.SUCCESS))
+        .isZero();
+    assertThat(
+            getCounterValue(
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD, RequestOutcome.ERROR))
+        .isEqualTo(1);
+    assertThat(
+            getCounterValue(
+                BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD,
+                RequestOutcome.DATA_UNAVAILABLE))
+        .isZero();
+  }
+
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getSendDataArguments")
   void shouldRecordFailingSendRequest(
@@ -169,11 +221,7 @@ class MetricRecordingValidatorApiChannelTest {
         noResponseTest(
             "subscribeToPersistentSubnets",
             channel -> channel.subscribeToPersistentSubnets(emptySet()),
-            BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD),
-        noResponseTest(
-            "sendSignedProposerPreferences",
-            channel -> channel.sendSignedProposerPreferences(emptyList()),
-            BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD));
+            BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD));
   }
 
   private static Arguments noResponseTest(
