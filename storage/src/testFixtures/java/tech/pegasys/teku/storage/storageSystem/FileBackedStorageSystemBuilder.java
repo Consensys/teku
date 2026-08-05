@@ -74,6 +74,7 @@ public class FileBackedStorageSystemBuilder {
 
   private Database buildDatabase() {
     return switch (version) {
+      case ROCKSDB_TREE -> createRocksDbTreeDatabase();
       case LEVELDB_TREE -> createLevelDbTrieDatabase();
       case LEVELDB2 -> createLevelDb2Database();
       case LEVELDB1 -> createLevelDb1Database();
@@ -191,6 +192,17 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        spec);
+  }
+
+  private Database createRocksDbTreeDatabase() {
+    KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
+    return RocksDbDatabaseFactory.createV6Tree(
+        new StubMetricsSystem(),
+        configDefault.withDatabaseDir(hotDir),
+        storageMode,
+        storeNonCanonicalBlocks,
+        10_000,
         spec);
   }
 

@@ -98,6 +98,7 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getExecutionBlockNumber().orElse(UInt64.ZERO),
                 bestBlock.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                ZERO,
                 ProtoNodeValidationStatus.VALID,
                 spec.calculateBlockCheckpoints(bestBlock.getState()),
                 ZERO,
@@ -516,7 +517,6 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
         storageSystem
             .chainBuilder()
             .generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
-    storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
     final Optional<ObjectAndMetaData<List<Attestation>>> response =

@@ -102,7 +102,6 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
         ChainBuilder.BlockOptions.create()
             .addProposerSlashing(dataStructureUtil.randomProposerSlashing(4));
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(3, blockOptions);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     final ProposerSlashing slashing = blockOptions.getProposerSlashings().getFirst();
     final UInt64 slashedProposerIndex =

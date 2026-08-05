@@ -34,6 +34,7 @@ public class ProtoNode {
 
   public static final UInt64 NO_EXECUTION_BLOCK_NUMBER = UInt64.ZERO;
   public static final Bytes32 NO_EXECUTION_BLOCK_HASH = Bytes32.ZERO;
+  public static final UInt64 NO_EXECUTION_GAS_LIMIT = UInt64.ZERO;
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -59,6 +60,8 @@ public class ProtoNode {
    */
   private final Bytes32 executionBlockHash;
 
+  private final UInt64 executionGasLimit;
+
   private UInt64 weight;
   private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
@@ -74,6 +77,7 @@ public class ProtoNode {
       final BlockCheckpoints checkpoints,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
+      final UInt64 executionGasLimit,
       final UInt64 weight,
       final Optional<Integer> bestChildIndex,
       final Optional<Integer> bestDescendantIndex,
@@ -86,6 +90,7 @@ public class ProtoNode {
     this.checkpoints = checkpoints;
     this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
+    this.executionGasLimit = executionGasLimit;
     this.weight = weight;
     this.bestChildIndex = bestChildIndex;
     this.bestDescendantIndex = bestDescendantIndex;
@@ -174,6 +179,10 @@ public class ProtoNode {
     return executionBlockHash;
   }
 
+  public UInt64 getExecutionGasLimit() {
+    return executionGasLimit;
+  }
+
   public BlockCheckpoints getBlockCheckpoints() {
     return checkpoints;
   }
@@ -236,6 +245,7 @@ public class ProtoNode {
         stateRoot,
         executionBlockNumber,
         executionBlockHash,
+        executionGasLimit,
         validationStatus,
         checkpoints,
         weight,
@@ -258,6 +268,7 @@ public class ProtoNode {
         && Objects.equals(checkpoints, protoNode.checkpoints)
         && Objects.equals(executionBlockNumber, protoNode.executionBlockNumber)
         && Objects.equals(executionBlockHash, protoNode.executionBlockHash)
+        && Objects.equals(executionGasLimit, protoNode.executionGasLimit)
         && Objects.equals(weight, protoNode.weight)
         && Objects.equals(parentIndex, protoNode.parentIndex)
         && Objects.equals(bestChildIndex, protoNode.bestChildIndex)
@@ -275,6 +286,7 @@ public class ProtoNode {
         checkpoints,
         executionBlockNumber,
         executionBlockHash,
+        executionGasLimit,
         weight,
         parentIndex,
         bestChildIndex,
@@ -295,6 +307,7 @@ public class ProtoNode {
         .add("unrealizedFinalizedCheckpoint", getUnrealizedFinalizedCheckpoint())
         .add("executionBlockNumber", executionBlockNumber)
         .add("executionBlockHash", executionBlockHash)
+        .add("executionGasLimit", executionGasLimit)
         .add("weight", weight)
         .add("parentIndex", parentIndex)
         .add("bestChildIndex", bestChildIndex)

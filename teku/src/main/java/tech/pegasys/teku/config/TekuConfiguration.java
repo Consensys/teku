@@ -99,6 +99,7 @@ public class TekuConfiguration {
             beaconRestApiConfig,
             powchainConfiguration,
             createExecutionPayloadBidCircuitBreakerFactory(spec, executionLayerConfiguration),
+            executionLayerConfiguration,
             storeConfig,
             spec,
             beaconChainControllerFactory,
