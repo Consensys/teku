@@ -623,7 +623,7 @@ public class BeaconChainMethods {
     final ExecutionPayloadEnvelopesByRangeMessageHandler
         executionPayloadEnvelopesByRangeMessageHandler =
             new ExecutionPayloadEnvelopesByRangeMessageHandler(
-                getSpecConfigGloas(spec), metricsSystem, combinedChainDataClient);
+                spec, getSpecConfigGloas(spec), metricsSystem, combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
