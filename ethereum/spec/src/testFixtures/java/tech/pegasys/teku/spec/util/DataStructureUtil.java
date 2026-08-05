@@ -496,7 +496,7 @@ public final class DataStructureUtil {
   }
 
   public SszBitlist randomBitlist(final UInt64 slot) {
-    return randomBitlist(getMaxValidatorsPerCommittee(slot));
+    return randomBitlist(getMaxValidatorsPerAttestation(slot));
   }
 
   public SszBitlist randomBitlist(final int n) {
@@ -964,7 +964,7 @@ public final class DataStructureUtil {
     final UInt64 slot = randomSlot();
     return attestationSchema.create(
         randomBitlist(
-            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerCommittee(slot)),
+            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerAttestation(slot)),
         randomAttestationData(),
         randomSignature(),
         this::randomCommitteeBitvector);
@@ -1004,7 +1004,7 @@ public final class DataStructureUtil {
         spec.atSlot(slot).getSchemaDefinitions().getAttestationSchema();
     return attestationSchema.create(
         randomBitlist(
-            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerCommittee(slot)),
+            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerAttestation(slot)),
         randomAttestationData(slot),
         randomSignature(),
         this::randomCommitteeBitvector);
@@ -1016,7 +1016,7 @@ public final class DataStructureUtil {
     return attestationSchema.create(
         randomBitlist(
             attestationSchema.getAggregationBitsSchema(),
-            getMaxValidatorsPerCommittee(randomSlot())),
+            getMaxValidatorsPerAttestation(randomSlot())),
         attestationData,
         randomSignature(),
         this::randomCommitteeBitvector);
@@ -3705,12 +3705,8 @@ public final class DataStructureUtil {
     return getConstant(SpecConfig::getJustificationBitsLength);
   }
 
-  private int getMaxValidatorsPerCommittee(final UInt64 slot) {
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
-          * getConstant(SpecConfig::getMaxCommitteesPerSlot);
-    }
-    return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
+  private int getMaxValidatorsPerAttestation(final UInt64 slot) {
+    return Math.toIntExact(spec.atSlot(slot).getConfig().getMaxValidatorsPerAttestation());
   }
 
   private int getMaxCommitteesPerSlot() {
