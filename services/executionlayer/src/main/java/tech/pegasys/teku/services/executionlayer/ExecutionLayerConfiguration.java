@@ -30,9 +30,9 @@ public class ExecutionLayerConfiguration {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final boolean DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED = true;
-  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW = 32;
-  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
-  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
+  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW = 8;
+  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 2;
+  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 2;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
   public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = UInt64.valueOf(90);
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
