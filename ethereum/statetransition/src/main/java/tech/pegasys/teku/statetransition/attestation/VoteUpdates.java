@@ -15,8 +15,8 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
@@ -30,10 +30,9 @@ public class VoteUpdates implements DeferredVotes {
   // overwrites a latest message when the new attestation's target epoch is strictly greater (a
   // same-epoch vote never overwrites). This is why a validator that attests to two competing blocks
   // in one slot (equivocation) is applied to its first-received vote rather than to whichever block
-  // root a root-keyed map happened to iterate first. A navigable map keeps iteration deterministic
-  // (ordered by validator index).
-  private final NavigableMap<UInt64, BlockRootAndFullPayloadHint> voteByValidatorIndex =
-      new ConcurrentSkipListMap<>();
+  // root a root-keyed map happened to iterate first.
+  private final Map<UInt64, BlockRootAndFullPayloadHint> voteByValidatorIndex =
+      new ConcurrentHashMap<>();
 
   public VoteUpdates(final UInt64 slot) {
     this.slot = slot;
