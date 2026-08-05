@@ -25,18 +25,26 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil.BlockRewardData;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair.AttestationProcessingResult;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockRewardCalculatorUtilTest {
@@ -106,6 +114,61 @@ public class BlockRewardCalculatorUtilTest {
         calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
     assertThat(reward.attestations()).isEqualTo(10L);
     verify(blockProcessorAltair, times(10)).processAttestation(any(), any(), any());
+  }
+
+  @Test
+  void calculateBlockRewards_shouldApplyFullParentAvailabilityForGloasAttestations() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final BlockRewardCalculatorUtil gloasCalculator = new BlockRewardCalculatorUtil(gloasSpec);
+    final BlockProcessorAltair gloasBlockProcessor = mock(BlockProcessorAltair.class);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(gloasSpec.getGenesisSchemaDefinitions());
+    final BeaconBlockBodySchema<?> bodySchema = schemaDefinitions.getBeaconBlockBodySchema();
+    final UInt64 parentSlot = UInt64.valueOf(8);
+    final UInt64 blockSlot = parentSlot.plus(2);
+    final int parentSlotIndex =
+        parentSlot.mod(gloasSpec.getSlotsPerHistoricalRoot(parentSlot)).intValue();
+    final ExecutionPayloadBid parentBid =
+        gloasData.randomExecutionPayloadBid(parentSlot, UInt64.ZERO);
+    final BeaconStateGloas preState =
+        BeaconStateGloas.required(
+            gloasData
+                .randomBeaconState(blockSlot)
+                .updated(
+                    mutableState -> {
+                      final MutableBeaconStateGloas stateGloas =
+                          MutableBeaconStateGloas.required(mutableState);
+                      stateGloas.setLatestExecutionPayloadBid(parentBid);
+                      stateGloas.setExecutionPayloadAvailability(
+                          schemaDefinitions.getExecutionPayloadAvailabilitySchema().getDefault());
+                    }));
+    final SignedExecutionPayloadBid childBid =
+        gloasData.randomSignedExecutionPayloadBid(
+            gloasData.randomExecutionPayloadBid(
+                parentBid.getBlockHash(), blockSlot, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO));
+    final BeaconBlockBody blockBody =
+        gloasData.randomBeaconBlockBody(
+            blockSlot,
+            builder ->
+                builder
+                    .signedExecutionPayloadBid(childBid)
+                    .attestations(bodySchema.getAttestationsSchema().getDefault())
+                    .proposerSlashings(bodySchema.getProposerSlashingsSchema().getDefault())
+                    .attesterSlashings(bodySchema.getAttesterSlashingsSchema().getDefault()));
+    final BeaconBlock block = gloasData.randomBeaconBlock(blockSlot, blockBody);
+    when(gloasBlockProcessor.createIndexedAttestationProvider(any(), any()))
+        .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
+
+    gloasCalculator.calculateBlockRewards(block, gloasBlockProcessor, preState);
+
+    final ArgumentCaptor<BeaconState> stateCaptor = ArgumentCaptor.forClass(BeaconState.class);
+    verify(gloasBlockProcessor).createIndexedAttestationProvider(stateCaptor.capture(), any());
+    final BeaconStateGloas attestationRewardState =
+        BeaconStateGloas.required(stateCaptor.getValue());
+    assertThat(attestationRewardState.getExecutionPayloadAvailability().getBit(parentSlotIndex))
+        .isTrue();
+    assertThat(preState.getExecutionPayloadAvailability().getBit(parentSlotIndex)).isFalse();
   }
 
   @Test

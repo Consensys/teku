@@ -55,7 +55,6 @@ public class GetSyncCommitteeRewardsTest
     final ChainBuilder.BlockOptions blockOptions =
         ChainBuilder.BlockOptions.create().setSyncAggregate(syncAggregate);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(1, blockOptions);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     setHandler(new GetSyncCommitteeRewards(chainDataProvider));
     request.setPathParameter("block_id", "head");

@@ -21,24 +21,38 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -51,6 +65,8 @@ class BlockProcessorGloasTest {
       ExecutionRequestsSchemaGloas.required(
           SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
               .getExecutionRequestsSchema());
+  private final SchemaDefinitionsGloas schemaDefinitions =
+      SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions());
   private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
 
   private BlockProcessorGloas blockProcessor() {
@@ -171,6 +187,129 @@ class BlockProcessorGloasTest {
     assertTooManyOperationsAreRejected(tooManyPayloadAttestations, "Too many payload attestations");
   }
 
+  @Test
+  void processExecutionPayloadBid_shouldReturnPreviousBidSlot() throws BlockProcessingException {
+    final UInt64 currentSlot = UInt64.valueOf(8);
+    final UInt64 previousBidSlot = UInt64.valueOf(3);
+    final MutableBeaconStateGloas mutableState =
+        BeaconStateGloas.required(dataStructureUtil.randomBeaconState(currentSlot))
+            .createWritableCopy();
+    mutableState.setLatestExecutionPayloadBid(
+        dataStructureUtil.randomExecutionPayloadBid(previousBidSlot, UInt64.ZERO));
+
+    final ExecutionPayloadBid bid =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .create(
+                mutableState.getLatestBlockHash(),
+                spec.getBlockRootAtSlot(mutableState, mutableState.getSlot().minusMinZero(1)),
+                dataStructureUtil.randomBytes32(),
+                spec.getRandaoMix(mutableState, spec.getCurrentEpoch(mutableState)),
+                dataStructureUtil.randomBytes20(),
+                UInt64.ZERO,
+                SpecConfigGloas.BUILDER_INDEX_SELF_BUILD,
+                mutableState.getSlot(),
+                UInt64.ZERO,
+                UInt64.ZERO,
+                schemaDefinitions.getExecutionPayloadBidSchema().getBlobKzgCommitmentsSchema().of(),
+                dataStructureUtil.randomBytes32());
+    final SignedExecutionPayloadBid signedBid =
+        schemaDefinitions.getSignedExecutionPayloadBidSchema().create(bid, BLSSignature.infinity());
+
+    final UInt64 returnedParentSlot =
+        blockProcessor().processExecutionPayloadBid(mutableState, signedBid);
+
+    assertThat(returnedParentSlot).isEqualTo(previousBidSlot);
+    assertThat(mutableState.getLatestExecutionPayloadBid()).isEqualTo(bid);
+  }
+
+  @Test
+  void processAttestation_shouldUseExplicitParentSlotForRewards() {
+    final MismatchedParentFixture fixture = mismatchedParentFixture();
+
+    final AttestationProcessingResult result =
+        blockProcessor()
+            .processAttestation(
+                fixture.state(),
+                fixture.attestation(),
+                fixture.indexedAttestationProvider(),
+                fixture.parentSlot());
+
+    assertThat(result.proposerReward()).isPresent();
+    assertThat(
+            miscHelpersAltair()
+                .hasFlag(
+                    fixture.state().getCurrentEpochParticipation().get(0).get(),
+                    ParticipationFlags.TIMELY_HEAD_FLAG_INDEX))
+        .isTrue();
+  }
+
+  @Test
+  void processAttestation_shouldUseBidParentSlotForConveniencePath() {
+    final MismatchedParentFixture fixture = mismatchedParentFixture();
+
+    final AttestationProcessingResult result =
+        blockProcessor()
+            .processAttestation(
+                fixture.state(), fixture.attestation(), fixture.indexedAttestationProvider());
+
+    assertThat(result.proposerReward()).isPresent();
+    assertThat(
+            miscHelpersAltair()
+                .hasFlag(
+                    fixture.state().getCurrentEpochParticipation().get(0).get(),
+                    ParticipationFlags.TIMELY_HEAD_FLAG_INDEX))
+        .isTrue();
+  }
+
+  private MismatchedParentFixture mismatchedParentFixture() {
+    final UInt64 parentSlot = UInt64.valueOf(8);
+    final UInt64 dataSlot = parentSlot.plus(1);
+    final UInt64 stateSlot = dataSlot.plus(1);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 slotsPerHistoricalRoot = UInt64.valueOf(config.getSlotsPerHistoricalRoot());
+    final MutableBeaconStateGloas state =
+        BeaconStateGloas.required(dataStructureUtil.randomBeaconState(stateSlot))
+            .createWritableCopy();
+    state.setLatestBlockHeader(
+        new BeaconBlockHeader(dataSlot, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO));
+    state.getBlockRoots().setElement(parentSlot.mod(slotsPerHistoricalRoot).intValue(), blockRoot);
+    state.getBlockRoots().setElement(dataSlot.mod(slotsPerHistoricalRoot).intValue(), blockRoot);
+    state.setCurrentJustifiedCheckpoint(
+        new Checkpoint(spec.computeEpochAtSlot(dataSlot), blockRoot));
+    state.getCurrentEpochParticipation().set(0, SszByte.asUInt8(0));
+    state.setLatestExecutionPayloadBid(
+        dataStructureUtil.randomExecutionPayloadBid(parentSlot, UInt64.ZERO));
+    state.setExecutionPayloadAvailability(
+        schemaDefinitions
+            .getExecutionPayloadAvailabilitySchema()
+            .ofBits(parentSlot.mod(slotsPerHistoricalRoot).intValue()));
+
+    final AttestationData data =
+        new AttestationData(
+            dataSlot,
+            UInt64.ONE,
+            blockRoot,
+            new Checkpoint(spec.computeEpochAtSlot(dataSlot), blockRoot),
+            new Checkpoint(spec.computeEpochAtSlot(dataSlot), blockRoot));
+    final Attestation attestation = dataStructureUtil.randomAttestation(data);
+    final IndexedAttestationLight indexedAttestation =
+        new IndexedAttestationLight(List.of(UInt64.ZERO), data, BLSSignature.infinity());
+    final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
+        ignored -> indexedAttestation;
+    return new MismatchedParentFixture(state, attestation, indexedAttestationProvider, parentSlot);
+  }
+
+  private MiscHelpersAltair miscHelpersAltair() {
+    return spec.getGenesisSpec().miscHelpers().toVersionAltair().orElseThrow();
+  }
+
+  private record MismatchedParentFixture(
+      MutableBeaconStateGloas state,
+      Attestation attestation,
+      AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider,
+      UInt64 parentSlot) {}
+
   private void assertTooManyRequestsAreRejected(
       final ExecutionRequests requests, final String expectedMessage) {
     assertThatThrownBy(() -> blockProcessor().applyParentExecutionPayload(null, requests, null))
@@ -180,7 +319,9 @@ class BlockProcessorGloasTest {
 
   private void assertTooManyOperationsAreRejected(
       final BeaconBlockBodyGloas body, final String expectedMessage) {
-    assertThatThrownBy(() -> blockProcessor().processOperationsNoValidation(null, body, null, null))
+    assertThatThrownBy(
+            () ->
+                blockProcessor().processOperationsNoValidation(null, body, null, null, UInt64.ZERO))
         .isInstanceOf(BlockProcessingException.class)
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(expectedMessage);
