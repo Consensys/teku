@@ -420,6 +420,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
+  protected volatile ExecutionPayloadProvider executionPayloadProvider;
   protected volatile StorageUpdateChannel storageUpdateChannel;
   protected volatile SyncPreImportBlockChannel syncPreImportBlockChannel;
   protected volatile StableSubnetSubscriber stableSubnetSubscriber;
@@ -626,8 +627,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider =
         createBlindedExecutionPayloadProvider(storageQueryChannel);
 
-    final ExecutionPayloadProvider executionPayloadProvider =
-        createExecutionPayloadProvider(blindedExecutionPayloadProvider);
+    executionPayloadProvider = createExecutionPayloadProvider(blindedExecutionPayloadProvider);
 
     // Used to optimize the case where we receive a block and are still importing its blobs/data
     // columns,
@@ -1620,7 +1620,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+        new CombinedChainDataClient(
+            recentChainData, storageQueryChannel, spec, executionPayloadProvider);
   }
 
   protected void initBlobKzgCommitmentsProvider() {
@@ -2053,9 +2054,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
               beaconConfig.p2pConfig().getHistoricalDataMaxQueryQueueSize(),
               metricsSystem);
+      // The envelope fallback reads from historical data too, so it goes through the throttled
+      // channel as well - otherwise RPC requests for finalized envelopes would bypass the
+      // concurrency limit this client exists to enforce.
+      final ExecutionPayloadProvider throttlingExecutionPayloadProvider =
+          createExecutionPayloadProvider(
+              createBlindedExecutionPayloadProvider(throttlingStorageQueryChannel));
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
+              new CombinedChainDataClient(
+                  recentChainData,
+                  throttlingStorageQueryChannel,
+                  spec,
+                  throttlingExecutionPayloadProvider));
     }
 
     final SuperNodeSupplier isSuperNodeSupplier =
