@@ -70,6 +70,16 @@ public abstract class AttestationUtil {
   }
 
   /**
+   * Returns the state to use for non-consensus attestation reward calculations. Forks may project
+   * block-processing data that is already known to the caller but has not yet been applied to the
+   * pre-state.
+   */
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    return state;
+  }
+
+  /**
    * Check if ``data_1`` and ``data_2`` are slashable according to Casper FFG rules.
    *
    * @param data1

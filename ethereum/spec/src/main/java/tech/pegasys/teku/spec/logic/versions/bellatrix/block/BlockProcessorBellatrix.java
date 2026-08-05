@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -98,25 +99,30 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier =
         getValidatorExitContextSupplier(state);
 
+    UInt64 parentSlot = state.getLatestBlockHeader().getSlot();
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      executionProcessing(genericState, block, payloadExecutor, validatorExitContextSupplier);
+      parentSlot =
+          executionProcessing(
+              genericState, block, payloadExecutor, validatorExitContextSupplier, parentSlot);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(
-        state, block.getBody(), indexedAttestationCache, validatorExitContextSupplier);
+        state, block.getBody(), indexedAttestationCache, validatorExitContextSupplier, parentSlot);
     processSyncAggregate(
         state, blockBody.getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
   }
 
-  public void executionProcessing(
+  public UInt64 executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlotFallback)
       throws BlockProcessingException {
     processExecutionPayload(genericState, beaconBlock.getBody(), payloadExecutor);
+    return parentSlotFallback;
   }
 
   @Override
