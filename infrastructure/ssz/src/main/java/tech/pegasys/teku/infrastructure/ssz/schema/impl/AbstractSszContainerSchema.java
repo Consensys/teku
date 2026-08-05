@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Suppliers;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -107,6 +108,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   // Progressive mode fields (null for regular containers)
   private final boolean[] activeFields;
   private final int[] fieldToTreePosition;
+  private final int[] slotToFieldIndex;
   private final LeafNode activeFieldsLeafNode;
 
   // ===== Regular (non-progressive) constructors =====
@@ -118,6 +120,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.childrenSchemas = childrenSchemas.stream().map(NamedSchema::getSchema).toList();
     this.activeFields = null;
     this.fieldToTreePosition = null;
+    this.slotToFieldIndex = null;
     this.activeFieldsLeafNode = null;
     this.fixedPartSize = calcSszFixedPartSize();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
@@ -133,6 +136,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.childrenSchemas = childrenSchemas;
     this.activeFields = null;
     this.fieldToTreePosition = null;
+    this.slotToFieldIndex = null;
     this.activeFieldsLeafNode = null;
     this.fixedPartSize = calcSszFixedPartSize();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
@@ -164,6 +168,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.containerName = name;
     this.activeFields = activeFields.clone();
     this.fieldToTreePosition = new int[childrenSchemas.size()];
+    this.slotToFieldIndex = new int[activeFields.length];
 
     int fieldIdx = 0;
     for (int slot = 0; slot < activeFields.length; slot++) {
@@ -176,7 +181,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         }
         childrenNamesToFieldIndex.put(ns.getName(), fieldIdx);
         this.fieldToTreePosition[fieldIdx] = slot;
+        this.slotToFieldIndex[slot] = fieldIdx;
         fieldIdx++;
+      } else {
+        this.slotToFieldIndex[slot] = -1;
       }
     }
 
@@ -576,20 +584,144 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
-    if (isProgressiveMode()) {
-      throw new UnsupportedOperationException(
-          "Store/load backing nodes not yet supported for progressive containers");
+    if (!isProgressiveMode()) {
+      SszContainerSchema.super.storeBackingNodes(
+          nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+      return;
     }
-    SszContainerSchema.super.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+    final TreeNode progressiveDataTree = node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    final TreeNode activeFieldsNode = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+    final long dataRootGIndex = GIndexUtil.gIdxLeftGIndex(rootGIndex);
+    ProgressiveTreeUtil.storeProgressiveSpine(
+        nodeStore,
+        dataRootGIndex,
+        progressiveDataTree,
+        activeFields.length,
+        (levelGIndex, levelSubtree, chunksInLevel, depth) ->
+            storeContainerLevelSubtree(
+                nodeStore,
+                maxBranchLevelsSkipped,
+                levelGIndex,
+                levelSubtree,
+                chunksInLevel,
+                depth));
+    nodeStore.storeLeafNode(activeFieldsNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+    nodeStore.storeBranchNode(
+        node.hashTreeRoot(),
+        rootGIndex,
+        1,
+        new Bytes32[] {progressiveDataTree.hashTreeRoot(), activeFieldsNode.hashTreeRoot()});
+  }
+
+  private void storeContainerLevelSubtree(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long levelGIndex,
+      final TreeNode levelSubtree,
+      final int chunksInLevel,
+      final int depth) {
+    if (chunksInLevel == 0) {
+      return;
+    }
+    final int levelNum = depth / 2; // depth = 2 * level per ProgressiveTreeUtil
+    final int levelStartSlot =
+        levelNum > 0 ? (int) ProgressiveTreeUtil.cumulativeCapacity(levelNum - 1) : 0;
+    if (depth == 0) {
+      final int fieldIdx = slotToFieldIndex[levelStartSlot];
+      if (fieldIdx >= 0) {
+        getChildSchema(fieldIdx)
+            .storeBackingNodes(nodeStore, maxBranchLevelsSkipped, levelGIndex, levelSubtree);
+      }
+    } else {
+      final long lastUsefulGIndex =
+          GIndexUtil.gIdxChildGIndex(levelGIndex, chunksInLevel - 1, depth);
+      StoringUtil.storeNodesToDepth(
+          nodeStore,
+          maxBranchLevelsSkipped,
+          levelSubtree,
+          levelGIndex,
+          depth,
+          lastUsefulGIndex,
+          (targetNode, targetGIndex) -> {
+            final int posInLevel = GIndexUtil.gIdxChildIndexFromGIndex(targetGIndex, depth);
+            final int slot = levelStartSlot + posInLevel;
+            final int fieldIdx = slotToFieldIndex[slot];
+            if (fieldIdx >= 0) {
+              getChildSchema(fieldIdx)
+                  .storeBackingNodes(nodeStore, maxBranchLevelsSkipped, targetGIndex, targetNode);
+            }
+          });
+    }
   }
 
   @Override
   public TreeNode loadBackingNodes(
       final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
-    if (isProgressiveMode()) {
-      throw new UnsupportedOperationException(
-          "Store/load backing nodes not yet supported for progressive containers");
+    if (!isProgressiveMode()) {
+      return SszContainerSchema.super.loadBackingNodes(nodeSource, rootHash, rootGIndex);
     }
-    return SszContainerSchema.super.loadBackingNodes(nodeSource, rootHash, rootGIndex);
+    final TreeNodeSource.CompressedBranchInfo branch =
+        nodeSource.loadBranchNode(rootHash, rootGIndex);
+    checkState(
+        branch.getChildren().length == 2, "Container root node must have exactly 2 children");
+    checkState(branch.getDepth() == 1, "Container root node must have depth of 1");
+    final Bytes32 dataHash = branch.getChildren()[0];
+    final long dataRootGIndex = GIndexUtil.gIdxLeftGIndex(rootGIndex);
+    final TreeNode progressiveDataTree =
+        ProgressiveTreeUtil.loadProgressiveSpine(
+            nodeSource,
+            dataHash,
+            dataRootGIndex,
+            activeFields.length,
+            (levelHash, levelGIndex, chunksInLevel, depth) ->
+                loadContainerLevelSubtree(
+                    nodeSource, levelHash, levelGIndex, chunksInLevel, depth));
+    return BranchNode.create(progressiveDataTree, activeFieldsLeafNode);
+  }
+
+  private TreeNode loadContainerLevelSubtree(
+      final TreeNodeSource nodeSource,
+      final Bytes32 levelHash,
+      final long levelGIndex,
+      final int chunksInLevel,
+      final int depth) {
+    final int levelNum = depth / 2;
+    final int levelStartSlot =
+        levelNum > 0 ? (int) ProgressiveTreeUtil.cumulativeCapacity(levelNum - 1) : 0;
+    if (depth == 0) {
+      final int fieldIdx = slotToFieldIndex[levelStartSlot];
+      if (fieldIdx < 0) {
+        return LeafNode.EMPTY_LEAF;
+      }
+      return loadChunkNode(nodeSource, levelHash, levelGIndex, getChildSchema(fieldIdx));
+    }
+    final long lastUsefulGIndex = GIndexUtil.gIdxChildGIndex(levelGIndex, chunksInLevel - 1, depth);
+    return LoadingUtil.loadNodesToDepth(
+        nodeSource,
+        levelHash,
+        levelGIndex,
+        depth,
+        TreeUtil.ZERO_TREES[depth],
+        lastUsefulGIndex,
+        (src, childHash, childGIndex) -> {
+          final int posInLevel = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, depth);
+          final int slot = levelStartSlot + posInLevel;
+          final int fieldIdx = slotToFieldIndex[slot];
+          if (fieldIdx < 0) {
+            return LeafNode.EMPTY_LEAF;
+          }
+          return loadChunkNode(src, childHash, childGIndex, getChildSchema(fieldIdx));
+        });
+  }
+
+  private TreeNode loadChunkNode(
+      final TreeNodeSource nodeSource,
+      final Bytes32 chunkHash,
+      final long chunkGIndex,
+      final SszSchema<?> fieldSchema) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(chunkHash) || chunkHash.equals(Bytes32.ZERO)) {
+      return fieldSchema.getDefaultTree();
+    }
+    return fieldSchema.loadBackingNodes(nodeSource, chunkHash, chunkGIndex);
   }
 }
