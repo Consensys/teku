@@ -317,6 +317,40 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
     verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(3L));
   }
 
+  @Test
+  public void onIncomingMessage_shouldServeSingleSlotRemainingAfterTrimming() {
+    buildChain(8);
+    // minServableEpoch = 1, so of the requested slots only slot 8 survives trimming, and it is also
+    // the last hot slot, so the request must not be treated as already complete
+    stubCurrentEpoch(1);
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.valueOf(6), UInt64.valueOf(3));
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    final SignedExecutionPayloadEnvelope expected =
+        chainBuilder.getExecutionPayloadAtSlot(UInt64.valueOf(8)).orElseThrow();
+    verify(callback).respond(expected);
+    verify(callback, times(1)).respond(any());
+    verify(callback).completeSuccessfully();
+    verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(1L));
+  }
+
+  @Test
+  public void onIncomingMessage_shouldServeEnvelopeWhenStartSlotIsHeadSlot() {
+    buildChain(5);
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.valueOf(5), UInt64.ONE);
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    final SignedExecutionPayloadEnvelope expected =
+        chainBuilder.getExecutionPayloadAtSlot(UInt64.valueOf(5)).orElseThrow();
+    verify(callback).respond(expected);
+    verify(callback).completeSuccessfully();
+    verify(peer, never()).adjustExecutionPayloadEnvelopesRequest(any(), anyLong());
+  }
+
   private void stubCurrentEpoch(final int epochsAfterMinEpochsForBlockRequests) {
     when(recentChainData.getCurrentEpoch())
         .thenReturn(

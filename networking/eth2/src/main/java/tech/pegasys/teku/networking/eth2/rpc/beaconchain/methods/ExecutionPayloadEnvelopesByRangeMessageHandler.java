@@ -158,7 +158,11 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
 
     final SafeFuture<RequestState> response;
 
-    if (initialState.isComplete()) {
+    // Only short-circuit when there is genuinely nothing to send: an empty range or a start slot
+    // strictly beyond our head. When the start slot equals the head slot we must still return the
+    // envelope at that slot, which is also the range a request trimmed down to its last servable
+    // slot ends up with.
+    if (adjustedCount.isZero() || adjustedStartSlot.isGreaterThan(headSlot)) {
       response = SafeFuture.completedFuture(initialState);
     } else {
       response = sendNextExecutionPayloadEnvelope(initialState);
