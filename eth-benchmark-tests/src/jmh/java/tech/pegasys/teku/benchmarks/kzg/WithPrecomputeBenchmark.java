@@ -56,14 +56,20 @@ public class WithPrecomputeBenchmark {
 
   @Benchmark
   public void computeExtendedMatrixAndProofs(final ExecutionPlan plan) {
-    plan.config.miscHelpersFulu.computeExtendedMatrix(plan.config.blobs.stream()
+    plan.config.miscHelpersFulu.computeExtendedMatrix(
+        plan.config.blobs.stream()
             .map(
-                    (b) ->
-                            new BlobAndCellProofs(
-                                    b,
-                                    plan.config.miscHelpersFulu.getKzg().computeCellsAndProofs(b.getBytes()).stream()
-                                            .map(KZGCellAndProof::proof)
-                                            .toList()))
+                (b) ->
+                    new BlobAndCellProofs(
+                        b,
+                        plan
+                            .config
+                            .miscHelpersFulu
+                            .getKzg()
+                            .computeCellsAndProofs(b.getBytes())
+                            .stream()
+                            .map(KZGCellAndProof::proof)
+                            .toList()))
             .toList());
   }
 

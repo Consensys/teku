@@ -64,14 +64,15 @@ public class SidecarBenchmarkConfig {
             .map(SszKZGCommitment::new)
             .toList();
     miscHelpersFulu.setKzg(getKzg(useRustLibrary));
-    List<BlobAndCellProofs> blobsAndCellProofs = blobs.stream()
+    List<BlobAndCellProofs> blobsAndCellProofs =
+        blobs.stream()
             .map(
-                    (b) ->
-                            new BlobAndCellProofs(
-                                    b,
-                                    miscHelpersFulu.getKzg().computeCellsAndProofs(b.getBytes()).stream()
-                                            .map(KZGCellAndProof::proof)
-                                            .toList()))
+                (b) ->
+                    new BlobAndCellProofs(
+                        b,
+                        miscHelpersFulu.getKzg().computeCellsAndProofs(b.getBytes()).stream()
+                            .map(KZGCellAndProof::proof)
+                            .toList()))
             .toList();
     extendedMatrix = miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs);
     signedBeaconBlock =
