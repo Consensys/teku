@@ -360,9 +360,6 @@ public class ProgressiveTreeUtil {
     if (totalChunks == 0) {
       return LeafNode.EMPTY_LEAF;
     }
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(dataHash)) {
-      return LeafNode.EMPTY_LEAF;
-    }
 
     final int maxLevel = levelForIndex(totalChunks - 1);
     return loadSpineLevelRecursive(
@@ -378,9 +375,6 @@ public class ProgressiveTreeUtil {
       final int totalChunks,
       final LevelLoader levelLoader) {
     if (level > maxLevel) {
-      return LeafNode.EMPTY_LEAF;
-    }
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(spineHash)) {
       return LeafNode.EMPTY_LEAF;
     }
 
