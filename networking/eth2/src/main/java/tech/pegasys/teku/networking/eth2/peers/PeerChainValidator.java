@@ -95,9 +95,21 @@ public class PeerChainValidator {
             })
         .exceptionally(
             err -> {
-              LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
               validationErrorCounter.inc();
-              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).finishStackTrace();
+              if (chainDataClient.isChainHeadOptimistic()) {
+                // While optimistically syncing we have no validated view of the chain, so a failed
+                // verification is not the peer's fault - disconnect without penalty (retryable)
+                // rather than banning an otherwise-good peer we still need to sync from.
+                LOG.debug(
+                    "Unable to validate peer's chain while optimistic, disconnecting without penalty {}",
+                    peer.getId(),
+                    err);
+                peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).finishStackTrace();
+              } else {
+                LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
+                peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK)
+                    .finishStackTrace();
+              }
               return false;
             });
   }
