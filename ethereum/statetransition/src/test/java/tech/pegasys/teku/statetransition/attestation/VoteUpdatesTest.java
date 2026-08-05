@@ -94,15 +94,13 @@ class VoteUpdatesTest {
 
   @Test
   void rejectsAnAttestationFromADifferentSlot() {
-    final IndexedAttestationLight wrongSlot =
-        attestation(UInt64.valueOf(99), BLOCK_A, UInt64.ZERO);
+    final IndexedAttestationLight wrongSlot = attestation(UInt64.valueOf(99), BLOCK_A, UInt64.ZERO);
     assertThatThrownBy(() -> voteUpdates.addAttestation(wrongSlot, false))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("wrong slot");
   }
 
-  private IndexedAttestationLight attestation(
-      final Bytes32 blockRoot, final UInt64... indices) {
+  private IndexedAttestationLight attestation(final Bytes32 blockRoot, final UInt64... indices) {
     return attestation(SLOT, blockRoot, indices);
   }
 
