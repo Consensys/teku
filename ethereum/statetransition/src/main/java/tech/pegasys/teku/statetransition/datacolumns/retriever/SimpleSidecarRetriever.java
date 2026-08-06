@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -37,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -51,13 +57,42 @@ public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
   private static final Logger LOG = LogManager.getLogger();
 
+  /** Cadence at which {@link #nextRound()} runs to match pending requests to peers. */
+  public static final Duration DEFAULT_ROUND_PERIOD = Duration.ofSeconds(1);
+
+  /**
+   * Default time a request must have been continuously in-flight before it becomes eligible for a
+   * hedged second attempt. Chosen to be shorter than the RPC response-chunk timeout so a slow peer
+   * is hedged well before its request would otherwise time out, but long enough that healthy peers
+   * (which respond in well under a second) are never hedged.
+   */
+  public static final Duration DEFAULT_HEDGE_DELAY = Duration.ofSeconds(3);
+
   private final Spec spec;
   private final MiscHelpersFulu miscHelpersFulu;
   private final DasPeerCustodyCountSupplier custodyCountSupplier;
   private final DataColumnReqResp reqResp;
   private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
   private final Duration roundPeriod;
   private final int maxRequestCount;
+
+  /**
+   * Fraction of the currently pending requests that may have a redundant ("hedged") second
+   * in-flight attempt at any time. Hedging lets a column stuck on a slow/unresponsive peer be
+   * re-dispatched to an alternate custody peer without waiting for the original RPC to time out.
+   * {@code 0} disables hedging entirely.
+   */
+  private final double overlapFraction;
+
+  /**
+   * How long a request must have been continuously in-flight before it becomes eligible for a
+   * hedged second attempt. This targets genuinely slow peers rather than blindly duplicating every
+   * request. Measured against wall-clock time (not round counts): {@link #nextRound()} can be
+   * triggered off its fixed cadence by {@link #flush()}, so round counts are not a reliable measure
+   * of elapsed time.
+   */
+  private final Duration hedgeDelay;
 
   private final Map<DataColumnSlotAndIdentifier, RetrieveRequest> pendingRequests =
       new ConcurrentHashMap<>();
@@ -65,6 +100,7 @@ public class SimpleSidecarRetriever
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicLong retrieveCounter = new AtomicLong();
   private final AtomicLong errorCounter = new AtomicLong();
+  private final AtomicLong hedgeCounter = new AtomicLong();
   private final DataColumnPeerManager peerManager;
 
   public SimpleSidecarRetriever(
@@ -73,12 +109,40 @@ public class SimpleSidecarRetriever
       final DasPeerCustodyCountSupplier custodyCountSupplier,
       final DataColumnReqResp reqResp,
       final AsyncRunner asyncRunner,
-      final Duration roundPeriod) {
+      final TimeProvider timeProvider,
+      final double overlapFraction) {
+    this(
+        spec,
+        peerManager,
+        custodyCountSupplier,
+        reqResp,
+        asyncRunner,
+        timeProvider,
+        DEFAULT_ROUND_PERIOD,
+        overlapFraction,
+        DEFAULT_HEDGE_DELAY);
+  }
+
+  public SimpleSidecarRetriever(
+      final Spec spec,
+      final DataColumnPeerManager peerManager,
+      final DasPeerCustodyCountSupplier custodyCountSupplier,
+      final DataColumnReqResp reqResp,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
+      final Duration roundPeriod,
+      final double overlapFraction,
+      final Duration hedgeDelay) {
+    checkArgument(
+        overlapFraction >= 0.0 && overlapFraction <= 1.0,
+        "overlapFraction must be within [0, 1] but was %s",
+        overlapFraction);
     this.spec = spec;
     this.miscHelpersFulu =
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
     this.custodyCountSupplier = custodyCountSupplier;
     this.asyncRunner = asyncRunner;
+    this.timeProvider = timeProvider;
     this.roundPeriod = roundPeriod;
     this.reqResp = reqResp;
     this.peerManager = peerManager;
@@ -86,6 +150,8 @@ public class SimpleSidecarRetriever
     this.maxRequestCount =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getMaxRequestDataColumnSidecars();
+    this.overlapFraction = overlapFraction;
+    this.hedgeDelay = hedgeDelay;
   }
 
   private void startIfNecessary() {
@@ -116,7 +182,7 @@ public class SimpleSidecarRetriever
 
     Optional.ofNullable(pendingRequests.get(dataColumnSlotAndIdentifier))
         .filter(request -> !request.result.isDone())
-        .ifPresent(request -> reqRespCompleted(request, sidecar));
+        .ifPresent(request -> reqRespSucceeded(request, sidecar));
   }
 
   @Override
@@ -125,25 +191,117 @@ public class SimpleSidecarRetriever
   @Override
   public void stop() {}
 
-  private Stream<RequestMatch> matchRequestsAndPeers() {
+  /**
+   * Produces the peer/request pairs to activate this round: first the primary matches (requests
+   * with no in-flight attempt), then any hedged matches for slow in-flight requests, bounded by
+   * {@link #overlapFraction}.
+   */
+  private List<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
-    return pendingRequests.entrySet().stream()
-        .filter(entry -> entry.getValue().activeRpcRequest == null)
+    final List<RequestMatch> matches = new ArrayList<>();
+
+    // Primary: requests that currently have no in-flight attempt.
+    pendingRequests.entrySet().stream()
+        .filter(entry -> entry.getValue().attemptingPeers.isEmpty())
         .sorted(Comparator.comparing(entry -> entry.getKey().slot()))
-        .flatMap(
-            entry -> {
-              final RetrieveRequest request = entry.getValue();
-              return findBestMatchingPeer(request, ongoingRequestsTracker).stream()
-                  .peek(peer -> ongoingRequestsTracker.decreaseAvailableRequests(peer.nodeId))
-                  .map(peer -> new RequestMatch(peer, request));
-            });
+        .forEach(
+            entry ->
+                findBestMatchingPeer(entry.getValue(), ongoingRequestsTracker, Set.of())
+                    .ifPresent(
+                        peer -> {
+                          ongoingRequestsTracker.decreaseAvailableRequests(peer.nodeId);
+                          matches.add(new RequestMatch(peer, entry.getValue()));
+                        }));
+
+    addHedgeMatches(ongoingRequestsTracker, matches);
+    return matches;
+  }
+
+  /**
+   * Adds redundant attempts for requests that have been in-flight for too long, re-dispatching them
+   * to an alternate custody peer. Bounded by the overlap budget so at most {@code overlapFraction}
+   * of the pending requests carry a duplicate attempt at once.
+   *
+   * <p>A request carries at most two concurrent attempts; escalation past that is implicit, driven
+   * by the RPC first-chunk timeout ({@code
+   * Eth2OutgoingRequestHandler.RESPONSE_CHUNK_ARRIVAL_TIMEOUT}, ~10s) freeing a slot to re-hedge a
+   * still-stuck request to a fresh peer. Example (hedgeDelay=3s, RPC timeout=10s):
+   *
+   * <ul>
+   *   <li>t=0 — primary attempt → peer A. attemptingPeers={A}.
+   *   <li>t=3s (hedgeDelay) — size==1 → hedge → peer B. {A,B}.
+   *   <li>t=6s — size==2, not eligible; both attempts still outstanding (nothing new).
+   *   <li>t≈10s (RPC timeout) — A times out → removed, {B}; B has by now been in flight longer than
+   *       hedgeDelay, so the request is hedge-eligible again → hedge to fresh peer C. {B,C}.
+   *   <li>t=13s — B times out → hedge to D. {C,D} … rotating a dead peer out ~every RPC timeout
+   *       until the column arrives or all attempts drain (then primary re-dispatches).
+   * </ul>
+   */
+  private void addHedgeMatches(
+      final RequestTracker ongoingRequestsTracker, final List<RequestMatch> matches) {
+    if (overlapFraction <= 0.0) {
+      return;
+    }
+    // The hedge budget is a fraction of the number of pending column retrievals, not of the peer
+    // request limits (maxRequestCount / getCurrentRequestLimit). Those limits still cap what any
+    // single peer will accept and are enforced in findMatchingPeers; here we instead want the
+    // redundancy to scale with the amount of outstanding work, matching how the rest of nextRound
+    // reasons over the whole pending set. This keeps overlap proportional and self-scaling (5% of
+    // in-flight work) rather than coupling it to per-peer rate limiting, which is a separate
+    // concern.
+    final int maxOverlap = (int) Math.floor(overlapFraction * pendingRequests.size());
+    if (maxOverlap <= 0) {
+      return;
+    }
+    // A request is hedged at most once: it only becomes eligible below while it has exactly one
+    // attempt (size() == 1), and a hedge takes it to two. So a request never has more than two
+    // concurrent attempts, and counting requests with size() > 1 counts each hedged request exactly
+    // once against the budget (there are no extra attempts to miss).
+    //
+    // This accounting is best-effort and approximate: rounds are not synchronized and completion
+    // callbacks run concurrently, so attemptingPeers can change while we compute the budget and
+    // scan for eligible requests. A request may be counted with a stale size or picked while
+    // transitioning 2 -> 1 attempts; the only effect is slightly over- or under-eager hedging that
+    // self-corrects next round. Correctness never depends on an exact count.
+    final long currentOverlap =
+        pendingRequests.values().stream().filter(r -> r.attemptingPeers.size() > 1).count();
+    int budget = maxOverlap - (int) currentOverlap;
+    if (budget <= 0) {
+      return;
+    }
+
+    final UInt64 nowMillis = timeProvider.getTimeInMillis();
+    // Best-effort selection: iterate lazily and stop as soon as the budget is spent, so we don't
+    // walk the whole pending set when many requests are eligible. We intentionally don't sort by
+    // slot here - sorting is a stateful barrier that would force a full walk every round, and it is
+    // unnecessary: the primary loop above is slot-ordered, so lower-slot requests are dispatched
+    // (and reach hedge-eligibility) first anyway.
+    final Iterator<RetrieveRequest> eligible =
+        pendingRequests.values().stream()
+            .filter(request -> request.attemptingPeers.size() == 1)
+            .filter(request -> request.inFlightForAtLeast(nowMillis, hedgeDelay))
+            .iterator();
+
+    while (budget > 0 && eligible.hasNext()) {
+      final RetrieveRequest request = eligible.next();
+      final Optional<ConnectedPeer> alternatePeer =
+          findBestMatchingPeer(request, ongoingRequestsTracker, request.attemptingPeers);
+      if (alternatePeer.isPresent()) {
+        ongoingRequestsTracker.decreaseAvailableRequests(alternatePeer.get().nodeId);
+        matches.add(new RequestMatch(alternatePeer.get(), request));
+        hedgeCounter.incrementAndGet();
+        budget--;
+      }
+    }
   }
 
   private boolean activateMatchedRequest(final RequestMatch match) {
-    if (!match.request.activeRpcRequestSet.compareAndSet(false, true)) {
-      // already activated
+    if (!match.request.attemptingPeers.add(match.peer.nodeId)) {
+      // already attempting this column via this peer
       return false;
     }
+    // Timestamp for this attempt, used to decide hedging eligibility (see inFlightForAtLeast).
+    final long dispatchedAtMillis = timeProvider.getTimeInMillis().longValue();
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
@@ -152,7 +310,7 @@ public class SimpleSidecarRetriever
     final SafeFuture<Void> activeRpcRequest =
         reqRespPromise.handle(
             (sidecar, err) -> {
-              reqRespCompleted(match.request, sidecar);
+              reqRespCompleted(match.request, match.peer, sidecar);
               if (err == null) {
                 match.peer.countSidecarReceived();
               } else {
@@ -169,13 +327,29 @@ public class SimpleSidecarRetriever
     // log all the info to fix the bug
     activeRpcRequest.ignoreCancelException().finishStackTrace();
 
-    match.request.activeRpcRequest = new ActiveRequest(activeRpcRequest, match.peer);
+    // Safe to install after firing: reqResp buffers the request and only completes it on flush(),
+    // which happens at the end of this round, so the RPC handle callback above cannot run before
+    // this assignment.
+    match.request.activeRequests.put(
+        match.peer.nodeId, new ActiveRequest(activeRpcRequest, match.peer, dispatchedAtMillis));
+    // The gossip completion path (reqRespSucceeded -> cancelActiveRequests) is NOT gated on flush,
+    // so it could have removed this request between claiming the peer slot above and registering
+    // the future here, leaving it un-cancelled. If the request is no longer pending, cancel now and
+    // don't count this as an activation.
+    if (!pendingRequests.containsKey(match.request.columnId)) {
+      activeRpcRequest.cancel(true);
+      return false;
+    }
     return true;
   }
 
   private Optional<ConnectedPeer> findBestMatchingPeer(
-      final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
-    final Stream<ConnectedPeer> matchingPeers = findMatchingPeers(request, ongoingRequestsTracker);
+      final RetrieveRequest request,
+      final RequestTracker ongoingRequestsTracker,
+      final Set<UInt256> excludedPeers) {
+    final Stream<ConnectedPeer> matchingPeers =
+        findMatchingPeers(request, ongoingRequestsTracker)
+            .filter(peer -> !excludedPeers.contains(peer.nodeId));
 
     // Preferring peers with the best response rate, then preferring less busy peers among equals
     final Comparator<ConnectedPeer> comparator =
@@ -201,9 +375,7 @@ public class SimpleSidecarRetriever
             pendingEntry -> {
               final RetrieveRequest pendingRequest = pendingEntry.getValue();
               if (pendingRequest.result.isDone()) {
-                if (pendingRequest.activeRpcRequest != null) {
-                  pendingRequest.activeRpcRequest.promise().cancel(true);
-                }
+                pendingRequest.cancelActiveRequests();
                 return true;
               }
               return false;
@@ -211,21 +383,29 @@ public class SimpleSidecarRetriever
   }
 
   private void nextRound() {
+    // Intentionally unsynchronized. nextRound runs on the fixed-delay schedule and from flush() on
+    // a multi-threaded runner, so two rounds may briefly overlap. The activation guard
+    // (attemptingPeers.add) is atomic, so the same (request, peer) is never dispatched twice; the
+    // only effect of overlap is that a request might get a second primary attempt or the overlap
+    // budget might be spent slightly over target - extra redundant traffic that self-corrects,
+    // never a lost or stalled request. We accept that rather than serialize rounds. (See also the
+    // best-effort notes on the overlap budget and inFlightForAtLeast.)
     disposeCompletedRequests();
 
     final long activatedMatches =
-        matchRequestsAndPeers()
+        matchRequestsAndPeers().stream()
             .map(this::activateMatchedRequest)
             .filter(activated -> activated)
             .count();
 
     if (LOG.isTraceEnabled()) {
       final long activeRequestCount =
-          pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
+          pendingRequests.values().stream().filter(r -> !r.attemptingPeers.isEmpty()).count();
       LOG.trace(
-          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {}, hedged: {}, total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
           retrieveCounter,
           errorCounter,
+          hedgeCounter,
           pendingRequests.size(),
           activeRequestCount,
           activatedMatches,
@@ -235,15 +415,33 @@ public class SimpleSidecarRetriever
     reqResp.flush();
   }
 
-  private void reqRespCompleted(
-      final RetrieveRequest request, final DataColumnSidecar maybeResult) {
-    if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
-      request.result.completeAsync(maybeResult, asyncRunner);
+  private void reqRespSucceeded(final RetrieveRequest request, final DataColumnSidecar sidecar) {
+    if (pendingRequests.remove(request.columnId) != null) {
+      request.result.completeAsync(sidecar, asyncRunner);
       retrieveCounter.incrementAndGet();
-    } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
-      request.activeRpcRequest = null;
-      errorCounter.incrementAndGet();
+      // cancel any redundant/hedged in-flight attempts for this column
+      request.cancelActiveRequests();
     }
+  }
+
+  private void reqRespCompleted(
+      final RetrieveRequest request,
+      final ConnectedPeer peer,
+      final DataColumnSidecar maybeResult) {
+    if (maybeResult != null) {
+      // Same completion handling as the gossip path. If another (hedged) attempt already won,
+      // reqRespSucceeded is a no-op and that winner's cancelActiveRequests() releases this peer's
+      // attempt, so no per-peer cleanup is needed here.
+      reqRespSucceeded(request, maybeResult);
+      return;
+    }
+    // This attempt failed. Release just this peer's attempt so the request can be re-dispatched
+    // next round if still pending. Removing the activeRequests entry also drops this attempt's
+    // dispatch timestamp, so the in-flight clock (see inFlightForAtLeast) tracks only live attempts
+    // with no field to reset.
+    request.attemptingPeers.remove(peer.nodeId);
+    request.activeRequests.remove(peer.nodeId);
+    errorCounter.incrementAndGet();
   }
 
   private String gatherAvailableCustodiesInfo() {
@@ -300,16 +498,52 @@ public class SimpleSidecarRetriever
     return connectedPeers;
   }
 
-  private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
+  @VisibleForTesting
+  long getHedgeCount() {
+    return hedgeCounter.get();
+  }
+
+  @VisibleForTesting
+  int getPendingRequestCount() {
+    return pendingRequests.size();
+  }
+
+  private record ActiveRequest(
+      SafeFuture<Void> promise, ConnectedPeer peer, long dispatchedAtMillis) {}
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
-    final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
-    volatile ActiveRequest activeRpcRequest = null;
+    // Peers with a reserved or in-flight attempt for this column. Also acts as the activation
+    // guard.
+    final Set<UInt256> attemptingPeers = ConcurrentHashMap.newKeySet();
+    final Map<UInt256, ActiveRequest> activeRequests = new ConcurrentHashMap<>();
 
     private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
+    }
+
+    /**
+     * True if some in-flight attempt was dispatched at least {@code delay} ago. The "in-flight
+     * clock" is derived from the immutable per-attempt {@link ActiveRequest#dispatchedAtMillis}
+     * timestamps rather than a shared mutable field, so there is nothing to reset and nothing to
+     * synchronize: when attempts drain the entries simply disappear, and a re-dispatch carries a
+     * fresh timestamp. Reading it concurrently with a drain/dispatch can only make a request look
+     * eligible a cycle early or late - never stalls it.
+     */
+    boolean inFlightForAtLeast(final UInt64 nowMillis, final Duration delay) {
+      final long cutoffMillis = nowMillis.longValue() - delay.toMillis();
+      return activeRequests.values().stream()
+          .anyMatch(activeRequest -> activeRequest.dispatchedAtMillis() <= cutoffMillis);
+    }
+
+    void cancelActiveRequests() {
+      // Only ever called on a request that the caller has already removed (or is removing) from
+      // pendingRequests, so this RetrieveRequest - together with attemptingPeers/activeRequests -
+      // is discarded right after. We therefore only cancel the in-flight futures and deliberately
+      // do NOT clear the two collections: clearing them in sequence is not atomic and could briefly
+      // expose an inconsistent (attemptingPeers, activeRequests) view to a concurrent round.
+      activeRequests.values().forEach(activeRequest -> activeRequest.promise().cancel(true));
     }
   }
 
@@ -399,12 +633,18 @@ public class SimpleSidecarRetriever
   private record RequestMatch(ConnectedPeer peer, RetrieveRequest request) {}
 
   private RequestTracker createFromCurrentPendingRequests() {
-    final Map<UInt256, Integer> pendingRequestsCount =
-        pendingRequests.values().stream()
-            .map(r -> r.activeRpcRequest)
-            .filter(Objects::nonNull)
-            .map(r -> r.peer().nodeId)
-            .collect(Collectors.groupingBy(r -> r, Collectors.reducing(0, e -> 1, Integer::sum)));
+    final Map<UInt256, Integer> pendingRequestsCount = new HashMap<>();
+    pendingRequests
+        .values()
+        .forEach(
+            request ->
+                request
+                    .activeRequests
+                    .values()
+                    .forEach(
+                        activeRequest ->
+                            pendingRequestsCount.merge(
+                                activeRequest.peer().nodeId, 1, Integer::sum)));
     return new RequestTracker(pendingRequestsCount);
   }
 
