@@ -49,7 +49,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
 
@@ -121,7 +120,6 @@ public class Eth2NetworkConfiguration {
   private static final String MINIMAL_TRUSTED_SETUP_FILENAME = "minimal-trusted-setup.txt";
 
   private final Spec spec;
-  private final String constants;
   private final StateBoostrapConfig stateBoostrapConfig;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
@@ -162,7 +160,6 @@ public class Eth2NetworkConfiguration {
 
   private Eth2NetworkConfiguration(
       final Spec spec,
-      final String constants,
       final StateBoostrapConfig stateBoostrapConfig,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
@@ -201,7 +198,6 @@ public class Eth2NetworkConfiguration {
       final int dataColumnSidecarExtensionRetentionEpochs,
       final int pendingPayloadAttestationsMaxQueue) {
     this.spec = spec;
-    this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -270,15 +266,6 @@ public class Eth2NetworkConfiguration {
 
   public Spec getSpec() {
     return spec;
-  }
-
-  /**
-   * @return The constants resource name or url
-   * @deprecated Constants should be accessed via {@link SpecVersion}
-   */
-  @Deprecated
-  public String getConstants() {
-    return constants;
   }
 
   public StateBoostrapConfig getNetworkBoostrapConfig() {
@@ -412,11 +399,6 @@ public class Eth2NetworkConfiguration {
   }
 
   @Override
-  public String toString() {
-    return constants;
-  }
-
-  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -445,7 +427,6 @@ public class Eth2NetworkConfiguration {
             == that.dataColumnSidecarExtensionRetentionEpochs
         && rustKzgEnabled == that.rustKzgEnabled
         && Objects.equals(spec, that.spec)
-        && Objects.equals(constants, that.constants)
         && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
         && Objects.equals(discoveryBootnodes, that.discoveryBootnodes)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch)
@@ -470,7 +451,6 @@ public class Eth2NetworkConfiguration {
   public int hashCode() {
     return Objects.hash(
         spec,
-        constants,
         stateBoostrapConfig,
         startupTargetPeerCount,
         startupTimeoutSeconds,
@@ -614,7 +594,6 @@ public class Eth2NetworkConfiguration {
       final Optional<Eth2Network> eth2Network = Eth2Network.fromStringLenient(constants);
       return new Eth2NetworkConfiguration(
           spec,
-          constants,
           new StateBoostrapConfig(
               genesisState,
               initialState,
