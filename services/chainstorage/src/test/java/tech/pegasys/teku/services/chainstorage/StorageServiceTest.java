@@ -83,7 +83,7 @@ class StorageServiceTest {
 
     storageService =
         new StorageService(
-            serviceConfig, storageConfiguration, false, false, false, Optional.empty());
+            serviceConfig, storageConfiguration, false, false, Optional.empty());
   }
 
   @Test

@@ -32,17 +32,14 @@ public class DepositStorage implements Eth1DepositStorageChannel {
 
   private final Database database;
   private final Supplier<SafeFuture<Boolean>> removeDepositsResult;
-  private final boolean depositSnapshotStorageEnabled;
 
-  private DepositStorage(final Database database, final boolean depositSnapshotStorageEnabled) {
+  private DepositStorage(final Database database) {
     this.database = database;
     this.removeDepositsResult = Suppliers.memoize(() -> SafeFuture.of(this::removeDeposits));
-    this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
   }
 
-  public static DepositStorage create(
-      final Database database, final boolean depositSnapshotStorageEnabled) {
-    return new DepositStorage(database, depositSnapshotStorageEnabled);
+  public static DepositStorage create(final Database database) {
+    return new DepositStorage(database);
   }
 
   @Override
@@ -51,9 +48,6 @@ public class DepositStorage implements Eth1DepositStorageChannel {
   }
 
   private boolean removeDeposits() {
-    if (!depositSnapshotStorageEnabled) {
-      return false;
-    }
     LOG.debug("Pruning deposit events in database");
     boolean depositsRemoved = false;
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
