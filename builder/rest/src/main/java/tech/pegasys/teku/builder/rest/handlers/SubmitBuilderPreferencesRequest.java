@@ -38,6 +38,6 @@ public class SubmitBuilderPreferencesRequest extends AbstractBuilderRequest {
         Map.of("validator_pubkey", validatorPubkey.toString()),
         builderPreferencesRequest,
         ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA.getJsonTypeDefinition(),
-        ResponseHandler.VOID);
+        ResponseHandler.voidHandler());
   }
 }

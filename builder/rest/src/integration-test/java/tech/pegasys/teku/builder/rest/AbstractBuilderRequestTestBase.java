@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class AbstractBuilderRequestTestBase {
+public abstract class AbstractBuilderRequestTestBase {
 
   protected DataStructureUtil dataStructureUtil;
   protected Spec spec;
