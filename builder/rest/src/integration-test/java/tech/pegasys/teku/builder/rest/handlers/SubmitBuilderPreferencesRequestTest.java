@@ -44,7 +44,7 @@ class SubmitBuilderPreferencesRequestTest extends AbstractBuilderRequestTestBase
 
   @BeforeEach
   void setupRequest() {
-    request = new SubmitBuilderPreferencesRequest(mockWebServer.url("/"), okHttpClient);
+    request = new SubmitBuilderPreferencesRequest(spec, mockWebServer.url("/"), okHttpClient);
     validatorPubkey = dataStructureUtil.randomPublicKey();
     builderPreferencesRequest = dataStructureUtil.randomBuilderPreferencesRequest();
   }
