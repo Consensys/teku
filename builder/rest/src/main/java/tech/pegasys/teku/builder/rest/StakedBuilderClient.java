@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
  *
  * @see <a href="https://github.com/ethereum/builder-specs/pull/138">builder-specs#138</a>
  */
-public interface BuilderClient {
+public interface StakedBuilderClient {
 
   SafeFuture<Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid(
       UInt64 slot,
