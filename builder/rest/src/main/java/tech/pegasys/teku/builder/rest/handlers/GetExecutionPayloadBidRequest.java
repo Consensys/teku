@@ -15,6 +15,7 @@ package tech.pegasys.teku.builder.rest.handlers;
 
 import static tech.pegasys.teku.builder.rest.BuilderApiMethod.GET_EXECUTION_PAYLOAD_BID;
 import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.util.Map;
 import java.util.Optional;
@@ -65,6 +66,7 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
       return postJson(
           GET_EXECUTION_PAYLOAD_BID,
           urlParams,
+          Map.of(HEADER_CONSENSUS_VERSION, spec.atSlot(slot).getMilestone().lowerCaseName()),
           signedRequestAuth.get(),
           ApiSchemas.SIGNED_REQUEST_AUTH_SCHEMA.getJsonTypeDefinition(),
           responseHandler);

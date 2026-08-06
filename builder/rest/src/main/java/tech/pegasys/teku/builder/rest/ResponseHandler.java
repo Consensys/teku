@@ -30,6 +30,7 @@ import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.BufferedSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -116,12 +117,15 @@ public class ResponseHandler<T> {
   }
 
   private static String getErrorMessage(final Response response) {
-    final ResponseBody body = response.body();
-    if (body == null) {
-      return response.message();
-    }
-    try {
-      return body.source().readUtf8(1024); // 1 KB limit
+    try (final ResponseBody body = response.body()) {
+      if (body == null) {
+        return response.message();
+      }
+      final BufferedSource source = body.source();
+      source.request(1024); // 1 KB limit
+      final long bytesToRead = Math.min(1024, source.getBuffer().size());
+      final String content = source.readUtf8(bytesToRead);
+      return content.isEmpty() ? response.message() : content;
     } catch (IOException ex) {
       return response.message();
     }
