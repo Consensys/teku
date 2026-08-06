@@ -82,6 +82,14 @@
               "example" : "1"
             }
           },
+          "Eth-Execution-Payload-Value" : {
+            "description" : "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.",
+            "required" : true,
+            "schema" : {
+              "type" : "string",
+              "example" : "1"
+            }
+          },
           "Eth-Execution-Payload-Included" : {
             "description" : "Indicates whether the execution payload envelope is included in the response.\nWhen `true`, the `data` field contains the full\nexecution payload envelope, blobs, and KZG proofs. When `false`, the `data`\nfield contains only a `BeaconBlock`.",
             "required" : false,

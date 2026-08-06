@@ -23,11 +23,13 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.blockContainerAndMetaDataSszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INCLUDE_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
@@ -152,6 +154,8 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         .withField("version", MILESTONE_TYPE, BlockContainerAndMetaData::specMilestone)
         .withField(
             CONSENSUS_BLOCK_VALUE, UINT256_TYPE, BlockContainerAndMetaData::consensusBlockValue)
+        .withField(
+            EXECUTION_PAYLOAD_VALUE, UINT256_TYPE, BlockContainerAndMetaData::executionPayloadValue)
         .withOptionalField(INCLUDE_EXECUTION_PAYLOAD, BOOLEAN_TYPE, (b) -> Optional.of(false))
         .withField("data", blockContainerType, BlockContainerAndMetaData::blockContainer)
         .build();
@@ -185,6 +189,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
     List<SerializableTypeDefinition<?>> headers = new ArrayList<>();
     headers.add(ETH_CONSENSUS_HEADER_TYPE);
     headers.add(ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE);
+    headers.add(ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE);
     headers.add(ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE);
     return headers;
   }
