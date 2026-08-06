@@ -1392,8 +1392,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void archiveSidecarsProofs(
-      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int archiveLimit) {
+  public void archiveSidecarsProofs(final UInt64 startSlot, final UInt64 tillSlotInclusive) {
     // Extension columns (indices >= NUMBER_OF_COLUMNS / 2) are the reconstructable half whose
     // proofs we retain while dropping the columns themselves.
     final int halfColumns =
@@ -1413,8 +1412,6 @@ public class KvStoreDatabase implements Database {
       dataColumnSidecars
           // we need only extension
           .filter(identifier -> identifier.columnIndex().isGreaterThanOrEqualTo(halfColumns))
-          .takeWhile(
-              item -> archiveMap.size() < archiveLimit || archiveMap.containsKey(item.slot()))
           .forEach(
               item -> archiveMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
 
@@ -1464,11 +1461,6 @@ public class KvStoreDatabase implements Database {
           updater.commit();
         }
         LOG.debug("Archived data column sidecars to proofs across {} slots", archivedSlots);
-      }
-
-      if (archivedSlots >= archiveLimit) {
-        LOG.debug(
-            "Data column sidecars-to-proofs archiving reached the limit of {} slots", archiveLimit);
       }
     }
   }

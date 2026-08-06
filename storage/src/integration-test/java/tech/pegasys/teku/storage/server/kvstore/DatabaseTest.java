@@ -3098,7 +3098,7 @@ public class DatabaseTest {
 
     final List<List<KZGProof>> expectedExtensionProofs = storeFullColumnSet(slot, numberOfColumns);
 
-    database.archiveSidecarsProofs(ZERO, slot, 10);
+    database.archiveSidecarsProofs(ZERO, slot);
 
     // only the reconstructable first half of the columns is retained
     assertThat(getStoredColumnIndices(slot))
@@ -3107,30 +3107,6 @@ public class DatabaseTest {
     // the proofs of the dropped extension columns are archived for reconstruction
     assertThat(database.getDataColumnSidecarsProofs(slot)).contains(expectedExtensionProofs);
     assertThat(database.getLastDataColumnSidecarsProofsSlot()).contains(slot);
-  }
-
-  @TestTemplate
-  public void archiveSidecarsProofs_archivesOldestSlotsFirstUpToLimit(final DatabaseContext context)
-      throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalFulu());
-    initialize(context);
-
-    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final int halfColumns = numberOfColumns / 2;
-    final UInt64 olderSlot = UInt64.valueOf(3);
-    final UInt64 newerSlot = UInt64.valueOf(4);
-    storeFullColumnSet(olderSlot, numberOfColumns);
-    storeFullColumnSet(newerSlot, numberOfColumns);
-
-    // limit archiving to a single slot
-    database.archiveSidecarsProofs(ZERO, newerSlot, 1);
-
-    // the oldest slot is archived first
-    assertThat(database.getDataColumnSidecarsProofs(olderSlot)).isPresent();
-    assertThat(getStoredColumnIndices(olderSlot)).hasSize(halfColumns);
-    // the newer slot is left untouched until a later run
-    assertThat(database.getDataColumnSidecarsProofs(newerSlot)).isEmpty();
-    assertThat(getStoredColumnIndices(newerSlot)).hasSize(numberOfColumns);
   }
 
   @TestTemplate
@@ -3150,7 +3126,7 @@ public class DatabaseTest {
         .map(index -> dataStructureUtil.randomDataColumnSidecar(header, kzgCommitments, index))
         .forEach(database::addSidecar);
 
-    database.archiveSidecarsProofs(ZERO, slot, 10);
+    database.archiveSidecarsProofs(ZERO, slot);
 
     // nothing archived and no column dropped: reconstruction from a partial half is impossible
     assertThat(database.getDataColumnSidecarsProofs(slot)).isEmpty();
@@ -3170,7 +3146,7 @@ public class DatabaseTest {
     try (final LogCaptor logCaptor = LogCaptor.forClass(KvStoreDatabase.class, Level.DEBUG)) {
       // archive the extension columns down to proofs: slot now holds first-half sidecars + proofs
       storeFullColumnSet(slot, numberOfColumns);
-      database.archiveSidecarsProofs(ZERO, slot, 10);
+      database.archiveSidecarsProofs(ZERO, slot);
       assertThat(database.getDataColumnSidecarsProofs(slot)).isPresent();
       assertThat(database.getLastDataColumnSidecarsProofsSlot()).contains(slot);
 
