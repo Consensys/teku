@@ -67,7 +67,7 @@ public class OkHttpStakedBuilderClient implements StakedBuilderClient {
       final BuilderPreferencesRequest builderPreferencesRequest) {
     return asyncRunner.runAsync(
         () ->
-            new SubmitBuilderPreferencesRequest(baseEndpoint, httpClient)
+            new SubmitBuilderPreferencesRequest(spec, baseEndpoint, httpClient)
                 .submit(validatorPubkey, builderPreferencesRequest));
   }
 

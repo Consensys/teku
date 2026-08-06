@@ -56,6 +56,7 @@ public abstract class AbstractBuilderRequest {
   protected <T, TObject> Optional<T> postJson(
       final BuilderApiMethod apiMethod,
       final Map<String, String> urlParams,
+      final Map<String, String> headers,
       final TObject requestBodyObj,
       final SerializableTypeDefinition<TObject> objectTypeDefinition,
       final ResponseHandler<T> responseHandler) {
@@ -65,12 +66,12 @@ public abstract class AbstractBuilderRequest {
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException("Failed to serialize request body to JSON", ex);
     }
-    final Request request =
+    final Request.Builder builder =
         new Request.Builder()
             .url(buildUrl(apiMethod, urlParams))
-            .post(RequestBody.create(requestBody, APPLICATION_JSON))
-            .build();
-    return executeCall(request, responseHandler);
+            .post(RequestBody.create(requestBody, APPLICATION_JSON));
+    headers.forEach(builder::addHeader);
+    return executeCall(builder.build(), responseHandler);
   }
 
   protected <T> Optional<T> postEmpty(

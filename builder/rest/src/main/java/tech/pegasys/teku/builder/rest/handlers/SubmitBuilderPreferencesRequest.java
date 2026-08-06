@@ -14,20 +14,25 @@
 package tech.pegasys.teku.builder.rest.handlers;
 
 import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SUBMIT_BUILDER_PREFERENCES;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.util.Map;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.builder.rest.ResponseHandler;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
 public class SubmitBuilderPreferencesRequest extends AbstractBuilderRequest {
 
+  private final Spec spec;
+
   public SubmitBuilderPreferencesRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
+      final Spec spec, final HttpUrl baseEndpoint, final OkHttpClient httpClient) {
     super(baseEndpoint, httpClient);
+    this.spec = spec;
   }
 
   public void submit(
@@ -36,6 +41,11 @@ public class SubmitBuilderPreferencesRequest extends AbstractBuilderRequest {
     postJson(
         SUBMIT_BUILDER_PREFERENCES,
         Map.of("validator_pubkey", validatorPubkey.toString()),
+        Map.of(
+            HEADER_CONSENSUS_VERSION,
+            spec.atSlot(builderPreferencesRequest.getAuth().getMessage().getSlot())
+                .getMilestone()
+                .lowerCaseName()),
         builderPreferencesRequest,
         ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA.getJsonTypeDefinition(),
         ResponseHandler.voidHandler());
