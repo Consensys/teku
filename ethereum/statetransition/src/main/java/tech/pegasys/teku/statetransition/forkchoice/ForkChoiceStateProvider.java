@@ -30,6 +30,12 @@ public class ForkChoiceStateProvider {
    * Supplies the fast confirmation {@code confirmed_root} to use as the FCU {@code safe_block_hash}
    * source ({@code get_safe_execution_block_hash}), or empty when fast confirmation is disabled (in
    * which case the safe hash defaults to the justified block, as before).
+   *
+   * <p>Thread-safety: {@code get()} is invoked on the fork-choice event thread, whereas the
+   * confirmed root it returns is produced on the fast confirmation runner thread. The supplier
+   * implementation is therefore responsible for publishing that value safely across threads (e.g.
+   * via a volatile/atomic holder); this class only reads the latest published value and never
+   * mutates it.
    */
   private final Supplier<Optional<Bytes32>> fastConfirmationSafeBlockRootSupplier;
 
