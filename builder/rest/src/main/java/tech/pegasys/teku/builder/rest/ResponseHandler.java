@@ -39,10 +39,12 @@ public class ResponseHandler<T> {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final ResponseHandler<Void> VOID = new ResponseHandler<>(Optional.empty());
-
-  private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
   private final Optional<DeserializableTypeDefinition<T>> maybeTypeDefinition;
+  private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
+
+  public static ResponseHandler<Void> voidHandler() {
+    return new ResponseHandler<>(Optional.empty());
+  }
 
   public ResponseHandler(final DeserializableTypeDefinition<T> typeDefinition) {
     this(Optional.of(typeDefinition));
@@ -119,7 +121,7 @@ public class ResponseHandler<T> {
       return response.message();
     }
     try {
-      return body.string();
+      return body.source().readUtf8(1024); // 1 KB limit
     } catch (IOException ex) {
       return response.message();
     }

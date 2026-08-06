@@ -41,6 +41,6 @@ public class SubmitSignedBeaconBlockRequest extends AbstractBuilderRequest {
             HEADER_CONSENSUS_VERSION,
             spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().lowerCaseName()),
         signedBeaconBlock.sszSerialize().toArrayUnsafe(),
-        ResponseHandler.VOID);
+        ResponseHandler.voidHandler());
   }
 }
