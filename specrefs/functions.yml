@@ -7575,8 +7575,8 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
       search: public AttestationProcessingResult\s+isValidIndexedAttestation\s*\(\s*final\s+Fork\s+\w+\s*,\s*final\s+BeaconState\s+\w+\s*,\s*final\s+IndexedAttestation\s+\w+\s*\)
       regex: true
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/schemas/registry/SchemaRegistryBuilder.java
-      search: private static long getMaxValidatorsPerAttestationElectra(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigElectra.java
+      search: default long getMaxValidatorsPerAttestation()
   spec: |
     <spec fn="is_valid_indexed_attestation" fork="gloas" hash="556495e6">
     def is_valid_indexed_attestation(

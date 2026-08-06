@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public class InMemoryStoringTreeNodeStore implements TreeNodeStore, TreeNodeSource {
 
@@ -41,10 +40,6 @@ public class InMemoryStoringTreeNodeStore implements TreeNodeStore, TreeNodeSour
   @Override
   public void storeBranchNode(
       final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(root)) {
-      // No point storing zero trees.
-      return;
-    }
     branchNodes.putIfAbsent(
         root, new CompressedBranchInfo(depth, Arrays.copyOf(children, children.length)));
   }

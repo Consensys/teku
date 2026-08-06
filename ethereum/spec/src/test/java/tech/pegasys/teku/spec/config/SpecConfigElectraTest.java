@@ -16,7 +16,10 @@ package tech.pegasys.teku.spec.config;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -73,6 +76,19 @@ public class SpecConfigElectraTest {
 
     assertThat(configA).isNotEqualTo(configB);
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
+  }
+
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  public void getMaxValidatorsPerAttestation_matchesMilestoneFormula(
+      final SpecMilestone milestone) {
+    final SpecConfig config = TestSpecFactory.createMinimal(milestone).getGenesisSpecConfig();
+    final long expected =
+        milestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+            ? (long) config.getMaxValidatorsPerCommittee() * config.getMaxCommitteesPerSlot()
+            : config.getMaxValidatorsPerCommittee();
+
+    assertThat(config.getMaxValidatorsPerAttestation()).isEqualTo(expected);
   }
 
   private SpecConfigElectra createRandomElectraConfig(
