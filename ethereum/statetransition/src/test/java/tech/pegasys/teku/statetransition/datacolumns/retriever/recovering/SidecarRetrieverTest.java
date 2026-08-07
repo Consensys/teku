@@ -169,12 +169,7 @@ public class SidecarRetrieverTest {
     final List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecars(
             dataStructureUtil.signedBlock(block),
-            List.of(
-                new BlobAndCellProofs(
-                    blob,
-                    miscHelpers.getKzg().computeCellsAndProofs(blob.getBytes()).stream()
-                        .map(KZGCellAndProof::proof)
-                        .toList())));
+            List.of(dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), blob)));
     final List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());

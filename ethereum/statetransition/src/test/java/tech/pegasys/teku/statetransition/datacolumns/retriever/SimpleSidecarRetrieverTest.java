@@ -141,12 +141,7 @@ public class SimpleSidecarRetrieverTest {
             createSigned(block),
             blobs.stream()
                 .map(
-                    (b) ->
-                        new BlobAndCellProofs(
-                            b,
-                            miscHelpers.getKzg().computeCellsAndProofs(b.getBytes()).stream()
-                                .map(KZGCellAndProof::proof)
-                                .toList()))
+                    (b) -> dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b))
                 .toList());
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 

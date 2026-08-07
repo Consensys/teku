@@ -60,16 +60,7 @@ public class WithPrecomputeBenchmark {
         plan.config.blobs.stream()
             .map(
                 (b) ->
-                    new BlobAndCellProofs(
-                        b,
-                        plan
-                            .config
-                            .miscHelpersFulu
-                            .getKzg()
-                            .computeCellsAndProofs(b.getBytes())
-                            .stream()
-                            .map(KZGCellAndProof::proof)
-                            .toList()))
+                        plan.config.dataStructureUtil.computeBlobAndCellProofs(plan.config.miscHelpersFulu.getKzg(), b))
             .toList());
   }
 

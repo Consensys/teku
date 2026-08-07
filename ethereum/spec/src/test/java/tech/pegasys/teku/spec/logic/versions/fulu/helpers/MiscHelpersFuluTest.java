@@ -310,11 +310,7 @@ public class MiscHelpersFuluTest {
         IntStream.range(0, 4)
             .mapToObj(
                 __ -> {
-                  Blob blob = dataStructureUtil.randomValidBlob();
-                  List<KZGCellAndProof> proofs =
-                      miscHelpersFulu.getKzg().computeCellsAndProofs(blob.getBytes());
-                  return new BlobAndCellProofs(
-                      blob, proofs.stream().map(KZGCellAndProof::proof).toList());
+                  return dataStructureUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), dataStructureUtil.randomValidBlob());
                 })
             .toList();
 

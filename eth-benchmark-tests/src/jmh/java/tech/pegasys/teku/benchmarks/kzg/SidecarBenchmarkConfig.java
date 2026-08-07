@@ -68,11 +68,7 @@ public class SidecarBenchmarkConfig {
         blobs.stream()
             .map(
                 (b) ->
-                    new BlobAndCellProofs(
-                        b,
-                        miscHelpersFulu.getKzg().computeCellsAndProofs(b.getBytes()).stream()
-                            .map(KZGCellAndProof::proof)
-                            .toList()))
+                    dataStructureUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), b))
             .toList();
     extendedMatrix = miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs);
     signedBeaconBlock =
