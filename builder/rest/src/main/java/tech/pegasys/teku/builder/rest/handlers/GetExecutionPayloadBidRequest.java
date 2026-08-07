@@ -62,16 +62,19 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
         new ResponseHandler<>(
             withDataWrapper(schemaDefinitions.getSignedExecutionPayloadBidSchema()));
 
+    final Map<String, String> headers =
+        Map.of(HEADER_CONSENSUS_VERSION, spec.atSlot(slot).getMilestone().lowerCaseName());
+
     if (signedRequestAuth.isPresent()) {
       return postJson(
           GET_EXECUTION_PAYLOAD_BID,
           urlParams,
-          Map.of(HEADER_CONSENSUS_VERSION, spec.atSlot(slot).getMilestone().lowerCaseName()),
+          headers,
           signedRequestAuth.get(),
           ApiSchemas.SIGNED_REQUEST_AUTH_SCHEMA.getJsonTypeDefinition(),
           responseHandler);
     } else {
-      return postEmpty(GET_EXECUTION_PAYLOAD_BID, urlParams, responseHandler);
+      return postEmpty(GET_EXECUTION_PAYLOAD_BID, urlParams, headers, responseHandler);
     }
   }
 }
