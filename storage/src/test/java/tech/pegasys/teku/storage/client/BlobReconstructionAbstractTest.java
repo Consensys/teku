@@ -51,7 +51,6 @@ public class BlobReconstructionAbstractTest {
 
   @Test
   @Disabled
-  @SuppressWarnings("deprecation")
   public void regenerateValidBlobsAndCellsFile() {
     reinitializeSpecWithProductionKZG();
 
@@ -67,7 +66,10 @@ public class BlobReconstructionAbstractTest {
             .map(
                 b -> {
                   final var sidecars =
-                      miscHelpers.constructDataColumnSidecarsOld(block, List.of(b));
+                      miscHelpers.constructDataColumnSidecars(
+                          block,
+                          List.of(
+                              dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
                   return new CellData(
                       b.getBytes().toHexString(),
                       sidecars.stream()
