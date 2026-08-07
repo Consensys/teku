@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
-import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -70,7 +68,8 @@ public class BlobReconstructionAbstractTest {
                   final var sidecars =
                       miscHelpers.constructDataColumnSidecars(
                           block,
-                          List.of(dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
+                          List.of(
+                              dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
                   return new CellData(
                       b.getBytes().toHexString(),
                       sidecars.stream()

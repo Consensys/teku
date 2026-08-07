@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -66,9 +65,7 @@ public class SidecarBenchmarkConfig {
     miscHelpersFulu.setKzg(getKzg(useRustLibrary));
     List<BlobAndCellProofs> blobsAndCellProofs =
         blobs.stream()
-            .map(
-                (b) ->
-                    dataStructureUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), b))
+            .map((b) -> dataStructureUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), b))
             .toList();
     extendedMatrix = miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs);
     signedBeaconBlock =

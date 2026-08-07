@@ -38,7 +38,6 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -49,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -140,8 +138,7 @@ public class SimpleSidecarRetrieverTest {
         miscHelpers.constructDataColumnSidecars(
             createSigned(block),
             blobs.stream()
-                .map(
-                    (b) -> dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b))
+                .map((b) -> dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b))
                 .toList());
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 

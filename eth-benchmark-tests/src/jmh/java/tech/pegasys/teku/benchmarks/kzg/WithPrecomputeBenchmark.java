@@ -26,7 +26,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -60,7 +59,8 @@ public class WithPrecomputeBenchmark {
         plan.config.blobs.stream()
             .map(
                 (b) ->
-                        plan.config.dataStructureUtil.computeBlobAndCellProofs(plan.config.miscHelpersFulu.getKzg(), b))
+                    plan.config.dataStructureUtil.computeBlobAndCellProofs(
+                        plan.config.miscHelpersFulu.getKzg(), b))
             .toList());
   }
 

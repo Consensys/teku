@@ -42,7 +42,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
@@ -54,7 +53,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -310,7 +308,8 @@ public class MiscHelpersFuluTest {
         IntStream.range(0, 4)
             .mapToObj(
                 __ -> {
-                  return dataStructureUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), dataStructureUtil.randomValidBlob());
+                  return dataStructureUtil.computeBlobAndCellProofs(
+                      miscHelpersFulu.getKzg(), dataStructureUtil.randomValidBlob());
                 })
             .toList();
 
