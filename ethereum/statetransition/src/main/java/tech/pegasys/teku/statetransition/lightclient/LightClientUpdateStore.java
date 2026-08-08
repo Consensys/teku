@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.statetransition.lightclient;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
-
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
@@ -26,8 +26,10 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 public class LightClientUpdateStore {
   private final ConcurrentSkipListMap<UInt64, LightClientUpdate> lightClientUpdateCache =
       new ConcurrentSkipListMap<>();
-  private final AtomicReference<Optional<LightClientFinalityUpdate>> latestFinalityUpdate = new AtomicReference<>(Optional.empty());
-  private final AtomicReference<Optional<LightClientOptimisticUpdate>> latestOptimisticUpdate = new AtomicReference<>(Optional.empty());
+  private final AtomicReference<Optional<LightClientFinalityUpdate>> latestFinalityUpdate =
+      new AtomicReference<>(Optional.empty());
+  private final AtomicReference<Optional<LightClientOptimisticUpdate>> latestOptimisticUpdate =
+      new AtomicReference<>(Optional.empty());
 
   private final Spec spec;
 
@@ -36,29 +38,42 @@ public class LightClientUpdateStore {
   }
 
   public void syncLightClientUpdate(final LightClientUpdate update) {
-    lightClientUpdateCache.merge(syncCommitteePeriodAtSlot(update.getAttestedHeader().getBeacon().getSlot()), update, (existingUpdate, incomingUpdate) ->
-      isBetterUpdate(incomingUpdate, existingUpdate) ? incomingUpdate : existingUpdate
-    );
+    lightClientUpdateCache.merge(
+        syncCommitteePeriodAtSlot(update.getAttestedHeader().getBeacon().getSlot()),
+        update,
+        (existingUpdate, incomingUpdate) ->
+            isBetterUpdate(incomingUpdate, existingUpdate) ? incomingUpdate : existingUpdate);
   }
 
   public void syncLightClientFinalityUpdate(final LightClientFinalityUpdate finalityUpdate) {
-    latestFinalityUpdate.updateAndGet(currentFinalityUpdate -> {
-      if (currentFinalityUpdate.isEmpty()) {
-        return Optional.of(finalityUpdate);
-      }
+    latestFinalityUpdate.updateAndGet(
+        currentFinalityUpdate -> {
+          if (currentFinalityUpdate.isEmpty()) {
+            return Optional.of(finalityUpdate);
+          }
 
-      return isBetterFinalityUpdate(finalityUpdate, currentFinalityUpdate.get()) ? Optional.of(finalityUpdate) : currentFinalityUpdate;
-    });
+          return isBetterFinalityUpdate(finalityUpdate, currentFinalityUpdate.get())
+              ? Optional.of(finalityUpdate)
+              : currentFinalityUpdate;
+        });
   }
 
   public void syncLightClientOptimisticUpdate(final LightClientOptimisticUpdate optimisticUpdate) {
-    latestOptimisticUpdate.updateAndGet(currentOptimisticUpdate -> {
-      if (currentOptimisticUpdate.isEmpty()) {
-        return Optional.of(optimisticUpdate);
-      }
+    latestOptimisticUpdate.updateAndGet(
+        currentOptimisticUpdate -> {
+          if (currentOptimisticUpdate.isEmpty()) {
+            return Optional.of(optimisticUpdate);
+          }
 
-      return isBetterOptimisticUpdate(optimisticUpdate, currentOptimisticUpdate.get()) ? Optional.of(optimisticUpdate) : currentOptimisticUpdate;
-    });
+          return isBetterOptimisticUpdate(optimisticUpdate, currentOptimisticUpdate.get())
+              ? Optional.of(optimisticUpdate)
+              : currentOptimisticUpdate;
+        });
+  }
+
+  public List<LightClientUpdate> getBestUpdatesInRange(final UInt64 period, final UInt64 count) {
+    return List.copyOf(
+        lightClientUpdateCache.subMap(period, true, period.plus(count), false).values());
   }
 
   /** {@code is_better_update}. */
@@ -90,12 +105,12 @@ public class LightClientUpdateStore {
 
     boolean newUpdateHasRelevantSyncCommittee =
         isSyncCommitteeUpdate(newUpdate)
-            && (syncCommitteePeriodAtSlot(newUpdateAttestedSlot)
-                .equals(syncCommitteePeriodAtSlot(newUpdateSignatureSlot)));
+            && syncCommitteePeriodAtSlot(newUpdateAttestedSlot)
+                .equals(syncCommitteePeriodAtSlot(newUpdateSignatureSlot));
     boolean oldUpdateHasRelevantSyncCommittee =
         isSyncCommitteeUpdate(oldUpdate)
-            && (syncCommitteePeriodAtSlot(oldUpdateAttestedSlot)
-                .equals(syncCommitteePeriodAtSlot(oldUpdateSignatureSlot)));
+            && syncCommitteePeriodAtSlot(oldUpdateAttestedSlot)
+                .equals(syncCommitteePeriodAtSlot(oldUpdateSignatureSlot));
 
     if (newUpdateHasRelevantSyncCommittee != oldUpdateHasRelevantSyncCommittee) {
       return newUpdateHasRelevantSyncCommittee;
@@ -111,10 +126,10 @@ public class LightClientUpdateStore {
     if (newUpdateHasFinality) {
       boolean newUpdateHasSyncCommitteeFinality =
           syncCommitteePeriodAtSlot(newUpdate.getFinalizedHeader().getBeacon().getSlot())
-                  .equals(syncCommitteePeriodAtSlot(newUpdateAttestedSlot));
+              .equals(syncCommitteePeriodAtSlot(newUpdateAttestedSlot));
       boolean oldUpdateHasSyncCommitteeFinality =
           syncCommitteePeriodAtSlot(oldUpdate.getFinalizedHeader().getBeacon().getSlot())
-                  .equals(syncCommitteePeriodAtSlot(oldUpdateAttestedSlot));
+              .equals(syncCommitteePeriodAtSlot(oldUpdateAttestedSlot));
 
       if (newUpdateHasSyncCommitteeFinality != oldUpdateHasSyncCommitteeFinality) {
         return newUpdateHasSyncCommitteeFinality;
@@ -147,7 +162,8 @@ public class LightClientUpdateStore {
     return !update.getFinalityBranch().isDefault();
   }
 
-  private boolean isBetterFinalityUpdate(final LightClientFinalityUpdate newUpdate, final LightClientFinalityUpdate oldUpdate) {
+  private boolean isBetterFinalityUpdate(
+      final LightClientFinalityUpdate newUpdate, final LightClientFinalityUpdate oldUpdate) {
     final UInt64 newFinalizedSlot = newUpdate.getFinalizedHeader().getBeacon().getSlot();
     final UInt64 oldFinalizedSlot = oldUpdate.getFinalizedHeader().getBeacon().getSlot();
 
@@ -155,11 +171,20 @@ public class LightClientUpdateStore {
       return newFinalizedSlot.isGreaterThan(oldFinalizedSlot);
     }
 
-    return newUpdate.getAttestedHeader().getBeacon().getSlot().isGreaterThan(oldUpdate.getAttestedHeader().getBeacon().getSlot());
+    return newUpdate
+        .getAttestedHeader()
+        .getBeacon()
+        .getSlot()
+        .isGreaterThan(oldUpdate.getAttestedHeader().getBeacon().getSlot());
   }
 
-  private boolean isBetterOptimisticUpdate(final LightClientOptimisticUpdate newUpdate, final LightClientOptimisticUpdate oldUpdate) {
-    return newUpdate.getAttestedHeader().getBeacon().getSlot().isGreaterThan(oldUpdate.getAttestedHeader().getBeacon().getSlot());
+  private boolean isBetterOptimisticUpdate(
+      final LightClientOptimisticUpdate newUpdate, final LightClientOptimisticUpdate oldUpdate) {
+    return newUpdate
+        .getAttestedHeader()
+        .getBeacon()
+        .getSlot()
+        .isGreaterThan(oldUpdate.getAttestedHeader().getBeacon().getSlot());
   }
 
   public Optional<LightClientOptimisticUpdate> getLatestOptimisticUpdate() {
