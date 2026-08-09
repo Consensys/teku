@@ -71,9 +71,12 @@ public class LightClientUpdateStore {
         });
   }
 
-  public List<LightClientUpdate> getBestUpdatesInRange(final UInt64 period, final UInt64 count) {
+  public List<LightClientUpdate> getBestUpdates(
+      final UInt64 fromPeriodInclusive, final UInt64 toPeriodExclusive) {
     return List.copyOf(
-        lightClientUpdateCache.subMap(period, true, period.plus(count), false).values());
+        lightClientUpdateCache
+            .subMap(fromPeriodInclusive, true, toPeriodExclusive, false)
+            .values());
   }
 
   /** {@code is_better_update}. */
