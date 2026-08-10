@@ -186,25 +186,36 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
+  public void addUpdate_shouldKeepExistingUpdateWhenIdentical() {
+    // Every clause falls through to `signatureSlot < signatureSlot`, which must be false.
+    final LightClientUpdate update = createLightClientUpdate().build();
+
+    store.addUpdate(update);
+    store.addUpdate(update);
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(update);
+  }
+
+  @TestTemplate
   public void addUpdate_shouldKeyByAttestedPeriodNotSignaturePeriod() {
     final LightClientUpdate update =
         createLightClientUpdate().signatureSlot(periodOneStartSlot.times(2)).build();
 
     store.addUpdate(update);
 
-    assertThat(store.getBestUpdates(UInt64.ONE, UInt64.valueOf(2))).containsExactly(update);
-    assertThat(store.getBestUpdates(UInt64.valueOf(2), UInt64.valueOf(3))).isEmpty();
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(update);
+    assertThat(store.getBestUpdatesInRange(UInt64.valueOf(2), 1)).isEmpty();
   }
 
   @TestTemplate
-  public void getBestUpdates_shouldReturnEmptyListWhenRangeIsEmpty() {
+  public void getBestUpdatesInRange_shouldReturnEmptyListWhenCountIsZero() {
     store.addUpdate(createLightClientUpdateAtPeriod(1));
 
-    assertThat(store.getBestUpdates(UInt64.ONE, UInt64.ONE)).isEmpty();
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 0)).isEmpty();
   }
 
   @TestTemplate
-  public void getBestUpdates_shouldReturnPeriodsInOrderExcludingEndPeriod() {
+  public void getBestUpdatesInRange_shouldReturnPeriodsInOrderWithinCount() {
     final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
     final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
@@ -213,18 +224,17 @@ public class LightClientUpdateStoreTest {
     store.addUpdate(periodOne);
     store.addUpdate(periodTwo);
 
-    assertThat(store.getBestUpdates(UInt64.ONE, UInt64.valueOf(3)))
-        .containsExactly(periodOne, periodTwo);
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 2)).containsExactly(periodOne, periodTwo);
   }
 
   @TestTemplate
-  public void getBestUpdates_shouldSkipMissingPeriodsAndTolerateRangePastEnd() {
+  public void getBestUpdatesInRange_shouldSkipMissingPeriodsAndTolerateCountPastEnd() {
     final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
     store.addUpdate(periodOne);
     store.addUpdate(periodThree);
 
-    assertThat(store.getBestUpdates(UInt64.ONE, UInt64.valueOf(500)))
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 500))
         .containsExactly(periodOne, periodThree);
   }
 
@@ -301,7 +311,7 @@ public class LightClientUpdateStoreTest {
     final LightClientUpdateStore comparisonStore = new LightClientUpdateStore(spec);
     comparisonStore.addUpdate(first);
     comparisonStore.addUpdate(second);
-    return comparisonStore.getBestUpdates(UInt64.ONE, UInt64.valueOf(2)).getFirst();
+    return comparisonStore.getBestUpdatesInRange(UInt64.ONE, 1).getFirst();
   }
 
   private LightClientUpdate createLightClientUpdateAtPeriod(final long period) {

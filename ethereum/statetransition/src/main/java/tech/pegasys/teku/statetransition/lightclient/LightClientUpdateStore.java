@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.lightclient;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -73,10 +74,11 @@ public class LightClientUpdateStore {
         });
   }
 
-  public List<LightClientUpdate> getBestUpdates(
-      final UInt64 fromPeriodInclusive, final UInt64 toPeriodExclusive) {
-    return List.copyOf(
-        bestUpdatesByPeriod.subMap(fromPeriodInclusive, true, toPeriodExclusive, false).values());
+  public List<LightClientUpdate> getBestUpdatesInRange(final UInt64 startPeriod, final int count) {
+    return bestUpdatesByPeriod.tailMap(startPeriod, true).entrySet().stream()
+        .takeWhile(entry -> entry.getKey().minus(startPeriod).isLessThan(count))
+        .map(Map.Entry::getValue)
+        .toList();
   }
 
   public Optional<LightClientFinalityUpdate> getLatestFinalityUpdate() {

@@ -2488,7 +2488,6 @@ public final class DataStructureUtil {
     return randomLightClientFinalityUpdate(slot, slot);
   }
 
-
   public LightClientFinalityUpdate randomLightClientFinalityUpdate(
       final UInt64 attestedSlot, final UInt64 finalizedSlot) {
     final LightClientFinalityUpdateSchema schema =
