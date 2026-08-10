@@ -8425,7 +8425,9 @@
     </spec>
 
 - name: on_fast_confirmation#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/fastconfirmation/FastConfirmationTracker.java
+      search: private void runFastConfirmation(
   spec: |
     <spec fn="on_fast_confirmation" fork="phase0" hash="f1f1a4c3">
     def on_fast_confirmation(fcr_store: FastConfirmationStore) -> None:

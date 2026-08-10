@@ -137,8 +137,6 @@ specrefs:
       - upgrade_lc_store_to_gloas#gloas
       - upgrade_lc_update_to_gloas#gloas
 
-      # Not implemented: fast confirmation
-      - on_fast_confirmation#phase0
 
       # Not implemented: fulu
       - verify_partial_data_column_header_inclusion_proof#fulu
