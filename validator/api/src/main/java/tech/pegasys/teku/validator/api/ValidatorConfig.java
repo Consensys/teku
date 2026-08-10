@@ -477,18 +477,20 @@ public class ValidatorConfig {
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
         final int validatorExternalSignerConcurrentRequestLimit) {
-      if (validatorExternalSignerConcurrentRequestLimit < MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
+      if (validatorExternalSignerConcurrentRequestLimit
+          < MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
         throw new InvalidConfigurationException(
             String.format(
                 "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be less than %s)",
                 validatorExternalSignerConcurrentRequestLimit,
-                    MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
-      } else if (validatorExternalSignerConcurrentRequestLimit > MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
+                MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
+      } else if (validatorExternalSignerConcurrentRequestLimit
+          > MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
         throw new InvalidConfigurationException(
-                String.format(
-                        "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be greater than %s)",
-                        validatorExternalSignerConcurrentRequestLimit,
-                        MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
+            String.format(
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be greater than %s)",
+                validatorExternalSignerConcurrentRequestLimit,
+                MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
       }
       this.validatorExternalSignerConcurrentRequestLimit =
           validatorExternalSignerConcurrentRequestLimit;
