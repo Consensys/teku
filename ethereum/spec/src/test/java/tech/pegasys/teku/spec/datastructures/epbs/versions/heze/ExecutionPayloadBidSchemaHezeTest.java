@@ -54,7 +54,7 @@ class ExecutionPayloadBidSchemaHezeTest {
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomSlot(),
             dataStructureUtil.randomExecutionPayload(),
-            dataStructureUtil.randomBlobKzgCommitments(),
+            dataStructureUtil.randomBlobKzgCommitments(schema.getBlobKzgCommitmentsSchema()),
             dataStructureUtil.randomBytes32());
 
     assertThat(schema).isInstanceOf(ExecutionPayloadBidSchemaHeze.class);

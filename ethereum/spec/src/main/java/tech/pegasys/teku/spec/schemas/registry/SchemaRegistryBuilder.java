@@ -261,6 +261,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.heze.BeaconStateSchemaHeze;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
@@ -655,7 +656,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             HEZE,
             (registry, specConfig, schemaName) ->
-                BeaconStateSchemaGloas.create(SpecConfigGloas.required(specConfig), registry))
+                BeaconStateSchemaHeze.create(SpecConfigHeze.required(specConfig), registry))
         .build();
   }
 
@@ -1354,6 +1355,15 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new SignedExecutionPayloadBidSchema(
+                    registry,
+                    OptionalLong.of(
+                        SpecConfigGloas.required(specConfig)
+                            .getMaxSignedExecutionPayloadBidSize())))
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadBidSchema(
+                    "SignedExecutionPayloadBidHeze",
                     registry,
                     OptionalLong.of(
                         SpecConfigGloas.required(specConfig)

@@ -34,8 +34,15 @@ public class SignedExecutionPayloadBidSchema
 
   public SignedExecutionPayloadBidSchema(
       final SchemaRegistry schemaRegistry, final OptionalLong networkSszLengthBytesUpperBound) {
+    this("SignedExecutionPayloadBid", schemaRegistry, networkSszLengthBytesUpperBound);
+  }
+
+  public SignedExecutionPayloadBidSchema(
+      final String schemaName,
+      final SchemaRegistry schemaRegistry,
+      final OptionalLong networkSszLengthBytesUpperBound) {
     super(
-        "SignedExecutionPayloadBid",
+        schemaName,
         namedSchema("message", schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
     this.networkSszLengthBytesUpperBound = networkSszLengthBytesUpperBound;

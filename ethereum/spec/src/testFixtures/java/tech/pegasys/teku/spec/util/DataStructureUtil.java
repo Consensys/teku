@@ -1707,7 +1707,7 @@ public final class DataStructureUtil {
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema()));
               }
               if (builder.supportsExecutionRequests()) {
-                builder.executionRequests(randomExecutionRequests());
+                builder.executionRequests(randomExecutionRequests(slot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
@@ -3267,7 +3267,7 @@ public final class DataStructureUtil {
     return randomSszList(getBlobKzgCommitmentsSchema(), count, this::randomSszKZGCommitment);
   }
 
-  SszList<SszKZGCommitment> randomBlobKzgCommitments(
+  public SszList<SszKZGCommitment> randomBlobKzgCommitments(
       final SszListSchema<SszKZGCommitment, ?> schema) {
     return randomBlobKzgCommitments(schema, randomNumberOfBlobsPerBlock());
   }
