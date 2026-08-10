@@ -194,7 +194,7 @@ public class RestApiConstants {
               Controls whether the execution payload envelope and blobs are included in the response
               when self-building (using local execution payload).
 
-              When `true` (default), the response includes the full block contents: beacon block,
+              When `true`, the response includes the full block contents: beacon block,
               execution payload envelope, blobs, and KZG proofs. This enables stateless operation
               where the validator client can use multiple beacon nodes (multi-BN setups, distributed validators, failover).
 
