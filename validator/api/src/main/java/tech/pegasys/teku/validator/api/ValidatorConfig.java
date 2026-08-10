@@ -57,7 +57,7 @@ public class ValidatorConfig {
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 40_000;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS = 60_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
-  public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 8;
+  public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
