@@ -140,10 +140,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlot)
       throws BlockProcessingException {
     super.processOperationsNoValidation(
-        state, body, indexedAttestationCache, validatorExitContextSupplier);
+        state, body, indexedAttestationCache, validatorExitContextSupplier, parentSlot);
 
     safelyProcess(() -> processExecutionRequests(state, body, validatorExitContextSupplier));
   }

@@ -27,7 +27,7 @@ class SszGossipCodec {
   public <T extends SszData> T decode(final Bytes data, final SszSchema<T> valueType)
       throws DecodingException {
     try {
-      if (!valueType.getSszLengthBounds().isWithinBounds(data.size())) {
+      if (!valueType.getNetworkSszLengthBounds().isWithinBounds(data.size())) {
         throw new DecodingException(
             "Uncompressed length " + data.size() + " is not within expected bounds");
       }

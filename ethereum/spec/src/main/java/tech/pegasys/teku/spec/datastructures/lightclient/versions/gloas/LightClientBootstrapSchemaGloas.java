@@ -17,9 +17,13 @@ import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC
 
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class LightClientBootstrapSchemaGloas extends LightClientBootstrapSchema {
-  public LightClientBootstrapSchemaGloas(final SpecConfigGloas specConfigGloas) {
-    super(specConfigGloas, CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS);
+  public LightClientBootstrapSchemaGloas(
+      final SpecConfigGloas specConfigGloas,
+      final SchemaRegistry schemaRegistry,
+      final String schemaName) {
+    super(specConfigGloas, CURRENT_SYNC_COMMITTEE_GINDEX_GLOAS, schemaRegistry, schemaName);
   }
 }

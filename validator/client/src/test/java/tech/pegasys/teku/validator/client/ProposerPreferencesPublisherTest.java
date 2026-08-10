@@ -29,11 +29,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -111,6 +113,33 @@ public class ProposerPreferencesPublisherTest {
             false));
 
     verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldReceiveValidationRejectionDescription(final SpecContext specContext) {
+    setUp(specContext);
+    final UInt64 epoch = UInt64.valueOf(6);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+    final String rejectionDescription = "Invalid proposer preferences signature";
+    when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException(rejectionDescription)));
+
+    try (LogCaptor logCaptor = LogCaptor.forClass(ValidatorLogger.class)) {
+      publisher.onProposerDutiesLoaded(
+          epoch,
+          new ProposerDuties(
+              dataStructureUtil.randomBytes32(),
+              List.of(new ProposerDuty(publicKey, 42, slot)),
+              false));
+
+      assertThat(logCaptor.getErrorLogs())
+          .singleElement()
+          .asString()
+          .contains("Failed to publish proposer preferences for epoch " + epoch);
+      assertThat(logCaptor.getErrorThrowables())
+          .extracting(error -> error.getCause().getMessage())
+          .containsExactly(rejectionDescription);
+    }
   }
 
   @TestTemplate
