@@ -25,6 +25,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXE
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.blockContainerAndMetaDataSszResponseType;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
@@ -121,6 +122,11 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final Optional<UInt64> requestedBuilderBoostFactor =
         request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
+    if (validatorDataProvider.getMilestoneAtSlot(slot).isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      request.respondError(SC_BAD_REQUEST, "produceBlockV3 is not supported from Gloas onwards, use produceBlockV4");
+      return;
+    }
+
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorDataProvider.produceBlock(slot, randao, graffiti, requestedBuilderBoostFactor);
     request.respondAsync(
