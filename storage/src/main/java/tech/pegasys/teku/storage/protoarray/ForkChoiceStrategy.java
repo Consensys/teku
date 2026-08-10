@@ -276,6 +276,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       // hash (the pre-fast-confirmation default). The BASE-node hash already matches the spec per
       // fork: pre-Gloas the confirmed block's execution_payload.block_hash, in Gloas its
       // signed_execution_payload_bid.message.parent_block_hash.
+      //
+      // Spec divergence: get_safe_execution_block_hash unconditionally dereferences
+      // store.blocks[confirmed_root]. Teku diverges in two ways: (1) when fast confirmation is
+      // disabled the supplier is empty and we fall back to the justified block (the spec has no
+      // such fallback); (2) the hash is read from protoarray's BASE ProtoNodeData rather than
+      // store.blocks[...].body, and protoarray only retains finalized-onward blocks, so a pruned
+      // confirmed/justified root yields Bytes32.ZERO here instead of the spec's KeyError.
       final Bytes32 safeExecutionHash =
           fastConfirmationSafeBlockRoot
               .flatMap(this::getBaseNodeData)

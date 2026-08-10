@@ -15,25 +15,23 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
+/** Deferred votes for a single slot; See {@link DeferredAttestations} for usage */
 public class VoteUpdates implements DeferredVotes {
   private final UInt64 slot;
 
-  // Keyed by validator index so that each validator holds a single vote for the slot. A validator's
-  // first vote wins (putIfAbsent), mirroring the spec's update_latest_messages, which only
-  // overwrites a latest message when the new attestation's target epoch is strictly greater (a
-  // same-epoch vote never overwrites). This is why a validator that attests to two competing blocks
-  // in one slot (equivocation) is applied to its first-received vote rather than to whichever block
-  // root a root-keyed map happened to iterate first. A navigable map keeps iteration deterministic
-  // (ordered by validator index).
-  private final NavigableMap<UInt64, BlockRootAndFullPayloadHint> voteByValidatorIndex =
-      new ConcurrentSkipListMap<>();
+  // Holds at most one vote per validator: the first one received wins. Deferred votes must be
+  // applied exactly as they would have been on arrival, and ForkChoiceUtil#shouldUpdateVote
+  // discards a validator's second vote within the same target epoch (within the same slot, under
+  // Gloas), so a validator equivocating in this slot must not have its later vote applied.
+  private final Map<UInt64, BlockRootAndFullPayloadHint> voteByValidatorIndex =
+      new ConcurrentHashMap<>();
 
   public VoteUpdates(final UInt64 slot) {
     this.slot = slot;

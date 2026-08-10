@@ -50,8 +50,10 @@ final class FastConfirmationStateLoader {
         store.retrieveCheckpointState(fcrStore.currentEpochObservedJustifiedCheckpoint());
     final SafeFuture<Optional<BeaconState>> headBlockState = store.retrieveBlockState(head);
 
-    // The futures are already running; compose (rather than join) so the runner is not blocked
-    // while they complete.
+    // All three retrievals were kicked off above and are already in flight on the store's runners.
+    // The nested thenCompose/thenApply below only joins their results; it does NOT serialize the
+    // I/O — each store call ran concurrently, and composing (rather than join()) keeps the fast
+    // confirmation runner unblocked while they complete.
     return previousBalanceSource.thenCompose(
         previous ->
             currentBalanceSource.thenCompose(

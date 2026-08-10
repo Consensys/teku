@@ -62,5 +62,10 @@ public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfig
   int getMaxPendingDepositsPerEpoch();
 
   @Override
+  default long getMaxValidatorsPerAttestation() {
+    return (long) getMaxValidatorsPerCommittee() * getMaxCommitteesPerSlot();
+  }
+
+  @Override
   Optional<SpecConfigElectra> toVersionElectra();
 }
