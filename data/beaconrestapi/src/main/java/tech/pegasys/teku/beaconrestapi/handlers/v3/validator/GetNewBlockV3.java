@@ -122,8 +122,11 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final Optional<UInt64> requestedBuilderBoostFactor =
         request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
-    if (validatorDataProvider.getMilestoneAtSlot(slot).isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      request.respondError(SC_BAD_REQUEST, "produceBlockV3 is not supported from Gloas onwards, use produceBlockV4");
+    if (validatorDataProvider
+        .getMilestoneAtSlot(slot)
+        .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      request.respondError(
+          SC_BAD_REQUEST, "produceBlockV3 is not supported from Gloas onwards, use produceBlockV4");
       return;
     }
 
