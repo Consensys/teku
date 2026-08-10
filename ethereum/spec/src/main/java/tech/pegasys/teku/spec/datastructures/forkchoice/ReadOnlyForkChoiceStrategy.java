@@ -29,16 +29,46 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> executionBlockHash(Bytes32 blockRoot);
 
+  default Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final Bytes32 blockRoot, final Bytes32 blockHash) {
+    return Optional.empty();
+  }
+
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
   /**
-   * Walks the parent chain from blockRoot to find the ancestor node at the given slot.
+   * Walks the parent chain from {@code node} to find the ancestor node at the given slot.
    *
-   * <p>This mirrors the Gloas {@code get_ancestor(...)} helper, which returns a full {@link
-   * ForkChoiceNode} identity.
+   * <p>This mirrors the {@code get_ancestor(store, node, slot)} helper, which takes and returns a
+   * {@link ForkChoiceNode} identity. The starting node's payload status selects which parent
+   * variant to follow, and the node itself is returned once its block slot is at or before {@code
+   * slot}.
+   *
+   * <p>This is the payload-status-aware counterpart of {@link #getAncestor(Bytes32, UInt64)} and is
+   * intentionally abstract: unlike a block-root walk it cannot be derived from {@link
+   * #getAncestor(Bytes32, UInt64)}, because that would discard each ancestor's payload status and
+   * always yield {@linkplain ForkChoiceNode#createBase(Bytes32) base (PENDING)} nodes — which
+   * silently breaks the Gloas ancestry checks in {@code ForkChoiceUtilGloas.isAncestor}. Every
+   * implementation must therefore resolve payload status explicitly. Implementations that do not
+   * model the Gloas three-state tree may resolve ancestry by block root and return base (PENDING)
+   * nodes.
    */
-  default Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
-    return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
+  Optional<ForkChoiceNode> getAncestorNode(ForkChoiceNode node, UInt64 slot);
+
+  /**
+   * Resolves a latest-message vote to the fork-choice node that it supports.
+   *
+   * <p>{@code currentSlot} selects the active fork-choice model, matching score application.
+   * Pre-Gloas this is the base node for {@code voteRoot}. In Gloas, {@code voteSlot} and {@code
+   * payloadPresent} select the PENDING, EMPTY, or FULL variant according to {@code
+   * get_supported_node(store, message)}.
+   */
+  default Optional<ForkChoiceNode> getSupportedNode(
+      final UInt64 currentSlot,
+      final Bytes32 voteRoot,
+      final UInt64 voteSlot,
+      final boolean payloadPresent) {
+    return Optional.of(ForkChoiceNode.createBase(voteRoot));
   }
 
   Optional<ForkChoiceNode> getParentBeaconBlockNode(ForkChoiceNode node);
@@ -108,14 +138,15 @@ public interface ReadOnlyForkChoiceStrategy {
   boolean shouldExtendPayload(ReadOnlyStore store, SlotAndBlockRoot slotAndBlockRoot);
 
   /**
-   * Returns whether block production should build on the FULL variant of {@code head}.
+   * Returns whether block production at {@code slot} should build on the FULL variant of {@code
+   * head}.
    *
    * <p>Pre-Gloas follows the existing {@link #shouldExtendPayload(ReadOnlyStore, SlotAndBlockRoot)}
    * decision. Gloas overrides this to account for PTC votes that signal data unavailability or an
    * untimely payload.
    */
   boolean shouldBuildOnFull(
-      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head);
+      final ReadOnlyStore store, final UInt64 slot, final ForkChoiceNode head);
 
   default Optional<Boolean> getPayloadTimelinessVote(
       final Bytes32 blockRoot, final int ptcPosition) {

@@ -58,6 +58,29 @@ public record PayloadBuildingAttributes(
         List.of());
   }
 
+  public PayloadBuildingAttributes(
+      final UInt64 proposerIndex,
+      final UInt64 proposalSlot,
+      final UInt64 timestamp,
+      final Bytes32 prevRandao,
+      final Eth1Address feeRecipient,
+      final UInt64 targetGasLimit,
+      final Optional<SignedValidatorRegistration> validatorRegistration,
+      final Optional<List<Withdrawal>> withdrawals,
+      final ForkChoiceNode parentBeaconBlock) {
+    this(
+        proposerIndex,
+        proposalSlot,
+        timestamp,
+        prevRandao,
+        feeRecipient,
+        targetGasLimit,
+        validatorRegistration,
+        withdrawals,
+        parentBeaconBlock,
+        List.of());
+  }
+
   public Optional<BLSPublicKey> getValidatorRegistrationPublicKey() {
     return validatorRegistration.map(
         signedValidatorRegistration -> signedValidatorRegistration.getMessage().getPublicKey());

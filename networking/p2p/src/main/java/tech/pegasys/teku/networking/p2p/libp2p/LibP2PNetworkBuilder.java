@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.MAXIMUM_ACTIVE_INBOUND_RPC_STREAMS;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_OPEN_STREAMS_RATE_LIMIT;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT;
 
@@ -49,9 +50,11 @@ import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.PrivateKeyProvider;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.InboundRpcStreamLimiter;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.network.config.DualStackPortBindings;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -97,7 +100,6 @@ public class LibP2PNetworkBuilder {
 
   protected LibP2PNetworkBuilder() {}
 
-  @SuppressWarnings("AddressSelection")
   public P2PNetwork<Peer> build() {
 
     gossipNetwork = createGossipNetwork();
@@ -176,7 +178,7 @@ public class LibP2PNetworkBuilder {
         .flatMap(
             networkInterface -> {
               final List<String> addresses = new ArrayList<>();
-              if (config.isTcpEnabled()) {
+              if (shouldListenOnTcp(config, networkInterface)) {
                 addresses.add(
                     MultiaddrUtil.fromInetSocketAddress(
                             new InetSocketAddress(
@@ -184,7 +186,7 @@ public class LibP2PNetworkBuilder {
                                 listenTcpPort(config, networkInterface, singleStack)))
                         .toString());
               }
-              if (config.isQuicEnabled()) {
+              if (shouldListenOnQuic(config, networkInterface)) {
                 addresses.add(
                     MultiaddrUtil.fromInetSocketAddressAsQuic(
                             new InetSocketAddress(
@@ -212,10 +214,10 @@ public class LibP2PNetworkBuilder {
         .flatMap(
             networkInterface -> {
               final List<Integer> ports = new ArrayList<>();
-              if (config.isTcpEnabled()) {
+              if (shouldListenOnTcp(config, networkInterface)) {
                 ports.add(listenTcpPort(config, networkInterface, singleStack));
               }
-              if (config.isQuicEnabled()) {
+              if (shouldListenOnQuic(config, networkInterface)) {
                 ports.add(listenQuicPort(config, networkInterface, singleStack));
               }
               return ports.stream();
@@ -267,8 +269,32 @@ public class LibP2PNetworkBuilder {
     };
   }
 
+  private static boolean shouldListenOnTcp(
+      final NetworkConfig config, final String networkInterface) {
+    return config.isTcpEnabled()
+        && DualStackPortBindings.shouldListenOnAddress(
+            config.getNetworkInterfaces(),
+            networkInterface,
+            config.getListenPort(),
+            config.getListenPortIpv6());
+  }
+
+  private static boolean shouldListenOnQuic(
+      final NetworkConfig config, final String networkInterface) {
+    return config.isQuicEnabled()
+        && DualStackPortBindings.shouldListenOnAddress(
+            config.getNetworkInterfaces(),
+            networkInterface,
+            config.getListenQuicPort(),
+            config.getListenQuicPortIpv6());
+  }
+
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
-    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m, metricsSystem)).toList();
+    final InboundRpcStreamLimiter inboundRpcStreamLimiter =
+        new InboundRpcStreamLimiter(MAXIMUM_ACTIVE_INBOUND_RPC_STREAMS);
+    return rpcMethods.stream()
+        .map(m -> new RpcHandler<>(asyncRunner, m, metricsSystem, inboundRpcStreamLimiter))
+        .toList();
   }
 
   protected LibP2PGossipNetwork createGossipNetwork() {
@@ -293,7 +319,6 @@ public class LibP2PNetworkBuilder {
         (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
   }
 
-  @SuppressWarnings("AddressSelection")
   protected Host createHost(final PrivKey privKey, final List<Multiaddr> advertisedAddresses) {
     final String[] listenAddrs = buildListenAddresses(config);
 

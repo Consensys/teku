@@ -22,6 +22,7 @@ import tech.pegasys.teku.dataproviders.lookup.BlindedExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
+import tech.pegasys.teku.dataproviders.lookup.RecentlyValidatedDataColumnSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -58,6 +59,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         BlindedExecutionPayloadProvider.NOOP,
         SingleBlockProvider.NOOP,
         SingleBlobSidecarProvider.NOOP,
+        RecentlyValidatedDataColumnSlotProvider.NOOP,
         StateAndBlockSummaryProvider.NOOP,
         EarliestBlobSidecarSlotProvider.NOOP,
         storageUpdateChannel,

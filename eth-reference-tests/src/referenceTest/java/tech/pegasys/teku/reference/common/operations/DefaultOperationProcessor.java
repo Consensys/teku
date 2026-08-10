@@ -189,7 +189,8 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processExecutionPayloadBid(state, signedBid);
+    spec.getBlockProcessor(signedBid.getMessage().getSlot())
+        .processExecutionPayloadBid(state, signedBid);
   }
 
   @Override

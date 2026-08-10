@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+// as this is a unit test, there's no need to pedantic with how we select addresses
 @SuppressWarnings("AddressSelection")
 class NodeRecordConverterTest {
 
@@ -65,6 +66,7 @@ class NodeRecordConverterTest {
   private static final SszBitvector SYNCNETS = SYNCNETS_SCHEMA.getDefault();
   private static final NodeRecordConverter CONVERTER = new NodeRecordConverter();
   private static final Bytes NODE_ID = CONVERTER.convertPublicKeyToNodeId(PUB_KEY);
+  private static final int MAX_CUSTODY_GROUP_COUNT = 128;
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -111,6 +113,16 @@ class NodeRecordConverterTest {
                 false,
                 new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
                 new EnrField(EnrField.UDP, 30303)))
+        .isEmpty();
+  }
+
+  @Test
+  public void shouldNotConvertRecordWithOutOfRangeTcpPort() {
+    assertThat(
+            convertNodeRecordWithFields(
+                false,
+                new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+                new EnrField(EnrField.TCP, 70000)))
         .isEmpty();
   }
 
@@ -372,7 +384,8 @@ class NodeRecordConverterTest {
 
   @ParameterizedTest
   @MethodSource("getCgcFixtures")
-  public void shouldDecodeCgcCorrectly(final String hexString, final Integer cgc) {
+  public void shouldDecodeCgcCorrectly(
+      final String hexString, final Optional<Integer> maybeCustodyGroupCount) {
     assertThat(
             convertNodeRecordWithFields(
                 false,
@@ -388,7 +401,7 @@ class NodeRecordConverterTest {
                 Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
-                Optional.of(cgc),
+                maybeCustodyGroupCount,
                 Optional.empty()));
   }
 
@@ -453,7 +466,10 @@ class NodeRecordConverterTest {
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(
       final boolean supportsIpv6, final EnrField... fields) {
     return CONVERTER.convertToDiscoveryPeer(
-        createNodeRecord(fields), supportsIpv6, SCHEMA_DEFINITIONS);
+        createNodeRecord(fields),
+        supportsIpv6,
+        SCHEMA_DEFINITIONS,
+        Optional.of(MAX_CUSTODY_GROUP_COUNT));
   }
 
   private NodeRecord createNodeRecord(final EnrField... fields) {
@@ -465,10 +481,11 @@ class NodeRecordConverterTest {
 
   private static Stream<Arguments> getCgcFixtures() {
     return Stream.of(
-        Arguments.of("0x00", 0),
-        Arguments.of("0x", 0),
-        Arguments.of("0x80", 128),
-        Arguments.of("0x8c", 140),
-        Arguments.of("0x0190", 400));
+        Arguments.of("0x00", Optional.of(0)),
+        Arguments.of("0x", Optional.of(0)),
+        Arguments.of("0x80", Optional.of(128)),
+        Arguments.of("0x8c", Optional.empty()),
+        Arguments.of("0x0190", Optional.empty()),
+        Arguments.of("0x0100000000", Optional.empty()));
   }
 }

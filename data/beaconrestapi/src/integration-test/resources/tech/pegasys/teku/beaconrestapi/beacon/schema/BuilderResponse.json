@@ -10,7 +10,7 @@
       "format" : "uint64"
     },
     "status" : {
-      "type" : "number"
+      "type" : "string"
     },
     "builder" : {
       "$ref" : "#/components/schemas/Builder"

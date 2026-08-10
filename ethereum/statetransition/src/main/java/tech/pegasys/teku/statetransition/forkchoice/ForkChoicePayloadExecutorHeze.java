@@ -55,7 +55,7 @@ class ForkChoicePayloadExecutorHeze extends ForkChoicePayloadExecutorGloas {
   private List<Transaction> getInclusionListTransactions() {
     return inclusionLists.stream()
         .map(InclusionList::getTransactions)
-        .flatMap(List::stream)
+        .flatMap(transactions -> transactions.stream())
         .toList();
   }
 }

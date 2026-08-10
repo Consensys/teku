@@ -15,10 +15,11 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.saveForFuture;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -41,14 +42,15 @@ public class ProposerPreferencesGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE = 1024;
+  // Two mainnet epochs for the current lookahead, with 4x overhead for dependent-root reorgs
+  private static final int RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE = 256;
 
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
   private final SigningRootUtil signingRootUtil;
   private final RecentChainData recentChainData;
 
-  private final Set<DedupKey> seenProposerPreferences =
+  private final Set<ProposerPreferencesDedupKey> seenProposerPreferences =
       LimitedSet.createSynchronizedLRU(RECENT_SEEN_PROPOSER_PREFERENCES_CACHE_SIZE);
 
   public ProposerPreferencesGossipValidator(
@@ -73,13 +75,10 @@ public class ProposerPreferencesGossipValidator {
      * [compute_epoch_at_slot(current_slot), compute_epoch_at_slot(current_slot) + MIN_SEED_LOOKAHEAD]`.
      */
     if (!gossipValidationHelper.isSlotInCurrentEpochWithMinSeedLookaheadTolerance(proposalSlot)) {
-      LOG.trace(
-          "Proposer preferences proposal slot {} is not in the current or within lookahead epoch",
-          proposalSlot);
       return completedFuture(
-          ignore(
-              "Proposer preferences proposal slot %s is not in the current or within lookahead epoch",
-              proposalSlot));
+          ignorePreferences(
+              proposerPreferences,
+              "proposal slot is not in the current or within the lookahead epoch"));
     }
 
     /*
@@ -87,9 +86,8 @@ public class ProposerPreferencesGossipValidator {
      */
     if (!gossipValidationHelper.isSlotFromFuture(proposalSlot)
         && !gossipValidationHelper.isSlotCurrent(proposalSlot)) {
-      LOG.trace("Proposer preferences proposal slot {} has already passed", proposalSlot);
       return completedFuture(
-          ignore("Proposer preferences proposal slot %s has already passed", proposalSlot));
+          ignorePreferences(proposerPreferences, "proposal slot has already passed"));
     }
 
     /*
@@ -97,20 +95,21 @@ public class ProposerPreferencesGossipValidator {
      * (a client MAY queue preferences for processing once the block is retrieved).
      */
     if (!gossipValidationHelper.isBlockAvailable(dependentRoot)) {
-      LOG.trace(
-          "Proposer preferences dependent root {} has not been seen. Saving for future processing",
-          dependentRoot);
-      return completedFuture(SAVE_FOR_FUTURE);
+      return completedFuture(
+          savePreferencesForFuture(
+              proposerPreferences,
+              "dependent root has not been seen; saving for future processing"));
     }
 
     /*
      * [IGNORE] The signed_proposer_preferences is the first valid message for the tuple
      * (preferences.dependent_root, preferences.proposal_slot, preferences.validator_index)
      */
-    final DedupKey dedupKey =
-        new DedupKey(dependentRoot, proposalSlot, proposerPreferences.getValidatorIndex());
+    final ProposerPreferencesDedupKey dedupKey =
+        new ProposerPreferencesDedupKey(
+            dependentRoot, proposalSlot, proposerPreferences.getValidatorIndex());
     if (seenProposerPreferences.contains(dedupKey)) {
-      return completedFuture(ignoreAlreadySeen(dedupKey));
+      return completedFuture(ignoreAlreadySeen(proposerPreferences));
     }
 
     /*
@@ -133,15 +132,12 @@ public class ProposerPreferencesGossipValidator {
     if (maybeDependentRootSlot.isPresent()) {
       final UInt64 dependentRootSlot = maybeDependentRootSlot.get();
       if (!dependentRootSlot.isLessThan(checkpointBoundarySlot)) {
-        LOG.trace(
-            "Proposer preferences dependent root {} is at slot {}, but must be before checkpoint boundary slot {}",
-            dependentRoot,
-            dependentRootSlot,
-            checkpointBoundarySlot);
         return completedFuture(
-            reject(
-                "Proposer preferences dependent root %s is at slot %s, but must be before checkpoint boundary slot %s",
-                dependentRoot, dependentRootSlot, checkpointBoundarySlot));
+            rejectPreferences(
+                proposerPreferences,
+                "dependent root is at slot %s but must be before checkpoint boundary slot %s",
+                dependentRootSlot,
+                checkpointBoundarySlot));
       }
     }
     return recentChainData
@@ -149,11 +145,10 @@ public class ProposerPreferencesGossipValidator {
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                LOG.trace(
-                    "Could not retrieve checkpoint state for ({}, {}). Saving for future processing",
-                    checkpointEpoch,
-                    dependentRoot);
-                return SAVE_FOR_FUTURE;
+                return savePreferencesForFuture(
+                    proposerPreferences,
+                    "checkpoint state for checkpoint epoch %s is unavailable; saving for future processing",
+                    checkpointEpoch);
               }
               final BeaconState state = maybeState.get();
 
@@ -168,14 +163,10 @@ public class ProposerPreferencesGossipValidator {
               final UInt64 expectedValidatorIndex =
                   BeaconStateFulu.required(state).getProposerLookahead().getElement(lookaheadIndex);
               if (!expectedValidatorIndex.equals(proposerPreferences.getValidatorIndex())) {
-                LOG.trace(
-                    "Proposer preferences validator index {} does not match expected proposer {} for slot {}",
-                    proposerPreferences.getValidatorIndex(),
-                    expectedValidatorIndex,
-                    proposalSlot);
-                return reject(
-                    "Proposer preferences validator index %s does not match expected proposer %s for slot %s",
-                    proposerPreferences.getValidatorIndex(), expectedValidatorIndex, proposalSlot);
+                return rejectPreferences(
+                    proposerPreferences,
+                    "validator index does not match expected proposer %s",
+                    expectedValidatorIndex);
               }
 
               /*
@@ -183,27 +174,95 @@ public class ProposerPreferencesGossipValidator {
                * the validator's public key
                */
               if (!isSignatureValid(signedProposerPreferences, state)) {
-                LOG.trace("Invalid proposer preferences signature");
-                return reject("Invalid proposer preferences signature");
+                return rejectPreferences(proposerPreferences, "invalid signature");
               }
 
               if (!seenProposerPreferences.add(dedupKey)) {
-                return ignoreAlreadySeen(dedupKey);
+                return ignoreAlreadySeen(proposerPreferences);
               }
 
-              return ACCEPT;
+              return acceptPreferences(proposerPreferences);
             })
         .exceptionally(
             error -> {
-              LOG.trace(
-                  "Unable to generate proposer preferences checkpoint state for checkpoint epoch {} and dependent root {}",
-                  checkpointEpoch,
-                  dependentRoot,
-                  error);
-              return reject(
-                  "Unable to generate proposer preferences checkpoint state for checkpoint epoch %s and dependent root %s",
-                  checkpointEpoch, dependentRoot);
+              return rejectPreferencesWithError(
+                  proposerPreferences,
+                  error,
+                  "unable to generate checkpoint state for checkpoint epoch %s",
+                  checkpointEpoch);
             });
+  }
+
+  private InternalValidationResult acceptPreferences(
+      final ProposerPreferences proposerPreferences) {
+    LOG.trace(
+        "ProposerPreferences Gossip Validation Result: ACCEPT, context: {}",
+        formatProposerPreferencesContext(proposerPreferences));
+    return ACCEPT;
+  }
+
+  @FormatMethod
+  private InternalValidationResult rejectPreferences(
+      final ProposerPreferences proposerPreferences,
+      final String descriptionTemplate,
+      final Object... args) {
+    final String message =
+        formatProposerPreferencesMessage(proposerPreferences, descriptionTemplate, args);
+    LOG.trace("ProposerPreferences Gossip Validation Result: REJECT, reason: {}", message);
+    return reject("%s", message);
+  }
+
+  @FormatMethod
+  private InternalValidationResult rejectPreferencesWithError(
+      final ProposerPreferences proposerPreferences,
+      final Throwable error,
+      final String descriptionTemplate,
+      final Object... args) {
+    final String message =
+        formatProposerPreferencesMessage(proposerPreferences, descriptionTemplate, args);
+    LOG.trace("ProposerPreferences Gossip Validation Result: REJECT, reason: {}", message, error);
+    return reject("%s", message);
+  }
+
+  @FormatMethod
+  private InternalValidationResult ignorePreferences(
+      final ProposerPreferences proposerPreferences,
+      final String descriptionTemplate,
+      final Object... args) {
+    final String message =
+        formatProposerPreferencesMessage(proposerPreferences, descriptionTemplate, args);
+    LOG.trace("ProposerPreferences Gossip Validation Result: IGNORE, reason: {}", message);
+    return ignore("%s", message);
+  }
+
+  @FormatMethod
+  private InternalValidationResult savePreferencesForFuture(
+      final ProposerPreferences proposerPreferences,
+      final String descriptionTemplate,
+      final Object... args) {
+    final String message =
+        formatProposerPreferencesMessage(proposerPreferences, descriptionTemplate, args);
+    LOG.trace("ProposerPreferences Gossip Validation Result: SAVE_FOR_FUTURE, reason: {}", message);
+    return saveForFuture("%s", message);
+  }
+
+  @FormatMethod
+  private String formatProposerPreferencesMessage(
+      final ProposerPreferences proposerPreferences,
+      final String descriptionTemplate,
+      final Object... args) {
+    return String.format(
+        "%s: %s",
+        formatProposerPreferencesContext(proposerPreferences),
+        String.format(descriptionTemplate, args));
+  }
+
+  private String formatProposerPreferencesContext(final ProposerPreferences proposerPreferences) {
+    return String.format(
+        "Proposer preferences (validator index %s, proposal slot %s, dependent root %s)",
+        proposerPreferences.getValidatorIndex(),
+        proposerPreferences.getProposalSlot(),
+        proposerPreferences.getDependentRoot());
   }
 
   private boolean isSignatureValid(
@@ -218,16 +277,11 @@ public class ProposerPreferencesGossipValidator {
         state);
   }
 
-  private InternalValidationResult ignoreAlreadySeen(final DedupKey dedupKey) {
-    LOG.trace(
-        "Already received proposer preferences for tuple ({}, {}, {})",
-        dedupKey.dependentRoot(),
-        dedupKey.proposalSlot(),
-        dedupKey.validatorIndex());
-    return ignore(
-        "Already received proposer preferences for tuple (%s, %s, %s)",
-        dedupKey.dependentRoot(), dedupKey.proposalSlot(), dedupKey.validatorIndex());
+  private InternalValidationResult ignoreAlreadySeen(
+      final ProposerPreferences proposerPreferences) {
+    return ignorePreferences(proposerPreferences, "already received");
   }
 
-  private record DedupKey(Bytes32 dependentRoot, UInt64 proposalSlot, UInt64 validatorIndex) {}
+  private record ProposerPreferencesDedupKey(
+      Bytes32 dependentRoot, UInt64 proposalSlot, UInt64 validatorIndex) {}
 }

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -259,6 +260,10 @@ public abstract class BLSTest {
     return BLSSecretKey.fromBytes(Bytes32.ZERO);
   }
 
+  private static BLSSecretKey secretKeyFromInteger(final BigInteger value) {
+    return BLSSecretKey.fromBytes(Bytes32.leftPad(Bytes.wrap(value.toByteArray())));
+  }
+
   @Test
   void succeedsWhenPubkeyAndSignatureBothTheIdentityIsFailed() {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -337,6 +342,41 @@ public abstract class BLSTest {
     assertTrue(
         BLS.batchVerify(
             pubKeys, messages, List.of(signature1, signature2, signature3), true, false));
+  }
+
+  @Test
+  void batchVerifyWithPairingReturnsFalseWhenFirstAggregatePublicKeyIsInfinity() {
+    final BLSKeyPair keyPair1 = new BLSKeyPair(secretKeyFromInteger(BigInteger.ONE));
+    final BLSKeyPair keyPair2 =
+        new BLSKeyPair(secretKeyFromInteger(BLSConstants.CURVE_ORDER_BI.subtract(BigInteger.ONE)));
+    final BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
+
+    assertTrue(keyPair1.getPublicKey().isValid());
+    assertTrue(keyPair2.getPublicKey().isValid());
+    assertEquals(
+        infinityG1(),
+        BLSPublicKey.aggregate(List.of(keyPair1.getPublicKey(), keyPair2.getPublicKey())));
+
+    final Bytes aggregateMessage = Bytes.wrap("Hello, aggregate!".getBytes(UTF_8));
+    final Bytes validMessage = Bytes.wrap("Hello, valid!".getBytes(UTF_8));
+    final BLSSignature aggregateSignature =
+        BLS.aggregate(
+            List.of(
+                BLS.sign(keyPair1.getSecretKey(), aggregateMessage),
+                BLS.sign(keyPair2.getSecretKey(), aggregateMessage)));
+    final BLSSignature validSignature = BLS.sign(keyPair3.getSecretKey(), validMessage);
+
+    // Regression: this used to throw when the infinity aggregate was the left-hand side of
+    // prepareBatchVerify2's merge.
+    assertFalse(
+        BLS.batchVerify(
+            List.of(
+                List.of(keyPair1.getPublicKey(), keyPair2.getPublicKey()),
+                List.of(keyPair3.getPublicKey())),
+            List.of(aggregateMessage, validMessage),
+            List.of(aggregateSignature, validSignature),
+            true,
+            false));
   }
 
   @Test

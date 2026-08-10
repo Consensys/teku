@@ -36,6 +36,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCH
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_PROPOSER_PREFERENCES_SCHEMA;
 
@@ -63,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContentsSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequestSchema;
@@ -92,6 +94,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
   private final BlindedExecutionPayloadEnvelopeSchema blindedExecutionPayloadEnvelopeSchema;
   private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
+  private final SignedExecutionPayloadEnvelopeContentsSchema
+      signedExecutionPayloadEnvelopeContentsSchema;
   private final SignedBlindedExecutionPayloadEnvelopeSchema
       signedBlindedExecutionPayloadEnvelopeSchema;
   private final SszBitvectorSchema<?> executionPayloadAvailabilitySchema;
@@ -120,6 +124,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
         schemaRegistry.get(BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
     this.signedExecutionPayloadEnvelopeSchema =
         schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
+    this.signedExecutionPayloadEnvelopeContentsSchema =
+        schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA);
     this.signedBlindedExecutionPayloadEnvelopeSchema =
         schemaRegistry.get(SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
     this.executionPayloadAvailabilitySchema =
@@ -231,6 +237,11 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SignedExecutionPayloadEnvelopeSchema getSignedExecutionPayloadEnvelopeSchema() {
     return signedExecutionPayloadEnvelopeSchema;
+  }
+
+  public SignedExecutionPayloadEnvelopeContentsSchema
+      getSignedExecutionPayloadEnvelopeContentsSchema() {
+    return signedExecutionPayloadEnvelopeContentsSchema;
   }
 
   public SignedBlindedExecutionPayloadEnvelopeSchema

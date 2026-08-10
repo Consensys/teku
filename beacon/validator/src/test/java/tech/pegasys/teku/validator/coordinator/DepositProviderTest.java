@@ -21,7 +21,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -70,7 +68,6 @@ public class DepositProviderTest {
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final Eth1DepositStorageChannel eth1DepositStorageChannel =
       mock(Eth1DepositStorageChannel.class);
-  private final EventLogger eventLogger = mock(EventLogger.class);
   private List<tech.pegasys.teku.ethereum.pow.api.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
   private Eth1Data randomEth1Data;
@@ -101,10 +98,7 @@ public class DepositProviderTest {
             eth1DataCache,
             storageUpdateChannel,
             eth1DepositStorageChannel,
-            spec,
-            eventLogger,
-            true);
-    depositProvider.onSyncingStatusChanged(true);
+            spec);
     depositMerkleTree = new MerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     createDepositEvents(40);
     randomEth1Data = dataStructureUtil.randomEth1Data();
@@ -298,51 +292,6 @@ public class DepositProviderTest {
     assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
         .isInstanceOf(MissingDepositsException.class)
         .hasMessageContaining("9 to 10");
-  }
-
-  @Test
-  void shouldLogAnEventOnSlotWhenAllDepositsRequiredForStateNotAvailable() {
-    setup(1);
-    // To generate a valid proof we need the deposits up to state deposit count
-    // So we want to check if on each slot our node has necessary deposit data
-    mockDepositsFromEth1Block(0, 8);
-    updateStateEth1DepositIndex(5);
-    updateStateEth1DataDepositCount(10);
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
-
-    depositProvider.onSlot(UInt64.ONE);
-
-    verify(eventLogger).eth1DepositDataNotAvailable(UInt64.valueOf(9), UInt64.valueOf(10));
-  }
-
-  @Test
-  void
-      shouldNotLogAnEventOnSlotIfFormerDepositMechanismIsDisabled_EvenIfAllDepositsRequiredForStateNotAvailable() {
-    setup(1, SpecMilestone.ELECTRA);
-    mockDepositsFromEth1Block(0, 8);
-    updateStateEth1DepositIndex(5);
-    updateStateDepositRequestsStartIndex(5);
-    updateStateEth1DataDepositCount(10);
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
-
-    depositProvider.onSlot(UInt64.ONE);
-
-    verifyNoInteractions(eventLogger);
-  }
-
-  @Test
-  void shouldNotLogAnEventOnSlotWhenAllDepositsRequiredForStateAvailable() {
-    setup(1);
-    // To generate a valid proof we need the deposits up to state deposit count
-    // So we want to check if on each slot our node has necessary deposit data
-    mockDepositsFromEth1Block(0, 10);
-    updateStateEth1DepositIndex(5);
-    updateStateEth1DataDepositCount(10);
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
-
-    depositProvider.onSlot(UInt64.ONE);
-
-    verifyNoInteractions(eventLogger);
   }
 
   @Test

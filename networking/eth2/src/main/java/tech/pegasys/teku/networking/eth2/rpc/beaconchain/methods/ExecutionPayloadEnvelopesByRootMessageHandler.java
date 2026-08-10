@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
@@ -47,14 +48,16 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final RecentChainData recentChainData;
+  private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRootMessageHandler(
-      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
+      final Spec spec,
+      final CombinedChainDataClient combinedChainDataClient,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
+    this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -92,7 +95,8 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.size());
 
     final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
-    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
+    final UInt64 currentEpoch =
+        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
     final UInt64 minServableEpoch =
         currentEpoch
             .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
@@ -104,21 +108,11 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
       future =
           future.thenCompose(
               __ ->
-                  recentChainData
-                      .retrieveSignedExecutionPayloadByBlockRoot(beaconBlockRoot.get())
-                      .thenCompose(
-                          maybeExecutionPayloadEnvelope ->
-                              maybeExecutionPayloadEnvelope
-                                  .filter(
-                                      envelope ->
-                                          isEnvelopeWithinServableRange(envelope, minServableEpoch))
-                                  .map(
-                                      executionPayloadEnvelope ->
-                                          callback
-                                              .respond(executionPayloadEnvelope)
-                                              .thenRun(
-                                                  sentExecutionPayloadEnvelopes::incrementAndGet))
-                                  .orElse(SafeFuture.COMPLETE)));
+                  respondToBlockRoot(
+                      beaconBlockRoot.get(),
+                      minServableEpoch,
+                      callback,
+                      sentExecutionPayloadEnvelopes));
     }
 
     future.finish(
@@ -132,9 +126,45 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
         err -> handleError(err, callback, "execution payload envelopes by root"));
   }
 
-  private boolean isEnvelopeWithinServableRange(
-      final SignedExecutionPayloadEnvelope envelope, final UInt64 minServableEpoch) {
-    return spec.computeEpochAtSlot(envelope.getMessage().getSlot())
-        .isGreaterThanOrEqualTo(minServableEpoch);
+  /**
+   * Resolves the slot for the requested root before retrieving the envelope. Retrieving an envelope
+   * for a finalized block requires reading the blinded envelope from the database and unblinding it
+   * with an execution layer round trip, so a root already known to be outside the servable range is
+   * rejected up front rather than after that work has been done. A root whose slot can't be
+   * resolved still goes through retrieval, where the range is enforced against the envelope itself.
+   */
+  private SafeFuture<Void> respondToBlockRoot(
+      final Bytes32 beaconBlockRoot,
+      final UInt64 minServableEpoch,
+      final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      final AtomicInteger sentExecutionPayloadEnvelopes) {
+    return combinedChainDataClient
+        .getSlotByBlockRoot(beaconBlockRoot)
+        .thenCompose(
+            maybeSlot -> {
+              if (maybeSlot.isPresent()
+                  && !isWithinServableRange(maybeSlot.get(), minServableEpoch)) {
+                return SafeFuture.COMPLETE;
+              }
+              return combinedChainDataClient
+                  .getExecutionPayloadByBlockRoot(beaconBlockRoot)
+                  .thenCompose(
+                      maybeExecutionPayloadEnvelope ->
+                          maybeExecutionPayloadEnvelope
+                              .filter(
+                                  envelope ->
+                                      isWithinServableRange(
+                                          envelope.getMessage().getSlot(), minServableEpoch))
+                              .map(
+                                  executionPayloadEnvelope ->
+                                      callback
+                                          .respond(executionPayloadEnvelope)
+                                          .thenRun(sentExecutionPayloadEnvelopes::incrementAndGet))
+                              .orElse(SafeFuture.COMPLETE));
+            });
+  }
+
+  private boolean isWithinServableRange(final UInt64 slot, final UInt64 minServableEpoch) {
+    return spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(minServableEpoch);
   }
 }

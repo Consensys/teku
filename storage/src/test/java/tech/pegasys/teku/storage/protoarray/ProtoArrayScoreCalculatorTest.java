@@ -822,9 +822,9 @@ public class ProtoArrayScoreCalculatorTest {
     store.putVote(
         ZERO, new VoteTracker(root, root, false, false, nextSlot, false, currentSlot, false));
 
-    when(forkChoiceModel.resolveVoteNode(root, currentSlot, false, protoArray, blockNodeIndex))
+    when(forkChoiceModel.getSupportedNode(root, currentSlot, false, protoArray, blockNodeIndex))
         .thenReturn(Optional.of(node));
-    when(forkChoiceModel.resolveVoteNode(root, nextSlot, false, protoArray, blockNodeIndex))
+    when(forkChoiceModel.getSupportedNode(root, nextSlot, false, protoArray, blockNodeIndex))
         .thenReturn(Optional.of(node));
 
     final LongList deltas =
@@ -847,9 +847,9 @@ public class ProtoArrayScoreCalculatorTest {
     assertThat(deltas.size()).isEqualTo(1);
     assertThat(deltas.getLong(0)).isZero();
     verify(forkChoiceModel, times(1))
-        .resolveVoteNode(root, currentSlot, false, protoArray, blockNodeIndex);
+        .getSupportedNode(root, currentSlot, false, protoArray, blockNodeIndex);
     verify(forkChoiceModel, times(1))
-        .resolveVoteNode(root, nextSlot, false, protoArray, blockNodeIndex);
+        .getSupportedNode(root, nextSlot, false, protoArray, blockNodeIndex);
   }
 
   private ProtoArray createProtoArray() {

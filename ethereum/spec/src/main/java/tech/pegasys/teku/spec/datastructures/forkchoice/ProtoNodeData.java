@@ -28,6 +28,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
   private final Bytes32 stateRoot;
   private final UInt64 executionBlockNumber;
   private final Bytes32 executionBlockHash;
+  private final UInt64 executionGasLimit;
   private final ProtoNodeValidationStatus validationStatus;
   private final BlockCheckpoints checkpoints;
   private final UInt64 weight;
@@ -40,6 +41,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       final Bytes32 stateRoot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
+      final UInt64 executionGasLimit,
       final ProtoNodeValidationStatus validationStatus,
       final BlockCheckpoints checkpoints,
       final UInt64 weight,
@@ -50,6 +52,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
     this.stateRoot = stateRoot;
     this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
+    this.executionGasLimit = executionGasLimit;
     this.validationStatus = validationStatus;
     this.checkpoints = checkpoints;
     this.weight = weight;
@@ -82,6 +85,10 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
 
   public Bytes32 getExecutionBlockHash() {
     return executionBlockHash;
+  }
+
+  public UInt64 getExecutionGasLimit() {
+    return executionGasLimit;
   }
 
   public boolean isOptimistic() {
@@ -119,6 +126,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(executionBlockNumber, that.executionBlockNumber)
         && Objects.equals(executionBlockHash, that.executionBlockHash)
+        && Objects.equals(executionGasLimit, that.executionGasLimit)
         && validationStatus == that.validationStatus
         && Objects.equals(checkpoints, that.checkpoints)
         && Objects.equals(weight, that.weight)
@@ -134,6 +142,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         stateRoot,
         executionBlockNumber,
         executionBlockHash,
+        executionGasLimit,
         validationStatus,
         checkpoints,
         weight,
@@ -149,6 +158,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         .add("stateRoot", stateRoot)
         .add("executionBlockNumber", executionBlockNumber)
         .add("executionBlockHash", executionBlockHash)
+        .add("executionGasLimit", executionGasLimit)
         .add("validationStatus", validationStatus)
         .add("checkpoints", checkpoints)
         .add("weight", weight)

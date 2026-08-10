@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullExc
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
 public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMessageHandler<I, O> {
   private static final Logger LOG = LogManager.getLogger();
@@ -68,7 +69,8 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
     // peer sent STOP_SENDING) is not a ClosedChannelException so it must be matched separately.
     if (rootCause instanceof StreamClosedException
         || rootCause instanceof ClosedChannelException
-        || rootCause instanceof ChannelOutputShutdownException) {
+        || rootCause instanceof ChannelOutputShutdownException
+        || rootCause instanceof StreamTimeoutException) {
       LOG.trace("Stream closed while sending requested {}", type, error);
       callback.completeWithUnexpectedError(error);
       return;

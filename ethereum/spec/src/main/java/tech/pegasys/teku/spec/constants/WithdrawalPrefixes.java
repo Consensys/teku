@@ -25,6 +25,6 @@ public class WithdrawalPrefixes {
   public static final byte COMPOUNDING_WITHDRAWAL_BYTE = 0x02;
   public static final Bytes COMPOUNDING_WITHDRAWAL_PREFIX = Bytes.of(COMPOUNDING_WITHDRAWAL_BYTE);
 
-  public static final byte BUILDER_WITHDRAWAL_BYTE = 0x03;
+  public static final byte BUILDER_WITHDRAWAL_BYTE = (byte) 0xB0;
   public static final Bytes BUILDER_WITHDRAWAL_PREFIX = Bytes.of(BUILDER_WITHDRAWAL_BYTE);
 }

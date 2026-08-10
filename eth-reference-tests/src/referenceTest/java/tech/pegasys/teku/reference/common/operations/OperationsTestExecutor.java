@@ -371,8 +371,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             state,
             beaconBlockBody,
             Optional.of(
-                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid),
-            Optional.empty());
+                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
       }
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
@@ -388,14 +387,14 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         processor.processParentExecutionPayload(state, beaconBlock);
       }
       case EXECUTION_PAYLOAD_BID -> {
-        final SignedExecutionPayloadBid signedExecutionPayloadBid =
+        final SignedExecutionPayloadBid signedBid =
             loadSsz(
                 testDefinition,
                 dataFileName,
                 SchemaDefinitionsGloas.required(
                         testDefinition.getSpec().getGenesisSchemaDefinitions())
                     .getSignedExecutionPayloadBidSchema());
-        processor.processExecutionPayloadBid(state, signedExecutionPayloadBid);
+        processor.processExecutionPayloadBid(state, signedBid);
       }
       case PAYLOAD_ATTESTATION -> {
         final PayloadAttestation payloadAttestation =

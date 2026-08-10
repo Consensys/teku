@@ -136,7 +136,10 @@ class ForkChoicePayloadExecutorGloasTest {
         ArgumentCaptor.forClass(NewPayloadRequest.class);
     verify(executionLayer).engineNewPayload(payloadRequestCaptor.capture(), eq(UInt64.ZERO));
     assertThat(payloadRequestCaptor.getValue().getInclusionList())
-        .contains(inclusionList.getTransactions());
+        .hasValueSatisfying(
+            transactions ->
+                assertThat(transactions)
+                    .containsExactlyElementsOf(inclusionList.getTransactions()));
     assertThat(result).isTrue();
   }
 }

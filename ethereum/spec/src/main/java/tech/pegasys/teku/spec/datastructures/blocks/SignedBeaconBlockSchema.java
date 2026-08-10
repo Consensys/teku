@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import it.unimi.dsi.fastutil.longs.LongList;
+import java.util.OptionalLong;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
@@ -25,12 +26,28 @@ public class SignedBeaconBlockSchema
     extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszSignature>
     implements SignedBlockContainerSchema<SignedBeaconBlock> {
 
+  private final OptionalLong networkSszLengthBytesUpperBound;
+
   public SignedBeaconBlockSchema(
       final BeaconBlockSchema beaconBlockSchema, final String containerName) {
+    this(beaconBlockSchema, containerName, OptionalLong.empty());
+  }
+
+  public SignedBeaconBlockSchema(
+      final BeaconBlockSchema beaconBlockSchema,
+      final String containerName,
+      final OptionalLong networkSszLengthBytesUpperBound) {
     super(
         containerName,
         namedSchema(SignedBeaconBlockFields.MESSAGE, beaconBlockSchema),
         namedSchema(SignedBeaconBlockFields.SIGNATURE, SszSignatureSchema.INSTANCE));
+    this.networkSszLengthBytesUpperBound = networkSszLengthBytesUpperBound;
+    validateNetworkSszLengthBytesUpperBound();
+  }
+
+  @Override
+  public OptionalLong getNetworkSszLengthBytesUpperBound() {
+    return networkSszLengthBytesUpperBound;
   }
 
   public SignedBeaconBlock create(final BeaconBlock message, final BLSSignature signature) {

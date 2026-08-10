@@ -48,6 +48,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private static final Logger LOG = LogManager.getLogger();
   static final int REMOTE_OPEN_STREAMS_RATE_LIMIT = 256;
   static final int REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT = 256;
+  static final int MAXIMUM_ACTIVE_INBOUND_RPC_STREAMS = 128;
 
   private final PrivKey privKey;
   private final NodeId nodeId;

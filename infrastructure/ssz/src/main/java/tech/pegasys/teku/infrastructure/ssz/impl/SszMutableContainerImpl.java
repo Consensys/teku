@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
@@ -20,6 +24,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableRefContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.ProgressiveTreeUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
@@ -27,6 +34,31 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
 
   public SszMutableContainerImpl(final SszContainerImpl backingImmutableView) {
     super(backingImmutableView);
+  }
+
+  @Override
+  protected TreeNode applyTreeChanges(
+      final Stream<Map.Entry<Integer, SszData>> newChildValues,
+      final TreeNode originalBackingTree) {
+    if (!getSchema().isProgressiveMode()) {
+      return super.applyTreeChanges(newChildValues, originalBackingTree);
+    }
+
+    final AbstractSszContainerSchema<?> schema = getSchema();
+    final TreeNode dataTree = originalBackingTree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    final TreeNode activeFieldsNode = originalBackingTree.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+
+    final Int2ObjectMap<TreeNode> slotUpdates = new Int2ObjectOpenHashMap<>();
+    newChildValues.forEach(
+        entry ->
+            slotUpdates.put(
+                schema.getTreePosition(entry.getKey()), entry.getValue().getBackingNode()));
+
+    final TreeNode updatedDataTree =
+        ProgressiveTreeUtil.updateProgressiveTree(
+            dataTree, slotUpdates, schema.getActiveFields().length);
+
+    return BranchNode.create(updatedDataTree, activeFieldsNode);
   }
 
   @Override

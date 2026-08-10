@@ -1325,6 +1325,13 @@ public class Spec {
   }
 
   // Attestation helpers
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    return atState(state)
+        .getAttestationUtil()
+        .getStateForAttestationRewardCalculation(state, parentPayloadAvailable);
+  }
+
   public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()
@@ -1334,11 +1341,11 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final Bytes32 blockRoot,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
-        .getGenericAttestationData(slot, state, blockRoot, committeeIndex);
+        .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
@@ -1443,6 +1450,10 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public Optional<Integer> getNumberOfCustodyGroups() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getNumberOfCustodyGroups);
+  }
+
   public int getNumberOfCustodyGroups(final UInt64 slot) {
     return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
   }
@@ -1454,11 +1465,14 @@ public class Spec {
 
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (getSpecConfigFulu().isEmpty()) {
+    final Optional<SpecConfigFulu> maybeSpecConfigFulu = getSpecConfigFulu();
+    if (maybeSpecConfigFulu.isEmpty()) {
       return false;
     }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
+    final SpecConfigFulu specConfigFulu = maybeSpecConfigFulu.get();
+    if (epoch.isLessThan(specConfigFulu.getFuluForkEpoch())) {
+      return false;
+    }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());

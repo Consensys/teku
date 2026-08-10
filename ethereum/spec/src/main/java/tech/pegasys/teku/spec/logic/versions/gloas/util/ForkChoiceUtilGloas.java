@@ -309,10 +309,31 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return true;
   }
 
+  /**
+   * is_ancestor
+   *
+   * <p>[Modified in Gloas:EIP7732] In addition to matching the ancestor block root, the resolved
+   * ancestor's payload status must equal {@code ancestor}'s, unless {@code ancestor} is PENDING
+   * (which matches any payload status).
+   */
   @Override
-  public Optional<ForkChoiceNode> getAncestorNode(
-      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
-    return forkChoiceStrategy.getAncestorNode(root, slot);
+  public boolean isAncestor(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final ForkChoiceNode node,
+      final ForkChoiceNode ancestor) {
+    final Optional<UInt64> ancestorSlot = forkChoiceStrategy.blockSlot(ancestor.blockRoot());
+    if (ancestorSlot.isEmpty()) {
+      return false;
+    }
+    final Optional<ForkChoiceNode> maybeNodeAncestor =
+        forkChoiceStrategy.getAncestorNode(node, ancestorSlot.get());
+    if (maybeNodeAncestor.isEmpty()) {
+      return false;
+    }
+    final ForkChoiceNode nodeAncestor = maybeNodeAncestor.get();
+    return nodeAncestor.blockRoot().equals(ancestor.blockRoot())
+        && (nodeAncestor.payloadStatus() == ancestor.payloadStatus()
+            || ancestor.payloadStatus() == PAYLOAD_STATUS_PENDING);
   }
 
   /**
@@ -359,12 +380,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final Bytes32 nodeRoot,
       final ForkChoicePayloadStatus nodePayloadStatus,
       final Bytes32 proposerBoostRoot) {
-    return forkChoiceStrategy
-        .blockSlot(nodeRoot)
-        .flatMap(nodeSlot -> getAncestorNode(forkChoiceStrategy, proposerBoostRoot, nodeSlot))
-        .filter(
-            ancestorNode -> ancestorNode.equals(new ForkChoiceNode(nodeRoot, nodePayloadStatus)))
-        .isPresent();
+    // Spec mapping: get_weight applies proposer boost to ``node`` when ``node`` is an ancestor of
+    // the PENDING proposer-boost node.
+    return isAncestor(
+        forkChoiceStrategy,
+        ForkChoiceNode.createBase(proposerBoostRoot),
+        new ForkChoiceNode(nodeRoot, nodePayloadStatus));
   }
 
   /**
@@ -478,26 +499,20 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   /**
-   * Determines whether the parent selected by {@code head} is strong using the child-aware Gloas
-   * payload-status rules.
+   * Determines whether the parent selected by {@code head} is strong by scoring the parent's
+   * PENDING variant, measuring support for the parent beacon block regardless of payload status.
    *
-   * <p>If the justified state or the parent payload status is not immediately available, Teku
-   * returns {@code false}. That suppresses the late-reorg override rather than risking a false
-   * positive that would incorrectly prefer the parent.
+   * <p>If the justified state is not immediately available, Teku returns {@code false}. That
+   * suppresses the late-reorg override rather than risking a false positive that would incorrectly
+   * prefer the parent.
    */
   @Override
   public boolean isParentStrong(
       final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 parentThreshold) {
     final Optional<BeaconState> maybeJustifiedState = store.getJustifiedStateIfAvailable();
-    final Optional<ForkChoicePayloadStatus> maybeParentPayloadStatus =
-        getParentPayloadStatusIfAvailable(store, head.getMessage().getBlock());
-    if (maybeJustifiedState.isPresent() && maybeParentPayloadStatus.isPresent()) {
+    if (maybeJustifiedState.isPresent()) {
       return isParentStrong(
-          store,
-          head.getParentRoot(),
-          parentThreshold,
-          maybeParentPayloadStatus.get(),
-          maybeJustifiedState.get());
+          store, head.getParentRoot(), parentThreshold, maybeJustifiedState.get());
     }
     // Fail closed for late-reorg decisions: missing inputs mean "do not treat the parent as
     // strong".
@@ -528,17 +543,16 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    *
    * <p>Spec reference: is_parent_strong (Gloas override)
    *
-   * <p>The Java signature carries `parentPayloadStatus` explicitly because the protoarray stores
-   * the EMPTY/FULL/PENDING split as node identity rather than recomputing it inside the helper.
+   * <p>Scores the parent's PENDING variant so the attestation weight counts support for the parent
+   * beacon block as a whole rather than a single EMPTY/FULL payload variant.
    */
   private boolean isParentStrong(
       final ReadOnlyStore store,
       final Bytes32 parentRoot,
       final UInt64 parentThreshold,
-      final ForkChoicePayloadStatus parentPayloadStatus,
       final BeaconState justifiedState) {
     final UInt64 attestationScore =
-        getNodeAttestationWeight(store, parentRoot, parentPayloadStatus, justifiedState);
+        getNodeAttestationWeight(store, parentRoot, PAYLOAD_STATUS_PENDING, justifiedState);
     return attestationScore.isGreaterThan(parentThreshold);
   }
 

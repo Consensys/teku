@@ -36,7 +36,7 @@ public class StorageConfiguration {
   public static final boolean DEFAULT_ROCKSDB_BLOB_DB_ENABLED = false;
   public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
-  public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
+  public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 5_000_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -317,6 +319,19 @@ class StoreTransactionUpdatesFactory {
         .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       return Optional.empty();
     }
-    return Optional.ofNullable(hotBlocks.get(latestFinalized.getRoot()));
+    return Optional.ofNullable(hotBlocks.get(latestFinalized.getRoot()))
+        .map(
+            boundaryBlock ->
+                baseStore
+                    .getForkChoiceStrategy()
+                    .getBlockData(boundaryBlock.getRoot(), PAYLOAD_STATUS_PENDING)
+                    .map(
+                        pendingNode ->
+                            new BlockAndCheckpoints(
+                                boundaryBlock.getBlock(),
+                                boundaryBlock.getBlockCheckpoints(),
+                                Optional.of(pendingNode.getExecutionBlockNumber()),
+                                Optional.of(pendingNode.getExecutionGasLimit())))
+                    .orElse(boundaryBlock));
   }
 }

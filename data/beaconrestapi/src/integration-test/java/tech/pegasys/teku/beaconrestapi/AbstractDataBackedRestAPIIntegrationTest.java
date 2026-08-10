@@ -77,6 +77,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -352,6 +353,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             blockProductionAndPublishingFactory,
             blockPublisher,
             payloadAttestationPool,
+            DataAvailabilitySampler.NOOP,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,

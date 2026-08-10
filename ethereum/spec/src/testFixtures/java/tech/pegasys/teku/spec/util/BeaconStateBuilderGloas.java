@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -331,22 +332,23 @@ public class BeaconStateBuilderGloas
                     ? dataStructureUtil.randomUInt64(defaultValidatorCount)
                     : UInt64.ZERO);
 
+    final ExecutionPayloadBidSchema<? extends ExecutionPayloadBid> executionPayloadBidSchema =
+        SchemaDefinitionsGloas.required(spec.getSchemaDefinitions()).getExecutionPayloadBidSchema();
     this.latestExecutionPayloadBid =
-        SchemaDefinitionsGloas.required(spec.getSchemaDefinitions())
-            .getExecutionPayloadBidSchema()
-            .create(
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomEth1Address(),
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomBuilderIndex(),
-                dataStructureUtil.randomSlot(),
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomBlobKzgCommitments(),
-                dataStructureUtil.randomBytes32());
+        executionPayloadBidSchema.create(
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomEth1Address(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBuilderIndex(),
+            dataStructureUtil.randomSlot(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBlobKzgCommitments(
+                executionPayloadBidSchema.getBlobKzgCommitmentsSchema()),
+            dataStructureUtil.randomBytes32());
 
     this.builders =
         dataStructureUtil.randomSszList(

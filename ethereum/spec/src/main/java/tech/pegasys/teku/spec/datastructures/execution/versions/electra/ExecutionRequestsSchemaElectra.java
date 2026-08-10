@@ -16,16 +16,15 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 import static tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsFields.CONSOLIDATIONS;
 import static tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsFields.DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsFields.WITHDRAWALS;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUESTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUESTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUESTS_SCHEMA;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -38,27 +37,23 @@ public class ExecutionRequestsSchemaElectra
         SszList<ConsolidationRequest>>
     implements ExecutionRequestsSchema<ExecutionRequestsElectra> {
 
+  @SuppressWarnings("unchecked")
   public ExecutionRequestsSchemaElectra(
-      final SpecConfigElectra specConfig,
-      final SchemaRegistry schemaRegistry,
-      final String containerName) {
+      final SchemaRegistry schemaRegistry, final String containerName) {
     super(
         containerName,
         namedSchema(
             DEPOSITS,
-            SszListSchema.create(
-                schemaRegistry.get(DEPOSIT_REQUEST_SCHEMA),
-                specConfig.getMaxDepositRequestsPerPayload())),
+            (SszListSchema<DepositRequest, SszList<DepositRequest>>)
+                schemaRegistry.get(DEPOSIT_REQUESTS_SCHEMA)),
         namedSchema(
             WITHDRAWALS,
-            SszListSchema.create(
-                schemaRegistry.get(WITHDRAWAL_REQUEST_SCHEMA),
-                specConfig.getMaxWithdrawalRequestsPerPayload())),
+            (SszListSchema<WithdrawalRequest, SszList<WithdrawalRequest>>)
+                schemaRegistry.get(WITHDRAWAL_REQUESTS_SCHEMA)),
         namedSchema(
             CONSOLIDATIONS,
-            SszListSchema.create(
-                schemaRegistry.get(CONSOLIDATION_REQUEST_SCHEMA),
-                specConfig.getMaxConsolidationRequestsPerPayload())));
+            (SszListSchema<ConsolidationRequest, SszList<ConsolidationRequest>>)
+                schemaRegistry.get(CONSOLIDATION_REQUESTS_SCHEMA)));
   }
 
   public ExecutionRequestsElectra create(

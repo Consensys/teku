@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.config.BeaconNodeConfig.DEFAULT_EVENT_CHANNEL_VIRTUAL_THREADS_ENABLED;
+
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -27,7 +29,7 @@ public class BeaconNodeOptions {
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
-  private boolean eventChannelVirtualThreadsEnabled = false;
+  private boolean eventChannelVirtualThreadsEnabled = DEFAULT_EVENT_CHANNEL_VIRTUAL_THREADS_ENABLED;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.beaconNode(b -> b.eventChannelVirtualThreadsEnabled(eventChannelVirtualThreadsEnabled));

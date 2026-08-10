@@ -56,7 +56,7 @@ public class InclusionList
     return getField2().get();
   }
 
-  public List<Transaction> getTransactions() {
-    return getField3().asList();
+  public SszList<Transaction> getTransactions() {
+    return getField3();
   }
 }

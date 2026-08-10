@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +31,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.SnappyPreparedGossipMessage.Uncompressor;
@@ -175,7 +179,34 @@ public class SnappyPreparedGossipMessageTest {
     message.getDecodedMessage();
 
     verify(uncompressor)
-        .uncompress(eq(messageBytes), eq(schema.getSszLengthBounds()), eq(gossipMaxSize));
+        .uncompress(eq(messageBytes), eq(schema.getNetworkSszLengthBounds()), eq(gossipMaxSize));
+  }
+
+  @Test
+  public void getDecodedMessage_ShouldUseNetworkSszLengthBounds() throws DecodingException {
+    final SszLengthBounds networkBounds = SszLengthBounds.ofBytes(8, 16);
+    final Uncompressor uncompressor = mock(Uncompressor.class);
+    @SuppressWarnings("unchecked")
+    final SszSchema<?> valueType = mock(SszSchema.class);
+    doReturn(networkBounds).when(valueType).getNetworkSszLengthBounds();
+    when(uncompressor.uncompress(any(), any(), anyLong())).thenReturn(Bytes.random(12));
+
+    final String altairTopic = GossipTopics.getTopic(altairForkDigest, "test", gossipEncoding);
+    final SnappyPreparedGossipMessage message =
+        SnappyPreparedGossipMessage.create(
+            altairTopic,
+            messageBytes,
+            forkDigestToMilestone,
+            valueType,
+            uncompressor,
+            spec.getNetworkingConfig(),
+            Optional.empty());
+
+    message.getDecodedMessage();
+
+    verify(valueType).getNetworkSszLengthBounds();
+    verify(valueType, never()).getSszLengthBounds();
+    verify(uncompressor).uncompress(eq(messageBytes), eq(networkBounds), anyLong());
   }
 
   private SnappyPreparedGossipMessage getPhase0Message(

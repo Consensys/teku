@@ -19,13 +19,21 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -42,6 +50,50 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
     super(specConfig, schemaDefinitions, beaconStateAccessors, miscHelpers);
   }
 
+  @Override
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    if (!parentPayloadAvailable) {
+      return state;
+    }
+
+    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
+    final int parentSlotIndex =
+        stateGloas
+            .getLatestExecutionPayloadBid()
+            .getSlot()
+            .mod(specConfig.getSlotsPerHistoricalRoot())
+            .intValue();
+    if (stateGloas.getExecutionPayloadAvailability().getBit(parentSlotIndex)) {
+      return state;
+    }
+
+    // Block processing sets this bit before processing attestations. Reward calculation starts from
+    // the pre-state, so project the known parent status without mutating that shared state.
+    return state.updated(
+        mutableState -> {
+          final MutableBeaconStateGloas mutableStateGloas =
+              MutableBeaconStateGloas.required(mutableState);
+          mutableStateGloas.setExecutionPayloadAvailability(
+              mutableStateGloas.getExecutionPayloadAvailability().withBit(parentSlotIndex));
+        });
+  }
+
+  @Override
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      final Fork fork,
+      final BeaconState state,
+      final IndexedAttestationLight indexedAttestation,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+    final int maxAttestingIndices =
+        specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+    if (indexedAttestation.attestingIndices().size() > maxAttestingIndices) {
+      return SafeFuture.completedFuture(
+          AttestationProcessingResult.invalid("Too many attesting indices"));
+    }
+    return super.isValidIndexedAttestationAsync(fork, state, indexedAttestation, signatureVerifier);
+  }
+
   /**
    * is_valid_indexed_payload_attestation
    *
@@ -49,9 +101,9 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
    * signature.
    */
   public boolean isValidIndexedPayloadAttestation(
-      final BeaconState state, final IndexedPayloadAttestation attestation) {
+      final BeaconState state, final IndexedPayloadAttestationLight attestation) {
     // Verify indices are non-empty and sorted
-    final List<UInt64> indices = attestation.getAttestingIndices().asListUnboxed();
+    final List<UInt64> indices = attestation.attestingIndices();
     if (indices.isEmpty() || !Comparators.isInOrder(indices, UInt64::compareTo)) {
       return false;
     }
@@ -64,11 +116,11 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
         beaconStateAccessors.getDomain(
             state.getForkInfo(),
             Domain.PTC_ATTESTER,
-            miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()));
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.getData(), domain);
+            miscHelpers.computeEpochAtSlot(attestation.data().getSlot()));
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.data(), domain);
     return specConfig
         .getBLSSignatureVerifier()
-        .verify(pubKeys, signingRoot, attestation.getSignature());
+        .verify(pubKeys, signingRoot, attestation.signature());
   }
 
   @Override
@@ -106,19 +158,20 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final Bytes32 blockRoot,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
+    final Bytes32 beaconBlockRoot = block.getRoot();
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     final Bytes32 epochBoundaryBlockRoot =
         startSlot.compareTo(slot) == 0 || state.getSlot().compareTo(startSlot) <= 0
-            ? blockRoot
+            ? block.getRoot()
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
     final Checkpoint source = state.getCurrentJustifiedCheckpoint();
     final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
 
     // Set attestation data
-    return new AttestationData(slot, committeeIndex, blockRoot, source, target);
+    return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
   }
 }

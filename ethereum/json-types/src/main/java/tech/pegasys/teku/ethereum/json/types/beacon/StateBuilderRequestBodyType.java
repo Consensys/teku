@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.ethereum.json.types.beacon;
 
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.api.migrated.BuilderStatus;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class StateBuilderRequestBodyType {
@@ -34,13 +34,13 @@ public class StateBuilderRequestBodyType {
                   StateBuilderRequestBodyType::setIds)
               .withOptionalField(
                   "statuses",
-                  DeserializableTypeDefinition.listOf(RAW_INTEGER_TYPE),
-                  StateBuilderRequestBodyType::getMaybeStatuses,
-                  StateBuilderRequestBodyType::setStatuses)
+                  DeserializableTypeDefinition.listOf(STRING_TYPE),
+                  StateBuilderRequestBodyType::getMaybeStringStatuses,
+                  StateBuilderRequestBodyType::setStringStatuses)
               .build();
 
   private List<String> ids = List.of();
-  private List<Integer> statuses = List.of();
+  private List<BuilderStatus> statuses = List.of();
 
   public StateBuilderRequestBodyType() {}
 
@@ -48,7 +48,7 @@ public class StateBuilderRequestBodyType {
     this.ids = ids;
   }
 
-  public StateBuilderRequestBodyType(final List<String> ids, final List<Integer> statuses) {
+  public StateBuilderRequestBodyType(final List<String> ids, final List<BuilderStatus> statuses) {
     this.ids = ids;
     this.statuses = statuses;
   }
@@ -57,7 +57,7 @@ public class StateBuilderRequestBodyType {
     return ids;
   }
 
-  public List<Integer> getStatuses() {
+  public List<BuilderStatus> getStatuses() {
     return statuses;
   }
 
@@ -65,15 +65,17 @@ public class StateBuilderRequestBodyType {
     return ids.isEmpty() ? Optional.empty() : Optional.of(ids);
   }
 
-  public Optional<List<Integer>> getMaybeStatuses() {
-    return statuses.isEmpty() ? Optional.empty() : Optional.of(statuses);
+  public Optional<List<String>> getMaybeStringStatuses() {
+    return statuses.isEmpty()
+        ? Optional.empty()
+        : Optional.of(statuses.stream().map(BuilderStatus::getValue).toList());
   }
 
   public void setIds(final Optional<List<String>> ids) {
     ids.ifPresent(i -> this.ids = i);
   }
 
-  public void setStatuses(final Optional<List<Integer>> statuses) {
-    statuses.ifPresent(s -> this.statuses = s);
+  public void setStringStatuses(final Optional<List<String>> statuses) {
+    statuses.ifPresent(s -> this.statuses = s.stream().map(BuilderStatus::parse).toList());
   }
 }

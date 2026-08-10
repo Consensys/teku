@@ -154,6 +154,19 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            dataColumnSidecarsByRangeRequestMessageSchema.create(
+                UInt64.MAX_VALUE, UInt64.valueOf(10), columnIndices));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+  }
+
+  @TestTemplate
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final DataColumnSidecarsByRangeRequestMessage request =
         dataColumnSidecarsByRangeRequestMessageSchema.create(
@@ -260,7 +273,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     verify(peer)
         .adjustDataColumnSidecarsRequest(
             eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
-    verify(combinedChainDataClient, never()).getDataColumnSidecars(any(), any());
+    verify(combinedChainDataClient, never()).getDataColumnSidecars(any(UInt64.class), any());
     verify(listener, never()).respond(any());
     verify(listener).completeSuccessfully();
   }

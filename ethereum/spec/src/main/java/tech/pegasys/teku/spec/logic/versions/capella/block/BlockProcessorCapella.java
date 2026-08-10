@@ -100,18 +100,24 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
 
   @Override
-  public void executionProcessing(
+  public UInt64 executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
       final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlotFallback,
       final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayloadHeader executionPayloadHeader =
         extractExecutionPayloadHeader(beaconBlock.getBody());
     processWithdrawals(genericState, Optional.of(executionPayloadHeader));
-    super.executionProcessing(
-        genericState, beaconBlock, payloadExecutor, validatorExitContextSupplier, inclusionLists);
+    return super.executionProcessing(
+        genericState,
+        beaconBlock,
+        payloadExecutor,
+        validatorExitContextSupplier,
+        parentSlotFallback,
+        inclusionLists);
   }
 
   @Override
@@ -156,10 +162,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlot)
       throws BlockProcessingException {
     super.processOperationsNoValidation(
-        state, body, indexedAttestationCache, validatorExitContextSupplier);
+        state, body, indexedAttestationCache, validatorExitContextSupplier, parentSlot);
 
     safelyProcess(
         () ->

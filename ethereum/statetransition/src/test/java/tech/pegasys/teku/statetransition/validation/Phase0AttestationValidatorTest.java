@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -363,5 +364,73 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                     expectedSubnetId)))
         .matches(
             rejected("descend from target block"), "Rejected does not descend from target block");
+  }
+
+  @Test
+  public void shouldRejectFutureSlotAttestationWithInvalidSignature() {
+    // A future-slot attestation with a bogus signature must be rejected (so the sender is
+    // penalised) rather than deferred with a penalty-free Ignore verdict, which would force a
+    // signature verification in the fork choice path for free.
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState, ONE);
+    assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
+
+    final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
+    when(signatureVerifier.verify(anyList(), any(Bytes.class), any()))
+        .thenReturn(SafeFuture.completedFuture(false));
+    final AttestationValidator validator =
+        new AttestationValidator(
+            spec, signatureVerifier, gossipValidationHelper, invalidBlockRoots);
+
+    final int subnetId = spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
+    chainUpdater.setCurrentSlot(ZERO);
+
+    assertThat(
+            validator
+                .validate(ValidatableAttestation.fromNetwork(spec, attestation, subnetId))
+                .join()
+                .code())
+        .isEqualTo(REJECT);
+    // The signature was actually verified at gossip time, giving a REJECT verdict that penalises
+    // the sender.
+    verify(signatureVerifier).verify(anyList(), any(Bytes.class), any());
+  }
+
+  @Test
+  public void shouldVerifyAndCacheSignatureForValidFutureSlotAttestation() {
+    // A valid future-slot attestation is still only deferred (SAVE_FOR_FUTURE), but its signature
+    // is verified and cached here so the fork choice path does not re-verify it.
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState, ONE);
+    assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
+    chainUpdater.setCurrentSlot(ZERO);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.fromNetwork(
+            spec,
+            attestation,
+            spec.computeSubnetForAttestation(blockAndState.getState(), attestation));
+
+    assertThat(validator.validate(validatableAttestation).join().code()).isEqualTo(SAVE_FOR_FUTURE);
+    assertThat(validatableAttestation.isValidIndexedAttestation()).isTrue();
+  }
+
+  @Test
+  public void shouldDeferFutureSlotAttestationOnWrongSubnetWhenSignatureIsValid() {
+    // A future-slot attestation is only rejected for an invalid signature; other gossip failures
+    // (here, the wrong subnet) defer rather than penalise the sender. Contrast with
+    // shouldRejectAttestationsSentOnTheWrongSubnet, which rejects an in-window attestation.
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState, ONE);
+    assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
+    final int subnetId = spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
+    chainUpdater.setCurrentSlot(ZERO);
+
+    assertThat(
+            validator
+                .validate(ValidatableAttestation.fromNetwork(spec, attestation, subnetId + 1))
+                .join()
+                .code())
+        .isEqualTo(SAVE_FOR_FUTURE);
   }
 }

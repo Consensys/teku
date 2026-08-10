@@ -21,9 +21,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<Transaction>> {
@@ -61,7 +61,7 @@ public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<T
               // TODO EIP7805 this is not used since using the method resolver to call
               // getInclusionListV1. We should find a better way to get the slot and get the spec at
               // that slot instead of using the genesis spec config/schema definitions
-              final TransactionSchema transactionSchema =
+              final SszByteListSchema<Transaction> transactionSchema =
                   SchemaDefinitionsHeze.required(spec.getGenesisSchemaDefinitions())
                       .getInclusionListSchema()
                       .getTransactionSchema();

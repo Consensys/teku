@@ -87,7 +87,10 @@ public class AttestationValidator {
       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
     }
     return singleOrAggregateAttestationChecks(
-            signatureVerifier, validatableAttestation, validatableAttestation.getReceivedSubnetId())
+            signatureVerifier,
+            validatableAttestation,
+            validatableAttestation.getReceivedSubnetId(),
+            true)
         .thenApply(InternalValidationResultWithState::getResult)
         .thenPeek(
             result -> {
@@ -116,6 +119,19 @@ public class AttestationValidator {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final ValidatableAttestation validatableAttestation,
       final OptionalInt receivedOnSubnetId) {
+    // Aggregate validation path: preserve legacy behaviour where a future-slot attestation is
+    // deferred without running signature verification here. The aggregate wrapper uses a batch
+    // verifier that is flushed separately, so verifying (and optimistically caching) the signature
+    // here would leave an unverified signature cached if the deferral short-circuits the flush.
+    return singleOrAggregateAttestationChecks(
+        signatureVerifier, validatableAttestation, receivedOnSubnetId, false);
+  }
+
+  SafeFuture<InternalValidationResultWithState> singleOrAggregateAttestationChecks(
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final ValidatableAttestation validatableAttestation,
+      final OptionalInt receivedOnSubnetId,
+      final boolean verifyFutureSlotAttestationSignature) {
 
     Attestation attestation = validatableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
@@ -165,10 +181,20 @@ public class AttestationValidator {
             gossipValidationHelper.getCurrentTimeMillis());
 
     if (slotInclusionGossipValidationResult.isPresent()) {
-      return switch (slotInclusionGossipValidationResult.get()) {
-        case IGNORE -> completedFuture(InternalValidationResultWithState.ignore());
-        case SAVE_FOR_FUTURE -> completedFuture(InternalValidationResultWithState.saveForFuture());
-      };
+      if (slotInclusionGossipValidationResult.get() == SlotInclusionGossipValidationResult.IGNORE) {
+        return completedFuture(InternalValidationResultWithState.ignore());
+      }
+      // SAVE_FOR_FUTURE: a future-slot attestation is deferred rather than accepted for gossip.
+      // When requested, we still verify its signature so that a bogus signature is rejected and its
+      // sender penalised, rather than being deferred with a penalty-free Ignore verdict and later
+      // forcing a BLS verification in the fork choice path for free. Only an invalid signature
+      // rejects here; every other gossip check simply defers (fork choice re-validates the rest
+      // once the attestation's slot arrives). A verified signature is cached so fork choice does
+      // not re-verify it.
+      if (!verifyFutureSlotAttestationSignature) {
+        return completedFuture(InternalValidationResultWithState.saveForFuture());
+      }
+      return checkFutureSlotAttestationSignature(validatableAttestation, signatureVerifier);
     }
 
     // [REJECT] The block being voted for (attestation.data.beacon_block_root) passes validation.
@@ -274,6 +300,42 @@ public class AttestationValidator {
                         validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                         return InternalValidationResultWithState.accept(state);
                       });
+            });
+  }
+
+  /**
+   * Verifies the signature of a future-slot attestation and always defers it (SAVE_FOR_FUTURE),
+   * rejecting only when the signature is invalid. The remaining gossip checks are intentionally
+   * skipped here: they either only apply to attestations eligible for immediate propagation, or are
+   * re-validated by fork choice when the attestation's slot arrives. Rejecting solely on an invalid
+   * signature keeps the peer penalty limited to provably-invalid messages, matching how other
+   * clients score future-slot attestations, while still avoiding a penalty-free BLS verification in
+   * the fork choice path.
+   */
+  private SafeFuture<InternalValidationResultWithState> checkFutureSlotAttestationSignature(
+      final ValidatableAttestation validatableAttestation,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+    final AttestationData data = validatableAttestation.getAttestation().getData();
+    // The signature can't be verified without the block being voted for and its state; defer.
+    if (!gossipValidationHelper.isBlockAvailable(data.getBeaconBlockRoot())) {
+      return completedFuture(InternalValidationResultWithState.saveForFuture());
+    }
+    return gossipValidationHelper
+        .getStateForAttestationValidation(data)
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isEmpty()) {
+                return completedFuture(InternalValidationResultWithState.saveForFuture());
+              }
+              return spec.isValidIndexedAttestation(
+                      maybeState.get(), validatableAttestation, signatureVerifier)
+                  .thenApply(
+                      signatureResult ->
+                          signatureResult.isSuccessful()
+                              ? InternalValidationResultWithState.saveForFuture()
+                              : InternalValidationResultWithState.reject(
+                                  "Attestation is not a valid indexed attestation: %s",
+                                  signatureResult.getInvalidReason()));
             });
   }
 }

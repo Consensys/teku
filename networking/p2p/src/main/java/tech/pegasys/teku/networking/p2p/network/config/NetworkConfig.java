@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.web3j.utils.Strings;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.IPVersionResolver;
 import tech.pegasys.teku.infrastructure.io.IPVersionResolver.IPVersion;
@@ -157,8 +156,16 @@ public class NetworkConfig {
     return advertisedPort.orElse(listenPort);
   }
 
+  public OptionalInt getOptionalAdvertisedPort() {
+    return advertisedPort;
+  }
+
   public int getAdvertisedPortIpv6() {
     return advertisedPortIpv6.orElse(listenPortIpv6);
+  }
+
+  public OptionalInt getOptionalAdvertisedPortIpv6() {
+    return advertisedPortIpv6;
   }
 
   public int getAdvertisedQuicPort() {
@@ -189,7 +196,6 @@ public class NetworkConfig {
     return wireLogsConfig;
   }
 
-  @SuppressWarnings("AddressSelection")
   private String resolveAnyLocalAddress(final String ipAddress) {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
@@ -376,7 +382,7 @@ public class NetworkConfig {
           ips -> {
             ips.forEach(
                 ip -> {
-                  if (Strings.isBlank(ip)) {
+                  if (ip == null || ip.isBlank()) {
                     throw new InvalidConfigurationException("Advertised ip is blank");
                   }
                   if (!isInetAddress(ip)) {
@@ -403,13 +409,13 @@ public class NetworkConfig {
     }
 
     public Builder listenQuicPort(final int listenQuicPort) {
-      validatePort(listenQuicPort, "--Xp2p-quic-port");
+      validatePort(listenQuicPort, "--p2p-quic-port");
       this.listenQuicPort = listenQuicPort;
       return this;
     }
 
     public Builder listenQuicPortIpv6(final int listenQuicPortIpv6) {
-      validatePort(listenQuicPortIpv6, "--Xp2p-quic-port-ipv6");
+      validatePort(listenQuicPortIpv6, "--p2p-quic-port-ipv6");
       this.listenQuicPortIpv6 = listenQuicPortIpv6;
       return this;
     }
@@ -430,7 +436,7 @@ public class NetworkConfig {
 
     public Builder advertisedQuicPort(final OptionalInt advertisedQuicPort) {
       checkNotNull(advertisedQuicPort);
-      advertisedQuicPort.ifPresent(port -> validatePort(port, "--Xp2p-advertised-quic-port"));
+      advertisedQuicPort.ifPresent(port -> validatePort(port, "--p2p-advertised-quic-port"));
       this.advertisedQuicPort = advertisedQuicPort;
       return this;
     }
@@ -438,7 +444,7 @@ public class NetworkConfig {
     public Builder advertisedQuicPortIpv6(final OptionalInt advertisedQuicPortIpv6) {
       checkNotNull(advertisedQuicPortIpv6);
       advertisedQuicPortIpv6.ifPresent(
-          port -> validatePort(port, "--Xp2p-advertised-quic-port-ipv6"));
+          port -> validatePort(port, "--p2p-advertised-quic-port-ipv6"));
       this.advertisedQuicPortIpv6 = advertisedQuicPortIpv6;
       return this;
     }

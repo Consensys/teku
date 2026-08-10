@@ -27,13 +27,13 @@
     "attester_slashings" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttesterSlashingElectra"
+        "$ref" : "#/components/schemas/AttesterSlashingGloas"
       }
     },
     "attestations" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttestationElectra"
+        "$ref" : "#/components/schemas/AttestationGloas"
       }
     },
     "deposits" : {

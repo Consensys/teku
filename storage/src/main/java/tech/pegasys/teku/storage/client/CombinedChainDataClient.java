@@ -27,9 +27,11 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -69,14 +71,24 @@ public class CombinedChainDataClient {
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
+  private final ExecutionPayloadProvider executionPayloadProvider;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec) {
+    this(recentChainData, historicalChainData, spec, ExecutionPayloadProvider.NOOP);
+  }
+
+  public CombinedChainDataClient(
+      final RecentChainData recentChainData,
+      final StorageQueryChannel historicalChainData,
+      final Spec spec,
+      final ExecutionPayloadProvider executionPayloadProvider) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
+    this.executionPayloadProvider = executionPayloadProvider;
   }
 
   /**
@@ -256,6 +268,25 @@ public class CombinedChainDataClient {
         .getDataColumnIdentifiers(slot)
         .thenApply(identifiers -> filterDataColumnSidecarKeys(identifiers, indices))
         .thenCompose(this::getDataColumnSidecars);
+  }
+
+  public SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    return historicalChainData
+        .getDataColumnIdentifiers(slotAndBlockRoot.getSlot())
+        .thenApply(
+            identifiers ->
+                filterDataColumnSidecarKeys(identifiers, indices)
+                    .filter(
+                        identifier ->
+                            identifier.blockRoot().equals(slotAndBlockRoot.getBlockRoot())))
+        .thenCompose(this::getDataColumnSidecars);
+  }
+
+  public SafeFuture<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
+    return historicalChainData
+        .getDataColumnSidecarsProofs(slot)
+        .thenApply(maybeProofs -> maybeProofs.orElseGet(List::of));
   }
 
   private Stream<DataColumnSlotAndIdentifier> filterDataColumnSidecarKeys(
@@ -575,19 +606,44 @@ public class CombinedChainDataClient {
               if (maybeSlot.isPresent()) {
                 return SafeFuture.completedFuture(maybeSlot);
               }
-              // 3. historical nonCanonical only: get block and extract slot
+              // 3. historical nonCanonical (optional): get block and extract slot, then fall back
+              //    to the recently-validated index if still not found.
               if (includeFinalizedNonCanonical) {
                 return historicalChainData
                     .getNonCanonicalBlockByRoot(blockRoot)
-                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
+                    .thenApply(
+                        nonCanonicalSlot ->
+                            nonCanonicalSlot.or(
+                                () ->
+                                    recentChainData.getRecentlyValidatedSlotByBlockRoot(
+                                        blockRoot)));
               }
-              return SafeFuture.completedFuture(Optional.empty());
+              // 4. recently-validated fallback: consult the recently-validated index for blocks
+              //    that have been gossip-validated but not yet imported.
+              return SafeFuture.completedFuture(
+                  recentChainData.getRecentlyValidatedSlotByBlockRoot(blockRoot));
             });
   }
 
+  /**
+   * Returns the execution payload envelope for the given block root, consulting the hot store first
+   * and falling back to historical data, mirroring {@link #getBlockByBlockRoot(Bytes32)}. The hot
+   * store only knows about blocks still present in fork choice, so finalized blocks pruned from it
+   * are resolved by the fallback, which reads the retained blinded envelope from the database and
+   * unblinds it via the execution layer.
+   */
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
-    return recentChainData.retrieveSignedExecutionPayloadByBlockRoot(blockRoot);
+    return recentChainData
+        .retrieveSignedExecutionPayloadByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeExecutionPayload -> {
+              if (maybeExecutionPayload.isPresent()) {
+                return SafeFuture.completedFuture(maybeExecutionPayload);
+              }
+              return executionPayloadProvider.getExecutionPayload(blockRoot);
+            });
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {

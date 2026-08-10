@@ -44,7 +44,13 @@ public class DataColumnPeerManagerImpl
   }
 
   private void peerConnected(final Eth2Peer peer) {
-    final UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
+    // Peers without a derivable discovery node id (e.g. non-secp256k1 identities) cannot be mapped
+    // to DAS custody columns, so they are not registered as data column sidecar providers.
+    if (peer.getDiscoveryNodeId().isEmpty()) {
+      return;
+    }
+
+    final UInt256 nodeId = peer.getDiscoveryNodeId().get();
     connectedPeers.put(nodeId, peer);
     listeners.forEach(
         l -> l.peerConnected(nodeId, () -> peer.getStatus().getEarliestAvailableSlot()));
@@ -52,7 +58,11 @@ public class DataColumnPeerManagerImpl
   }
 
   private void peerDisconnected(final Eth2Peer peer) {
-    final UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
+    if (peer.getDiscoveryNodeId().isEmpty()) {
+      return;
+    }
+
+    final UInt256 nodeId = peer.getDiscoveryNodeId().get();
     listeners.forEach(l -> l.peerDisconnected(nodeId));
     connectedPeers.remove(nodeId);
   }

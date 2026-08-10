@@ -184,21 +184,7 @@ public interface BlockProcessor {
       MutableBeaconState state, Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException;
 
-  default void processExecutionPayloadBid(
-      final MutableBeaconState state, final BeaconBlock beaconBlock)
-      throws BlockProcessingException {
-    final SignedExecutionPayloadBid signedBid =
-        beaconBlock
-            .getBody()
-            .getOptionalSignedExecutionPayloadBid()
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "Signed Execution Payload Bid expected as part of body"));
-    processExecutionPayloadBid(state, signedBid);
-  }
-
-  void processExecutionPayloadBid(MutableBeaconState state, SignedExecutionPayloadBid signedBid)
+  UInt64 processExecutionPayloadBid(MutableBeaconState state, SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException;
 
   void processPayloadAttestations(

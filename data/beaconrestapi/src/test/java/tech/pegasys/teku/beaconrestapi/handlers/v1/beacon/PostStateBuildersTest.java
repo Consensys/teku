@@ -14,15 +14,15 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -30,14 +30,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.migrated.BuilderStatus;
 import tech.pegasys.teku.api.migrated.StateBuilderData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateBuilderRequestBodyType;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -61,7 +61,7 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
             .pathParameter("state_id", "head")
             .build();
     request.setRequestBody(requestBody);
-    final ObjectAndMetaData<SszList<StateBuilderData>> expectedResponse =
+    final ObjectAndMetaData<List<StateBuilderData>> expectedResponse =
         new ObjectAndMetaData<>(getBuildersList(), SpecMilestone.GLOAS, false, true, false);
     when(chainDataProvider.getStateBuilders("head", List.of("0"), List.of()))
         .thenReturn(completedFuture(Optional.of(expectedResponse)));
@@ -75,17 +75,16 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   void shouldGetBuildersFromStateWithIdsAndStatuses() throws Exception {
     final StateBuilderRequestBodyType requestBody =
-        new StateBuilderRequestBodyType(List.of("0"), List.of(StateBuilderData.STATUS_ACTIVE));
+        new StateBuilderRequestBodyType(List.of("0"), List.of(BuilderStatus.ACTIVE));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .build();
     request.setRequestBody(requestBody);
-    final ObjectAndMetaData<SszList<StateBuilderData>> expectedResponse =
+    final ObjectAndMetaData<List<StateBuilderData>> expectedResponse =
         new ObjectAndMetaData<>(getBuildersList(), SpecMilestone.GLOAS, false, true, false);
-    when(chainDataProvider.getStateBuilders(
-            "head", List.of("0"), List.of(StateBuilderData.STATUS_ACTIVE)))
+    when(chainDataProvider.getStateBuilders("head", List.of("0"), List.of(BuilderStatus.ACTIVE)))
         .thenReturn(completedFuture(Optional.of(expectedResponse)));
 
     handler.handleRequest(request);
@@ -95,13 +94,31 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
+  void shouldReadStringStatusesFromRequestBody() throws IOException {
+    final StateBuilderRequestBodyType requestBody =
+        (StateBuilderRequestBodyType)
+            getRequestBodyFromMetadata(
+                handler, "{\"ids\":[\"0\"],\"statuses\":[\"active\",\"exited\"]}");
+
+    assertThat(requestBody.getIds()).containsExactly("0");
+    assertThat(requestBody.getStatuses())
+        .containsExactly(BuilderStatus.ACTIVE, BuilderStatus.EXITED);
+  }
+
+  @Test
+  void shouldFailIfStatusInvalidInRequestBody() {
+    assertThatThrownBy(() -> getRequestBodyFromMetadata(handler, "{\"statuses\":[\"invalid\"]}"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void shouldGetBuildersFromStateWithEmptyRequestBody() throws Exception {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
             .build();
-    final ObjectAndMetaData<SszList<StateBuilderData>> expectedResponse =
+    final ObjectAndMetaData<List<StateBuilderData>> expectedResponse =
         new ObjectAndMetaData<>(getBuildersList(), SpecMilestone.GLOAS, false, true, false);
     when(chainDataProvider.getStateBuilders("head", List.of(), List.of()))
         .thenReturn(completedFuture(Optional.of(expectedResponse)));
@@ -115,13 +132,8 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   void metadata_shouldHandle200() throws IOException {
     final StateBuilderData stateBuilderData = getBuildersList().get(0);
-    final ObjectAndMetaData<SszList<StateBuilderData>> responseData =
-        new ObjectAndMetaData<>(
-            StateBuilderData.SSZ_LIST_SCHEMA.of(stateBuilderData),
-            SpecMilestone.GLOAS,
-            false,
-            true,
-            false);
+    final ObjectAndMetaData<List<StateBuilderData>> responseData =
+        new ObjectAndMetaData<>(List.of(stateBuilderData), SpecMilestone.GLOAS, false, true, false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
 
@@ -129,20 +141,15 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
         .contains("\"execution_optimistic\":false")
         .contains("\"finalized\":false")
         .contains("\"index\":\"0\"")
-        .contains("\"status\":1")
+        .contains("\"status\":\"active\"")
         .contains("\"builder\":")
-        .contains("\"pubkey\":\"" + stateBuilderData.getBuilder().getPublicKey() + "\"");
+        .contains("\"pubkey\":\"" + stateBuilderData.builder().getPublicKey() + "\"");
   }
 
   @Test
-  void metadata_shouldHandle200OctetStream() throws IOException {
-    final SszList<StateBuilderData> builders = getBuildersList();
-    final ObjectAndMetaData<SszList<StateBuilderData>> responseData =
-        new ObjectAndMetaData<>(builders, SpecMilestone.GLOAS, false, true, false);
-
-    final byte[] data = getResponseSszFromMetadata(handler, SC_OK, responseData);
-
-    assertThat(Bytes.of(data)).isEqualTo(builders.sszSerialize());
+  void metadata_shouldSelectJsonWhenOctetStreamRequested() {
+    assertThat(handler.getMetadata().getContentType(SC_OK, Optional.of(ContentTypes.OCTET_STREAM)))
+        .isEqualTo(ContentTypes.JSON);
   }
 
   @Test
@@ -156,11 +163,6 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle406() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_ACCEPTABLE);
-  }
-
-  @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
@@ -170,9 +172,8 @@ public class PostStateBuildersTest extends AbstractMigratedBeaconHandlerTest {
     verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 
-  private SszList<StateBuilderData> getBuildersList() {
+  private List<StateBuilderData> getBuildersList() {
     final Builder builder = dataStructureUtil.randomBuilder();
-    return StateBuilderData.SSZ_LIST_SCHEMA.of(
-        StateBuilderData.create(UInt64.ZERO, StateBuilderData.STATUS_ACTIVE, builder));
+    return List.of(new StateBuilderData(UInt64.ZERO, BuilderStatus.ACTIVE, builder));
   }
 }
