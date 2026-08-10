@@ -780,8 +780,7 @@ public class Spec {
       final BeaconState state,
       final ProposerSlashing proposerSlashing,
       final BLSSignatureVerifier signatureVerifier) {
-    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
-    return atEpoch(epoch)
+    return atState(state)
         .operationSignatureVerifier()
         .verifyProposerSlashingSignature(
             state.getFork(), state, proposerSlashing, signatureVerifier);
@@ -791,8 +790,7 @@ public class Spec {
       final BeaconState state,
       final SignedVoluntaryExit signedExit,
       final BLSSignatureVerifier signatureVerifier) {
-    final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
+    return atState(state)
         .operationSignatureVerifier()
         .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
@@ -926,25 +924,21 @@ public class Spec {
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
-    // Attestations must both be from the same epoch or will wind up being rejected by any version
-    final UInt64 epoch = computeEpochAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateAttesterSlashing(state.getFork(), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
-    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateProposerSlashing(state.getFork(), state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
-    final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateVoluntaryExit(state.getFork(), state, signedExit);
   }
@@ -1514,11 +1508,6 @@ public class Spec {
 
   private Fork getForkAtSlot(final UInt64 slot) {
     return forkSchedule.getFork(computeEpochAtSlot(slot));
-  }
-
-  private UInt64 getProposerSlashingEpoch(final ProposerSlashing proposerSlashing) {
-    // Slashable blocks must be from same slot
-    return computeEpochAtSlot(proposerSlashing.getHeader1().getMessage().getSlot());
   }
 
   @Override
