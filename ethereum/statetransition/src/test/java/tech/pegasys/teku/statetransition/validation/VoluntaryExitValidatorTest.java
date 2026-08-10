@@ -162,18 +162,35 @@ public class VoluntaryExitValidatorTest {
     final BeaconState state = getBestState();
     final VoluntaryExit exit = new VoluntaryExit(UInt64.ZERO, UInt64.ZERO);
 
-    // LocalSigner resolves the domain from the message's epoch, which on a post-Capella chain is
-    // not the EIP-7044 pinned domain that block processing uses.
     final BLSSignature messageEpochSignature =
-        new LocalSigner(spec, VALIDATOR_KEYS.get(0), SyncAsyncRunner.SYNC_RUNNER)
-            .signVoluntaryExit(
-                exit, new ForkInfo(state.getFork(), state.getGenesisValidatorsRoot()))
-            .getImmediately();
+        signUnderMessageEpochDomain(spec, state, exit, VALIDATOR_KEYS.get(0));
     assertThat(messageEpochSignature)
         .isNotEqualTo(signUnderStateForkDomain(spec, state, exit, VALIDATOR_KEYS.get(0)));
 
     assertValidationResult(
         new SignedVoluntaryExit(exit, messageEpochSignature), REJECT, "Signature is invalid");
+  }
+
+  /**
+   * Round trip: an exit produced by Teku's own signing path for a past epoch must be accepted by
+   * Teku's validation. Signing resolves the domain from the fork, so this holds even though the
+   * exit names epoch 0.
+   */
+  @Test
+  public void shouldAcceptPastEpochExitProducedByOwnSigner() {
+    final Spec spec = setUpChainWithStaggeredForks();
+    final BeaconState state = getBestState();
+    final VoluntaryExit exit = new VoluntaryExit(UInt64.ZERO, UInt64.ZERO);
+
+    final BLSSignature signature =
+        new LocalSigner(spec, VALIDATOR_KEYS.get(0), SyncAsyncRunner.SYNC_RUNNER)
+            .signVoluntaryExit(
+                exit, new ForkInfo(state.getFork(), state.getGenesisValidatorsRoot()))
+            .getImmediately();
+
+    assertThat(signature)
+        .isEqualTo(signUnderStateForkDomain(spec, state, exit, VALIDATOR_KEYS.get(0)));
+    assertValidationResult(new SignedVoluntaryExit(exit, signature), ACCEPT);
   }
 
   /**
@@ -193,6 +210,26 @@ public class VoluntaryExitValidatorTest {
     advanceChainAndUpdateBestBlock(spec.slotsPerEpoch(UInt64.ZERO) * 65L);
     voluntaryExitValidator = new VoluntaryExitValidator(spec, recentChainData, timeProvider);
     return spec;
+  }
+
+  /**
+   * Reproduces the pre-fix signing behaviour: milestone and fork both taken from the exit epoch.
+   */
+  private static BLSSignature signUnderMessageEpochDomain(
+      final Spec spec,
+      final BeaconState state,
+      final VoluntaryExit exit,
+      final BLSKeyPair keyPair) {
+    final SpecVersion specVersion = spec.atEpoch(exit.getEpoch());
+    final Bytes32 domain =
+        specVersion
+            .beaconStateAccessors()
+            .getVoluntaryExitDomain(
+                exit.getEpoch(),
+                spec.getForkSchedule().getFork(exit.getEpoch()),
+                state.getGenesisValidatorsRoot());
+    return BLS.sign(
+        keyPair.getSecretKey(), specVersion.miscHelpers().computeSigningRoot(exit, domain));
   }
 
   private static BLSSignature signUnderStateForkDomain(
