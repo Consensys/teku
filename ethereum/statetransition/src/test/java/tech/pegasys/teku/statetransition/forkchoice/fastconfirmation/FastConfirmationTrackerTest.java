@@ -296,6 +296,39 @@ class FastConfirmationTrackerTest {
   }
 
   @Test
+  void shouldCommitRotationButAbandonConfirmationWhenSourceStateLoadFails() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    // The head-state load fails, which takes the same abandon branch as a load timeout. The slot's
+    // rotation must still be committed in order (so the next slot reads correctly rotated FCR
+    // variables), while the confirmation is abandoned: confirmed_root is left unchanged and no
+    // event is emitted for this slot.
+    when(store.retrieveBlockState(any(Bytes32.class)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("boom")));
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+    final Bytes32 headRoot = Bytes32.random();
+
+    // Head block slot 12 (epoch 1); slot 17 is epoch 2 — one epoch behind, so the full rule runs.
+    applyUpdate(tracker, asyncRunner, UInt64.valueOf(17), headRoot);
+
+    final FastConfirmationStore fastConfirmationStore =
+        tracker.getFastConfirmationStore().orElseThrow();
+    // Rotation committed despite the failed confirmation.
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(headRoot);
+    // Confirmation abandoned: confirmed_root unchanged (still the initial finalized root), no event
+    // emitted, and no fallback counted (a fallback is a deliberate transition, not an abandonment).
+    assertThat(fastConfirmationStore.confirmedRoot()).isEqualTo(finalizedCheckpoint.getRoot());
+    verify(eventChannel, never()).onFastConfirmation(any(), any(), any());
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_fallbacks_total"))
+        .isZero();
+  }
+
+  @Test
   void shouldSkipStaleOrDuplicateSlotUpdates() {
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
