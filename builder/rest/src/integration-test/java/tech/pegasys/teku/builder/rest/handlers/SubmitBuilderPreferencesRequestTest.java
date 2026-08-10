@@ -58,7 +58,7 @@ class SubmitBuilderPreferencesRequestTest extends AbstractBuilderRequestTestBase
   }
 
   @TestTemplate
-  void shouldVerifyCorrectUrlAndMethod() throws Exception {
+  void shouldVerifyCorrectUrlMethodAndHeaders() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
 
     request.submit(validatorPubkey, builderPreferencesRequest);
@@ -71,6 +71,12 @@ class SubmitBuilderPreferencesRequestTest extends AbstractBuilderRequestTestBase
                 .getPath(Map.of())
                 .replace("{validator_pubkey}", ""));
     assertThat(recorded.getRequestUrl().encodedPath()).contains(validatorPubkey.toString());
+
+    final String expectedMilestone =
+        spec.atSlot(builderPreferencesRequest.getAuth().getMessage().getSlot())
+            .getMilestone()
+            .lowerCaseName();
+    assertThat(recorded.getHeader("Eth-Consensus-Version")).isEqualTo(expectedMilestone);
   }
 
   @TestTemplate

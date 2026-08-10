@@ -95,6 +95,9 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
     final RecordedRequest recorded = mockWebServer.takeRequest();
     assertThat(recorded.getMethod()).isEqualTo("POST");
     assertThat(recorded.getBody().size()).isGreaterThan(0);
+
+    final String expectedMilestone = spec.atSlot(slot).getMilestone().lowerCaseName();
+    assertThat(recorded.getHeader("Eth-Consensus-Version")).isEqualTo(expectedMilestone);
   }
 
   @TestTemplate
