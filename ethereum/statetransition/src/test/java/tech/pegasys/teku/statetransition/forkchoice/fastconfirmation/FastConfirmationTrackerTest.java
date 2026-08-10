@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class FastConfirmationTrackerTest {
 
@@ -255,6 +256,43 @@ class FastConfirmationTrackerTest {
             metricsSystem.getCounterValue(
                 TekuMetricCategory.BEACON, "fast_confirmation_fallbacks_total"))
         .isZero();
+  }
+
+  @Test
+  void shouldNotBlockRunnerWhileSourceStateLoadIsPending() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    // The head-state load hangs; the checkpoint-state loads resolve immediately (empty, from
+    // setUp). A blocking join() on this would monopolize the single-thread runner; composing does
+    // not.
+    final SafeFuture<Optional<BeaconState>> pendingHeadState = new SafeFuture<>();
+    when(store.retrieveBlockState(any(Bytes32.class))).thenReturn(pendingHeadState);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+    final Bytes32 headRoot = Bytes32.random();
+
+    // Head block slot 12 (epoch 1); slot 17 is epoch 2 — one epoch behind, so the full rule runs.
+    final SafeFuture<Void> result = tracker.onSlot(UInt64.valueOf(17), headRoot);
+
+    // Draining the runner completes its scheduled action even though the load is still pending: the
+    // runner is free (no queued actions left) while onSlot's result waits on the load.
+    asyncRunner.executeQueuedActions();
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+    assertThatSafeFuture(result).isNotCompleted();
+
+    // Once the load resolves, the pipeline finishes off the runner: the store is written (slot head
+    // rotated) and the confirmed root falls back to finalized as no states were available.
+    pendingHeadState.complete(Optional.empty());
+
+    assertThatSafeFuture(result).isCompleted();
+    assertThat(tracker.getFastConfirmationStore().orElseThrow().currentSlotHead())
+        .isEqualTo(headRoot);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, "fast_confirmation_fallbacks_total"))
+        .isEqualTo(1);
   }
 
   @Test
