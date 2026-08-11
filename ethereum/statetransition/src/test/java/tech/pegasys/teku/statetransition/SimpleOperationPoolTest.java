@@ -77,7 +77,8 @@ public class SimpleOperationPoolTest {
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxProposerSlashings()))
+        .isEmpty();
   }
 
   @Test
@@ -112,7 +113,35 @@ public class SimpleOperationPoolTest {
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
-    assertThat(pool.getItemsForBlock(state)).hasSize(maxVoluntaryExits);
+    assertThat(pool.getItemsForBlock(state, maxVoluntaryExits + 1)).hasSize(maxVoluntaryExits);
+  }
+
+  @Test
+  void shouldLimitGloasAttesterSlashingsToConsensusMaximum() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
+    final Function<UInt64, BeaconBlockBodySchema<?>> gloasBlockSchemaSupplier =
+        slot -> gloasSpec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
+    final OperationValidator<AttesterSlashing> validator = mock(OperationValidator.class);
+    final OperationPool<AttesterSlashing> pool =
+        new SimpleOperationPool<>(
+            "AttesterSlashingPool",
+            metricsSystem,
+            gloasBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
+            validator);
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
+
+    pool.addLocal(gloasDataStructureUtil.randomAttesterSlashing());
+    pool.addLocal(gloasDataStructureUtil.randomAttesterSlashing());
+
+    final int maxAttesterSlashings =
+        gloasSpec
+            .getGenesisSpecConfig()
+            .toVersionElectra()
+            .orElseThrow()
+            .getMaxAttesterSlashingsElectra();
+    assertThat(pool.getItemsForBlock(state, maxAttesterSlashings)).hasSize(maxAttesterSlashings);
   }
 
   @Test
@@ -133,7 +162,7 @@ public class SimpleOperationPoolTest {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
     // Didn't find any applicable items but tried them all
-    assertThat(pool.getItemsForBlock(state, filter, operation -> {})).isEmpty();
+    assertThat(pool.getItemsForBlock(state, maxVoluntaryExits, filter, operation -> {})).isEmpty();
     verify(filter, times(maxVoluntaryExits + 10)).test(any());
   }
 
@@ -161,6 +190,7 @@ public class SimpleOperationPoolTest {
     final SszList<SignedVoluntaryExit> selectedItems =
         pool.getItemsForBlock(
             state,
+            spec.getGenesisSpecConfig().getMaxVoluntaryExits(),
             exitsToAccept::contains,
             exit -> {
               // Only allow the first exit to be added
@@ -186,7 +216,8 @@ public class SimpleOperationPoolTest {
             .limit(attesterSlashingsSchema.getMaxLength())
             .collect(attesterSlashingsSchema.collector());
     pool.removeAll(attesterSlashings);
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxAttesterSlashings()))
+        .isEmpty();
   }
 
   @Test
@@ -211,7 +242,8 @@ public class SimpleOperationPoolTest {
         .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
     when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
 
-    assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxProposerSlashings()))
+        .containsOnly(slashing2);
   }
 
   @Test
@@ -238,7 +270,8 @@ public class SimpleOperationPoolTest {
         .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
     when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
 
-    assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxProposerSlashings()))
+        .containsOnly(slashing2);
     assertThat(pool.getAll()).containsOnly(slashing2);
   }
 
