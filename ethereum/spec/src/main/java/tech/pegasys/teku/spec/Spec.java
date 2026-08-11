@@ -765,9 +765,16 @@ public class Spec {
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
   }
 
+  /**
+   * Resolved from the fork rather than the exit's epoch, to match how exits are validated (against
+   * the state's fork). From Capella onwards EIP-7044 pins this domain, so an exit naming a past
+   * epoch must still be signed under the current fork's domain to be valid. The epoch is still
+   * passed through because pre-Deneb milestones legitimately use it to choose between the fork's
+   * previous and current version.
+   */
   public Bytes32 getVoluntaryExitDomain(
       final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
-    return atEpoch(epoch)
+    return atEpoch(fork.getEpoch())
         .beaconStateAccessors()
         .getVoluntaryExitDomain(epoch, fork, genesisValidatorsRoot);
   }
@@ -791,8 +798,7 @@ public class Spec {
       final BeaconState state,
       final SignedVoluntaryExit signedExit,
       final BLSSignatureVerifier signatureVerifier) {
-    final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
+    return atState(state)
         .operationSignatureVerifier()
         .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
@@ -943,8 +949,7 @@ public class Spec {
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
-    final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateVoluntaryExit(state.getFork(), state, signedExit);
   }
@@ -1288,6 +1293,13 @@ public class Spec {
   }
 
   // Attestation helpers
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    return atState(state)
+        .getAttestationUtil()
+        .getStateForAttestationRewardCalculation(state, parentPayloadAvailable);
+  }
+
   public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()

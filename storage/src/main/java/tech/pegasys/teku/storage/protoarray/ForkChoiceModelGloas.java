@@ -83,6 +83,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final BlockCheckpoints checkpoints,
       final Optional<UInt64> maybeExecutionBlockNumber,
       final Optional<Bytes32> maybeExecutionBlockHash,
+      final Optional<UInt64> maybeExecutionGasLimit,
       final boolean optimisticallyProcessed) {
     // Spec mapping: modified on_block(store, signed_block)
     // The parent choice follows get_parent_payload_status / is_parent_node_full and the node
@@ -108,6 +109,10 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         parentProtoNode
             .map(ProtoNode::getExecutionBlockHash)
             .orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH);
+    final UInt64 executionGasLimit =
+        parentProtoNode
+            .map(ProtoNode::getExecutionGasLimit)
+            .orElse(ProtoNode.NO_EXECUTION_GAS_LIMIT);
 
     // the node is optimistic only if it builds on top of optimistic node.
     // In gloas we start being optimistic from a FULL block
@@ -121,6 +126,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         checkpoints,
         executionBlockNumber,
         executionBlockHash,
+        executionGasLimit,
         isParentOptimistic);
     blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
 
@@ -134,6 +140,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         checkpoints,
         executionBlockNumber,
         executionBlockHash,
+        executionGasLimit,
         isParentOptimistic);
     blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
   }
@@ -158,6 +165,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final BlockCheckpoints checkpoints,
       final Optional<UInt64> maybeExecutionBlockNumber,
       final Optional<Bytes32> maybeExecutionBlockHash,
+      final Optional<UInt64> maybeExecutionGasLimit,
       final boolean optimisticallyProcessed) {
     // Anchor blocks preserve their real beacon parent root as metadata while deliberately having
     // no tracked parent node. Descendants then attach to the anchor's FULL or EMPTY child.
@@ -172,6 +180,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
           checkpoints,
           maybeExecutionBlockNumber.orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
           maybeExecutionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+          maybeExecutionGasLimit.orElse(ProtoNode.NO_EXECUTION_GAS_LIMIT),
           optimisticallyProcessed);
       blockNodeIndex.putBaseNode(blockRoot, blockSlot, baseNode);
     } else {
@@ -192,6 +201,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
           checkpoints,
           maybeExecutionBlockNumber.orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
           maybeExecutionBlockHash.orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+          maybeExecutionGasLimit.orElse(ProtoNode.NO_EXECUTION_GAS_LIMIT),
           optimisticallyProcessed);
       blockNodeIndex.attachEmptyNode(blockRoot, emptyNode);
     }
@@ -252,6 +262,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final Bytes32 blockRoot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
+      final UInt64 executionGasLimit,
       final boolean isOptimistic) {
     // Spec mapping: on_execution_payload(store, signed_execution_payload_envelope)
     if (blockNodeIndex.getFullNode(blockRoot).isPresent()) {
@@ -276,8 +287,26 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         baseNode.getCheckpoints(),
         executionBlockNumber,
         executionBlockHash,
+        executionGasLimit,
         isOptimistic);
     blockNodeIndex.attachFullNode(blockRoot, fullNode);
+  }
+
+  void onExecutionPayload(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final Bytes32 blockRoot,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash,
+      final boolean isOptimistic) {
+    onExecutionPayload(
+        protoArray,
+        blockNodeIndex,
+        blockRoot,
+        executionBlockNumber,
+        executionBlockHash,
+        ProtoNode.NO_EXECUTION_GAS_LIMIT,
+        isOptimistic);
   }
 
   @Override
@@ -311,6 +340,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         block.getCheckpointEpochs().orElseThrow(),
         executionBlockNumber,
         parentBlockHash,
+        block.getExecutionGasLimit(),
         optimisticallyProcessed);
     block
         .getGloasForkChoiceRebuildData()
@@ -323,6 +353,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
                     block.getBlockRoot(),
                     rebuildPayload.executionBlockNumber(),
                     rebuildPayload.executionBlockHash(),
+                    rebuildPayload.executionGasLimit(),
                     optimisticallyProcessed));
   }
 
@@ -346,6 +377,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         block.getCheckpointEpochs().orElseThrow(),
         block.getExecutionBlockNumber(),
         parentBlockHash,
+        block.getExecutionGasLimit(),
         optimisticallyProcessed);
     block
         .getGloasForkChoiceRebuildData()
@@ -358,6 +390,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
                     block.getBlockRoot(),
                     rebuildPayload.executionBlockNumber(),
                     rebuildPayload.executionBlockHash(),
+                    rebuildPayload.executionGasLimit(),
                     optimisticallyProcessed));
   }
 
@@ -604,7 +637,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   /**
-   * Spec mapping: `should_build_on_full(store, head)`.
+   * Spec mapping: `should_build_on_full(store, head, slot)`.
    *
    * <p>The proposer calls this after fork choice has selected a non-pending head, before choosing
    * whether block production should use the parent's FULL payload variant or reorg to its EMPTY
@@ -620,7 +653,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   public boolean shouldBuildOnFull(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
-      final UInt64 currentSlot,
+      final UInt64 slot,
       final ForkChoiceNode head) {
     checkArgument(
         head.payloadStatus() != ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING,
@@ -640,7 +673,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         .orElse(true)) {
       return false;
     }
-    if (!headIsFromPreviousSlot(head, protoArray, currentSlot)) {
+    if (!headIsFromPreviousSlot(head, protoArray, slot)) {
       return true;
     }
     if (payloadDataAvailability(headNodeVariants.get(), false)) {
@@ -653,11 +686,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   private boolean headIsFromPreviousSlot(
-      final ForkChoiceNode head, final ProtoArray protoArray, final UInt64 currentSlot) {
+      final ForkChoiceNode head, final ProtoArray protoArray, final UInt64 slot) {
     return protoArray
         .getNode(head)
         .map(ProtoNode::getBlockSlot)
-        .map(blockSlot -> blockSlot.plus(1).equals(currentSlot))
+        .map(blockSlot -> blockSlot.plus(1).equals(slot))
         .orElse(false);
   }
 
@@ -714,6 +747,37 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         .or(() -> resolveBaseNode(blockNodeIndex, blockRoot))
         .flatMap(protoArray::getNode)
         .map(ProtoNode::getBlockData);
+  }
+
+  @Override
+  public Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final Bytes32 blockRoot,
+      final Bytes32 blockHash) {
+    return getExecutionNodeForBlockRootAndHash(protoArray, blockNodeIndex, blockRoot, blockHash)
+        .map(ProtoNode::getExecutionGasLimit)
+        .filter(gasLimit -> !gasLimit.equals(ProtoNode.NO_EXECUTION_GAS_LIMIT));
+  }
+
+  private Optional<ProtoNode> getExecutionNodeForBlockRootAndHash(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final Bytes32 blockRoot,
+      final Bytes32 blockHash) {
+    return blockNodeIndex
+        .getVariants(blockRoot)
+        .flatMap(
+            variants ->
+                variants
+                    .fullNode()
+                    .flatMap(protoArray::getNode)
+                    .filter(node -> node.getExecutionBlockHash().equals(blockHash))
+                    .or(
+                        () ->
+                            protoArray
+                                .getNode(variants.baseNode())
+                                .filter(node -> node.getExecutionBlockHash().equals(blockHash))));
   }
 
   @Override
@@ -784,10 +848,18 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final GloasForkChoiceRebuildData rebuildData) {
     return rebuildData
         .payloadBlockNumber()
-        .map(
+        .flatMap(
             executionBlockNumber ->
-                new FullNodeRebuildPayload(executionBlockNumber, rebuildData.payloadBlockHash()));
+                rebuildData
+                    .payloadGasLimit()
+                    .map(
+                        executionGasLimit ->
+                            new FullNodeRebuildPayload(
+                                executionBlockNumber,
+                                rebuildData.payloadBlockHash(),
+                                executionGasLimit)));
   }
 
-  private record FullNodeRebuildPayload(UInt64 executionBlockNumber, Bytes32 executionBlockHash) {}
+  private record FullNodeRebuildPayload(
+      UInt64 executionBlockNumber, Bytes32 executionBlockHash, UInt64 executionGasLimit) {}
 }

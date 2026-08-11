@@ -68,7 +68,6 @@ public class ProposerSlashingValidatorTest {
   public void shouldAcceptValidProposerSlashing() {
     chainUpdater.initializeGenesis(true);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(getBestState(), slashing)).thenReturn(Optional.empty());
@@ -82,7 +81,6 @@ public class ProposerSlashingValidatorTest {
   public void shouldRejectInvalidProposerSlashing() {
     chainUpdater.initializeGenesis(true);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(getBestState(), slashing))
@@ -97,7 +95,6 @@ public class ProposerSlashingValidatorTest {
   public void shouldRejectProposerSlashingWithInvalidSignature() {
     chainUpdater.initializeGenesis(true);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(getBestState(), slashing)).thenReturn(Optional.empty());
@@ -111,7 +108,6 @@ public class ProposerSlashingValidatorTest {
   public void shouldIgnoreProposerSlashingForTheSameProposer() {
     chainUpdater.initializeGenesis(true);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 =
@@ -129,7 +125,6 @@ public class ProposerSlashingValidatorTest {
       shouldRejectProposerSlashingForTwoSignedHeadersWithSameMessageButDifferentSignature() {
     chainUpdater.initializeGenesis(true);
     SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(6);
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
     SignedBeaconBlockHeader header1 = dataStructureUtil.randomSignedBeaconBlockHeader();
     SignedBeaconBlockHeader header2 =

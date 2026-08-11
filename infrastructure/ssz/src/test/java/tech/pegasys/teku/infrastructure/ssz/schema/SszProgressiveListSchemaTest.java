@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.TreeNodeAssert.assertT
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -478,8 +479,6 @@ public class SszProgressiveListSchemaTest {
   @ParameterizedTest
   @ValueSource(ints = {1, 5, 15})
   void storeAndLoadBackingNodes_compositeList(final int maxBranchLevelsSkipped) {
-    // Use a standard (non-progressive) container as element schema since progressive containers
-    // don't support store/load yet
     final ContainerSchema2<SszContainer, SszUInt64, SszUInt64> elementSchema =
         ContainerSchema2.create(
             SszPrimitiveSchemas.UINT64_SCHEMA,
@@ -492,6 +491,31 @@ public class SszProgressiveListSchemaTest {
             (SszProgressiveListSchema<?>) SszProgressiveListSchema.create(elementSchema);
 
     assertStoreLoadRoundtrip(listSchema, maxBranchLevelsSkipped);
+  }
+
+  @Test
+  void storeAndLoadBackingNodes_allZeroByteList() {
+    // Regression: a byte list where all 32 elements are 0x00 (e.g. epoch participation at genesis)
+    // has exactly 1 chunk of all-zero bytes. That chunk's hash equals ZERO_TREES[1].hashTreeRoot(),
+    // which caused loadProgressiveSpine to return LeafNode.EMPTY_LEAF instead of a BranchNode,
+    // breaking element navigation with "Invalid root index: 2".
+    final SszProgressiveListSchema<SszByte> byteListSchema =
+        SszProgressiveListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA);
+    // 32 zero bytes fills exactly one 32-byte chunk
+    final SszList<SszByte> list =
+        byteListSchema.createFromElements(Collections.nCopies(32, SszByte.of((byte) 0)));
+
+    final InMemoryStoringTreeNodeStore nodeStore = new InMemoryStoringTreeNodeStore();
+    final long rootGIndex = 34;
+    byteListSchema.storeBackingNodes(nodeStore, 15, rootGIndex, list.getBackingNode());
+
+    final TreeNode result =
+        byteListSchema.loadBackingNodes(nodeStore, list.hashTreeRoot(), rootGIndex);
+
+    assertThatTreeNode(result).isTreeEqual(list.getBackingNode());
+    final SszList<SszByte> loaded = byteListSchema.createFromBackingNode(result);
+    assertThat(loaded.size()).isEqualTo(32);
+    assertThat(loaded.get(0).get()).isEqualTo((byte) 0);
   }
 
   @Test

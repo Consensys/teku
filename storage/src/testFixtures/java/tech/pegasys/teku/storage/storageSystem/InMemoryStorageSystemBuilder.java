@@ -79,8 +79,8 @@ public class InMemoryStorageSystemBuilder {
   public StorageSystem build() {
     final Database database =
         switch (version) {
-          case LEVELDB_TREE ->
-              createLevelDbTreeDatabase(); // Leveldb only varies by db type which doesn't apply to
+          case LEVELDB_TREE, ROCKSDB_TREE ->
+              createTreeDatabase(); // Tree only varies by db type which doesn't apply to
           // in-memory
           case LEVELDB2, V6 ->
               createV6Database(); // Leveldb only varies by db type which doesn't apply to in-memory
@@ -172,7 +172,7 @@ public class InMemoryStorageSystemBuilder {
     };
   }
 
-  private Database createLevelDbTreeDatabase() {
+  private Database createTreeDatabase() {
     if (hotDb == null) {
       final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
       hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());

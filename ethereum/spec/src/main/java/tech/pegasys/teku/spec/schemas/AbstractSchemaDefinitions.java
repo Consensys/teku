@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_F
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -44,8 +43,6 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
     this.syncnetsENRFieldSchema = schemaRegistry.get(SYNCNETS_ENR_FIELD_SCHEMA);
     this.attnetsENRFieldSchema = schemaRegistry.get(ATTNETS_ENR_FIELD_SCHEMA);
   }
-
-  abstract long getMaxValidatorsPerAttestation(SpecConfig specConfig);
 
   @Override
   public SszListSchema<Deposit, ?> getDepositsSchema() {

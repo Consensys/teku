@@ -99,6 +99,7 @@ public class TekuConfiguration {
             beaconRestApiConfig,
             powchainConfiguration,
             createExecutionPayloadBidCircuitBreakerFactory(spec, executionLayerConfiguration),
+            executionLayerConfiguration,
             storeConfig,
             spec,
             beaconChainControllerFactory,
@@ -253,12 +254,6 @@ public class TekuConfiguration {
       storageConfigurationBuilder.dataConfig(dataConfig);
       powchainConfigBuilder.depositContractDefault(depositContractAddress);
       powchainConfigBuilder.depositContractDeployBlockDefault(depositContractDeployBlock);
-      powchainConfigBuilder.setDepositSnapshotPathForNetwork(
-          eth2NetworkConfiguration.getEth2Network());
-      eth2NetworkConfiguration
-          .getNetworkBoostrapConfig()
-          .getCheckpointSyncUrl()
-          .ifPresent(powchainConfigBuilder::checkpointSyncDepositSnapshotUrl);
       p2pConfigBuilder.discovery(
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
