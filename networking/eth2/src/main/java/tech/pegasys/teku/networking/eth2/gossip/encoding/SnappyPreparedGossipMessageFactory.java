@@ -24,12 +24,11 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMessageFactory {
 
-  private final SnappyBlockCompressor snappyCompressor;
+  private final SnappyCompressor snappyCompressor;
   private final ForkDigestToMilestone forkDigestToMilestone;
 
   public SnappyPreparedGossipMessageFactory(
-      final SnappyBlockCompressor snappyCompressor,
-      final ForkDigestToMilestone forkDigestToMilestone) {
+      final SnappyCompressor snappyCompressor, final ForkDigestToMilestone forkDigestToMilestone) {
     this.snappyCompressor = snappyCompressor;
     this.forkDigestToMilestone = forkDigestToMilestone;
   }

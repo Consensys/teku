@@ -41,6 +41,11 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
         }
 
         @Override
+        public boolean isDataAvailable(final SignedBeaconBlock block) {
+          return true;
+        }
+
+        @Override
         public SamplingEligibilityStatus checkSamplingEligibility(final BeaconBlock block) {
           return SamplingEligibilityStatus.NOT_REQUIRED_NO_BLOBS;
         }
@@ -52,6 +57,11 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
 
         @Override
         public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+          return Optional.empty();
+        }
+
+        @Override
+        public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
           return Optional.empty();
         }
 
@@ -75,4 +85,6 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
   boolean containsBlock(Bytes32 blockRoot);
 
   Optional<SignedBeaconBlock> getBlock(Bytes32 blockRoot);
+
+  Optional<UInt64> getSlotForBlockRoot(Bytes32 blockRoot);
 }

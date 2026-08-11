@@ -80,6 +80,47 @@ class ForkChoiceUtilTest {
   }
 
   @Test
+  void isAncestor_returnsTrueWhenResolvedAncestorMatches() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+    final UInt64 ancestorSlot = UInt64.valueOf(3);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(ancestorSlot));
+    when(strategy.getAncestorNode(node, ancestorSlot)).thenReturn(Optional.of(ancestor));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenResolvedAncestorDiffers() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+    final UInt64 ancestorSlot = UInt64.valueOf(3);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(ancestorSlot));
+    when(strategy.getAncestorNode(node, ancestorSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(dataStructureUtil.randomBytes32())));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenAncestorSlotUnknown() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.empty());
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
     chainBuilder.generateBlocksUpToSlot(10);
 
@@ -268,24 +309,24 @@ class ForkChoiceUtilTest {
   }
 
   @ParameterizedTest
-  @MethodSource("isShufflingStableConditions")
-  void isShufflingStable(final int slot, final boolean expectedResult) {
-    assertThat(forkChoiceUtil.isShufflingStable(UInt64.valueOf(slot))).isEqualTo(expectedResult);
+  @MethodSource("isNotEpochBoundaryConditions")
+  void isNotEpochBoundary(final int slot, final boolean expectedResult) {
+    assertThat(forkChoiceUtil.isNotEpochBoundary(UInt64.valueOf(slot))).isEqualTo(expectedResult);
   }
 
-  public static Stream<Arguments> isShufflingStableConditions() {
+  public static Stream<Arguments> isNotEpochBoundaryConditions() {
     // 8 slots per epoch for test conditions
     final int epochStart = 10240 * 8;
     final int nextEpochStart = 10241 * 8;
     // slot , expectedResult
     final ArrayList<Arguments> args = new ArrayList<>();
 
-    // shuffling is not stable at any epoch boundary
+    // is_not_epoch_boundary returns false at any epoch boundary
     args.add(Arguments.of(0, false));
     args.add(Arguments.of(epochStart, false));
     args.add(Arguments.of(nextEpochStart, false));
     for (int i = epochStart + 1; i < nextEpochStart; i++) {
-      // all non epoch boundary slots are considered stable
+      // all non epoch boundary slots return true
       args.add(Arguments.of(i, true));
     }
 

@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,21 +36,26 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBlockHashCalculator;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadGloas;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -75,6 +81,7 @@ public class BlockProposalTestUtil {
 
   private final Spec spec;
   private final DataStructureUtil dataStructureUtil;
+  private final Bytes emptyBlockAccessList;
 
   // used for ePBS to cache the data required for proposing the execution payload by the builder
   private final Map<UInt64, ExecutionPayloadProposalData> executionPayloadProposalDataCache =
@@ -83,6 +90,7 @@ public class BlockProposalTestUtil {
   public BlockProposalTestUtil(final Spec spec) {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
+    this.emptyBlockAccessList = createEmptyBlockAccessList();
   }
 
   public SafeFuture<SignedBlockAndState> createBlock(
@@ -304,7 +312,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
                     blsToExecutionChanges.orElseGet(
-                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+                        () -> emptySignedBlsToExecutionChangesList(newSlot)));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
@@ -314,13 +322,21 @@ public class BlockProposalTestUtil {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests(newSlot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
+                final ExecutionRequests executionRequests = createExecutionRequests(newSlot);
+                final ExecutionPayload payload =
+                    executionPayload.orElseGet(
+                        () ->
+                            createExecutionPayload(
+                                newSlot,
+                                blockSlotState,
+                                transactions,
+                                terminalBlock,
+                                Optional.of(executionRequests),
+                                parentBlockSigningRoot));
                 final ExecutionPayloadProposalData executionPayloadProposalData =
                     new ExecutionPayloadProposalData(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, blockSlotState, transactions, terminalBlock)),
-                        createExecutionRequests(newSlot),
+                        payload,
+                        executionRequests,
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -407,7 +423,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
                     blsToExecutionChanges.orElseGet(
-                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+                        () -> emptySignedBlsToExecutionChangesList(newSlot)));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
@@ -417,13 +433,21 @@ public class BlockProposalTestUtil {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests(newSlot));
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
+                final ExecutionRequests executionRequests = createExecutionRequests(newSlot);
+                final ExecutionPayload payload =
+                    executionPayload.orElseGet(
+                        () ->
+                            createExecutionPayload(
+                                newSlot,
+                                blockSlotState,
+                                transactions,
+                                terminalBlock,
+                                Optional.of(executionRequests),
+                                parentBlockSigningRoot));
                 final ExecutionPayloadProposalData executionPayloadProposalData =
                     new ExecutionPayloadProposalData(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, blockSlotState, transactions, terminalBlock)),
-                        createExecutionRequests(newSlot),
+                        payload,
+                        executionRequests,
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
@@ -471,6 +495,24 @@ public class BlockProposalTestUtil {
       final BeaconState state,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock) {
+    return createExecutionPayload(
+        newSlot,
+        state,
+        transactions,
+        terminalBlock,
+        spec.isExecutionPayloadEnvelopeAvailableAtSlot(newSlot)
+            ? Optional.of(createExecutionRequests(newSlot))
+            : Optional.empty(),
+        Bytes32.ZERO);
+  }
+
+  private ExecutionPayload createExecutionPayload(
+      final UInt64 newSlot,
+      final BeaconState state,
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionRequests> maybeExecutionRequests,
+      final Bytes32 parentBeaconBlockRoot) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
     final ExecutionPayloadSchema<?> schema =
         SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
@@ -493,29 +535,103 @@ public class BlockProposalTestUtil {
     final Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
     final UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
 
-    return schema.createExecutionPayload(
-        builder ->
-            builder
-                .parentHash(parentHash)
-                .feeRecipient(Bytes20.ZERO)
-                .stateRoot(dataStructureUtil.randomBytes32())
-                .receiptsRoot(dataStructureUtil.randomBytes32())
-                .logsBloom(dataStructureUtil.randomBytes256())
-                .prevRandao(specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch))
-                .blockNumber(newSlot)
-                .gasLimit(UInt64.valueOf(30_000_000L))
-                .gasUsed(UInt64.valueOf(30_000_000L))
-                .timestamp(
-                    specVersion.miscHelpers().computeTimeAtSlot(state.getGenesisTime(), newSlot))
-                .extraData(dataStructureUtil.randomBytes32())
-                .baseFeePerGas(UInt256.ONE)
-                .blockHash(dataStructureUtil.randomBytes32())
-                .transactions(transactions.orElse(Collections.emptyList()))
-                .withdrawals(List::of)
-                .blobGasUsed(() -> UInt64.ZERO)
-                .excessBlobGas(() -> UInt64.ZERO)
-                .blockAccessList(() -> Bytes32.ZERO)
-                .slotNumber(() -> newSlot));
+    final ExecutionPayload payload =
+        schema.createExecutionPayload(
+            builder ->
+                builder
+                    .parentHash(parentHash)
+                    .feeRecipient(Bytes20.ZERO)
+                    .stateRoot(dataStructureUtil.randomBytes32())
+                    .receiptsRoot(dataStructureUtil.randomBytes32())
+                    .logsBloom(dataStructureUtil.randomBytes256())
+                    .prevRandao(
+                        specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch))
+                    .blockNumber(newSlot)
+                    .gasLimit(UInt64.valueOf(30_000_000L))
+                    .gasUsed(UInt64.valueOf(30_000_000L))
+                    .timestamp(
+                        specVersion
+                            .miscHelpers()
+                            .computeTimeAtSlot(state.getGenesisTime(), newSlot))
+                    .extraData(dataStructureUtil.randomBytes32())
+                    .baseFeePerGas(UInt256.ONE)
+                    .blockHash(dataStructureUtil.randomBytes32())
+                    .transactions(transactions.orElse(Collections.emptyList()))
+                    .withdrawals(List::of)
+                    .blobGasUsed(() -> UInt64.ZERO)
+                    .excessBlobGas(() -> UInt64.ZERO)
+                    .blockAccessList(() -> emptyBlockAccessList)
+                    .slotNumber(() -> newSlot));
+    if (!spec.isExecutionPayloadEnvelopeAvailableAtSlot(newSlot)) {
+      return payload;
+    }
+    return withComputedBlockHash(
+        newSlot,
+        payload,
+        maybeExecutionRequests.orElseGet(() -> createExecutionRequests(newSlot)),
+        parentBeaconBlockRoot);
+  }
+
+  private ExecutionPayload withComputedBlockHash(
+      final UInt64 slot,
+      final ExecutionPayload payload,
+      final ExecutionRequests executionRequests,
+      final Bytes32 parentBeaconBlockRoot) {
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+    final ExecutionPayloadEnvelope envelope =
+        schemaDefinitions
+            .getExecutionPayloadEnvelopeSchema()
+            .create(
+                payload,
+                executionRequests,
+                BUILDER_INDEX_SELF_BUILD,
+                Bytes32.ZERO,
+                parentBeaconBlockRoot);
+    final Bytes32 blockHash =
+        ExecutionPayloadBlockHashCalculator.computeGloasBlockHash(
+            envelope, spec.getExecutionRequestsDataCodec(slot));
+    final ExecutionPayloadGloas payloadGloas = ExecutionPayloadGloas.required(payload);
+    return schemaDefinitions
+        .getExecutionPayloadSchema()
+        .createExecutionPayload(
+            builder ->
+                builder
+                    .parentHash(payloadGloas.getParentHash())
+                    .feeRecipient(payloadGloas.getFeeRecipient())
+                    .stateRoot(payloadGloas.getStateRoot())
+                    .receiptsRoot(payloadGloas.getReceiptsRoot())
+                    .logsBloom(payloadGloas.getLogsBloom())
+                    .prevRandao(payloadGloas.getPrevRandao())
+                    .blockNumber(payloadGloas.getBlockNumber())
+                    .gasLimit(payloadGloas.getGasLimit())
+                    .gasUsed(payloadGloas.getGasUsed())
+                    .timestamp(payloadGloas.getTimestamp())
+                    .extraData(payloadGloas.getExtraData())
+                    .baseFeePerGas(payloadGloas.getBaseFeePerGas())
+                    .blockHash(blockHash)
+                    .transactions(
+                        payloadGloas.getTransactions().stream().map(Transaction::getBytes).toList())
+                    .withdrawals(payloadGloas.getWithdrawals()::asList)
+                    .blobGasUsed(payloadGloas::getBlobGasUsed)
+                    .excessBlobGas(payloadGloas::getExcessBlobGas)
+                    .blockAccessList(() -> payloadGloas.getBlockAccessList().getBytes())
+                    .slotNumber(payloadGloas::getSlotNumber));
+  }
+
+  private Bytes createEmptyBlockAccessList() {
+    final BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
+    rlpOutput.startList();
+    rlpOutput.endList();
+    return rlpOutput.encoded();
+  }
+
+  private SszList<SignedBlsToExecutionChange> emptySignedBlsToExecutionChangesList(
+      final UInt64 slot) {
+    return BeaconBlockBodySchemaCapella.required(
+            spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema())
+        .getBlsToExecutionChangesSchema()
+        .of();
   }
 
   private ExecutionRequests createExecutionRequests(final UInt64 newSlot) {
@@ -535,6 +651,11 @@ public class BlockProposalTestUtil {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions());
     final ExecutionPayload executionPayload = executionPayloadProposalData.executionPayload();
+    final SszList<SszKZGCommitment> kzgCommitments =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .getBlobKzgCommitmentsSchema()
+            .createFromElements(executionPayloadProposalData.kzgCommitments().asList());
     // self-building bid
     final ExecutionPayloadBid bid =
         schemaDefinitions
@@ -550,7 +671,7 @@ public class BlockProposalTestUtil {
                 newSlot,
                 UInt64.ZERO,
                 UInt64.ZERO,
-                executionPayloadProposalData.kzgCommitments(),
+                kzgCommitments,
                 executionPayloadProposalData.executionRequests().hashTreeRoot());
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

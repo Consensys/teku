@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -71,7 +72,6 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -640,7 +640,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public List<Transaction> generateInclusionListTransactions(final UInt64 slot) {
     final SpecConfigHeze specConfigHeze =
         spec.atSlot(slot).getConfig().toVersionHeze().orElseThrow();
-    final TransactionSchema transactionSchema =
+    final SszByteListSchema<Transaction> transactionSchema =
         spec.atSlot(slot)
             .getSchemaDefinitions()
             .toVersionHeze()

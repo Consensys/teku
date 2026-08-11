@@ -24,7 +24,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -49,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -64,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -333,51 +332,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void shouldExtendPayload_shouldReturnFalseForGloasBlockWithoutLocalPayload() {
-    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
-    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block = chainBuilder.generateNextBlock();
-
-    final ForkChoiceStrategy forkChoiceStrategy =
-        createGloasForkChoiceStrategy(gloasSpec, genesis, block, emptyMap());
-    final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
-    when(store.getExecutionPayloadIfAvailable(block.getRoot())).thenReturn(Optional.empty());
-
-    assertThat(
-            forkChoiceStrategy.shouldExtendPayload(
-                store, new SlotAndBlockRoot(block.getSlot(), block.getRoot())))
-        .isFalse();
-  }
-
-  @Test
-  void shouldExtendPayload_shouldReturnTrueForGloasBlockWithLocalPayload() {
-    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
-    final ChainBuilder chainBuilder = ChainBuilder.create(gloasSpec);
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block = chainBuilder.generateNextBlock();
-    final SignedExecutionPayloadEnvelope executionPayload =
-        chainBuilder.getExecutionPayloadAtSlot(block.getSlot()).orElseThrow();
-
-    final ForkChoiceStrategy forkChoiceStrategy =
-        createGloasForkChoiceStrategy(
-            gloasSpec,
-            genesis,
-            block,
-            Map.of(block.getRoot(), new ExecutionPayloadUpdate(executionPayload, false)));
-    final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
-    when(store.getExecutionPayloadIfAvailable(block.getRoot()))
-        .thenReturn(Optional.of(executionPayload));
-
-    assertThat(
-            forkChoiceStrategy.shouldExtendPayload(
-                store, new SlotAndBlockRoot(block.getSlot(), block.getRoot())))
-        .isTrue();
-  }
-
-  @Test
   public void findHead_worksForChainInitializedFromNonGenesisAnchor() {
     // Set up store with an anchor point that has justified and finalized checkpoints prior to its
     // epoch
@@ -490,7 +444,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
 
-    assertThat(strategy.getAncestorNode(head.getRoot(), ancestor.getSlot()))
+    assertThat(
+            strategy.getAncestorNode(ForkChoiceNode.createBase(head.getRoot()), ancestor.getSlot()))
         .contains(
             new ForkChoiceNode(ancestor.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
   }
@@ -510,6 +465,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getStateRoot(),
                     head.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
                     head.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
+                    ZERO,
                     ProtoNodeValidationStatus.VALID,
                     spec.calculateBlockCheckpoints(head.getState()),
                     ZERO,
@@ -691,6 +647,34 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void applyUpdate_shouldSeedFinalizedBoundaryEmptyExecutionContext() {
+    final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
+    final UInt64 boundaryBlockNumber = UInt64.valueOf(123);
+    final UInt64 boundaryGasLimit = UInt64.valueOf(60_000_000);
+    final BlockAndCheckpoints boundaryBlockAndCheckpoints =
+        new BlockAndCheckpoints(
+            fixture.boundary().getBlock(),
+            fixture.boundaryBlockAndCheckpoints().getBlockCheckpoints(),
+            Optional.of(boundaryBlockNumber),
+            Optional.of(boundaryGasLimit));
+
+    fixture
+        .strategy()
+        .applyUpdate(
+            List.of(
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.boundary()),
+                BlockAndCheckpoints.fromBlockAndState(fixture.spec(), fixture.child())),
+            emptyMap(),
+            emptySet(),
+            emptyMap(),
+            fixture.finalizedCheckpoint(),
+            Optional.of(boundaryBlockAndCheckpoints));
+
+    assertThat(childBaseNode(fixture).getExecutionBlockNumber()).isEqualTo(boundaryBlockNumber);
+    assertThat(childBaseNode(fixture).getExecutionGasLimit()).isEqualTo(boundaryGasLimit);
+  }
+
+  @Test
   void applyUpdate_shouldPruneToFinalizedBoundaryAnchorInsertedIntoNonEmptyProtoArray() {
     final GloasBoundaryFixture fixture = createGloasBoundaryFixture();
     fixture.protoArray().setPruneThreshold(0);
@@ -770,6 +754,142 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                 .orElseThrow()
                 .getParentIndex())
         .isEmpty();
+  }
+
+  @Test
+  void getExecutionContextForBlockRootAndHash_gloasShouldResolveFullAndEmptyContexts() {
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalGloas());
+    final SignedBlockAndState parentBlock = storageSystem.chainUpdater().advanceChain(1);
+    final SignedBlockAndState block = storageSystem.chainUpdater().advanceChain(2);
+
+    final Bytes32 fullParentBlockHash =
+        block
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage()
+            .getBlockHash();
+    final UInt64 fullParentGasLimit =
+        block
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage()
+            .getGasLimit();
+    final Bytes32 emptyParentBlockHash =
+        BeaconStateGloas.required(block.getState()).getLatestBlockHash();
+    final UInt64 emptyParentGasLimit =
+        parentBlock
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage()
+            .getGasLimit();
+
+    final ReadOnlyForkChoiceStrategy strategy =
+        storageSystem.recentChainData().getForkChoiceStrategy().orElseThrow();
+
+    assertThat(fullParentBlockHash).isNotEqualTo(emptyParentBlockHash);
+    assertThat(
+            strategy.getExecutionGasLimitForBlockRootAndHash(block.getRoot(), fullParentBlockHash))
+        .contains(fullParentGasLimit);
+    assertThat(
+            strategy.getExecutionGasLimitForBlockRootAndHash(block.getRoot(), emptyParentBlockHash))
+        .contains(emptyParentGasLimit);
+    assertThat(
+            strategy.getExecutionGasLimitForBlockRootAndHash(
+                block.getRoot(), dataStructureUtil.randomBytes32()))
+        .isEmpty();
+
+    final StorageSystem restartedStorageSystem = storageSystem.restarted();
+
+    final ReadOnlyForkChoiceStrategy rebuiltStrategy =
+        restartedStorageSystem.recentChainData().getForkChoiceStrategy().orElseThrow();
+    assertThat(
+            rebuiltStrategy.getExecutionGasLimitForBlockRootAndHash(
+                block.getRoot(), fullParentBlockHash))
+        .contains(fullParentGasLimit);
+    assertThat(
+            rebuiltStrategy.getExecutionGasLimitForBlockRootAndHash(
+                block.getRoot(), emptyParentBlockHash))
+        .contains(emptyParentGasLimit);
+  }
+
+  @Test
+  void getExecutionContextForBlockRootAndHash_shouldPreserveGasAcrossGloasForkBoundary() {
+    final Spec transitionSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE);
+    final StorageSystem storageSystem = initStorageSystem(transitionSpec);
+    final UInt64 gloasForkSlot = transitionSpec.computeStartSlotAtEpoch(UInt64.ONE);
+    final SignedBlockAndState preGloasParent =
+        storageSystem.chainUpdater().advanceChain(gloasForkSlot.minusMinZero(1));
+    storageSystem.chainUpdater().advanceChain(gloasForkSlot);
+    final var parentPayload =
+        preGloasParent
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalExecutionPayload()
+            .orElseThrow();
+
+    assertExecutionGasLimit(
+        storageSystem, preGloasParent, parentPayload.getBlockHash(), parentPayload.getGasLimit());
+
+    assertExecutionGasLimit(
+        storageSystem.restarted(),
+        preGloasParent,
+        parentPayload.getBlockHash(),
+        parentPayload.getGasLimit());
+  }
+
+  @Test
+  void getExecutionContextForBlockRootAndHash_shouldSurviveGloasFinalizationAndRestart() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final StorageSystem storageSystem = initStorageSystem(gloasSpec);
+    storageSystem
+        .chainUpdater()
+        .advanceChainUntil(gloasSpec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    final SignedBlockAndState finalizedBlock =
+        storageSystem.chainBuilder().getLatestBlockAndStateAtEpochBoundary(UInt64.ONE);
+    final var finalizedBid =
+        finalizedBlock
+            .getBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalSignedExecutionPayloadBid()
+            .orElseThrow()
+            .getMessage();
+    final ReadOnlyForkChoiceStrategy strategy =
+        storageSystem.recentChainData().getForkChoiceStrategy().orElseThrow();
+    final UInt64 emptyGasLimit =
+        strategy
+            .getExecutionGasLimitForBlockRootAndHash(
+                finalizedBlock.getRoot(), finalizedBid.getParentBlockHash())
+            .orElseThrow();
+    final UInt64 fullGasLimit =
+        strategy
+            .getExecutionGasLimitForBlockRootAndHash(
+                finalizedBlock.getRoot(), finalizedBid.getBlockHash())
+            .orElseThrow();
+
+    storageSystem.chainUpdater().finalizeEpoch(UInt64.ONE);
+
+    assertExecutionGasLimit(
+        storageSystem, finalizedBlock, finalizedBid.getParentBlockHash(), emptyGasLimit);
+    assertExecutionGasLimit(
+        storageSystem, finalizedBlock, finalizedBid.getBlockHash(), fullGasLimit);
+
+    final StorageSystem restartedStorageSystem = storageSystem.restarted();
+
+    assertExecutionGasLimit(
+        restartedStorageSystem, finalizedBlock, finalizedBid.getParentBlockHash(), emptyGasLimit);
+    assertExecutionGasLimit(
+        restartedStorageSystem, finalizedBlock, finalizedBid.getBlockHash(), fullGasLimit);
   }
 
   @Test
@@ -1082,25 +1202,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     return storageSystem.recentChainData().getStore().getForkChoiceStrategy();
   }
 
-  private ForkChoiceStrategy createGloasForkChoiceStrategy(
-      final Spec gloasSpec,
-      final SignedBlockAndState genesis,
-      final SignedBlockAndState block,
-      final Map<Bytes32, ExecutionPayloadUpdate> executionPayloads) {
-    final ProtoArray protoArray = createProtoArray(gloasSpec, block.getState());
-    final ForkChoiceStrategy forkChoiceStrategy =
-        ForkChoiceStrategy.initialize(gloasSpec, protoArray);
-    forkChoiceStrategy.applyUpdate(
-        List.of(
-            BlockAndCheckpoints.fromBlockAndState(gloasSpec, genesis),
-            BlockAndCheckpoints.fromBlockAndState(gloasSpec, block)),
-        executionPayloads,
-        emptySet(),
-        emptyMap(),
-        new Checkpoint(ZERO, genesis.getRoot()));
-    return forkChoiceStrategy;
-  }
-
   private InternalPayloadTraversalFixture createInternalPayloadTraversalFixture() {
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -1296,10 +1397,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   private boolean shouldBuildOnFull(
-      final GloasPayloadDecisionFixture fixture,
-      final UInt64 currentSlot,
-      final ForkChoiceNode head) {
-    return fixture.strategy().shouldBuildOnFull(fixture.store(), currentSlot, head);
+      final GloasPayloadDecisionFixture fixture, final UInt64 slot, final ForkChoiceNode head) {
+    return fixture.strategy().shouldBuildOnFull(fixture.store(), slot, head);
   }
 
   private IntSet ptcPositions(final int count) {
@@ -1322,6 +1421,20 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         .protoArray()
         .getNode(ForkChoiceNode.createBase(fixture.child().getRoot()))
         .orElseThrow();
+  }
+
+  private void assertExecutionGasLimit(
+      final StorageSystem storageSystem,
+      final SignedBlockAndState block,
+      final Bytes32 executionBlockHash,
+      final UInt64 executionGasLimit) {
+    assertThat(
+            storageSystem
+                .recentChainData()
+                .getForkChoiceStrategy()
+                .orElseThrow()
+                .getExecutionGasLimitForBlockRootAndHash(block.getRoot(), executionBlockHash))
+        .contains(executionGasLimit);
   }
 
   private void assertProtoArrayParentIndicesAreValid(final ProtoArray protoArray) {

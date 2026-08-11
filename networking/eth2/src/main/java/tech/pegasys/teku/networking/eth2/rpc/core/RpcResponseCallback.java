@@ -13,11 +13,15 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
+import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -25,21 +29,32 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorExcept
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
 class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
+
+  @VisibleForTesting static final Duration RESPONSE_WRITE_TIMEOUT = Duration.ofSeconds(10);
+
   private final RpcResponseEncoder<TResponse, ?> responseEncoder;
   private final RpcStream rpcStream;
+  private final AsyncRunner asyncRunner;
+  private final String protocolId;
 
   public RpcResponseCallback(
-      final RpcStream rpcStream, final RpcResponseEncoder<TResponse, ?> responseEncoder) {
+      final RpcStream rpcStream,
+      final RpcResponseEncoder<TResponse, ?> responseEncoder,
+      final AsyncRunner asyncRunner,
+      final String protocolId) {
     this.rpcStream = rpcStream;
     this.responseEncoder = responseEncoder;
+    this.asyncRunner = asyncRunner;
+    this.protocolId = protocolId;
   }
 
   @Override
   public SafeFuture<Void> respond(final TResponse data) {
-    return rpcStream.writeBytes(responseEncoder.encodeSuccessfulResponse(data));
+    return writeWithTimeout(responseEncoder.encodeSuccessfulResponse(data));
   }
 
   @Override
@@ -48,6 +63,12 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
         .thenRun(this::completeSuccessfully)
         .finish(
             RootCauseExceptionHandler.builder()
+                .addCatch(
+                    StreamClosedException.class,
+                    err -> LOG.trace("Failed to write because stream was closed", err))
+                .addCatch(
+                    StreamTimeoutException.class,
+                    err -> LOG.trace("Failed to write because response write timed out", err))
                 .addCatch(
                     ClosedChannelException.class,
                     err -> LOG.trace("Failed to write because channel was closed", err))
@@ -69,10 +90,20 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   public void completeWithErrorResponse(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessageString());
     try {
-      rpcStream
-          .writeBytes(responseEncoder.encodeErrorResponse(error))
+      writeWithTimeout(responseEncoder.encodeErrorResponse(error))
           .finish(
               RootCauseExceptionHandler.builder()
+                  .addCatch(
+                      StreamClosedException.class,
+                      err ->
+                          LOG.trace(
+                              "Failed to write error response because stream was closed", err))
+                  .addCatch(
+                      StreamTimeoutException.class,
+                      err ->
+                          LOG.trace(
+                              "Failed to write error response because response write timed out",
+                              err))
                   .addCatch(
                       ClosedChannelException.class,
                       err ->
@@ -94,6 +125,31 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
     rpcStream.closeWriteStream().finishDebug(LOG);
   }
 
+  private SafeFuture<Void> writeWithTimeout(final Bytes responseBytes) {
+    final SafeFuture<Void> writeFuture;
+    try {
+      writeFuture = rpcStream.writeBytes(responseBytes);
+    } catch (final Throwable t) {
+      return SafeFuture.failedFuture(t);
+    }
+    final SafeFuture.Interruptor timeoutInterruptor =
+        SafeFuture.createInterruptor(
+            asyncRunner.getDelayedFuture(RESPONSE_WRITE_TIMEOUT),
+            () ->
+                new RpcTimeoutException(
+                    "Timed out waiting for response write for protocol " + protocolId,
+                    RESPONSE_WRITE_TIMEOUT));
+    return writeFuture
+        .orInterrupt(timeoutInterruptor)
+        .catchAndRethrow(
+            error -> {
+              if (Throwables.getRootCause(error) instanceof RpcTimeoutException) {
+                LOG.debug("Timed out writing RPC response for {}. Closing stream.", protocolId);
+                rpcStream.closeAbruptly().finishDebug(LOG);
+              }
+            });
+  }
+
   @Override
   public void completeWithUnexpectedError(final Throwable error) {
     if (error instanceof PeerDisconnectedException) {
@@ -109,8 +165,9 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof StreamClosedException
         || rootCause instanceof ClosedChannelException
-        || rootCause instanceof ChannelOutputShutdownException) {
-      LOG.trace("Not sending RPC response as the stream is already closed", error);
+        || rootCause instanceof ChannelOutputShutdownException
+        || rootCause instanceof StreamTimeoutException) {
+      LOG.trace("Not sending RPC response as the stream is already closed or timed out", error);
       rpcStream.closeAbruptly().finishTrace(LOG);
       return;
     }

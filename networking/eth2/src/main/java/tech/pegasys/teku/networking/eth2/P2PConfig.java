@@ -19,6 +19,8 @@ import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAUL
 import java.time.Duration;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -33,6 +35,8 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class P2PConfig {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final int DEFAULT_PEER_BLOCKS_RATE_LIMIT = 500;
   // 250 MB per peer per minute (~ 4.16 MB/s)
   public static final int DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT = 2000;
@@ -45,6 +49,8 @@ public class P2PConfig {
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
+  public static final boolean DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED = false;
+  public static final boolean DEFAULT_RPC_SNAPPY_AIRCOMPRESSOR_ENABLED = false;
   public static final boolean DEFAULT_DAS_DISABLE_EL_RECOVERY = false;
   public static final boolean DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED = true;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
@@ -95,6 +101,8 @@ public class P2PConfig {
   private final int batchVerifyMaxBatchSize;
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
+  private final boolean isGossipSnappyAircompressorEnabled;
+  private final boolean isRpcSnappyAircompressorEnabled;
   private final boolean allTopicsFilterEnabled;
   private final int sidecarRecoveryTimeout;
   private final int sidecarDownloadTimeout;
@@ -128,6 +136,8 @@ public class P2PConfig {
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
+      final boolean isGossipSnappyAircompressorEnabled,
+      final boolean isRpcSnappyAircompressorEnabled,
       final int sidecarRecoveryTimeout,
       final int sidecarDownloadTimeout,
       final Integer sidecarSyncBatchSize,
@@ -159,6 +169,8 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
+    this.isGossipSnappyAircompressorEnabled = isGossipSnappyAircompressorEnabled;
+    this.isRpcSnappyAircompressorEnabled = isRpcSnappyAircompressorEnabled;
     this.sidecarDownloadTimeout = sidecarDownloadTimeout;
     this.sidecarRecoveryTimeout = sidecarRecoveryTimeout;
     this.sidecarSyncBatchSize = sidecarSyncBatchSize;
@@ -273,6 +285,14 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
+  public boolean isGossipSnappyAircompressorEnabled() {
+    return isGossipSnappyAircompressorEnabled;
+  }
+
+  public boolean isRpcSnappyAircompressorEnabled() {
+    return isRpcSnappyAircompressorEnabled;
+  }
+
   public int getSidecarRecoveryTimeout() {
     return sidecarRecoveryTimeout;
   }
@@ -307,7 +327,8 @@ public class P2PConfig {
 
     private Spec spec;
     private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
-    private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private boolean gossipSnappyAircompressorEnabled = DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED;
+    private boolean rpcSnappyAircompressorEnabled = DEFAULT_RPC_SNAPPY_AIRCOMPRESSOR_ENABLED;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
@@ -345,10 +366,21 @@ public class P2PConfig {
     public P2PConfig build() {
       validate();
 
+      if (gossipSnappyAircompressorEnabled) {
+        LOG.info("Experimental aircompressor Snappy encoding is enabled for gossip");
+      }
+      if (rpcSnappyAircompressorEnabled) {
+        LOG.info("Experimental aircompressor Snappy encoding is enabled for RPC");
+      }
+
       final GossipConfigurator gossipConfigurator =
           isGossipScoringEnabled
               ? GossipConfigurator.scoringEnabled(spec)
               : GossipConfigurator.NOOP;
+      final GossipEncoding gossipEncoding =
+          gossipSnappyAircompressorEnabled
+              ? GossipEncoding.SSZ_SNAPPY_AIRCOMPRESSOR
+              : GossipEncoding.SSZ_SNAPPY;
       final SpecConfig specConfig = spec.getGenesisSpecConfig();
       final Eth2Context eth2Context =
           Eth2Context.builder()
@@ -367,9 +399,8 @@ public class P2PConfig {
       final NetworkConfig networkConfig = this.networkConfig.build();
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
       discoveryConfig.listenUdpPortIpv6Default(networkConfig.getListenPortIpv6());
-      discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
-      discoveryConfig.advertisedUdpPortIpv6Default(
-          OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
+      discoveryConfig.advertisedUdpPortDefault(networkConfig.getOptionalAdvertisedPort());
+      discoveryConfig.advertisedUdpPortIpv6Default(networkConfig.getOptionalAdvertisedPortIpv6());
 
       if (subscribeAllCustodySubnetsEnabled) {
         custodyGroupCountOverride = Integer.MAX_VALUE;
@@ -405,6 +436,8 @@ public class P2PConfig {
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
+          gossipSnappyAircompressorEnabled,
+          rpcSnappyAircompressorEnabled,
           sidecarRecoveryTimeout,
           sidecarDownloadTimeout,
           sidecarSyncBatchSize,
@@ -539,6 +572,17 @@ public class P2PConfig {
 
     public Builder gossipBlobsAfterBlockEnabled(final boolean gossipBlobsAfterBlockEnabled) {
       this.gossipBlobsAfterBlockEnabled = gossipBlobsAfterBlockEnabled;
+      return this;
+    }
+
+    public Builder gossipSnappyAircompressorEnabled(
+        final boolean gossipSnappyAircompressorEnabled) {
+      this.gossipSnappyAircompressorEnabled = gossipSnappyAircompressorEnabled;
+      return this;
+    }
+
+    public Builder rpcSnappyAircompressorEnabled(final boolean rpcSnappyAircompressorEnabled) {
+      this.rpcSnappyAircompressorEnabled = rpcSnappyAircompressorEnabled;
       return this;
     }
 

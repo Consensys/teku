@@ -47,8 +47,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -251,8 +251,13 @@ public abstract class AbstractBlockFactoryTest {
       blockProposerRewards = UInt64.ZERO;
     }
 
+    final Optional<UInt64> requestedBuilderBoostFactor = Optional.of(UInt64.valueOf(42));
     setupExecutionLayerBlockAndBlobsProduction(
-        UInt64.valueOf(blockSlot), spec, dataStructureUtil, blockExecutionValue);
+        UInt64.valueOf(blockSlot),
+        spec,
+        dataStructureUtil,
+        blockExecutionValue,
+        requestedBuilderBoostFactor);
 
     executionPayloadBuilder.accept(blockSlotState);
 
@@ -265,7 +270,7 @@ public abstract class AbstractBlockFactoryTest {
                     blockSlotState,
                     randaoReveal,
                     Optional.empty(),
-                    Optional.empty(),
+                    requestedBuilderBoostFactor,
                     BlockProductionPerformance.NOOP)));
 
     final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
@@ -528,7 +533,8 @@ public abstract class AbstractBlockFactoryTest {
       final UInt64 blockSlot,
       final Spec spec,
       final DataStructureUtil dataStructureUtil,
-      final UInt256 value) {
+      final UInt256 value,
+      final Optional<UInt64> expectedRequestedBuilderBoostFactor) {
     // non-blinded
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
@@ -584,17 +590,20 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // simulate a bid
-    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any(), any()))
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any(), any(), any()))
         .thenAnswer(
             args -> {
               final Bytes32 parentRoot = args.getArgument(0);
               final Bytes32 parentBlockHash = args.getArgument(1);
               final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(2));
               final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(3);
+              final Optional<UInt64> requestedBuilderBoostFactor = args.getArgument(4);
               // verify we pass the correct future to the bid manager
               assertThat(getPayloadResponseFuture)
                   .isEqualTo(
                       cachedExecutionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired());
+              assertThat(requestedBuilderBoostFactor)
+                  .isEqualTo(expectedRequestedBuilderBoostFactor);
               assertThat(parentBlockHash).isEqualTo(executionPayload.getParentHash());
               final UInt64 slot = state.getSlot();
               final SchemaDefinitionsGloas schemaDefinitions =

@@ -7,16 +7,12 @@
 ## Unreleased Changes
 
 ### Breaking Changes
-
- * Dropped Windows support. Teku is no longer built, tested, or distributed for Windows. The `gradlew.bat` wrapper, Windows CI job, and Windows-specific native dependencies (LevelDB JNI) have been removed.
+ - Removed the legacy web3j-based Eth1/PoW deposit-log fetching. A node no longer requires an Eth1 JSON-RPC endpoint to run; deposits are sourced from the finalized deposit-tree snapshot and in-protocol (EIP-6110) execution requests. The following CLI options have been removed: `--eth1-endpoints` / `--eth1-endpoint`, `--eth1-deposit-contract-max-request-size`.
+ - Removed the non-production `validator-tools send-deposits` and `validator-tools generate-and-send-deposits` internal subcommands (web3j-based deposit submission). `validator-tools generate-keys` is unaffected.
+ - Removed the GetDepositSnapshot RPC endpoint, which has been deprecated and removed since v3.0.0 of the Beacon API spec.
 
 ### Additions and Improvements
 
-- Added some extra fields to the peers output for beacon-apis #606. Consumers of the peers endpoint should be aware of this new optional data.
-- QUIC enabled by default (uses UDP port 9001 by default)
-- New Engine API client with better performance enabled by default
-
 ### Bug Fixes
-
-- Prevent RPC rate-limited peers from immediately reconnecting inbound.
-- Fixed missing `process_cpu_seconds_total` metric in the Docker images by adding the `jdk.management` module to the custom Java runtime.
+ - Fixed Beacon REST API socket retention when clients cancel pending asynchronous requests. Requests now time out after 30 seconds.
+ - Fix an edge case on BeaconBlocksByRange where a request for a single block would return an empty response instead of the block.

@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayl
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
   private final Spec spec = TestSpecFactory.createMinimalGloas();
@@ -62,8 +64,10 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionPayloadEnvelopesByRangeMessageHandler handler =
       new ExecutionPayloadEnvelopesByRangeMessageHandler(
+          spec,
           SpecConfigGloas.required(spec.getGenesisSpecConfig()),
           metricsSystem,
           combinedChainDataClient);
@@ -77,6 +81,9 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
   @BeforeEach
   public void setup() {
     chainBuilder.generateGenesis();
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
+    // Current epoch 0 keeps the whole chain within the servable range by default
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveExecutionPayloadEnvelopesRequest(any(), anyLong()))
         .thenReturn(Optional.of(new RequestKey(ZERO, 42)));
@@ -124,6 +131,20 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
             new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(128)));
     assertThat(response).isEmpty();
     assertThat(getLabelledCounterValue("count_too_big")).isEqualTo(0);
+  }
+
+  @Test
+  void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final Optional<RpcException> response =
+        handler.validateRequest(
+            PROTOCOL_ID,
+            new ExecutionPayloadEnvelopesByRangeRequestMessage(
+                UInt64.MAX_VALUE, UInt64.valueOf(10)));
+
+    assertThat(response)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    verifyNoInteractions(combinedChainDataClient);
   }
 
   @Test
@@ -247,6 +268,95 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
       }
     }
     verify(callback).completeSuccessfully();
+  }
+
+  @Test
+  public void onIncomingMessage_shouldNotServeRangeEntirelyOutsideServableRange() {
+    buildChain(12);
+    // minServableEpoch = 1, so slots below the start of epoch 1 must not be served
+    stubCurrentEpoch(1);
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(5));
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    // no envelope is retrieved from the database or the execution layer
+    verify(combinedChainDataClient, never()).getExecutionPayloadByBlockRoot(any());
+    verify(combinedChainDataClient, never()).getBlockAtSlotExact(any());
+    verify(callback, never()).respond(any());
+    verify(callback).completeSuccessfully();
+    verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(0L));
+  }
+
+  @Test
+  public void onIncomingMessage_shouldTrimRangeStartingOutsideServableRange() {
+    buildChain(12);
+    // minServableEpoch = 1, so the servable range starts at slot 8 with 8 slots per epoch
+    stubCurrentEpoch(1);
+    final UInt64 minServableSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    assertThat(minServableSlot).isEqualTo(UInt64.valueOf(8));
+
+    // slots 5 to 10 requested, only 8, 9 and 10 are servable
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.valueOf(5), UInt64.valueOf(6));
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    verify(callback, times(3)).respond(any());
+    // slots below the servable range are dropped and the count is reduced rather than shifted, so
+    // slot 11 is never served even though it is within the servable range
+    for (final SignedExecutionPayloadEnvelope envelope :
+        chainBuilder.streamExecutionPayloads(UInt64.valueOf(5), UInt64.valueOf(11)).toList()) {
+      if (envelope.getSlot().isLessThan(minServableSlot)
+          || envelope.getSlot().isGreaterThan(UInt64.valueOf(10))) {
+        verify(callback, never()).respond(envelope);
+      } else {
+        verify(callback).respond(envelope);
+      }
+    }
+    verify(callback).completeSuccessfully();
+    verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(3L));
+  }
+
+  @Test
+  public void onIncomingMessage_shouldServeSingleSlotRemainingAfterTrimming() {
+    buildChain(8);
+    // minServableEpoch = 1, so of the requested slots only slot 8 survives trimming, and it is also
+    // the last hot slot, so the request must not be treated as already complete
+    stubCurrentEpoch(1);
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.valueOf(6), UInt64.valueOf(3));
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    final SignedExecutionPayloadEnvelope expected =
+        chainBuilder.getExecutionPayloadAtSlot(UInt64.valueOf(8)).orElseThrow();
+    verify(callback).respond(expected);
+    verify(callback, times(1)).respond(any());
+    verify(callback).completeSuccessfully();
+    verify(peer).adjustExecutionPayloadEnvelopesRequest(any(), eq(1L));
+  }
+
+  @Test
+  public void onIncomingMessage_shouldServeEnvelopeWhenStartSlotIsHeadSlot() {
+    buildChain(5);
+
+    final ExecutionPayloadEnvelopesByRangeRequestMessage message =
+        new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.valueOf(5), UInt64.ONE);
+    handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
+
+    final SignedExecutionPayloadEnvelope expected =
+        chainBuilder.getExecutionPayloadAtSlot(UInt64.valueOf(5)).orElseThrow();
+    verify(callback).respond(expected);
+    verify(callback).completeSuccessfully();
+    verify(peer, never()).adjustExecutionPayloadEnvelopesRequest(any(), anyLong());
+  }
+
+  private void stubCurrentEpoch(final int epochsAfterMinEpochsForBlockRequests) {
+    when(recentChainData.getCurrentEpoch())
+        .thenReturn(
+            Optional.of(
+                UInt64.valueOf(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
+                    .plus(epochsAfterMinEpochsForBlockRequests)));
   }
 
   private void stubFinalizedChainHeadAndBlockLookup(final UInt64 headSlot) {

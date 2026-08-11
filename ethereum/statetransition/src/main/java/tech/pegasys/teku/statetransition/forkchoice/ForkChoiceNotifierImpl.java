@@ -193,6 +193,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   /**
    * @param parentBeaconBlock fork choice node of the beacon block the new block will be built on
    * @param blockSlot slot of the block being produced, for which the payloadId has been requested
+   * @param inclusionListTransactions inclusion list transactions of the block being produced
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the bellatrix fork and before Terminal Block arrival)

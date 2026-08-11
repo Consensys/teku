@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -100,7 +101,10 @@ class ForkChoiceUtilGloasTest {
                 UInt64.ZERO,
                 parentPayloadValue,
                 UInt64.ZERO,
-                dataStructureUtil.randomBlobKzgCommitments(),
+                schemaDefinitions
+                    .getExecutionPayloadBidSchema()
+                    .getBlobKzgCommitmentsSchema()
+                    .createFromElements(dataStructureUtil.randomBlobKzgCommitments().asList()),
                 parentExecutionRequests.hashTreeRoot());
 
     final BeaconState originalState =
@@ -168,10 +172,12 @@ class ForkChoiceUtilGloasTest {
 
   @Test
   void getPayloadDueMillis_shouldUsePayloadDueBps() {
+    // PAYLOAD_DUE_BPS is 5000 (50% of SLOT_DURATION_MS)
     assertThat(forkChoiceUtil.getPayloadDueMillis())
-        .hasValue(spec.getSlotDurationMillis(gloasSlot) * 3 / 4);
+        .hasValue(spec.getSlotDurationMillis(gloasSlot) / 2);
+    // PAYLOAD_ATTESTATION_DUE_BPS remains 7500 (75%), so the payload deadline is now earlier
     assertThat(forkChoiceUtil.getPayloadDueMillis())
-        .isEqualTo(forkChoiceUtil.getPayloadAttestationDueMillis());
+        .isNotEqualTo(forkChoiceUtil.getPayloadAttestationDueMillis());
   }
 
   @Test
@@ -428,7 +434,7 @@ class ForkChoiceUtilGloasTest {
     when(strategy.getBlockData(headRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING))
         .thenReturn(Optional.of(headNode));
     when(strategy.blockSlot(headRoot)).thenReturn(Optional.of(gloasSlot));
-    when(strategy.getAncestorNode(boostRoot, gloasSlot))
+    when(strategy.getAncestorNode(ForkChoiceNode.createBase(boostRoot), gloasSlot))
         .thenReturn(Optional.of(ForkChoiceNode.createBase(headRoot)));
 
     assertThat(forkChoiceUtil.isHeadWeak(store, headRoot, UInt64.ONE)).isTrue();
@@ -472,46 +478,33 @@ class ForkChoiceUtilGloasTest {
     when(signedHead.getParentRoot()).thenReturn(parentRoot);
     when(signedHead.getMessage()).thenReturn(headBlock);
     when(signedParent.getMessage()).thenReturn(parentBlock);
-    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL))
+    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING))
         .thenReturn(Optional.of(parentNode));
     when(strategy.blockSlot(parentRoot)).thenReturn(Optional.of(gloasSlot));
-    when(strategy.getAncestorNode(boostRoot, gloasSlot))
-        .thenReturn(
-            Optional.of(
-                new ForkChoiceNode(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL)));
+    when(strategy.getAncestorNode(ForkChoiceNode.createBase(boostRoot), gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(parentRoot)));
 
     assertThat(forkChoiceUtil.isParentStrong(store, signedHead, UInt64.ZERO)).isFalse();
   }
 
   @Test
-  void isParentStrong_shouldUseHeadPayloadLinkageWhenSelectingParentVariant() {
+  void isParentStrong_shouldScoreParentWithPendingVariantRegardlessOfPayloadLinkage() {
     final UInt64 parentThreshold = UInt64.ONE;
-    final BeaconBlock parentBlock = createBlockWithBlockHash(dataStructureUtil.randomBytes32());
-    final Bytes32 parentRoot = parentBlock.getRoot();
-    final BeaconBlock headBlock =
-        createBlockWithParentAndParentBlockHash(parentRoot, dataStructureUtil.randomBytes32());
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final SignedBeaconBlock signedHead = mock(SignedBeaconBlock.class);
-    final SignedBeaconBlock signedParent = mock(SignedBeaconBlock.class);
-    final ProtoNodeData emptyNode = mock(ProtoNodeData.class);
-    final ProtoNodeData fullNode = mock(ProtoNodeData.class);
+    final ProtoNodeData pendingNode = mock(ProtoNodeData.class);
     final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
 
-    when(emptyNode.getWeight()).thenReturn(UInt64.ZERO);
-    when(fullNode.getWeight()).thenReturn(parentThreshold.plus(1));
+    when(pendingNode.getWeight()).thenReturn(parentThreshold.plus(1));
     when(store.getForkChoiceStrategy()).thenReturn(strategy);
     when(store.getJustifiedStateIfAvailable()).thenReturn(Optional.of(justifiedState));
-    when(store.getBlockIfAvailable(parentRoot)).thenReturn(Optional.of(signedParent));
     when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
     when(signedHead.getParentRoot()).thenReturn(parentRoot);
-    when(signedHead.getMessage()).thenReturn(headBlock);
-    when(signedParent.getMessage()).thenReturn(parentBlock);
-    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY))
-        .thenReturn(Optional.of(emptyNode));
-    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL))
-        .thenReturn(Optional.of(fullNode));
+    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING))
+        .thenReturn(Optional.of(pendingNode));
 
-    assertThat(forkChoiceUtil.isParentStrong(store, signedHead, parentThreshold)).isFalse();
+    assertThat(forkChoiceUtil.isParentStrong(store, signedHead, parentThreshold)).isTrue();
   }
 
   @Test
@@ -529,34 +522,135 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
-  void isParentStrong_shouldNotSubtractProposerBoostFromResolvedNodeWeight() {
-    final BeaconBlock parentBlock = createBlockWithBlockHash(dataStructureUtil.randomBytes32());
-    final Bytes32 parentRoot = parentBlock.getRoot();
-    final BeaconBlock headBlock =
-        createBlockWithParentAndParentBlockHash(parentRoot, dataStructureUtil.randomBytes32());
+  void isParentStrong_shouldExcludeProposerBoostFromPendingParentWeight() {
+    assertParentStrengthWithProposerBoost(UInt64.ONE, UInt64.ONE, false);
+  }
+
+  @Test
+  void isParentStrong_shouldReturnTrueWhenUnboostedPendingParentWeightExceedsThreshold() {
+    assertParentStrengthWithProposerBoost(UInt64.valueOf(2), UInt64.ONE, true);
+  }
+
+  private void assertParentStrengthWithProposerBoost(
+      final UInt64 attestationWeight,
+      final UInt64 parentThreshold,
+      final boolean expectedToBeStrong) {
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final SignedBeaconBlock signedHead = mock(SignedBeaconBlock.class);
-    final SignedBeaconBlock signedParent = mock(SignedBeaconBlock.class);
     final UInt64 proposerBoostAmount = spec.getProposerBoostAmount(justifiedState);
-    final UInt64 attestationWeight = proposerBoostAmount.plus(1);
+    final UInt64 boostedWeight = proposerBoostAmount.plus(attestationWeight);
     final ProtoNodeData parentNode = mock(ProtoNodeData.class);
     final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
 
-    when(parentNode.getWeight()).thenReturn(attestationWeight);
+    when(parentNode.getWeight()).thenReturn(boostedWeight);
     when(store.getForkChoiceStrategy()).thenReturn(strategy);
     when(store.getJustifiedStateIfAvailable()).thenReturn(Optional.of(justifiedState));
-    when(store.getBlockIfAvailable(parentRoot)).thenReturn(Optional.of(signedParent));
     when(store.getProposerBoostRoot()).thenReturn(Optional.of(parentRoot));
     when(signedHead.getParentRoot()).thenReturn(parentRoot);
-    when(signedHead.getMessage()).thenReturn(headBlock);
-    when(signedParent.getMessage()).thenReturn(parentBlock);
-    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY))
+    when(strategy.getBlockData(parentRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING))
         .thenReturn(Optional.of(parentNode));
     when(strategy.blockSlot(parentRoot)).thenReturn(Optional.of(gloasSlot));
-    when(strategy.getAncestorNode(parentRoot, gloasSlot))
+    when(strategy.getAncestorNode(ForkChoiceNode.createBase(parentRoot), gloasSlot))
         .thenReturn(Optional.of(ForkChoiceNode.createBase(parentRoot)));
 
-    assertThat(forkChoiceUtil.isParentStrong(store, signedHead, proposerBoostAmount)).isTrue();
+    assertThat(forkChoiceUtil.isParentStrong(store, signedHead, parentThreshold))
+        .isEqualTo(expectedToBeStrong);
+  }
+
+  @Test
+  void getProposerHead_preservesFullParentPayloadStatusOnReorg() {
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode fullParent = ForkChoiceNode.createFull(parentRoot);
+
+    assertThat(getProposerHeadAfterLateReorg(fullParent, true)).isEqualTo(fullParent);
+  }
+
+  @Test
+  void getProposerHead_downgradesReorgedFullParentToEmptyWhenNotBuildingOnFull() {
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode fullParent = ForkChoiceNode.createFull(parentRoot);
+
+    assertThat(getProposerHeadAfterLateReorg(fullParent, false))
+        .isEqualTo(ForkChoiceNode.createEmpty(parentRoot));
+  }
+
+  @Test
+  void getProposerHead_returnsPendingReorgedParentAsIs() {
+    final ForkChoiceNode pendingParent =
+        ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+
+    assertThat(getProposerHeadAfterLateReorg(pendingParent, false)).isEqualTo(pendingParent);
+  }
+
+  @Test
+  void isAncestor_returnsTrueWhenRootAndPayloadStatusMatch() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createFull(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createFull(ancestorRoot)));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsTrueWhenAncestorIsPendingWildcard() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    // A PENDING ancestor matches any resolved payload status for the same block root.
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createFull(ancestorRoot)));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isTrue();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenPayloadStatusDiffersAndAncestorIsNotPending() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createFull(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createEmpty(ancestorRoot)));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenResolvedRootDiffers() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot))
+        .thenReturn(Optional.of(ForkChoiceNode.createBase(dataStructureUtil.randomBytes32())));
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
+  }
+
+  @Test
+  void isAncestor_returnsFalseWhenAncestorNodeCannotBeResolved() {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final Bytes32 ancestorRoot = dataStructureUtil.randomBytes32();
+    final ForkChoiceNode node = ForkChoiceNode.createBase(dataStructureUtil.randomBytes32());
+    final ForkChoiceNode ancestor = ForkChoiceNode.createBase(ancestorRoot);
+
+    when(strategy.blockSlot(ancestorRoot)).thenReturn(Optional.of(gloasSlot));
+    when(strategy.getAncestorNode(node, gloasSlot)).thenReturn(Optional.empty());
+
+    assertThat(forkChoiceUtil.isAncestor(strategy, node, ancestor)).isFalse();
   }
 
   // Helper methods to create blocks with specific properties
@@ -681,5 +775,42 @@ class ForkChoiceUtilGloasTest {
             parentRoot, // Set the desired parent root
             block.getStateRoot(),
             newBody);
+  }
+
+  private ForkChoiceNode getProposerHeadAfterLateReorg(
+      final ForkChoiceNode parentNode, final boolean shouldBuildOnFull) {
+    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    final ForkChoiceReorgContext context = mock(ForkChoiceReorgContext.class);
+    final SignedBeaconBlock head = dataStructureUtil.randomSignedBeaconBlock(gloasSlot);
+    final ForkChoiceNode headNode = ForkChoiceNode.createFull(head.getRoot());
+    final UInt64 proposalSlot = gloasSlot.increment();
+    final ProtoNodeData parentData = mock(ProtoNodeData.class);
+
+    when(context.getStore()).thenReturn(store);
+    when(context.getBlockTimeliness(head.getRoot()))
+        .thenReturn(Optional.of(new BlockTimeliness(false, false)));
+    when(store.getForkChoiceStrategy()).thenReturn(strategy);
+    when(store.getGenesisTimeMillis()).thenReturn(UInt64.ZERO);
+    when(store.getTimeInMillis()).thenReturn(UInt64.ZERO);
+    when(store.getFinalizedCheckpoint())
+        .thenReturn(dataStructureUtil.randomCheckpoint(UInt64.ZERO));
+    when(store.getJustifiedStateIfAvailable()).thenReturn(Optional.of(justifiedState));
+    when(store.getBlockStateIfAvailable(head.getRoot())).thenReturn(Optional.of(justifiedState));
+    when(store.getParentThreshold()).thenReturn(UInt64.ZERO);
+    when(store.getReorgThreshold()).thenReturn(UInt64.MAX_VALUE);
+    when(store.getProposerBoostRoot()).thenReturn(Optional.empty());
+    when(store.getBlockIfAvailable(ArgumentMatchers.any())).thenReturn(Optional.of(head));
+    when(store.isFfgCompetitive(head.getRoot(), head.getParentRoot()))
+        .thenReturn(Optional.of(true));
+    when(parentData.getWeight()).thenReturn(UInt64.ONE);
+    when(strategy.getBlockData(
+            head.getParentRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING))
+        .thenReturn(Optional.of(parentData));
+    when(strategy.blockSlot(head.getParentRoot())).thenReturn(Optional.of(gloasSlot.minus(1)));
+    when(strategy.getParentBeaconBlockNode(headNode)).thenReturn(Optional.of(parentNode));
+    when(strategy.shouldBuildOnFull(store, proposalSlot, parentNode)).thenReturn(shouldBuildOnFull);
+
+    return forkChoiceUtil.getProposerHead(context, headNode, proposalSlot);
   }
 }

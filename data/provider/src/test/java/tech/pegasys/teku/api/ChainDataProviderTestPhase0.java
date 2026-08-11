@@ -98,6 +98,7 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getExecutionBlockNumber().orElse(UInt64.ZERO),
                 bestBlock.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                ZERO,
                 ProtoNodeValidationStatus.VALID,
                 spec.calculateBlockCheckpoints(bestBlock.getState()),
                 ZERO,
@@ -464,12 +465,15 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             mockBlobSidecarReconstructionProvider,
             mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(1024);
-    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
+    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList()).size())
+        .isEqualTo(1024);
 
     assertThat(
-            provider.getValidatorBalancesFromState(
-                internalState, List.of("0", "100", "1023", "1024", "1024000")))
-        .hasSize(3);
+            provider
+                .getValidatorBalancesFromState(
+                    internalState, List.of("0", "100", "1023", "1024", "1024000"))
+                .size())
+        .isEqualTo(3);
   }
 
   @Test
@@ -513,7 +517,6 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
         storageSystem
             .chainBuilder()
             .generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
-    storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
     final Optional<ObjectAndMetaData<List<Attestation>>> response =

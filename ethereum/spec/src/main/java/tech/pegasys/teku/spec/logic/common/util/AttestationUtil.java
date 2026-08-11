@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -66,6 +67,16 @@ public abstract class AttestationUtil {
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
+  }
+
+  /**
+   * Returns the state to use for non-consensus attestation reward calculations. Forks may project
+   * block-processing data that is already known to the caller but has not yet been applied to the
+   * pre-state.
+   */
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    return state;
   }
 
   /**
@@ -308,20 +319,21 @@ public abstract class AttestationUtil {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final Bytes32 blockRoot,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
+    final Bytes32 beaconBlockRoot = block.getRoot();
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     final Bytes32 epochBoundaryBlockRoot =
         startSlot.compareTo(slot) == 0 || state.getSlot().compareTo(startSlot) <= 0
-            ? blockRoot
+            ? beaconBlockRoot
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
     final Checkpoint source = state.getCurrentJustifiedCheckpoint();
     final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
 
     // Set attestation data
-    return new AttestationData(slot, committeeIndex, blockRoot, source, target);
+    return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
   }
 
   public abstract Optional<SlotInclusionGossipValidationResult>

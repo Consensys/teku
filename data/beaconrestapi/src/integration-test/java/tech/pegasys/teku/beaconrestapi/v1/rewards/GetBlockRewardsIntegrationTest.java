@@ -55,7 +55,6 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
             .setSyncAggregate(syncAggregate);
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(12, blockOptions);
 
-    chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
   }
 

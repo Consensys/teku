@@ -71,6 +71,20 @@ public abstract class ContainerSchema4<
         List.of(fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2, fieldNamedSchema3));
   }
 
+  protected ContainerSchema4(
+      final String containerName,
+      final boolean[] activeFields,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V3> fieldNamedSchema3) {
+
+    super(
+        containerName,
+        activeFields,
+        List.of(fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2, fieldNamedSchema3));
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(0);

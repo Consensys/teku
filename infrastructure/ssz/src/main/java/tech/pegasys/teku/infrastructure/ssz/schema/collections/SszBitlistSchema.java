@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
 import java.util.BitSet;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
@@ -33,11 +34,30 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
   SszBitlistT ofBits(int size, int... setBitIndices);
 
   /**
+   * Creates an SszBitlist with the size inferred from the set bit indices. The size is set to one
+   * past the highest set bit index, or 0 if no bits are set. Works for both bounded and progressive
+   * schemas.
+   */
+  default SszBitlistT ofSetBits(final int... setBitIndices) {
+    final int size =
+        setBitIndices.length == 0 ? 0 : IntStream.of(setBitIndices).max().getAsInt() + 1;
+    return ofBits(size, setBitIndices);
+  }
+
+  /**
    * Creates an SszBitlist by wrapping a given bitSet. This is an optimized constructor that DOES
    * NOT clone the bitSet. It is used in aggregating attestation pool. DO NOT MUTATE after the
    * wrapping!! SszBitlist is supposed to be immutable.
    */
   SszBitlistT wrapBitSet(int size, BitSet bitSet);
+
+  /**
+   * Creates an SszBitlist by wrapping a given bitSet with the size inferred from the bitSet's
+   * logical length. Works for both bounded and progressive schemas.
+   */
+  default SszBitlistT wrapBitSet(final BitSet bitSet) {
+    return wrapBitSet(bitSet.length(), bitSet);
+  }
 
   /**
    * Creates a SszBitlist from bytes.

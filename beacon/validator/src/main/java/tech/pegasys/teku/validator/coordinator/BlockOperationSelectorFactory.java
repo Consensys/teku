@@ -37,9 +37,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -197,9 +198,14 @@ public class BlockOperationSelectorFactory {
 
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      final BeaconState attestationRewardState =
+          spec.getStateForAttestationRewardCalculation(
+              blockSlotState,
+              blockProductionContext.parentPayloadStatus()
+                  == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
-              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+              attestationRewardState, new AttestationForkChecker(spec, blockSlotState));
       blockProductionContext.blockProductionPerformance().getAttestationsForBlock();
 
       // Collect slashings to include
@@ -528,6 +534,7 @@ public class BlockOperationSelectorFactory {
                 blockProductionContext.parentExecutionBlockHash(),
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
+                blockProductionContext.requestedBuilderBoostFactor(),
                 blockProductionContext.blockProductionPerformance())
             .thenAccept(bodyBuilder::signedExecutionPayloadBid);
     return SafeFuture.allOf(

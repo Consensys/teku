@@ -169,7 +169,12 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
     return createNodeFromSszBytes(bytes);
   }
 
-  protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
+  /**
+   * Creates a leaf node from SSZ-encoded bytes containing one or more packed values of this type,
+   * validating value encodings where the type constrains them (e.g. booleans must be 0 or 1).
+   * Packed-list deserializers call this once per (up to 32-byte) chunk.
+   */
+  public LeafNode createNodeFromSszBytes(final Bytes bytes) {
     return LeafNode.create(bytes);
   }
 

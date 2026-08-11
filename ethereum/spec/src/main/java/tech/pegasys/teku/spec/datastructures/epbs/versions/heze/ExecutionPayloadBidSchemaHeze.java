@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -68,6 +69,8 @@ public class ExecutionPayloadBidSchemaHeze
         SszBitvector>
     implements ExecutionPayloadBidSchema<ExecutionPayloadBidHeze> {
 
+  private static final boolean[] ACTIVE_FIELDS = ProgressiveSchemaUtils.allActive(13);
+
   private final SszBitvectorSchema<?> inclusionListBitsSchema;
 
   public ExecutionPayloadBidSchemaHeze(
@@ -81,6 +84,7 @@ public class ExecutionPayloadBidSchemaHeze
       final SpecConfigHeze specConfig) {
     super(
         schemaName,
+        ACTIVE_FIELDS,
         namedSchema(PARENT_BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(PARENT_BLOCK_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),

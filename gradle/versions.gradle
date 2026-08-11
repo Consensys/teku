@@ -1,14 +1,18 @@
 dependencyManagement {
 	imports {
-		mavenBom 'io.netty:netty-bom:4.2.15.Final'
+		mavenBom 'io.netty:netty-bom:4.2.16.Final'
+		// Remove these pins when Javalin uses Jetty 12.1.11 or later.
+		// Jetty 12.1.11 fixes https://github.com/jetty/jetty.project/issues/15226.
+		mavenBom 'org.eclipse.jetty:jetty-bom:12.1.11'
+		mavenBom 'org.eclipse.jetty.ee10:jetty-ee10-bom:12.1.11'
 	}
 	dependencies {
-		dependency 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
-		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.22.0') {
+		dependency 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
+		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.22.1') {
 			entry 'jackson-dataformat-yaml'
 			entry 'jackson-dataformat-toml'
 		}
-		dependency 'com.fasterxml.jackson.module:jackson-module-blackbird:2.22.0'
+		dependency 'com.fasterxml.jackson.module:jackson-module-blackbird:2.22.1'
 
 		dependencySet(group: 'com.google.errorprone', version: '2.45.0') {
 			entry 'error_prone_check_api'
@@ -24,12 +28,13 @@ dependencyManagement {
 
 		dependency 'org.yaml:snakeyaml:2.6'
 
-		dependency 'org.jsoup:jsoup:1.22.2'
+		dependency 'org.jsoup:jsoup:1.23.1'
 
 		dependency 'com.launchdarkly:okhttp-eventsource:4.3.0'
 
 		dependencySet(group: 'com.squareup.okhttp3', version: '4.12.0') {
 			entry 'okhttp'
+			entry 'logging-interceptor'
 			entry 'mockwebserver'
 		}
 
@@ -40,23 +45,23 @@ dependencyManagement {
 			entry 'javalin-rendering-thymeleaf'
 		}
 
-		dependency 'io.libp2p:jvm-libp2p:1.3.4-RELEASE'
-		dependency 'tech.pegasys:jblst:0.3.15'
-		dependency 'io.consensys.protocols:jc-kzg-4844:2.1.6'
+		dependency 'io.libp2p:jvm-libp2p:1.3.5-RELEASE'
+		dependency 'tech.pegasys:jblst:0.3.17'
+		dependency 'io.consensys.protocols:jc-kzg-4844:2.1.8'
 		dependency 'io.github.crate-crypto:java-eth-kzg:0.10.0'
 
 		dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
 
-		dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.4.0'
+		dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.4.10'
 
 		dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-		dependencySet(group: 'io.swagger.core.v3', version: '2.2.51') {
+		dependencySet(group: 'io.swagger.core.v3', version: '2.2.52') {
 			entry 'swagger-annotations'
 		}
 
 		// On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-		dependency 'org.webjars:swagger-ui:5.32.6'
+		dependency 'org.webjars:swagger-ui:5.32.11'
 
 		dependency 'org.thymeleaf:thymeleaf:3.1.5.RELEASE'
 		dependencySet(group: 'com.github.oshi', version: '6.12.0') {
@@ -64,7 +69,7 @@ dependencyManagement {
 			entry 'oshi-core-java11'
 		}
 
-		dependency 'it.unimi.dsi:fastutil:8.5.18'
+		dependency 'it.unimi.dsi:fastutil:8.5.19'
 
 		dependencySet(group: 'io.consensys.tuweni', version: '2.7.2') {
 			entry 'tuweni-bytes'
@@ -78,7 +83,7 @@ dependencyManagement {
 		dependency 'commons-io:commons-io:2.22.0'
 		dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
-		dependencySet(group: 'org.apache.logging.log4j', version: '2.26.0') {
+		dependencySet(group: 'org.apache.logging.log4j', version: '2.26.1') {
 			entry 'log4j-api'
 			entry 'log4j-core'
 			entry 'log4j-slf4j-impl'
@@ -116,28 +121,25 @@ dependencyManagement {
 			entry 'jmh-core'
 			entry 'jmh-generator-annprocess'
 		}
-		dependency 'org.quartz-scheduler:quartz:2.5.2'
 		dependency 'org.rocksdb:rocksdbjni:10.10.1.1'
 		dependency 'org.fusesource.leveldbjni:leveldbjni:1.8'
 		dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-		dependencySet(group: "org.web3j", version: "4.14.0") {
+		dependencySet(group: "org.web3j", version: "6.0.0") {
 			entry 'core'
-			entry 'abi'
-			entry 'crypto'
-			entry 'utils'
 		}
 
 		dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
+		dependency 'io.airlift:aircompressor-v3:3.7'
 
 		dependency 'io.prometheus:prometheus-metrics-bom:1.5.1'
 
-		dependencySet(group: 'org.hyperledger.besu.internal', version: '26.6.0') {
+		dependencySet(group: 'org.hyperledger.besu.internal', version: '26.6.1') {
 			entry 'besu-metrics-core'
 			entry 'besu-ethereum-core'
 			entry 'besu-config'
 		}
-		dependencySet(group: 'org.hyperledger.besu', version: '26.6.0') {
+		dependencySet(group: 'org.hyperledger.besu', version: '26.6.1') {
 			entry 'besu-datatypes'
 			entry 'besu-evm'
 			entry 'besu-plugin-api'

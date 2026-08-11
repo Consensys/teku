@@ -46,6 +46,7 @@ interface ForkChoiceModel {
       BlockCheckpoints checkpoints,
       Optional<UInt64> executionBlockNumber,
       Optional<Bytes32> executionBlockHash,
+      Optional<UInt64> executionGasLimit,
       boolean optimisticallyProcessed);
 
   void processAnchorBlock(
@@ -58,6 +59,7 @@ interface ForkChoiceModel {
       BlockCheckpoints checkpoints,
       Optional<UInt64> executionBlockNumber,
       Optional<Bytes32> executionBlockHash,
+      Optional<UInt64> executionGasLimit,
       boolean optimisticallyProcessed);
 
   void onExecutionPayload(
@@ -66,6 +68,7 @@ interface ForkChoiceModel {
       Bytes32 blockRoot,
       UInt64 executionBlockNumber,
       Bytes32 executionBlockHash,
+      UInt64 executionGasLimit,
       boolean isOptimistic);
 
   void rebuildBlockNodesFromMetadata(
@@ -82,8 +85,12 @@ interface ForkChoiceModel {
     rebuildBlockNodesFromMetadata(protoArray, blockNodeIndex, block, optimisticallyProcessed);
   }
 
-  /** Resolves a latest-message vote onto a concrete node identity. */
-  Optional<ForkChoiceNode> resolveVoteNode(
+  /**
+   * Resolves a latest-message vote onto a concrete node identity.
+   *
+   * <p>Spec mapping: {@code get_supported_node(store, message)}.
+   */
+  Optional<ForkChoiceNode> getSupportedNode(
       Bytes32 voteRoot,
       UInt64 voteSlot,
       boolean payloadPresent,
@@ -121,7 +128,7 @@ interface ForkChoiceModel {
   boolean shouldBuildOnFull(
       ProtoArray protoArray,
       BlockNodeVariantsIndex blockNodeIndex,
-      UInt64 currentSlot,
+      UInt64 slot,
       ForkChoiceNode head);
 
   /**
@@ -155,6 +162,14 @@ interface ForkChoiceModel {
 
   Optional<ProtoNodeData> getExecutionNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
+
+  default Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final Bytes32 blockRoot,
+      final Bytes32 blockHash) {
+    return Optional.empty();
+  }
 
   void pullUpBlockCheckpoints(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);

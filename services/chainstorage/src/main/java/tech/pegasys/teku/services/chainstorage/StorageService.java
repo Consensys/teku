@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
@@ -225,10 +224,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               final EventChannels eventChannels = serviceConfig.getEventChannels();
 
               final DepositStorage depositStorage =
-                  DepositStorage.create(
-                      eventChannels.getPublisher(Eth1EventsChannel.class),
-                      database,
-                      depositSnapshotStorageEnabled);
+                  DepositStorage.create(database, depositSnapshotStorageEnabled);
 
               batchingVoteUpdateChannel =
                   new BatchingVoteUpdateChannel(
@@ -247,7 +243,6 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               eventChannels
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
-                  .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
                   .subscribe(SidecarUpdateChannel.class, chainStorage);
             })
@@ -279,9 +274,9 @@ public class StorageService extends Service implements StorageServiceFacade {
       final Duration pruningInterval,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
-    if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE) {
-      throw new InvalidConfigurationException(
-          "State pruning is not supported with leveldb_tree database.");
+    if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE
+        || config.getDataStorageCreateDbVersion() == DatabaseVersion.ROCKSDB_TREE) {
+      throw new InvalidConfigurationException("State pruning is not supported with tree database.");
     }
 
     LOG.info(

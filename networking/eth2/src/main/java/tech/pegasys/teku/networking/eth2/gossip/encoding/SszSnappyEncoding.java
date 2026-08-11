@@ -21,10 +21,10 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage.GossipDecod
 
 class SszSnappyEncoding implements GossipEncoding {
   private static final String NAME = "ssz_snappy";
-  private final SnappyBlockCompressor snappyCompressor;
+  private final SnappyCompressor snappyCompressor;
   private final SszGossipCodec sszCodec = new SszGossipCodec();
 
-  public SszSnappyEncoding(final SnappyBlockCompressor snappyCompressor) {
+  public SszSnappyEncoding(final SnappyCompressor snappyCompressor) {
     this.snappyCompressor = snappyCompressor;
   }
 

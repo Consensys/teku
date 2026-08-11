@@ -58,7 +58,7 @@ class InclusionListFactoryTest {
             .latestExecutionPayloadBid(latestExecutionPayloadBid)
             .build();
     final List<Transaction> transactions =
-        dataStructureUtil.randomInclusionList(2).getTransactions();
+        dataStructureUtil.randomInclusionList(2).getTransactions().asList();
 
     when(combinedChainDataClient.getBestState())
         .thenReturn(Optional.of(SafeFuture.completedFuture(state)));

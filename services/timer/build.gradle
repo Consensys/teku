@@ -3,7 +3,4 @@ dependencies {
 	implementation project(':infrastructure:async')
 	implementation project(':infrastructure:events')
 	implementation 'com.google.guava:guava'
-	implementation('org.quartz-scheduler:quartz') {
-		exclude group: 'com.mchange'
-	}
 }

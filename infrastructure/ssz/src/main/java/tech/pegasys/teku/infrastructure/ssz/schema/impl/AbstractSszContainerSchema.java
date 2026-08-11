@@ -22,12 +22,16 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Queue;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -40,7 +44,13 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.ProgressiveTreeUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszContainerSchema<C extends SszContainer>
@@ -81,30 +91,34 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   private final Supplier<SszLengthBounds> sszLengthBounds =
       Suppliers.memoize(this::computeSszLengthBounds);
+  private final Supplier<SszLengthBounds> networkSszLengthBounds =
+      Suppliers.memoize(this::computeNetworkSszLengthBounds);
   private final String containerName;
   private final List<String> childrenNames = new ArrayList<>();
   private final Object2IntMap<String> childrenNamesToFieldIndex = new Object2IntOpenHashMap<>();
   private final List<? extends SszSchema<?>> childrenSchemas;
-  private final TreeNode defaultTree;
-  private final long treeWidth;
   private final int fixedPartSize;
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
+
+  // Lazy fields — required because progressive mode needs full schema init before tree creation
+  private volatile TreeNode defaultTree;
+  private volatile Long treeWidth;
+
+  // Progressive mode fields (null for regular containers)
+  private final boolean[] activeFields;
+  private final int[] fieldToTreePosition;
+  private final LeafNode activeFieldsLeafNode;
+
+  // ===== Regular (non-progressive) constructors =====
 
   protected AbstractSszContainerSchema(
       final String name, final List<? extends NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
-    for (int i = 0; i < childrenSchemas.size(); i++) {
-      final NamedSchema<?> childSchema = childrenSchemas.get(i);
-      if (childrenNamesToFieldIndex.containsKey(childSchema.getName())) {
-        throw new IllegalArgumentException(
-            "Duplicate field name detected for field " + childSchema.getName() + " at index " + i);
-      }
-      childrenNamesToFieldIndex.put(childSchema.getName(), i);
-      childrenNames.add(childSchema.getName());
-    }
+    initFieldNames(childrenSchemas);
     this.childrenSchemas = childrenSchemas.stream().map(NamedSchema::getSchema).toList();
-    this.defaultTree = createDefaultTree();
-    this.treeWidth = SszContainerSchema.super.treeWidth();
+    this.activeFields = null;
+    this.fieldToTreePosition = null;
+    this.activeFieldsLeafNode = null;
     this.fixedPartSize = calcSszFixedPartSize();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
@@ -117,16 +131,129 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       childrenNames.add(name);
     }
     this.childrenSchemas = childrenSchemas;
-    this.defaultTree = createDefaultTree();
-    this.treeWidth = SszContainerSchema.super.treeWidth();
+    this.activeFields = null;
+    this.fieldToTreePosition = null;
+    this.activeFieldsLeafNode = null;
     this.fixedPartSize = calcSszFixedPartSize();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
+  // ===== Progressive constructor =====
+
+  protected AbstractSszContainerSchema(
+      final String name,
+      final boolean[] activeFields,
+      final List<? extends NamedSchema<?>> childrenSchemas) {
+    checkArgument(activeFields.length > 0, "activeFields must not be empty");
+    checkArgument(
+        activeFields[activeFields.length - 1], "Last element of activeFields must be true");
+    checkArgument(activeFields.length <= 256, "activeFields length must be <= 256");
+
+    int activeCount = 0;
+    for (boolean b : activeFields) {
+      if (b) {
+        activeCount++;
+      }
+    }
+    checkArgument(
+        activeCount == childrenSchemas.size(),
+        "Number of active fields (%s) must match number of field schemas (%s)",
+        activeCount,
+        childrenSchemas.size());
+
+    this.containerName = name;
+    this.activeFields = activeFields.clone();
+    this.fieldToTreePosition = new int[childrenSchemas.size()];
+
+    int fieldIdx = 0;
+    for (int slot = 0; slot < activeFields.length; slot++) {
+      if (activeFields[slot]) {
+        final NamedSchema<?> ns = childrenSchemas.get(fieldIdx);
+        childrenNames.add(ns.getName());
+        if (childrenNamesToFieldIndex.containsKey(ns.getName())) {
+          throw new IllegalArgumentException(
+              "Duplicate field name detected for field " + ns.getName() + " at index " + fieldIdx);
+        }
+        childrenNamesToFieldIndex.put(ns.getName(), fieldIdx);
+        this.fieldToTreePosition[fieldIdx] = slot;
+        fieldIdx++;
+      }
+    }
+
+    this.childrenSchemas = childrenSchemas.stream().map(NamedSchema::getSchema).toList();
+    this.activeFieldsLeafNode = createActiveFieldsLeafNode(activeFields);
+    this.fixedPartSize = calcSszFixedPartSize();
+    this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
+  }
+
+  // ===== Progressive mode helpers =====
+
+  public boolean isProgressiveMode() {
+    return activeFields != null;
+  }
+
+  public boolean[] getActiveFields() {
+    return activeFields != null ? activeFields.clone() : null;
+  }
+
+  public int getTreePosition(final int fieldIndex) {
+    if (!isProgressiveMode()) {
+      throw new UnsupportedOperationException("Not a progressive container");
+    }
+    return fieldToTreePosition[fieldIndex];
+  }
+
+  private static LeafNode createActiveFieldsLeafNode(final boolean[] activeFields) {
+    final int byteLen = (activeFields.length + 7) / 8;
+    final byte[] bytes = new byte[byteLen];
+    for (int i = 0; i < activeFields.length; i++) {
+      if (activeFields[i]) {
+        bytes[i / 8] |= (byte) (1 << (i % 8));
+      }
+    }
+    return LeafNode.create(Bytes.wrap(bytes));
+  }
+
+  private List<TreeNode> createSlotChunks(final List<TreeNode> activeFieldNodes) {
+    final List<TreeNode> slotChunks = new ArrayList<>(activeFields.length);
+    int fieldIdx = 0;
+    for (boolean activeField : activeFields) {
+      if (activeField) {
+        slotChunks.add(activeFieldNodes.get(fieldIdx));
+        fieldIdx++;
+      } else {
+        slotChunks.add(LeafNode.EMPTY_LEAF);
+      }
+    }
+    return slotChunks;
+  }
+
+  // ===== Field name initialization =====
+
+  private void initFieldNames(final List<? extends NamedSchema<?>> childrenSchemas) {
+    for (int i = 0; i < childrenSchemas.size(); i++) {
+      final NamedSchema<?> childSchema = childrenSchemas.get(i);
+      if (childrenNamesToFieldIndex.containsKey(childSchema.getName())) {
+        throw new IllegalArgumentException(
+            "Duplicate field name detected for field " + childSchema.getName() + " at index " + i);
+      }
+      childrenNamesToFieldIndex.put(childSchema.getName(), i);
+      childrenNames.add(childSchema.getName());
+    }
+  }
+
+  // ===== Tree creation =====
+
   @Override
   public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
     checkArgument(fieldValues.size() == getFieldsCount(), "Wrong number of filed values");
-    return TreeUtil.createTree(fieldValues.stream().map(SszData::getBackingNode).toList());
+    final List<TreeNode> fieldNodes = fieldValues.stream().map(SszData::getBackingNode).toList();
+    if (isProgressiveMode()) {
+      final List<TreeNode> slotChunks = createSlotChunks(fieldNodes);
+      final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(slotChunks);
+      return BranchNode.create(progressiveTree, activeFieldsLeafNode);
+    }
+    return TreeUtil.createTree(fieldNodes);
   }
 
   @Override
@@ -146,33 +273,74 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public TreeNode getDefaultTree() {
+    if (defaultTree == null) {
+      defaultTree = createDefaultTree();
+    }
     return defaultTree;
   }
 
   @Override
   public long treeWidth() {
+    if (isProgressiveMode()) {
+      throw new UnsupportedOperationException(
+          "Progressive containers don't have a fixed tree width");
+    }
+    if (treeWidth == null) {
+      treeWidth = SszContainerSchema.super.treeWidth();
+    }
     return treeWidth;
   }
 
+  @Override
+  public int treeDepth() {
+    if (isProgressiveMode()) {
+      throw new UnsupportedOperationException(
+          "Progressive containers don't have a fixed tree depth");
+    }
+    return SszContainerSchema.super.treeDepth();
+  }
+
+  @Override
+  public long maxChunks() {
+    if (isProgressiveMode()) {
+      throw new UnsupportedOperationException(
+          "Progressive containers don't have a fixed maxChunks");
+    }
+    return SszContainerSchema.super.maxChunks();
+  }
+
   private TreeNode createDefaultTree() {
-    List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
+    final List<TreeNode> defaultChildren = new ArrayList<>(getFieldsCount());
     for (int i = 0; i < getFieldsCount(); i++) {
       defaultChildren.add(getChildSchema(i).getDefault().getBackingNode());
     }
+    if (isProgressiveMode()) {
+      final List<TreeNode> slotChunks = createSlotChunks(defaultChildren);
+      final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(slotChunks);
+      return BranchNode.create(progressiveTree, activeFieldsLeafNode);
+    }
     return TreeUtil.createTree(defaultChildren);
   }
+
+  // ===== Generalized index =====
+
+  @Override
+  public long getChildGeneralizedIndex(final long fieldIndex) {
+    if (isProgressiveMode()) {
+      final int treePosition = fieldToTreePosition[(int) fieldIndex];
+      final long progressiveGIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(treePosition);
+      return GIndexUtil.gIdxCompose(GIndexUtil.LEFT_CHILD_G_INDEX, progressiveGIdx);
+    }
+    return SszContainerSchema.super.getChildGeneralizedIndex(fieldIndex);
+  }
+
+  // ===== Schema accessors =====
 
   @Override
   public SszSchema<?> getChildSchema(final int index) {
     return childrenSchemas.get(index);
   }
 
-  /**
-   * Get the index of a field by name
-   *
-   * @param fieldName the name of the field
-   * @return The index if it exists, otherwise -1
-   */
   @Override
   public int getFieldIndex(final String fieldName) {
     return childrenNamesToFieldIndex.getOrDefault(fieldName, -1);
@@ -195,12 +363,17 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       return false;
     }
     AbstractSszContainerSchema<?> that = (AbstractSszContainerSchema<?>) o;
-    return childrenSchemas.equals(that.childrenSchemas);
+    return childrenSchemas.equals(that.childrenSchemas)
+        && Arrays.equals(activeFields, that.activeFields)
+        && Objects.equals(
+            getNetworkSszLengthBytesUpperBound(), that.getNetworkSszLengthBytesUpperBound());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(childrenSchemas);
+    int result = Objects.hash(childrenSchemas, getNetworkSszLengthBytesUpperBound());
+    result = 31 * result + Arrays.hashCode(activeFields);
+    return result;
   }
 
   @Override
@@ -222,7 +395,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     int size = 0;
     for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
-      size += childType.isFixedSize() ? childType.getSszFixedPartSize() : SSZ_LENGTH_SIZE;
+      size += childType.isFixedSize() ? childType.getSszFixedPartSize() : SszType.SSZ_LENGTH_SIZE;
     }
     return size;
   }
@@ -231,16 +404,15 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   public int getSszVariablePartSize(final TreeNode node) {
     if (isFixedSize()) {
       return 0;
-    } else {
-      int size = 0;
-      for (int i = 0; i < getFieldsCount(); i++) {
-        SszSchema<?> childType = getChildSchema(i);
-        if (!childType.isFixedSize()) {
-          size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
-        }
-      }
-      return size;
     }
+    int size = 0;
+    for (int i = 0; i < getFieldsCount(); i++) {
+      SszSchema<?> childType = getChildSchema(i);
+      if (!childType.isFixedSize()) {
+        size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
+      }
+    }
+    return size;
   }
 
   @Override
@@ -250,7 +422,8 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
-    int variableChildOffset = getSszFixedPartSize();
+    final int sszFixedPartSize = getSszFixedPartSize();
+    int variableChildOffset = sszFixedPartSize;
     int[] variableSizes = new int[getFieldsCount()];
     for (int i = 0; i < getFieldsCount(); i++) {
       TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
@@ -265,7 +438,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         variableChildOffset += childSize;
       }
     }
-    for (int i = 0; i < childrenSchemas.size(); i++) {
+    for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
@@ -278,19 +451,18 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public TreeNode sszDeserializeTree(final SszReader reader) {
-    int endOffset = reader.getAvailableBytes();
-    int childCount = getFieldsCount();
-    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
-    IntList variableChildrenOffsets = new IntArrayList(childCount);
+    final int endOffset = reader.getAvailableBytes();
+    final int childCount = getFieldsCount();
+    final Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
+    final IntList variableChildrenOffsets = new IntArrayList(childCount);
     for (int i = 0; i < childCount; i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
         try (SszReader sszReader = reader.slice(childType.getSszFixedPartSize())) {
-          TreeNode childNode = childType.sszDeserializeTree(sszReader);
-          fixedChildrenSubtrees.add(childNode);
+          fixedChildrenSubtrees.add(childType.sszDeserializeTree(sszReader));
         }
       } else {
-        int childOffset = SszType.sszBytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int childOffset = SszType.sszBytesToLength(reader.read(SszType.SSZ_LENGTH_SIZE));
         variableChildrenOffsets.add(childOffset);
       }
     }
@@ -308,7 +480,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
     variableChildrenOffsets.add(endOffset);
 
-    ArrayDeque<Integer> variableChildrenSizes =
+    final ArrayDeque<Integer> variableChildrenSizes =
         new ArrayDeque<>(variableChildrenOffsets.size() - 1);
     for (int i = 0; i < variableChildrenOffsets.size() - 1; i++) {
       variableChildrenSizes.add(
@@ -319,20 +491,24 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       throw new SszDeserializeException("Invalid SSZ: wrong child offsets");
     }
 
-    List<TreeNode> childrenSubtrees = new ArrayList<>(childCount);
+    final List<TreeNode> fieldNodes = new ArrayList<>(childCount);
     for (int i = 0; i < childCount; i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
-        childrenSubtrees.add(fixedChildrenSubtrees.remove());
+        fieldNodes.add(fixedChildrenSubtrees.remove());
       } else {
         try (SszReader sszReader = reader.slice(variableChildrenSizes.remove())) {
-          TreeNode childNode = childType.sszDeserializeTree(sszReader);
-          childrenSubtrees.add(childNode);
+          fieldNodes.add(childType.sszDeserializeTree(sszReader));
         }
       }
     }
 
-    return TreeUtil.createTree(childrenSubtrees);
+    if (isProgressiveMode()) {
+      final List<TreeNode> slotChunks = createSlotChunks(fieldNodes);
+      return BranchNode.create(
+          ProgressiveTreeUtil.createProgressiveTree(slotChunks), activeFieldsLeafNode);
+    }
+    return TreeUtil.createTree(fieldNodes);
   }
 
   @Override
@@ -340,14 +516,28 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     return sszLengthBounds.get();
   }
 
+  @Override
+  public SszLengthBounds getNetworkSszLengthBounds() {
+    return networkSszLengthBounds.get();
+  }
+
   private SszLengthBounds computeSszLengthBounds() {
     return IntStream.range(0, getFieldsCount())
         .mapToObj(this::getChildSchema)
-        // dynamic sized children need 4-byte offset
-        .map(t -> t.getSszLengthBounds().addBytes((t.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)))
-        // elements are not packed in containers
+        .map(t -> t.getSszLengthBounds().addBytes(t.isFixedSize() ? 0 : SszType.SSZ_LENGTH_SIZE))
         .map(SszLengthBounds::ceilToBytes)
         .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
+  }
+
+  private SszLengthBounds computeNetworkSszLengthBounds() {
+    final OptionalLong upperBound = getNetworkSszLengthBytesUpperBound();
+    return upperBound.isPresent()
+        ? getSszLengthBounds().withMaxBytesUpperBound(upperBound.getAsLong())
+        : getSszLengthBounds();
+  }
+
+  protected void validateNetworkSszLengthBytesUpperBound() {
+    computeNetworkSszLengthBounds();
   }
 
   @Override
@@ -363,5 +553,43 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public String toString() {
     return getContainerName();
+  }
+
+  // ===== Store/load backing nodes (progressive override) =====
+
+  @Override
+  public void storeChildNode(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long gIndex,
+      final TreeNode node) {
+    if (isProgressiveMode()) {
+      throw new UnsupportedOperationException(
+          "Store/load backing nodes not yet supported for progressive containers");
+    }
+    SszContainerSchema.super.storeChildNode(nodeStore, maxBranchLevelsSkipped, gIndex, node);
+  }
+
+  @Override
+  public void storeBackingNodes(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    if (isProgressiveMode()) {
+      throw new UnsupportedOperationException(
+          "Store/load backing nodes not yet supported for progressive containers");
+    }
+    SszContainerSchema.super.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+    if (isProgressiveMode()) {
+      throw new UnsupportedOperationException(
+          "Store/load backing nodes not yet supported for progressive containers");
+    }
+    return SszContainerSchema.super.loadBackingNodes(nodeSource, rootHash, rootGIndex);
   }
 }

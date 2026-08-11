@@ -13,10 +13,15 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengthNode;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableArrayTypeDefinition;
@@ -25,9 +30,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszPackedByteListsHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszSuperNodeHint;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil.TargetDepthNodeHandler;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
@@ -35,7 +43,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
-import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedByteListsNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
@@ -50,6 +58,8 @@ public abstract class AbstractSszListSchema<
   private final SszVectorSchemaImpl<ElementDataT> compatibleVectorSchema;
   private final SszLengthBounds sszLengthBounds;
   private final DeserializableTypeDefinition<SszListT> jsonTypeDefinition;
+  // null when the SszPackedByteListsHint is not present
+  private final SszByteListSchema<?> packedByteListElementSchema;
 
   protected AbstractSszListSchema(
       final SszSchema<ElementDataT> elementSchema, final long maxLength) {
@@ -61,12 +71,48 @@ public abstract class AbstractSszListSchema<
       final long maxLength,
       final SszSchemaHints hints) {
     super(maxLength, elementSchema, hints);
+    if (hints.getHint(SszPackedByteListsHint.class).isPresent()) {
+      checkArgument(
+          !(elementSchema instanceof SszProgressiveByteListSchema),
+          "SszPackedByteListsHint on a fixed list requires a fixed byte list element schema but got %s",
+          elementSchema);
+      checkArgument(
+          elementSchema instanceof SszByteListSchema,
+          "SszPackedByteListsHint requires a byte list element schema but got %s",
+          elementSchema);
+      checkArgument(
+          maxLength >= 2, "SszPackedByteListsHint requires maxLength >= 2 but got %s", maxLength);
+      this.packedByteListElementSchema = (SszByteListSchema<?>) elementSchema;
+    } else {
+      this.packedByteListElementSchema = null;
+    }
     this.compatibleVectorSchema =
         new SszVectorSchemaImpl<>(elementSchema, getMaxLength(), true, getHints());
     this.sszLengthBounds = computeSszLengthBounds(elementSchema, maxLength);
     this.jsonTypeDefinition =
         new DeserializableArrayTypeDefinition<>(
             getElementSchema().getJsonTypeDefinition(), this::createFromElements);
+  }
+
+  @Override
+  public TreeNode createTreeFromElements(final List<? extends ElementDataT> elements) {
+    if (packedByteListElementSchema == null || elements.isEmpty()) {
+      return SszListSchema.super.createTreeFromElements(elements);
+    }
+    checkArgument(
+        elements.size() <= getMaxLength(),
+        "Too many elements for this collection type (max length %s, size %s)",
+        getMaxLength(),
+        elements.size());
+    final PackedByteListsUtil.PackedElements packed = PackedByteListsUtil.packElements(elements);
+    final SszPackedByteListsNode packedNode =
+        new SszPackedByteListsNode(
+            packed.sszBytes(),
+            packed.offsets(),
+            packedByteListElementSchema.treeDepth(),
+            treeDepth(),
+            this::materializePackedElement);
+    return createTree(packedNode, elements.size());
   }
 
   @Override
@@ -103,6 +149,9 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
+    if (getVectorNode(node) instanceof SszPackedByteListsNode packedNode) {
+      return packedNode.getSszBytes().size();
+    }
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
@@ -129,10 +178,14 @@ public abstract class AbstractSszListSchema<
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl serialization is only supported by SszBitlistSchema");
-    } else {
-      return getCompatibleVectorSchema()
-          .sszSerializeVector(getVectorNode(node), writer, elementsCount);
     }
+    if (getVectorNode(node) instanceof SszPackedByteListsNode packedNode) {
+      final Bytes sszBytes = packedNode.getSszBytes();
+      writer.write(sszBytes);
+      return sszBytes.size();
+    }
+    return getCompatibleVectorSchema()
+        .sszSerializeVector(getVectorNode(node), writer, elementsCount);
   }
 
   @Override
@@ -140,9 +193,39 @@ public abstract class AbstractSszListSchema<
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl deserialization is only supported by SszBitlistSchema");
-    } else {
-      DeserializedData data = sszDeserializeVector(reader);
-      return createTree(data.getDataTree(), data.getChildrenCount());
+    }
+    if (packedByteListElementSchema != null) {
+      return sszDeserializePacked(reader);
+    }
+    DeserializedData data = sszDeserializeVector(reader);
+    return createTree(data.getDataTree(), data.getChildrenCount());
+  }
+
+  private TreeNode sszDeserializePacked(final SszReader reader) {
+    final int endOffset = reader.getAvailableBytes();
+    if (endOffset == 0) {
+      return createDefaultTree();
+    }
+    final Bytes bytes = reader.read(endOffset);
+    final int[] offsets = parsePackedOffsets(bytes);
+    final SszPackedByteListsNode packedNode =
+        new SszPackedByteListsNode(
+            bytes,
+            offsets,
+            packedByteListElementSchema.treeDepth(),
+            treeDepth(),
+            this::materializePackedElement);
+    return createTree(packedNode, packedNode.getElementCount());
+  }
+
+  private int[] parsePackedOffsets(final Bytes bytes) {
+    return PackedByteListsUtil.parsePackedOffsets(
+        bytes, getMaxLength(), packedByteListElementSchema.getMaxLength());
+  }
+
+  private TreeNode materializePackedElement(final Bytes elementSsz) {
+    try (SszReader elementReader = SszReader.fromBytes(elementSsz)) {
+      return getElementSchema().sszDeserializeTree(elementReader);
     }
   }
 
@@ -193,6 +276,10 @@ public abstract class AbstractSszListSchema<
       return;
     }
     final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length, superNodeDepth);
+    // NOTE: storing SszSuperNodes via storeLeafNode is unsound for payloads <= 32 bytes: stores
+    // assume a leaf's root equals rightPad(data) and skip persisting them (see
+    // KvStoreTreeNodeStore.storeLeafNode), which does not hold for computed-root data nodes.
+    // Left as-is: no production schema currently stores supernode-hinted structures.
     final TargetDepthNodeHandler targetDepthNodeHandler =
         superNodeDepth == 0
             ? (targetDepthNode, targetDepthGIndex) ->
@@ -278,27 +365,6 @@ public abstract class AbstractSszListSchema<
             lastUsefulGIndex,
             childLoader);
     return BranchNode.create(vectorNode, toLengthNode(length));
-  }
-
-  private static TreeNode toLengthNode(final int length) {
-    return length == 0
-        ? LeafNode.ZERO_LEAVES[8]
-        : LeafNode.create(Bytes.ofUnsignedLong(length, ByteOrder.LITTLE_ENDIAN));
-  }
-
-  private static long fromLengthNode(final TreeNode lengthNode) {
-    assert lengthNode instanceof LeafNode;
-    return ((LeafNode) lengthNode).getData().toLong(ByteOrder.LITTLE_ENDIAN);
-  }
-
-  protected static int getLength(final TreeNode listNode) {
-    long longLength = fromLengthNode(listNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
-    assert longLength < Integer.MAX_VALUE;
-    return (int) longLength;
-  }
-
-  protected static TreeNode getVectorNode(final TreeNode listNode) {
-    return listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
   @Override

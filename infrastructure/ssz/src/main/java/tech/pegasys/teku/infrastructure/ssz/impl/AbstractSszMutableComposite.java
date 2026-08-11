@@ -180,11 +180,23 @@ public abstract class AbstractSszMutableComposite<
               // pre-fill the read cache with changed values
               .peek(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableData.getBackingNode();
-      TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
-      TreeNode newBackingTree = originalBackingTree.updated(changes);
-      TreeNode finalBackingTree = doFinalTreeUpdates(newBackingTree);
+      TreeNode finalBackingTree = applyTreeChanges(changesList, originalBackingTree);
       return createImmutableSszComposite(finalBackingTree, cache);
     }
+  }
+
+  /**
+   * Applies all child changes to the backing tree and returns the final tree node. Subclasses can
+   * override this to implement custom tree update logic (e.g. progressive trees with mixed-depth
+   * generalized indices). The default implementation chains {@link #changesToNewNodes} → {@link
+   * TreeNode#updated} → {@link #doFinalTreeUpdates}.
+   */
+  protected TreeNode applyTreeChanges(
+      final Stream<Map.Entry<Integer, SszChildT>> newChildValues,
+      final TreeNode originalBackingTree) {
+    TreeUpdates changes = changesToNewNodes(newChildValues, originalBackingTree);
+    TreeNode newBackingTree = originalBackingTree.updated(changes);
+    return doFinalTreeUpdates(newBackingTree);
   }
 
   protected TreeNode doFinalTreeUpdates(final TreeNode updatedTree) {

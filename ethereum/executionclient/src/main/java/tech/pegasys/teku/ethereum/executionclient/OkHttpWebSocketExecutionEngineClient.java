@@ -196,7 +196,7 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
     @Override
     public void onFailure(final WebSocket ws, final Throwable t, final okhttp3.Response response) {
       LOG.warn("WebSocket connection failure", t);
-      handleDisconnect(t);
+      handleDisconnect(ws, t);
     }
 
     @Override
@@ -207,11 +207,15 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
     @Override
     public void onClosed(final WebSocket ws, final int code, final String reason) {
       LOG.debug("WebSocket connection closed: {} {}", code, reason);
-      handleDisconnect(new Exception("WebSocket closed: " + code + " " + reason));
+      handleDisconnect(ws, new Exception("WebSocket closed: " + code + " " + reason));
     }
 
-    private void handleDisconnect(final Throwable cause) {
-      synchronized (this) {
+    private void handleDisconnect(final WebSocket ws, final Throwable cause) {
+      synchronized (OkHttpWebSocketExecutionEngineClient.this) {
+        if (!ws.equals(webSocket)) {
+          LOG.debug("Ignoring disconnect from stale WebSocket");
+          return;
+        }
         connected.set(false);
         pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
         pendingRequests.clear();

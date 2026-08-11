@@ -114,6 +114,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
         .flatMap(DataColumnSamplingTracker::getBlock);
   }
 
+  @Override
+  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
+    return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
+        .map(DataColumnSamplingTracker::slot);
+  }
+
   /**
    * When syncing or backfilling always make sure to call this method with known DataColumn *before*
    * calling {@link DasSamplerBasic#checkDataAvailability(UInt64, Bytes32)} so that RPC fetch won't
@@ -329,6 +335,19 @@ public class DasSamplerBasicImpl implements DasSamplerBasic, SlotEventsChannel {
 
     // For non-deferred forks, block import already required data availability to be satisfied.
     return true;
+  }
+
+  @Override
+  public boolean isDataAvailable(final SignedBeaconBlock block) {
+    // if there are no blobs for this block, consider the data as available
+    if (!hasBlobs(block.getMessage())) {
+      return true;
+    }
+    if (isDataAvailabilityAlreadySatisfied(block.getSlot(), block.getRoot())) {
+      return true;
+    }
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(block.getRoot());
+    return tracker != null && tracker.completionFuture().isCompletedNormally();
   }
 
   private boolean isInCustodyPeriod(final BeaconBlock block) {

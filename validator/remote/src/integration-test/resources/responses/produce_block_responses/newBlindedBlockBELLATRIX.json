@@ -1,8 +1,8 @@
 {
   "version": "bellatrix",
   "execution_payload_blinded": true,
-  "execution_payload_value": "73092283800700793286468708950267523415056945357667839430375913972420161943176",
-  "consensus_block_value": "110698795530499877737280254001850075711411497370695181962707136225646562110",
+  "execution_payload_value": "12345",
+  "consensus_block_value": "123000000000",
   "data": {
     "slot": "1",
     "proposer_index": "4666673844721362956",

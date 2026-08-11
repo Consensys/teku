@@ -118,8 +118,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.BlobKzgCommitmentsProvider;
@@ -131,6 +131,7 @@ import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -294,7 +295,9 @@ public class Eth2P2PNetworkFactory {
 
         if (rpcEncoding == null) {
           rpcEncoding =
-              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
+              RpcEncoding.createSszSnappyEncoding(
+                  spec.getNetworkingConfig().getMaxPayloadSize(),
+                  config.isRpcSnappyAircompressorEnabled());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final int numberOfColumns = spec.getNumberOfDataColumns().orElse(0);
@@ -425,6 +428,7 @@ public class Eth2P2PNetworkFactory {
                                 NodeIdToDataColumnSidecarSubnetsCalculator.create(
                                     spec, currentSlotSupplier),
                                 gossipNetwork,
+                                eth2PeerManager,
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,
                                 syncCommitteeSubnetService,
@@ -735,7 +739,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create();
-        BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
+        ChainBuilder chainBuilder = ChainBuilder.create(spec);
+        ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
+        chainUpdater.initializeGenesis();
       }
       if (processedAttestationSubscriptionProvider == null) {
         Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);

@@ -16,9 +16,9 @@ package tech.pegasys.teku.services.executionlayer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_ALWAYS_KEYWORD;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_BID_COMPARE_FACTOR;
+import static tech.pegasys.teku.spec.executionlayer.BuilderBoostFactorEvaluator.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -88,19 +88,6 @@ public class ExecutionLayerConfigurationTest {
     final ExecutionLayerConfiguration.Builder builder1 = configBuilder.specProvider(bellatrixSpec);
     assertThat(builder1.build().getBuilderBidCompareFactor())
         .isEqualByComparingTo(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
-  }
-
-  @Test
-  public void shouldUseNewEngineApiClientByDefault() {
-    final ExecutionLayerConfiguration config = configBuilder.specProvider(bellatrixSpec).build();
-    assertThat(config.isUseNewEngineApiClient()).isTrue();
-  }
-
-  @Test
-  public void shouldAllowDisablingNewEngineApiClient() {
-    final ExecutionLayerConfiguration config =
-        configBuilder.specProvider(bellatrixSpec).useNewEngineApiClient(false).build();
-    assertThat(config.isUseNewEngineApiClient()).isFalse();
   }
 
   @Test

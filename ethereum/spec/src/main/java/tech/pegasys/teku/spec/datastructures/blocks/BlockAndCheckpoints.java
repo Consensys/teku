@@ -26,17 +26,32 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 public class BlockAndCheckpoints implements BeaconBlockSummary {
   private final SignedBeaconBlock block;
   private final BlockCheckpoints blockCheckpoints;
+  private final Optional<UInt64> executionBlockNumber;
+  private final Optional<UInt64> executionGasLimit;
 
   public BlockAndCheckpoints(
       final SignedBeaconBlock block, final BlockCheckpoints blockCheckpoints) {
+    this(block, blockCheckpoints, Optional.empty(), Optional.empty());
+  }
+
+  public BlockAndCheckpoints(
+      final SignedBeaconBlock block,
+      final BlockCheckpoints blockCheckpoints,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<UInt64> executionGasLimit) {
     this.block = block;
     this.blockCheckpoints = blockCheckpoints;
+    this.executionBlockNumber = executionBlockNumber;
+    this.executionGasLimit = executionGasLimit;
   }
 
   public static BlockAndCheckpoints fromBlockAndState(
       final Spec spec, final SignedBlockAndState blockAndState) {
     return new BlockAndCheckpoints(
-        blockAndState.getBlock(), spec.calculateBlockCheckpoints(blockAndState.getState()));
+        blockAndState.getBlock(),
+        spec.calculateBlockCheckpoints(blockAndState.getState()),
+        blockAndState.getExecutionBlockNumber(),
+        blockAndState.getExecutionGasLimit());
   }
 
   public SignedBeaconBlock getBlock() {
@@ -88,7 +103,8 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
   }
 
   public Optional<UInt64> getExecutionBlockNumber() {
-    return getExecutionPayload().map(ExecutionPayload::getBlockNumber);
+    return executionBlockNumber.or(
+        () -> getExecutionPayload().map(ExecutionPayload::getBlockNumber));
   }
 
   public Optional<Bytes32> getExecutionBlockHash() {
@@ -96,6 +112,10 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
         .map(ExecutionPayload::getBlockHash)
         // in Gloas, use the parent block hash from the bid, because the payload is processed later
         .or(() -> getExecutionPayloadBid().map(ExecutionPayloadBid::getParentBlockHash));
+  }
+
+  public Optional<UInt64> getExecutionGasLimit() {
+    return executionGasLimit.or(() -> getExecutionPayload().map(ExecutionPayload::getGasLimit));
   }
 
   @Override
@@ -108,12 +128,14 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
     }
     final BlockAndCheckpoints that = (BlockAndCheckpoints) o;
     return Objects.equals(block, that.block)
-        && Objects.equals(blockCheckpoints, that.blockCheckpoints);
+        && Objects.equals(blockCheckpoints, that.blockCheckpoints)
+        && Objects.equals(executionBlockNumber, that.executionBlockNumber)
+        && Objects.equals(executionGasLimit, that.executionGasLimit);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(block, blockCheckpoints);
+    return Objects.hash(block, blockCheckpoints, executionBlockNumber, executionGasLimit);
   }
 
   @Override
@@ -121,6 +143,8 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
     return MoreObjects.toStringHelper(this)
         .add("block", block)
         .add("blockCheckpoints", blockCheckpoints)
+        .add("executionBlockNumber", executionBlockNumber)
+        .add("executionGasLimit", executionGasLimit)
         .toString();
   }
 

@@ -344,7 +344,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("p2p-enabled", true);
     configMap.put("p2p-discovery-enabled", true);
     configMap.put("p2p-port", P2P_PORT);
-    configMap.put("Xp2p-quic-port", P2P_PORT + 1);
+    configMap.put("p2p-quic-port", P2P_PORT + 1);
     configMap.put("p2p-advertised-port", P2P_PORT);
     configMap.put("p2p-interface", "0.0.0.0");
     configMap.put("p2p-private-key-file", PRIVATE_KEY_FILE_PATH);
@@ -478,9 +478,7 @@ public class TekuNodeConfigBuilder {
     mustBe(NodeType.BEACON_NODE);
     configMap.put("Xinterop-enabled", false);
     LOG.debug("eth1-deposit-contract-address={}}", eth1Node.getDepositContractAddress().toString());
-    LOG.debug("eth1-endpoint={}", eth1Node.getInternalJsonRpcUrl());
     configMap.put("eth1-deposit-contract-address", eth1Node.getDepositContractAddress().toString());
-    configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
     return this;
   }
 

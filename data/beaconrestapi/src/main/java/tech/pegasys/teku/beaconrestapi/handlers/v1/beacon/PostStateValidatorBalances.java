@@ -23,14 +23,16 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.schemas.api.StateValidatorBalanceData;
 
 public class PostStateValidatorBalances extends RestApiEndpoint {
   private final ChainDataProvider chainDataProvider;
@@ -49,8 +51,13 @@ public class PostStateValidatorBalances extends RestApiEndpoint {
             .pathParam(PARAMETER_STATE_ID)
             .optionalRequestBody()
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
-            .response(SC_OK, "Request successful", GetStateValidatorBalances.RESPONSE_TYPE)
+            .response(
+                SC_OK,
+                "Request successful",
+                GetStateValidatorBalances.RESPONSE_TYPE,
+                EthereumTypes.sszResponseType())
             .withNotFoundResponse()
+            .withNotAcceptableResponse()
             .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -60,7 +67,7 @@ public class PostStateValidatorBalances extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<List<String>> validators = request.getOptionalRequestBody();
 
-    final SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<SszList<StateValidatorBalanceData>>>> future =
         chainDataProvider.getStateValidatorBalances(
             request.getPathParameter(PARAMETER_STATE_ID), validators.orElse(List.of()));
 

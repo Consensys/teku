@@ -22,17 +22,22 @@ import static org.mockito.Mockito.when;
 
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.nio.channels.ClosedChannelException;
+import java.time.Duration;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 
 class RpcResponseCallbackTest {
 
+  private static final String PROTOCOL_ID = "/eth2/beacon_chain/req/test/1/ssz_snappy";
+
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RpcStream rpcStream = mock(RpcStream.class);
 
   @SuppressWarnings("unchecked")
@@ -41,7 +46,24 @@ class RpcResponseCallbackTest {
   private final SszData data = mock(SszData.class);
 
   private final RpcResponseCallback<SszData> callback =
-      new RpcResponseCallback<>(rpcStream, responseEncoder);
+      new RpcResponseCallback<>(rpcStream, responseEncoder, asyncRunner, PROTOCOL_ID);
+
+  @Test
+  void shouldCloseStreamWhenResponseWriteDoesNotComplete() {
+    final SafeFuture<Void> writeFuture = new SafeFuture<>();
+    when(responseEncoder.encodeSuccessfulResponse(data)).thenReturn(Bytes.EMPTY);
+    when(rpcStream.writeBytes(any())).thenReturn(writeFuture);
+    when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
+
+    final SafeFuture<Void> responseFuture = callback.respond(data);
+
+    assertThat(responseFuture).isNotDone();
+
+    asyncRunner.executeQueuedActions();
+
+    verify(rpcStream).closeAbruptly();
+    assertThat(responseFuture).isCompletedExceptionally();
+  }
 
   @Test
   void shouldNotLogErrorWhenWriteFailsWithStopSending() {
@@ -108,6 +130,20 @@ class RpcResponseCallbackTest {
   }
 
   @Test
+  void completeWithUnexpectedErrorShouldNotWriteErrorResponseWhenStreamTimedOut() {
+    when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithUnexpectedError(
+          new RpcTimeoutException("No response write", Duration.ZERO));
+
+      verify(rpcStream, never()).writeBytes(any());
+      verify(rpcStream).closeAbruptly();
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
   void completeWithUnexpectedErrorShouldWriteErrorResponseForUnexpectedError() {
     when(responseEncoder.encodeErrorResponse(any())).thenReturn(Bytes.EMPTY);
     when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
@@ -136,6 +172,17 @@ class RpcResponseCallbackTest {
   @Test
   void completeWithErrorResponseShouldNotLogErrorWhenWriteFailsWithClosedChannel() {
     failErrorResponseWriteWith(new ClosedChannelException());
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
+      callback.completeWithErrorResponse(new RpcException.ServerErrorException());
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+  }
+
+  @Test
+  void completeWithErrorResponseShouldNotLogErrorWhenWriteFailsWithStreamClosed() {
+    failErrorResponseWriteWith(new StreamClosedException());
 
     try (final LogCaptor logCaptor = LogCaptor.forClass(RpcResponseCallback.class, Level.TRACE)) {
       callback.completeWithErrorResponse(new RpcException.ServerErrorException());

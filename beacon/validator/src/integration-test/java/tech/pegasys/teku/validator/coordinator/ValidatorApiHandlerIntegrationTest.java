@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
@@ -236,6 +237,7 @@ public class ValidatorApiHandlerIntegrationTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            DataAvailabilitySampler.NOOP,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,

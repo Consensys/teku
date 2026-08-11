@@ -156,7 +156,7 @@ public class InclusionListsBlockUpdater {
   private List<Bytes> getInclusionListTransactions(final List<InclusionList> inclusionLists) {
     return inclusionLists.stream()
         .map(InclusionList::getTransactions)
-        .flatMap(List::stream)
+        .flatMap(transactions -> transactions.stream())
         .map(SszByteListImpl::getBytes)
         .toList();
   }

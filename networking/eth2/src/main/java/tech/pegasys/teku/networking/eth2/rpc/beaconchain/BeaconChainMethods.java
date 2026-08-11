@@ -234,7 +234,7 @@ public class BeaconChainMethods {
             dataColumnSidecarArchiveReconstructor,
             dasLogger),
         createExecutionPayloadEnvelopesByRoot(
-            spec, asyncRunner, peerLookup, rpcEncoding, recentChainData, metricsSystem),
+            spec, asyncRunner, peerLookup, rpcEncoding, combinedChainDataClient, metricsSystem),
         createExecutionPayloadEnvelopesByRange(
             spec, asyncRunner, peerLookup, rpcEncoding, combinedChainDataClient, metricsSystem),
         createInclusionListByCommitteeIndices(
@@ -579,7 +579,7 @@ public class BeaconChainMethods {
           final AsyncRunner asyncRunner,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
-          final RecentChainData recentChainData,
+          final CombinedChainDataClient combinedChainDataClient,
           final MetricsSystem metricsSystem) {
 
     if (!spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
@@ -593,11 +593,14 @@ public class BeaconChainMethods {
 
     final RpcContextCodec<Bytes4, SignedExecutionPayloadEnvelope> forkDigestContextCodec =
         RpcContextCodec.forkDigest(
-            spec, recentChainData, ForkDigestPayloadContext.SIGNED_EXECUTION_PAYLOAD_ENVELOPE);
+            spec,
+            combinedChainDataClient.getRecentChainData(),
+            ForkDigestPayloadContext.SIGNED_EXECUTION_PAYLOAD_ENVELOPE);
 
     final ExecutionPayloadEnvelopesByRootMessageHandler
         executionPayloadEnvelopesByRootMessageHandler =
-            new ExecutionPayloadEnvelopesByRootMessageHandler(spec, recentChainData, metricsSystem);
+            new ExecutionPayloadEnvelopesByRootMessageHandler(
+                spec, combinedChainDataClient, metricsSystem);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -640,7 +643,7 @@ public class BeaconChainMethods {
     final ExecutionPayloadEnvelopesByRangeMessageHandler
         executionPayloadEnvelopesByRangeMessageHandler =
             new ExecutionPayloadEnvelopesByRangeMessageHandler(
-                getSpecConfigGloas(spec), metricsSystem, combinedChainDataClient);
+                spec, getSpecConfigGloas(spec), metricsSystem, combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

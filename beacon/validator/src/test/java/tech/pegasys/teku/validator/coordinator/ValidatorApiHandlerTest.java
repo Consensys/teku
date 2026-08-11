@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -36,6 +37,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL;
 import static tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
@@ -57,6 +59,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -102,6 +105,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -113,10 +117,12 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
@@ -170,6 +176,8 @@ class ValidatorApiHandlerTest {
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+  private final DataAvailabilitySampler dataAvailabilitySampler =
+      mock(DataAvailabilitySampler.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
   private final ExecutionPayloadFactory executionPayloadFactory =
@@ -238,6 +246,7 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
@@ -536,6 +545,7 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            dataAvailabilitySampler,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
@@ -659,27 +669,39 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void onBlockProductionPreparationDue_shouldPrepareBlock() {
+  public void onBlockProductionPreparationDue_shouldReusePreparedChainHeadWhenCreatingBlock() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
-
-    mockRequiredMethodsForBlockProduction(blockSlotState, newSlot);
-
-    validatorApiHandler.onBlockProductionPreparationDue(newSlot);
+    final ChainHead selectedChainHead = mock(ChainHead.class);
+    final Bytes32 parentRoot =
+        mockRequiredMethodsForBlockProduction(
+            selectedChainHead, blockSlotState, newSlot, PAYLOAD_STATUS_FULL);
 
     when(blockFactory.createUnsignedBlock(any()))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
-    SafeFuture<Optional<BlockContainerAndMetaData>> result =
+    validatorApiHandler.onBlockProductionPreparationDue(newSlot);
+
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
 
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
 
-    verify(chainDataClient).getStateForBlockProduction(eq(chainHead), eq(newSlot));
+    verify(forkChoiceTrigger).prepareForBlockProduction(eq(newSlot), any());
+    verify(chainDataClient).getStateForBlockProduction(same(selectedChainHead), eq(newSlot));
+
+    final ArgumentCaptor<BlockProductionContext> blockProductionContextCaptor =
+        ArgumentCaptor.forClass(BlockProductionContext.class);
+    verify(blockFactory).createUnsignedBlock(blockProductionContextCaptor.capture());
+
+    final BlockProductionContext blockProductionContext = blockProductionContextCaptor.getValue();
+    assertThat(blockProductionContext.blockSlotState()).isSameAs(blockSlotState);
+    assertThat(blockProductionContext.parentRoot()).isEqualTo(parentRoot);
+    assertThat(blockProductionContext.parentPayloadStatus()).isEqualTo(PAYLOAD_STATUS_FULL);
   }
 
   @Test
@@ -745,7 +767,7 @@ class ValidatorApiHandlerTest {
             spec.getGenericAttestationData(
                 slot,
                 blockAndState.getState(),
-                blockAndState.getBlock().getRoot(),
+                blockAndState.getBlock(),
                 UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getIndex()).isEqualTo(ZERO);
     assertThat(attestationData.getSlot()).isEqualTo(slot);
@@ -789,7 +811,10 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
-                slot, attesterHeadBlockAndState.getState(), attesterHeadRoot, ONE));
+                slot,
+                attesterHeadBlockAndState.getState(),
+                attesterHeadBlockAndState.getBlock(),
+                ONE));
   }
 
   @Test
@@ -841,7 +866,7 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
-                slot, rightState, block.getRoot(), UInt64.valueOf(committeeIndex)));
+                slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getIndex()).isEqualTo(ZERO);
     assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
@@ -1413,13 +1438,38 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
     final PublishSignedExecutionPayloadResult publishResult =
         PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
-    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+    when(executionPayloadPublisher.publishSignedExecutionPayload(
+            eq(signedExecutionPayload), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(publishResult));
 
-    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+    assertThat(
+            validatorApiHandler.publishSignedExecutionPayload(
+                signedExecutionPayload, Optional.empty()))
         .isCompletedWithValue(publishResult);
 
-    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+    verify(executionPayloadPublisher)
+        .publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldPublishWithBroadcastValidationLevel() {
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult publishResult =
+        PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
+    final Optional<BroadcastValidationLevel> broadcastValidationLevel = Optional.of(GOSSIP);
+
+    when(executionPayloadPublisher.publishSignedExecutionPayload(
+            eq(signedExecutionPayload), eq(broadcastValidationLevel)))
+        .thenReturn(SafeFuture.completedFuture(publishResult));
+
+    assertThat(
+            validatorApiHandler.publishSignedExecutionPayload(
+                signedExecutionPayload, broadcastValidationLevel))
+        .isCompletedWithValue(publishResult);
+
+    verify(executionPayloadPublisher)
+        .publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel);
   }
 
   @Test
@@ -1429,13 +1479,17 @@ class ValidatorApiHandlerTest {
     final PublishSignedExecutionPayloadResult failedResult =
         PublishSignedExecutionPayloadResult.rejected(
             signedExecutionPayload.getBeaconBlockRoot(), "oopsy");
-    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+    when(executionPayloadPublisher.publishSignedExecutionPayload(
+            eq(signedExecutionPayload), eq(Optional.empty())))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+    assertThat(
+            validatorApiHandler.publishSignedExecutionPayload(
+                signedExecutionPayload, Optional.empty()))
         .isCompletedWithValue(failedResult);
 
-    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+    verify(executionPayloadPublisher)
+        .publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
   }
 
   @Test
@@ -1498,6 +1552,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
         .thenReturn(true);
+    when(dataAvailabilitySampler.isDataAvailable(block)).thenReturn(true);
 
     final Optional<PayloadAttestationData> result =
         SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
@@ -1508,30 +1563,7 @@ class ValidatorApiHandlerTest {
               assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
               assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
               assertThat(payloadAttestationData.isPayloadPresent()).isTrue();
-              assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
-            });
-  }
-
-  @Test
-  public void createPayloadAttestationData_shouldSetPayloadPresentFalseWhenPayloadWasNotEarly() {
-    final UInt64 newSlot = UInt64.valueOf(25);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(newSlot);
-
-    when(chainDataClient.getBlockAtSlotExact(eq(newSlot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot()))
-        .thenReturn(false);
-
-    final Optional<PayloadAttestationData> result =
-        SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
-
-    assertThat(result)
-        .hasValueSatisfying(
-            payloadAttestationData -> {
-              assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
-              assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
-              assertThat(payloadAttestationData.isPayloadPresent()).isFalse();
-              assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
+              assertThat(payloadAttestationData.isBlobDataAvailable()).isTrue();
             });
   }
 
@@ -1547,6 +1579,7 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isEmpty();
     verify(executionPayloadManager, never()).isExecutionPayloadSeenBeforeDeadline(any());
+    verify(dataAvailabilitySampler, never()).isDataAvailable(any());
   }
 
   @Test
@@ -1563,11 +1596,24 @@ class ValidatorApiHandlerTest {
 
   private void mockRequiredMethodsForBlockProduction(
       final BeaconState blockSlotState, final UInt64 newSlot) {
-    when(chainDataClient.getStateForBlockProduction(eq(chainHead), eq(newSlot)))
+    mockRequiredMethodsForBlockProduction(
+        chainHead, blockSlotState, newSlot, PAYLOAD_STATUS_PENDING);
+  }
+
+  private Bytes32 mockRequiredMethodsForBlockProduction(
+      final ChainHead chainHead,
+      final BeaconState blockSlotState,
+      final UInt64 newSlot,
+      final ForkChoicePayloadStatus payloadStatus) {
+    when(forkChoiceTrigger.prepareForBlockProduction(eq(newSlot), any()))
+        .thenReturn(SafeFuture.completedFuture(chainHead));
+    when(chainDataClient.getStateForBlockProduction(same(chainHead), eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(blockSlotState));
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.decrement());
     when(chainHead.getRoot()).thenReturn(parentRoot);
-    when(chainHead.getForkChoiceNode()).thenReturn(ForkChoiceNode.createBase(parentRoot));
+    when(chainHead.getForkChoiceNode()).thenReturn(new ForkChoiceNode(parentRoot, payloadStatus));
+    when(chainHead.getPayloadStatus()).thenReturn(payloadStatus);
+    return parentRoot;
   }
 
   private boolean validatorIsLive(

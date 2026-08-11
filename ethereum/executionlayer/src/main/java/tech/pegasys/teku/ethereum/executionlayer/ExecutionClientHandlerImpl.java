@@ -26,6 +26,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.WithdrawalV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -39,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -229,7 +229,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(
             response -> {
-              final TransactionSchema transactionSchema =
+              final SszByteListSchema<Transaction> transactionSchema =
                   SchemaDefinitionsHeze.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getInclusionListSchema()
                       .getTransactionSchema();

@@ -24,10 +24,14 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCH
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.ProgressiveSchemaUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
@@ -38,9 +42,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -63,14 +70,41 @@ public class BeaconStateSchemaGloas
   public static final int PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX = 44;
   public static final int PTC_WINDOW_INDEX = 45;
 
+  private static final boolean[] ACTIVE_FIELDS =
+      ProgressiveSchemaUtils.allActive(PTC_WINDOW_INDEX + 1);
+
+  // Inline (non-registry) BeaconState list fields converted to progressive here. Registry-backed
+  // list fields (pending_*, historical_summaries, builder_pending_withdrawals) become progressive
+  // via their GLOAS registry creators; common list fields (validators/balances/eth1_data_votes) via
+  // BeaconStateFields.getCommonFields; payload_expected_withdrawals is already progressive (it
+  // reuses
+  // the Gloas execution payload's withdrawals schema).
+  private static final Set<String> PROGRESSIVE_INLINE_LIST_FIELD_NAMES =
+      Stream.of(
+              BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
+              BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
+              BeaconStateFields.INACTIVITY_SCORES,
+              BeaconStateFields.BUILDERS)
+          .map(BeaconStateFields::getSszFieldName)
+          .collect(Collectors.toSet());
+
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     this("BeaconStateGloas", specConfig, schemaRegistry);
   }
 
-  private BeaconStateSchemaGloas(
+  protected BeaconStateSchemaGloas(
       final String schemaName, final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    super(schemaName, getUniqueFields(specConfig, schemaRegistry), specConfig);
+    super(schemaName, ACTIVE_FIELDS, getUniqueFields(specConfig, schemaRegistry), specConfig);
+  }
+
+  private static SszField toProgressiveListFieldIfListed(final SszField field) {
+    if (!PROGRESSIVE_INLINE_LIST_FIELD_NAMES.contains(field.getName())) {
+      return field;
+    }
+    final SszSchema<?> progressiveSchema =
+        BeaconStateFields.toProgressiveListSchema((SszListSchema<?, ?>) field.getSchema().get());
+    return new SszField(field.getIndex(), field.getName(), () -> progressiveSchema);
   }
 
   private static List<SszField> getUniqueFields(
@@ -129,6 +163,7 @@ public class BeaconStateSchemaGloas
                       }
                     }),
             newFields.stream())
+        .map(BeaconStateSchemaGloas::toProgressiveListFieldIfListed)
         .toList();
   }
 
@@ -214,11 +249,6 @@ public class BeaconStateSchemaGloas
     return new BeaconStateSchemaGloas(specConfig, schemaRegistry);
   }
 
-  public static BeaconStateSchemaGloas create(
-      final String schemaName, final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return new BeaconStateSchemaGloas(schemaName, specConfig, schemaRegistry);
-  }
-
   public static BeaconStateSchemaGloas required(final BeaconStateSchema<?, ?> schema) {
     checkArgument(
         schema instanceof BeaconStateSchemaGloas,
@@ -230,6 +260,13 @@ public class BeaconStateSchemaGloas
   @Override
   public BeaconStateGloas createEmpty() {
     return createEmptyBeaconStateImpl();
+  }
+
+  public BeaconStateGloas createEmptyWithTransitionCachesFrom(final BeaconState sourceState) {
+    return new BeaconStateGloasImpl(
+        this,
+        BeaconStateCache.getTransitionCaches(sourceState).copy(),
+        SlotCaches.createNewEmpty());
   }
 
   private BeaconStateGloasImpl createEmptyBeaconStateImpl() {

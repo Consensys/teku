@@ -86,7 +86,8 @@ public interface OperationProcessor {
   void processParentExecutionPayload(MutableBeaconState state, BeaconBlock beaconBlock)
       throws BlockProcessingException;
 
-  void processExecutionPayloadBid(MutableBeaconState state, SignedExecutionPayloadBid signedBid)
+  void processExecutionPayloadBid(
+      MutableBeaconState state, SignedExecutionPayloadBid executionPayloadBid)
       throws BlockProcessingException;
 
   void processPayloadAttestation(MutableBeaconState state, PayloadAttestation payloadAttestation)

@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -36,7 +37,14 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
 
   public SszByteListSchemaImpl(
       final SszPrimitiveSchema<Byte, SszByte> elementSchema, final long maxLength) {
-    super(elementSchema, maxLength);
+    this(elementSchema, maxLength, SszSchemaHints.none());
+  }
+
+  public SszByteListSchemaImpl(
+      final SszPrimitiveSchema<Byte, SszByte> elementSchema,
+      final long maxLength,
+      final SszSchemaHints hints) {
+    super(elementSchema, maxLength, hints);
     this.jsonTypeDefinition =
         elementSchema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)
             ? SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ encoded byte list")

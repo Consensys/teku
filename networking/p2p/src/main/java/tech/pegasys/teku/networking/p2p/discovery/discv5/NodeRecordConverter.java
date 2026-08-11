@@ -49,26 +49,42 @@ public class NodeRecordConverter {
       final NodeRecord nodeRecord,
       final boolean supportsIpv6,
       final SchemaDefinitions schemaDefinitions) {
+    return convertToDiscoveryPeer(nodeRecord, supportsIpv6, schemaDefinitions, Optional.empty());
+  }
+
+  public Optional<DiscoveryPeer> convertToDiscoveryPeer(
+      final NodeRecord nodeRecord,
+      final boolean supportsIpv6,
+      final SchemaDefinitions schemaDefinitions,
+      final Optional<Integer> maxDasCustodyGroupCount) {
     final Optional<InetSocketAddress> tcpAddress;
     final Optional<InetSocketAddress> quicAddress;
-    if (supportsIpv6) {
-      // prefer IPv6 address
-      tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
-      quicAddress = nodeRecord.getQuic6Address().or(nodeRecord::getQuicAddress);
-    } else {
-      tcpAddress = nodeRecord.getTcpAddress();
-      quicAddress = nodeRecord.getQuicAddress();
+    try {
+      if (supportsIpv6) {
+        // prefer IPv6 address
+        tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
+        quicAddress = nodeRecord.getQuic6Address().or(nodeRecord::getQuicAddress);
+      } else {
+        tcpAddress = nodeRecord.getTcpAddress();
+        quicAddress = nodeRecord.getQuicAddress();
+      }
+    } catch (final RuntimeException e) {
+      // A single malformed record (e.g. an out-of-range port) must not drop the rest of the batch.
+      LOG.debug("Ignoring node record with unusable address: {}", nodeRecord, e);
+      return Optional.empty();
     }
     return tcpAddress.map(
         address ->
-            socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address, quicAddress));
+            socketAddressToDiscoveryPeer(
+                schemaDefinitions, nodeRecord, address, quicAddress, maxDasCustodyGroupCount));
   }
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
       final SchemaDefinitions schemaDefinitions,
       final NodeRecord nodeRecord,
       final InetSocketAddress address,
-      final Optional<InetSocketAddress> quicAddress) {
+      final Optional<InetSocketAddress> quicAddress,
+      final Optional<Integer> maxDasCustodyGroupCount) {
 
     final Optional<EnrForkId> enrForkId =
         parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.SSZ_SCHEMA::sszDeserialize);
@@ -85,10 +101,11 @@ public class NodeRecordConverter {
         parseField(nodeRecord, SYNC_COMMITTEE_SUBNET_ENR_FIELD, syncnetsSchema::fromBytes)
             .orElse(syncnetsSchema.getDefault());
     final Optional<Integer> dasTotalCustodySubnetCount =
-        parseField(
-            nodeRecord,
-            DAS_CUSTODY_GROUP_COUNT_ENR_FIELD,
-            bytes -> UInt64.fromBytes(bytes).intValue());
+        parseField(nodeRecord, DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, UInt64::fromBytes)
+            .flatMap(
+                custodyGroupCount ->
+                    validateAndParseDasCustodyGroupCount(
+                        custodyGroupCount, maxDasCustodyGroupCount));
     final Optional<Bytes4> nextForkDigest =
         parseField(
                 nodeRecord,
@@ -106,6 +123,18 @@ public class NodeRecordConverter {
         syncCommitteeSubnets,
         dasTotalCustodySubnetCount,
         nextForkDigest);
+  }
+
+  private static Optional<Integer> validateAndParseDasCustodyGroupCount(
+      final UInt64 custodyGroupCount, final Optional<Integer> maxDasCustodyGroupCount) {
+    if (maxDasCustodyGroupCount.isEmpty()) {
+      return Optional.empty();
+    }
+    if (custodyGroupCount.compareTo(UInt64.valueOf(maxDasCustodyGroupCount.get())) > 0) {
+      return Optional.empty();
+    }
+
+    return Optional.of(custodyGroupCount.intValue());
   }
 
   private static <T> Optional<T> parseField(

@@ -17,10 +17,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -30,14 +32,16 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.schemas.api.StateValidatorBalanceData;
 
 class PostStateValidatorBalancesTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -59,7 +63,7 @@ class PostStateValidatorBalancesTest
             .build();
     request.setRequestBody(List.of("1", "2"));
 
-    final ObjectAndMetaData<List<StateValidatorBalanceData>> expectedData =
+    final ObjectAndMetaData<SszList<StateValidatorBalanceData>> expectedData =
         chainDataProvider.getStateValidatorBalances("head", List.of("1", "2")).get().orElseThrow();
 
     handler.handleRequest(request);
@@ -76,7 +80,7 @@ class PostStateValidatorBalancesTest
             .pathParameter("state_id", "head")
             .build();
 
-    final ObjectAndMetaData<List<StateValidatorBalanceData>> expectedData =
+    final ObjectAndMetaData<SszList<StateValidatorBalanceData>> expectedData =
         chainDataProvider.getStateValidatorBalances("head", List.of()).get().orElseThrow();
 
     handler.handleRequest(request);
@@ -96,19 +100,20 @@ class PostStateValidatorBalancesTest
   }
 
   @Test
+  void metadata_shouldHandle406() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_ACCEPTABLE);
+  }
+
+  @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    List<StateValidatorBalanceData> stateValidatorBalanceData = new ArrayList<>();
-    for (int i = 0; i < 10; i++) {
-      stateValidatorBalanceData.add(
-          new StateValidatorBalanceData(UInt64.valueOf(i), dataStructureUtil.randomUInt64()));
-    }
+    SszList<StateValidatorBalanceData> stateValidatorBalanceData = getValidatorBalanceList(10);
 
-    ObjectAndMetaData<List<StateValidatorBalanceData>> responseData =
+    ObjectAndMetaData<SszList<StateValidatorBalanceData>> responseData =
         withMetaData(stateValidatorBalanceData);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
@@ -118,6 +123,27 @@ class PostStateValidatorBalancesTest
                 GetStateValidatorBalancesTest.class, "getStateValidatorBalances.json"),
             UTF_8);
     assertThat(data).isEqualTo(expected);
+  }
+
+  @Test
+  void metadata_shouldHandle200OctetStream() throws JsonProcessingException {
+    SszList<StateValidatorBalanceData> stateValidatorBalanceData = getValidatorBalanceList(2);
+
+    ObjectAndMetaData<SszList<StateValidatorBalanceData>> responseData =
+        withMetaData(stateValidatorBalanceData);
+
+    final byte[] data = getResponseSszFromMetadata(handler, SC_OK, responseData);
+
+    assertThat(Bytes.of(data)).isEqualTo(stateValidatorBalanceData.sszSerialize());
+  }
+
+  private SszList<StateValidatorBalanceData> getValidatorBalanceList(final int count) {
+    List<StateValidatorBalanceData> stateValidatorBalanceData = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      stateValidatorBalanceData.add(
+          new StateValidatorBalanceData(UInt64.valueOf(i), dataStructureUtil.randomUInt64()));
+    }
+    return StateValidatorBalanceData.SSZ_LIST_SCHEMA.createFromElements(stateValidatorBalanceData);
   }
 
   @Test
