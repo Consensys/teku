@@ -65,6 +65,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
   private Optional<UInt64> genesisTime = Optional.empty();
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
+  private Optional<Cancellable> scheduledArchiver = Optional.empty();
 
   public DataColumnSidecarPruner(
       final Spec spec,
@@ -106,16 +107,24 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     scheduledPruner =
         Optional.of(
             asyncRunner.runWithFixedDelay(
-                this::pruneDataColumnSidecars,
+                this::doPruneDataColumnSidecars,
                 Duration.ZERO,
                 pruneInterval,
                 error -> LOG.error("Failed to prune old data column sidecars", error)));
+    scheduledArchiver =
+        Optional.of(
+            asyncRunner.runWithFixedDelay(
+                this::doArchiveDataColumnSidecars,
+                Duration.ZERO,
+                pruneInterval,
+                error -> LOG.error("Failed to archive data column sidecars to proofs", error)));
     return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     scheduledPruner.ifPresent(Cancellable::cancel);
+    scheduledArchiver.ifPresent(Cancellable::cancel);
     return SafeFuture.COMPLETE;
   }
 
@@ -123,11 +132,10 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
    * NOTE: the column pruning must not update earliestAvailableDataColumnSlot db variable. That
    * variable is fully maintained by DasCustodyBackfiller
    */
-  private void pruneDataColumnSidecars() {
-
+  private void doPruneDataColumnSidecars() {
     final Optional<UInt64> genesisTime = getGenesisTime();
     if (genesisTime.isEmpty()) {
-      LOG.debug("Not pruning as no genesis time is available.");
+      LOG.debug("Not pruning data column sidecars: no genesis time available yet.");
       return;
     }
 
@@ -136,52 +144,68 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     final UInt64 minCustodySlot = calculatePruneSlot();
     LOG.debug("Pruning data column sidecars before slot {}", minCustodySlot);
     database.pruneAllSidecars(minCustodySlot.minusMinZero(1), pruneLimit);
-
-    pruningTimingsLabelledGauge.set(System.currentTimeMillis() - start, pruningMetricsType);
+    final long elapsed = System.currentTimeMillis() - start;
+    pruningTimingsLabelledGauge.set(elapsed, pruningMetricsType);
     pruningActiveLabelledGauge.set(0, pruningMetricsType);
+    LOG.debug("Data column sidecars pruning completed in {} ms", elapsed);
+
     if (dataColumnSidecarsStorageCountersEnabled) {
       dataColumnSize.set(database.getSidecarColumnCount());
       earliestDataColumnSidecarSlot.set(
           database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
     }
+  }
 
-    if (lastDataColumnSidecarArchivePrunableSlot.get() > 0) {
-      final long tillSlotLong = lastDataColumnSidecarArchivePrunableSlot.get();
-      final long earliestSlotLong =
-          database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(0L);
-      if (earliestSlotLong > tillSlotLong) {
-        LOG.debug(
-            "No data column sidecars to archive: earliest stored slot {} is after prunable till slot {}",
-            earliestSlotLong,
-            tillSlotLong);
-        return;
-      }
-      final RangeSet<Long> unarchived =
-          archivedSlotRanges.complement().subRangeSet(Range.closed(earliestSlotLong, tillSlotLong));
-      if (unarchived.isEmpty()) {
-        LOG.debug(
-            "All data column sidecars up to slot {} have been archived to proofs", tillSlotLong);
-        return;
-      }
-      // Take the highest (most recent) unarchived range; ContiguousSet resolves inclusive bounds.
-      final Range<Long> highestGap = Iterables.getLast(unarchived.asRanges());
-      final ContiguousSet<Long> gapSlots = ContiguousSet.create(highestGap, DiscreteDomain.longs());
-      if (gapSlots.isEmpty()) {
-        return;
-      }
-      final long upper = gapSlots.last();
-      final long lower = Math.max(gapSlots.first(), upper - pruneLimit);
-      LOG.debug(
-          "Archiving data column sidecars to proofs from slot {} up to slot {} (limit {})",
-          lower,
-          upper,
-          pruneLimit);
-      database.archiveSidecarsProofs(UInt64.valueOf(lower), UInt64.valueOf(upper));
-      // Store as half-open [lower, upper+1) so adjacent chunks connect and merge in the RangeSet.
-      // Range<Long> is real-valued: [9,19] and [20,30] are not connected, which would leave a
-      // phantom gap (19,20) that is empty but gets picked as the highest unarchived range.
-      archivedSlotRanges.add(Range.closedOpen(lower, upper + 1L));
+  private void doArchiveDataColumnSidecars() {
+    final long tillSlotLong = lastDataColumnSidecarArchivePrunableSlot.get();
+    if (tillSlotLong < 0) {
+      LOG.debug("Not archiving data column sidecars: no prunable slot signal received yet.");
+      return;
     }
+
+    final long earliestSlotLong =
+        database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(0L);
+    if (earliestSlotLong > tillSlotLong) {
+      LOG.debug(
+          "No data column sidecars to archive: earliest stored slot {} is after prunable till slot {}",
+          earliestSlotLong,
+          tillSlotLong);
+      return;
+    }
+
+    final RangeSet<Long> unarchived =
+        archivedSlotRanges.complement().subRangeSet(Range.closed(earliestSlotLong, tillSlotLong));
+    if (unarchived.isEmpty()) {
+      LOG.debug(
+          "All data column sidecars up to slot {} have been archived to proofs", tillSlotLong);
+      return;
+    }
+
+    // Take the highest (most recent) unarchived range; ContiguousSet resolves inclusive bounds.
+    final Range<Long> highestGap = Iterables.getLast(unarchived.asRanges());
+    final ContiguousSet<Long> gapSlots = ContiguousSet.create(highestGap, DiscreteDomain.longs());
+    if (gapSlots.isEmpty()) {
+      return;
+    }
+    final long upper = gapSlots.last();
+    final long lower = Math.max(gapSlots.first(), upper - pruneLimit);
+    LOG.debug(
+        "Archiving data column sidecars to proofs from slot {} up to slot {} (limit {})",
+        lower,
+        upper,
+        pruneLimit);
+    final long start = System.currentTimeMillis();
+    database.archiveSidecarsProofs(UInt64.valueOf(lower), UInt64.valueOf(upper));
+    final long elapsed = System.currentTimeMillis() - start;
+    LOG.debug(
+        "Archiving data column sidecars to proofs completed in {} ms (from slot {} up to slot {})",
+        elapsed,
+        lower,
+        upper);
+    // Store as half-open [lower, upper+1) so adjacent chunks connect and merge in the RangeSet.
+    // Range<Long> is real-valued: [9,19] and [20,30] are not connected, which would leave a
+    // phantom gap (19,20) that is empty but gets picked as the highest unarchived range.
+    archivedSlotRanges.add(Range.closedOpen(lower, upper + 1L));
   }
 
   @Override
@@ -189,14 +213,11 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     lastDataColumnSidecarArchivePrunableSlot.set(slot.longValue());
   }
 
-  /**
-   * This method adds an extra epoch following the rational of the edge case found in the
-   * BlobSidecarPruner. See {@link
-   * tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner#getLatestPrunableSlot(UInt64)}
-   */
+  // Adds one extra epoch beyond custodyPeriodEpochs to avoid the edge case described in
+  // BlobSidecarPruner where the slot at the exact epoch boundary could be kept one epoch too long.
   private UInt64 calculatePruneSlot() {
     final UInt64 currentSlot =
-        spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime.get());
+        spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime.orElseThrow());
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
     final int custodyPeriodEpochs =
         spec.getSpecConfig(currentEpoch)

@@ -94,12 +94,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                       1,
                       DEFAULT_MAX_QUEUE_SIZE,
                       Thread.NORM_PRIORITY - 1);
-              final AsyncRunner dataColumnPrunerAsyncRunner =
-                  serviceConfig.createAsyncRunner(
-                      "dataColumnPrunerAsyncRunner",
-                      1,
-                      DEFAULT_MAX_QUEUE_SIZE,
-                      Thread.NORM_PRIORITY - 1);
               final VersionedDatabaseFactory dbFactory =
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
@@ -211,7 +205,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.getSpec(),
                             database,
                             serviceConfig.getMetricsSystem(),
-                            dataColumnPrunerAsyncRunner,
+                            storagePrunerAsyncRunner,
                             serviceConfig.getTimeProvider(),
                             config.getDataColumnPruningInterval(),
                             config.getDataColumnPruningLimit(),
