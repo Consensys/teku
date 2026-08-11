@@ -124,7 +124,7 @@ public class DataColumnSidecarPrunerTest {
     when(database.getEarliestDataColumnSidecarSlot()).thenReturn(Optional.of(UInt64.ZERO));
 
     dataColumnSidecarPruner.onSidecarArchivePrunableSlot(prunableSlot);
-    asyncRunner.executeDueActions();    // run 1: archives [10, 20]
+    asyncRunner.executeDueActions(); // run 1: archives [10, 20]
     asyncRunner.executeQueuedActions(); // run 2: archives [0, 9]
 
     verify(database).archiveSidecarsProofs(UInt64.valueOf(10), prunableSlot);
@@ -151,7 +151,7 @@ public class DataColumnSidecarPrunerTest {
     when(database.getEarliestDataColumnSidecarSlot()).thenReturn(Optional.of(UInt64.ZERO));
 
     dataColumnSidecarPruner.onSidecarArchivePrunableSlot(initialPrunableSlot);
-    asyncRunner.executeDueActions();    // run 1: archives [20, 30]
+    asyncRunner.executeDueActions(); // run 1: archives [20, 30]
     asyncRunner.executeQueuedActions(); // run 2: archives [9, 19]
     asyncRunner.executeQueuedActions(); // run 3: archives [0, 8]
 

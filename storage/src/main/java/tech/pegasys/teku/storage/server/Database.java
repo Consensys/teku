@@ -317,10 +317,10 @@ public interface Database extends AutoCloseable {
   void compactStorage();
 
   /**
-   * Archives the reconstructable extension data column sidecars (column indices >= NUMBER_OF_COLUMNS
-   * / 2) in [startSlot, tillSlotInclusive]: for each fully populated slot it persists their KZG
-   * proofs and drops the sidecars themselves, retaining only enough data to reconstruct them on
-   * demand.
+   * Archives the reconstructable extension data column sidecars (column indices >=
+   * NUMBER_OF_COLUMNS / 2) in [startSlot, tillSlotInclusive]: for each fully populated slot it
+   * persists their KZG proofs and drops the sidecars themselves, retaining only enough data to
+   * reconstruct them on demand.
    *
    * <p><b>Callers must submit small ranges.</b> There is no internal limit; the entire range is
    * scanned in a single pass. Use {@link
