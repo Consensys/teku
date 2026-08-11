@@ -145,6 +145,19 @@ public class DataColumnSidecarPrunerTest {
   }
 
   @Test
+  void shouldSkipArchivingWhenEarliestSlotIsAfterTillSlot() {
+    // Common on checkpoint-synced nodes: prunable boundary is before the earliest stored sidecar.
+    final UInt64 prunableSlot = UInt64.valueOf(100);
+    final UInt64 earliestStoredSlot = UInt64.valueOf(500);
+    when(database.getEarliestDataColumnSidecarSlot()).thenReturn(Optional.of(earliestStoredSlot));
+
+    dataColumnSidecarPruner.onSidecarArchivePrunableSlot(prunableSlot);
+    asyncRunner.executeDueActions();
+
+    verify(database, never()).archiveSidecarsProofs(any(), any());
+  }
+
+  @Test
   void shouldPrioritiseNewDeltaAfterTillSlotBump() {
     final UInt64 initialPrunableSlot = UInt64.valueOf(30);
     final UInt64 bumpedPrunableSlot = UInt64.valueOf(50);

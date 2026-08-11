@@ -149,6 +149,13 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
       final long tillSlotLong = lastDataColumnSidecarArchivePrunableSlot.get();
       final long earliestSlotLong =
           database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(0L);
+      if (earliestSlotLong > tillSlotLong) {
+        LOG.debug(
+            "No data column sidecars to archive: earliest stored slot {} is after prunable till slot {}",
+            earliestSlotLong,
+            tillSlotLong);
+        return;
+      }
       final RangeSet<Long> unarchived =
           archivedSlotRanges.complement().subRangeSet(Range.closed(earliestSlotLong, tillSlotLong));
       if (unarchived.isEmpty()) {
