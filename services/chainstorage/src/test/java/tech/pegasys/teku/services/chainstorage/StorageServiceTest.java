@@ -87,8 +87,7 @@ class StorageServiceTest {
         .thenReturn(stubAsyncRunner);
 
     storageService =
-        new StorageService(
-            serviceConfig, storageConfiguration, false, false, false, Optional.empty());
+        new StorageService(serviceConfig, storageConfiguration, false, false, Optional.empty());
   }
 
   @Test

@@ -113,19 +113,10 @@ public class ForkChoiceUtil {
    * <p>Returns whether {@code ancestor} is an ancestor of {@code node}, i.e. {@code ancestor} lies
    * on the chain from {@code node} at {@code ancestor}'s block slot.
    *
-   * <p>This base (phase0) form is the {@code is_ancestor#phase0} spec anchor and the default that
-   * {@code ForkChoiceUtilGloas#isAncestor} overrides. It has no pre-Gloas caller by design: in the
-   * spec, {@code is_ancestor} is consumed only by {@code get_weight}, to add proposer boost when a
-   * node is an ancestor of the proposer-boost node. Teku instead computes {@code get_weight} inside
-   * protoarray, folding the proposer-boost delta into each node's stored weight during {@code
-   * ProtoArray#applyScoreChanges}. That back-propagation realizes the ancestry condition
-   * implicitly, so the weight path needs no explicit {@code is_ancestor} call. The only explicit
-   * caller is the Gloas override, which runs the check in reverse to recover the attestation-only
-   * weight (via {@code ForkChoiceUtilGloas#getNodeAttestationWeight}); pre-Gloas {@code
-   * isHeadWeak}/{@code isParentStrong} read the already-boosted protoarray weight directly and
-   * never query ancestry. Since {@code ForkChoiceUtilGloas} overrides this method, even that
-   * reverse path dispatches to the override rather than here — so this base form is retained for
-   * spec fidelity and exercised only by its unit test.
+   * <p>This base (phase0) form is the {@code is_ancestor#phase0} spec anchor and the default
+   * overridden by {@code ForkChoiceUtilGloas#isAncestor}. Fast confirmation calls it explicitly
+   * when computing attestation support. Protoarray fork-choice scoring instead realizes the same
+   * ancestry relationship by propagating node weights to parents.
    */
   public boolean isAncestor(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,

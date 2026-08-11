@@ -492,28 +492,6 @@ public class StatusLogger {
             Color.RED));
   }
 
-  public void loadingDepositSnapshotResource(final String snapshotResource) {
-    log.info("Loading deposit tree snapshot from {}", snapshotResource);
-  }
-
-  public void loadingDepositSnapshotFromDb() {
-    log.info("Loading deposit tree snapshot from database");
-  }
-
-  public void onDepositSnapshot(final long deposits, final Bytes32 executionBlockHash) {
-    log.info(
-        "A deposit snapshot was read with {} deposits and {} execution block hash.",
-        deposits,
-        executionBlockHash);
-  }
-
-  public void loadedDepositSnapshot(final long deposits, final Bytes32 executionBlockHash) {
-    log.info(
-        "Loaded deposits tree state from snapshot with {} deposits and {} execution block hash.",
-        deposits,
-        executionBlockHash);
-  }
-
   public void warnIgnoringWeakSubjectivityPeriod() {
     log.warn(
         print(

@@ -96,11 +96,11 @@ dependencyManagement {
 
 		dependency 'org.awaitility:awaitility:4.3.0'
 
-		dependencySet(group: 'org.bouncycastle', version: '1.84') {
-			entry 'bcprov-jdk18on'
+		dependencySet(group: 'org.bouncycastle', version: '1.85') {
 			entry 'bcpkix-jdk18on'
 			entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
 		}
+		dependency 'org.bouncycastle:bcprov-jdk18on:1.85.2' // patch .2 fix only available for bc provider
 
 		dependencySet(group: 'org.junit.jupiter', version: '5.14.4') {
 			entry 'junit-jupiter-api'
