@@ -106,18 +106,6 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
-  public void addUpdate_shouldIgnoreSyncCommitteeBranchFromAnotherPeriod() {
-    final LightClientUpdate signedInAttestedPeriod = createLightClientUpdate().build();
-    final LightClientUpdate signedInAnotherPeriod =
-        createLightClientUpdate().signatureSlot(periodOneStartSlot.times(3)).build();
-
-    assertThat(getBestUpdateAfterAdding(signedInAttestedPeriod, signedInAnotherPeriod))
-        .isEqualTo(signedInAttestedPeriod);
-    assertThat(getBestUpdateAfterAdding(signedInAnotherPeriod, signedInAttestedPeriod))
-        .isEqualTo(signedInAttestedPeriod);
-  }
-
-  @TestTemplate
   public void addUpdate_shouldPreferFinality() {
     final LightClientUpdate withFinality = createLightClientUpdate().finalityBranch(true).build();
     final LightClientUpdate withoutFinality =
@@ -197,14 +185,13 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
-  public void addUpdate_shouldKeyByAttestedPeriodNotSignaturePeriod() {
+  public void addUpdate_shouldRejectUpdateAttestedAndSignedInDifferentPeriods() {
     final LightClientUpdate update =
         createLightClientUpdate().signatureSlot(periodOneStartSlot.times(2)).build();
 
     store.addUpdate(update);
 
-    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(update);
-    assertThat(store.getBestUpdatesInRange(UInt64.valueOf(2), 1)).isEmpty();
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 3)).isEmpty();
   }
 
   @TestTemplate
@@ -228,14 +215,23 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
-  public void getBestUpdatesInRange_shouldSkipMissingPeriodsAndTolerateCountPastEnd() {
+  public void getBestUpdatesInRange_shouldStopAtFirstMissingPeriod() {
     final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
     store.addUpdate(periodOne);
     store.addUpdate(periodThree);
 
-    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 500))
-        .containsExactly(periodOne, periodThree);
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 500)).containsExactly(periodOne);
+  }
+
+  @TestTemplate
+  public void getBestUpdatesInRange_shouldStartAtEarliestKnownPeriodInRange() {
+    final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
+    final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
+    store.addUpdate(periodTwo);
+    store.addUpdate(periodThree);
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 3)).containsExactly(periodTwo, periodThree);
   }
 
   @TestTemplate
@@ -249,13 +245,13 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
-  public void addFinalityUpdate_shouldKeepHighestFinalizedSlot() {
+  public void addFinalityUpdate_shouldKeepHighestAttestedSlotEvenWhenFinalizedSlotIsLower() {
     final LightClientFinalityUpdate older =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot.increment(), periodOneStartSlot);
+            periodOneStartSlot, periodOneStartSlot.increment());
     final LightClientFinalityUpdate newer =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot.increment(), periodOneStartSlot.increment());
+            periodOneStartSlot.increment(), periodOneStartSlot);
 
     store.addFinalityUpdate(older);
     store.addFinalityUpdate(newer);
@@ -266,12 +262,13 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
-  public void addFinalityUpdate_shouldBreakEqualFinalizedSlotByAttestedSlot() {
+  public void addFinalityUpdate_shouldBreakEqualAttestedSlotBySignatureSlot() {
     final LightClientFinalityUpdate older =
-        dataStructureUtil.randomLightClientFinalityUpdate(periodOneStartSlot, periodOneStartSlot);
+        dataStructureUtil.randomLightClientFinalityUpdate(
+            periodOneStartSlot, periodOneStartSlot, periodOneStartSlot);
     final LightClientFinalityUpdate newer =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot.increment(), periodOneStartSlot);
+            periodOneStartSlot, periodOneStartSlot, periodOneStartSlot.increment());
 
     store.addFinalityUpdate(older);
     store.addFinalityUpdate(newer);
@@ -297,6 +294,22 @@ public class LightClientUpdateStoreTest {
         dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot);
     final LightClientOptimisticUpdate newer =
         dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot.increment());
+
+    store.addOptimisticUpdate(older);
+    store.addOptimisticUpdate(newer);
+    assertThat(store.getLatestOptimisticUpdate()).contains(newer);
+
+    store.addOptimisticUpdate(older);
+    assertThat(store.getLatestOptimisticUpdate()).contains(newer);
+  }
+
+  @TestTemplate
+  public void addOptimisticUpdate_shouldBreakEqualAttestedSlotBySignatureSlot() {
+    final LightClientOptimisticUpdate older =
+        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot, periodOneStartSlot);
+    final LightClientOptimisticUpdate newer =
+        dataStructureUtil.randomLightClientOptimisticUpdate(
+            periodOneStartSlot, periodOneStartSlot.increment());
 
     store.addOptimisticUpdate(older);
     store.addOptimisticUpdate(newer);
