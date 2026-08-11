@@ -96,7 +96,7 @@ dependencyManagement {
 
 		dependency 'org.awaitility:awaitility:4.3.0'
 
-		dependencySet(group: 'org.bouncycastle', version: '1.84') {
+		dependencySet(group: 'org.bouncycastle', version: '1.85.2') {
 			entry 'bcprov-jdk18on'
 			entry 'bcpkix-jdk18on'
 			entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
