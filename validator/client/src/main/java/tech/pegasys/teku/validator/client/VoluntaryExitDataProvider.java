@@ -58,10 +58,14 @@ public class VoluntaryExitDataProvider {
         .thenCombine(
             validatorApiChannel.getValidatorIndices(Set.of(publicKey)),
             (genesisData, indicesMap) -> {
-              final UInt64 epoch =
-                  maybeEpoch.orElse(calculateCurrentEpoch(genesisData.getGenesisTime()));
+              final UInt64 currentEpoch = calculateCurrentEpoch(genesisData.getGenesisTime());
+              final UInt64 epoch = maybeEpoch.orElse(currentEpoch);
               final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
-              final Fork fork = spec.getForkSchedule().getFork(epoch);
+              // Exits are validated against the state's fork, so a past exit epoch must not drag
+              // the signing fork back with it - that produces an exit the beacon node rejects. A
+              // future epoch keeps signing against the fork at that epoch, so pre-signing for an
+              // upcoming fork is unaffected.
+              final Fork fork = spec.getForkSchedule().getFork(epoch.max(currentEpoch));
               final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
               final int validatorIndex =
                   Optional.ofNullable(indicesMap.get(publicKey))
