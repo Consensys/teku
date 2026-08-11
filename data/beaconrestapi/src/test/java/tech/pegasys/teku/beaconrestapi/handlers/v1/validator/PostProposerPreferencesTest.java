@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -39,6 +39,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -109,7 +110,7 @@ class PostProposerPreferencesTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void shouldRejectJsonRequestBodyExceedingMaximumItems() throws IOException {
+  void shouldRejectJsonRequestBodyExceedingMaximumItems() throws Exception {
     final SignedProposerPreferences preferences =
         dataStructureUtil.randomSignedProposerPreferences();
     final SpecConfigGloas specConfig =
@@ -120,12 +121,21 @@ class PostProposerPreferencesTest extends AbstractMigratedBeaconHandlerTest {
             Collections.nCopies(maxItems + 1, preferences),
             DeserializableTypeDefinition.listOf(preferences.getSchema().getJsonTypeDefinition()));
 
-    assertThatThrownBy(
-            () ->
-                getRequestBodyFromMetadata(
-                    handler, Map.of(HEADER_CONSENSUS_VERSION, SpecMilestone.GLOAS.name()), json))
-        .hasMessageContaining(
-            "Provided array has more than " + maxItems + " maximum required items");
+    request.setRequestBody(
+        getRequestBodyFromMetadata(
+            handler, Map.of(HEADER_CONSENSUS_VERSION, SpecMilestone.GLOAS.name()), json));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody())
+        .isEqualTo(
+            new HttpErrorResponse(
+                SC_BAD_REQUEST,
+                "A maximum of "
+                    + maxItems
+                    + " SignedProposerPreferences objects can be submitted to the node at one time"));
+    verifyNoInteractions(validatorDataProvider);
   }
 
   @Test

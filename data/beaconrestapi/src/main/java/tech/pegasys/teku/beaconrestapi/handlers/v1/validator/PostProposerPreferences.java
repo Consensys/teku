@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Optional;
 import org.apache.commons.io.function.IOFunction;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
@@ -47,6 +46,7 @@ public class PostProposerPreferences extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/proposer_preferences";
 
   private final ValidatorDataProvider provider;
+  private final int maxItems;
 
   public PostProposerPreferences(
       final DataProvider dataProvider,
@@ -59,13 +59,29 @@ public class PostProposerPreferences extends RestApiEndpoint {
       final ValidatorDataProvider provider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(spec, schemaDefinitionCache));
+    this(provider, schemaDefinitionCache, getMaxItems(spec));
+  }
+
+  private PostProposerPreferences(
+      final ValidatorDataProvider provider,
+      final SchemaDefinitionCache schemaDefinitionCache,
+      final int maxItems) {
+    super(createMetadata(schemaDefinitionCache, maxItems));
     this.provider = provider;
+    this.maxItems = maxItems;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<SignedProposerPreferences> proposerPreferences = request.getRequestBody();
+    if (proposerPreferences.size() > maxItems) {
+      request.respondError(
+          SC_BAD_REQUEST,
+          String.format(
+              "A maximum of %s SignedProposerPreferences objects can be submitted to the node at one time",
+              maxItems));
+      return;
+    }
     request.respondAsync(
         provider
             .submitProposerPreferences(proposerPreferences)
@@ -80,16 +96,19 @@ public class PostProposerPreferences extends RestApiEndpoint {
         SC_BAD_REQUEST, ErrorListBadRequest.convert(PARTIAL_PUBLISH_FAILURE_MESSAGE, errors));
   }
 
+  private static int getMaxItems(final Spec spec) {
+    final SpecConfigGloas specConfig =
+        SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig());
+    return (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch();
+  }
+
   private static EndpointMetadata createMetadata(
-      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
+      final SchemaDefinitionCache schemaDefinitionCache, final int maxItems) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(
             schemaDefinitionCache.getSchemaDefinition(SpecMilestone.GLOAS));
     final SignedProposerPreferencesSchema signedProposerPreferencesSchema =
         schemaDefinitions.getSignedProposerPreferencesSchema();
-    final SpecConfigGloas specConfig =
-        SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig());
-    final int maxItems = (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch();
     final IOFunction<Bytes, List<SignedProposerPreferences>> octetStreamParser =
         bytes ->
             SszListSchema.create(signedProposerPreferencesSchema, maxItems)
@@ -104,9 +123,7 @@ public class PostProposerPreferences extends RestApiEndpoint {
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             DeserializableTypeDefinition.listOf(
-                signedProposerPreferencesSchema.getJsonTypeDefinition(),
-                Optional.empty(),
-                Optional.of(maxItems)),
+                signedProposerPreferencesSchema.getJsonTypeDefinition()),
             octetStreamParser)
         .headerRequired(
             ETH_CONSENSUS_VERSION_TYPE.withDescription(

@@ -25,7 +25,6 @@
         "application/json" : {
           "schema" : {
             "type" : "array",
-            "maxItems" : 16,
             "items" : {
               "$ref" : "#/components/schemas/SignedProposerPreferences"
             }
