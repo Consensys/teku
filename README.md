@@ -6,7 +6,6 @@
  [![consensus-specs](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FConsensys%2Fteku%2Frefs%2Fheads%2Fmaster%2Fbuild.gradle&search=refTestVersion.*%22(v%5B%5E%22%5D%2B)%22&replace=%241&label=consensus-specs)](https://github.com/ethereum/consensus-specs/releases)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/teku)
  [![Twitter Follow](https://img.shields.io/twitter/follow/Teku_Consensys)](https://twitter.com/Teku_Consensys)
- [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/ConsenSys/teku/badge)](https://www.gitpoap.io/gh/ConsenSys/teku)
 
 Teku is an open-source Ethereum consensus client written in Java and containing a full beacon node and validator client implementation.
 
