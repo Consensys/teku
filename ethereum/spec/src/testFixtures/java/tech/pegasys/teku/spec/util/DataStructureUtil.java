@@ -2490,6 +2490,11 @@ public final class DataStructureUtil {
 
   public LightClientFinalityUpdate randomLightClientFinalityUpdate(
       final UInt64 attestedSlot, final UInt64 finalizedSlot) {
+    return randomLightClientFinalityUpdate(attestedSlot, finalizedSlot, randomUInt64());
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(
+      final UInt64 attestedSlot, final UInt64 finalizedSlot, final UInt64 signatureSlot) {
     final LightClientFinalityUpdateSchema schema =
         getAltairSchemaDefinitions(attestedSlot).getLightClientFinalityUpdateSchema();
 
@@ -2498,15 +2503,20 @@ public final class DataStructureUtil {
         lightClientHeaderAtSlot(finalizedSlot),
         randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
-        SszUInt64.of(randomUInt64()));
+        SszUInt64.of(signatureSlot));
   }
 
   public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(final UInt64 slot) {
+    return randomLightClientOptimisticUpdate(slot, randomUInt64());
+  }
+
+  public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(
+      final UInt64 slot, final UInt64 signatureSlot) {
     final LightClientOptimisticUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientOptimisticUpdateSchema();
 
     return schema.create(
-        lightClientHeaderAtSlot(slot), randomSyncAggregate(), SszUInt64.of(randomUInt64()));
+        lightClientHeaderAtSlot(slot), randomSyncAggregate(), SszUInt64.of(signatureSlot));
   }
 
   private LightClientHeader lightClientHeaderAtSlot(final UInt64 slot) {
