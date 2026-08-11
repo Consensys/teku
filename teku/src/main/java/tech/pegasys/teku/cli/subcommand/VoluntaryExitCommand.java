@@ -374,7 +374,14 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
     final Optional<GenesisData> maybeGenesisData = typeDefClient.getGenesis();
     validateOrDefaultEpoch(maybeGenesisData);
-    fork = spec.getForkSchedule().getFork(epoch);
+    // Exits are validated against the state's fork, so a past --epoch must not drag the signing
+    // fork back with it - that produces an exit the beacon node rejects. A future --epoch is
+    // still permitted (--save-exits-path skips the epoch check) and keeps signing against the
+    // fork at that epoch, so pre-signing for an upcoming fork is unaffected.
+    fork =
+        spec.getForkSchedule()
+            .getFork(
+                maybeGenesisData.map(this::getEpochFromGenesisData).map(epoch::max).orElse(epoch));
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = maybeGenesisData.map(GenesisData::getGenesisValidatorsRoot);

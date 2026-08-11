@@ -871,6 +871,11 @@ public abstract class RecentChainData
     blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
 
+  public void setBlockTimelinessAfterDataAvailability(
+      final SignedBeaconBlock block, final UInt64 dataAvailableTimeMillis) {
+    blockTimelinessTracker.setBlockTimelinessAfterDataAvailability(block, dataAvailableTimeMillis);
+  }
+
   @Override
   public Optional<BlockTimeliness> getBlockTimeliness(final Bytes32 root) {
     return blockTimelinessTracker.getBlockTimeliness(root);
