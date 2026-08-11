@@ -18,8 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.HashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -106,20 +109,24 @@ class BlockTimelinessTrackerTest {
     assertThat(tracker.isBlockLate(signedBlockAndState.getRoot())).isFalse();
   }
 
-  @Test
-  void fuluShouldSkipEarlyTimelinessFromArrivalTime() {
-    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
-    final DataStructureUtil fuluUtil = new DataStructureUtil(fuluSpec);
-    final SignedBlockAndState fuluBlock = fuluUtil.randomSignedBlockAndState(slot);
-    final UInt64 fuluGenesisMillis = fuluBlock.getState().getGenesisTime().times(1000);
-    final BlockTimelinessTracker fuluTracker =
-        new BlockTimelinessTracker(fuluSpec, () -> fuluGenesisMillis, new HashMap<>());
+  @ParameterizedTest(name = "{0}")
+  @EnumSource(SpecMilestone.class)
+  void shouldSkipArrivalTimelinessOnlyForFulu(final SpecMilestone milestone) {
+    final Spec testSpec = TestSpecFactory.createMinimal(milestone);
+    final DataStructureUtil util = new DataStructureUtil(testSpec);
+    final SignedBlockAndState block = util.randomSignedBlockAndState(slot);
+    final UInt64 milestoneGenesisMillis = block.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker testTracker =
+        new BlockTimelinessTracker(testSpec, () -> milestoneGenesisMillis, new HashMap<>());
 
-    // Arrival time well within attestation deadline — should still be ignored for Fulu
-    fuluTracker.setBlockTimelinessFromArrivalTime(
-        fuluBlock.getBlock(), computeTime(fuluGenesisMillis, fuluSpec, slot, 100));
+    testTracker.setBlockTimelinessFromArrivalTime(
+        block.getBlock(), computeTime(milestoneGenesisMillis, testSpec, slot, 100));
 
-    assertThat(fuluTracker.getBlockTimeliness(fuluBlock.getRoot())).isEmpty();
+    if (milestone == SpecMilestone.FULU) {
+      assertThat(testTracker.getBlockTimeliness(block.getRoot())).isEmpty();
+    } else {
+      assertThat(testTracker.getBlockTimeliness(block.getRoot())).isPresent();
+    }
   }
 
   @Test

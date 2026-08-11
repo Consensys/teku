@@ -70,7 +70,7 @@ class BlockTimelinessTracker {
         block.getRoot(), computeBlockTimelinessFromArrivalTime(block, dataAvailableTimeMillis));
   }
 
-  public BlockTimeliness computeBlockTimelinessFromArrivalTime(
+  BlockTimeliness computeBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
     final UInt64 genesisTimeMillis = genesisTimeMillisSupplier.get();
     final UInt64 computedSlot =
