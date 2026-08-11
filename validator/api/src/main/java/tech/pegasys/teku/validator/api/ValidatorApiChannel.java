@@ -306,10 +306,10 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
   // used to maintain backwards compatibility with block v3
   default SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
-      UInt64 slot,
-      BLSSignature randaoReveal,
-      Optional<Bytes32> graffiti,
-      Optional<UInt64> requestedBuilderBoostFactor) {
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     return createUnsignedBlock(
         slot,
         randaoReveal,
