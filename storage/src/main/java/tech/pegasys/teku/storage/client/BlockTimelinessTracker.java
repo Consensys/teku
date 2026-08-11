@@ -47,8 +47,27 @@ class BlockTimelinessTracker {
     if (blockTimeliness.get(block.getRoot()) != null) {
       return;
     }
+    if (spec.atSlot(block.getSlot())
+        .getForkChoiceUtil()
+        .isDataAvailabilityRequiredForTimeliness()) {
+      // Timeliness will be recorded after data availability check completes
+      return;
+    }
     blockTimeliness.put(
         block.getRoot(), computeBlockTimelinessFromArrivalTime(block, arrivalTimeMillis));
+  }
+
+  /**
+   * Records block timeliness using the time at which data availability was confirmed. Only called
+   * for forks (Fulu) where DA determines timeliness rather than block body arrival.
+   */
+  public void setBlockTimelinessAfterDataAvailability(
+      final SignedBeaconBlock block, final UInt64 dataAvailableTimeMillis) {
+    if (blockTimeliness.get(block.getRoot()) != null) {
+      return;
+    }
+    blockTimeliness.put(
+        block.getRoot(), computeBlockTimelinessFromArrivalTime(block, dataAvailableTimeMillis));
   }
 
   public BlockTimeliness computeBlockTimelinessFromArrivalTime(

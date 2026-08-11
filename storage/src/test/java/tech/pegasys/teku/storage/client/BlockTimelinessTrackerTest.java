@@ -106,7 +106,71 @@ class BlockTimelinessTrackerTest {
     assertThat(tracker.isBlockLate(signedBlockAndState.getRoot())).isFalse();
   }
 
+  @Test
+  void fuluShouldSkipEarlyTimelinessFromArrivalTime() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil fuluUtil = new DataStructureUtil(fuluSpec);
+    final SignedBlockAndState fuluBlock = fuluUtil.randomSignedBlockAndState(slot);
+    final UInt64 fuluGenesisMillis = fuluBlock.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker fuluTracker =
+        new BlockTimelinessTracker(fuluSpec, () -> fuluGenesisMillis, new HashMap<>());
+
+    // Arrival time well within attestation deadline — should still be ignored for Fulu
+    fuluTracker.setBlockTimelinessFromArrivalTime(
+        fuluBlock.getBlock(), computeTime(fuluGenesisMillis, fuluSpec, slot, 100));
+
+    assertThat(fuluTracker.getBlockTimeliness(fuluBlock.getRoot())).isEmpty();
+  }
+
+  @Test
+  void fuluShouldRecordTimelinessAfterDataAvailabilityWhenTimely() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil fuluUtil = new DataStructureUtil(fuluSpec);
+    final SignedBlockAndState fuluBlock = fuluUtil.randomSignedBlockAndState(slot);
+    final UInt64 fuluGenesisMillis = fuluBlock.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker fuluTracker =
+        new BlockTimelinessTracker(fuluSpec, () -> fuluGenesisMillis, new HashMap<>());
+
+    fuluTracker.setBlockTimelinessAfterDataAvailability(
+        fuluBlock.getBlock(), computeTime(fuluGenesisMillis, fuluSpec, slot, 100));
+
+    assertThat(fuluTracker.getBlockTimeliness(fuluBlock.getRoot()))
+        .isPresent()
+        .hasValueSatisfying(t -> assertThat(t.isTimelyAttestation()).isTrue());
+    assertThat(fuluTracker.isBlockLate(fuluBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void fuluShouldRecordLateTimelinessAfterDataAvailabilityWhenLate() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil fuluUtil = new DataStructureUtil(fuluSpec);
+    final SignedBlockAndState fuluBlock = fuluUtil.randomSignedBlockAndState(slot);
+    final UInt64 fuluGenesisMillis = fuluBlock.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker fuluTracker =
+        new BlockTimelinessTracker(fuluSpec, () -> fuluGenesisMillis, new HashMap<>());
+
+    final int attestationDueMillis =
+        fuluSpec.atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+    fuluTracker.setBlockTimelinessAfterDataAvailability(
+        fuluBlock.getBlock(), computeTime(fuluGenesisMillis, fuluSpec, slot, attestationDueMillis));
+
+    assertThat(fuluTracker.getBlockTimeliness(fuluBlock.getRoot()))
+        .isPresent()
+        .hasValueSatisfying(t -> assertThat(t.isTimelyAttestation()).isFalse());
+    assertThat(fuluTracker.isBlockLate(fuluBlock.getRoot())).isTrue();
+  }
+
   private UInt64 computeTime(final UInt64 slot, final long timeIntoSlot) {
     return genesisTimeMillis.plus(slot.times(millisPerSlot)).plus(timeIntoSlot);
+  }
+
+  private UInt64 computeTime(
+      final UInt64 genesisMillis,
+      final Spec targetSpec,
+      final UInt64 targetSlot,
+      final long timeIntoSlot) {
+    return genesisMillis
+        .plus(targetSlot.times(targetSpec.getGenesisSpecConfig().getSlotDurationMillis()))
+        .plus(timeIntoSlot);
   }
 }
