@@ -13,7 +13,6 @@
  - Promoted `--Xvalidators-external-signer-concurrent-limit` to non-experimental `--validators-external-signer-concurrent-limit`, and impose maximum limit of 1024
 
 ### Additions and Improvements
+ - `--validator-keys` now accepts `<KEY_DIR>:<PASS_FILE>`, using a single password file for all keystores found in the directory.
 
 ### Bug Fixes
- - Fixed Beacon REST API socket retention when clients cancel pending asynchronous requests. Requests now time out after 30 seconds.
- - Fix an edge case on BeaconBlocksByRange where a request for a single block would return an empty response instead of the block.

@@ -22,12 +22,16 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {
+
+  private static final Logger LOG = LogManager.getLogger(FinalizedStateCache.class);
 
   private static final long MAX_REGENERATE_SLOTS = 10_000L;
 
@@ -89,6 +93,7 @@ public class FinalizedStateCache {
       if (Throwables.getRootCause(e) instanceof StateUnavailableException) {
         return Optional.empty();
       }
+      LOG.error("Error while regenerating state for slot {}", slot, e);
       throw new RuntimeException("Error while regenerating state", e);
     }
   }
