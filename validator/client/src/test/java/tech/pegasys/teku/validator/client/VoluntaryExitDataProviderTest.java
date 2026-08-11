@@ -17,14 +17,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -87,6 +90,55 @@ class VoluntaryExitDataProviderTest {
         new SignedVoluntaryExit(
             new VoluntaryExit(UInt64.valueOf(1234), UInt64.ZERO), volExitSignature);
     assertThatSafeFuture(result).isCompletedWithValue(expected);
+  }
+
+  /**
+   * An exit naming a past epoch must still be signed against the chain's current fork, otherwise
+   * the beacon node - which validates exits against the state's fork - rejects an exit Teku itself
+   * produced.
+   */
+  @Test
+  void getSignedVoluntaryExit_shouldSignPastEpochAgainstCurrentFork() {
+    final Spec staggeredSpec =
+        TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(1000));
+    final VoluntaryExitDataProvider staggeredProvider =
+        new VoluntaryExitDataProvider(
+            staggeredSpec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
+    final UInt64 currentEpoch = staggeredProvider.calculateCurrentEpoch(UInt64.ZERO);
+
+    safeJoin(staggeredProvider.getSignedVoluntaryExit(publicKey1, Optional.of(UInt64.ZERO)));
+
+    final ArgumentCaptor<ForkInfo> forkInfoCaptor = ArgumentCaptor.forClass(ForkInfo.class);
+    verify(signer).signVoluntaryExit(any(), forkInfoCaptor.capture());
+    assertThat(forkInfoCaptor.getValue().getFork())
+        .isEqualTo(staggeredSpec.getForkSchedule().getFork(currentEpoch))
+        .isNotEqualTo(staggeredSpec.getForkSchedule().getFork(UInt64.ZERO));
+  }
+
+  /**
+   * A future epoch is permitted and must keep signing against the fork scheduled at that epoch, so
+   * an exit can be pre-signed for an upcoming fork. Only past epochs are pulled forward.
+   */
+  @Test
+  void getSignedVoluntaryExit_shouldSignFutureEpochAgainstThatEpochsFork() {
+    final UInt64 futureForkEpoch = UInt64.valueOf(5000);
+    final Spec staggeredSpec =
+        TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), futureForkEpoch);
+    final VoluntaryExitDataProvider staggeredProvider =
+        new VoluntaryExitDataProvider(
+            staggeredSpec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
+    final UInt64 currentEpoch = staggeredProvider.calculateCurrentEpoch(UInt64.ZERO);
+    assertThat(currentEpoch).isLessThan(futureForkEpoch);
+
+    safeJoin(staggeredProvider.getSignedVoluntaryExit(publicKey1, Optional.of(futureForkEpoch)));
+
+    final ArgumentCaptor<ForkInfo> forkInfoCaptor = ArgumentCaptor.forClass(ForkInfo.class);
+    verify(signer).signVoluntaryExit(any(), forkInfoCaptor.capture());
+    assertThat(forkInfoCaptor.getValue().getFork())
+        .isEqualTo(staggeredSpec.getForkSchedule().getFork(futureForkEpoch))
+        .isNotEqualTo(staggeredSpec.getForkSchedule().getFork(currentEpoch));
   }
 
   @Test
