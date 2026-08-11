@@ -483,6 +483,33 @@ class FastConfirmationCalculatorTest {
   }
 
   @Test
+  void shouldSkipVotesWhoseCheckpointBlockHasBeenPrunedRatherThanThrowing() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    // currentSlot 10 -> currentEpoch 1; current target = checkpoint(1, chain[8]).
+    // A validator that has not voted since epoch 0 keeps an old message: its checkpoint block sits
+    // below the finalized checkpoint and has been pruned from fork choice, so get_ancestor returns
+    // empty. The block it voted for is still tracked (contains -> true), so the presence guard
+    // passes. The vote must be skipped on the epoch mismatch (it can never match the current-epoch
+    // target) instead of resolving its checkpoint block, which would otherwise throw. Regression
+    // test for a Missing-ancestor crash seen replaying a fast-finalizing incident.
+    final Bytes32 staleVotedRoot = Bytes32.random();
+    when(forkChoice.contains(staleVotedRoot)).thenReturn(true);
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    0, vote(chain.get(9), 9), // target checkpoint(1, chain[8]) -> counts
+                    1, vote(chain.get(9), 9), // counts
+                    2, vote(staleVotedRoot, 3)))); // epoch-0 vote, checkpoint pruned -> skipped
+    final FastConfirmationCalculator calculator = calculator(balanceSource, chain.get(10), 10);
+
+    final BeaconState pulledUp = calculator.getPulledUpHeadState();
+    final UInt64 expected = effectiveBalance(pulledUp, 0).plus(effectiveBalance(pulledUp, 1));
+    assertThat(calculator.getCurrentTargetScore()).isEqualTo(expected);
+  }
+
+  @Test
   void shouldComputeHonestFfgSupportFromRemainingWeightWhenNoVotes() {
     buildLinearChain(11);
     final BeaconState balanceSource = genesisState();

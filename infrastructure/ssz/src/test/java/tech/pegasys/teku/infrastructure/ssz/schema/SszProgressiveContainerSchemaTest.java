@@ -15,10 +15,13 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.ssz.schema.TreeNodeAssert.assertThatTreeNode;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -307,5 +310,65 @@ public class SszProgressiveContainerSchemaTest {
   void getSszLengthBounds_maxBytesShouldBePositive() {
     final SszLengthBounds bounds = MULTI_FIELD_SCHEMA.getSszLengthBounds();
     assertThat(bounds.getMaxBytes()).isPositive();
+  }
+
+  // ===== Store/Load backing nodes roundtrip tests =====
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 5, 15})
+  void storeAndLoadBackingNodes_allFixedFields(final int maxBranchLevelsSkipped) {
+    final TreeNode node =
+        MULTI_FIELD_SCHEMA.createTreeFromFieldValues(
+            List.of(
+                SszUInt64.of(UInt64.valueOf(0xDEADBEEFL)),
+                SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 42),
+                SszUInt64.of(UInt64.valueOf(0xCAFEBABEL))));
+    assertStoreLoadRoundtrip(MULTI_FIELD_SCHEMA, node, maxBranchLevelsSkipped);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 5, 15})
+  void storeAndLoadBackingNodes_gappedFields(final int maxBranchLevelsSkipped) {
+    final TreeNode node =
+        GAPPED_SCHEMA.createTreeFromFieldValues(
+            List.of(
+                SszUInt64.of(UInt64.valueOf(999)),
+                SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 7)));
+    assertStoreLoadRoundtrip(GAPPED_SCHEMA, node, maxBranchLevelsSkipped);
+  }
+
+  @Test
+  void storeAndLoadBackingNodes_defaultContainer() {
+    final TreeNode node = MULTI_FIELD_SCHEMA.getDefaultTree();
+    assertStoreLoadRoundtrip(MULTI_FIELD_SCHEMA, node, 15);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 5, 15})
+  void storeAndLoadBackingNodes_withVariableField(final int maxBranchLevelsSkipped) {
+    final SszContainerSchema<SszContainer> varSchema =
+        SszContainerSchema.createProgressive(
+            "VarContainer2",
+            new boolean[] {true, true},
+            List.of(
+                NamedSchema.of("fixed", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("bits", SszBitlistSchema.create(64))));
+    final TreeNode node =
+        varSchema.createTreeFromFieldValues(
+            List.of(
+                SszUInt64.of(UInt64.valueOf(12345)), SszBitlistSchema.create(64).ofBits(10, 0, 5)));
+    assertStoreLoadRoundtrip(varSchema, node, maxBranchLevelsSkipped);
+  }
+
+  private void assertStoreLoadRoundtrip(
+      final SszContainerSchema<?> schema, final TreeNode node, final int maxBranchLevelsSkipped) {
+    final InMemoryStoringTreeNodeStore nodeStore = new InMemoryStoringTreeNodeStore();
+    final long rootGIndex = 34L;
+
+    schema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+    final TreeNode result = schema.loadBackingNodes(nodeStore, node.hashTreeRoot(), rootGIndex);
+
+    assertThat(result.hashTreeRoot()).isEqualTo(node.hashTreeRoot());
+    assertThatTreeNode(result).isTreeEqual(node);
   }
 }

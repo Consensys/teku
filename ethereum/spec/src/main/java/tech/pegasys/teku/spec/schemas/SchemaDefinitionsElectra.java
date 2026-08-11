@@ -27,7 +27,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQ
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
@@ -154,11 +153,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
-  }
-
-  @Override
-  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
-    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 
   @Override
