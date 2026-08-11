@@ -92,7 +92,7 @@
           },
           "Eth-Execution-Payload-Included" : {
             "description" : "Indicates whether the execution payload envelope is included in the response.\nWhen `true`, the `data` field contains the full\nexecution payload envelope, blobs, and KZG proofs. When `false`, the `data`\nfield contains only a `BeaconBlock`.",
-            "required" : false,
+            "required" : true,
             "schema" : {
               "type" : "boolean"
             }
