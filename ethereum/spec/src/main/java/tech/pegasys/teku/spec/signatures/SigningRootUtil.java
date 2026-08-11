@@ -103,7 +103,9 @@ public class SigningRootUtil {
 
   public Bytes signingRootForSignVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
-    final SpecVersion specVersion = spec.atEpoch(voluntaryExit.getEpoch());
+    // Resolved from the fork, not the exit's epoch: the beacon node validates exits against the
+    // state's fork, so signing must agree or we produce exits our own validation rejects.
+    final SpecVersion specVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final Bytes32 domain =
         spec.getVoluntaryExitDomain(
             voluntaryExit.getEpoch(), forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());

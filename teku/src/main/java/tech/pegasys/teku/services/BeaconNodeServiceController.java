@@ -35,10 +35,6 @@ public class BeaconNodeServiceController extends ServiceController {
         new StorageService(
             serviceConfig,
             tekuConfig.storageConfiguration(),
-            tekuConfig
-                .powchain()
-                .getDepositTreeSnapshotConfiguration()
-                .isBundledDepositSnapshotEnabled(),
             tekuConfig.metricsConfig().isBlobSidecarsStorageCountersEnabled(),
             tekuConfig.metricsConfig().isDataColumnSidecarsStorageCountersEnabled(),
             tekuConfig.beaconChain().eth2NetworkConfig().getEth2Network()));
