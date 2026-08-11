@@ -66,7 +66,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContents
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetNewBlockV4 extends RestApiEndpoint {
   private static final Logger LOG = LoggerFactory.getLogger(GetNewBlockV4.class);
@@ -243,8 +242,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
                     && milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
                     && blockContainer instanceof BlockContentsGloas,
             SpecMilestone.GLOAS,
-            schemaDefinitions ->
-                SchemaDefinitionsGloas.required(schemaDefinitions).getBlockContentsGloasSchema()));
+            SchemaDefinitions::getBlockContainerSchema));
 
     // External builder bid: beacon block only (builder holds the payload)
     schemaGetterList.add(
@@ -254,7 +252,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
                     && milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
                     && !(blockContainer instanceof BlockContentsGloas),
             SpecMilestone.GLOAS,
-            SchemaDefinitions::getBlockContainerSchema));
+            schemaDefinitions -> schemaDefinitions.getBeaconBlockSchema().castTypeToBlockContainer()));
     return schemaGetterList;
   }
 

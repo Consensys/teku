@@ -168,7 +168,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   @Override
   public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBeaconBlockSchema().castTypeToBlockContainer();
+    return blockContentsGloasSchema.castTypeToBlockContainer();
   }
 
   @Override

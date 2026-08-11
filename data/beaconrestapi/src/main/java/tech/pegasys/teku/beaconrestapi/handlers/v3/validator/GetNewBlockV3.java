@@ -52,6 +52,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentType
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -197,6 +198,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                 schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
                     && !blockContainer.isBlinded(),
             SpecMilestone.PHASE0,
+            Optional.of(SpecMilestone.FULU),
             SchemaDefinitions::getBlockContainerSchema));
 
     schemaGetterList.add(
@@ -206,6 +208,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                     && milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)
                     && blockContainer.isBlinded(),
             SpecMilestone.BELLATRIX,
+            Optional.of(SpecMilestone.FULU),
             SchemaDefinitions::getBlindedBlockContainerSchema));
     return schemaGetterList;
   }
