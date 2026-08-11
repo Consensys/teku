@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 
@@ -30,6 +31,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   private final Set<Bytes32> knownStoredBranchesCache;
   private final Set<Bytes32> newlyStoredBranches = new HashSet<>();
+  private final KvStoreAccessor db;
   private final KvStoreTransaction transaction;
   private final SchemaCombinedTreeState schema;
 
@@ -39,21 +41,27 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   public KvStoreTreeNodeStore(
       final Set<Bytes32> knownStoredBranchesCache,
+      final KvStoreAccessor db,
       final KvStoreTransaction transaction,
       final SchemaCombinedTreeState schema) {
     this.knownStoredBranchesCache = knownStoredBranchesCache;
+    this.db = db;
     this.transaction = transaction;
     this.schema = schema;
   }
 
   @Override
   public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
-    final boolean result =
-        newlyStoredBranches.contains(root) || knownStoredBranchesCache.contains(root);
-    if (result) {
+    if (newlyStoredBranches.contains(root) || knownStoredBranchesCache.contains(root)) {
       skippedBranchNodes++;
+      return true;
     }
-    return result;
+    if (db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root).isPresent()) {
+      knownStoredBranchesCache.add(root);
+      skippedBranchNodes++;
+      return true;
+    }
+    return false;
   }
 
   @Override
