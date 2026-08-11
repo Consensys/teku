@@ -98,7 +98,7 @@ public class ValidatorKeysOptions {
       names = {"--validators-external-signer-concurrent-limit"},
       paramLabel = "<INTEGER>",
       description =
-          "The maximum number of concurrent background requests to make to the signer, must be between 0 and 1024 inclusive. This only applies for aggregation slot and validator registration requests.",
+          "The maximum number of concurrent background requests to make to the signer, must be between 1 and 1024 inclusive. This only applies for aggregation slot and validator registration requests.",
       arity = "1")
   private int validatorExternalSignerConcurrentRequestLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
