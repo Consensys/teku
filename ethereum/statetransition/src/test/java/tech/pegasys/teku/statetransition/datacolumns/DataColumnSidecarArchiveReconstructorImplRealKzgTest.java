@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -87,7 +87,8 @@ public class DataColumnSidecarArchiveReconstructorImplRealKzgTest {
   void reconstructsExtensionColumnsIdenticalToOriginalSidecars() {
     final List<BlobAndCellProofs> blobsAndCellProofs =
         IntStream.range(0, 4)
-            .mapToObj(__ -> KzgUtil.computeBlobAndCellProofs(kzg, dataStructureUtil.randomValidBlob()))
+            .mapToObj(
+                __ -> KzgUtil.computeBlobAndCellProofs(kzg, dataStructureUtil.randomValidBlob()))
             .toList();
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobsAndCellProofs.size());
@@ -95,7 +96,9 @@ public class DataColumnSidecarArchiveReconstructorImplRealKzgTest {
     // the canonical full set of column sidecars, built from the real blobs with real KZG
     final List<DataColumnSidecar> originalSidecars =
         miscHelpers.constructDataColumnSidecars(
-            block.getMessage(), block.asHeader(), miscHelpers.computeExtendedMatrix(blobsAndCellProofs));
+            block.getMessage(),
+            block.asHeader(),
+            miscHelpers.computeExtendedMatrix(blobsAndCellProofs));
     assertThat(originalSidecars).hasSize(numberOfColumns);
 
     // supernodes retain the first half of the sidecars plus the extension columns' proofs
