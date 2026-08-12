@@ -18,8 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.HashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -106,7 +109,75 @@ class BlockTimelinessTrackerTest {
     assertThat(tracker.isBlockLate(signedBlockAndState.getRoot())).isFalse();
   }
 
+  @ParameterizedTest(name = "{0}")
+  @EnumSource(SpecMilestone.class)
+  void shouldSkipArrivalTimelinessOnlyForFulu(final SpecMilestone milestone) {
+    final Spec testSpec = TestSpecFactory.createMinimal(milestone);
+    final DataStructureUtil util = new DataStructureUtil(testSpec);
+    final SignedBlockAndState block = util.randomSignedBlockAndState(slot);
+    final UInt64 milestoneGenesisMillis = block.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker testTracker =
+        new BlockTimelinessTracker(testSpec, () -> milestoneGenesisMillis, new HashMap<>());
+
+    testTracker.setBlockTimelinessFromArrivalTime(
+        block.getBlock(), computeTime(milestoneGenesisMillis, testSpec, slot, 100));
+
+    if (milestone == SpecMilestone.FULU) {
+      assertThat(testTracker.getBlockTimeliness(block.getRoot())).isEmpty();
+    } else {
+      assertThat(testTracker.getBlockTimeliness(block.getRoot())).isPresent();
+    }
+  }
+
+  @Test
+  void fuluShouldRecordTimelinessAfterDataAvailabilityWhenTimely() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil fuluUtil = new DataStructureUtil(fuluSpec);
+    final SignedBlockAndState fuluBlock = fuluUtil.randomSignedBlockAndState(slot);
+    final UInt64 fuluGenesisMillis = fuluBlock.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker fuluTracker =
+        new BlockTimelinessTracker(fuluSpec, () -> fuluGenesisMillis, new HashMap<>());
+
+    fuluTracker.setBlockTimelinessAfterDataAvailability(
+        fuluBlock.getBlock(), computeTime(fuluGenesisMillis, fuluSpec, slot, 100));
+
+    assertThat(fuluTracker.getBlockTimeliness(fuluBlock.getRoot()))
+        .isPresent()
+        .hasValueSatisfying(t -> assertThat(t.isTimelyAttestation()).isTrue());
+    assertThat(fuluTracker.isBlockLate(fuluBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void fuluShouldRecordLateTimelinessAfterDataAvailabilityWhenLate() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil fuluUtil = new DataStructureUtil(fuluSpec);
+    final SignedBlockAndState fuluBlock = fuluUtil.randomSignedBlockAndState(slot);
+    final UInt64 fuluGenesisMillis = fuluBlock.getState().getGenesisTime().times(1000);
+    final BlockTimelinessTracker fuluTracker =
+        new BlockTimelinessTracker(fuluSpec, () -> fuluGenesisMillis, new HashMap<>());
+
+    final int attestationDueMillis =
+        fuluSpec.atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+    fuluTracker.setBlockTimelinessAfterDataAvailability(
+        fuluBlock.getBlock(), computeTime(fuluGenesisMillis, fuluSpec, slot, attestationDueMillis));
+
+    assertThat(fuluTracker.getBlockTimeliness(fuluBlock.getRoot()))
+        .isPresent()
+        .hasValueSatisfying(t -> assertThat(t.isTimelyAttestation()).isFalse());
+    assertThat(fuluTracker.isBlockLate(fuluBlock.getRoot())).isTrue();
+  }
+
   private UInt64 computeTime(final UInt64 slot, final long timeIntoSlot) {
     return genesisTimeMillis.plus(slot.times(millisPerSlot)).plus(timeIntoSlot);
+  }
+
+  private UInt64 computeTime(
+      final UInt64 genesisMillis,
+      final Spec targetSpec,
+      final UInt64 targetSlot,
+      final long timeIntoSlot) {
+    return genesisMillis
+        .plus(targetSlot.times(targetSpec.getGenesisSpecConfig().getSlotDurationMillis()))
+        .plus(timeIntoSlot);
   }
 }

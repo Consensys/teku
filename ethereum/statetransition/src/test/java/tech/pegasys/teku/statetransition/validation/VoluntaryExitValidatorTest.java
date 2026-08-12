@@ -26,10 +26,12 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -127,6 +130,121 @@ public class VoluntaryExitValidatorTest {
     final SignedVoluntaryExit exit = new SignedVoluntaryExit(voluntaryExit, exitSignature);
 
     assertValidationResult(exit, ACCEPT);
+  }
+
+  /**
+   * EIP-7044 pins the voluntary exit signature domain from Capella onwards, so an exit naming a
+   * long-past epoch is legitimately valid - provided it is signed under the domain the *state's*
+   * fork computes. Validation must therefore be dispatched on the state's fork, not on the epoch
+   * carried inside the message.
+   */
+  @Test
+  public void shouldAcceptPastEpochExitSignedUnderStateForkDomain() {
+    final Spec spec = setUpChainWithStaggeredForks();
+    final BeaconState state = getBestState();
+    final VoluntaryExit exit = new VoluntaryExit(UInt64.ZERO, UInt64.ZERO);
+
+    final SignedVoluntaryExit signedExit =
+        new SignedVoluntaryExit(
+            exit, signUnderStateForkDomain(spec, state, exit, VALIDATOR_KEYS.get(0)));
+
+    assertValidationResult(signedExit, ACCEPT);
+  }
+
+  /**
+   * The mirror of the above: an exit naming epoch 0 signed under the domain resolved from that
+   * epoch rather than from the state's fork. Block processing rejects this, so gossip and the local
+   * API must reject it too, otherwise it lingers in the pool and breaks block production.
+   */
+  @Test
+  public void shouldRejectPastEpochExitSignedUnderMessageEpochDomain() {
+    final Spec spec = setUpChainWithStaggeredForks();
+    final BeaconState state = getBestState();
+    final VoluntaryExit exit = new VoluntaryExit(UInt64.ZERO, UInt64.ZERO);
+
+    final BLSSignature messageEpochSignature =
+        signUnderMessageEpochDomain(spec, state, exit, VALIDATOR_KEYS.get(0));
+    assertThat(messageEpochSignature)
+        .isNotEqualTo(signUnderStateForkDomain(spec, state, exit, VALIDATOR_KEYS.get(0)));
+
+    assertValidationResult(
+        new SignedVoluntaryExit(exit, messageEpochSignature), REJECT, "Signature is invalid");
+  }
+
+  /**
+   * Round trip: an exit produced by Teku's own signing path for a past epoch must be accepted by
+   * Teku's validation. Signing resolves the domain from the fork, so this holds even though the
+   * exit names epoch 0.
+   */
+  @Test
+  public void shouldAcceptPastEpochExitProducedByOwnSigner() {
+    final Spec spec = setUpChainWithStaggeredForks();
+    final BeaconState state = getBestState();
+    final VoluntaryExit exit = new VoluntaryExit(UInt64.ZERO, UInt64.ZERO);
+
+    final BLSSignature signature =
+        new LocalSigner(spec, VALIDATOR_KEYS.get(0), SyncAsyncRunner.SYNC_RUNNER)
+            .signVoluntaryExit(
+                exit, new ForkInfo(state.getFork(), state.getGenesisValidatorsRoot()))
+            .getImmediately();
+
+    assertThat(signature)
+        .isEqualTo(signUnderStateForkDomain(spec, state, exit, VALIDATOR_KEYS.get(0)));
+    assertValidationResult(new SignedVoluntaryExit(exit, signature), ACCEPT);
+  }
+
+  /**
+   * Capella at epoch 1, Deneb at 2, Electra at 3, Fulu far in the future. The head therefore sits
+   * in Electra while epoch 0 resolves to Bellatrix, so the domain the message epoch selects
+   * genuinely differs from the one the state's fork selects.
+   */
+  private Spec setUpChainWithStaggeredForks() {
+    final Spec spec =
+        TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(1000));
+    recentChainData = MemoryOnlyRecentChainData.create(spec);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+    chainUpdater.initializeGenesis();
+    // a validator cannot exit until SHARD_COMMITTEE_PERIOD (64 epochs on minimal) has elapsed
+    advanceChainAndUpdateBestBlock(spec.slotsPerEpoch(UInt64.ZERO) * 65L);
+    voluntaryExitValidator = new VoluntaryExitValidator(spec, recentChainData, timeProvider);
+    return spec;
+  }
+
+  /**
+   * Reproduces the pre-fix signing behaviour: milestone and fork both taken from the exit epoch.
+   */
+  private static BLSSignature signUnderMessageEpochDomain(
+      final Spec spec,
+      final BeaconState state,
+      final VoluntaryExit exit,
+      final BLSKeyPair keyPair) {
+    final SpecVersion specVersion = spec.atEpoch(exit.getEpoch());
+    final Bytes32 domain =
+        specVersion
+            .beaconStateAccessors()
+            .getVoluntaryExitDomain(
+                exit.getEpoch(),
+                spec.getForkSchedule().getFork(exit.getEpoch()),
+                state.getGenesisValidatorsRoot());
+    return BLS.sign(
+        keyPair.getSecretKey(), specVersion.miscHelpers().computeSigningRoot(exit, domain));
+  }
+
+  private static BLSSignature signUnderStateForkDomain(
+      final Spec spec,
+      final BeaconState state,
+      final VoluntaryExit exit,
+      final BLSKeyPair keyPair) {
+    final SpecVersion specVersion = spec.atSlot(state.getSlot());
+    final Bytes32 domain =
+        specVersion
+            .beaconStateAccessors()
+            .getVoluntaryExitDomain(
+                exit.getEpoch(), state.getFork(), state.getGenesisValidatorsRoot());
+    return BLS.sign(
+        keyPair.getSecretKey(), specVersion.miscHelpers().computeSigningRoot(exit, domain));
   }
 
   @Test

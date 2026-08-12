@@ -801,6 +801,16 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
+  /**
+   * Returns true if data availability must complete before recording block timeliness.
+   *
+   * <p>For Fulu, the spec records timeliness post-DA (PeerDAS). For all other forks, timeliness is
+   * recorded at block body arrival.
+   */
+  public boolean isDataAvailabilityRequiredForTimeliness() {
+    return false;
+  }
+
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
     final BeaconBlockBody body = block.getMessage().getBody();
