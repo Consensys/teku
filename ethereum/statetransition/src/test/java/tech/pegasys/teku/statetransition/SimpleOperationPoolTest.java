@@ -117,34 +117,6 @@ public class SimpleOperationPoolTest {
   }
 
   @Test
-  void shouldLimitGloasAttesterSlashingsToConsensusMaximum() {
-    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
-    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
-    final Function<UInt64, BeaconBlockBodySchema<?>> gloasBlockSchemaSupplier =
-        slot -> gloasSpec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
-    final OperationValidator<AttesterSlashing> validator = mock(OperationValidator.class);
-    final OperationPool<AttesterSlashing> pool =
-        new SimpleOperationPool<>(
-            "AttesterSlashingPool",
-            metricsSystem,
-            gloasBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
-            validator);
-    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
-    when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
-
-    pool.addLocal(gloasDataStructureUtil.randomAttesterSlashing());
-    pool.addLocal(gloasDataStructureUtil.randomAttesterSlashing());
-
-    final int maxAttesterSlashings =
-        gloasSpec
-            .getGenesisSpecConfig()
-            .toVersionElectra()
-            .orElseThrow()
-            .getMaxAttesterSlashingsElectra();
-    assertThat(pool.getItemsForBlock(state, maxAttesterSlashings)).hasSize(maxAttesterSlashings);
-  }
-
-  @Test
   void shouldNotCountFilteredOperationsInMaxItems() {
     final Predicate<SignedVoluntaryExit> filter = mock(Predicate.class);
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);

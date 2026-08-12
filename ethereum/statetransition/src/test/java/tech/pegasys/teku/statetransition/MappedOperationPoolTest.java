@@ -185,6 +185,7 @@ public class MappedOperationPoolTest {
           .isCompleted();
     }
 
+    assertThat(voluntaryExitPool.size()).isEqualTo(maxVoluntaryExits + 1);
     assertThat(voluntaryExitPool.getItemsForBlock(state, maxVoluntaryExits))
         .hasSize(maxVoluntaryExits);
   }
