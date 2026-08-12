@@ -152,6 +152,7 @@ public class MappedOperationPoolTest {
       assertThat(pool.addLocal(dataStructureUtil.randomSignedBlsToExecutionChange())).isCompleted();
     }
 
+    // Verify the bounded schema limit is respected even when the caller requests more items
     assertThat(pool.getItemsForBlock(state, maxBlsToExecutionChanges + 1))
         .hasSize(maxBlsToExecutionChanges);
     assertThat(pool.size()).isEqualTo(maxBlsToExecutionChanges + 1);
