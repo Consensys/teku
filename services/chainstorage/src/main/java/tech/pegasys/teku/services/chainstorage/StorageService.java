@@ -91,7 +91,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               final AsyncRunner storagePrunerAsyncRunner =
                   serviceConfig.createAsyncRunner(
                       "storagePrunerAsyncRunner",
-                      1,
+                      4,
                       DEFAULT_MAX_QUEUE_SIZE,
                       Thread.NORM_PRIORITY - 1);
               final VersionedDatabaseFactory dbFactory =
