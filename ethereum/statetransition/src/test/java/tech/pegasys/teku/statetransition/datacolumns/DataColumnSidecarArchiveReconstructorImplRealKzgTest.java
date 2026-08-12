@@ -38,11 +38,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -84,14 +85,17 @@ public class DataColumnSidecarArchiveReconstructorImplRealKzgTest {
 
   @Test
   void reconstructsExtensionColumnsIdenticalToOriginalSidecars() {
-    final List<Blob> blobs =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<BlobAndCellProofs> blobsAndCellProofs =
+        IntStream.range(0, 4)
+            .mapToObj(__ -> KzgUtil.computeBlobAndCellProofs(kzg, dataStructureUtil.randomValidBlob()))
+            .toList();
     final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobsAndCellProofs.size());
 
     // the canonical full set of column sidecars, built from the real blobs with real KZG
     final List<DataColumnSidecar> originalSidecars =
-        miscHelpers.constructDataColumnSidecarsOld(block, blobs);
+        miscHelpers.constructDataColumnSidecars(
+            block.getMessage(), block.asHeader(), miscHelpers.computeExtendedMatrix(blobsAndCellProofs));
     assertThat(originalSidecars).hasSize(numberOfColumns);
 
     // supernodes retain the first half of the sidecars plus the extension columns' proofs
