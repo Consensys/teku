@@ -15,10 +15,17 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.GasLimitScheduleEntry;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -53,11 +60,15 @@ public class GloasBuilder extends BaseForkBuilder
   private Integer consolidationChurnLimitQuotient;
   private UInt64 maxPerEpochActivationChurnLimitGloas;
 
+  // EIP-8261: Gas limit schedule
+  private final List<GasLimitScheduleEntry> gasLimitSchedule = new ArrayList<>();
+
   GloasBuilder() {}
 
   @Override
   public SpecConfigAndParent<SpecConfigGloas> build(
       final SpecConfigAndParent<SpecConfigFulu> specConfigAndParent) {
+    verifyGasLimitScheduleEpochs(specConfigAndParent.specConfig().getGloasForkEpoch());
     return SpecConfigAndParent.of(
         new SpecConfigGloasImpl(
             specConfigAndParent.specConfig(),
@@ -82,7 +93,8 @@ public class GloasBuilder extends BaseForkBuilder
             maxSignedAggregateAndProofSize,
             maxAttesterSlashingSize,
             maxDataColumnSidecarSize,
-            maxSignedExecutionPayloadBidSize),
+            maxSignedExecutionPayloadBidSize,
+            gasLimitSchedule),
         specConfigAndParent);
   }
 
@@ -221,6 +233,42 @@ public class GloasBuilder extends BaseForkBuilder
     checkNotNull(maxPerEpochActivationChurnLimitGloas);
     this.maxPerEpochActivationChurnLimitGloas = maxPerEpochActivationChurnLimitGloas;
     return this;
+  }
+
+  public GloasBuilder gasLimitSchedule(final List<GasLimitScheduleEntry> gasLimitSchedule) {
+    checkNotNull(gasLimitSchedule);
+    verifyGasLimitSchedule(gasLimitSchedule);
+    this.gasLimitSchedule.clear();
+    gasLimitSchedule.stream()
+        .sorted(Comparator.comparing(GasLimitScheduleEntry::epoch))
+        .forEach(this.gasLimitSchedule::add);
+    return this;
+  }
+
+  /** The schedule is sorted by epoch, so only the lowest epoch needs checking. */
+  private void verifyGasLimitScheduleEpochs(final UInt64 gloasForkEpoch) {
+    if (gasLimitSchedule.isEmpty() || gloasForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      // nothing to check, or Gloas is not scheduled yet on this network
+      return;
+    }
+    final UInt64 lowestEpoch = gasLimitSchedule.getFirst().epoch();
+    if (lowestEpoch.isLessThan(gloasForkEpoch)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Gas limit schedule contains an entry for epoch %s, which is before the Gloas fork epoch %s.",
+              lowestEpoch, gloasForkEpoch));
+    }
+  }
+
+  private void verifyGasLimitSchedule(final List<GasLimitScheduleEntry> gasLimitSchedule) {
+    final Set<UInt64> seenEpochs = new HashSet<>();
+    for (final GasLimitScheduleEntry entry : gasLimitSchedule) {
+      if (!seenEpochs.add(entry.epoch())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "There are duplicate entries for epoch %s in gas limit schedule.", entry.epoch()));
+      }
+    }
   }
 
   @Override

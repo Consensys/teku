@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
+import tech.pegasys.teku.spec.config.GasLimitScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -89,6 +90,19 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   public UInt64 convertValidatorIndexToBuilderIndex(final UInt64 validatorIndex) {
     return UInt64.valueOf(validatorIndex.longValue() & ~BUILDER_INDEX_FLAG.longValue());
+  }
+
+  /**
+   * get_scheduled_gas_limit
+   *
+   * <p>EIP-8261: returns the scheduled gas limit at a given epoch, if any.
+   */
+  public Optional<UInt64> getScheduledGasLimit(final UInt64 epoch) {
+    // the schedule is kept sorted by epoch in ascending order
+    return specConfigGloas.getGasLimitSchedule().reversed().stream()
+        .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
+        .map(GasLimitScheduleEntry::gasLimit)
+        .findFirst();
   }
 
   @Override
