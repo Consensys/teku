@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_BLOCK_HASH_GINDEX_GLOAS;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.EXECUTION_PAYLOAD_GINDEX;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,11 +52,9 @@ public class LightClientUtilTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private LightClientUtil lightClientUtil;
-  private TestSpecInvocationContextProvider.SpecContext specContext;
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    this.specContext = specContext;
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     lightClientUtil = spec.getLightClientUtilRequired(UInt64.ZERO);
@@ -62,26 +62,20 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientBootstrap_shouldReturnValidBootstrap() {
-    assumePreCapella();
     final SignedBlockAndState blockAndState =
         blockWithPostState(1, dataStructureUtil.randomBytes32());
     final BeaconState state = blockAndState.getState();
-    final LightClientHeader expectedHeader =
-        SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
-            .getLightClientHeaderSchema()
-            .create(BeaconBlockHeader.fromState(state));
     final LightClientBootstrap bootstrap =
         lightClientUtil.createLightClientBootstrap(state, blockAndState.getBlock());
 
-    assertThat(bootstrap.getLightClientHeader()).isEqualTo(expectedHeader);
+    assertHeaderMatchesBlock(bootstrap.getLightClientHeader(), blockAndState.getBlock());
     assertThat(bootstrap.getCurrentSyncCommittee())
         .isEqualTo(BeaconStateAltair.required(state).getCurrentSyncCommittee());
-    assertThat(bootstrap.getSyncCommitteeBranch().size())
-        .isEqualTo(
-            SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
-                .getLightClientBootstrapSchema()
-                .getSyncCommitteeBranchSchema()
-                .getLength());
+    assertProofReconstructsRoot(
+        bootstrap.getCurrentSyncCommittee().hashTreeRoot(),
+        bootstrap.getSyncCommitteeBranch(),
+        fieldGIndex(state, BeaconStateFields.CURRENT_SYNC_COMMITTEE),
+        state.hashTreeRoot());
   }
 
   @TestTemplate
@@ -121,7 +115,6 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldProveNextSyncCommitteeWithinSamePeriod() {
-    assumePreCapella();
     final SignedBlockAndState attested = blockWithPostState(1, dataStructureUtil.randomBytes32());
     final SignedBlockAndState signature = blockWithPostState(2, attested.getBlock().getRoot());
 
@@ -147,7 +140,6 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldUseDefaultsWhenSignatureSlotInLaterPeriod() {
-    assumePreCapella();
     final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
     final long nextPeriodSlot =
         (long) config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1;
@@ -174,7 +166,6 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldProveFinalizedHeaderFromAttestedState() {
-    assumePreCapella();
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBlockAndState attested =
         blockWithPostState(
@@ -191,11 +182,7 @@ public class LightClientUtilTest {
             attested.getBlock(),
             Optional.of(finalizedBlock));
 
-    final LightClientHeader expectedFinalizedHeader =
-        SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
-            .getLightClientHeaderSchema()
-            .create(BeaconBlockHeader.fromBlock(finalizedBlock.getMessage()));
-    assertThat(update.getFinalizedHeader()).isEqualTo(expectedFinalizedHeader);
+    assertHeaderMatchesBlock(update.getFinalizedHeader(), finalizedBlock);
 
     assertProofReconstructsStateRoot(
         attested.getState(),
@@ -206,7 +193,6 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldRejectFinalizedBlockNotMatchingCheckpoint() {
-    assumePreCapella();
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBlockAndState attested = blockWithPostState(2, dataStructureUtil.randomBytes32());
     final SignedBlockAndState signature = blockWithPostState(3, attested.getBlock().getRoot());
@@ -225,7 +211,6 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldUseDefaultHeaderForGenesisFinalizedBlock() {
-    assumePreCapella();
     final SignedBeaconBlock genesisBlock = dataStructureUtil.randomSignedBeaconBlock(0);
     final SignedBlockAndState attested =
         blockWithPostState(
@@ -257,7 +242,6 @@ public class LightClientUtilTest {
 
   @TestTemplate
   public void createLightClientUpdate_shouldRejectStateThatIsNotThePostStateOfTheBlock() {
-    assumePreCapella();
     final SignedBlockAndState attested = blockWithPostState(1, dataStructureUtil.randomBytes32());
     final SignedBlockAndState signature = blockWithPostState(2, attested.getBlock().getRoot());
     final SignedBlockAndState unrelated = blockWithPostState(2, attested.getBlock().getRoot());
@@ -300,42 +284,6 @@ public class LightClientUtilTest {
     assertThat(optimisticUpdate.getSignatureSlot()).isEqualTo(update.getSignatureSlot());
   }
 
-  @TestTemplate
-  public void createLightClientBootstrap_shouldThrowFromCapella() {
-    assumeCapellaOrLater();
-    final SignedBlockAndState blockAndState =
-        blockWithPostState(1, dataStructureUtil.randomBytes32());
-    assertThatThrownBy(
-            () ->
-                lightClientUtil.createLightClientBootstrap(
-                    blockAndState.getState(), blockAndState.getBlock()))
-        .isInstanceOf(UnsupportedOperationException.class);
-  }
-
-  @TestTemplate
-  public void createLightClientUpdate_shouldThrowFromCapella() {
-    assumeCapellaOrLater();
-    final SignedBlockAndState attested = blockWithPostState(1, dataStructureUtil.randomBytes32());
-    final SignedBlockAndState signature = blockWithPostState(2, attested.getBlock().getRoot());
-    assertThatThrownBy(
-            () ->
-                lightClientUtil.createLightClientUpdate(
-                    signature.getState(),
-                    signature.getBlock(),
-                    attested.getState(),
-                    attested.getBlock(),
-                    Optional.empty()))
-        .isInstanceOf(UnsupportedOperationException.class);
-  }
-
-  private void assumePreCapella() {
-    specContext.assumeIsOneOf(SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
-  }
-
-  private void assumeCapellaOrLater() {
-    specContext.assumeIsNotOneOf(SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
-  }
-
   private SignedBlockAndState blockWithPostState(final long slot, final Bytes32 parentRoot) {
     return blockWithPostState(slot, parentRoot, Optional.empty());
   }
@@ -376,18 +324,48 @@ public class LightClientUtilTest {
             Checkpoint.SSZ_SCHEMA.getFieldIndex("root")));
   }
 
+  private void assertHeaderMatchesBlock(
+      final LightClientHeader header, final SignedBeaconBlock block) {
+    assertThat(header.getBeacon()).isEqualTo(BeaconBlockHeader.fromBlock(block.getMessage()));
+
+    final Bytes32 bodyRoot = block.getMessage().getBody().hashTreeRoot();
+    header
+        .toVersionCapella()
+        .ifPresent(
+            capella ->
+                assertProofReconstructsRoot(
+                    capella.getExecution().hashTreeRoot(),
+                    capella.getExecutionBranch(),
+                    EXECUTION_PAYLOAD_GINDEX,
+                    bodyRoot));
+    header
+        .toVersionGloas()
+        .ifPresent(
+            gloas ->
+                assertProofReconstructsRoot(
+                    gloas.getExecutionBlockHash().get(),
+                    gloas.getExecutionBranch(),
+                    EXECUTION_BLOCK_HASH_GINDEX_GLOAS,
+                    bodyRoot));
+  }
+
   private void assertProofReconstructsStateRoot(
       final BeaconState state,
       final Bytes32 leaf,
       final SszBytes32Vector branch,
       final long gIndex) {
+    assertProofReconstructsRoot(leaf, branch, gIndex, state.hashTreeRoot());
+  }
+
+  private void assertProofReconstructsRoot(
+      final Bytes32 leaf, final SszBytes32Vector branch, final long gIndex, final Bytes32 root) {
     final int depth = branch.size();
     assertThat(depth).isEqualTo(GIndexUtil.gIdxGetDepth(gIndex));
 
     final int index = GIndexUtil.gIdxGetChildIndex(gIndex, depth);
     assertThat(
             new Predicates(spec.getGenesisSpecConfig())
-                .isValidMerkleBranch(leaf, branch, depth, index, state.hashTreeRoot()))
+                .isValidMerkleBranch(leaf, branch, depth, index, root))
         .isTrue();
   }
 }

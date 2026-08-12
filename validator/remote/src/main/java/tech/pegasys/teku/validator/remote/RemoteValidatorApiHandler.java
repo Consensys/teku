@@ -285,7 +285,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedProposerPreferences(
+  public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }

@@ -745,7 +745,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertInternalValidationResults);
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
@@ -787,7 +787,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             });
   }
 
-  private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
+  private List<SubmitDataError> convertInternalValidationResults(
       final List<InternalValidationResult> results) {
     final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < results.size(); index++) {
@@ -805,7 +805,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return SafeFuture.collectAll(aggregateAndProofs.stream().map(this::processAggregateAndProof))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertInternalValidationResults);
   }
 
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
@@ -921,27 +921,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final List<PayloadAttestationMessage> payloadAttestationMessages) {
     return SafeFuture.collectAll(
             payloadAttestationMessages.stream().map(payloadAttestationPool::addLocal))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertInternalValidationResults);
   }
 
   @Override
-  public SafeFuture<Void> sendSignedProposerPreferences(
+  public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return SafeFuture.collectAll(
             signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
-        .thenAccept(
-            results -> {
-              final List<String> errorMessages =
-                  results.stream()
-                      .filter(InternalValidationResult::isReject)
-                      .flatMap(result -> result.getDescription().stream())
-                      .toList();
-              if (!errorMessages.isEmpty()) {
-                LOG.warn(
-                    "Some proposer preferences were rejected: {}",
-                    String.join("; ", errorMessages));
-              }
-            });
+        .thenApply(this::convertInternalValidationResults);
   }
 
   @Override
