@@ -133,6 +133,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
    * variable is fully maintained by DasCustodyBackfiller
    */
   private void doPruneDataColumnSidecars() {
+    LOG.debug("Data column sidecars pruner task triggered");
     final Optional<UInt64> genesisTime = getGenesisTime();
     if (genesisTime.isEmpty()) {
       LOG.debug("Not pruning data column sidecars: no genesis time available yet.");
@@ -157,6 +158,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
   }
 
   private void doArchiveDataColumnSidecars() {
+    LOG.debug("Data column sidecars archiver task triggered");
     final long tillSlotLong = lastDataColumnSidecarArchivePrunableSlot.get();
     if (tillSlotLong < 0) {
       LOG.debug("Not archiving data column sidecars: no prunable slot signal received yet.");
