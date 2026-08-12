@@ -11,5 +11,6 @@
 
 ### Additions and Improvements
  - `--validator-keys` now accepts `<KEY_DIR>:<PASS_FILE>`, using a single password file for all keystores found in the directory.
+ - Improved debug/beacon/states endpoint to allow searching of the finalized state root, to assist third party products searching on roots.
 
 ### Bug Fixes
