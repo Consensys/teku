@@ -25,12 +25,9 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
 public class ExecutionLayerOptions {
-
-  @Mixin private final DepositOptions depositOptions = new DepositOptions();
 
   @Option(
       names = {"--ee-endpoint"},
@@ -162,6 +159,5 @@ public class ExecutionLayerOptions {
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
                 .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag)
                 .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled));
-    depositOptions.configure(builder);
   }
 }
