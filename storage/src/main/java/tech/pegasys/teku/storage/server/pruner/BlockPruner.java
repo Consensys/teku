@@ -104,14 +104,15 @@ public class BlockPruner extends Service {
     }
     LOG.debug("Initiating pruning of finalized blocks prior to slot {}.", earliestSlotToKeep);
     try {
+      final long start = System.currentTimeMillis();
       final UInt64 lastPrunedSlot =
           database.pruneFinalizedBlocks(
               earliestSlotToKeep.decrement(), pruneLimit, checkpointEarliestSlot);
       LOG.debug(
-          "Pruned {} finalized blocks prior to slot {}, last pruned slot was {}.",
-          pruneLimit,
+          "Pruned finalized blocks prior to slot {}, last pruned slot was {}, completed in {} ms.",
           earliestSlotToKeep,
-          lastPrunedSlot);
+          lastPrunedSlot,
+          System.currentTimeMillis() - start);
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

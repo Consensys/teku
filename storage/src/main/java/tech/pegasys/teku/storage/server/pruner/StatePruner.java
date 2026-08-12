@@ -108,9 +108,14 @@ public class StatePruner extends Service {
     }
     LOG.debug("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
+      final long start = System.currentTimeMillis();
       maybeLastPrunedSlot =
           database.pruneFinalizedStates(
               maybeLastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit);
+      LOG.debug(
+          "Pruning of finalized states prior to slot {} completed in {} ms.",
+          earliestSlotToKeep,
+          System.currentTimeMillis() - start);
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
