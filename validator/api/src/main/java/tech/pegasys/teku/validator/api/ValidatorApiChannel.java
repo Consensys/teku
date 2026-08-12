@@ -199,9 +199,9 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Void> sendSignedProposerPreferences(
+        public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
             final List<SignedProposerPreferences> signedProposerPreferences) {
-          return SafeFuture.COMPLETE;
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
@@ -342,7 +342,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
   SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       List<PayloadAttestationMessage> payloadAttestationMessages);
 
-  SafeFuture<Void> sendSignedProposerPreferences(
+  SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       List<SignedProposerPreferences> signedProposerPreferences);
 
   SafeFuture<Void> prepareBeaconProposer(
