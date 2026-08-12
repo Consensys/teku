@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -52,10 +54,11 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
  */
 class FastConfirmationCalculator {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Spec spec;
   private final ForkChoiceUtil forkChoiceUtil;
 
-  @SuppressWarnings({"UnusedVariable"})
   private final FastConfirmationStore fcrStore;
 
   private final ReadOnlyStore store;
@@ -386,11 +389,263 @@ class FastConfirmationCalculator {
         continue;
       }
       final UInt64 messageEpoch = spec.computeEpochAtSlot(vote.getNextSlot());
+      // A vote can only support the target when its message epoch matches the target epoch, since
+      // Checkpoint equality requires equal epochs. Filtering on the epoch first also avoids
+      // resolving the vote's checkpoint block: for a voter that has not voted for one or more
+      // epochs the message epoch can sit at or below the finalized checkpoint, whose block has
+      // been pruned from fork choice (protoarray only retains finalized-onward blocks, while the
+      // spec assumes every block stays in store.blocks), and get_checkpoint_block would otherwise
+      // throw. Such a vote cannot match the current-epoch target anyway, so it contributes no
+      // score.
+      if (!messageEpoch.equals(target.getEpoch())) {
+        continue;
+      }
       if (target.equals(getCheckpointForBlock(votedRoot, messageEpoch))) {
         score = score.plus(validator.getEffectiveBalance());
       }
     }
     return score;
+  }
+
+  /**
+   * Implements {@code compute_honest_ffg_support_for_current_target}: the minimum honest FFG
+   * support the current-epoch target can be assured of, assuming synchrony and {@code
+   * CONFIRMATION_BYZANTINE_THRESHOLD}.
+   */
+  UInt64 computeHonestFfgSupportForCurrentTarget() {
+    final BeaconState balanceSource = getPulledUpHeadState();
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(balanceSource);
+    final UInt64 ffgSupportForCheckpoint = getCurrentTargetScore();
+    final UInt64 epochStart = spec.computeStartSlotAtEpoch(currentEpoch);
+    final UInt64 lastSlot = currentSlot.minus(1);
+
+    // Total FFG weight already assigned up to, but excluding, the current slot.
+    final UInt64 ffgWeightTillNow =
+        FastConfirmationRuleUtil.estimateCommitteeWeightBetweenSlots(
+            spec, totalActiveBalance, epochStart, lastSlot);
+    final UInt64 remainingFfgWeight = totalActiveBalance.minusMinZero(ffgWeightTillNow);
+    final UInt64 remainingHonestFfgWeight =
+        remainingFfgWeight
+            .dividedBy(100)
+            .times(100 - FastConfirmationRuleUtil.CONFIRMATION_BYZANTINE_THRESHOLD);
+
+    final UInt64 adversarialWeight = computeAdversarialWeight(balanceSource, epochStart, lastSlot);
+    // ffg_support - min(adversarial_weight, ffg_support)
+    final UInt64 minHonestFfgSupport = ffgSupportForCheckpoint.minusMinZero(adversarialWeight);
+
+    return minHonestFfgSupport.plus(remainingHonestFfgWeight);
+  }
+
+  /**
+   * Implements {@code will_no_conflicting_checkpoint_be_justified}: whether no checkpoint
+   * conflicting with the current target can ever be justified.
+   */
+  boolean willNoConflictingCheckpointBeJustified() {
+    // If the target is already the greatest unrealized justified checkpoint, nothing can conflict.
+    if (getCurrentTarget().equals(getStoreUnrealizedJustifiedCheckpoint())) {
+      return true;
+    }
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(getPulledUpHeadState());
+    return computeHonestFfgSupportForCurrentTarget().times(3).isGreaterThan(totalActiveBalance);
+  }
+
+  /**
+   * Implements {@code will_current_target_be_justified}: whether the current target will eventually
+   * be justified.
+   */
+  boolean willCurrentTargetBeJustified() {
+    final UInt64 totalActiveBalance = spec.getTotalActiveBalance(getPulledUpHeadState());
+    return computeHonestFfgSupportForCurrentTarget()
+        .times(3)
+        .isGreaterThanOrEqualTo(totalActiveBalance.times(2));
+  }
+
+  /**
+   * Implements {@code is_confirmed_chain_safe}: whether every block of the confirmed chain, from
+   * the current-epoch observed justified checkpoint up to {@code confirmedRoot}, is LMD-GHOST safe
+   * against the previous balance source. Run at the start of each epoch to relax the synchrony
+   * assumption (reconfirmation).
+   */
+  boolean isConfirmedChainSafe(final Bytes32 confirmedRoot) {
+    final Checkpoint observedJustified = fcrStore.currentEpochObservedJustifiedCheckpoint();
+    // The observed justified checkpoint must be on the confirmed chain.
+    if (!observedJustified.equals(
+        getCheckpointForBlock(confirmedRoot, observedJustified.getEpoch()))) {
+      return false;
+    }
+
+    final Bytes32 startRootExclusive;
+    if (observedJustified.getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch)) {
+      // Exclude the justified checkpoint block: from the previous epoch it is always canonical.
+      startRootExclusive = observedJustified.getRoot();
+    } else {
+      // Limit reconfirmation to the first block of the previous epoch; confirming it implies its
+      // ancestors.
+      final Bytes32 ancestorAtPreviousEpochStart =
+          getAncestorRoot(confirmedRoot, spec.computeStartSlotAtEpoch(currentEpoch.minus(1)));
+      startRootExclusive =
+          getBlockEpoch(ancestorAtPreviousEpochStart).plus(1).equals(currentEpoch)
+              ? getBlockParentRoot(ancestorAtPreviousEpochStart)
+              : ancestorAtPreviousEpochStart;
+    }
+
+    final BeaconState previousBalanceSource =
+        states
+            .previousBalanceSource()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Previous balance source is required for reconfirmation"));
+    return getAncestorRoots(confirmedRoot, startRootExclusive).stream()
+        .allMatch(root -> isOneConfirmed(previousBalanceSource, root));
+  }
+
+  /**
+   * Implements {@code find_latest_confirmed_descendant}: the most recent confirmed block in the
+   * canonical suffix starting from {@code latestConfirmedRoot}. It first tries to advance across
+   * previous-epoch blocks (relying on the previous slot head), then further into the current epoch
+   * (gated on the current target being justifiable), keeping the result only if it cannot be
+   * reorged out in the current or next epoch.
+   */
+  Bytes32 findLatestConfirmedDescendant(final Bytes32 latestConfirmedRoot) {
+    final boolean atEpochStart = FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, currentSlot);
+    final Bytes32 previousSlotHead = fcrStore.previousSlotHead();
+    final BeaconState currentBalanceSource = states.currentBalanceSource();
+    Bytes32 confirmedRoot = latestConfirmedRoot;
+
+    // The previous slot head is a root persisted in the FCR store across slots, so it may have been
+    // pruned from fork choice (protoarray only keeps finalized-onward blocks, while the spec
+    // assumes
+    // every block stays in store.blocks). When it is gone we cannot rely on it, so skip the
+    // previous-epoch advance rather than dereferencing it — mirrors the guard get_latest_confirmed
+    // applies to its other persisted roots.
+    if (forkChoice.contains(previousSlotHead)
+        && getBlockEpoch(confirmedRoot).plus(1).equals(currentEpoch)
+        && epochPlusIsAtLeastCurrent(getVotingSource(previousSlotHead).getEpoch(), 2)
+        && (atEpochStart
+            || (willNoConflictingCheckpointBeJustified()
+                && (epochPlusIsAtLeastCurrent(
+                        getUnrealizedJustification(previousSlotHead).getEpoch(), 1)
+                    || epochPlusIsAtLeastCurrent(
+                        getUnrealizedJustification(head).getEpoch(), 1))))) {
+      // Advance towards the head over previous-epoch blocks; stop at the first unconfirmed one.
+      for (final Bytes32 blockRoot : getAncestorRoots(head, confirmedRoot)) {
+        // Only meant to confirm previous-epoch blocks.
+        if (getBlockEpoch(blockRoot).equals(currentEpoch)) {
+          break;
+        }
+        // Can only rely on the previous head if it descends from the block being confirmed.
+        if (!isAncestor(previousSlotHead, blockRoot)) {
+          break;
+        }
+        if (!isOneConfirmed(currentBalanceSource, blockRoot)) {
+          break;
+        }
+        confirmedRoot = blockRoot;
+      }
+    }
+
+    if (atEpochStart || epochPlusIsAtLeastCurrent(getUnrealizedJustification(head).getEpoch(), 1)) {
+      Bytes32 tentativeConfirmedRoot = confirmedRoot;
+      for (final Bytes32 blockRoot : getAncestorRoots(head, confirmedRoot)) {
+        // Only true the first time the walk advances into the current epoch.
+        if (getBlockEpoch(blockRoot).isGreaterThan(getBlockEpoch(tentativeConfirmedRoot))
+            && !willCurrentTargetBeJustified()) {
+          break;
+        }
+        if (!isOneConfirmed(currentBalanceSource, blockRoot)) {
+          break;
+        }
+        tentativeConfirmedRoot = blockRoot;
+      }
+
+      // Only keep the advance if the block cannot be reorged out this epoch or the next.
+      if (getBlockEpoch(tentativeConfirmedRoot).equals(currentEpoch)
+          || (epochPlusIsAtLeastCurrent(getVotingSource(tentativeConfirmedRoot).getEpoch(), 2)
+              && (atEpochStart || willNoConflictingCheckpointBeJustified()))) {
+        confirmedRoot = tentativeConfirmedRoot;
+      }
+    }
+
+    return confirmedRoot;
+  }
+
+  /**
+   * Implements {@code get_latest_confirmed}: the FCR entry point. Reverts {@code confirmed_root} to
+   * the finalized block when it is too old, no longer canonical, or (at an epoch boundary) fails
+   * reconfirmation; optionally restarts the chain from the observed justified checkpoint; then
+   * advances via {@link #findLatestConfirmedDescendant}.
+   */
+  Bytes32 getLatestConfirmed() {
+    final boolean atEpochStart = FastConfirmationRuleUtil.isStartSlotAtEpoch(spec, currentSlot);
+    Bytes32 confirmedRoot = fcrStore.confirmedRoot();
+
+    // Revert to the finalized block if the confirmed block is no longer tracked by fork choice
+    // (pruned below the finalized anchor as finality advanced — the spec assumes every block stays
+    // in store.blocks, but Teku's protoarray only keeps finalized-onward), is more than one epoch
+    // old, no longer an ancestor of the head, or (at an epoch boundary) its chain can no longer be
+    // reconfirmed. The fork-choice-presence check is first so the epoch/ancestry lookups below
+    // never
+    // run on a pruned root.
+    if (!forkChoice.contains(confirmedRoot)
+        || getBlockEpoch(confirmedRoot).plus(1).isLessThan(currentEpoch)
+        || !isAncestor(head, confirmedRoot)
+        || (atEpochStart && !isConfirmedChainSafe(confirmedRoot))) {
+      confirmedRoot = store.getFinalizedCheckpoint().getRoot();
+    }
+
+    // Restart the confirmation chain from the observed justified checkpoint when, at an epoch
+    // boundary, that checkpoint is from the previous epoch, equals the head's unrealized
+    // justification, and the confirmed block is older than it. Skip when the checkpoint block has
+    // been pruned from fork choice.
+    final Checkpoint observedJustified = fcrStore.currentEpochObservedJustifiedCheckpoint();
+    if (atEpochStart && forkChoice.contains(observedJustified.getRoot())) {
+      final UInt64 observedJustifiedBlockSlot = getBlockSlot(observedJustified.getRoot());
+      if (spec.computeEpochAtSlot(observedJustifiedBlockSlot).plus(1).equals(currentEpoch)
+          && observedJustified.equals(getUnrealizedJustification(head))
+          && getBlockSlot(confirmedRoot).isLessThan(observedJustifiedBlockSlot)) {
+        confirmedRoot = observedJustified.getRoot();
+      }
+    }
+
+    // Attempt to advance the confirmed block further; only meaningful while it is recent.
+    final boolean advanceRan =
+        getBlockEpoch(confirmedRoot).plus(1).isGreaterThanOrEqualTo(currentEpoch);
+    final Bytes32 result =
+        advanceRan ? findLatestConfirmedDescendant(confirmedRoot) : confirmedRoot;
+
+    if (LOG.isTraceEnabled()) {
+      final Object headUnrealizedJustifiedEpoch =
+          forkChoice.getBlockData(head).isPresent()
+              ? getUnrealizedJustification(head).getEpoch()
+              : "n/a";
+      LOG.trace(
+          "FCR getLatestConfirmed slot={} epoch={} atEpochStart={} headFullyValidated={} finalizedEpoch={} observedJustifiedEpoch={} headUnrealizedJustifiedEpoch={} confirmedEpochBeforeAdvance={} advanceRan={} resultEpoch={}",
+          currentSlot,
+          currentEpoch,
+          atEpochStart,
+          forkChoice.isFullyValidated(head),
+          getBlockEpoch(store.getFinalizedCheckpoint().getRoot()),
+          observedJustified.getEpoch(),
+          headUnrealizedJustifiedEpoch,
+          getBlockEpoch(confirmedRoot),
+          advanceRan,
+          getBlockEpoch(result));
+    }
+    return result;
+  }
+
+  /**
+   * Returns {@code epoch + offset >= currentEpoch} (spec pattern {@code checkpoint.epoch + n >=
+   * current_epoch}).
+   */
+  private boolean epochPlusIsAtLeastCurrent(final UInt64 epoch, final long offset) {
+    return epoch.plus(offset).isGreaterThanOrEqualTo(currentEpoch);
+  }
+
+  /** Reconstructs {@code store.unrealized_justified_checkpoint} (the store-level greatest). */
+  private Checkpoint getStoreUnrealizedJustifiedCheckpoint() {
+    return FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store);
   }
 
   /**
@@ -418,6 +673,33 @@ class FastConfirmationCalculator {
       }
     }
     return headState;
+  }
+
+  /**
+   * Implements {@code get_voting_source}: the voting source of a block is its unrealized justified
+   * checkpoint when the block is from a prior epoch (pulled up), otherwise its realized justified
+   * checkpoint. Teku's protoarray stores the block's post-state realized justified checkpoint,
+   * which equals the spec's {@code store.block_states[block_root].current_justified_checkpoint}, so
+   * no block state needs to be loaded here.
+   */
+  Checkpoint getVotingSource(final Bytes32 blockRoot) {
+    final UInt64 blockEpoch = getBlockEpoch(blockRoot);
+    if (currentEpoch.isGreaterThan(blockEpoch)) {
+      return getUnrealizedJustification(blockRoot);
+    }
+    return getCheckpoints(blockRoot).getJustifiedCheckpoint();
+  }
+
+  /**
+   * Implements {@code is_ancestor(store, get_node_for_root(descendantRoot),
+   * get_node_for_root(ancestorRoot))}: {@code true} if {@code ancestorRoot} is an ancestor of
+   * {@code descendantRoot} (a block is considered its own ancestor).
+   *
+   * <p>Delegates to the fork-choice {@code is_ancestor} rather than re-deriving ancestry, so the
+   * Gloas payload-status semantics are honoured.
+   */
+  boolean isAncestor(final Bytes32 descendantRoot, final Bytes32 ancestorRoot) {
+    return isAncestor(getNodeForRoot(descendantRoot), getNodeForRoot(ancestorRoot));
   }
 
   private boolean isAncestor(
