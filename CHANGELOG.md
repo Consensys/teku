@@ -13,4 +13,4 @@
  - `--validator-keys` now accepts `<KEY_DIR>:<PASS_FILE>`, using a single password file for all keystores found in the directory.
 
 ### Bug Fixes
- - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to 
+ - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
