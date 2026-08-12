@@ -69,8 +69,7 @@ public class BlobReconstructionAbstractTest {
                   final var sidecars =
                       miscHelpers.constructDataColumnSidecars(
                           block,
-                          List.of(
-                                  KzgUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
+                          List.of(KzgUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
                   return new CellData(
                       b.getBytes().toHexString(),
                       sidecars.stream()
