@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
