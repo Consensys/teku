@@ -10,7 +10,7 @@
  - Removed the legacy web3j-based Eth1/PoW deposit-log fetching. A node no longer requires an Eth1 JSON-RPC endpoint to run; deposits are sourced from the finalized deposit-tree snapshot and in-protocol (EIP-6110) execution requests. The following CLI options have been removed: `--eth1-endpoints` / `--eth1-endpoint`, `--eth1-deposit-contract-max-request-size`.
  - Removed the non-production `validator-tools send-deposits` and `validator-tools generate-and-send-deposits` internal subcommands (web3j-based deposit submission). `validator-tools generate-keys` is unaffected.
  - Removed the GetDepositSnapshot RPC endpoint, which has been deprecated and removed since v3.0.0 of the Beacon API spec.
- - Promoted `--Xvalidators-external-signer-concurrent-limit` to non-experimental `--validators-external-signer-concurrent-limit`, and impose maximum limit of 1024
+ - Promoted `--Xvalidators-external-signer-concurrent-limit` to non-experimental `--validators-external-signer-concurrent-limit`, and imposed maximum limit of 1024
 
 ### Additions and Improvements
  - `--validator-keys` now accepts `<KEY_DIR>:<PASS_FILE>`, using a single password file for all keystores found in the directory.
