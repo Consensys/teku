@@ -92,17 +92,13 @@ specrefs:
 
       # No light client support
       - apply_light_client_update
-      - block_to_light_client_header
       - current_sync_committee_gindex_at_slot
       - finalized_root_gindex_at_slot
       - get_lc_execution_root
       - get_safety_threshold
       - get_subtree_index
       - initialize_light_client_store
-      - is_better_update
-      - is_finality_update
       - is_next_sync_committee_known
-      - is_sync_committee_update
       - is_valid_light_client_header
       - is_valid_normalized_merkle_branch
       - normalize_merkle_branch#electra

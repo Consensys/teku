@@ -72,6 +72,8 @@ public class MappedOperationPoolTest {
               .andThen(BeaconBlockBodySchema::toVersionCapella)
               .andThen(Optional::orElseThrow)
               .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema);
+  private final int maxBlsToExecutionChanges =
+      spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
   private final OperationPool<SignedBlsToExecutionChange> pool =
       new MappedOperationPool<>(
           "BlsToExecutionOperationPool",
@@ -88,7 +90,7 @@ public class MappedOperationPoolTest {
 
   @Test
   void emptyPoolShouldReturnEmptyList() {
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, maxBlsToExecutionChanges)).isEmpty();
   }
 
   @Test
@@ -146,15 +148,47 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange item = initPoolWithSingleItem();
     when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
-    final int maxBlsToExecutionChanges =
-        spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
-    while (pool.size() < maxBlsToExecutionChanges) {
+    while (pool.size() <= maxBlsToExecutionChanges) {
       assertThat(pool.addLocal(dataStructureUtil.randomSignedBlsToExecutionChange())).isCompleted();
     }
 
-    assertThat(pool.getItemsForBlock(state)).hasSize(maxBlsToExecutionChanges);
-    assertThat(pool.size()).isEqualTo(maxBlsToExecutionChanges);
-    assertThat(pool.getItemsForBlock(state)).contains(item);
+    // Verify the bounded schema limit is respected even when the caller requests more items
+    assertThat(pool.getItemsForBlock(state, maxBlsToExecutionChanges + 1))
+        .hasSize(maxBlsToExecutionChanges);
+    assertThat(pool.size()).isEqualTo(maxBlsToExecutionChanges + 1);
+    assertThat(pool.getItemsForBlock(state, maxBlsToExecutionChanges)).contains(item);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldLimitGloasVoluntaryExitsToConsensusMaximum() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
+    final OperationValidator<SignedVoluntaryExit> exitValidator = mock(OperationValidator.class);
+    final OperationPool<SignedVoluntaryExit> voluntaryExitPool =
+        new MappedOperationPool<>(
+            "VoluntaryExitPool",
+            metricsSystem,
+            slot ->
+                gloasSpec
+                    .atSlot(slot)
+                    .getSchemaDefinitions()
+                    .getBeaconBlockBodySchema()
+                    .getVoluntaryExitsSchema(),
+            exitValidator,
+            asyncRunner,
+            stubTimeProvider);
+    when(exitValidator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    when(exitValidator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
+    final int maxVoluntaryExits = gloasSpec.getGenesisSpecConfig().getMaxVoluntaryExits();
+    while (voluntaryExitPool.size() <= maxVoluntaryExits) {
+      assertThat(voluntaryExitPool.addLocal(gloasDataStructureUtil.randomSignedVoluntaryExit()))
+          .isCompleted();
+    }
+
+    assertThat(voluntaryExitPool.size()).isEqualTo(maxVoluntaryExits + 1);
+    assertThat(voluntaryExitPool.getItemsForBlock(state, maxVoluntaryExits))
+        .hasSize(maxVoluntaryExits);
   }
 
   @Test
@@ -169,7 +203,8 @@ public class MappedOperationPoolTest {
     assertThat(pool.addRemote(remoteEntry, Optional.empty())).isCompleted();
     assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
 
-    final SszList<SignedBlsToExecutionChange> blockItems = pool.getItemsForBlock(state);
+    final SszList<SignedBlsToExecutionChange> blockItems =
+        pool.getItemsForBlock(state, maxBlsToExecutionChanges);
     assertThat(blockItems.size()).isEqualTo(3);
     assertThat(blockItems.get(2)).isEqualTo(remoteEntry);
   }
@@ -197,7 +232,7 @@ public class MappedOperationPoolTest {
     initPoolWithSingleItem();
     assertThat(pool.size()).isEqualTo(1);
 
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, maxBlsToExecutionChanges)).isEmpty();
     assertThat(pool.size()).isEqualTo(0);
   }
 

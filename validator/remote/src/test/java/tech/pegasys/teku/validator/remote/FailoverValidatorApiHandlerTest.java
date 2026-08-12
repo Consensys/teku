@@ -791,7 +791,7 @@ class FailoverValidatorApiHandlerTest {
                 apiChannel -> apiChannel.sendSignedProposerPreferences(List.of()),
                 apiChannel -> verify(apiChannel).sendSignedProposerPreferences(List.of()),
                 BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD,
-                null)));
+                List.of())));
   }
 
   private static Stream<Arguments> getPublishSignedDutiesRequests() {
