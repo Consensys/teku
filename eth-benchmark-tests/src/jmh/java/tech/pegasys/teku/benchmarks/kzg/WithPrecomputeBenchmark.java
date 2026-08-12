@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.util.KzgUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 
 @Fork(1)
@@ -55,7 +56,10 @@ public class WithPrecomputeBenchmark {
 
   @Benchmark
   public void computeExtendedMatrixAndProofs(final ExecutionPlan plan) {
-    plan.config.miscHelpersFulu.computeExtendedMatrixAndProofs(plan.config.blobs);
+    plan.config.miscHelpersFulu.computeExtendedMatrix(
+        plan.config.blobs.stream()
+            .map((b) -> KzgUtil.computeBlobAndCellProofs(plan.config.miscHelpersFulu.getKzg(), b))
+            .toList());
   }
 
   @Benchmark
