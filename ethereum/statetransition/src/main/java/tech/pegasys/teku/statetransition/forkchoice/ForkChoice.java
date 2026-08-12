@@ -567,6 +567,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
                     blockBroadcastValidator.onConsensusValidationSucceeded();
+                    // For Fulu, record timeliness at DA completion rather than block body arrival
+                    if (forkChoiceUtil.isDataAvailabilityRequiredForTimeliness()) {
+                      recentChainData.setBlockTimelinessAfterDataAvailability(
+                          block, recentChainData.getStore().getTimeInMillis());
+                    }
                   }
                 });
 
