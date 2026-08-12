@@ -166,17 +166,20 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   @Override
-  public SszList<T> getItemsForBlock(final BeaconState stateAtBlockSlot) {
-    return getItemsForBlock(stateAtBlockSlot, operation -> true, operation -> {});
+  public SszList<T> getItemsForBlock(
+      final BeaconState stateAtBlockSlot, final int maxItemsForBlock) {
+    return getItemsForBlock(stateAtBlockSlot, maxItemsForBlock, operation -> true, operation -> {});
   }
 
   @Override
   public SszList<T> getItemsForBlock(
       final BeaconState stateAtBlockSlot,
+      final int maxItemsForBlock,
       final Predicate<T> filter,
       final Consumer<T> includedItemConsumer) {
     final SszListSchema<T, ?> schema =
         slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
+    final long maxItemsToSelect = Math.min(maxItemsForBlock, schema.getMaxLength());
 
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
@@ -184,6 +187,9 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
         operations.values().stream().sorted().map(OperationPoolEntry::getMessage).toList();
     final List<T> selected = new ArrayList<>();
     for (final T item : sortedViableOperations) {
+      if (selected.size() >= maxItemsToSelect) {
+        break;
+      }
       if (!filter.test(item)) {
         continue;
       }
@@ -191,9 +197,6 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
       if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, item).isEmpty()) {
         selected.add(item);
         includedItemConsumer.accept(item);
-        if (selected.size() == schema.getMaxLength()) {
-          break;
-        }
       } else {
         // The item is no longer valid to be included in a block so remove it from the pool.
         operations.remove(validatorIndex);

@@ -112,8 +112,8 @@ class VoluntaryExitPoolIntegrationTest {
     assertThat(result.code()).isEqualTo(ValidationResultCode.REJECT);
     assertThat(pool.size()).isZero();
     // and it can never be selected for a block, no matter how often we propose
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, getMaxVoluntaryExits(state))).isEmpty();
+    assertThat(pool.getItemsForBlock(state, getMaxVoluntaryExits(state))).isEmpty();
     assertThat(pool.size()).isZero();
   }
 
@@ -130,7 +130,8 @@ class VoluntaryExitPoolIntegrationTest {
     // reject these wholesale.
     assertThat(result.code()).isEqualTo(ValidationResultCode.ACCEPT);
     assertThat(pool.size()).isEqualTo(1);
-    assertThat(pool.getItemsForBlock(state)).containsExactly(signedExit);
+    assertThat(pool.getItemsForBlock(state, getMaxVoluntaryExits(state)))
+        .containsExactly(signedExit);
     assertThat(pool.size()).isEqualTo(1);
   }
 
@@ -151,7 +152,12 @@ class VoluntaryExitPoolIntegrationTest {
                 .getImmediately());
 
     assertThat(safeJoin(pool.addLocal(signedExit)).code()).isEqualTo(ValidationResultCode.ACCEPT);
-    assertThat(pool.getItemsForBlock(state)).containsExactly(signedExit);
+    assertThat(pool.getItemsForBlock(state, getMaxVoluntaryExits(state)))
+        .containsExactly(signedExit);
+  }
+
+  private int getMaxVoluntaryExits(final BeaconState state) {
+    return spec.atSlot(state.getSlot()).getConfig().getMaxVoluntaryExits();
   }
 
   /**
