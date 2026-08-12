@@ -67,20 +67,6 @@ public class V4FinalizedStateTreeStorageLogic
             "Number of finalized states stored");
   }
 
-  public void populateCacheFromExistingDb(
-      final KvStoreAccessor db, final SchemaCombinedTreeState schema) {
-    LOG.info("Rebuilding finalized state branch node cache from existing database...");
-    final long startMs = System.currentTimeMillis();
-    try (final Stream<Bytes32> keys =
-        db.streamKeys(schema.getColumnFinalizedStateMerkleTreeBranches())) {
-      keys.forEach(knownStoredBranchesCache::add);
-    }
-    LOG.info(
-        "Rebuilt finalized state branch cache with {} entries in {}ms",
-        knownStoredBranchesCache.size(),
-        System.currentTimeMillis() - startMs);
-  }
-
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(
       final KvStoreAccessor db, final SchemaCombinedTreeState dbSchema, final UInt64 maxSlot) {
@@ -149,7 +135,7 @@ public class V4FinalizedStateTreeStorageLogic
         final SchemaCombinedTreeState schema,
         final BeaconState state) {
       if (nodeStore == null) {
-        nodeStore = new KvStoreTreeNodeStore(knownStoredBranchesCache, transaction, schema);
+        nodeStore = new KvStoreTreeNodeStore(knownStoredBranchesCache, db, transaction, schema);
       }
       transaction.put(
           schema.getColumnFinalizedStateRootsBySlot(), state.getSlot(), state.hashTreeRoot());
