@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 
 public class MiscHelpersFuluTest {
 
@@ -308,7 +309,7 @@ public class MiscHelpersFuluTest {
         IntStream.range(0, 4)
             .mapToObj(
                 __ -> {
-                  return dataStructureUtil.computeBlobAndCellProofs(
+                  return KzgUtil.computeBlobAndCellProofs(
                       miscHelpersFulu.getKzg(), dataStructureUtil.randomValidBlob());
                 })
             .toList();

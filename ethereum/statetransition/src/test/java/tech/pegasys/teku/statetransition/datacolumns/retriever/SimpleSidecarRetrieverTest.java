@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
 @SuppressWarnings({"JavaCase"})
@@ -138,7 +139,7 @@ public class SimpleSidecarRetrieverTest {
         miscHelpers.constructDataColumnSidecars(
             createSigned(block),
             blobs.stream()
-                .map((b) -> dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b))
+                .map((b) -> KzgUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b))
                 .toList());
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 

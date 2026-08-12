@@ -558,12 +558,6 @@ public final class DataStructureUtil {
     return new SszKZGProof(randomKZGProof());
   }
 
-  public BlobAndCellProofs computeBlobAndCellProofs(final KZG kzg, final Blob blob) {
-    return new BlobAndCellProofs(
-        blob,
-        kzg.computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList());
-  }
-
   public Bytes48 randomPublicKeyBytes() {
     return pubKeyGenerator.get().toBytesCompressed();
   }

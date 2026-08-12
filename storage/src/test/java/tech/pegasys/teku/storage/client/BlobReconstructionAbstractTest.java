@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 
 public class BlobReconstructionAbstractTest {
   protected final Spec spec = TestSpecFactory.createMinimalFulu();
@@ -69,7 +70,7 @@ public class BlobReconstructionAbstractTest {
                       miscHelpers.constructDataColumnSidecars(
                           block,
                           List.of(
-                              dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
+                                  KzgUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), b)));
                   return new CellData(
                       b.getBytes().toHexString(),
                       sidecars.stream()

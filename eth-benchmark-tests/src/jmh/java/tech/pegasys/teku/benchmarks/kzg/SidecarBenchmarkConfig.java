@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 
 public class SidecarBenchmarkConfig {
   final KzgInstances kzgBenchmark;
@@ -65,7 +66,7 @@ public class SidecarBenchmarkConfig {
     miscHelpersFulu.setKzg(getKzg(useRustLibrary));
     List<BlobAndCellProofs> blobsAndCellProofs =
         blobs.stream()
-            .map((b) -> dataStructureUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), b))
+            .map((b) -> KzgUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), b))
             .toList();
     extendedMatrix = miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs);
     signedBeaconBlock =

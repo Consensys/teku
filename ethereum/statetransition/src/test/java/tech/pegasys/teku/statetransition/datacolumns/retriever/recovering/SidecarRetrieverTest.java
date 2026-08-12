@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
@@ -167,7 +168,7 @@ public class SidecarRetrieverTest {
     final List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecars(
             dataStructureUtil.signedBlock(block),
-            List.of(dataStructureUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), blob)));
+            List.of(KzgUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), blob)));
     final List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
