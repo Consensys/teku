@@ -252,7 +252,8 @@ public class GetNewBlockV4 extends RestApiEndpoint {
                     && milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
                     && !(blockContainer instanceof BlockContentsGloas),
             SpecMilestone.GLOAS,
-            schemaDefinitions -> schemaDefinitions.getBeaconBlockSchema().castTypeToBlockContainer()));
+            schemaDefinitions ->
+                schemaDefinitions.getBeaconBlockSchema().castTypeToBlockContainer()));
     return schemaGetterList;
   }
 
