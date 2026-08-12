@@ -113,6 +113,7 @@ public class SimpleOperationPoolTest {
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
+    // Verify the bounded schema limit is respected even when the caller requests more items
     assertThat(pool.getItemsForBlock(state, maxVoluntaryExits + 1)).hasSize(maxVoluntaryExits);
   }
 
