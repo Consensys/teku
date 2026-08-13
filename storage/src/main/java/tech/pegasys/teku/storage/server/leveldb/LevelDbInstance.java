@@ -119,6 +119,11 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public long approximateSize(final KvStoreColumn<?, ?> column) {
+    return size(column);
+  }
+
+  @Override
   public <K, V> Map<K, V> getAll(final KvStoreColumn<K, V> column) {
     return withIterator(
         iterator -> {
