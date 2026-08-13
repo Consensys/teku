@@ -14,3 +14,4 @@
  - Improved debug/beacon/states endpoint to allow searching of the finalized state root, to assist third party products searching on roots.
 
 ### Bug Fixes
+ - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
