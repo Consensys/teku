@@ -361,6 +361,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     startRestAPIAtGenesis(StateStorageMode.ARCHIVE, specMilestone, CONFIG);
   }
 
+  protected void startRestAPIAtGenesis(
+      final StateStorageMode storageMode, final SpecMilestone specMilestone) {
+    startRestAPIAtGenesis(storageMode, specMilestone, CONFIG);
+  }
+
   protected void startRestAPIAtGenesis() {
     startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0, CONFIG);
   }
