@@ -104,13 +104,27 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
   @Override
   protected SafeFuture<?> doStart() {
+    final Cancellable rawPruner =
+        asyncRunner.runWithFixedDelay(
+            this::doPruneDataColumnSidecars,
+            Duration.ZERO,
+            pruneInterval,
+            error -> LOG.error("Failed to prune old data column sidecars", error));
     scheduledPruner =
         Optional.of(
-            asyncRunner.runWithFixedDelay(
-                this::doPruneDataColumnSidecars,
-                Duration.ZERO,
-                pruneInterval,
-                error -> LOG.error("Failed to prune old data column sidecars", error)));
+            new Cancellable() {
+              @Override
+              public void cancel() {
+                LOG.debug(
+                    "DCS prune Cancellable.cancel() called", new Exception("cancel stack trace"));
+                rawPruner.cancel();
+              }
+
+              @Override
+              public boolean isCancelled() {
+                return rawPruner.isCancelled();
+              }
+            });
     scheduledArchiver =
         Optional.of(
             asyncRunner.runWithFixedDelay(
@@ -123,6 +137,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
   @Override
   protected SafeFuture<?> doStop() {
+    LOG.debug("DataColumnSidecarPruner doStop called, cancelling scheduled tasks");
     scheduledPruner.ifPresent(Cancellable::cancel);
     scheduledArchiver.ifPresent(Cancellable::cancel);
     return SafeFuture.COMPLETE;
@@ -155,6 +170,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
       earliestDataColumnSidecarSlot.set(
           database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
     }
+    LOG.debug("DCS prune task body exiting normally, reschedule will fire in finally block");
   }
 
   private void doArchiveDataColumnSidecars() {
