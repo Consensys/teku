@@ -218,6 +218,22 @@ jobs:
         shell: bash
         run: |
           ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava resolveCiDependencies assemble
+      - name: Upload distribution tar
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: distribution-tar
+          path: |
+            build/distributions/*.tar.gz
+          retention-days: 14
+      - name: Upload distribution zip
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: distribution-zip
+          path: |
+            build/distributions/*.zip
+          retention-days: 7
       - name: Upload workspace build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -228,15 +244,20 @@ jobs:
           retention-days: 1
           include-hidden-files: 'true'
 
+  prDistributions:
+    needs: [changes, assemble]
+    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest-128
+    steps:
       - name: Checkout PR head
-        if: github.event_name == 'pull_request'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: 'recursive'
           persist-credentials: false
-      - name: Assemble PR head distributions
-        if: github.event_name == 'pull_request'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Assemble distributions
         run: |
           ./gradlew clean assemble
       - name: Upload distribution tar
