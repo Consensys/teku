@@ -292,6 +292,20 @@ public class ProposerConfigManagerTest {
   }
 
   @Test
+  void getGasLimit_shouldReturnScheduledGasLimitForRequestedEpoch() throws IOException {
+    when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(Optional.empty());
+    setUpWithGasLimitSchedule();
+
+    // still in the first scheduled epoch, but asking for a duty in a later one
+    assertThat(proposerConfigManager.getGasLimit(validatorNotInConfig.getPublicKey(), UInt64.ZERO))
+        .isEqualTo(FIRST_SCHEDULED_GAS_LIMIT);
+    assertThat(
+            proposerConfigManager.getGasLimit(
+                validatorNotInConfig.getPublicKey(), SECOND_SCHEDULED_EPOCH))
+        .isEqualTo(SECOND_SCHEDULED_GAS_LIMIT);
+  }
+
+  @Test
   void getGasLimit_shouldPreferConfiguredDefaultOverScheduledGasLimit() throws IOException {
     when(validatorConfig.getBuilderRegistrationDefaultGasLimit())
         .thenReturn(Optional.of(FIRST_SCHEDULED_GAS_LIMIT.times(2)));
