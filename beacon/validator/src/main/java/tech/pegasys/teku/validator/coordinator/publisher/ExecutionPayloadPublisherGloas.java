@@ -55,25 +55,33 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return publishSignedExecutionPayload(
-        signedExecutionPayload,
-        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload),
-        broadcastValidationLevel);
+    return SafeFuture.<List<DataColumnSidecar>>of(
+            () -> executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenCompose(
+            dataColumnSidecars ->
+                publishSignedExecutionPayload(
+                    signedExecutionPayload, dataColumnSidecars, broadcastValidationLevel));
   }
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return publishSignedExecutionPayload(
-        signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
-        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayloadEnvelopeContents),
-        broadcastValidationLevel);
+    return SafeFuture.<List<DataColumnSidecar>>of(
+            () ->
+                executionPayloadFactory.createDataColumnSidecars(
+                    signedExecutionPayloadEnvelopeContents))
+        .thenCompose(
+            dataColumnSidecars ->
+                publishSignedExecutionPayload(
+                    signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
+                    dataColumnSidecars,
+                    broadcastValidationLevel));
   }
 
   private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
-      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
+      final List<DataColumnSidecar> dataColumnSidecars,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
     return executionPayloadManager
@@ -94,7 +102,7 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                                 .orElse("")));
               }
               publishExecutionPayloadAndDataColumnSidecars(
-                  signedExecutionPayload, dataColumnSidecarsFuture);
+                  signedExecutionPayload, dataColumnSidecars);
               return validateAndImportResult
                   .importResult()
                   .orElseThrow(() -> new IllegalStateException("ACCEPT without import future"))
@@ -109,13 +117,9 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
 
   private void publishExecutionPayloadAndDataColumnSidecars(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
-      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture) {
+      final List<DataColumnSidecar> dataColumnSidecars) {
     executionPayloadGossipChannel.publishExecutionPayload(signedExecutionPayload).finishError(LOG);
-    dataColumnSidecarsFuture
-        .thenAccept(
-            dataColumnSidecars ->
-                dataColumnSidecarGossipChannel.publishDataColumnSidecars(
-                    dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL))
-        .finishError(LOG);
+    dataColumnSidecarGossipChannel.publishDataColumnSidecars(
+        dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
 }

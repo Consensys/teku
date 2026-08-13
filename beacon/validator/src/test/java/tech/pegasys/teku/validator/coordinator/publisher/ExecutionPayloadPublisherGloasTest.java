@@ -98,6 +98,20 @@ class ExecutionPayloadPublisherGloasTest {
   }
 
   @Test
+  public void publishSignedExecutionPayload_shouldFailBeforePublishingWhenSidecarsAreUnavailable() {
+    final IllegalStateException error = new IllegalStateException("payload cache unavailable");
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(SafeFuture.failedFuture(error));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedExceptionallyWith(error);
+
+    verifyNoInteractions(
+        executionPayloadManager, executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
   public void publishSignedExecutionPayload_shouldReturnRejectedResultIfBroadcastValidationFails() {
     when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
             eq(signedExecutionPayload), any()))
