@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -47,6 +48,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -204,10 +208,14 @@ public abstract class AbstractBlockFactoryTest {
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
-    when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
-    when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
-    when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
-    when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
+    when(attesterSlashingPool.getItemsForBlock(any(), anyInt(), any(), any()))
+        .thenReturn(attesterSlashings);
+    when(proposerSlashingPool.getItemsForBlock(any(), anyInt(), any(), any()))
+        .thenReturn(proposerSlashings);
+    when(voluntaryExitPool.getItemsForBlock(any(), anyInt(), any(), any()))
+        .thenReturn(voluntaryExits);
+    when(blsToExecutionChangePool.getItemsForBlock(any(), anyInt()))
+        .thenReturn(blsToExecutionChanges);
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
     when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
@@ -274,6 +282,26 @@ public abstract class AbstractBlockFactoryTest {
                     BlockProductionPerformance.NOOP)));
 
     final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
+    final SpecConfig specConfig = spec.atSlot(newSlot).getConfig();
+    final int maxAttesterSlashings =
+        specConfig
+            .toVersionElectra()
+            .map(SpecConfigElectra::getMaxAttesterSlashingsElectra)
+            .orElseGet(specConfig::getMaxAttesterSlashings);
+
+    verify(attesterSlashingPool)
+        .getItemsForBlock(eq(blockSlotState), eq(maxAttesterSlashings), any(), any());
+    verify(proposerSlashingPool)
+        .getItemsForBlock(
+            eq(blockSlotState), eq(specConfig.getMaxProposerSlashings()), any(), any());
+    verify(voluntaryExitPool)
+        .getItemsForBlock(eq(blockSlotState), eq(specConfig.getMaxVoluntaryExits()), any(), any());
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      verify(blsToExecutionChangePool)
+          .getItemsForBlock(
+              eq(blockSlotState),
+              eq(SpecConfigCapella.required(specConfig).getMaxBlsToExecutionChanges()));
+    }
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
