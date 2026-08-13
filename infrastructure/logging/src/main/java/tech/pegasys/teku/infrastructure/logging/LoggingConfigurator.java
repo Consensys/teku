@@ -164,7 +164,7 @@ public class LoggingConfigurator {
     LoggerConfig validatorLogger = null;
     LoggerConfig dbLogger = null;
 
-    if(destination != LoggingDestination.CONSOLE
+    if (destination != LoggingDestination.CONSOLE
         && destination != LoggingDestination.FILE
         && destination != LoggingDestination.DEFAULT_BOTH
         && destination != LoggingDestination.BOTH) {
