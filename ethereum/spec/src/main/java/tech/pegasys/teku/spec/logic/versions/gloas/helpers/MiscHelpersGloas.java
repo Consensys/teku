@@ -24,7 +24,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +40,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.spec.config.GasLimitScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -74,6 +76,8 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   private final SpecConfigGloas specConfigGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
+  // EIP-8261: the gas limit schedule, navigable by epoch
+  private final NavigableMap<UInt64, UInt64> epochToScheduledGasLimit = new TreeMap<>();
 
   public MiscHelpersGloas(
       final SpecConfigGloas specConfig,
@@ -82,6 +86,9 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
     super(specConfig, predicates, schemaDefinitionsGloas);
     this.specConfigGloas = specConfig;
     this.schemaDefinitionsGloas = schemaDefinitionsGloas;
+    specConfig
+        .getGasLimitSchedule()
+        .forEach(entry -> epochToScheduledGasLimit.put(entry.epoch(), entry.gasLimit()));
   }
 
   public UInt64 convertBuilderIndexToValidatorIndex(final UInt64 builderIndex) {
@@ -98,11 +105,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
    * <p>EIP-8261: returns the scheduled gas limit at a given epoch, if any.
    */
   public Optional<UInt64> getScheduledGasLimit(final UInt64 epoch) {
-    // the schedule is kept sorted by epoch in ascending order
-    return specConfigGloas.getGasLimitSchedule().reversed().stream()
-        .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
-        .map(GasLimitScheduleEntry::gasLimit)
-        .findFirst();
+    return Optional.ofNullable(epochToScheduledGasLimit.floorEntry(epoch)).map(Map.Entry::getValue);
   }
 
   @Override
