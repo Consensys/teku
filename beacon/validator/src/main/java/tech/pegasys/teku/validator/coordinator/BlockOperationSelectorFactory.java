@@ -36,6 +36,9 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -146,6 +149,7 @@ public class BlockOperationSelectorFactory {
 
     final BeaconState blockSlotState = blockProductionContext.blockSlotState();
     final Bytes32 parentRoot = blockProductionContext.parentRoot();
+    final SpecConfig specConfig = spec.atSlot(blockSlotState.getSlot()).getConfig();
 
     return bodyBuilder -> {
       blockProductionContext.blockProductionPerformance().beaconBlockBodyPreparationStarted();
@@ -207,12 +211,14 @@ public class BlockOperationSelectorFactory {
       final SszList<AttesterSlashing> attesterSlashings =
           attesterSlashingPool.getItemsForBlock(
               blockSlotState,
+              getMaxAttesterSlashings(specConfig),
               slashing -> !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
               slashing -> exitedValidators.addAll(slashing.getIntersectingValidatorIndices()));
 
       final SszList<ProposerSlashing> proposerSlashings =
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
+              specConfig.getMaxProposerSlashings(),
               slashing ->
                   !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex()),
               slashing ->
@@ -244,6 +250,7 @@ public class BlockOperationSelectorFactory {
                       final SszList<SignedVoluntaryExit> voluntaryExits =
                           getVoluntaryExitsForBlock(
                               blockSlotState,
+                              specConfig.getMaxVoluntaryExits(),
                               exitedValidators,
                               validatorsWithParentWithdrawalRequests);
                       bodyBuilder.voluntaryExits(voluntaryExits);
@@ -252,7 +259,11 @@ public class BlockOperationSelectorFactory {
                     });
       } else {
         final SszList<SignedVoluntaryExit> voluntaryExits =
-            getVoluntaryExitsForBlock(blockSlotState, exitedValidators, new HashSet<>());
+            getVoluntaryExitsForBlock(
+                blockSlotState,
+                specConfig.getMaxVoluntaryExits(),
+                exitedValidators,
+                new HashSet<>());
         bodyBuilder.voluntaryExits(voluntaryExits);
         setVoluntaryExitsAndParentExecutionRequests = COMPLETE;
       }
@@ -277,7 +288,9 @@ public class BlockOperationSelectorFactory {
       // Post-Capella: BLS to Execution changes
       if (bodyBuilder.supportsBlsToExecutionChanges()) {
         bodyBuilder.blsToExecutionChanges(
-            blsToExecutionChangePool.getItemsForBlock(blockSlotState));
+            blsToExecutionChangePool.getItemsForBlock(
+                blockSlotState,
+                SpecConfigCapella.required(specConfig).getMaxBlsToExecutionChanges()));
       }
 
       // Post-Gloas: Payload Attestations
@@ -295,14 +308,23 @@ public class BlockOperationSelectorFactory {
 
   private SszList<SignedVoluntaryExit> getVoluntaryExitsForBlock(
       final BeaconState blockSlotState,
+      final int maxVoluntaryExits,
       final Set<UInt64> exitedValidators,
       final Set<UInt64> validatorsWithParentWithdrawalRequests) {
     return voluntaryExitPool.getItemsForBlock(
         blockSlotState,
+        maxVoluntaryExits,
         exit ->
             voluntaryExitPredicate(
                 blockSlotState, exitedValidators, exit, validatorsWithParentWithdrawalRequests),
         exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
+  }
+
+  private static int getMaxAttesterSlashings(final SpecConfig specConfig) {
+    return specConfig
+        .toVersionElectra()
+        .map(SpecConfigElectra::getMaxAttesterSlashingsElectra)
+        .orElseGet(specConfig::getMaxAttesterSlashings);
   }
 
   private boolean voluntaryExitPredicate(
