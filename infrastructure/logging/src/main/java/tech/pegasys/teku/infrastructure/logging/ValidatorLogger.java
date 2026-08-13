@@ -48,7 +48,7 @@ public class ValidatorLogger {
             Color.GREEN));
   }
 
-  public void beaconNodeEventStreamConnectionError(final Throwable unused) {
+  public void beaconNodeEventStreamConnectionError() {
     log.debug(
         ColorConsolePrinter.print(
             String.format("%sError while connecting to beacon node event stream", PREFIX),
