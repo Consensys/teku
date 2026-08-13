@@ -32,10 +32,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
-import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 @TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.ELECTRA})
@@ -44,29 +41,24 @@ public class GetLightClientBootstrapIntegrationTest
 
   final Bytes32 blockRoot = Bytes32.random();
 
-  private TestSpecInvocationContextProvider.SpecContext specContext;
-
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    this.specContext = specContext;
     startRestAPIAtGenesis(specContext.getSpecMilestone());
   }
 
   @TestTemplate
   void shouldReturnResultIfCreatedSuccessfully() throws IOException {
-    specContext.assumeIsOneOf(SpecMilestone.ALTAIR);
     final BeaconState state =
         safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
             .orElseThrow()
             .getData();
-    final LightClientHeader expectedHeader =
-        SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
-            .getLightClientHeaderSchema()
-            .create(BeaconBlockHeader.fromState(state));
-    final SyncCommittee expectedSyncCommittee =
-        BeaconStateAltair.required(state).getCurrentSyncCommittee();
+    final Bytes32 headBlockRoot = BeaconBlockHeader.fromState(state).getRoot();
+    final LightClientBootstrap expectedBootstrap =
+        safeJoin(dataProvider.getChainDataProvider().getLightClientBoostrap(headBlockRoot))
+            .orElseThrow()
+            .getData();
 
-    final Response response = get(expectedHeader.getBeacon().getRoot());
+    final Response response = get(headBlockRoot);
     assertThat(response.code()).isEqualTo(SC_OK);
 
     final LightClientBootstrapSchema lightClientBootstrapSchema =
@@ -76,8 +68,7 @@ public class GetLightClientBootstrapIntegrationTest
         JsonUtil.parse(
             response.body().string(), SharedApiTypes.withDataWrapper(lightClientBootstrapSchema));
 
-    assertThat(parsedBootstrapResponse.getLightClientHeader()).isEqualTo(expectedHeader);
-    assertThat(parsedBootstrapResponse.getCurrentSyncCommittee()).isEqualTo(expectedSyncCommittee);
+    assertThat(parsedBootstrapResponse).isEqualTo(expectedBootstrap);
   }
 
   @TestTemplate

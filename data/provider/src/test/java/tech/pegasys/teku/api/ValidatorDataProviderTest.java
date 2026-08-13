@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -310,6 +311,20 @@ public class ValidatorDataProviderTest {
     verify(validatorApiChannel).sendSignedAttestations(args.capture());
     assertThat(args.getValue()).hasSize(1);
     assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(attestation);
+  }
+
+  @TestTemplate
+  void submitProposerPreferences_shouldPreserveIndexedErrors() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.GLOAS);
+    final SignedProposerPreferences preferences =
+        dataStructureUtil.randomSignedProposerPreferences();
+    final List<SubmitDataError> errors =
+        List.of(new SubmitDataError(ZERO, "Invalid proposer preferences signature"));
+    when(validatorApiChannel.sendSignedProposerPreferences(List.of(preferences)))
+        .thenReturn(SafeFuture.completedFuture(errors));
+
+    assertThatSafeFuture(provider.submitProposerPreferences(List.of(preferences)))
+        .isCompletedWithValue(errors);
   }
 
   @TestTemplate

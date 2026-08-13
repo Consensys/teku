@@ -96,6 +96,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -134,6 +135,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -2465,6 +2467,10 @@ public final class DataStructureUtil {
             bootstrapSchema.getSyncCommitteeBranchSchema(), this::randomBytes32));
   }
 
+  public RandomLightClientUpdateBuilder createRandomLightClientUpdateBuilder(final UInt64 slot) {
+    return new RandomLightClientUpdateBuilder(slot);
+  }
+
   public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
     final LightClientUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
@@ -2480,23 +2486,44 @@ public final class DataStructureUtil {
   }
 
   public LightClientFinalityUpdate randomLightClientFinalityUpdate(final UInt64 slot) {
+    return randomLightClientFinalityUpdate(slot, slot);
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(
+      final UInt64 attestedSlot, final UInt64 finalizedSlot) {
+    return randomLightClientFinalityUpdate(attestedSlot, finalizedSlot, randomUInt64());
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(
+      final UInt64 attestedSlot, final UInt64 finalizedSlot, final UInt64 signatureSlot) {
     final LightClientFinalityUpdateSchema schema =
-        getAltairSchemaDefinitions(slot).getLightClientFinalityUpdateSchema();
+        getAltairSchemaDefinitions(attestedSlot).getLightClientFinalityUpdateSchema();
 
     return schema.create(
-        randomLightClientHeader(slot),
-        randomLightClientHeader(slot),
+        lightClientHeaderAtSlot(attestedSlot),
+        lightClientHeaderAtSlot(finalizedSlot),
         randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
-        SszUInt64.of(randomUInt64()));
+        SszUInt64.of(signatureSlot));
   }
 
   public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(final UInt64 slot) {
+    return randomLightClientOptimisticUpdate(slot, randomUInt64());
+  }
+
+  public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(
+      final UInt64 slot, final UInt64 signatureSlot) {
     final LightClientOptimisticUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientOptimisticUpdateSchema();
 
     return schema.create(
-        randomLightClientHeader(slot), randomSyncAggregate(), SszUInt64.of(randomUInt64()));
+        lightClientHeaderAtSlot(slot), randomSyncAggregate(), SszUInt64.of(signatureSlot));
+  }
+
+  private LightClientHeader lightClientHeaderAtSlot(final UInt64 slot) {
+    return getAltairSchemaDefinitions(slot)
+        .getLightClientHeaderSchema()
+        .create(randomBeaconBlockHeader(slot, UInt64.ZERO));
   }
 
   public LightClientUpdateResponse randomLightClientUpdateResponse(final UInt64 slot) {
@@ -2906,6 +2933,83 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
+  }
+
+  public class RandomLightClientUpdateBuilder {
+
+    private final SchemaDefinitionsAltair schemaDefinitions;
+
+    private UInt64 attestedSlot;
+    private UInt64 signatureSlot;
+    private UInt64 finalizedSlot;
+    private int syncCommitteeParticipants;
+    private boolean syncCommitteeBranch = true;
+    private boolean finalityBranch = true;
+
+    private RandomLightClientUpdateBuilder(final UInt64 slot) {
+      this.schemaDefinitions = getAltairSchemaDefinitions(slot);
+      this.attestedSlot = slot;
+      this.signatureSlot = slot;
+      this.finalizedSlot = slot;
+      this.syncCommitteeParticipants =
+          SpecConfigAltair.required(spec.atSlot(slot).getConfig()).getSyncCommitteeSize();
+    }
+
+    public RandomLightClientUpdateBuilder attestedSlot(final UInt64 attestedSlot) {
+      this.attestedSlot = attestedSlot;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder signatureSlot(final UInt64 signatureSlot) {
+      this.signatureSlot = signatureSlot;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder finalizedSlot(final UInt64 finalizedSlot) {
+      this.finalizedSlot = finalizedSlot;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder syncCommitteeParticipants(final int participants) {
+      this.syncCommitteeParticipants = participants;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder syncCommitteeBranch(final boolean present) {
+      this.syncCommitteeBranch = present;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder finalityBranch(final boolean present) {
+      this.finalityBranch = present;
+      return this;
+    }
+
+    public LightClientUpdate build() {
+      final LightClientUpdateSchema schema = schemaDefinitions.getLightClientUpdateSchema();
+      return schema.create(
+          lightClientHeaderAtSlot(attestedSlot),
+          randomSyncCommittee(),
+          branch(schema.getSyncCommitteeBranchSchema(), syncCommitteeBranch),
+          lightClientHeaderAtSlot(finalizedSlot),
+          branch(schema.getFinalityBranchSchema(), finalityBranch),
+          syncAggregate(),
+          SszUInt64.of(signatureSlot));
+    }
+
+    private SyncAggregate syncAggregate() {
+      return randomSyncAggregate(IntStream.range(0, syncCommitteeParticipants).toArray());
+    }
+
+    private SszBytes32Vector branch(
+        final SszBytes32VectorSchema<SszBytes32Vector> schema, final boolean present) {
+      if (!present) {
+        return schema.getDefault();
+      }
+      return Stream.generate(DataStructureUtil.this::randomBytes32)
+          .limit(schema.getLength())
+          .collect(schema.collectorUnboxed());
+    }
   }
 
   public class RandomBlobSidecarBuilder {
@@ -3587,6 +3691,25 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             randomBytes32());
+  }
+
+  public BlockContentsGloas randomBlockContentsGloas(final UInt64 slot) {
+    final BlobsBundle blobsBundle = randomBlobsBundle(1);
+    return getGloasSchemaDefinitions(slot)
+        .getBlockContentsGloasSchema()
+        .create(
+            randomBeaconBlock(slot),
+            randomExecutionPayloadEnvelope(slot),
+            blobsBundle.getProofs(),
+            blobsBundle.getBlobs());
+  }
+
+  public BlockContainerAndMetaData randomBlockContentsGloasAndMetaData(final UInt64 slot) {
+    return new BlockContainerAndMetaData(
+        randomBlockContentsGloas(slot),
+        spec.atSlot(slot).getMilestone(),
+        randomUInt256(),
+        randomUInt256());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {

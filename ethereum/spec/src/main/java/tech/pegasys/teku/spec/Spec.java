@@ -787,8 +787,7 @@ public class Spec {
       final BeaconState state,
       final ProposerSlashing proposerSlashing,
       final BLSSignatureVerifier signatureVerifier) {
-    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
-    return atEpoch(epoch)
+    return atState(state)
         .operationSignatureVerifier()
         .verifyProposerSlashingSignature(
             state.getFork(), state, proposerSlashing, signatureVerifier);
@@ -930,19 +929,23 @@ public class Spec {
         .validateAsync(fork, store, validatableAttestation, maybeState, asyncSignatureVerifier);
   }
 
+  /**
+   * Dispatched on the state's fork rather than an epoch taken from the slashing, so that pool and
+   * gossip validation apply the same milestone's rules that block processing later will. The slots
+   * inside a slashing are attacker controlled and unbounded, and from Gloas the attesting indices
+   * bound is enforced in the validation logic rather than by the SSZ schema - so dispatching on
+   * them would let a slashing naming a pre-Gloas epoch skip that bound.
+   */
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
-    // Attestations must both be from the same epoch or will wind up being rejected by any version
-    final UInt64 epoch = computeEpochAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateAttesterSlashing(state.getFork(), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
-    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateProposerSlashing(state.getFork(), state, proposerSlashing);
   }
@@ -1519,11 +1522,6 @@ public class Spec {
 
   private Fork getForkAtSlot(final UInt64 slot) {
     return forkSchedule.getFork(computeEpochAtSlot(slot));
-  }
-
-  private UInt64 getProposerSlashingEpoch(final ProposerSlashing proposerSlashing) {
-    // Slashable blocks must be from same slot
-    return computeEpochAtSlot(proposerSlashing.getHeader1().getMessage().getSlot());
   }
 
   @Override
