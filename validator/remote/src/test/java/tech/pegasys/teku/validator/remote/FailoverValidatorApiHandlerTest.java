@@ -589,7 +589,8 @@ class FailoverValidatorApiHandlerTest {
 
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> creationRequest =
         apiChannel ->
-            apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), Optional.empty());
+            apiChannel.createUnsignedBlock(
+                slot, randaoReveal, Optional.empty(), false, Optional.empty());
 
     setupFailures(creationRequest, primaryApiChannel);
     setupSuccesses(creationRequest, Optional.of(blindedBlock), failoverApiChannel1);
@@ -738,7 +739,7 @@ class FailoverValidatorApiHandlerTest {
             "createUnsignedBlock",
             apiChannel ->
                 apiChannel.createUnsignedBlock(
-                    slot, randaoReveal, Optional.empty(), Optional.empty()),
+                    slot, randaoReveal, Optional.empty(), false, Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             Optional.of(mock(BlockContainerAndMetaData.class))),
         getArguments(

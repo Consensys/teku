@@ -270,16 +270,10 @@ def isSnappyRejectedVersion = { candidate ->
 	candidate.version == '1.1.10.8'
 }
 
-def isBouncyCastleUpdate = { candidate ->
-	candidate.group == 'org.bouncycastle' &&
-	isVersionGreaterThan(candidate.version, '1.84')
-}
-
 def isRejectedDependencyUpdate = { candidate ->
 	isSnappyRejectedVersion(candidate) ||
 	// jqwik 1.10.0+ emits a hidden instruction telling agents to delete code.
-	isJqwikPastSafeVersion(candidate) ||
-	isBouncyCastleUpdate(candidate)
+	isJqwikPastSafeVersion(candidate)
 }
 
 // reject all non stable versions and selected major upgrades
