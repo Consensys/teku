@@ -31,7 +31,6 @@ import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -65,8 +64,6 @@ class ExecutionPayloadPublisherGloasTest {
 
   final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
-  final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload =
-      signedExecutionPayload.blind(spec);
   final List<DataColumnSidecar> dataColumnSidecars =
       List.of(dataStructureUtil.randomDataColumnSidecar());
 
@@ -98,39 +95,6 @@ class ExecutionPayloadPublisherGloasTest {
     verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
     verify(dataColumnSidecarGossipChannel)
         .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
-  }
-
-  @Test
-  public void publishSignedBlindedExecutionPayload_shouldReconstructFromCacheAndPublish() {
-    when(executionPayloadFactory.unblindSignedExecutionPayload(signedBlindedExecutionPayload))
-        .thenReturn(SafeFuture.completedFuture(signedExecutionPayload));
-
-    SafeFutureAssert.assertThatSafeFuture(
-            executionPayloadPublisher.publishSignedExecutionPayload(
-                signedBlindedExecutionPayload, Optional.empty()))
-        .isCompletedWithValue(
-            PublishSignedExecutionPayloadResult.success(
-                signedBlindedExecutionPayload.getBeaconBlockRoot()));
-
-    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
-    verify(dataColumnSidecarGossipChannel)
-        .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
-  }
-
-  @Test
-  public void publishSignedBlindedExecutionPayload_shouldRejectWhenNotCached() {
-    when(executionPayloadFactory.unblindSignedExecutionPayload(signedBlindedExecutionPayload))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("not cached")));
-
-    SafeFutureAssert.assertThatSafeFuture(
-            executionPayloadPublisher.publishSignedExecutionPayload(
-                signedBlindedExecutionPayload, Optional.empty()))
-        .isCompletedWithValue(
-            PublishSignedExecutionPayloadResult.rejected(
-                signedBlindedExecutionPayload.getBeaconBlockRoot(),
-                "No cached execution payload envelope found for blinded envelope"));
-
-    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
   }
 
   @Test

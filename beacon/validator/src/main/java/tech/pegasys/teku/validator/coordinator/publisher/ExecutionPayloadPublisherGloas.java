@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -70,39 +69,6 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
         signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
         executionPayloadFactory.createDataColumnSidecars(signedExecutionPayloadEnvelopeContents),
         broadcastValidationLevel);
-  }
-
-  @Override
-  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return SafeFuture.<SignedExecutionPayloadEnvelope>of(
-            () ->
-                executionPayloadFactory.unblindSignedExecutionPayload(
-                    signedBlindedExecutionPayload))
-        .thenApply(Optional::of)
-        .exceptionally(
-            error -> {
-              LOG.warn(
-                  "Failed to unblind execution payload envelope for beacon block root {}",
-                  signedBlindedExecutionPayload.getBeaconBlockRoot(),
-                  error);
-              return Optional.empty();
-            })
-        .thenCompose(
-            maybeSignedExecutionPayload ->
-                maybeSignedExecutionPayload
-                    .map(
-                        signedExecutionPayload ->
-                            publishSignedExecutionPayload(
-                                signedExecutionPayload, broadcastValidationLevel))
-                    .orElseGet(
-                        () ->
-                            SafeFuture.completedFuture(
-                                PublishSignedExecutionPayloadResult.rejected(
-                                    signedBlindedExecutionPayload.getBeaconBlockRoot(),
-                                    "No cached execution payload envelope found for blinded"
-                                        + " envelope"))));
   }
 
   private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
