@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -96,7 +97,7 @@ public class ProposerPreferencesPublisherTest {
     when(signer.signProposerPreferences(any(), any()))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
     when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
-        .thenReturn(SafeFuture.COMPLETE);
+        .thenReturn(SafeFuture.completedFuture(List.of()));
   }
 
   @TestTemplate
@@ -122,7 +123,9 @@ public class ProposerPreferencesPublisherTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
     final String rejectionDescription = "Invalid proposer preferences signature";
     when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException(rejectionDescription)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(new SubmitDataError(UInt64.ZERO, rejectionDescription))));
 
     try (LogCaptor logCaptor = LogCaptor.forClass(ValidatorLogger.class)) {
       publisher.onProposerDutiesLoaded(
