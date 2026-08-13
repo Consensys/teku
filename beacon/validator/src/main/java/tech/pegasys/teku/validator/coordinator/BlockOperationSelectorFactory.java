@@ -617,6 +617,10 @@ public class BlockOperationSelectorFactory {
             () -> builderPayloadOrFallbackData.getFallbackDataRequired().getExecutionPayload());
   }
 
+  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
+    return executionLayerBlockProductionManager.getCachedPayloadResult(slot);
+  }
+
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
     return block -> {
       final UInt64 slot = block.getSlot();
