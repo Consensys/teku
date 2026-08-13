@@ -1475,6 +1475,17 @@ public class Spec {
     return atEpoch(epoch).miscHelpers().toVersionGloas().isPresent();
   }
 
+  /**
+   * EIP-8261: the gas limit scheduled for the given epoch, empty when the epoch is pre-Gloas or the
+   * network has no gas limit schedule defined for it.
+   */
+  public Optional<UInt64> getScheduledGasLimit(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionGloas()
+        .flatMap(miscHelpers -> miscHelpers.getScheduledGasLimit(epoch));
+  }
+
   // Deneb private helpers
   private Optional<SpecConfigDeneb> getSpecConfigDeneb() {
     final SpecMilestone highestSupportedMilestone =
