@@ -138,6 +138,7 @@ public class LoggingConfigurator {
     addLoggers(configuration);
   }
 
+  @SuppressWarnings("MissingCasesInEnumSwitch")
   private static void addLoggers(final AbstractConfiguration configuration) {
 
     if (isUninitialized()) {
@@ -158,50 +159,59 @@ public class LoggingConfigurator {
 
     Appender consoleAppender;
     Appender fileAppender;
+    LoggerConfig eventsLogger = null;
+    LoggerConfig statusLogger = null;
+    LoggerConfig validatorLogger = null;
+    LoggerConfig dbLogger = null;
+
+    if(destination != LoggingDestination.CONSOLE
+        && destination != LoggingDestination.FILE
+        && destination != LoggingDestination.DEFAULT_BOTH
+        && destination != LoggingDestination.BOTH) {
+      displayUnknownDestinationConfigured();
+      destination = LoggingDestination.DEFAULT_BOTH;
+    }
 
     switch (destination) {
-      case CONSOLE:
+      case CONSOLE -> {
         consoleAppender = consoleAppender(configuration, false);
 
-        setUpStatusLogger(consoleAppender);
-        setUpEventsLogger(consoleAppender);
-        setUpValidatorLogger(consoleAppender);
-        setUpDbLogger(consoleAppender);
+        statusLogger = setUpStatusLogger(consoleAppender);
+        eventsLogger = setUpEventsLogger(consoleAppender);
+        validatorLogger = setUpValidatorLogger(consoleAppender);
+        dbLogger = setUpDbLogger(consoleAppender);
 
         addAppenderToRootLogger(configuration, consoleAppender);
-        break;
-      case FILE:
+      }
+      case FILE -> {
         fileAppender = fileAppender(configuration);
 
-        setUpStatusLogger(fileAppender);
-        setUpEventsLogger(fileAppender);
-        setUpValidatorLogger(fileAppender);
-        setUpDbLogger(fileAppender);
+        statusLogger = setUpStatusLogger(fileAppender);
+        eventsLogger = setUpEventsLogger(fileAppender);
+        validatorLogger = setUpValidatorLogger(fileAppender);
+        dbLogger = setUpDbLogger(fileAppender);
 
         addAppenderToRootLogger(configuration, fileAppender);
-        break;
-      default:
-        displayUnknownDestinationConfigured();
-      // fall through
-      case DEFAULT_BOTH:
-      // fall through
-      case BOTH:
+      }
+      case DEFAULT_BOTH, BOTH -> {
         consoleAppender = consoleAppender(configuration, true);
-        final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
-        final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
-        final LoggerConfig validatorLogger = setUpValidatorLogger(consoleAppender);
-        final LoggerConfig dbLogger = setUpDbLogger(consoleAppender);
-        configuration.addLogger(eventsLogger.getName(), eventsLogger);
-        configuration.addLogger(statusLogger.getName(), statusLogger);
-        configuration.addLogger(validatorLogger.getName(), validatorLogger);
-        configuration.addLogger(dbLogger.getName(), dbLogger);
+        eventsLogger = setUpEventsLogger(consoleAppender);
+        statusLogger = setUpStatusLogger(consoleAppender);
+        validatorLogger = setUpValidatorLogger(consoleAppender);
+        dbLogger = setUpDbLogger(consoleAppender);
 
         fileAppender = fileAppender(configuration);
 
         setUpStatusLogger(consoleAppender);
         addAppenderToRootLogger(configuration, fileAppender);
-        break;
+      }
     }
+
+    configuration.addLogger(eventsLogger.getName(), eventsLogger);
+    configuration.addLogger(statusLogger.getName(), statusLogger);
+    configuration.addLogger(validatorLogger.getName(), validatorLogger);
+    configuration.addLogger(dbLogger.getName(), dbLogger);
+
     STATUS_LOG.info("Include P2P warnings set to: {}", includeP2pWarnings);
     configuration.getLoggerContext().updateLoggers();
   }
