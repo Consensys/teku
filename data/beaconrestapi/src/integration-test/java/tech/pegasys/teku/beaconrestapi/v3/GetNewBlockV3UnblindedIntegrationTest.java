@@ -18,9 +18,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
-import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -37,9 +38,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 
-@TestSpecContext(
-    allMilestones = true,
-    ignoredMilestones = {DENEB, ELECTRA, FULU})
+@TestSpecContext(milestone = {PHASE0, ALTAIR, BELLATRIX, CAPELLA})
 public class GetNewBlockV3UnblindedIntegrationTest extends AbstractGetNewBlockV3IntegrationTest {
 
   @TestTemplate
