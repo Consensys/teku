@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -104,6 +105,8 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
   public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBlockIfBlinded(
       final SignedBeaconBlock maybeBlindedBlock,
       final BlockPublishingPerformance blockPublishingPerformance) {
+    Preconditions.checkArgument(
+        !maybeBlindedBlock.isBlinded(), "Blocks in ePBS should be all unblinded");
     return SafeFuture.completedFuture(Optional.of(maybeBlindedBlock));
   }
 }
