@@ -95,7 +95,7 @@ public class ProposerPreferencesPublisher {
                             .map(
                                 duty ->
                                     createSignedProposerPreferences(
-                                        duty, dependentRoot, forkInfo, preferencesUtil)))
+                                        duty, epoch, dependentRoot, forkInfo, preferencesUtil)))
                     .thenCompose(
                         signedPreferences -> {
                           final List<SignedProposerPreferences> preferencesList =
@@ -117,6 +117,7 @@ public class ProposerPreferencesPublisher {
 
   private SafeFuture<Optional<SignedProposerPreferences>> createSignedProposerPreferences(
       final ProposerDuty duty,
+      final UInt64 epoch,
       final Bytes32 dependentRoot,
       final ForkInfo forkInfo,
       final ProposerPreferencesUtil preferencesUtil) {
@@ -131,7 +132,10 @@ public class ProposerPreferencesPublisher {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final UInt64 targetGasLimit = proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
+    // duties are loaded ahead of time, so the gas limit must be the one scheduled for the duty
+    // epoch
+    final UInt64 targetGasLimit =
+        proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey(), epoch);
     final Optional<ProposerPreferences> maybePreferences =
         preferencesUtil.createProposerPreferences(
             dependentRoot,

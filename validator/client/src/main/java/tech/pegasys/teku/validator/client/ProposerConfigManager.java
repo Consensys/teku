@@ -184,17 +184,22 @@ public class ProposerConfigManager
    * <ul>
    *   <li>gas limit configured for the key (proposer config file, or the SET api)
    *   <li>default configured via <code>--validators-builder-registration-default-gas-limit</code>
-   *   <li>gas limit scheduled by the network for the current epoch (EIP-8261)
+   *   <li>gas limit scheduled by the network for the epoch (EIP-8261)
    *   <li>{@link ValidatorConfig#DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT}
    * </ul>
    */
   @Override
   public UInt64 getGasLimit(final BLSPublicKey publicKey) {
+    return getGasLimit(publicKey, currentEpoch.get());
+  }
+
+  @Override
+  public UInt64 getGasLimit(final BLSPublicKey publicKey, final UInt64 epoch) {
     final Optional<UInt64> maybeConfiguredGasLimit =
         getAttributeWithFallback(Config::getBuilderGasLimit, publicKey)
             .or(config::getBuilderRegistrationDefaultGasLimit);
 
-    final Optional<UInt64> maybeScheduledGasLimit = scheduledGasLimit.get();
+    final Optional<UInt64> maybeScheduledGasLimit = getScheduledGasLimit(epoch);
     if (maybeConfiguredGasLimit.isEmpty()) {
       return maybeScheduledGasLimit.orElse(ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT);
     }
@@ -202,14 +207,23 @@ public class ProposerConfigManager
     final UInt64 configuredGasLimit = maybeConfiguredGasLimit.get();
     if (maybeScheduledGasLimit.isPresent()
         && configuredGasLimit.isGreaterThan(maybeScheduledGasLimit.get())) {
-      warnAboutGasLimit(publicKey, configuredGasLimit, maybeScheduledGasLimit.get());
+      warnAboutGasLimit(publicKey, epoch, configuredGasLimit, maybeScheduledGasLimit.get());
     }
     return configuredGasLimit;
+  }
+
+  private Optional<UInt64> getScheduledGasLimit(final UInt64 epoch) {
+    if (epoch.equals(currentEpoch.get())) {
+      // the common case, resolved once per epoch instead of once per validator
+      return scheduledGasLimit.get();
+    }
+    return spec.getScheduledGasLimit(epoch);
   }
 
   /** Warns at most once per validator for a given configured gas limit. */
   private void warnAboutGasLimit(
       final BLSPublicKey publicKey,
+      final UInt64 epoch,
       final UInt64 configuredGasLimit,
       final UInt64 recommendedGasLimit) {
     final UInt64 previouslyWarnedGasLimit =
@@ -222,7 +236,7 @@ public class ProposerConfigManager
         configuredGasLimit,
         publicKey,
         recommendedGasLimit,
-        currentEpoch.get());
+        epoch);
   }
 
   @Override
