@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
@@ -45,6 +46,14 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(response.getConfigMap());
+  }
+
+  @Test
+  void shouldIncludeBuilderDepositDomain() throws JsonProcessingException {
+    handler.handleRequest(request);
+
+    final Map<?, ?> responseBody = (Map<?, ?>) request.getResponseBody();
+    assertThat(responseBody.get("DOMAIN_BUILDER_DEPOSIT")).isEqualTo("0x0e000000");
   }
 
   @Test
