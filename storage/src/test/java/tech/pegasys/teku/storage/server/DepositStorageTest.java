@@ -54,7 +54,7 @@ public class DepositStorageTest {
     storageSystem = storageSystemSupplier.get(dataDirectory, spec);
     database = storageSystem.database();
 
-    depositStorage = storageSystem.createDepositStorage(false);
+    depositStorage = storageSystem.createDepositStorage();
   }
 
   @AfterEach
@@ -84,32 +84,11 @@ public class DepositStorageTest {
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void shouldNotRemoveDepositsWhenDepositSnapshotStorageNotEnabled(
+  public void shouldRemoveDepositEvents(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
-    database.addDepositsFromBlockEvent(block99);
-    database.addDepositsFromBlockEvent(block100);
-    database.addDepositsFromBlockEvent(block101);
-
-    SafeFuture<Boolean> removeFuture = depositStorage.removeDepositEvents();
-    assertThat(removeFuture).isCompleted();
-    assertThat(removeFuture.get()).isFalse();
-
-    try (Stream<DepositsFromBlockEvent> deposits = database.streamDepositsFromBlocks()) {
-      assertThat(deposits.collect(toList())).containsExactly(block99, block100, block101);
-    }
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void shouldRemoveDepositsWhenDepositSnapshotStorageEnabled(
-      final String storageType,
-      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
-      throws ExecutionException, InterruptedException {
-    setup(storageSystemSupplier);
-    depositStorage = storageSystem.createDepositStorage(true);
     database.addDepositsFromBlockEvent(block99);
     database.addDepositsFromBlockEvent(block100);
     database.addDepositsFromBlockEvent(block101);

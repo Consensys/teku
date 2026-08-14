@@ -74,7 +74,12 @@ public class SpecConfigReader {
           // Deprecated fields
           "GOSSIP_MAX_SIZE_BELLATRIX",
           "MAX_CHUNK_SIZE_BELLATRIX",
-          "MAX_CHUNK_SIZE");
+          "MAX_CHUNK_SIZE",
+          // Deprecated networking fields not used by Teku
+          "RESP_TIMEOUT",
+          "TTFB_TIMEOUT",
+          // Ephemery-specific field not used by Teku
+          "EPHEMERY_RESET_PERIOD");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored

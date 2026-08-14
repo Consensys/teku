@@ -389,6 +389,17 @@ class FastConfirmationCalculator {
         continue;
       }
       final UInt64 messageEpoch = spec.computeEpochAtSlot(vote.getNextSlot());
+      // A vote can only support the target when its message epoch matches the target epoch, since
+      // Checkpoint equality requires equal epochs. Filtering on the epoch first also avoids
+      // resolving the vote's checkpoint block: for a voter that has not voted for one or more
+      // epochs the message epoch can sit at or below the finalized checkpoint, whose block has
+      // been pruned from fork choice (protoarray only retains finalized-onward blocks, while the
+      // spec assumes every block stays in store.blocks), and get_checkpoint_block would otherwise
+      // throw. Such a vote cannot match the current-epoch target anyway, so it contributes no
+      // score.
+      if (!messageEpoch.equals(target.getEpoch())) {
+        continue;
+      }
       if (target.equals(getCheckpointForBlock(votedRoot, messageEpoch))) {
         score = score.plus(validator.getEffectiveBalance());
       }

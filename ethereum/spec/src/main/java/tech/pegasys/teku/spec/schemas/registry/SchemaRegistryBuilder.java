@@ -44,6 +44,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_ACCESS_LIST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_GLOAS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
@@ -170,6 +171,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
@@ -372,6 +374,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
+        .addProvider(createBlockContentsGloasSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeContentsSchemaProvider())
         .addProvider(createSignedBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
@@ -396,7 +399,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ELECTRA,
             (_, specConfig, _) ->
-                SszBitlistSchema.create(getMaxValidatorsPerAttestationElectra(specConfig)))
+                SszBitlistSchema.create(specConfig.getMaxValidatorsPerAttestation()))
         .withCreator(GLOAS, (_, _, _) -> new SszProgressiveBitlistSchema())
         .build();
   }
@@ -406,11 +409,11 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (_, specConfig, _) ->
-                SszUInt64ListSchema.create(getMaxValidatorsPerAttestationPhase0(specConfig)))
+                SszUInt64ListSchema.create(specConfig.getMaxValidatorsPerAttestation()))
         .withCreator(
             ELECTRA,
             (_, specConfig, _) ->
-                SszUInt64ListSchema.create(getMaxValidatorsPerAttestationElectra(specConfig)))
+                SszUInt64ListSchema.create(specConfig.getMaxValidatorsPerAttestation()))
         .withCreator(GLOAS, (_, _, _) -> SszProgressiveUInt64ListSchema.create())
         .build();
   }
@@ -1020,7 +1023,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (registry, specConfig, schemaName) ->
-                new AttestationPhase0Schema(getMaxValidatorsPerAttestationPhase0(specConfig))
+                new AttestationPhase0Schema(specConfig.getMaxValidatorsPerAttestation())
                     .castTypeToAttestationSchema())
         .withCreator(
             ELECTRA,
@@ -1265,14 +1268,6 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static long getMaxValidatorsPerAttestationPhase0(final SpecConfig specConfig) {
-    return specConfig.getMaxValidatorsPerCommittee();
-  }
-
-  private static long getMaxValidatorsPerAttestationElectra(final SpecConfig specConfig) {
-    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
-  }
-
   private static SchemaProvider<?> createBuilderPendingPaymentSchemaProvider() {
     return providerBuilder(BUILDER_PENDING_PAYMENT_SCHEMA)
         .withCreator(
@@ -1386,6 +1381,15 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new SignedBlindedExecutionPayloadEnvelopeSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBlockContentsGloasSchemaProvider() {
+    return providerBuilder(BLOCK_CONTENTS_GLOAS_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new BlockContentsGloasSchema(SpecConfigFulu.required(specConfig), registry))
         .build();
   }
 

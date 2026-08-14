@@ -23,10 +23,10 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
@@ -44,7 +44,7 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
             .blockContainer();
 
-    assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
+    assertThat(blockContainer).isInstanceOf(BlockContentsGloas.class);
     assertThat(blockContainer.getBlock().getBody()).isInstanceOf(BeaconBlockBodyGloas.class);
   }
 
@@ -63,10 +63,12 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
     final BlockFactory blockFactory = createBlockFactory(spec);
     assertThatThrownBy(
             () ->
-                blockFactory.unblindSignedBlockIfBlinded(
-                    signedBlindedBlock, BlockPublishingPerformance.NOOP))
+                blockFactory
+                    .unblindSignedBlockIfBlinded(
+                        signedBlindedBlock, BlockPublishingPerformance.NOOP)
+                    .join())
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Blocks in ePBS should be all unblinded");
+        .hasMessageContaining("Blocks in ePBS should be all unblinded");
   }
 
   @Override

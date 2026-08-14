@@ -28,10 +28,11 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
-@TestSpecContext(allMilestones = true)
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA, SpecMilestone.FULU})
 public class GetNewBlockV3IntegrationTest extends AbstractGetNewBlockV3IntegrationTest {
 
   @TestTemplate

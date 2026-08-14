@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -70,14 +71,24 @@ public class CombinedChainDataClient {
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
+  private final ExecutionPayloadProvider executionPayloadProvider;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec) {
+    this(recentChainData, historicalChainData, spec, ExecutionPayloadProvider.NOOP);
+  }
+
+  public CombinedChainDataClient(
+      final RecentChainData recentChainData,
+      final StorageQueryChannel historicalChainData,
+      final Spec spec,
+      final ExecutionPayloadProvider executionPayloadProvider) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
+    this.executionPayloadProvider = executionPayloadProvider;
   }
 
   /**
@@ -615,9 +626,24 @@ public class CombinedChainDataClient {
             });
   }
 
+  /**
+   * Returns the execution payload envelope for the given block root, consulting the hot store first
+   * and falling back to historical data, mirroring {@link #getBlockByBlockRoot(Bytes32)}. The hot
+   * store only knows about blocks still present in fork choice, so finalized blocks pruned from it
+   * are resolved by the fallback, which reads the retained blinded envelope from the database and
+   * unblinds it via the execution layer.
+   */
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
-    return recentChainData.retrieveSignedExecutionPayloadByBlockRoot(blockRoot);
+    return recentChainData
+        .retrieveSignedExecutionPayloadByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeExecutionPayload -> {
+              if (maybeExecutionPayload.isPresent()) {
+                return SafeFuture.completedFuture(maybeExecutionPayload);
+              }
+              return executionPayloadProvider.getExecutionPayload(blockRoot);
+            });
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
@@ -951,7 +977,17 @@ public class CombinedChainDataClient {
     return historicalChainData
         .getFinalizedSlotByStateRoot(stateRoot)
         .thenCompose(
-            maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
+                return getStateAtSlotExact(maybeSlot.get());
+              }
+              // In prune/minimal mode the finalized state root index is not populated, so fall
+              // back to the current finalized state and check if it matches the requested root.
+              return getBestFinalizedState()
+                  .thenApply(
+                      maybeFinalized ->
+                          maybeFinalized.filter(s -> s.hashTreeRoot().equals(stateRoot)));
+            });
   }
 
   private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {

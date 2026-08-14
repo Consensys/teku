@@ -14,19 +14,24 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
@@ -36,11 +41,17 @@ class KvStoreTreeNodeStoreTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Set<Bytes32> knownBranchCache = new HashSet<>();
+  private final KvStoreAccessor db = mock(KvStoreAccessor.class);
   private final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
   private final SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
 
   private final KvStoreTreeNodeStore store =
-      new KvStoreTreeNodeStore(knownBranchCache, transaction, schema);
+      new KvStoreTreeNodeStore(knownBranchCache, db, transaction, schema);
+
+  @BeforeEach
+  void setUp() {
+    when(db.get(any(), any())).thenReturn(Optional.empty());
+  }
 
   @Test
   void canSkipBranch_shouldSkipBranchWhenInKnownBranchCache() {
@@ -54,13 +65,28 @@ class KvStoreTreeNodeStoreTest {
   }
 
   @Test
-  void canSkipBranch_shouldNotSkipBranchWhenNotInKnownBranchCache() {
+  void canSkipBranch_shouldNotSkipBranchWhenNotInKnownBranchCacheOrDb() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
 
     assertThat(store.canSkipBranch(root, 3)).isFalse();
     assertThat(store.getSkippedBranchNodeCount()).isZero();
     assertThat(store.getStoredBranchNodeCount()).isZero();
     assertThat(store.getStoredLeafNodeCount()).isZero();
+  }
+
+  @Test
+  void canSkipBranch_shouldSkipBranchWhenInDbAndAddToCache() {
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    when(db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root))
+        .thenReturn(Optional.of(new CompressedBranchInfo(1, new Bytes32[0])));
+
+    assertThat(store.canSkipBranch(root, 3)).isTrue();
+    assertThat(store.getSkippedBranchNodeCount()).isEqualTo(1);
+    assertThat(knownBranchCache).contains(root);
+
+    // second call should be served from cache without hitting db again
+    assertThat(store.canSkipBranch(root, 3)).isTrue();
+    verify(db, times(1)).get(schema.getColumnFinalizedStateMerkleTreeBranches(), root);
   }
 
   @Test

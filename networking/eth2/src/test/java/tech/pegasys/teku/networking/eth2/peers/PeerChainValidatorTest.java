@@ -234,9 +234,21 @@ public class PeerChainValidatorTest {
     // Setup mocks
     forksMatch();
     remoteChainIsAheadAndUnresponsive();
-
+    // not optimistic (mock default) -> penalize with a banning disconnect reason
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainRejected(result, DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+  }
+
+  @Test
+  public void unableToValidate_whenOptimistic_disconnectsWithoutPenalty() {
+    // Same unverifiable situation, but while optimistically syncing we cannot judge the peer, so we
+    // must NOT ban it (UNABLE_TO_VERIFY_NETWORK) - only drop it with a non-banning reason.
+    forksMatch();
+    remoteChainIsAheadAndUnresponsive();
+    when(combinedChainData.isChainHeadOptimistic()).thenReturn(true);
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainRejected(result, DisconnectReason.UNRESPONSIVE);
   }
 
   @Test

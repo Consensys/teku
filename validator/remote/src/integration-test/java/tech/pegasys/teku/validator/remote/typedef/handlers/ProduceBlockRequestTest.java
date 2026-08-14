@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
@@ -79,8 +78,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetUnblindedBeaconBlockAsJson() throws JsonProcessingException {
-    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
-        .isTrue();
+    assumeThat(specMilestone.isLessThan(DENEB)).isTrue();
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
@@ -118,8 +116,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetUnblindedBeaconBlockAsSsz() {
-    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
-        .isTrue();
+    assumeThat(specMilestone.isLessThan(DENEB)).isTrue();
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
