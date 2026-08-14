@@ -245,7 +245,7 @@ jobs:
           include-hidden-files: 'true'
 
   prDistributions:
-    needs: [changes, assemble]
+    needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest-128
     steps:
