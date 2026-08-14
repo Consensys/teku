@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
+import tech.pegasys.teku.validator.coordinator.DataColumnSidecarCreationException;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
 public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher {
@@ -55,40 +57,44 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return SafeFuture.<List<DataColumnSidecar>>of(
-            () -> executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
-        .thenCompose(
-            dataColumnSidecars ->
-                publishSignedExecutionPayload(
-                    signedExecutionPayload, dataColumnSidecars, broadcastValidationLevel));
+    return publishSignedExecutionPayload(
+        signedExecutionPayload,
+        SafeFuture.of(
+            () -> executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload)),
+        broadcastValidationLevel);
   }
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return SafeFuture.<List<DataColumnSidecar>>of(
+    return publishSignedExecutionPayload(
+        signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
+        SafeFuture.of(
             () ->
                 executionPayloadFactory.createDataColumnSidecars(
-                    signedExecutionPayloadEnvelopeContents))
-        .thenCompose(
-            dataColumnSidecars ->
-                publishSignedExecutionPayload(
-                    signedExecutionPayloadEnvelopeContents.getSignedExecutionPayloadEnvelope(),
-                    dataColumnSidecars,
-                    broadcastValidationLevel));
+                    signedExecutionPayloadEnvelopeContents)),
+        broadcastValidationLevel);
   }
 
+  /**
+   * The data column sidecars are built concurrently with the broadcast validation, but both must
+   * have completed before anything is published: a failure to build the sidecars (for example when
+   * the blobs are not cached for a stateful submission) must prevent the execution payload from
+   * being broadcast. Gossiping an envelope whose columns cannot be made available is pointless, as
+   * no honest node adds such a payload to its store.
+   */
   private SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
-      final List<DataColumnSidecar> dataColumnSidecars,
+      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
     return executionPayloadManager
         .validateAndImportExecutionPayloadForBroadcast(
             signedExecutionPayload, broadcastValidationLevel)
-        .thenCompose(
-            validateAndImportResult -> {
+        .thenComposeCombined(
+            recoverDataColumnSidecarCreationFailure(dataColumnSidecarsFuture, beaconBlockRoot),
+            (validateAndImportResult, dataColumnSidecarsResult) -> {
               final InternalValidationResult validationResult =
                   validateAndImportResult.validationResult();
               if (!validationResult.isAccept()) {
@@ -101,8 +107,16 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                                 .map(description -> ": " + description)
                                 .orElse("")));
               }
+              if (dataColumnSidecarsResult.rejectionReason().isPresent()) {
+                // the payload is valid but we cannot make its columns available, so the caller is
+                // told it was not published while the import is left to complete on its own
+                validateAndImportResult.importResult().ifPresent(future -> future.finishError(LOG));
+                return SafeFuture.completedFuture(
+                    PublishSignedExecutionPayloadResult.rejected(
+                        beaconBlockRoot, dataColumnSidecarsResult.rejectionReason().get()));
+              }
               publishExecutionPayloadAndDataColumnSidecars(
-                  signedExecutionPayload, dataColumnSidecars);
+                  signedExecutionPayload, dataColumnSidecarsResult.dataColumnSidecars());
               return validateAndImportResult
                   .importResult()
                   .orElseThrow(() -> new IllegalStateException("ACCEPT without import future"))
@@ -113,6 +127,48 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                               : PublishSignedExecutionPayloadResult.notImported(
                                   beaconBlockRoot, importResult.getFailureReason().name()));
             });
+  }
+
+  /**
+   * A {@link DataColumnSidecarCreationException} is caused by the submission itself rather than by
+   * an internal failure, so it is turned into a rejection reason the caller can act on instead of
+   * being propagated as an error. Any other failure is left to propagate.
+   */
+  private static SafeFuture<DataColumnSidecarsResult> recoverDataColumnSidecarCreationFailure(
+      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
+      final Bytes32 beaconBlockRoot) {
+    return dataColumnSidecarsFuture
+        .thenApply(DataColumnSidecarsResult::created)
+        .exceptionallyCompose(
+            error ->
+                ExceptionUtil.getCause(error, DataColumnSidecarCreationException.class)
+                    .map(
+                        creationException -> {
+                          LOG.warn(
+                              "Unable to build the data column sidecars for the execution payload"
+                                  + " envelope with beacon block root {}: {}",
+                              beaconBlockRoot,
+                              creationException.getMessage());
+                          return SafeFuture.completedFuture(
+                              DataColumnSidecarsResult.rejected(creationException.getMessage()));
+                        })
+                    .orElseGet(() -> SafeFuture.failedFuture(error)));
+  }
+
+  /**
+   * Either the data column sidecars to publish, or the reason why the execution payload envelope
+   * must be rejected because they could not be built.
+   */
+  private record DataColumnSidecarsResult(
+      List<DataColumnSidecar> dataColumnSidecars, Optional<String> rejectionReason) {
+
+    static DataColumnSidecarsResult created(final List<DataColumnSidecar> dataColumnSidecars) {
+      return new DataColumnSidecarsResult(dataColumnSidecars, Optional.empty());
+    }
+
+    static DataColumnSidecarsResult rejected(final String rejectionReason) {
+      return new DataColumnSidecarsResult(List.of(), Optional.of(rejectionReason));
+    }
   }
 
   private void publishExecutionPayloadAndDataColumnSidecars(

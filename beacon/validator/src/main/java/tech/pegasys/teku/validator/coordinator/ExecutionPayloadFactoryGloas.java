@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -74,17 +72,24 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
   public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     final UInt64 slot = signedExecutionPayload.getMessage().getSlot();
-    return SafeFuture.<GetPayloadResponse>of(() -> getCachedGetPayloadResponseFuture(slot))
+    return SafeFuture.<GetPayloadResponse>of(
+            () ->
+                executionLayerBlockProductionManager
+                    .getCachedPayloadResult(slot)
+                    .orElseThrow(() -> DataColumnSidecarCreationException.noCachedBlobData(slot))
+                    .getPayloadResponseFutureFromLocalFlowRequired())
         .thenApply(
             getPayloadResponse -> {
-              checkState(
+              if (!getPayloadResponse
+                  .getExecutionPayload()
+                  .hashTreeRoot()
+                  .equals(signedExecutionPayload.getMessage().getPayload().hashTreeRoot())) {
+                throw DataColumnSidecarCreationException.cachedPayloadMismatch(slot);
+              }
+              final BlobsBundle blobsBundle =
                   getPayloadResponse
-                      .getExecutionPayload()
-                      .hashTreeRoot()
-                      .equals(signedExecutionPayload.getMessage().getPayload().hashTreeRoot()),
-                  "Cached execution payload does not match signed execution payload envelope for slot %s",
-                  slot);
-              final BlobsBundle blobsBundle = getPayloadResponse.getBlobsBundle().orElseThrow();
+                      .getBlobsBundle()
+                      .orElseThrow(() -> DataColumnSidecarCreationException.noCachedBlobData(slot));
               return createDataColumnSidecars(
                   signedExecutionPayload, blobsBundle.getBlobs(), blobsBundle.getProofs());
             });

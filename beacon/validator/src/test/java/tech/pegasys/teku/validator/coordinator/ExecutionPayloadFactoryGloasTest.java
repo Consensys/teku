@@ -120,8 +120,8 @@ class ExecutionPayloadFactoryGloasTest {
         .thenReturn(Optional.empty());
 
     assertThatSafeFuture(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
-        .isCompletedExceptionallyWith(IllegalStateException.class)
-        .hasMessage("ExecutionPayloadResult hasn't been cached for slot " + slot);
+        .isCompletedExceptionallyWith(DataColumnSidecarCreationException.class)
+        .hasMessage(DataColumnSidecarCreationException.noCachedBlobData(slot).getMessage());
   }
 
   @Test
@@ -140,10 +140,8 @@ class ExecutionPayloadFactoryGloasTest {
     setupCachingOfThePayloadResult(slot, mismatchedGetPayloadResponse);
 
     assertThatSafeFuture(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
-        .isCompletedExceptionallyWith(IllegalStateException.class)
-        .hasMessage(
-            "Cached execution payload does not match signed execution payload envelope for slot "
-                + slot);
+        .isCompletedExceptionallyWith(DataColumnSidecarCreationException.class)
+        .hasMessage(DataColumnSidecarCreationException.cachedPayloadMismatch(slot).getMessage());
   }
 
   private void assertExecutionPayloadCreated(

@@ -38,6 +38,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
+import tech.pegasys.teku.validator.coordinator.DataColumnSidecarCreationException;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
 class ExecutionPayloadPublisherGloasTest {
@@ -98,8 +99,42 @@ class ExecutionPayloadPublisherGloasTest {
   }
 
   @Test
-  public void publishSignedExecutionPayload_shouldFailBeforePublishingWhenSidecarsAreUnavailable() {
-    final IllegalStateException error = new IllegalStateException("payload cache unavailable");
+  public void publishSignedExecutionPayload_shouldRejectWithoutPublishingWhenBlobDataIsNotCached() {
+    final DataColumnSidecarCreationException error =
+        DataColumnSidecarCreationException.noCachedBlobData(signedExecutionPayload.getSlot());
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(SafeFuture.failedFuture(error));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedExecutionPayload.getBeaconBlockRoot(), error.getMessage()));
+
+    // broadcast validation runs concurrently with the sidecar creation, but nothing is published
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
+  public void
+      publishSignedExecutionPayload_shouldRejectWithoutPublishingWhenEnvelopeDoesNotMatchCachedPayload() {
+    final DataColumnSidecarCreationException error =
+        DataColumnSidecarCreationException.cachedPayloadMismatch(signedExecutionPayload.getSlot());
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(SafeFuture.failedFuture(error));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedExecutionPayload.getBeaconBlockRoot(), error.getMessage()));
+
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldFailBeforePublishingOnUnexpectedSidecarError() {
+    final IllegalStateException error = new IllegalStateException("boom");
     when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
         .thenReturn(SafeFuture.failedFuture(error));
 
@@ -107,8 +142,7 @@ class ExecutionPayloadPublisherGloasTest {
             executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
         .isCompletedExceptionallyWith(error);
 
-    verifyNoInteractions(
-        executionPayloadManager, executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
   }
 
   @Test
