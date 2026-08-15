@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.lightclient;
 
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,6 +37,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class LightClientServerService
     implements ReceivedBlockEventsChannel, FinalizedCheckpointChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final LightClientUpdateStore lightClientStore;
@@ -97,11 +101,14 @@ public class LightClientServerService
     retrieveStateByRoot
         .apply(block.getRoot())
         .thenCompose(
-            maybePostState -> {
-              return maybePostState
-                  .map(beaconState -> createAndStoreUpdate(block, beaconState))
-                  .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()));
-            });
+            maybePostState ->
+                maybePostState
+                    .map(postState -> createAndStoreUpdate(block, postState))
+                    .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())))
+        .finish(
+            error ->
+                LOG.warn(
+                    "Failed to create light client update for block {}", block.getRoot(), error));
   }
 
   @Override
@@ -112,7 +119,6 @@ public class LightClientServerService
 
   private SafeFuture<Optional<LightClientUpdate>> createAndStoreUpdate(
       final SignedBeaconBlock signatureBlock, final BeaconState signatureBlockPostState) {
-    final UInt64 slot = signatureBlock.getSlot();
     final Bytes32 parentRoot = signatureBlock.getParentRoot();
 
     final SafeFuture<Optional<SignedBeaconBlock>> attestedBlockFuture =
@@ -147,29 +153,31 @@ public class LightClientServerService
                       return Optional.empty();
                     }
 
-                    try {
-                      final LightClientUtil lightClientUtil = spec.getLightClientUtilRequired(slot);
-                      final LightClientUpdate update =
-                          lightClientUtil.createLightClientUpdate(
-                              signatureBlockPostState,
-                              signatureBlock,
-                              attestedState,
-                              attestedBlock,
-                              maybeFinalizedBlock);
-                      lightClientStore.addUpdate(update);
-
-                      final LightClientFinalityUpdate finalityUpdate =
-                          lightClientUtil.createLightClientFinalityUpdate(update);
-                      lightClientStore.addFinalityUpdate(finalityUpdate);
-
-                      final LightClientOptimisticUpdate optimisticUpdate =
-                          lightClientUtil.createLightClientOptimisticUpdate(update);
-                      lightClientStore.addOptimisticUpdate(optimisticUpdate);
-
-                      return Optional.of(update);
-                    } catch (final Exception e) {
+                    final Optional<LightClientUtil> maybeLightClientUtil =
+                        spec.getLightClientUtil(attestedBlock.getSlot());
+                    if (maybeLightClientUtil.isEmpty()) {
                       return Optional.empty();
                     }
+                    final LightClientUtil lightClientUtil = maybeLightClientUtil.get();
+
+                    final LightClientUpdate update =
+                        lightClientUtil.createLightClientUpdate(
+                            signatureBlockPostState,
+                            signatureBlock,
+                            attestedState,
+                            attestedBlock,
+                            maybeFinalizedBlock);
+                    lightClientStore.addUpdate(update);
+
+                    final LightClientFinalityUpdate finalityUpdate =
+                        lightClientUtil.createLightClientFinalityUpdate(update);
+                    lightClientStore.addFinalityUpdate(finalityUpdate);
+
+                    final LightClientOptimisticUpdate optimisticUpdate =
+                        lightClientUtil.createLightClientOptimisticUpdate(update);
+                    lightClientStore.addOptimisticUpdate(optimisticUpdate);
+
+                    return Optional.of(update);
                   });
             });
   }
