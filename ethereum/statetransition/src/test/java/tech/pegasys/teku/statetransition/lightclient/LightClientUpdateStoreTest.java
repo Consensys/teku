@@ -319,6 +319,18 @@ public class LightClientUpdateStoreTest {
     assertThat(store.getLatestOptimisticUpdate()).contains(newer);
   }
 
+  @TestTemplate
+  public void pruneUpdateBefore_shouldDropPeriodsBelowGivenPeriod() {
+    final LightClientUpdate periodZero = createLightClientUpdateAtPeriod(0);
+    final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
+    final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 500)).containsExactly(periodZero, periodOne, periodOne);
+
+    store.pruneUpdatesBefore(UInt64.ONE);
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 500)).containsExactly(periodOne, periodTwo);
+  }
+
   private LightClientUpdate getBestUpdateAfterAdding(
       final LightClientUpdate first, final LightClientUpdate second) {
     final LightClientUpdateStore comparisonStore = new LightClientUpdateStore(spec);
