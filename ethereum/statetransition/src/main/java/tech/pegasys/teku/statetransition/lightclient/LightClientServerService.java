@@ -40,6 +40,9 @@ public class LightClientServerService
 
   private static final Logger LOG = LogManager.getLogger();
 
+  /** Sync committee periods of updates retained behind the finalized period. */
+  private static final int MAX_RETAINED_PERIODS = 128;
+
   private final Spec spec;
   private final LightClientUpdateStore lightClientStore;
   private final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveBlockByRoot;
@@ -114,7 +117,16 @@ public class LightClientServerService
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    // This is a no-operation function
+    final UInt64 finalizedSlot = checkpoint.getEpochStartSlot(spec);
+    if (spec.atSlot(finalizedSlot).getMilestone().isLessThan(SpecMilestone.ALTAIR)) {
+      return;
+    }
+
+    final UInt64 finalizedPeriod =
+        spec.getSyncCommitteeUtilRequired(finalizedSlot)
+            .computeSyncCommitteePeriod(checkpoint.getEpoch());
+
+    lightClientStore.pruneUpdatesBefore(finalizedPeriod.minusMinZero(MAX_RETAINED_PERIODS));
   }
 
   private SafeFuture<Optional<LightClientUpdate>> createAndStoreUpdate(
@@ -126,59 +138,56 @@ public class LightClientServerService
     final SafeFuture<Optional<BeaconState>> attestedStateFuture =
         retrieveStateByRoot.apply(parentRoot);
 
-    return SafeFuture.allOf(attestedBlockFuture, attestedStateFuture)
-        .thenCompose(
-            __ -> {
-              final Optional<SignedBeaconBlock> maybeAttestedBlock = attestedBlockFuture.join();
-              final Optional<BeaconState> maybeAttestedState = attestedStateFuture.join();
+    return attestedBlockFuture.thenComposeCombined(
+        attestedStateFuture,
+        (maybeAttestedBlock, maybeAttestedState) -> {
+          if (maybeAttestedBlock.isEmpty() || maybeAttestedState.isEmpty()) {
+            return SafeFuture.completedFuture(Optional.empty());
+          }
 
-              if (maybeAttestedBlock.isEmpty() || maybeAttestedState.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
+          final SignedBeaconBlock attestedBlock = maybeAttestedBlock.get();
+          final BeaconState attestedState = maybeAttestedState.get();
 
-              final SignedBeaconBlock attestedBlock = maybeAttestedBlock.get();
-              final BeaconState attestedState = maybeAttestedState.get();
+          final Bytes32 finalizedRoot = attestedState.getFinalizedCheckpoint().getRoot();
+          final SafeFuture<Optional<SignedBeaconBlock>> finalizedBlockFuture;
+          if (finalizedRoot.isZero()) {
+            finalizedBlockFuture = SafeFuture.completedFuture(Optional.empty());
+          } else {
+            finalizedBlockFuture = retrieveBlockByRoot.apply(finalizedRoot);
+          }
 
-              final Bytes32 finalizedRoot = attestedState.getFinalizedCheckpoint().getRoot();
-              final SafeFuture<Optional<SignedBeaconBlock>> finalizedBlockFuture;
-              if (finalizedRoot.isZero()) {
-                finalizedBlockFuture = SafeFuture.completedFuture(Optional.empty());
-              } else {
-                finalizedBlockFuture = retrieveBlockByRoot.apply(finalizedRoot);
-              }
+          return finalizedBlockFuture.thenApply(
+              maybeFinalizedBlock -> {
+                if (!finalizedRoot.isZero() && maybeFinalizedBlock.isEmpty()) {
+                  return Optional.empty();
+                }
 
-              return finalizedBlockFuture.thenApply(
-                  maybeFinalizedBlock -> {
-                    if (!finalizedRoot.isZero() && maybeFinalizedBlock.isEmpty()) {
-                      return Optional.empty();
-                    }
+                final Optional<LightClientUtil> maybeLightClientUtil =
+                    spec.getLightClientUtil(attestedBlock.getSlot());
+                if (maybeLightClientUtil.isEmpty()) {
+                  return Optional.empty();
+                }
+                final LightClientUtil lightClientUtil = maybeLightClientUtil.get();
 
-                    final Optional<LightClientUtil> maybeLightClientUtil =
-                        spec.getLightClientUtil(attestedBlock.getSlot());
-                    if (maybeLightClientUtil.isEmpty()) {
-                      return Optional.empty();
-                    }
-                    final LightClientUtil lightClientUtil = maybeLightClientUtil.get();
+                final LightClientUpdate update =
+                    lightClientUtil.createLightClientUpdate(
+                        signatureBlockPostState,
+                        signatureBlock,
+                        attestedState,
+                        attestedBlock,
+                        maybeFinalizedBlock);
+                lightClientStore.addUpdate(update);
 
-                    final LightClientUpdate update =
-                        lightClientUtil.createLightClientUpdate(
-                            signatureBlockPostState,
-                            signatureBlock,
-                            attestedState,
-                            attestedBlock,
-                            maybeFinalizedBlock);
-                    lightClientStore.addUpdate(update);
+                final LightClientFinalityUpdate finalityUpdate =
+                    lightClientUtil.createLightClientFinalityUpdate(update);
+                lightClientStore.addFinalityUpdate(finalityUpdate);
 
-                    final LightClientFinalityUpdate finalityUpdate =
-                        lightClientUtil.createLightClientFinalityUpdate(update);
-                    lightClientStore.addFinalityUpdate(finalityUpdate);
+                final LightClientOptimisticUpdate optimisticUpdate =
+                    lightClientUtil.createLightClientOptimisticUpdate(update);
+                lightClientStore.addOptimisticUpdate(optimisticUpdate);
 
-                    final LightClientOptimisticUpdate optimisticUpdate =
-                        lightClientUtil.createLightClientOptimisticUpdate(update);
-                    lightClientStore.addOptimisticUpdate(optimisticUpdate);
-
-                    return Optional.of(update);
-                  });
-            });
+                return Optional.of(update);
+              });
+        });
   }
 }

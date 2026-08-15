@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 public class LightClientUpdateStore {
   private final Spec spec;
 
-  // TODO: bound this once updates are persisted
   private final ConcurrentNavigableMap<UInt64, LightClientUpdate> bestUpdatesByPeriod =
       new ConcurrentSkipListMap<>();
   private final AtomicReference<Optional<LightClientFinalityUpdate>> latestFinalityUpdate =
@@ -107,6 +106,10 @@ public class LightClientUpdateStore {
     }
 
     return consecutiveUpdates;
+  }
+
+  public void pruneUpdatesBefore(final UInt64 period) {
+    bestUpdatesByPeriod.headMap(period).clear();
   }
 
   public Optional<LightClientFinalityUpdate> getLatestFinalityUpdate() {
