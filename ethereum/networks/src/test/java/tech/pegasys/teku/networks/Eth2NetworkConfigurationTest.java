@@ -181,7 +181,6 @@ public class Eth2NetworkConfigurationTest {
     final StateBoostrapConfig stateBoostrapConfig = config.getNetworkBoostrapConfig();
 
     assertThat(config.getEth2Network().map(Eth2Network::configName)).contains("plataberget");
-    assertThat(config.getConstants()).isEqualTo("plataberget");
     assertThat(config.getStartupTimeoutSeconds()).isEqualTo(120);
     assertThat(config.getEth1DepositContractDeployBlock()).contains(UInt64.ZERO);
     assertThat(config.getDiscoveryBootnodes()).hasSize(20);
@@ -196,6 +195,15 @@ public class Eth2NetworkConfigurationTest {
             "https://raw.githubusercontent.com/ethpandaops/glamsterdam-devnets/"
                 + "b2e909bb60ae9c1930a869134ebbaeb0a079022a/network-configs/devnet-8/"
                 + "metadata/genesis.ssz");
+    assertThat(
+            config
+                .getSpec()
+                .getSpecConfigAndParent()
+                .specConfig()
+                .toVersionHeze()
+                .orElseThrow()
+                .getMaxTransactionsBytesPerInclusionList())
+        .isEqualTo(8192);
     assertThat(parseBootnodes(config.getDiscoveryBootnodes())).hasSize(20);
   }
 

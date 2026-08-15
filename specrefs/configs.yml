@@ -455,7 +455,7 @@
 - name: MAX_BYTES_PER_INCLUSION_LIST#heze
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "MAX_BYTES_PER_INCLUSION_LIST:"
+      search: "MAX_TRANSACTIONS_BYTES_PER_INCLUSION_LIST:"
   spec: |
     <spec config_var="MAX_BYTES_PER_INCLUSION_LIST" fork="heze" hash="1d503ddc">
     MAX_BYTES_PER_INCLUSION_LIST: Uint64 = 8192
