@@ -83,7 +83,8 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
     request.setQueryParameter(INCLUDE_PAYLOAD, "true");
     final BlockContainerAndMetaData blockContainerAndMetaData =
-        dataStructureUtil.randomBlockContentsGloasAndMetaData(ONE);
+        dataStructureUtil.randomBlockContainerAndMetaData(
+            dataStructureUtil.randomBlockContents(ONE), ONE);
 
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
@@ -125,7 +126,8 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
     request.setQueryParameter(INCLUDE_PAYLOAD, "false");
     // Even with a self-built block, include_payload=false strips the envelope
     final BlockContainerAndMetaData blockContainerAndMetaData =
-        dataStructureUtil.randomBlockContentsGloasAndMetaData(ONE);
+        dataStructureUtil.randomBlockContainerAndMetaData(
+            dataStructureUtil.randomBlockContents(ONE), ONE);
 
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)

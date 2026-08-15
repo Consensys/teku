@@ -135,7 +135,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -2877,7 +2876,7 @@ public final class DataStructureUtil {
     final List<KZGProof> kzgProofs =
         randomKZGProofs(getNumberOfRequiredProofs(slot, numberOfBlobs));
     return getDenebSchemaDefinitions(slot)
-        .getSignedBlockContentsSchema()
+        .getSignedBlockContentsWithBlobsSchema()
         .create(signedBeaconBlock, kzgProofs, blobs);
   }
 
@@ -2889,7 +2888,7 @@ public final class DataStructureUtil {
         randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromBlobsBundle(blobsBundle));
     return getDenebSchemaDefinitions(slot)
-        .getSignedBlockContentsSchema()
+        .getSignedBlockContentsWithBlobsSchema()
         .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 
@@ -2903,8 +2902,13 @@ public final class DataStructureUtil {
         beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return getGloasSchemaDefinitions(slot)
+          .getBlockContentsSchemaGloas()
+          .create(beaconBlock, randomExecutionPayloadEnvelope(slot), kzgProofs, blobs);
+    }
     return getDenebSchemaDefinitions(slot)
-        .getBlockContentsSchema()
+        .getBlockContentsWithBlobsSchema()
         .create(beaconBlock, kzgProofs, blobs);
   }
 
@@ -3691,25 +3695,6 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             randomBytes32());
-  }
-
-  public BlockContentsGloas randomBlockContentsGloas(final UInt64 slot) {
-    final BlobsBundle blobsBundle = randomBlobsBundle(1);
-    return getGloasSchemaDefinitions(slot)
-        .getBlockContentsGloasSchema()
-        .create(
-            randomBeaconBlock(slot),
-            randomExecutionPayloadEnvelope(slot),
-            blobsBundle.getProofs(),
-            blobsBundle.getBlobs());
-  }
-
-  public BlockContainerAndMetaData randomBlockContentsGloasAndMetaData(final UInt64 slot) {
-    return new BlockContainerAndMetaData(
-        randomBlockContentsGloas(slot),
-        spec.atSlot(slot).getMilestone(),
-        randomUInt256(),
-        randomUInt256());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {

@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.versions.fulu;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
-import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 
@@ -23,7 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
@@ -31,13 +30,13 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class BlockContentsSchemaFulu
-    extends ContainerSchema3<BlockContentsFulu, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
-    implements BlockContentsWithBlobsSchema<BlockContentsFulu> {
+public class BlockContentsWithBlobsSchemaDeneb
+    extends ContainerSchema3<BlockContentsDeneb, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    implements BlockContentsWithBlobsSchema<BlockContentsDeneb> {
 
-  public BlockContentsSchemaFulu(
+  public BlockContentsWithBlobsSchemaDeneb(
       final String containerName,
-      final SpecConfigFulu specConfig,
+      final SpecConfigDeneb specConfig,
       final SchemaRegistry schemaRegistry) {
     super(
         containerName,
@@ -45,8 +44,7 @@ public class BlockContentsSchemaFulu
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(
-                SszKZGProofSchema.INSTANCE,
-                (long) specConfig.getMaxBlobCommitmentsPerBlock() * FIELD_ELEMENTS_PER_EXT_BLOB)),
+                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
             FIELD_BLOBS,
             SszListSchema.create(
@@ -54,14 +52,14 @@ public class BlockContentsSchemaFulu
   }
 
   @Override
-  public BlockContentsFulu create(
+  public BlockContentsDeneb create(
       final BeaconBlock beaconBlock, final List<KZGProof> kzgProofs, final List<Blob> blobs) {
-    return new BlockContentsFulu(this, beaconBlock, kzgProofs, blobs);
+    return new BlockContentsDeneb(this, beaconBlock, kzgProofs, blobs);
   }
 
   @Override
-  public BlockContentsFulu createFromBackingNode(final TreeNode node) {
-    return new BlockContentsFulu(this, node);
+  public BlockContentsDeneb createFromBackingNode(final TreeNode node) {
+    return new BlockContentsDeneb(this, node);
   }
 
   @SuppressWarnings("unchecked")

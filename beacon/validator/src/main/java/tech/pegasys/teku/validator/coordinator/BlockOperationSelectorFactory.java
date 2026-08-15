@@ -772,12 +772,15 @@ public class BlockOperationSelectorFactory {
         // from the local fallback
         final BlobsBundle blobsBundle =
             builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
-        final BlockContentsWithBlobsSchema<?> blockContentsSchema =
+        final BlockContentsWithBlobsSchema<?> blockContentsWithBlobsSchema =
             SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-                .getBlockContentsSchema();
-        blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());
+                .getBlockContentsWithBlobsSchema();
+        blobs =
+            blockContentsWithBlobsSchema
+                .getBlobsSchema()
+                .createFromElements(blobsBundle.getBlobs());
         proofs =
-            blockContentsSchema
+            blockContentsWithBlobsSchema
                 .getKzgProofsSchema()
                 .createFromElements(
                     blobsBundle.getProofs().stream().map(SszKZGProof::new).toList());

@@ -28,12 +28,12 @@ public class BlockContentsFulu
     extends Container3<BlockContentsFulu, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements BlockContainer {
 
-  BlockContentsFulu(final BlockContentsSchemaFulu type, final TreeNode backingNode) {
+  BlockContentsFulu(final BlockContentsWithBlobsSchemaFulu type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BlockContentsFulu(
-      final BlockContentsSchemaFulu schema,
+      final BlockContentsWithBlobsSchemaFulu schema,
       final BeaconBlock beaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {

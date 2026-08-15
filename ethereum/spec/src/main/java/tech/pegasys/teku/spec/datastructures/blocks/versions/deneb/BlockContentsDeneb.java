@@ -28,12 +28,12 @@ public class BlockContentsDeneb
     extends Container3<BlockContentsDeneb, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements BlockContainer {
 
-  BlockContentsDeneb(final BlockContentsSchemaDeneb type, final TreeNode backingNode) {
+  BlockContentsDeneb(final BlockContentsWithBlobsSchemaDeneb type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BlockContentsDeneb(
-      final BlockContentsSchemaDeneb schema,
+      final BlockContentsWithBlobsSchemaDeneb schema,
       final BeaconBlock beaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
