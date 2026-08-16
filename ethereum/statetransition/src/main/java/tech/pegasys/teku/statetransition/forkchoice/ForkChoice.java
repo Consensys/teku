@@ -237,7 +237,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<Optional<ChainHead>> processHead() {
-    return processHead(Optional.empty(), false);
+    return processHead(Optional.empty(), true);
   }
 
   /** on_block */
@@ -418,7 +418,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       // with no blocking join; it never gates tick processing.
       if (fastConfirmationTracker.isEnabled()) {
         forkChoiceFastConfirmation.processForSlot(
-            currentSlot, deferredAttestationsFuture, this::processHead);
+            currentSlot,
+            deferredAttestationsFuture,
+            this::processHeadWithoutForkChoiceUpdate,
+            this::notifyForkChoiceUpdatedForFastConfirmation);
       } else {
         deferredAttestationsFuture.finishStackTrace();
       }
@@ -436,11 +439,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   SafeFuture<Optional<ChainHead>> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), true);
+  }
+
+  /**
+   * Processes the slot head for fast confirmation without sending the fcU. The confirmed root feeds
+   * {@code safe_block_hash}, so the fcU is sent afterwards (see {@link
+   * ForkChoiceFastConfirmation}), once {@code on_fast_confirmation} has updated it — otherwise the
+   * slot-start fcU would carry the previous slot's confirmed root.
+   */
+  SafeFuture<Optional<ChainHead>> processHeadWithoutForkChoiceUpdate(final UInt64 nodeSlot) {
     return processHead(Optional.of(nodeSlot), false);
   }
 
   private SafeFuture<Optional<ChainHead>> processHead(
-      final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+      final Optional<UInt64> nodeSlot, final boolean sendForkChoiceUpdated) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -476,11 +489,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                               justifiedCheckpoint);
                       nodeSlot.ifPresent(lastProcessHeadSlot::set);
 
-                      if (isPreProposal) {
-                        checkState(newHead.isPresent(), "We need a chainHead for block production");
-                        // Pre-proposal callers (prepareForBlockProduction) handle the proposer-head
-                        // override and the resulting fcU notification themselves.
-                      } else {
+                      // Callers that pass sendForkChoiceUpdated=false send the fcU themselves:
+                      // pre-proposal (prepareForBlockProduction) after the proposer-head override,
+                      // and fast confirmation after on_fast_confirmation updates the confirmed
+                      // root.
+                      if (sendForkChoiceUpdated) {
                         notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
                             Optional.empty(), Optional.empty());
                       }
@@ -1192,6 +1205,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         result.getFailureCause());
   }
 
+  /**
+   * Sends the slot-start fcU on the fork-choice thread after {@code on_fast_confirmation} has run,
+   * so {@code safe_block_hash} reflects this slot's confirmed root (see {@link
+   * #processHeadWithoutForkChoiceUpdate}).
+   */
+  private SafeFuture<Void> notifyForkChoiceUpdatedForFastConfirmation() {
+    return onForkChoiceThread(
+        () ->
+            notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty()));
+  }
+
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
       final Optional<UInt64> proposingSlot, final Optional<ChainHead> proposingOnHead) {
     checkState(
@@ -1351,8 +1375,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 .thenPeek(__ -> blockProductionPerformance.prepareOnTick()),
             applyDeferredAttestations(slot)
                 .thenPeek(__ -> blockProductionPerformance.prepareApplyDeferredAttestations()))
-        .thenCompose(__ -> processHead(Optional.of(slot), true))
-        .thenApply(Optional::orElseThrow)
+        // Block production sends its own fcU (after the proposer-head override), so suppress it
+        // here; a chain head is required for block production.
+        .thenCompose(__ -> processHead(Optional.of(slot), false))
+        .thenApply(
+            maybeHead ->
+                maybeHead.orElseThrow(
+                    () -> new IllegalStateException("Missing chain head for block production")))
         .thenCompose(
             canonicalHead ->
                 applyProposerHeadOverrideAndNotify(canonicalHead, slot, blockProductionPerformance))

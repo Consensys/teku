@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -71,7 +72,10 @@ public final class ForkChoiceFastConfirmation {
    * start, so this composes {@code processHead} onto the deferred-attestation future rather than
    * joining it. Everything after the head snapshot (epoch-boundary flags, greatest unrealized
    * justified checkpoint, source states, and the confirmation computation) is handed to the fast
-   * confirmation runner via {@link FastConfirmationTracker#onSlot}.
+   * confirmation runner via {@link FastConfirmationTracker#onSlot}. Once the confirmed root has
+   * been updated, {@code sendForkChoiceUpdated} sends the slot's fcU so its {@code safe_block_hash}
+   * reflects this slot's confirmed root; {@code processHead} deliberately does not send it (see
+   * {@code ForkChoice#processHeadWithoutForkChoiceUpdate}), so exactly one fcU is sent per slot.
    *
    * <p>Successive slots are chained so {@code onSlot} is invoked in slot order: a slot's pipeline
    * only starts once the previous slot's has fully resolved. In steady state this adds no delay
@@ -89,7 +93,8 @@ public final class ForkChoiceFastConfirmation {
   public void processForSlot(
       final UInt64 currentSlot,
       final SafeFuture<Void> deferredAttestationsFuture,
-      final Function<UInt64, SafeFuture<Optional<ChainHead>>> processHead) {
+      final Function<UInt64, SafeFuture<Optional<ChainHead>>> processHead,
+      final Supplier<SafeFuture<Void>> sendForkChoiceUpdated) {
     final SafeFuture<Void> segment =
         slotChain
             .thenCompose(__ -> deferredAttestationsFuture)
@@ -97,7 +102,11 @@ public final class ForkChoiceFastConfirmation {
             .thenCompose(
                 maybeHead ->
                     maybeHead
-                        .map(head -> fastConfirmationTracker.onSlot(currentSlot, head.getRoot()))
+                        .map(
+                            head ->
+                                fastConfirmationTracker
+                                    .onSlot(currentSlot, head.getRoot())
+                                    .thenCompose(__ -> sendForkChoiceUpdated.get()))
                         .orElse(SafeFuture.COMPLETE));
     slotChain =
         withSegmentTimeout(segment, currentSlot)

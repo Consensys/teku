@@ -276,6 +276,28 @@ class ForkChoiceTest {
   }
 
   @Test
+  void processHead_shouldSendForkChoiceUpdatedWhenFastConfirmationDisabled() {
+    // Default forkChoice uses FastConfirmationTracker.NOOP (FCR disabled). processHead must still
+    // send the fcU itself, exactly as before the FCR fcU-ordering change.
+    processHead(ONE);
+
+    verify(forkChoiceNotifier).onForkChoiceUpdated(any(), eq(Optional.empty()));
+  }
+
+  @Test
+  void onTick_shouldNotSendForkChoiceUpdatedWhenFastConfirmationDisabled() {
+    // With FCR disabled, the slot tick does not process the head or send an fcU (master behaviour);
+    // the FCR path — which sends the fcU after on_fast_confirmation — is only taken when enabled.
+    final UInt64 nextSlot = recentChainData.getCurrentSlot().orElseThrow().plus(ONE);
+
+    forkChoice.onTick(
+        spec.computeTimeMillisAtSlot(nextSlot, recentChainData.getGenesisTimeMillis()),
+        Optional.empty());
+
+    verify(forkChoiceNotifier, never()).onForkChoiceUpdated(any(), any());
+  }
+
+  @Test
   void shouldNotTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
     processHead(ONE);

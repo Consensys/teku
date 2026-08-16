@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,11 +48,21 @@ class ForkChoiceFastConfirmationTest {
 
   private final List<UInt64> onSlotInvocations = new ArrayList<>();
 
+  // Records the order of events so tests can assert the fcU is sent once per slot, after onSlot.
+  private final List<String> events = new ArrayList<>();
+  private final Supplier<SafeFuture<Void>> sendForkChoiceUpdated =
+      () -> {
+        events.add("fcU");
+        return SafeFuture.COMPLETE;
+      };
+
   ForkChoiceFastConfirmationTest() {
     when(tracker.onSlot(any(), any()))
         .thenAnswer(
             invocation -> {
-              onSlotInvocations.add(invocation.getArgument(0));
+              final UInt64 slot = invocation.getArgument(0);
+              onSlotInvocations.add(slot);
+              events.add("onSlot:" + slot);
               return SafeFuture.COMPLETE;
             });
   }
@@ -67,8 +78,10 @@ class ForkChoiceFastConfirmationTest {
                 ? slowHead
                 : SafeFuture.completedFuture(Optional.of(chainHead(Bytes32.random())));
 
-    forkChoiceFastConfirmation.processForSlot(UInt64.ONE, SafeFuture.COMPLETE, processHead);
-    forkChoiceFastConfirmation.processForSlot(UInt64.valueOf(2), SafeFuture.COMPLETE, processHead);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.valueOf(2), SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
 
     // Slot 1 is still blocked on its processHead, so slot 2 must not have jumped ahead.
     assertThat(onSlotInvocations).isEmpty();
@@ -77,6 +90,8 @@ class ForkChoiceFastConfirmationTest {
     slowHead.complete(Optional.of(chainHead(Bytes32.random())));
 
     assertThat(onSlotInvocations).containsExactly(UInt64.ONE, UInt64.valueOf(2));
+    // Each slot sends exactly one fcU, after its onSlot.
+    assertThat(events).containsExactly("onSlot:1", "fcU", "onSlot:2", "fcU");
   }
 
   @Test
@@ -88,8 +103,10 @@ class ForkChoiceFastConfirmationTest {
                 ? new SafeFuture<>()
                 : SafeFuture.completedFuture(Optional.of(chainHead(Bytes32.random())));
 
-    forkChoiceFastConfirmation.processForSlot(UInt64.ONE, SafeFuture.COMPLETE, processHead);
-    forkChoiceFastConfirmation.processForSlot(UInt64.valueOf(2), SafeFuture.COMPLETE, processHead);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.valueOf(2), SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
 
     // Nothing runs while slot 1 hangs and its timeout has not fired.
     assertThat(onSlotInvocations).isEmpty();
@@ -99,6 +116,8 @@ class ForkChoiceFastConfirmationTest {
     asyncRunner.executeDueActionsRepeatedly();
 
     assertThat(onSlotInvocations).containsExactly(UInt64.valueOf(2));
+    // Only slot 2 ran, so only slot 2 sent an fcU; the abandoned slot 1 sent none.
+    assertThat(events).containsExactly("onSlot:2", "fcU");
   }
 
   @Test
@@ -109,8 +128,10 @@ class ForkChoiceFastConfirmationTest {
                 ? SafeFuture.failedFuture(new IllegalStateException("processHead failed"))
                 : SafeFuture.completedFuture(Optional.of(chainHead(Bytes32.random())));
 
-    forkChoiceFastConfirmation.processForSlot(UInt64.ONE, SafeFuture.COMPLETE, processHead);
-    forkChoiceFastConfirmation.processForSlot(UInt64.valueOf(2), SafeFuture.COMPLETE, processHead);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.valueOf(2), SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
 
     // Slot 1 failed (no onSlot), but the chain stayed alive and slot 2 still ran.
     assertThat(onSlotInvocations).containsExactly(UInt64.valueOf(2));
@@ -121,9 +142,12 @@ class ForkChoiceFastConfirmationTest {
     final Function<UInt64, SafeFuture<Optional<ChainHead>>> processHead =
         slot -> SafeFuture.completedFuture(Optional.empty());
 
-    forkChoiceFastConfirmation.processForSlot(UInt64.ONE, SafeFuture.COMPLETE, processHead);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
 
+    // No head, so neither onSlot nor the fcU runs for this slot.
     assertThat(onSlotInvocations).isEmpty();
+    assertThat(events).isEmpty();
   }
 
   private ChainHead chainHead(final Bytes32 root) {
