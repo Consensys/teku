@@ -589,7 +589,8 @@ class FailoverValidatorApiHandlerTest {
 
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> creationRequest =
         apiChannel ->
-            apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), Optional.empty());
+            apiChannel.createUnsignedBlock(
+                slot, randaoReveal, Optional.empty(), false, Optional.empty());
 
     setupFailures(creationRequest, primaryApiChannel);
     setupSuccesses(creationRequest, Optional.of(blindedBlock), failoverApiChannel1);
@@ -738,7 +739,7 @@ class FailoverValidatorApiHandlerTest {
             "createUnsignedBlock",
             apiChannel ->
                 apiChannel.createUnsignedBlock(
-                    slot, randaoReveal, Optional.empty(), Optional.empty()),
+                    slot, randaoReveal, Optional.empty(), false, Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             Optional.of(mock(BlockContainerAndMetaData.class))),
         getArguments(
@@ -791,7 +792,7 @@ class FailoverValidatorApiHandlerTest {
                 apiChannel -> apiChannel.sendSignedProposerPreferences(List.of()),
                 apiChannel -> verify(apiChannel).sendSignedProposerPreferences(List.of()),
                 BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD,
-                null)));
+                List.of())));
   }
 
   private static Stream<Arguments> getPublishSignedDutiesRequests() {

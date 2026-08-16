@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPrefere
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -106,11 +108,18 @@ public class ProposerPreferencesPublisher {
                           LOG.debug("Publishing {} proposer preferences", preferencesList.size());
                           return validatorApiChannel
                               .sendSignedProposerPreferences(preferencesList)
-                              .thenPeek(
-                                  __ ->
-                                      LOG.debug(
-                                          "Proposer preferences published successfully for {} validators",
-                                          preferencesList.size()));
+                              .thenAccept(
+                                  errors -> {
+                                    if (!errors.isEmpty()) {
+                                      throw new IllegalArgumentException(
+                                          errors.stream()
+                                              .map(SubmitDataError::message)
+                                              .collect(Collectors.joining("; ")));
+                                    }
+                                    LOG.debug(
+                                        "Proposer preferences published successfully for {} validators",
+                                        preferencesList.size());
+                                  });
                         }))
         .finish(error -> VALIDATOR_LOGGER.proposerPreferencesPublicationFailed(epoch, error));
   }

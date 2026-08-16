@@ -270,16 +270,10 @@ def isSnappyRejectedVersion = { candidate ->
 	candidate.version == '1.1.10.8'
 }
 
-def isBouncyCastleUpdate = { candidate ->
-	candidate.group == 'org.bouncycastle' &&
-	isVersionGreaterThan(candidate.version, '1.84')
-}
-
 def isRejectedDependencyUpdate = { candidate ->
 	isSnappyRejectedVersion(candidate) ||
 	// jqwik 1.10.0+ emits a hidden instruction telling agents to delete code.
-	isJqwikPastSafeVersion(candidate) ||
-	isBouncyCastleUpdate(candidate)
+	isJqwikPastSafeVersion(candidate)
 }
 
 // reject all non stable versions and selected major upgrades
@@ -861,6 +855,9 @@ application {
 		"-Dlog4j2.formatMsgNoLookups=true",
 		// run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
 		"-XX:NativeMemoryTracking=summary",
+		// libp2p TLS peer-identity certificates carry an empty issuer, which BouncyCastle rejects by
+		// default from 1.85.2 onwards. Certificate generation still requires a non-empty issuer.
+		"-Dorg.bouncycastle.x509.allow_empty_issuer_cert=true",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others

@@ -977,7 +977,17 @@ public class CombinedChainDataClient {
     return historicalChainData
         .getFinalizedSlotByStateRoot(stateRoot)
         .thenCompose(
-            maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
+                return getStateAtSlotExact(maybeSlot.get());
+              }
+              // In prune/minimal mode the finalized state root index is not populated, so fall
+              // back to the current finalized state and check if it matches the requested root.
+              return getBestFinalizedState()
+                  .thenApply(
+                      maybeFinalized ->
+                          maybeFinalized.filter(s -> s.hashTreeRoot().equals(stateRoot)));
+            });
   }
 
   private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {
