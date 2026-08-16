@@ -16,9 +16,11 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.libp2p.pubsub.NoPeersForOutboundMessageException;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -49,10 +51,11 @@ class SyncCommitteeMessageGossipManagerTest {
       mock(SyncCommitteeStateUtils.class);
   private final SyncCommitteeSubnetSubscriptions subnetSubscriptions =
       mock(SyncCommitteeSubnetSubscriptions.class);
+  private final Runnable peerSearchRequester = mock(Runnable.class);
 
   private final SyncCommitteeMessageGossipManager gossipManager =
       new SyncCommitteeMessageGossipManager(
-          metricsSystem, spec, syncCommitteeStateUtils, subnetSubscriptions);
+          metricsSystem, spec, syncCommitteeStateUtils, subnetSubscriptions, peerSearchRequester);
 
   @BeforeEach
   void setUp() {
@@ -113,6 +116,35 @@ class SyncCommitteeMessageGossipManagerTest {
     verify(subnetSubscriptions).gossip(message.getMessage(), 1);
     verify(subnetSubscriptions).gossip(message.getMessage(), 3);
     verify(subnetSubscriptions).gossip(message.getMessage(), 5);
+  }
+
+  @Test
+  void shouldRequestPeerSearchWhenNoPeersAreAvailableForSyncCommitteeSubnet() {
+    final int subnetId = 3;
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromNetwork(
+            dataStructureUtil.randomSyncCommitteeMessage(), subnetId);
+    when(subnetSubscriptions.gossip(message.getMessage(), subnetId))
+        .thenReturn(
+            SafeFuture.failedFuture(new NoPeersForOutboundMessageException("no peers available")));
+
+    gossipManager.publish(message);
+
+    verify(peerSearchRequester).run();
+  }
+
+  @Test
+  void shouldNotRequestPeerSearchForOtherPublishFailures() {
+    final int subnetId = 3;
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromNetwork(
+            dataStructureUtil.randomSyncCommitteeMessage(), subnetId);
+    when(subnetSubscriptions.gossip(message.getMessage(), subnetId))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("boom")));
+
+    gossipManager.publish(message);
+
+    verify(peerSearchRequester, never()).run();
   }
 
   private void withApplicableSubnets(

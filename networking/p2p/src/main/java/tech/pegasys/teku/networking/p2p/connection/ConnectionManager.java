@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +54,7 @@ public class ConnectionManager extends Service {
   private static final UInt64 STABLE_CONNECTION_THRESHOLD_MILLIS = UInt64.valueOf(2000);
   protected static final Duration WARMUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
   protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
+  protected static final Duration REQUESTED_DISCOVERY_INTERVAL = Duration.ofSeconds(5);
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final P2PNetwork<? extends Peer> network;
@@ -67,6 +69,8 @@ public class ConnectionManager extends Service {
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
+  private final AtomicBoolean peerSearchInProgress = new AtomicBoolean(false);
+  private UInt64 nextRequestedPeerSearchTime = UInt64.ZERO;
 
   private final Map<PeerAddress, Integer> lastStaticPeerReconnectionDelay =
       new ConcurrentHashMap<>();
@@ -138,6 +142,27 @@ public class ConnectionManager extends Service {
     }
   }
 
+  public void requestPeerSearch() {
+    if (!isRunning()) {
+      LOG.trace("Not running so not searching for peers");
+      return;
+    }
+    if (!isPeerSearchRequestAllowed()) {
+      LOG.trace("Peer search request ignored because a recent request was already processed");
+      return;
+    }
+    searchForPeers().finish(this::logSearchError);
+  }
+
+  private synchronized boolean isPeerSearchRequestAllowed() {
+    final UInt64 now = timeProvider.getTimeInMillis();
+    if (now.isLessThan(nextRequestedPeerSearchTime)) {
+      return false;
+    }
+    nextRequestedPeerSearchTime = now.plus(REQUESTED_DISCOVERY_INTERVAL.toMillis());
+    return true;
+  }
+
   private void connectToBestPeers(final Collection<DiscoveryPeer> additionalPeersToConsider) {
     peerSelectionStrategy
         .selectPeersToConnect(
@@ -156,11 +181,15 @@ public class ConnectionManager extends Service {
       LOG.trace("Not running so not searching for peers");
       return SafeFuture.COMPLETE;
     }
+    if (!peerSearchInProgress.compareAndSet(false, true)) {
+      LOG.trace("Peer search already in progress");
+      return SafeFuture.COMPLETE;
+    }
     LOG.trace("Searching for peers");
     return discoveryService
         .searchForPeers()
         .orTimeout(30, TimeUnit.SECONDS)
-        .handle(
+        .<Void>handle(
             (peers, error) -> {
               if (error == null) {
                 connectToBestPeers(peers);
@@ -169,7 +198,8 @@ public class ConnectionManager extends Service {
                 connectToBestPeers(emptyList());
               }
               return null;
-            });
+            })
+        .alwaysRun(() -> peerSearchInProgress.set(false));
   }
 
   private void attemptConnection(final PeerAddress peerAddress) {
