@@ -97,11 +97,10 @@ public class ValidatorKeysOptions {
   private String validatorExternalSignerTruststorePasswordFile = null;
 
   @CommandLine.Option(
-      names = {"--Xvalidators-external-signer-concurrent-limit"},
+      names = {"--validators-external-signer-concurrent-limit"},
       paramLabel = "<INTEGER>",
       description =
-          "The maximum number of concurrent background requests to make to the signer. This only applies for aggregation slot and validator registration requests.",
-      hidden = true,
+          "The maximum number of concurrent background requests to make to the signer, must be between 1 and 1024 inclusive. This only applies for aggregation slot and validator registration requests.",
       arity = "1")
   private int validatorExternalSignerConcurrentRequestLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;

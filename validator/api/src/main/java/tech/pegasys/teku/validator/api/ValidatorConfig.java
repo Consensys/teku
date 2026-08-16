@@ -58,6 +58,8 @@ public class ValidatorConfig {
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS = 60_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
+  public static final int MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 1;
+  public static final int MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 1024;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
@@ -475,11 +477,20 @@ public class ValidatorConfig {
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
         final int validatorExternalSignerConcurrentRequestLimit) {
-      if (validatorExternalSignerConcurrentRequestLimit < 0) {
+      if (validatorExternalSignerConcurrentRequestLimit
+          < MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
         throw new InvalidConfigurationException(
             String.format(
-                "Invalid validatorExternalSignerConcurrentRequestLimit: %s",
-                validatorExternalSignerConcurrentRequestLimit));
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be less than %s)",
+                validatorExternalSignerConcurrentRequestLimit,
+                MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
+      } else if (validatorExternalSignerConcurrentRequestLimit
+          > MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be greater than %s)",
+                validatorExternalSignerConcurrentRequestLimit,
+                MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
       }
       this.validatorExternalSignerConcurrentRequestLimit =
           validatorExternalSignerConcurrentRequestLimit;
