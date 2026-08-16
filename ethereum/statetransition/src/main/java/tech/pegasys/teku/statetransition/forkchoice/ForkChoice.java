@@ -129,6 +129,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
   private final FastConfirmationTracker fastConfirmationTracker;
+  private final ForkChoiceFastConfirmation forkChoiceFastConfirmation;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
@@ -164,6 +165,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.fastConfirmationTracker = fastConfirmationTracker;
+    this.forkChoiceFastConfirmation = new ForkChoiceFastConfirmation(spec, fastConfirmationTracker);
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
@@ -415,8 +417,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       // slot-start work runs entirely off the fork-choice thread (on the fast confirmation runner)
       // with no blocking join; it never gates tick processing.
       if (fastConfirmationTracker.isEnabled()) {
-        ForkChoiceFastConfirmation.processForSlot(
-            fastConfirmationTracker, currentSlot, deferredAttestationsFuture, this::processHead);
+        forkChoiceFastConfirmation.processForSlot(
+            currentSlot, deferredAttestationsFuture, this::processHead);
       } else {
         deferredAttestationsFuture.finishStackTrace();
       }
