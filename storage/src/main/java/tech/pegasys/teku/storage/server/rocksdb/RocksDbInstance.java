@@ -109,18 +109,6 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public long approximateSize(final KvStoreColumn<?, ?> column) {
-    assertOpen();
-    final ColumnFamilyHandle handle = getColumnHandle(column);
-    try {
-      return db.getLongProperty(handle, "rocksdb.estimate-num-keys");
-    } catch (final RocksDBException e) {
-      LOG.debug("Failed to get approximate size for column", e);
-      return -1L;
-    }
-  }
-
-  @Override
   public <K, V> Map<K, V> getAll(final KvStoreColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream = stream(column)) {

@@ -31,9 +31,6 @@ public interface KvStoreAccessor extends AutoCloseable {
 
   long size(KvStoreColumn<?, ?> column);
 
-  /** Returns an approximate entry count for the column. O(1) — safe to call in hot paths. */
-  long approximateSize(KvStoreColumn<?, ?> column);
-
   <K, V> Map<K, V> getAll(KvStoreColumn<K, V> column);
 
   /**
