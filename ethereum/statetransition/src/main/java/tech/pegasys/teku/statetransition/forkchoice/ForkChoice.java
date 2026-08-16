@@ -1387,10 +1387,42 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             maybeHead ->
                 maybeHead.orElseThrow(
                     () -> new IllegalStateException("Missing chain head for block production")))
+        .thenPeek(canonicalHead -> updateFastConfirmationForProposalSlot(slot, canonicalHead))
         .thenCompose(
             canonicalHead ->
                 applyProposerHeadOverrideAndNotify(canonicalHead, slot, blockProductionPerformance))
         .thenPeek(__ -> blockProductionPerformance.prepareProcessHead());
+  }
+
+  /**
+   * Block production advances the store into the proposal slot itself (via {@code
+   * tickProcessor.onTick} above), so {@link #onTick} sees no slot boundary and does not run the
+   * fast confirmation update for that slot. Run it here so {@code on_fast_confirmation} and the
+   * once-per-slot rotation are not skipped on proposal slots (which would leave {@code
+   * FastConfirmationStore} stale for later slots).
+   *
+   * <p>Invoked on the fork-choice event thread — where {@link #onTick} also drives {@code onSlot} —
+   * so the tracker's per-slot chain stays single-threaded, and fire-and-forget so it never gates
+   * block production. Uses the pre-override canonical head ({@code get_head} at slot start). The
+   * tracker dedups if {@code onTick} already ran this slot, and the proposer fcU below already
+   * carries the confirmed root, so no extra fcU is sent here.
+   */
+  private void updateFastConfirmationForProposalSlot(
+      final UInt64 slot, final ChainHead canonicalHead) {
+    if (!fastConfirmationTracker.isEnabled()) {
+      return;
+    }
+    onForkChoiceThread(
+            () ->
+                fastConfirmationTracker
+                    .onSlot(slot, canonicalHead.getRoot())
+                    .finish(
+                        error ->
+                            LOG.error(
+                                "Fast confirmation update for proposal slot {} failed",
+                                slot,
+                                error)))
+        .finishError(LOG);
   }
 
   /**

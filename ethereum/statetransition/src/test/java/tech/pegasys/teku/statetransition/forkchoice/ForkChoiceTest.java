@@ -285,6 +285,38 @@ class ForkChoiceTest {
   }
 
   @Test
+  void prepareForBlockProduction_shouldRunFastConfirmationForProposalSlotWhenEnabled() {
+    final StubAsyncRunner fastConfirmationAsyncRunner = new StubAsyncRunner();
+    recreateForkChoice(
+        FastConfirmationTracker.create(
+            spec,
+            Optional.of(fastConfirmationAsyncRunner),
+            FastConfirmationEventChannel.NOOP,
+            metricsSystem,
+            StubTimeProvider.withTimeInMillis(0)),
+        LateBlockReorgPreparationHandler.NOOP);
+    // Move within tolerance of slot 1 so prepareForBlockProduction advances the store into it (as
+    // when proposing), stealing the slot boundary from ForkChoice.onTick.
+    storageSystem
+        .chainUpdater()
+        .setTimeMillis(
+            spec.computeTimeMillisAtSlot(ONE, recentChainData.getGenesisTimeMillis())
+                .minusMinZero(BLOCK_CREATION_TOLERANCE_MS - 100));
+
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
+
+    // The fast confirmation update for the proposal slot was scheduled despite onTick not seeing a
+    // boundary; run it and confirm the once-per-slot rotation happened for the proposal slot.
+    fastConfirmationAsyncRunner.executeQueuedActions();
+
+    final FastConfirmationStore fastConfirmationStore =
+        forkChoice.getFastConfirmationStore().orElseThrow();
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(genesis.getRoot());
+  }
+
+  @Test
   void onTick_shouldNotSendForkChoiceUpdatedWhenFastConfirmationDisabled() {
     // With FCR disabled, the slot tick does not process the head or send an fcU (master behaviour);
     // the FCR path — which sends the fcU after on_fast_confirmation — is only taken when enabled.
