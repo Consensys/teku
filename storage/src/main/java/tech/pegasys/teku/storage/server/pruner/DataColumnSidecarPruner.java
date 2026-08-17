@@ -46,6 +46,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
   private final Spec spec;
   private final Database database;
   private final AsyncRunner asyncRunner;
+  private final AsyncRunner metricsAsyncRunner;
   private final Duration pruneInterval;
   private final int pruneLimit;
   private final TimeProvider timeProvider;
@@ -53,6 +54,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
+  private final Duration pruningWarnTimeout;
 
   private final AtomicLong dataColumnSize = new AtomicLong(0);
   private final AtomicLong earliestDataColumnSidecarSlot = new AtomicLong(-1);
@@ -66,22 +68,26 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<Cancellable> scheduledArchiver = Optional.empty();
+  private Optional<Cancellable> scheduledMetricsUpdater = Optional.empty();
 
   public DataColumnSidecarPruner(
       final Spec spec,
       final Database database,
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
+      final AsyncRunner metricsAsyncRunner,
       final TimeProvider timeProvider,
       final Duration pruneInterval,
       final int pruneLimit,
       final boolean dataColumnSidecarsStorageCountersEnabled,
       final String pruningMetricsType,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
-      final SettableLabelledGauge pruningActiveLabelledGauge) {
+      final SettableLabelledGauge pruningActiveLabelledGauge,
+      final Duration pruningWarnTimeout) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
+    this.metricsAsyncRunner = metricsAsyncRunner;
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
@@ -89,6 +95,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     this.pruningMetricsType = pruningMetricsType;
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
+    this.pruningWarnTimeout = pruningWarnTimeout;
     if (dataColumnSidecarsStorageCountersEnabled) {
       LabelledSuppliedMetric labelledGauge =
           metricsSystem.createLabelledSuppliedGauge(
@@ -132,6 +139,16 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
                 Duration.ZERO,
                 pruneInterval,
                 error -> LOG.error("Failed to archive data column sidecars to proofs", error)));
+    if (dataColumnSidecarsStorageCountersEnabled) {
+      scheduledMetricsUpdater =
+          Optional.of(
+              metricsAsyncRunner.runWithFixedDelay(
+                  this::doUpdateDataColumnSidecarMetrics,
+                  Duration.ZERO,
+                  pruneInterval,
+                  error ->
+                      LOG.error("Failed to update data column sidecar storage counters", error)));
+    }
     return SafeFuture.COMPLETE;
   }
 
@@ -140,6 +157,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     LOG.debug("DataColumnSidecarPruner doStop called, cancelling scheduled tasks");
     scheduledPruner.ifPresent(Cancellable::cancel);
     scheduledArchiver.ifPresent(Cancellable::cancel);
+    scheduledMetricsUpdater.ifPresent(Cancellable::cancel);
     return SafeFuture.COMPLETE;
   }
 
@@ -164,13 +182,20 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     pruningTimingsLabelledGauge.set(elapsed, pruningMetricsType);
     pruningActiveLabelledGauge.set(0, pruningMetricsType);
     LOG.debug("Data column sidecars pruning completed in {} ms", elapsed);
-
-    if (dataColumnSidecarsStorageCountersEnabled) {
-      dataColumnSize.set(database.getSidecarColumnCount());
-      earliestDataColumnSidecarSlot.set(
-          database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
+    if (elapsed > pruningWarnTimeout.toMillis()) {
+      LOG.warn(
+          "Pruning task for {} took {} ms, exceeding the warn threshold of {} ms",
+          pruningMetricsType,
+          elapsed,
+          pruningWarnTimeout.toMillis());
     }
     LOG.debug("DCS prune task body exiting normally, reschedule will fire in finally block");
+  }
+
+  private void doUpdateDataColumnSidecarMetrics() {
+    dataColumnSize.set(database.getSidecarColumnCount());
+    earliestDataColumnSidecarSlot.set(
+        database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
   }
 
   private void doArchiveDataColumnSidecars() {
