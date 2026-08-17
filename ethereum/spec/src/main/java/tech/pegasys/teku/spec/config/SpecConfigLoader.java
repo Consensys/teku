@@ -48,6 +48,7 @@ public class SpecConfigLoader {
           "less-swift",
           "mainnet",
           "minimal",
+          "plataberget",
           "sepolia",
           "swift");
   private static final String CONFIG_PATH = "configs/";
