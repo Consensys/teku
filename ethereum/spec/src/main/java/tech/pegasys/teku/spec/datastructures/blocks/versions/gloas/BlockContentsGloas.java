@@ -58,8 +58,9 @@ public class BlockContentsGloas
     return getField0();
   }
 
-  public ExecutionPayloadEnvelope getExecutionPayloadEnvelope() {
-    return getField1();
+  @Override
+  public Optional<ExecutionPayloadEnvelope> getExecutionPayloadEnvelope() {
+    return Optional.of(getField1());
   }
 
   @Override
