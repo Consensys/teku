@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
@@ -70,12 +71,41 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void shouldFail_whenCommitteeIndexIsMissingPreGloas() throws JsonProcessingException {
+  void shouldFail_whenCommitteeIndexIsMissingPreElectra() throws JsonProcessingException {
     request.setQueryParameter(SLOT, "1");
     when(validatorDataProvider.createAttestationDataAtSlot(ONE, 1))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  @Test
+  void shouldIgnoreNonZeroCommitteeIndexPostElectra() throws Exception {
+    final var electraSpec = TestSpecFactory.createMinimalElectra();
+    setHandler(new GetAttestationData(validatorDataProvider, electraSpec));
+    request.setQueryParameter(SLOT, "1");
+    request.setOptionalQueryParameter(COMMITTEE_INDEX, "4");
+    when(validatorDataProvider.createAttestationDataAtSlot(ONE, 0))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(attestationData);
+  }
+
+  @Test
+  void shouldAcceptMissingCommitteeIndexPostElectra() throws Exception {
+    final var electraSpec = TestSpecFactory.createMinimalElectra();
+    setHandler(new GetAttestationData(validatorDataProvider, electraSpec));
+    request.setQueryParameter(SLOT, "1");
+    when(validatorDataProvider.createAttestationDataAtSlot(ONE, 0))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(attestationData);
   }
 
   public static Stream<Arguments> validateParameters() {
@@ -87,15 +117,18 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
         Arguments.of(SpecMilestone.GLOAS, Optional.of(ZERO), Optional.empty()),
         Arguments.of(SpecMilestone.GLOAS, Optional.of(ONE), Optional.empty()),
         Arguments.of(SpecMilestone.GLOAS, Optional.empty(), Optional.empty()),
-        // must be set before gloas
-        Arguments.of(SpecMilestone.ELECTRA, Optional.empty(), Optional.of("must be set")),
-        Arguments.of(SpecMilestone.FULU, Optional.empty(), Optional.of("must be set")),
+        // post-electra: committee_index is optional and any value is accepted (ignored)
+        Arguments.of(SpecMilestone.ELECTRA, Optional.empty(), Optional.empty()),
+        Arguments.of(SpecMilestone.FULU, Optional.empty(), Optional.empty()),
+        Arguments.of(SpecMilestone.ELECTRA, Optional.of(ONE), Optional.empty()),
+        Arguments.of(SpecMilestone.FULU, Optional.of(ONE), Optional.empty()),
+        Arguments.of(SpecMilestone.ELECTRA, Optional.of(UInt64.valueOf(4)), Optional.empty()),
+        Arguments.of(SpecMilestone.FULU, Optional.of(UInt64.valueOf(4)), Optional.empty()),
+        // must be set before electra
+        Arguments.of(SpecMilestone.DENEB, Optional.empty(), Optional.of("must be set")),
         // in gloas must be 0 or 1 if set
         Arguments.of(
-            SpecMilestone.GLOAS, Optional.of(UInt64.valueOf(2)), Optional.of("less than 2")),
-        // parameter must be 0 in electra and fulu
-        Arguments.of(SpecMilestone.ELECTRA, Optional.of(ONE), Optional.of("parameter must be 0")),
-        Arguments.of(SpecMilestone.FULU, Optional.of(ONE), Optional.of("parameter must be 0")));
+            SpecMilestone.GLOAS, Optional.of(UInt64.valueOf(2)), Optional.of("less than 2")));
   }
 
   @ParameterizedTest(name = "spec={0}, committee={1} - failure={2}")

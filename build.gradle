@@ -16,6 +16,11 @@ import static tech.pegasys.teku.repackage.Repackage.repackage
 
 buildscript {
 	repositories {
+		// See the comment on the project repositories below.
+		maven {
+			name = 'mavenCentralMirror'
+			url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+		}
 		mavenCentral()
 	}
 	// JReleaser 1.23.0 uses GpgObjectSigner from JGit 5.x/6.x, which was removed in JGit 7.x.
@@ -333,6 +338,19 @@ allprojects {
 
 	repositories {
 		mavenLocal()
+		// Google's read-only mirror of Maven Central, tried first so that CI does not depend on
+		// Central's per-IP rate limit. Our test shards resolve dependencies from dozens of runners
+		// that share an egress IP, and Central answers with HTTP 429 once they exceed its quota.
+		// Gradle treats a 429 as a hard failure rather than falling through to the next repository,
+		// so the mirror has to come first to be of any use.
+		//
+		// The mirror can lag Central by a few hours for freshly published artifacts. That case is
+		// safe: a miss is a plain 404 and Gradle falls through to mavenCentral() below. The one
+		// visible effect is that `dependencyUpdates` may not report a release published today.
+		maven {
+			name = 'mavenCentralMirror'
+			url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+		}
 		mavenCentral()
 		maven { url = "https://jitpack.io" }
 		maven {
@@ -1107,15 +1125,31 @@ tasks.register('manifestDocker') {
 	}
 }
 
+// The compile classpaths are warmed as well as the runtime ones: a test shard re-resolves the compile
+// classpath when it checks whether the compile tasks are up to date, and compileOnly dependencies only
+// ever appear there. Missing them is what sent every shard back to Maven Central for jars such as
+// jakarta.xml.bind-api and commons-codec.
 def ciDependencyConfigurations = [
 	'jacocoAgent',
 	'jacocoAnt',
+	'annotationProcessor',
+	'compileClasspath',
 	'runtimeClasspath',
+	'testAnnotationProcessor',
+	'testCompileClasspath',
 	'testRuntimeClasspath',
+	'testFixturesCompileClasspath',
+	'testFixturesRuntimeClasspath',
+	'integrationTestCompileClasspath',
 	'integrationTestRuntimeClasspath',
+	'acceptanceTestCompileClasspath',
 	'acceptanceTestRuntimeClasspath',
+	'propertyTestCompileClasspath',
 	'propertyTestRuntimeClasspath',
+	'referenceTestCompileClasspath',
 	'referenceTestRuntimeClasspath',
+	'jmhCompileClasspath',
+	'jmhRuntimeClasspath',
 ]
 
 def resolveCiDependencyConfigurations = { targetProject ->

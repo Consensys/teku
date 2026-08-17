@@ -178,7 +178,6 @@ specrefs:
       # Not implemented yet: EIP-7688 progressive SSZ sizing work
       - MAX_ATTESTER_SLASHING_SIZE#gloas
       - MAX_DATA_COLUMN_SIDECAR_SIZE#gloas
-      - MAX_PARTIAL_DATA_COLUMN_SIDECAR_SIZE#gloas
       - MAX_SIGNED_AGGREGATE_AND_PROOF_SIZE#gloas
       - MAX_SIGNED_EXECUTION_PAYLOAD_BID_SIZE#gloas
       - MAX_SIGNED_EXECUTION_PAYLOAD_BID_SIZE_HEZE#heze
