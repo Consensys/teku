@@ -176,6 +176,10 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     }
   }
 
+  /**
+   * Updates storage counter gauges by performing a full sequential scan of the sidecar column.
+   * O(N) — may take minutes on nodes with large DCS datasets.
+   */
   private void doUpdateDataColumnSidecarMetrics() {
     LOG.debug("Updating data column sidecar storage counters (full column scan — may be slow)");
     final long start = System.currentTimeMillis();

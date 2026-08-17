@@ -150,6 +150,10 @@ public class BlobSidecarPruner extends Service {
     }
   }
 
+  /**
+   * Updates storage counter gauges by performing a full sequential scan of the blob sidecar column.
+   * O(N) — may take minutes on nodes with large blob datasets.
+   */
   private void doUpdateBlobSidecarMetrics() {
     LOG.debug("Updating blob sidecar storage counters (full column scan — may be slow)");
     final long start = System.currentTimeMillis();
