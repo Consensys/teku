@@ -87,11 +87,13 @@ public class BlockContentsSchemaGloas
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
     return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<Blob, ?> getBlobsSchema() {
     return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
   }
