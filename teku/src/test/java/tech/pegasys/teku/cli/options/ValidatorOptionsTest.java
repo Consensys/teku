@@ -57,7 +57,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadValidatorExternalSignerConcurrentRequestLimit() {
     final ValidatorConfig config =
-        getTekuConfigurationFromArguments("--Xvalidators-external-signer-concurrent-limit=123")
+        getTekuConfigurationFromArguments("--validators-external-signer-concurrent-limit=123")
             .validatorClient()
             .getValidatorConfig();
     assertThat(config.getValidatorExternalSignerConcurrentRequestLimit()).isEqualTo(123);

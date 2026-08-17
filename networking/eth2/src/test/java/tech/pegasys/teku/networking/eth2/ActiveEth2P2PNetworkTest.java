@@ -51,9 +51,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -137,6 +139,17 @@ public class ActiveEth2P2PNetworkTest {
             Optional.of(altairFork),
             Optional.of(bpoFork),
             Optional.of(altairForkDigest));
+  }
+
+  @Test
+  void publishExecutionPayloadBidDelegatesToGossipForkManager() {
+    final SignedExecutionPayloadBid bid =
+        new DataStructureUtil(TestSpecFactory.createMinimalGloas())
+            .randomSignedExecutionPayloadBid();
+
+    network.publishExecutionPayloadBid(bid);
+
+    verify(gossipForkManager).publishExecutionPayloadBid(bid);
   }
 
   @Test

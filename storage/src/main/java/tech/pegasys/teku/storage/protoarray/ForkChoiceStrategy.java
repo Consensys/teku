@@ -250,7 +250,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Optional<ChainHead> proposingOnHead,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
-      final Checkpoint finalizedCheckpoint) {
+      final Checkpoint finalizedCheckpoint,
+      final Optional<Bytes32> fastConfirmationSafeBlockRoot) {
     protoArrayLock.readLock().lock();
     try {
       final ProtoNode headNode =
@@ -269,8 +270,23 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       // Pre-Gloas has only BASE, so this is the normal execution payload block hash.
       // In Gloas, BASE/EMPTY carry the effective EL parent hash from the bid
       // parent_block_hash; FULL carries the revealed payload hash for the selected head.
+      //
+      // safe_block_hash implements get_safe_execution_block_hash(fcr_store): when fast
+      // confirmation is enabled it is the confirmed block's hash, otherwise the justified block's
+      // hash (the pre-fast-confirmation default). The BASE-node hash already matches the spec per
+      // fork: pre-Gloas the confirmed block's execution_payload.block_hash, in Gloas its
+      // signed_execution_payload_bid.message.parent_block_hash.
+      //
+      // Spec divergence: get_safe_execution_block_hash unconditionally dereferences
+      // store.blocks[confirmed_root]. Teku diverges in two ways: (1) when fast confirmation is
+      // disabled the supplier is empty and we fall back to the justified block (the spec has no
+      // such fallback); (2) the hash is read from protoarray's BASE ProtoNodeData rather than
+      // store.blocks[...].body, and protoarray only retains finalized-onward blocks, so a pruned
+      // confirmed/justified root yields Bytes32.ZERO here instead of the spec's KeyError.
       final Bytes32 safeExecutionHash =
-          getBaseNodeData(justifiedCheckpoint.getRoot())
+          fastConfirmationSafeBlockRoot
+              .flatMap(this::getBaseNodeData)
+              .or(() -> getBaseNodeData(justifiedCheckpoint.getRoot()))
               .map(ProtoNodeData::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       final Bytes32 finalizedExecutionHash =
@@ -411,6 +427,21 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
+  public Optional<UInt64> getExecutionGasLimitForBlockRootAndHash(
+      final Bytes32 blockRoot, final Bytes32 blockHash) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForRoot(blockRoot)
+          .flatMap(
+              model ->
+                  model.getExecutionGasLimitForBlockRootAndHash(
+                      protoArray, blockNodeIndex, blockRoot, blockHash));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
   public Optional<Bytes32> blockParentRoot(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
@@ -476,11 +507,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   @Override
   public boolean shouldBuildOnFull(
-      final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
+      final ReadOnlyStore store, final UInt64 slot, final ForkChoiceNode head) {
     protoArrayLock.readLock().lock();
     try {
-      return getForkChoiceModel(currentSlot)
-          .shouldBuildOnFull(protoArray, blockNodeIndex, currentSlot, head);
+      return getForkChoiceModel(slot).shouldBuildOnFull(protoArray, blockNodeIndex, slot, head);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -505,6 +535,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final UInt64 blockSlot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
+      final UInt64 executionGasLimit,
       final boolean isOptimistic) {
     getForkChoiceModel(blockSlot)
         .onExecutionPayload(
@@ -513,6 +544,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
             blockRoot,
             executionBlockNumber,
             executionBlockHash,
+            executionGasLimit,
             isOptimistic);
     updateParentBestChildAndDescendantForBlockVariants(blockRoot);
   }
@@ -828,7 +860,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                     block.getStateRoot(),
                     block.getBlockCheckpoints(),
                     block.getExecutionBlockNumber(),
-                    block.getExecutionBlockHash());
+                    block.getExecutionBlockHash(),
+                    block.getExecutionGasLimit());
                 processExecutionPayload(executionPayloadsByRoot.remove(block.getRoot()));
               });
       executionPayloadsByRoot.values().forEach(this::processExecutionPayload);
@@ -864,6 +897,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         envelope.getSlot(),
         envelope.getMessage().getPayload().getBlockNumber(),
         envelope.getMessage().getPayload().getBlockHash(),
+        envelope.getMessage().getPayload().getGasLimit(),
         executionPayloadUpdate.isOptimistic());
   }
 
@@ -882,6 +916,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
             block.getBlockCheckpoints(),
             block.getExecutionBlockNumber(),
             block.getExecutionBlockHash(),
+            block.getExecutionGasLimit(),
             spec.isBlockProcessorOptimistic(block.getSlot()));
     updateParentBestChildAndDescendantForBlockVariants(block.getRoot());
   }
@@ -933,6 +968,26 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final BlockCheckpoints checkpoints,
       final Optional<UInt64> executionBlockNumber,
       final Optional<Bytes32> executionBlockHash) {
+    processBlock(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        checkpoints,
+        executionBlockNumber,
+        executionBlockHash,
+        Optional.empty());
+  }
+
+  private void processBlock(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<Bytes32> executionBlockHash,
+      final Optional<UInt64> executionGasLimit) {
     getForkChoiceModel(blockSlot)
         .processBlock(
             protoArray,
@@ -944,6 +999,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
             checkpoints,
             executionBlockNumber,
             executionBlockHash,
+            executionGasLimit,
             spec.isBlockProcessorOptimistic(blockSlot));
     updateParentBestChildAndDescendantForBlockVariants(blockRoot);
   }

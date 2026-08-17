@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_O
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @Test
@@ -82,6 +84,52 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
         .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
+  }
+
+  @Test
+  public void shouldGetFinalizedState()
+      throws IOException, ExecutionException, InterruptedException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+
+    final BeaconState finalizedState =
+        combinedChainDataClient.getBestFinalizedState().get().orElseThrow();
+
+    final Response response = get("finalized", ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
+    final ResponseData<? extends BeaconState> stateResponse =
+        JsonUtil.parse(
+            response.body().string(),
+            typeDefinition(
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema()));
+
+    assertThat(stateResponse.getData().hashTreeRoot()).isEqualTo(finalizedState.hashTreeRoot());
+  }
+
+  @Test
+  public void shouldGetFinalizedStateByRootInPruneMode()
+      throws IOException, ExecutionException, InterruptedException {
+    startRestAPIAtGenesis(StateStorageMode.PRUNE, SpecMilestone.ALTAIR);
+
+    final BeaconState finalizedState =
+        combinedChainDataClient.getBestFinalizedState().get().orElseThrow();
+
+    final Response response = get(finalizedState.hashTreeRoot().toHexString(), ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
+    final ResponseData<? extends BeaconState> stateResponse =
+        JsonUtil.parse(
+            response.body().string(),
+            typeDefinition(
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema()));
+
+    assertThat(stateResponse.getData().hashTreeRoot()).isEqualTo(finalizedState.hashTreeRoot());
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {

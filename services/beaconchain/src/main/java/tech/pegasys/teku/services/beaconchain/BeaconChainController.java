@@ -120,6 +120,7 @@ import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -420,6 +421,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
+  protected volatile ExecutionPayloadProvider executionPayloadProvider;
   protected volatile StorageUpdateChannel storageUpdateChannel;
   protected volatile SyncPreImportBlockChannel syncPreImportBlockChannel;
   protected volatile StableSubnetSubscriber stableSubnetSubscriber;
@@ -490,7 +492,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "type");
     this.dasGossipLogger = new DasGossipBatchLogger(dasAsyncRunner, timeProvider);
     this.dasReqRespLogger = DasReqRespLogger.create(timeProvider);
-    this.ephemerySlotValidationService = new EphemerySlotValidationService();
+    final SpecConfig genesisConfig = spec.getGenesisSpec().getConfig();
+    this.ephemerySlotValidationService =
+        new EphemerySlotValidationService(
+            genesisConfig.getEphemeryResetPeriod(), genesisConfig.getSecondsPerSlot());
     this.debugDataDirectory = serviceConfig.getDataDirLayout().getDebugDataDirectory();
   }
 
@@ -626,8 +631,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final BlindedExecutionPayloadProvider blindedExecutionPayloadProvider =
         createBlindedExecutionPayloadProvider(storageQueryChannel);
 
-    final ExecutionPayloadProvider executionPayloadProvider =
-        createExecutionPayloadProvider(blindedExecutionPayloadProvider);
+    executionPayloadProvider = createExecutionPayloadProvider(blindedExecutionPayloadProvider);
 
     // Used to optimize the case where we receive a block and are still importing its blobs/data
     // columns,
@@ -996,7 +1000,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadBidGossipValidator,
               executionPayloadBidCircuitBreaker,
               receivedExecutionPayloadBidEventsChannelPublisher,
-              poolFactory.createPendingPoolForExecutionPayloadBids(spec));
+              poolFactory.createPendingPoolForExecutionPayloadBids(spec),
+              beaconConfig.executionLayerConfig().getBuilderBidCompareFactor(),
+              beaconConfig.executionLayerConfig().getUseShouldOverrideBuilderFlag());
       proposerPreferencesManager.subscribeOperationAdded(defaultExecutionPayloadBidManager);
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultExecutionPayloadBidManager);
@@ -1618,7 +1624,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+        new CombinedChainDataClient(
+            recentChainData, storageQueryChannel, spec, executionPayloadProvider);
   }
 
   protected void initBlobKzgCommitmentsProvider() {
@@ -2051,9 +2058,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
               beaconConfig.p2pConfig().getHistoricalDataMaxQueryQueueSize(),
               metricsSystem);
+      // The envelope fallback reads from historical data too, so it goes through the throttled
+      // channel as well - otherwise RPC requests for finalized envelopes would bypass the
+      // concurrency limit this client exists to enforce.
+      final ExecutionPayloadProvider throttlingExecutionPayloadProvider =
+          createExecutionPayloadProvider(
+              createBlindedExecutionPayloadProvider(throttlingStorageQueryChannel));
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
+              new CombinedChainDataClient(
+                  recentChainData,
+                  throttlingStorageQueryChannel,
+                  spec,
+                  throttlingExecutionPayloadProvider));
     }
 
     final SuperNodeSupplier isSuperNodeSupplier =
@@ -2140,6 +2157,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishPayloadAttestationMessage));
     proposerPreferencesManager.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishProposerPreferences));
+    executionPayloadBidManager.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishExecutionPayloadBid));
 
     eventChannels.subscribe(
         CustodyGroupCountChannel.class,

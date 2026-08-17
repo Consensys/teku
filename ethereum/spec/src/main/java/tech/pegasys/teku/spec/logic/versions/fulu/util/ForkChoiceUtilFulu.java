@@ -55,6 +55,11 @@ public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
   }
 
   @Override
+  public boolean isDataAvailabilityRequiredForTimeliness() {
+    return true;
+  }
+
+  @Override
   public Optional<ForkChoiceUtilFulu> toVersionFulu() {
     return Optional.of(this);
   }

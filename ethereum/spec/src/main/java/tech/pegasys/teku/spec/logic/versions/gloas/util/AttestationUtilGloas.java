@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestatio
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
@@ -49,13 +51,41 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
   }
 
   @Override
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    if (!parentPayloadAvailable) {
+      return state;
+    }
+
+    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
+    final int parentSlotIndex =
+        stateGloas
+            .getLatestExecutionPayloadBid()
+            .getSlot()
+            .mod(specConfig.getSlotsPerHistoricalRoot())
+            .intValue();
+    if (stateGloas.getExecutionPayloadAvailability().getBit(parentSlotIndex)) {
+      return state;
+    }
+
+    // Block processing sets this bit before processing attestations. Reward calculation starts from
+    // the pre-state, so project the known parent status without mutating that shared state.
+    return state.updated(
+        mutableState -> {
+          final MutableBeaconStateGloas mutableStateGloas =
+              MutableBeaconStateGloas.required(mutableState);
+          mutableStateGloas.setExecutionPayloadAvailability(
+              mutableStateGloas.getExecutionPayloadAvailability().withBit(parentSlotIndex));
+        });
+  }
+
+  @Override
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
       final IndexedAttestationLight indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
-    final int maxAttestingIndices =
-        specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+    final long maxAttestingIndices = specConfig.getMaxValidatorsPerAttestation();
     if (indexedAttestation.attestingIndices().size() > maxAttestingIndices) {
       return SafeFuture.completedFuture(
           AttestationProcessingResult.invalid("Too many attesting indices"));

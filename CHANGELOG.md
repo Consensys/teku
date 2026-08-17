@@ -7,11 +7,14 @@
 ## Unreleased Changes
 
 ### Breaking Changes
- - Removed the legacy web3j-based Eth1/PoW deposit-log fetching. A node no longer requires an Eth1 JSON-RPC endpoint to run; deposits are sourced from the finalized deposit-tree snapshot and in-protocol (EIP-6110) execution requests. The following CLI options have been removed: `--eth1-endpoints` / `--eth1-endpoint`, `--eth1-deposit-contract-max-request-size`.
- - Removed the non-production `validator-tools send-deposits` and `validator-tools generate-and-send-deposits` internal subcommands (web3j-based deposit submission). `validator-tools generate-keys` is unaffected.
- - Removed the GetDepositSnapshot RPC endpoint, which has been deprecated and removed since v3.0.0 of the Beacon API spec.
+ - Promoted `--Xvalidators-external-signer-concurrent-limit` to non-experimental `--validators-external-signer-concurrent-limit`, and imposed maximum limit of 1024
+ - Removed the `--deposit-snapshot-enabled` and `--Xdeposit-snapshot` CLI options along with the bundled deposit tree snapshots.
 
 ### Additions and Improvements
+ - Added native support for the [Plataberget testnet](https://plataberget.dev/). Use `--network=plataberget` to join the network.
+ - `--validator-keys` now accepts `<KEY_DIR>:<PASS_FILE>`, using a single password file for all keystores found in the directory.
+ - Improved debug/beacon/states endpoint to allow searching of the finalized state root, to assist third party products searching on roots.
 
 ### Bug Fixes
- - Fixed Beacon REST API socket retention when clients cancel pending asynchronous requests. Requests now time out after 30 seconds.
+ - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
+ - Post-Electra, the `committee_index` query parameter in `GET /eth/v1/validator/attestation_data` is now ignored instead of rejected when non-zero, matching the behaviour of other consensus clients.

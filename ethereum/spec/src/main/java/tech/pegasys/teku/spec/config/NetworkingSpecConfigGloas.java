@@ -23,5 +23,7 @@ public interface NetworkingSpecConfigGloas extends NetworkingSpecConfigDeneb {
 
   int getMaxDataColumnSidecarSize();
 
+  int getMaxPartialDataColumnSidecarSize();
+
   int getMaxSignedExecutionPayloadBidSize();
 }
