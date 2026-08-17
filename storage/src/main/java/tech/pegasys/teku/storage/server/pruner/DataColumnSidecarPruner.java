@@ -131,7 +131,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
               metricsAsyncRunner.runWithFixedDelay(
                   this::doUpdateDataColumnSidecarMetrics,
                   Duration.ZERO,
-                  pruneInterval,
+                  Duration.ofHours(1),
                   error ->
                       LOG.error("Failed to update data column sidecar storage counters", error)));
     }

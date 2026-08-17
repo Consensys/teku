@@ -119,7 +119,7 @@ public class BlobSidecarPruner extends Service {
               metricsAsyncRunner.runWithFixedDelay(
                   this::doUpdateBlobSidecarMetrics,
                   Duration.ZERO,
-                  pruneInterval,
+                  Duration.ofHours(1),
                   error -> LOG.error("Failed to update blob sidecar storage counters", error)));
     }
     return SafeFuture.COMPLETE;
