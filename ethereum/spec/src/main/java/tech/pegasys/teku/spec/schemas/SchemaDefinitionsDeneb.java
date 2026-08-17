@@ -20,9 +20,9 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_WITH_BLOBS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_WITH_BLOBS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -64,9 +64,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blobSchema = schemaRegistry.get(BLOB_SCHEMA);
     this.blobsInBlockSchema = schemaRegistry.get(BLOBS_IN_BLOCK_SCHEMA);
     this.blobSidecarSchema = schemaRegistry.get(BLOB_SIDECAR_SCHEMA);
-    this.blockContentsWithBlobsSchema = schemaRegistry.get(BLOCK_CONTENTS_WITH_BLOBS_SCHEMA);
-    this.signedBlockContentsWithBlobsSchema =
-        schemaRegistry.get(SIGNED_BLOCK_CONTENTS_WITH_BLOBS_SCHEMA);
+    this.blockContentsWithBlobsSchema = schemaRegistry.get(BLOCK_CONTENTS_SCHEMA);
+    this.signedBlockContentsWithBlobsSchema = schemaRegistry.get(SIGNED_BLOCK_CONTENTS_SCHEMA);
     this.blobsBundleSchema = schemaRegistry.get(BLOBS_BUNDLE_SCHEMA);
     this.executionPayloadAndBlobsBundleSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA);

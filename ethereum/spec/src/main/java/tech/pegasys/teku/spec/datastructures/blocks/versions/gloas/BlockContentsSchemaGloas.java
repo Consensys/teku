@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
@@ -47,7 +47,7 @@ public class BlockContentsSchemaGloas
   private static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
   public BlockContentsSchemaGloas(
-      final SpecConfigFulu specConfig, final SchemaRegistry schemaRegistry) {
+      final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "BlockContentsGloas",
         namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),

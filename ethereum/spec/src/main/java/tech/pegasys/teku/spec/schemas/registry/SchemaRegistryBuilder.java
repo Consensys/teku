@@ -45,7 +45,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_ACCESS_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_GLOAS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_WITH_BLOBS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_DEPOSIT_REQUESTS_SCHEMA;
@@ -100,7 +100,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_WITH_BLOBS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
@@ -167,10 +167,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloasImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsWithBlobsSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsWithBlobsSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsWithBlobsSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsWithBlobsSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
@@ -508,31 +508,31 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBlockContentsWithBlobsSchema() {
-    return providerBuilder(BLOCK_CONTENTS_WITH_BLOBS_SCHEMA)
+    return providerBuilder(BLOCK_CONTENTS_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig, schemaName) ->
-                new BlockContentsWithBlobsSchemaDeneb(
+                new BlockContentsSchemaDeneb(
                     schemaName, SpecConfigDeneb.required(specConfig), registry))
         .withCreator(
             FULU,
             (registry, specConfig, schemaName) ->
-                new BlockContentsWithBlobsSchemaFulu(
+                new BlockContentsSchemaFulu(
                     schemaName, SpecConfigFulu.required(specConfig), registry))
         .build();
   }
 
   private static SchemaProvider<?> createSignedBlockContentsWithBlobsSchema() {
-    return providerBuilder(SIGNED_BLOCK_CONTENTS_WITH_BLOBS_SCHEMA)
+    return providerBuilder(SIGNED_BLOCK_CONTENTS_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig, schemaName) ->
-                new SignedBlockContentsWithBlobsSchemaDeneb(
+                new SignedBlockContentsSchemaDeneb(
                     schemaName, SpecConfigDeneb.required(specConfig), registry))
         .withCreator(
             FULU,
             (registry, specConfig, schemaName) ->
-                new SignedBlockContentsWithBlobsSchemaFulu(
+                new SignedBlockContentsSchemaFulu(
                     schemaName, SpecConfigFulu.required(specConfig), registry))
         .build();
   }
@@ -541,7 +541,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SIGNED_BUILDER_BID_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig, schemaName) -> new SignedBuilderBidSchema(schemaName, registry))
+            (registry, _, schemaName) -> new SignedBuilderBidSchema(schemaName, registry))
         .build();
   }
 
@@ -1388,8 +1388,8 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLOCK_CONTENTS_GLOAS_SCHEMA)
         .withCreator(
             GLOAS,
-            (registry, specConfig, schemaName) ->
-                new BlockContentsSchemaGloas(SpecConfigFulu.required(specConfig), registry))
+            (registry, specConfig, _) ->
+                new BlockContentsSchemaGloas(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 

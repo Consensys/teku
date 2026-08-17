@@ -29,13 +29,12 @@ public class SignedBlockContentsFulu
         SignedBlockContentsFulu, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements SignedBlockContainer {
 
-  SignedBlockContentsFulu(
-      final SignedBlockContentsWithBlobsSchemaFulu type, final TreeNode backingNode) {
+  SignedBlockContentsFulu(final SignedBlockContentsSchemaFulu type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedBlockContentsFulu(
-      final SignedBlockContentsWithBlobsSchemaFulu schema,
+      final SignedBlockContentsSchemaFulu schema,
       final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
@@ -49,7 +48,7 @@ public class SignedBlockContentsFulu
   }
 
   public SignedBlockContentsFulu(
-      final SignedBlockContentsWithBlobsSchemaFulu schema,
+      final SignedBlockContentsSchemaFulu schema,
       final SignedBeaconBlock signedBeaconBlock,
       final SszList<SszKZGProof> kzgProofs,
       final SszList<Blob> blobs) {

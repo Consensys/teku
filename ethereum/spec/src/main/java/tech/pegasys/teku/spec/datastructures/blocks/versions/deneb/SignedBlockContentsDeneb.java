@@ -29,13 +29,12 @@ public class SignedBlockContentsDeneb
         SignedBlockContentsDeneb, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements SignedBlockContainer {
 
-  SignedBlockContentsDeneb(
-      final SignedBlockContentsWithBlobsSchemaDeneb type, final TreeNode backingNode) {
+  SignedBlockContentsDeneb(final SignedBlockContentsSchemaDeneb type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedBlockContentsDeneb(
-      final SignedBlockContentsWithBlobsSchemaDeneb schema,
+      final SignedBlockContentsSchemaDeneb schema,
       final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
@@ -49,7 +48,7 @@ public class SignedBlockContentsDeneb
   }
 
   public SignedBlockContentsDeneb(
-      final SignedBlockContentsWithBlobsSchemaDeneb schema,
+      final SignedBlockContentsSchemaDeneb schema,
       final SignedBeaconBlock signedBeaconBlock,
       final SszList<SszKZGProof> kzgProofs,
       final SszList<Blob> blobs) {

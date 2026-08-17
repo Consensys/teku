@@ -221,10 +221,10 @@ public class SchemaTypes {
   public static final SchemaId<BlobSidecarsByRootRequestMessageSchema>
       BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
-  public static final SchemaId<BlockContentsWithBlobsSchema<?>> BLOCK_CONTENTS_WITH_BLOBS_SCHEMA =
-      create("BLOCK_CONTENTS_WITH_BLOBS_SCHEMA");
-  public static final SchemaId<SignedBlockContentsWithBlobsSchema<?>>
-      SIGNED_BLOCK_CONTENTS_WITH_BLOBS_SCHEMA = create("SIGNED_BLOCK_CONTENTS_WITH_BLOBS_SCHEMA");
+  public static final SchemaId<BlockContentsWithBlobsSchema<?>> BLOCK_CONTENTS_SCHEMA =
+      create("BLOCK_CONTENTS_SCHEMA");
+  public static final SchemaId<SignedBlockContentsWithBlobsSchema<?>> SIGNED_BLOCK_CONTENTS_SCHEMA =
+      create("SIGNED_BLOCK_CONTENTS_SCHEMA");
   public static final SchemaId<BlobsBundleSchema<?>> BLOBS_BUNDLE_SCHEMA =
       create("BLOBS_BUNDLE_SCHEMA");
 

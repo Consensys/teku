@@ -31,11 +31,11 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class BlockContentsWithBlobsSchemaFulu
+public class BlockContentsSchemaFulu
     extends ContainerSchema3<BlockContentsFulu, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements BlockContentsWithBlobsSchema<BlockContentsFulu> {
 
-  public BlockContentsWithBlobsSchemaFulu(
+  public BlockContentsSchemaFulu(
       final String containerName,
       final SpecConfigFulu specConfig,
       final SchemaRegistry schemaRegistry) {

@@ -32,12 +32,12 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class SignedBlockContentsWithBlobsSchemaFulu
+public class SignedBlockContentsSchemaFulu
     extends ContainerSchema3<
         SignedBlockContentsFulu, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements SignedBlockContentsWithBlobsSchema<SignedBlockContentsFulu> {
 
-  public SignedBlockContentsWithBlobsSchemaFulu(
+  public SignedBlockContentsSchemaFulu(
       final String containerName,
       final SpecConfigFulu specConfig,
       final SchemaRegistry schemaRegistry) {
