@@ -401,20 +401,24 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
   }
 
-  // Add weight for same-slot attestations when any new flag is set.
-  // This ensures each validator contributes exactly once per slot.
   @Override
   protected UInt64 updateBuilderPaymentWeight(
+      final byte previousParticipationFlags,
       final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
       final int attestingIndex,
       final BeaconState state) {
-    final BuilderPendingPayment payment =
-        BeaconStateGloas.required(state).getBuilderPendingPayments().get(builderPaymentIndex);
-    if (beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
+    final boolean hadNoParticipation = previousParticipationFlags == (byte) 0b0000_0000;
+    if (hadNoParticipation
+        && beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
         // only add to the payment quorum if the payment is not trivial
-        && payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
+        && BeaconStateGloas.required(state)
+            .getBuilderPendingPayments()
+            .get(builderPaymentIndex)
+            .getWithdrawal()
+            .getAmount()
+            .isGreaterThan(UInt64.ZERO)) {
       return builderPaymentWeightDelta.plus(
           state.getValidators().get(attestingIndex).getEffectiveBalance());
     } else {
