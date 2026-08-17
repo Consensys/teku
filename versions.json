@@ -4,8 +4,8 @@
   "source": "master"
  },
  "stable": {
-  "spec": "v26.8.1-dev14",
-  "source": "v26.8.1-dev14"
+  "spec": "v26.8.1-dev15",
+  "source": "v26.8.1-dev15"
  },
  "v26.3.0": {
   "spec": "v26.3.0",
@@ -78,5 +78,9 @@
  "v26.8.1-dev14": {
   "spec": "v26.8.1-dev14",
   "source": "v26.8.1-dev14"
+ },
+ "v26.8.1-dev15": {
+  "spec": "v26.8.1-dev15",
+  "source": "v26.8.1-dev15"
  }
 }
