@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -477,6 +478,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
+  }
+
+  @Override
+  public Optional<UInt64> getEphemeryResetPeriod() {
+    return specConfig.getEphemeryResetPeriod();
   }
 
   @Override

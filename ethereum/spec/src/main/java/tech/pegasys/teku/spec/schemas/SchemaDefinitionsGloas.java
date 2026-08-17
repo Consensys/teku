@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_GLOAS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_EXIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
@@ -78,6 +80,7 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
+  private final BlockContentsGloasSchema blockContentsGloasSchema;
   private final BuilderDepositRequestSchema builderDepositRequestSchema;
   private final BuilderExitRequestSchema builderExitRequestSchema;
   private final BuilderPendingPaymentSchema builderPendingPaymentSchema;
@@ -106,6 +109,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SchemaDefinitionsGloas(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
+    this.blockContentsGloasSchema = schemaRegistry.get(BLOCK_CONTENTS_GLOAS_SCHEMA);
     this.builderDepositRequestSchema = schemaRegistry.get(BUILDER_DEPOSIT_REQUEST_SCHEMA);
     this.builderExitRequestSchema = schemaRegistry.get(BUILDER_EXIT_REQUEST_SCHEMA);
     this.builderPendingPaymentSchema = schemaRegistry.get(BUILDER_PENDING_PAYMENT_SCHEMA);
@@ -164,12 +168,16 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   @Override
   public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBeaconBlockSchema().castTypeToBlockContainer();
+    return blockContentsGloasSchema.castTypeToBlockContainer();
   }
 
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  public BlockContentsGloasSchema getBlockContentsGloasSchema() {
+    return blockContentsGloasSchema;
   }
 
   @Override

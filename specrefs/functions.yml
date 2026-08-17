@@ -1105,8 +1105,6 @@
 - name: compute_matrix#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
-      search: public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
       search: public List<List<MatrixEntry>> computeExtendedMatrix(
   spec: |
     <spec fn="compute_matrix" fork="fulu" hash="fe9651c4">
