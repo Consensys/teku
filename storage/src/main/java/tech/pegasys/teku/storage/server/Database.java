@@ -243,14 +243,14 @@ public interface Database extends AutoCloseable {
   long getBlobSidecarColumnCount();
 
   /**
-   * Returns the exact number of data column sidecar entries. Performs a full sequential scan of
-   * the sidecar column — O(N), may take minutes on large datasets.
+   * Returns the exact number of data column sidecar entries. Performs a full sequential scan of the
+   * sidecar column — O(N), may take minutes on large datasets.
    */
   long getSidecarColumnCount();
 
   /**
-   * Returns the exact number of non-canonical blob sidecar entries. Performs a full sequential
-   * scan of the non-canonical blob sidecar column — O(N), may take minutes on large datasets.
+   * Returns the exact number of non-canonical blob sidecar entries. Performs a full sequential scan
+   * of the non-canonical blob sidecar column — O(N), may take minutes on large datasets.
    */
   long getNonCanonicalBlobSidecarColumnCount();
 
