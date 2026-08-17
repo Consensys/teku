@@ -245,6 +245,13 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
         elapsed,
         lower,
         upper);
+    if (elapsed > pruningWarnTimeout.toMillis()) {
+      LOG.warn(
+          "Archiving task for {} took {} ms, exceeding the warn threshold of {} ms",
+          pruningMetricsType,
+          elapsed,
+          pruningWarnTimeout.toMillis());
+    }
     // Store as half-open [lower, upper+1) so adjacent chunks connect and merge in the RangeSet.
     // Range<Long> is real-valued: [9,19] and [20,30] are not connected, which would leave a
     // phantom gap (19,20) that is empty but gets picked as the highest unarchived range.
