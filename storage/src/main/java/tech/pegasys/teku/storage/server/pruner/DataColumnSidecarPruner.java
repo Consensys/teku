@@ -111,27 +111,13 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
   @Override
   protected SafeFuture<?> doStart() {
-    final Cancellable rawPruner =
-        asyncRunner.runWithFixedDelay(
-            this::doPruneDataColumnSidecars,
-            Duration.ZERO,
-            pruneInterval,
-            error -> LOG.error("Failed to prune old data column sidecars", error));
     scheduledPruner =
         Optional.of(
-            new Cancellable() {
-              @Override
-              public void cancel() {
-                LOG.debug(
-                    "DCS prune Cancellable.cancel() called", new Exception("cancel stack trace"));
-                rawPruner.cancel();
-              }
-
-              @Override
-              public boolean isCancelled() {
-                return rawPruner.isCancelled();
-              }
-            });
+            asyncRunner.runWithFixedDelay(
+                this::doPruneDataColumnSidecars,
+                Duration.ZERO,
+                pruneInterval,
+                error -> LOG.error("Failed to prune old data column sidecars", error)));
     scheduledArchiver =
         Optional.of(
             asyncRunner.runWithFixedDelay(
@@ -154,7 +140,6 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
   @Override
   protected SafeFuture<?> doStop() {
-    LOG.debug("DataColumnSidecarPruner doStop called, cancelling scheduled tasks");
     scheduledPruner.ifPresent(Cancellable::cancel);
     scheduledArchiver.ifPresent(Cancellable::cancel);
     scheduledMetricsUpdater.ifPresent(Cancellable::cancel);
@@ -189,7 +174,6 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
           elapsed,
           pruningWarnTimeout.toMillis());
     }
-    LOG.debug("DCS prune task body exiting normally, reschedule will fire in finally block");
   }
 
   private void doUpdateDataColumnSidecarMetrics() {
