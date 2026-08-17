@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
@@ -446,13 +447,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final Optional<BuilderConfig> builderConfig) {
     return blockProductionBySlotCache
         .computeIfAbsent(
-            slot,
-            __ ->
-                createUnsignedBlockInternal(
-                    slot, randaoReveal, graffiti, requestedBuilderBoostFactor))
+            slot, __ -> createUnsignedBlockInternal(slot, randaoReveal, graffiti, builderConfig))
         .whenException(
             __ -> {
               // allow further block production attempts for this slot
@@ -493,7 +492,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final Optional<BuilderConfig> builderConfig) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -506,7 +505,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     blockProductionPreparationContext.blockProductionPerformance.validatorBlockRequested();
 
     return blockProductionPreparationContext
-        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
+        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, builderConfig)
         .thenCompose(this::createBlock)
         .thenPeek(
             maybeBlock ->
@@ -1235,7 +1234,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final UInt64 proposalSlot,
         final BLSSignature randaoReveal,
         final Optional<Bytes32> graffiti,
-        final Optional<UInt64> requestedBuilderBoostFactor) {
+        final Optional<BuilderConfig> builderConfig) {
       return stateFuture.thenCombine(
           chainHeadFuture,
           (state, chainHead) ->
@@ -1246,7 +1245,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   chainHead,
                   randaoReveal,
                   graffiti,
-                  requestedBuilderBoostFactor,
+                  builderConfig,
                   blockProductionPerformance));
     }
   }

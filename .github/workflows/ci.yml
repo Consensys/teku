@@ -209,8 +209,14 @@ jobs:
           echo "run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
           echo "vcs_ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+      # assemble is the only writer of the shared Gradle cache entry: it resolves the widest set of
+      # dependencies (see resolveCiDependencies) and it completes before every job that consumes the
+      # cache. Letting other jobs write would race for the same key and could publish a Gradle home
+      # that is missing the test dependencies the shards need.
       - name: Prepare
         uses: ./.github/actions/prepare
+        with:
+          gradle-cache-write: 'true'
       - name: Determine Teku version
         id: projectDetails
         uses: ./.github/actions/get-project-version
@@ -651,8 +657,6 @@ jobs:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
-        with:
-          gradle-cache-read-only: 'true'
       - name: Download assemble-output
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:

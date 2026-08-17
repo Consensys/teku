@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -389,7 +390,7 @@ public class BlockOperationSelectorFactory {
             executionPayloadContext.orElseThrow(),
             blockSlotState,
             shouldTryBuilderFlow,
-            blockProductionContext.requestedBuilderBoostFactor(),
+            blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
             blockProductionContext.blockProductionPerformance());
 
     return SafeFuture.allOf(
@@ -556,7 +557,7 @@ public class BlockOperationSelectorFactory {
                 blockProductionContext.parentExecutionBlockHash(),
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
-                blockProductionContext.requestedBuilderBoostFactor(),
+                blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
                 blockProductionContext.blockProductionPerformance())
             .thenAccept(bodyBuilder::signedExecutionPayloadBid);
     return SafeFuture.allOf(
@@ -615,6 +616,10 @@ public class BlockOperationSelectorFactory {
         // from the local fallback
         .orElseGet(
             () -> builderPayloadOrFallbackData.getFallbackDataRequired().getExecutionPayload());
+  }
+
+  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
+    return executionLayerBlockProductionManager.getCachedPayloadResult(slot);
   }
 
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {

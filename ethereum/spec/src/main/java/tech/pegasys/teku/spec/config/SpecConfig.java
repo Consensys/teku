@@ -209,6 +209,11 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getReorgParentWeightThreshold();
 
+  // Ephemery
+  default Optional<UInt64> getEphemeryResetPeriod() {
+    return Optional.empty();
+  }
+
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
