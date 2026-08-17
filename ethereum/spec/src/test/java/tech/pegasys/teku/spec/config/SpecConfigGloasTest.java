@@ -50,6 +50,7 @@ public class SpecConfigGloasTest {
     assertThat(config.getMaxSignedAggregateAndProofSize()).isEqualTo(16829);
     assertThat(config.getMaxAttesterSlashingSize()).isEqualTo(2097616);
     assertThat(config.getMaxDataColumnSidecarSize()).isEqualTo(8585272);
+    assertThat(config.getMaxPartialDataColumnSidecarSize()).isEqualTo(8585741);
     assertThat(config.getMaxSignedExecutionPayloadBidSize()).isEqualTo(196932);
   }
 
@@ -65,7 +66,8 @@ public class SpecConfigGloasTest {
                                 .maxSignedAggregateAndProofSize(1)
                                 .maxAttesterSlashingSize(2)
                                 .maxDataColumnSidecarSize(3)
-                                .maxSignedExecutionPayloadBidSize(4)))
+                                .maxPartialDataColumnSidecarSize(4)
+                                .maxSignedExecutionPayloadBidSize(5)))
             .specConfig()
             .toVersionGloas()
             .orElseThrow();
@@ -73,7 +75,8 @@ public class SpecConfigGloasTest {
     assertThat(config.getMaxSignedAggregateAndProofSize()).isEqualTo(1);
     assertThat(config.getMaxAttesterSlashingSize()).isEqualTo(2);
     assertThat(config.getMaxDataColumnSidecarSize()).isEqualTo(3);
-    assertThat(config.getMaxSignedExecutionPayloadBidSize()).isEqualTo(4);
+    assertThat(config.getMaxPartialDataColumnSidecarSize()).isEqualTo(4);
+    assertThat(config.getMaxSignedExecutionPayloadBidSize()).isEqualTo(5);
   }
 
   @Test
@@ -144,6 +147,7 @@ public class SpecConfigGloasTest {
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(1_000_000),
         dataStructureUtil.randomPositiveInt(1_000_000),
+        dataStructureUtil.randomPositiveInt(10_000_000),
         dataStructureUtil.randomPositiveInt(10_000_000),
         dataStructureUtil.randomPositiveInt(1_000_000)) {};
   }
