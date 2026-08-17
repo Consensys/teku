@@ -143,20 +143,24 @@ public class ConnectionManager extends Service {
   }
 
   public void requestPeerSearch() {
-    if (!isRunning()) {
-      LOG.trace("Not running so not searching for peers");
+    if (!tryStartRequestedPeerSearch()) {
       return;
     }
-    if (!isPeerSearchRequestAllowed()) {
-      LOG.trace("Peer search request ignored because a recent request was already processed");
-      return;
-    }
-    searchForPeers().finish(this::logSearchError);
+    executePeerSearch().finish(this::logSearchError);
   }
 
-  private synchronized boolean isPeerSearchRequestAllowed() {
+  private synchronized boolean tryStartRequestedPeerSearch() {
+    if (!isRunning()) {
+      LOG.trace("Not running so not searching for peers");
+      return false;
+    }
     final UInt64 now = timeProvider.getTimeInMillis();
     if (now.isLessThan(nextRequestedPeerSearchTime)) {
+      LOG.trace("Peer search request ignored because a recent request was already processed");
+      return false;
+    }
+    if (!peerSearchInProgress.compareAndSet(false, true)) {
+      LOG.trace("Peer search already in progress");
       return false;
     }
     nextRequestedPeerSearchTime = now.plus(REQUESTED_DISCOVERY_INTERVAL.toMillis());
@@ -177,14 +181,25 @@ public class ConnectionManager extends Service {
   }
 
   private SafeFuture<Void> searchForPeers() {
+    if (!tryStartPeerSearch()) {
+      return SafeFuture.COMPLETE;
+    }
+    return executePeerSearch();
+  }
+
+  private boolean tryStartPeerSearch() {
     if (!isRunning()) {
       LOG.trace("Not running so not searching for peers");
-      return SafeFuture.COMPLETE;
+      return false;
     }
     if (!peerSearchInProgress.compareAndSet(false, true)) {
       LOG.trace("Peer search already in progress");
-      return SafeFuture.COMPLETE;
+      return false;
     }
+    return true;
+  }
+
+  private SafeFuture<Void> executePeerSearch() {
     LOG.trace("Searching for peers");
     return discoveryService
         .searchForPeers()
