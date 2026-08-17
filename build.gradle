@@ -46,7 +46,7 @@ class ConfiguredLicenseBundleNormalizer extends LicenseBundleNormalizer {
 			final String module) {
 		if (licenseFileDetails.file == null || licenseFileDetails.file.isEmpty()) {
 			return [licenseFileDetails]
-		}w
+		}
 		def rules = transformationRulesFor(
 				transformationRuleMatchers,
 				module,
@@ -1292,12 +1292,13 @@ subprojects {
 		}
 
 		signing {
+			required { gradle.taskGraph.allTasks.any { it.name.contains("publish") } }
 			def signingKey = findProperty("signingKey")
 			def signingPassword = findProperty("signingPassword") ?: ""
 			if (signingKey) {
 				useInMemoryPgpKeys(signingKey, signingPassword)
-				sign publishing.publications.mavenJava
 			}
+			sign publishing.publications.mavenJava
 		}
 	}
 
