@@ -44,7 +44,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_ACCESS_LIST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_GLOAS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
@@ -171,7 +170,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
@@ -326,8 +325,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createBlobSidecarSchemaProvider())
         .addProvider(createBlobSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createBlobsBundleSchemaProvider())
-        .addProvider(createBlockContentsWithBlobsSchema())
-        .addProvider(createSignedBlockContentsWithBlobsSchema())
+        .addProvider(createBlockContentsSchema())
+        .addProvider(createSignedBlockContentsSchema())
         .addProvider(createExecutionPayloadAndBlobsBundleSchemaProvider())
 
         // ELECTRA
@@ -374,7 +373,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
-        .addProvider(createBlockContentsGloasSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeContentsSchemaProvider())
         .addProvider(createSignedBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
@@ -507,7 +505,7 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<?> createBlockContentsWithBlobsSchema() {
+  private static SchemaProvider<?> createBlockContentsSchema() {
     return providerBuilder(BLOCK_CONTENTS_SCHEMA)
         .withCreator(
             DENEB,
@@ -519,10 +517,15 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new BlockContentsSchemaFulu(
                     schemaName, SpecConfigFulu.required(specConfig), registry))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new BlockContentsSchemaGloas(
+                    schemaName, SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
-  private static SchemaProvider<?> createSignedBlockContentsWithBlobsSchema() {
+  private static SchemaProvider<?> createSignedBlockContentsSchema() {
     return providerBuilder(SIGNED_BLOCK_CONTENTS_SCHEMA)
         .withCreator(
             DENEB,
@@ -1381,15 +1384,6 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new SignedBlindedExecutionPayloadEnvelopeSchema(registry))
-        .build();
-  }
-
-  private static SchemaProvider<?> createBlockContentsGloasSchemaProvider() {
-    return providerBuilder(BLOCK_CONTENTS_GLOAS_SCHEMA)
-        .withCreator(
-            GLOAS,
-            (registry, specConfig, _) ->
-                new BlockContentsGloasSchema(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 

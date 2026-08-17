@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -772,15 +772,12 @@ public class BlockOperationSelectorFactory {
         // from the local fallback
         final BlobsBundle blobsBundle =
             builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
-        final BlockContentsWithBlobsSchema<?> blockContentsWithBlobsSchema =
+        final BlockContentsSchema<?> blockContentsSchema =
             SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-                .getBlockContentsWithBlobsSchema();
-        blobs =
-            blockContentsWithBlobsSchema
-                .getBlobsSchema()
-                .createFromElements(blobsBundle.getBlobs());
+                .getBlockContentsSchema();
+        blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());
         proofs =
-            blockContentsWithBlobsSchema
+            blockContentsSchema
                 .getKzgProofsSchema()
                 .createFromElements(
                     blobsBundle.getProofs().stream().map(SszKZGProof::new).toList());

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -21,12 +22,15 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public interface BlockContentsWithBlobsSchema<T extends BlockContainer>
-    extends BlockContainerSchema<T> {
+public interface SignedBlockContentsSchema<T extends SignedBlockContainer>
+    extends SignedBlockContainerSchema<T> {
   SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   SszFieldName FIELD_BLOBS = () -> "blobs";
 
-  T create(BeaconBlock beaconBlock, List<KZGProof> kzgProofs, List<Blob> blobs);
+  T create(SignedBeaconBlock signedBeaconBlock, List<KZGProof> kzgProofs, List<Blob> blobs);
+
+  T create(
+      SignedBeaconBlock signedBeaconBlock, SszList<SszKZGProof> kzgProofs, SszList<Blob> blobs);
 
   @Override
   T createFromBackingNode(TreeNode node);

@@ -61,7 +61,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   private BlockContainer createBlockContents(
       final BeaconBlock block, final BlobsBundle blobsBundle) {
     return SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
-        .getBlockContentsWithBlobsSchema()
+        .getBlockContentsSchema()
         .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 }

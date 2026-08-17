@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 public class SignedBlockContentsSchemaDeneb
     extends ContainerSchema3<
         SignedBlockContentsDeneb, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
-    implements SignedBlockContentsWithBlobsSchema<SignedBlockContentsDeneb> {
+    implements SignedBlockContentsSchema<SignedBlockContentsDeneb> {
 
   public SignedBlockContentsSchemaDeneb(
       final String containerName,

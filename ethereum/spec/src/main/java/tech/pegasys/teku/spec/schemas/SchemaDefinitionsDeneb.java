@@ -33,10 +33,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyBuilderDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
@@ -51,8 +51,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobSchema blobSchema;
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
   private final BlobSidecarSchema blobSidecarSchema;
-  private final BlockContentsWithBlobsSchema<?> blockContentsWithBlobsSchema;
-  private final SignedBlockContentsWithBlobsSchema<?> signedBlockContentsWithBlobsSchema;
+  private final BlockContentsSchema<?> blockContentsSchema;
+  private final SignedBlockContentsSchema<?> signedBlockContentsSchema;
   private final BlobsBundleSchema<?> blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
@@ -64,8 +64,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blobSchema = schemaRegistry.get(BLOB_SCHEMA);
     this.blobsInBlockSchema = schemaRegistry.get(BLOBS_IN_BLOCK_SCHEMA);
     this.blobSidecarSchema = schemaRegistry.get(BLOB_SIDECAR_SCHEMA);
-    this.blockContentsWithBlobsSchema = schemaRegistry.get(BLOCK_CONTENTS_SCHEMA);
-    this.signedBlockContentsWithBlobsSchema = schemaRegistry.get(SIGNED_BLOCK_CONTENTS_SCHEMA);
+    this.blockContentsSchema = schemaRegistry.get(BLOCK_CONTENTS_SCHEMA);
+    this.signedBlockContentsSchema = schemaRegistry.get(SIGNED_BLOCK_CONTENTS_SCHEMA);
     this.blobsBundleSchema = schemaRegistry.get(BLOBS_BUNDLE_SCHEMA);
     this.executionPayloadAndBlobsBundleSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA);
@@ -84,12 +84,12 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   @Override
   public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBlockContentsWithBlobsSchema().castTypeToBlockContainer();
+    return getBlockContentsSchema().castTypeToBlockContainer();
   }
 
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
-    return getSignedBlockContentsWithBlobsSchema().castTypeToSignedBlockContainer();
+    return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
   }
 
   @Override
@@ -120,12 +120,12 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobSidecarSchema;
   }
 
-  public BlockContentsWithBlobsSchema<?> getBlockContentsWithBlobsSchema() {
-    return blockContentsWithBlobsSchema;
+  public BlockContentsSchema<?> getBlockContentsSchema() {
+    return blockContentsSchema;
   }
 
-  public SignedBlockContentsWithBlobsSchema<?> getSignedBlockContentsWithBlobsSchema() {
-    return signedBlockContentsWithBlobsSchema;
+  public SignedBlockContentsSchema<?> getSignedBlockContentsSchema() {
+    return signedBlockContentsSchema;
   }
 
   public BlobsBundleSchema<?> getBlobsBundleSchema() {

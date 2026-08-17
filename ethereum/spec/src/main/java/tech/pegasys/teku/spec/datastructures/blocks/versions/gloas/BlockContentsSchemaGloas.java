@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
@@ -28,28 +29,30 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class BlockContentsGloasSchema
+public class BlockContentsSchemaGloas
     extends ContainerSchema4<
         BlockContentsGloas,
         BeaconBlock,
         ExecutionPayloadEnvelope,
         SszList<SszKZGProof>,
         SszList<Blob>>
-    implements BlockContainerSchema<BlockContentsGloas> {
+    implements BlockContentsSchema<BlockContentsGloas> {
 
   private static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   private static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
-  public BlockContentsGloasSchema(
-      final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
+  public BlockContentsSchemaGloas(
+      final String containerName,
+      final SpecConfigGloas specConfig,
+      final SchemaRegistry schemaRegistry) {
     super(
-        "BlockContentsGloas",
+        containerName,
         namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
         namedSchema(
             "execution_payload_envelope", schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)),
@@ -64,15 +67,16 @@ public class BlockContentsGloasSchema
                 schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
+  @Override
   public BlockContentsGloas create(
       final BeaconBlock beaconBlock,
-      final ExecutionPayloadEnvelope executionPayloadEnvelope,
       final List<KZGProof> kzgProofs,
-      final List<Blob> blobs) {
+      final List<Blob> blobs,
+      final Optional<ExecutionPayloadEnvelope> executionPayloadEnvelope) {
     return new BlockContentsGloas(
         this,
         beaconBlock,
-        executionPayloadEnvelope,
+        executionPayloadEnvelope.orElseThrow(),
         getKzgProofsSchema().createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
         getBlobsSchema().createFromElements(blobs));
   }
