@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
@@ -307,7 +307,7 @@ public class SchemaTypes {
           create("BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
       SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
-  public static final SchemaId<BlockContentsSchemaGloas> BLOCK_CONTENTS_GLOAS_SCHEMA =
+  public static final SchemaId<BlockContentsGloasSchema> BLOCK_CONTENTS_GLOAS_SCHEMA =
       create("BLOCK_CONTENTS_GLOAS_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeContentsSchema>
       SIGNED_EXECUTION_PAYLOAD_ENVELOPE_CONTENTS_SCHEMA =

@@ -2903,9 +2903,9 @@ public final class DataStructureUtil {
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      // BlockContentsSchemaGloas
+      // BlockContentsGloasSchema
       return getGloasSchemaDefinitions(slot)
-          .getBlockContentsSchemaGloas()
+          .getBlockContentsGloasSchema()
           .create(beaconBlock, randomExecutionPayloadEnvelope(slot), kzgProofs, blobs);
     }
     // BlockContentsWithBlobsSchema(Deneb/Fulu)

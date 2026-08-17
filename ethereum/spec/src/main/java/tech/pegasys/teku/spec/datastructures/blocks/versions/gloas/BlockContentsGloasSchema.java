@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class BlockContentsSchemaGloas
+public class BlockContentsGloasSchema
     extends ContainerSchema4<
         BlockContentsGloas,
         BeaconBlock,
@@ -46,7 +46,7 @@ public class BlockContentsSchemaGloas
   private static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   private static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
-  public BlockContentsSchemaGloas(
+  public BlockContentsGloasSchema(
       final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "BlockContentsGloas",

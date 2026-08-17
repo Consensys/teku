@@ -89,7 +89,7 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
                                     block.getParentRoot());
                         final BlockContentsGloas blockContentsGloas =
                             schemaDefinitions
-                                .getBlockContentsSchemaGloas()
+                                .getBlockContentsGloasSchema()
                                 .create(
                                     block,
                                     envelope,

@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
@@ -103,7 +103,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final SszVectorSchema<BuilderPendingPayment, ?> builderPendingPaymentsSchema;
   private final SszListSchema<BuilderPendingWithdrawal, ?> builderPendingWithdrawalsSchema;
   private final PtcWindowSchema ptcWindowSchema;
-  private final BlockContentsSchemaGloas blockContentsSchemaGloas;
+  private final BlockContentsGloasSchema blockContentsGloasSchema;
   private final ExecutionPayloadEnvelopesByRootRequestMessageSchema
       executionPayloadEnvelopesByRootRequestMessageSchema;
 
@@ -135,7 +135,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     this.builderPendingPaymentsSchema = schemaRegistry.get(BUILDER_PENDING_PAYMENTS_SCHEMA);
     this.builderPendingWithdrawalsSchema = schemaRegistry.get(BUILDER_PENDING_WITHDRAWALS_SCHEMA);
     this.ptcWindowSchema = schemaRegistry.get(PTC_WINDOW_SCHEMA);
-    this.blockContentsSchemaGloas = schemaRegistry.get(BLOCK_CONTENTS_GLOAS_SCHEMA);
+    this.blockContentsGloasSchema = schemaRegistry.get(BLOCK_CONTENTS_GLOAS_SCHEMA);
     this.executionPayloadEnvelopesByRootRequestMessageSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
   }
@@ -168,7 +168,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   @Override
   public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return blockContentsSchemaGloas.castTypeToBlockContainer();
+    return blockContentsGloasSchema.castTypeToBlockContainer();
   }
 
   @Override
@@ -268,8 +268,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     return ptcWindowSchema;
   }
 
-  public BlockContentsSchemaGloas getBlockContentsSchemaGloas() {
-    return blockContentsSchemaGloas;
+  public BlockContentsGloasSchema getBlockContentsGloasSchema() {
+    return blockContentsGloasSchema;
   }
 
   public ExecutionPayloadEnvelopesByRootRequestMessageSchema

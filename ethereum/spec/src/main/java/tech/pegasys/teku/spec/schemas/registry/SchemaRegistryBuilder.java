@@ -171,7 +171,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
@@ -1389,7 +1389,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             GLOAS,
             (registry, specConfig, _) ->
-                new BlockContentsSchemaGloas(SpecConfigGloas.required(specConfig), registry))
+                new BlockContentsGloasSchema(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
