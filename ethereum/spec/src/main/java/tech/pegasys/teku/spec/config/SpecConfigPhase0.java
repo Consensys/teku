@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -161,6 +162,9 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes4 hezeForkVersion;
   private final UInt64 hezeForkEpoch;
 
+  // ephemery
+  private final Optional<UInt64> ephemeryResetPeriod;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -248,7 +252,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Bytes4 gloasForkVersion,
       final UInt64 gloasForkEpoch,
       final Bytes4 hezeForkVersion,
-      final UInt64 hezeForkEpoch) {
+      final UInt64 hezeForkEpoch,
+      final Optional<UInt64> ephemeryResetPeriod) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -335,6 +340,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.gloasForkEpoch = gloasForkEpoch;
     this.hezeForkVersion = hezeForkVersion;
     this.hezeForkEpoch = hezeForkEpoch;
+    this.ephemeryResetPeriod = ephemeryResetPeriod;
     this.blsSignatureVerifier = blsSignatureVerifier;
     this.batchSignatureVerifierSupplier = batchSignatureVerifierSupplier;
   }
@@ -542,6 +548,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public UInt64 getHezeForkEpoch() {
     return hezeForkEpoch;
+  }
+
+  @Override
+  public Optional<UInt64> getEphemeryResetPeriod() {
+    return ephemeryResetPeriod;
   }
 
   @Override
@@ -888,7 +899,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
         && Objects.equals(depositContractAddress, that.depositContractAddress)
         && Objects.equals(messageDomainInvalidSnappy, that.messageDomainInvalidSnappy)
-        && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy);
+        && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy)
+        && Objects.equals(ephemeryResetPeriod, that.ephemeryResetPeriod);
   }
 
   @Override
@@ -969,6 +981,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         gloasForkEpoch,
         hezeForkVersion,
         hezeForkEpoch,
-        attestationSubnetPrefixBits);
+        attestationSubnetPrefixBits,
+        ephemeryResetPeriod);
   }
 }

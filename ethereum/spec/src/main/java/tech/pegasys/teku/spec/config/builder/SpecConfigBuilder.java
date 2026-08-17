@@ -171,6 +171,10 @@ public class SpecConfigBuilder {
       BatchSignatureVerifierImpl::new;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
+
+  // Ephemery-specific optional field
+  private UInt64 ephemeryResetPeriod;
+
   private final BuilderChain<SpecConfig, SpecConfigHeze> builderChain =
       BuilderChain.create(altairBuilder)
           .appendBuilder(bellatrixBuilder)
@@ -344,7 +348,8 @@ public class SpecConfigBuilder {
                 gloasForkVersion,
                 gloasForkEpoch,
                 hezeForkVersion,
-                hezeForkEpoch));
+                hezeForkEpoch,
+                Optional.ofNullable(ephemeryResetPeriod)));
 
     return builderChain.build(config);
   }
@@ -1016,6 +1021,12 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder reorgParentWeightThreshold(final Integer reorgParentWeightThreshold) {
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
+    return this;
+  }
+
+  public SpecConfigBuilder ephemeryResetPeriod(final UInt64 ephemeryResetPeriod) {
+    checkNotNull(ephemeryResetPeriod);
+    this.ephemeryResetPeriod = ephemeryResetPeriod;
     return this;
   }
 
