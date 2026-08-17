@@ -21,19 +21,19 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
 
   private final int inclusionListDueBps;
   private final int maxRequestInclusionList;
-  private final int maxBytesPerInclusionList;
+  private final int maxTransactionsBytesPerInclusionList;
   private final int inclusionListCommitteeSize;
 
   public SpecConfigHezeImpl(
       final SpecConfigGloas specConfig,
       final int inclusionListDueBps,
       final int maxRequestInclusionList,
-      final int maxBytesPerInclusionList,
+      final int maxTransactionsBytesPerInclusionList,
       final int inclusionListCommitteeSize) {
     super(specConfig);
     this.inclusionListDueBps = inclusionListDueBps;
     this.maxRequestInclusionList = maxRequestInclusionList;
-    this.maxBytesPerInclusionList = maxBytesPerInclusionList;
+    this.maxTransactionsBytesPerInclusionList = maxTransactionsBytesPerInclusionList;
     this.inclusionListCommitteeSize = inclusionListCommitteeSize;
   }
 
@@ -53,8 +53,8 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
   }
 
   @Override
-  public int getMaxBytesPerInclusionList() {
-    return maxBytesPerInclusionList;
+  public int getMaxTransactionsBytesPerInclusionList() {
+    return maxTransactionsBytesPerInclusionList;
   }
 
   @Override
@@ -78,7 +78,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
     SpecConfigHezeImpl that = (SpecConfigHezeImpl) o;
     return inclusionListDueBps == that.inclusionListDueBps
         && maxRequestInclusionList == that.maxRequestInclusionList
-        && maxBytesPerInclusionList == that.maxBytesPerInclusionList
+        && maxTransactionsBytesPerInclusionList == that.maxTransactionsBytesPerInclusionList
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize;
   }
 
@@ -88,7 +88,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
         super.hashCode(),
         inclusionListDueBps,
         maxRequestInclusionList,
-        maxBytesPerInclusionList,
+        maxTransactionsBytesPerInclusionList,
         inclusionListCommitteeSize);
   }
 }
