@@ -32,6 +32,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int maxSignedAggregateAndProofSize;
   private final int maxAttesterSlashingSize;
   private final int maxDataColumnSidecarSize;
+  private final int maxPartialDataColumnSidecarSize;
   private final int maxSignedExecutionPayloadBidSize;
   private final int minBuilderWithdrawabilityDelay;
   private final int payloadAttestationDueBps;
@@ -65,6 +66,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int maxSignedAggregateAndProofSize,
       final int maxAttesterSlashingSize,
       final int maxDataColumnSidecarSize,
+      final int maxPartialDataColumnSidecarSize,
       final int maxSignedExecutionPayloadBidSize) {
     super(specConfig);
     this.aggregateDueBps = aggregateDueBps;
@@ -80,6 +82,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.maxSignedAggregateAndProofSize = maxSignedAggregateAndProofSize;
     this.maxAttesterSlashingSize = maxAttesterSlashingSize;
     this.maxDataColumnSidecarSize = maxDataColumnSidecarSize;
+    this.maxPartialDataColumnSidecarSize = maxPartialDataColumnSidecarSize;
     this.maxSignedExecutionPayloadBidSize = maxSignedExecutionPayloadBidSize;
     this.ptcSize = ptcSize;
     this.minBuilderWithdrawabilityDelay = minBuilderWithdrawabilityDelay;
@@ -124,6 +127,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   @Override
   public int getMaxDataColumnSidecarSize() {
     return maxDataColumnSidecarSize;
+  }
+
+  @Override
+  public int getMaxPartialDataColumnSidecarSize() {
+    return maxPartialDataColumnSidecarSize;
   }
 
   @Override
@@ -228,6 +236,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && maxSignedAggregateAndProofSize == that.maxSignedAggregateAndProofSize
         && maxAttesterSlashingSize == that.maxAttesterSlashingSize
         && maxDataColumnSidecarSize == that.maxDataColumnSidecarSize
+        && maxPartialDataColumnSidecarSize == that.maxPartialDataColumnSidecarSize
         && maxSignedExecutionPayloadBidSize == that.maxSignedExecutionPayloadBidSize
         && minBuilderWithdrawabilityDelay == that.minBuilderWithdrawabilityDelay
         && payloadAttestationDueBps == that.payloadAttestationDueBps
@@ -262,6 +271,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         maxSignedAggregateAndProofSize,
         maxAttesterSlashingSize,
         maxDataColumnSidecarSize,
+        maxPartialDataColumnSidecarSize,
         maxSignedExecutionPayloadBidSize,
         minBuilderWithdrawabilityDelay,
         payloadAttestationDueBps,

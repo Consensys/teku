@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -128,7 +129,11 @@ class SentryValidatorApiChannelTest {
 
     verify(blockHandlerChannel)
         .createUnsignedBlock(
-            eq(UInt64.ZERO), eq(BLSSignature.empty()), eq(Optional.empty()), eq(Optional.of(ONE)));
+            eq(UInt64.ZERO),
+            eq(BLSSignature.empty()),
+            eq(Optional.empty()),
+            eq(false),
+            eq(Optional.of(ApiSchemas.BUILDER_CONFIG_SCHEMA.create(ONE))));
     verifyNoInteractions(dutiesProviderChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -144,7 +149,11 @@ class SentryValidatorApiChannelTest {
 
     verify(dutiesProviderChannel)
         .createUnsignedBlock(
-            eq(UInt64.ZERO), eq(BLSSignature.empty()), eq(Optional.empty()), eq(Optional.of(ONE)));
+            eq(UInt64.ZERO),
+            eq(BLSSignature.empty()),
+            eq(Optional.empty()),
+            eq(false),
+            eq(Optional.of(ApiSchemas.BUILDER_CONFIG_SCHEMA.create(ONE))));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

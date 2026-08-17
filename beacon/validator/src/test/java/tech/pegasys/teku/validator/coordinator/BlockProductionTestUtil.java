@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
 final class BlockProductionTestUtil {
 
@@ -59,7 +60,7 @@ final class BlockProductionTestUtil {
         parentExecutionBlockHash(blockSlotState),
         randaoReveal,
         graffiti,
-        requestedBuilderBoostFactor,
+        requestedBuilderBoostFactor.map(ApiSchemas.BUILDER_CONFIG_SCHEMA::create),
         blockProductionPerformance);
   }
 

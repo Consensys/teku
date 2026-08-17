@@ -18,7 +18,7 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "`UInt64` The committee index for which an attestation data should be created. For `slot`s in Electra and later, this parameter MAY always be set to 0.",
+        "description" : "`UInt64` The committee index for which an attestation data should be created. For `slot`s in Electra and later (before Gloas), this parameter is ignored and the response will always have `committee_index` of 0.",
         "example" : "1",
         "format" : "uint64"
       }
