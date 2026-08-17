@@ -81,7 +81,7 @@ public class GetAttestationData extends RestApiEndpoint {
             .queryParam(
                 COMMITTEE_INDEX_PARAMETER.withDescription(
                     "`UInt64` The committee index for which an attestation data should be created. For `slot`s in "
-                        + "Electra and later, this parameter MAY always be set to 0."))
+                        + "Electra and later (before Gloas), this parameter is ignored and the response will always have `committee_index` of 0."))
             .response(
                 SC_OK,
                 "Request successful",
@@ -101,12 +101,21 @@ public class GetAttestationData extends RestApiEndpoint {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
     final Optional<UInt64> committeeIndex =
         request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
-    if (!validate(request, spec.atSlot(slot).getMilestone(), committeeIndex)) {
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+    if (!validate(request, milestone, committeeIndex)) {
       return;
     }
 
+    // Post-Electra (before Gloas), committee_index is deprecated and must be ignored.
+    // Always use 0 regardless of what the caller provided.
+    final int effectiveCommitteeIndex =
+        (milestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+                && milestone.isLessThan(SpecMilestone.GLOAS))
+            ? 0
+            : committeeIndex.orElse(UInt64.ZERO).intValue();
+
     final SafeFuture<Optional<AttestationData>> future =
-        provider.createAttestationDataAtSlot(slot, committeeIndex.orElse(UInt64.ZERO).intValue());
+        provider.createAttestationDataAtSlot(slot, effectiveCommitteeIndex);
 
     request.respondAsync(
         future.thenApply(
@@ -121,19 +130,11 @@ public class GetAttestationData extends RestApiEndpoint {
       final SpecMilestone milestone,
       final Optional<UInt64> committeeIndex)
       throws JsonProcessingException {
-    if (committeeIndex.isEmpty() && milestone.isLessThan(SpecMilestone.GLOAS)) {
-      // prior to gloas, committeeIndex is a required field
+    if (committeeIndex.isEmpty() && milestone.isLessThan(SpecMilestone.ELECTRA)) {
+      // prior to electra, committeeIndex is a required field
       request.respondError(
           SC_BAD_REQUEST,
-          String.format("'%s' parameter must be set before gloas.", COMMITTEE_INDEX));
-      return false;
-    } else if ((milestone.equals(SpecMilestone.ELECTRA) || milestone.equals(SpecMilestone.FULU))
-        && committeeIndex.isPresent()
-        && !committeeIndex.get().isZero()) {
-      // if the milestone is electra or fulu, committee index is required, and must be 0
-      request.respondError(
-          SC_BAD_REQUEST,
-          String.format("'%s' parameter must be 0 in electra and fulu forks.", COMMITTEE_INDEX));
+          String.format("'%s' parameter must be set before electra.", COMMITTEE_INDEX));
       return false;
     } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
         && committeeIndex.isPresent()

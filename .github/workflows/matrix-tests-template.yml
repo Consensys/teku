@@ -65,8 +65,6 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
-        with:
-          gradle-cache-read-only: 'true'
 
       # only acceptance tests need the docker login
       # 4.0.0
