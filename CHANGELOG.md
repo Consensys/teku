@@ -15,5 +15,6 @@
  - Improved debug/beacon/states endpoint to allow searching of the finalized state root, to assist third party products searching on roots.
 
 ### Bug Fixes
+ - Validate `BeaconBlocksByRoot` responses against the requested block roots before accepting them.
  - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
  - Post-Electra, the `committee_index` query parameter in `GET /eth/v1/validator/attestation_data` is now ignored instead of rejected when non-zero, matching the behaviour of other consensus clients.
