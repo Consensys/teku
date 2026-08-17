@@ -151,9 +151,16 @@ public class BlobSidecarPruner extends Service {
   }
 
   private void doUpdateBlobSidecarMetrics() {
+    LOG.debug("Updating blob sidecar storage counters (full column scan — may be slow)");
+    final long start = System.currentTimeMillis();
     blobColumnSize.set(database.getBlobSidecarColumnCount());
     earliestBlobSidecarSlot.set(
         database.getEarliestBlobSidecarSlot().map(UInt64::longValue).orElse(-1L));
+    LOG.debug(
+        "Blob sidecar storage counters updated in {} ms: total={}, earliestSlot={}",
+        System.currentTimeMillis() - start,
+        blobColumnSize.get(),
+        earliestBlobSidecarSlot.get());
   }
 
   private void pruneBlobsPriorToAvailabilityWindow() {
