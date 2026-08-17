@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.DataColumnSidecarCreationException;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
@@ -41,16 +42,19 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
   private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
   private final ExecutionPayloadManager executionPayloadManager;
+  private final RecentChainData recentChainData;
 
   public ExecutionPayloadPublisherGloas(
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
-      final ExecutionPayloadManager executionPayloadManager) {
+      final ExecutionPayloadManager executionPayloadManager,
+      final RecentChainData recentChainData) {
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadGossipChannel = executionPayloadGossipChannel;
     this.dataColumnSidecarGossipChannel = dataColumnSidecarGossipChannel;
     this.executionPayloadManager = executionPayloadManager;
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -134,7 +138,7 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
    * an internal failure, so it is turned into a rejection reason the caller can act on instead of
    * being propagated as an error. Any other failure is left to propagate.
    */
-  private static SafeFuture<DataColumnSidecarsResult> recoverDataColumnSidecarCreationFailure(
+  private SafeFuture<DataColumnSidecarsResult> recoverDataColumnSidecarCreationFailure(
       final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture,
       final Bytes32 beaconBlockRoot) {
     return dataColumnSidecarsFuture
@@ -143,16 +147,51 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
             error ->
                 ExceptionUtil.getCause(error, DataColumnSidecarCreationException.class)
                     .map(
-                        creationException -> {
-                          LOG.warn(
-                              "Unable to build the data column sidecars for the execution payload"
-                                  + " envelope with beacon block root {}: {}",
-                              beaconBlockRoot,
-                              creationException.getMessage());
-                          return SafeFuture.completedFuture(
-                              DataColumnSidecarsResult.rejected(creationException.getMessage()));
-                        })
+                        creationException ->
+                            onDataColumnSidecarCreationFailure(creationException, beaconBlockRoot))
                     .orElseGet(() -> SafeFuture.failedFuture(error)));
+  }
+
+  /**
+   * Missing blob data only prevents publication when the block actually commits to blobs. A block
+   * with no blob KZG commitments needs no sidecars, so the envelope is published with an empty list
+   * rather than rejected. When the block cannot be found we assume blobs are needed and reject.
+   */
+  private SafeFuture<DataColumnSidecarsResult> onDataColumnSidecarCreationFailure(
+      final DataColumnSidecarCreationException creationException, final Bytes32 beaconBlockRoot) {
+    if (!creationException.isBlobDataNotCached()) {
+      return SafeFuture.completedFuture(
+          rejectDataColumnSidecars(creationException, beaconBlockRoot));
+    }
+    return recentChainData
+        .retrieveBlockByRoot(beaconBlockRoot)
+        .thenApply(
+            maybeBlock -> {
+              final boolean commitsToBlobs =
+                  maybeBlock
+                      .flatMap(block -> block.getBody().getOptionalSignedExecutionPayloadBid())
+                      .map(bid -> !bid.getMessage().getBlobKzgCommitments().isEmpty())
+                      .orElse(true);
+              if (commitsToBlobs) {
+                return rejectDataColumnSidecars(creationException, beaconBlockRoot);
+              }
+              LOG.debug(
+                  "No cached blob data for the execution payload envelope with beacon block root"
+                      + " {}, but the block commits to no blobs so no data column sidecars are"
+                      + " needed",
+                  beaconBlockRoot);
+              return DataColumnSidecarsResult.created(List.of());
+            });
+  }
+
+  private static DataColumnSidecarsResult rejectDataColumnSidecars(
+      final DataColumnSidecarCreationException creationException, final Bytes32 beaconBlockRoot) {
+    LOG.warn(
+        "Unable to build the data column sidecars for the execution payload envelope with beacon"
+            + " block root {}: {}",
+        beaconBlockRoot,
+        creationException.getMessage());
+    return DataColumnSidecarsResult.rejected(creationException.getMessage());
   }
 
   /**

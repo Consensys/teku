@@ -1885,7 +1885,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadFactory,
               executionPayloadGossipChannel,
               dataColumnSidecarGossipChannel,
-              executionPayloadManager);
+              executionPayloadManager,
+              recentChainData);
     } else {
       executionPayloadFactory = ExecutionPayloadFactory.NOOP;
       executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;

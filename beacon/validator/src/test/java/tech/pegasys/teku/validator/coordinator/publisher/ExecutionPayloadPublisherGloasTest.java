@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.DataColumnSidecarCreationException;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
@@ -55,13 +56,15 @@ class ExecutionPayloadPublisherGloasTest {
       mock(DataColumnSidecarGossipChannel.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final ExecutionPayloadPublisherGloas executionPayloadPublisher =
       new ExecutionPayloadPublisherGloas(
           executionPayloadFactory,
           executionPayloadGossipChannel,
           dataColumnSidecarGossipChannel,
-          executionPayloadManager);
+          executionPayloadManager,
+          recentChainData);
 
   final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
@@ -70,6 +73,12 @@ class ExecutionPayloadPublisherGloasTest {
 
   @BeforeEach
   public void setUp() {
+    // by default the block commits to blobs, so sidecars are required to publish
+    when(recentChainData.retrieveBlockByRoot(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    dataStructureUtil.randomSignedBeaconBlockWithCommitments(1).getMessage())));
     when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
             eq(signedExecutionPayload), any()))
         .thenReturn(
@@ -122,6 +131,48 @@ class ExecutionPayloadPublisherGloasTest {
         DataColumnSidecarCreationException.cachedPayloadMismatch(signedExecutionPayload.getSlot());
     when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
         .thenReturn(SafeFuture.failedFuture(error));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedExecutionPayload.getBeaconBlockRoot(), error.getMessage()));
+
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldPublishWithoutSidecarsWhenBlockHasNoBlobs() {
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(
+            SafeFuture.failedFuture(
+                DataColumnSidecarCreationException.noCachedBlobData(
+                    signedExecutionPayload.getSlot())));
+    when(recentChainData.retrieveBlockByRoot(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments().getMessage())));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.success(
+                signedExecutionPayload.getBeaconBlockRoot()));
+
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(List.of(), RemoteOrigin.LOCAL_PROPOSAL);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldRejectWhenBlobDataIsNotCachedAndBlockIsUnknown() {
+    final DataColumnSidecarCreationException error =
+        DataColumnSidecarCreationException.noCachedBlobData(signedExecutionPayload.getSlot());
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(SafeFuture.failedFuture(error));
+    when(recentChainData.retrieveBlockByRoot(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     SafeFutureAssert.assertThatSafeFuture(
             executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
