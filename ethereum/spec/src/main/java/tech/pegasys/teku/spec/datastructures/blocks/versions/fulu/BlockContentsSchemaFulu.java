@@ -43,7 +43,7 @@ public class BlockContentsSchemaFulu
       final SchemaRegistry schemaRegistry) {
     super(
         containerName,
-        namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
+        namedSchema(FIELD_BLOCK, schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -44,18 +43,16 @@ public class BlockContentsSchemaGloas
         SszList<Blob>>
     implements BlockContentsSchema<BlockContentsGloas> {
 
-  private static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
-  private static final SszFieldName FIELD_BLOBS = () -> "blobs";
-
   public BlockContentsSchemaGloas(
       final String containerName,
       final SpecConfigGloas specConfig,
       final SchemaRegistry schemaRegistry) {
     super(
         containerName,
-        namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
+        namedSchema(FIELD_BLOCK, schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
         namedSchema(
-            "execution_payload_envelope", schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)),
+            FIELD_EXECUTION_PAYLOAD_ENVELOPE,
+            schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(

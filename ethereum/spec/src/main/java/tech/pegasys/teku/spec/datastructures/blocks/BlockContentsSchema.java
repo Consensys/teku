@@ -24,8 +24,12 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public interface BlockContentsSchema<T extends BlockContainer> extends BlockContainerSchema<T> {
+
+  SszFieldName FIELD_BLOCK = () -> "block";
   SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   SszFieldName FIELD_BLOBS = () -> "blobs";
+  // GLOAS
+  SszFieldName FIELD_EXECUTION_PAYLOAD_ENVELOPE = () -> "execution_payload_envelope";
 
   default T create(
       final BeaconBlock beaconBlock, final List<KZGProof> kzgProofs, final List<Blob> blobs) {
@@ -36,7 +40,6 @@ public interface BlockContentsSchema<T extends BlockContainer> extends BlockCont
       BeaconBlock beaconBlock,
       List<KZGProof> kzgProofs,
       List<Blob> blobs,
-      // GLOAS
       Optional<ExecutionPayloadEnvelope> executionPayloadEnvelope);
 
   @Override
