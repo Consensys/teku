@@ -2081,7 +2081,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       dataColumnSidecarArchiveReconstructor =
           new DataColumnSidecarArchiveReconstructorImpl(
               throttlingCombinedChainDataClient.orElse(combinedChainDataClient),
-              asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 1),
+              asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 2),
               isSuperNodeSupplier,
               spec,
               beaconConfig.eth2NetworkConfig().getDataColumnSidecarExtensionRetentionEpochs(),

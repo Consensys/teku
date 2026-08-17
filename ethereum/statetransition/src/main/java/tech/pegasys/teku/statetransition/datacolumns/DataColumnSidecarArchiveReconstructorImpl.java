@@ -61,7 +61,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
   // At most this many reconstructions run concurrently; the rest are queued (see
   // reconstructionQueue)
   // and dropped by RECONSTRUCTION_TIMEOUT if they can't be served in time.
-  private static final int MAX_CONCURRENT_RECONSTRUCTIONS = 4;
+  private static final int MAX_CONCURRENT_RECONSTRUCTIONS = 32;
   // Hard bound on the reconstruction backlog: once this many are already queued, further requests
   // are rejected immediately (served as empty) rather than growing the queue unboundedly.
   private static final int MAX_QUEUED_RECONSTRUCTIONS = 1024;
