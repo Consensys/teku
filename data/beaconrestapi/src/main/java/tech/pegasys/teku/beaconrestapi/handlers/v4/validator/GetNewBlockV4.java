@@ -142,11 +142,6 @@ public class GetNewBlockV4 extends RestApiEndpoint {
       return;
     }
 
-    if (includePayload.isEmpty()) {
-      request.respondError(SC_BAD_REQUEST, "include_payload is required");
-      return;
-    }
-
     final long requestTimeMs = System.currentTimeMillis();
     LOG.debug(
         "produceBlockV4 requested: slot={}, include_payload={}, builder_boost_factor={}, timestampMs={}",
@@ -169,8 +164,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
                                   instanceof BlockContentsGloas;
                           // include_payload=true and self-built → include full contents
                           // include_payload=false or builder bid → return beacon block only
-                          final boolean executionPayloadIncluded =
-                              selfBuilt && includePayload.get();
+                          final boolean executionPayloadIncluded = selfBuilt && includePayload;
                           final BlockContainerAndMetaData responseMetaData =
                               executionPayloadIncluded
                                   ? blockContainerAndMetaData
