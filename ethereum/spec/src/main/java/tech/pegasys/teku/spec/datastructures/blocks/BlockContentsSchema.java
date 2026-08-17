@@ -31,11 +31,6 @@ public interface BlockContentsSchema<T extends BlockContainer> extends BlockCont
   // GLOAS
   SszFieldName FIELD_EXECUTION_PAYLOAD_ENVELOPE = () -> "execution_payload_envelope";
 
-  default T create(
-      final BeaconBlock beaconBlock, final List<KZGProof> kzgProofs, final List<Blob> blobs) {
-    return create(beaconBlock, kzgProofs, blobs, Optional.empty());
-  }
-
   T create(
       BeaconBlock beaconBlock,
       List<KZGProof> kzgProofs,
