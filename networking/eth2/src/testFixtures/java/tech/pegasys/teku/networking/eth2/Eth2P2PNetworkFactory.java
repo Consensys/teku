@@ -656,7 +656,7 @@ public class Eth2P2PNetworkFactory {
 
       return P2PConfig.builder()
           .specProvider(spec)
-          .targetSubnetSubscriberCount(2)
+          .targetSubnetSubscriberCount(P2PConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT)
           .network(
               b ->
                   b.listenPort(tcpPort)
