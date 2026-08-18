@@ -218,7 +218,7 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  void shouldNotPropagateHeadV1Event() throws IOException {
+  void shouldNotPropagateHeadV1EventAfterGloas() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head,head_v2");
     manager.registerClient(client1);
 
