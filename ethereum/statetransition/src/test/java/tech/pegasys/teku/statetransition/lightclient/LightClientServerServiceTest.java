@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.fail;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,15 +33,20 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.ReorgContext;
 
 @TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
 public class LightClientServerServiceTest {
+
+  /** Blocks are on the canonical chain unless a test says otherwise. */
+  private static final BiPredicate<UInt64, Bytes32> CANONICAL = (slot, root) -> true;
 
   private final Map<Bytes32, SignedBeaconBlock> blocksByRoot = new HashMap<>();
   private final Map<Bytes32, BeaconState> statesByRoot = new HashMap<>();
@@ -55,7 +61,8 @@ public class LightClientServerServiceTest {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     store = new LightClientUpdateStore(spec);
-    service = new LightClientServerService(spec, store, this::lookUpBlock, this::lookUpState);
+    service =
+        new LightClientServerService(spec, store, this::lookUpBlock, this::lookUpState, CANONICAL);
   }
 
   @TestTemplate
@@ -81,6 +88,22 @@ public class LightClientServerServiceTest {
                 .setSkipStateTransition(true));
 
     serviceRejectingStateLookups().onBlockImported(chain.signature().getBlock(), false);
+
+    assertNothingStored();
+  }
+
+  @TestTemplate
+  public void onBlockImported_shouldIgnoreOrphanedBlocks() {
+    final Chain chain = generateChain();
+    final LightClientServerService orphanRejectingService =
+        new LightClientServerService(
+            spec,
+            store,
+            this::lookUpBlock,
+            __ -> fail("should have returned before looking up state"),
+            (slot, root) -> false);
+
+    orphanRejectingService.onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
@@ -133,7 +156,8 @@ public class LightClientServerServiceTest {
             spec,
             store,
             this::lookUpBlock,
-            __ -> SafeFuture.failedFuture(new IllegalStateException("store is down")));
+            __ -> SafeFuture.failedFuture(new IllegalStateException("store is down")),
+            CANONICAL);
 
     failingService.onBlockImported(chain.signature().getBlock(), false);
 
@@ -165,7 +189,8 @@ public class LightClientServerServiceTest {
             store,
             this::lookUpBlock,
             root ->
-                root.equals(chain.attested().getRoot()) ? pendingAttestedState : lookUpState(root));
+                root.equals(chain.attested().getRoot()) ? pendingAttestedState : lookUpState(root),
+            CANONICAL);
 
     pendingService.onBlockImported(chain.signature().getBlock(), false);
 
@@ -208,7 +233,67 @@ public class LightClientServerServiceTest {
     assertThat(onlyUpdateAtPeriod(1)).isEqualTo(update);
   }
 
+  @TestTemplate
+  public void chainHeadUpdated_shouldDropUpdatesOrphanedByAReorg() {
+    final Chain chain = generateChain();
+    service.onBlockImported(chain.signature().getBlock(), false);
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).hasSize(1);
+
+    notifyChainHeadUpdated(orphanEverythingService(), reorg());
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).isEmpty();
+  }
+
+  @TestTemplate
+  public void chainHeadUpdated_shouldKeepUpdatesStillOnTheCanonicalChain() {
+    final Chain chain = generateChain();
+    service.onBlockImported(chain.signature().getBlock(), false);
+
+    notifyChainHeadUpdated(service, reorg());
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).hasSize(1);
+  }
+
+  @TestTemplate
+  public void chainHeadUpdated_shouldIgnoreHeadAdvancesThatAreNotReorgs() {
+    final Chain chain = generateChain();
+    service.onBlockImported(chain.signature().getBlock(), false);
+
+    // No ReorgContext: the chain advanced on the same fork, nothing can have been orphaned.
+    notifyChainHeadUpdated(orphanEverythingService(), Optional.empty());
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).hasSize(1);
+  }
+
   private record Chain(SignedBlockAndState attested, SignedBlockAndState signature) {}
+
+  private LightClientServerService orphanEverythingService() {
+    return new LightClientServerService(
+        spec, store, this::lookUpBlock, this::lookUpState, (slot, root) -> false);
+  }
+
+  private Optional<ReorgContext> reorg() {
+    return ReorgContext.of(
+        dataStructureUtil.randomBytes32(),
+        UInt64.ONE,
+        dataStructureUtil.randomBytes32(),
+        UInt64.ZERO,
+        dataStructureUtil.randomBytes32());
+  }
+
+  private void notifyChainHeadUpdated(
+      final LightClientServerService target, final Optional<ReorgContext> reorgContext) {
+    target.chainHeadUpdated(
+        UInt64.ONE,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        false,
+        false,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        Optional.<ForkChoicePayloadStatus>empty(),
+        reorgContext);
+  }
 
   private SafeFuture<Optional<SignedBeaconBlock>> lookUpBlock(final Bytes32 root) {
     return SafeFuture.completedFuture(Optional.ofNullable(blocksByRoot.get(root)));
@@ -220,7 +305,11 @@ public class LightClientServerServiceTest {
 
   private LightClientServerService serviceRejectingStateLookups() {
     return new LightClientServerService(
-        spec, store, this::lookUpBlock, __ -> fail("should have returned before looking up state"));
+        spec,
+        store,
+        this::lookUpBlock,
+        __ -> fail("should have returned before looking up state"),
+        CANONICAL);
   }
 
   private Chain generateChain() {
@@ -250,7 +339,7 @@ public class LightClientServerServiceTest {
   private LightClientUpdate addUpdateAtPeriod(final long period) {
     final LightClientUpdate update =
         dataStructureUtil.createRandomLightClientUpdateBuilder(periodStartSlot(period)).build();
-    store.addUpdate(update);
+    store.addUpdate(update, dataStructureUtil.randomBytes32());
     return update;
   }
 

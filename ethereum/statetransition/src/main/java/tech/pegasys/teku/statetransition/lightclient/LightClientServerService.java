@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.lightclient;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
@@ -33,11 +35,13 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class LightClientServerService
-    implements ReceivedBlockEventsChannel, FinalizedCheckpointChannel {
+    implements ReceivedBlockEventsChannel, FinalizedCheckpointChannel, ChainHeadChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -48,6 +52,7 @@ public class LightClientServerService
   private final LightClientUpdateStore lightClientStore;
   private final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveBlockByRoot;
   private final Function<Bytes32, SafeFuture<Optional<BeaconState>>> retrieveStateByRoot;
+  private final BiPredicate<UInt64, Bytes32> isCanonicalBlock;
 
   public LightClientServerService(
       final Spec spec,
@@ -57,18 +62,28 @@ public class LightClientServerService
         spec,
         lightClientStore,
         combinedChainDataClient::getBlockByBlockRoot,
-        combinedChainDataClient::getStateByBlockRoot);
+        combinedChainDataClient::getStateByBlockRoot,
+        (slot, blockRoot) ->
+            combinedChainDataClient
+                .getChainHead()
+                .map(
+                    chainHead ->
+                        combinedChainDataClient.isCanonicalBlock(
+                            slot, blockRoot, chainHead.getRoot()))
+                .orElse(false));
   }
 
   public LightClientServerService(
       final Spec spec,
       final LightClientUpdateStore lightClientStore,
       final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveBlockByRoot,
-      final Function<Bytes32, SafeFuture<Optional<BeaconState>>> retrieveStateByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<BeaconState>>> retrieveStateByRoot,
+      final BiPredicate<UInt64, Bytes32> isCanonicalBlock) {
     this.spec = spec;
     this.lightClientStore = lightClientStore;
     this.retrieveBlockByRoot = retrieveBlockByRoot;
     this.retrieveStateByRoot = retrieveStateByRoot;
+    this.isCanonicalBlock = isCanonicalBlock;
   }
 
   @Override
@@ -79,6 +94,10 @@ public class LightClientServerService
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean isExecutionOptimistic) {
+    // Deliberate: LightClientUpdate has no field marking the execution payload as unverified, so a
+    // light client receiving one cannot tell that it is optimistic - and light clients are exactly
+    // the consumers that cannot check for themselves. During optimistic sync this drops nearly
+    // every update, which is acceptable because a syncing node is not authoritative anyway.
     if (isExecutionOptimistic) {
       return;
     }
@@ -99,6 +118,13 @@ public class LightClientServerService
     if (maybeSyncAggregate.get().getSyncCommitteeBits().getBitCount()
         < SpecConfigAltair.required(spec.atSlot(slot).getConfig())
             .getMinSyncCommitteeParticipants()) {
+      return;
+    }
+
+    // full-node.md: only blocks on the canonical chain as selected by fork choice are
+    // considered. Fork choice has already run for this block by the time this event fires.
+    // A later reorg can still orphan it; re-evaluating on head change is left to the store.
+    if (!isCanonicalBlock.test(slot, block.getRoot())) {
       return;
     }
 
@@ -128,6 +154,27 @@ public class LightClientServerService
             .computeSyncCommitteePeriod(checkpoint.getEpoch());
 
     lightClientStore.pruneUpdatesBefore(finalizedPeriod.minusMinZero(MAX_RETAINED_PERIODS));
+  }
+
+  @Override
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
+      final Bytes32 bestBlockRoot,
+      final boolean epochTransition,
+      final boolean executionOptimistic,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Optional<ForkChoicePayloadStatus> payloadStatus,
+      final Optional<ReorgContext> optionalReorgContext) {
+    if (optionalReorgContext.isEmpty()) {
+      return;
+    }
+
+    // full-node.md: updates referring to orphaned blocks SHOULD NOT be provided. The import-time
+    // check cannot see a reorg that happens later, so re-test what is already stored. The head has
+    // been updated by the time this fires, so isCanonicalBlock resolves against the new chain.
+    lightClientStore.removeNonCanonicalUpdates(isCanonicalBlock);
   }
 
   private SafeFuture<Optional<LightClientUpdate>> createAndStoreUpdate(
@@ -177,7 +224,7 @@ public class LightClientServerService
                         attestedState,
                         attestedBlock,
                         maybeFinalizedBlock);
-                lightClientStore.addUpdate(update);
+                lightClientStore.addUpdate(update, signatureBlock.getRoot());
 
                 final LightClientFinalityUpdate finalityUpdate =
                     lightClientUtil.createLightClientFinalityUpdate(update);

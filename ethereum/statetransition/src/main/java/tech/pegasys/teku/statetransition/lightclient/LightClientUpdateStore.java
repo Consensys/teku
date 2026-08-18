@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
@@ -29,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 public class LightClientUpdateStore {
   private final Spec spec;
 
-  private final ConcurrentNavigableMap<UInt64, LightClientUpdate> bestUpdatesByPeriod =
+  private final ConcurrentNavigableMap<UInt64, StoredUpdate> bestUpdatesByPeriod =
       new ConcurrentSkipListMap<>();
   private final AtomicReference<Optional<LightClientFinalityUpdate>> latestFinalityUpdate =
       new AtomicReference<>(Optional.empty());
@@ -40,7 +42,7 @@ public class LightClientUpdateStore {
     this.spec = spec;
   }
 
-  public void addUpdate(final LightClientUpdate update) {
+  public void addUpdate(final LightClientUpdate update, final Bytes32 signatureBlockRoot) {
     final UInt64 attestedPeriod =
         syncCommitteePeriodAtSlot(update.getAttestedHeader().getBeacon().getSlot());
     if (!attestedPeriod.equals(syncCommitteePeriodAtSlot(update.getSignatureSlot().get()))) {
@@ -49,9 +51,22 @@ public class LightClientUpdateStore {
 
     bestUpdatesByPeriod.merge(
         attestedPeriod,
-        update,
-        (existingUpdate, incomingUpdate) ->
-            isBetterUpdate(incomingUpdate, existingUpdate) ? incomingUpdate : existingUpdate);
+        new StoredUpdate(update, signatureBlockRoot),
+        (existing, incoming) ->
+            isBetterUpdate(incoming.update(), existing.update()) ? incoming : existing);
+  }
+
+  /**
+   * Drops every update whose signature block is no longer on the canonical chain. {@code
+   * isCanonical} is applied to each update's signature slot and block root.
+   */
+  public void removeNonCanonicalUpdates(final BiPredicate<UInt64, Bytes32> isCanonical) {
+    bestUpdatesByPeriod
+        .values()
+        .removeIf(
+            stored ->
+                !isCanonical.test(
+                    stored.update().getSignatureSlot().get(), stored.signatureBlockRoot()));
   }
 
   public void addFinalityUpdate(final LightClientFinalityUpdate finalityUpdate) {
@@ -89,7 +104,7 @@ public class LightClientUpdateStore {
   }
 
   public List<LightClientUpdate> getBestUpdatesInRange(final UInt64 startPeriod, final int count) {
-    final ConcurrentNavigableMap<UInt64, LightClientUpdate> updatesInRange =
+    final ConcurrentNavigableMap<UInt64, StoredUpdate> updatesInRange =
         bestUpdatesByPeriod.subMap(startPeriod, true, startPeriod.plus(count), false);
     if (updatesInRange.isEmpty()) {
       return List.of();
@@ -98,11 +113,11 @@ public class LightClientUpdateStore {
     final UInt64 earliestPeriod = updatesInRange.firstKey();
     final List<LightClientUpdate> consecutiveUpdates = new ArrayList<>();
 
-    for (final Map.Entry<UInt64, LightClientUpdate> entry : updatesInRange.entrySet()) {
+    for (final Map.Entry<UInt64, StoredUpdate> entry : updatesInRange.entrySet()) {
       if (!entry.getKey().equals(earliestPeriod.plus(consecutiveUpdates.size()))) {
         break;
       }
-      consecutiveUpdates.add(entry.getValue());
+      consecutiveUpdates.add(entry.getValue().update());
     }
 
     return consecutiveUpdates;
@@ -119,6 +134,9 @@ public class LightClientUpdateStore {
   public Optional<LightClientOptimisticUpdate> getLatestOptimisticUpdate() {
     return latestOptimisticUpdate.get();
   }
+
+  /** An update plus the root of the block whose sync aggregate signed it. */
+  private record StoredUpdate(LightClientUpdate update, Bytes32 signatureBlockRoot) {}
 
   /** {@code is_better_update}. */
   private boolean isBetterUpdate(
