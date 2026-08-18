@@ -19,10 +19,10 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
-import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
 final class BlockProductionTestUtil {
 
@@ -60,7 +60,7 @@ final class BlockProductionTestUtil {
         parentExecutionBlockHash(blockSlotState),
         randaoReveal,
         graffiti,
-        requestedBuilderBoostFactor.map(ApiSchemas.BUILDER_CONFIG_SCHEMA::create),
+        requestedBuilderBoostFactor.map(BuilderConfig::withBuilderBoostFactor),
         blockProductionPerformance);
   }
 

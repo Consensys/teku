@@ -55,7 +55,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
@@ -129,12 +131,12 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             .withHandler(SC_OK, this::handleV4BlockContainerResult);
   }
 
-  public Optional<BlockContainerAndMetaData> submit(
+  public Optional<BlockContainerAndMetaData> submitV3(
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final Map<String, String> queryParams =
-        buildQueryParams(randaoReveal, graffiti, requestedBuilderBoostFactor);
+        buildQueryParamsV3(randaoReveal, graffiti, requestedBuilderBoostFactor);
     final Map<String, String> headers = buildAcceptHeaders();
     return get(
             GET_UNSIGNED_BLOCK_V3,
@@ -149,30 +151,46 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   public Optional<BlockContainerAndMetaData> submitV4(
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final BuilderConfig builderConfig) {
     final Map<String, String> queryParams =
-        buildQueryParams(randaoReveal, graffiti, requestedBuilderBoostFactor);
-    queryParams.put(INCLUDE_PAYLOAD, Boolean.toString(true));
+        buildQueryParamsV4(randaoReveal, graffiti, includePayload);
     final Map<String, String> headers = buildAcceptHeaders();
-    return get(
+    return postJson(
             GET_UNSIGNED_BLOCK_V4,
             Map.of("slot", slot.toString()),
             queryParams,
-            emptyMap(),
             headers,
+            builderConfig,
+            ApiSchemas.BUILDER_CONFIG_SCHEMA.getJsonTypeDefinition(),
             this.responseHandlerV4)
         .map(this::toMetaData);
   }
 
-  private Map<String, String> buildQueryParams(
+  private Map<String, String> buildQueryParamsV3(
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
+    final Map<String, String> queryParams = buildCommonQueryParams(randaoReveal, graffiti);
+    requestedBuilderBoostFactor.ifPresent(
+        builderBoostFactor -> queryParams.put(BUILDER_BOOST_FACTOR, builderBoostFactor.toString()));
+    return queryParams;
+  }
+
+  private Map<String, String> buildQueryParamsV4(
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final boolean includePayload) {
+    final Map<String, String> queryParams = buildCommonQueryParams(randaoReveal, graffiti);
+    queryParams.put(INCLUDE_PAYLOAD, Boolean.toString(includePayload));
+    return queryParams;
+  }
+
+  private Map<String, String> buildCommonQueryParams(
+      final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put(RANDAO_REVEAL, randaoReveal.toString());
     graffiti.ifPresent(bytes32 -> queryParams.put(GRAFFITI, bytes32.toHexString()));
-    requestedBuilderBoostFactor.ifPresent(
-        factor -> queryParams.put(BUILDER_BOOST_FACTOR, factor.toString()));
     return queryParams;
   }
 

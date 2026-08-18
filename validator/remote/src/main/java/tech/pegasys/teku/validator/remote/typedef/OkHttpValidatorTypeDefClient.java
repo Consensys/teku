@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import okhttp3.HttpUrl;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
@@ -158,7 +160,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final Optional<BuilderConfig> maybeBuilderConfig) {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(
             getBaseEndpoint(),
@@ -168,9 +171,14 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
             preferSszBlockEncoding);
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      return produceBlockRequest.submitV4(randaoReveal, graffiti, requestedBuilderBoostFactor);
+      // BuilderConfig is required for block v4
+      final BuilderConfig builderConfig =
+          maybeBuilderConfig.orElseThrow(
+              () -> new NoSuchElementException("BuilderConfig is expected for block v4 request"));
+      return produceBlockRequest.submitV4(randaoReveal, graffiti, includePayload, builderConfig);
     }
-    return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
+    return produceBlockRequest.submitV3(
+        randaoReveal, graffiti, maybeBuilderConfig.map(BuilderConfig::getBuilderBoostFactor));
   }
 
   public void registerValidators(

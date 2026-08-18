@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
 public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface {
   ValidatorApiChannel NOOP =
@@ -305,7 +304,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         randaoReveal,
         graffiti,
         false,
-        requestedBuilderBoostFactor.map(ApiSchemas.BUILDER_CONFIG_SCHEMA::create));
+        requestedBuilderBoostFactor.map(BuilderConfig::withBuilderBoostFactor));
   }
 
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(

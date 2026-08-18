@@ -72,6 +72,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -80,6 +81,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -881,7 +883,11 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final UInt64 boostFactor = dataStructureUtil.randomUInt64();
 
     typeDefClient.createUnsignedBlock(
-        slot, randaoReveal, Optional.of(graffiti), Optional.of(boostFactor));
+        slot,
+        randaoReveal,
+        Optional.of(graffiti),
+        false,
+        Optional.of(BuilderConfig.withBuilderBoostFactor(boostFactor)));
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -903,22 +909,25 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final UInt64 slot = dataStructureUtil.randomSlot();
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
-    final UInt64 boostFactor = dataStructureUtil.randomUInt64();
+    final BuilderConfig builderConfig = BuilderConfig.NO_OP;
 
     typeDefClient.createUnsignedBlock(
-        slot, randaoReveal, Optional.of(graffiti), Optional.of(boostFactor));
+        slot, randaoReveal, Optional.of(graffiti), true, Optional.of(builderConfig));
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
-    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK_V4.getPath(Map.of(SLOT, slot.toString())));
     assertThat(request.getRequestUrl().queryParameter(RANDAO_REVEAL))
         .isEqualTo(randaoReveal.toString());
     assertThat(request.getRequestUrl().queryParameter(GRAFFITI)).isEqualTo(graffiti.toString());
-    assertThat(request.getRequestUrl().queryParameter(BUILDER_BOOST_FACTOR))
-        .isEqualTo(boostFactor.toString());
     assertThat(request.getRequestUrl().queryParameter("include_payload")).isEqualTo("true");
+    // ensure the BuilderConfig is the request body
+    assertThat(request.getBody().readUtf8())
+        .isEqualTo(
+            JsonUtil.serialize(
+                builderConfig, ApiSchemas.BUILDER_CONFIG_SCHEMA.getJsonTypeDefinition()));
   }
 
   @TestTemplate
