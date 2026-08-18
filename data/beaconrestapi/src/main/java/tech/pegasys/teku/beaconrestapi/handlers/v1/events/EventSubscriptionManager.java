@@ -164,16 +164,16 @@ public class EventSubscriptionManager
           notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
-    if(spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
       final HeadEvent headEvent =
-              new HeadEvent(
-                      slot,
-                      bestBlockRoot,
-                      stateRoot,
-                      epochTransition,
-                      executionOptimistic,
-                      previousDutyDependentRoot,
-                      currentDutyDependentRoot);
+          new HeadEvent(
+              slot,
+              bestBlockRoot,
+              stateRoot,
+              epochTransition,
+              executionOptimistic,
+              previousDutyDependentRoot,
+              currentDutyDependentRoot);
       notifySubscribersOfEvent(EventType.head, headEvent);
     }
 
