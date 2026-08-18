@@ -6,7 +6,17 @@ import com.github.jk1.license.render.ReportRenderer
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.xml.XmlSlurper
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 import io.consensys.protocols.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
@@ -41,7 +51,13 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
-	id 'org.jreleaser' version '1.23.0'
+	id 'org.jreleaser' version '1.23.0' apply false
+}
+
+// JReleaser's banner writes a marker under Gradle user home when the plugin is applied.
+// Keep it out of normal builds so that marker does not invalidate configuration cache reuse.
+def jreleaserTaskRequested = gradle.startParameter.taskNames.any {
+	it.tokenize(':').last().startsWith('jreleaser')
 }
 
 class ConfiguredLicenseBundleNormalizer extends LicenseBundleNormalizer {
@@ -91,6 +107,88 @@ class ConfiguredJsonReportRenderer extends JsonReportRenderer {
 		jsonReport.importedModules = readImportedModules(data.importedModules)
 		new File(licenseReportExtension.absoluteOutputDir, fileNameCache).text =
 				new JsonBuilder(trimAndRemoveNullEntries(jsonReport)).toPrettyString()
+	}
+}
+
+abstract class CheckMavenCoordinateCollisions extends DefaultTask {
+	@Input
+	abstract MapProperty<String, String> getPublicationCoordinatesByProject()
+
+	@TaskAction
+	void checkForCollisions() {
+		def coordinates = [:]
+		publicationCoordinatesByProject.get().forEach { projectPath, coordinate ->
+			if (coordinates.containsKey(coordinate)) {
+				throw new GradleException("Duplicate maven coordinates detected, ${coordinate} is used by " +
+				"both ${coordinates[coordinate]} and ${projectPath}.\n" +
+				"Please add a `publishing` script block to one or both subprojects.")
+			}
+			coordinates[coordinate] = projectPath
+		}
+	}
+}
+
+abstract class CheckBesuPrometheusVersionCompatibility extends DefaultTask {
+	@Input
+	abstract Property<String> getBesuVersion()
+
+	@Input
+	abstract Property<String> getTekuPrometheusVersion()
+
+	@InputFiles
+	@PathSensitive(PathSensitivity.NONE)
+	abstract ConfigurableFileCollection getBesuBomPom()
+
+	@TaskAction
+	void checkCompatibility() {
+		def besuPrometheusVersion = getBesuPrometheusMetricsBomVersion()
+		if (majorMinorVersion(tekuPrometheusVersion.get()) != majorMinorVersion(besuPrometheusVersion)) {
+			throw new GradleException("Teku manages io.prometheus:prometheus-metrics-bom:${tekuPrometheusVersion.get()}, " +
+			"but org.hyperledger.besu:bom:${besuVersion.get()} imports ${besuPrometheusVersion}. " +
+			"The Prometheus BOM must stay on the same major.minor version line as Besu.")
+		}
+	}
+
+	private String getBesuPrometheusMetricsBomVersion() {
+		def pom = new XmlSlurper(false, false).parse(besuBomPom.singleFile)
+		def dependency = pom.dependencyManagement.dependencies.dependency.find {
+			it.groupId.text() == 'io.prometheus' && it.artifactId.text() == 'prometheus-metrics-bom'
+		}
+		if (dependency == null) {
+			throw new GradleException("Besu ${besuVersion.get()} BOM does not import io.prometheus:prometheus-metrics-bom")
+		}
+		return dependency.version.text()
+	}
+
+	private static String majorMinorVersion(final String version) {
+		def parts = version.tokenize('.')
+		if (parts.size() < 2) {
+			throw new GradleException("Version ${version} must include major and minor components")
+		}
+		return parts.take(2).join('.')
+	}
+}
+
+abstract class DeleteDistributionArchives extends DefaultTask {
+	@Internal
+	abstract DirectoryProperty getDistributionDirectory()
+
+	@Input
+	abstract Property<String> getArchiveExtension()
+
+	@TaskAction
+	void deleteArchives() {
+		def directory = distributionDirectory.get().asFile
+		if (!directory.directory) {
+			return
+		}
+		directory.listFiles()
+				.findAll { it.file && it.name.endsWith(archiveExtension.get()) }
+				.each {
+					if (!it.delete()) {
+						throw new GradleException("Failed to delete ${it}")
+					}
+				}
 	}
 }
 
@@ -805,20 +903,19 @@ tasks.named('checkLicensePreparation') {
 	}
 }
 
-tasks.register('checkMavenCoordinateCollisions') {
-	doLast {
-		def coordinates = [:]
-		getAllprojects().forEach {
-			if (it.properties.containsKey('publishing') && it.jar?.enabled) {
-				def coordinate = it.publishing?.publications[0].coordinates
-				if (coordinates.containsKey(coordinate)) {
-					throw new GradleException("Duplicate maven coordinates detected, ${coordinate} is used by " +
-					"both ${coordinates[coordinate]} and ${it.path}.\n" +
-					"Please add a `publishing` script block to one or both subprojects.")
-				}
-				coordinates[coordinate] = it.path
-			}
-		}
+tasks.register('checkMavenCoordinateCollisions', CheckMavenCoordinateCollisions) {
+	publicationCoordinatesByProject.empty()
+}
+
+gradle.projectsEvaluated {
+	def publicationCoordinatesByProject = getAllprojects()
+	.findAll { it.properties.containsKey('publishing') && it.jar?.enabled }
+	.collectEntries {
+		def publication = it.publishing.publications[0]
+		[(it.path): "${publication.groupId}:${publication.artifactId}:${publication.version}".toString()]
+	}
+	tasks.named('checkMavenCoordinateCollisions', CheckMavenCoordinateCollisions) {
+		it.publicationCoordinatesByProject.set(publicationCoordinatesByProject)
 	}
 }
 
@@ -830,40 +927,16 @@ def getManagedDependencyVersion = { String group, String artifact ->
 	return version
 }
 
-def getBesuPrometheusMetricsBomVersion = { String besuVersion ->
-	def besuBom = configurations.detachedConfiguration(
-	dependencies.create("org.hyperledger.besu:bom:${besuVersion}@pom"))
-	besuBom.transitive = false
-	def pom = new XmlSlurper(false, false).parse(besuBom.singleFile)
-	def dependency = pom.dependencyManagement.dependencies.dependency.find {
-		it.groupId.text() == 'io.prometheus' && it.artifactId.text() == 'prometheus-metrics-bom'
-	}
-	if (dependency == null) {
-		throw new GradleException("Besu ${besuVersion} BOM does not import io.prometheus:prometheus-metrics-bom")
-	}
-	return dependency.version.text()
-}
+def besuMetricsCoreVersion = getManagedDependencyVersion('org.hyperledger.besu.internal', 'besu-metrics-core')
+def tekuPrometheusMetricsBomVersion = getManagedDependencyVersion('io.prometheus', 'prometheus-metrics-bom')
+def besuBom = configurations.detachedConfiguration(
+		dependencies.create("org.hyperledger.besu:bom:${besuMetricsCoreVersion}@pom"))
+besuBom.transitive = false
 
-def majorMinorVersion = { String version ->
-	def parts = version.tokenize('.')
-	if (parts.size() < 2) {
-		throw new GradleException("Version ${version} must include major and minor components")
-	}
-	return parts.take(2).join('.')
-}
-
-tasks.register('checkBesuPrometheusVersionCompatibility') {
-	doLast {
-		def besuVersion = getManagedDependencyVersion('org.hyperledger.besu.internal', 'besu-metrics-core')
-		def tekuPrometheusVersion = getManagedDependencyVersion('io.prometheus', 'prometheus-metrics-bom')
-		def besuPrometheusVersion = getBesuPrometheusMetricsBomVersion(besuVersion)
-
-		if (majorMinorVersion(tekuPrometheusVersion) != majorMinorVersion(besuPrometheusVersion)) {
-			throw new GradleException("Teku manages io.prometheus:prometheus-metrics-bom:${tekuPrometheusVersion}, " +
-			"but org.hyperledger.besu:bom:${besuVersion} imports ${besuPrometheusVersion}. " +
-			"The Prometheus BOM must stay on the same major.minor version line as Besu.")
-		}
-	}
+tasks.register('checkBesuPrometheusVersionCompatibility', CheckBesuPrometheusVersionCompatibility) {
+	besuVersion.set(besuMetricsCoreVersion)
+	tekuPrometheusVersion.set(tekuPrometheusMetricsBomVersion)
+	besuBomPom.from(besuBom)
 }
 
 tasks.register('dependencyUpdateChecks', Exec) {
@@ -918,27 +991,33 @@ installDist {
 	dependsOn licenseCheck, startScripts, autocomplete
 }
 
+def distributionArchiveLastModifiedDate = lastCommitDate()
+
+tasks.register('deleteDistTarArchives', DeleteDistributionArchives) {
+	distributionDirectory.set(layout.buildDirectory.dir('distributions'))
+	archiveExtension.set('.tar.gz')
+}
+
+tasks.register('deleteDistZipArchives', DeleteDistributionArchives) {
+	distributionDirectory.set(layout.buildDirectory.dir('distributions'))
+	archiveExtension.set('.zip')
+}
+
 distTar {
-	dependsOn licenseCheck, startScripts, autocomplete
-	doFirst {
-		delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
-	}
+	dependsOn licenseCheck, startScripts, autocomplete, deleteDistTarArchives
 	compression = Compression.GZIP
 	archiveExtension = 'tar.gz'
 	reproducibleFileOrder = true
 	doLast {
-		repackage(archiveFile.get().toString(), lastCommitDate())
+		repackage(archiveFile.get().toString(), distributionArchiveLastModifiedDate)
 	}
 }
 
 distZip {
-	dependsOn licenseCheck, startScripts, autocomplete
-	doFirst {
-		delete fileTree(dir: 'build/distributions', include: '*.zip')
-	}
+	dependsOn licenseCheck, startScripts, autocomplete, deleteDistZipArchives
 	reproducibleFileOrder = true
 	doLast {
-		repackage(archiveFile.get().toString(), lastCommitDate())
+		repackage(archiveFile.get().toString(), distributionArchiveLastModifiedDate)
 	}
 }
 
@@ -1712,32 +1791,36 @@ tasks.register('cloudsmithUpload') {
 	}
 }
 
-jreleaser {
-	project {
-		java {
-			groupId = 'tech.pegasys.teku'
+if (jreleaserTaskRequested) {
+	apply plugin: 'org.jreleaser'
+
+	jreleaser {
+		project {
+			java {
+				groupId = 'tech.pegasys.teku'
+			}
 		}
-	}
-	release {
-		github {
-			skipRelease = true
-			skipTag = true
-			token = "foobar"
+		release {
+			github {
+				skipRelease = true
+				skipTag = true
+				token = "foobar"
+			}
 		}
-	}
-	signing {
-		active = 'ALWAYS'
-		armored = true
-	}
-	deploy {
-		maven {
-			mavenCentral {
-				sonatype {
-					active = 'ALWAYS'
-					url = 'https://central.sonatype.com/api/v1/publisher'
-					stagingRepository('build/staging-deploy')
-					retryDelay = 15
-					maxRetries = 100
+		signing {
+			active = 'ALWAYS'
+			armored = true
+		}
+		deploy {
+			maven {
+				mavenCentral {
+					sonatype {
+						active = 'ALWAYS'
+						url = 'https://central.sonatype.com/api/v1/publisher'
+						stagingRepository('build/staging-deploy')
+						retryDelay = 15
+						maxRetries = 100
+					}
 				}
 			}
 		}
