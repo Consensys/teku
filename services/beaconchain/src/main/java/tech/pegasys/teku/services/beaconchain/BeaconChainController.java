@@ -2076,24 +2076,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SuperNodeSupplier isSuperNodeSupplier =
         new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
-    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      dataColumnSidecarArchiveReconstructor =
-          new DataColumnSidecarArchiveReconstructorImpl(
-              throttlingCombinedChainDataClient.orElse(combinedChainDataClient),
-              asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 2),
-              isSuperNodeSupplier,
-              spec,
-              beaconConfig.eth2NetworkConfig().getDataColumnSidecarExtensionRetentionEpochs(),
-              eventChannels.getPublisher(SidecarArchivePrunableChannel.class),
-              metricsSystem,
-              timeProvider);
-      eventChannels
-          .subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarArchiveReconstructor)
-          .subscribe(SlotEventsChannel.class, dataColumnSidecarArchiveReconstructor);
-    } else {
-      dataColumnSidecarArchiveReconstructor = DataColumnSidecarArchiveReconstructor.NOOP;
-    }
+    // TODO: re-enable after CPU investigation
+    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
+        DataColumnSidecarArchiveReconstructor.NOOP;
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
