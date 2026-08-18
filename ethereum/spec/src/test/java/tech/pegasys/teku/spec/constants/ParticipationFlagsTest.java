@@ -34,7 +34,6 @@ public class ParticipationFlagsTest {
 
   @Test
   public void isAnyFlagSet() {
-    assertThat(ParticipationFlags.isAnyFlagSet(0)).isFalse();
     assertThat(ParticipationFlags.isAnyFlagSet(1)).isTrue();
     assertThat(ParticipationFlags.isAnyFlagSet(2)).isTrue();
     assertThat(ParticipationFlags.isAnyFlagSet(3)).isTrue();
@@ -43,6 +42,7 @@ public class ParticipationFlagsTest {
     assertThat(ParticipationFlags.isAnyFlagSet(6)).isTrue();
     assertThat(ParticipationFlags.isAnyFlagSet(7)).isTrue();
     assertThat(ParticipationFlags.isAnyFlagSet(9)).isTrue();
+
     assertThat(ParticipationFlags.isAnyFlagSet(0)).isFalse();
     assertThat(ParticipationFlags.isAnyFlagSet(8)).isFalse();
   }
