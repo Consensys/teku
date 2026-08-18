@@ -133,6 +133,17 @@ public class Eth2NetworkOptions {
   private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
 
   @Option(
+      names = {"--Xlight-client-server-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Generate and serve light client updates",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean lightClientServerEnabled =
+      Eth2NetworkConfiguration.DEFAULT_LIGHT_CLIENT_SERVER_ENABLED;
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -561,6 +572,7 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .lightClientServerEnabled(lightClientServerEnabled)
         .prepareBlockProductionEnabled(prepareBlockProductionEnabled)
         .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
         .aggregatingAttestationPoolV2BlockAggregationTimeLimit(

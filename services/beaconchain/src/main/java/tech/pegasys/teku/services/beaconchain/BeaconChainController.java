@@ -1651,16 +1651,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initLightClientUpdateStore() {
     LOG.debug("BeaconChainController.initLightClientUpdateStore()");
+    // Always constructed: ChainDataProvider holds it unconditionally and serves an empty store
+    // when the server is disabled.
     lightClientUpdateStore = new LightClientUpdateStore(spec);
   }
 
   protected void initLightClientServerService() {
+    if (!beaconConfig.eth2NetworkConfig().isLightClientServerEnabled()) {
+      LOG.debug("BeaconChainController.initLightClientServerService() - disabled");
+      return;
+    }
     LOG.debug("BeaconChainController.initLightClientServerService()");
     lightClientServerService =
         new LightClientServerService(spec, lightClientUpdateStore, combinedChainDataClient);
     eventChannels
         .subscribe(ReceivedBlockEventsChannel.class, lightClientServerService)
-        .subscribe(FinalizedCheckpointChannel.class, lightClientServerService);
+        .subscribe(FinalizedCheckpointChannel.class, lightClientServerService)
+        .subscribe(ChainHeadChannel.class, lightClientServerService);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
