@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
@@ -409,16 +410,12 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final AttestationData data,
       final int attestingIndex,
       final BeaconState state) {
-    final boolean hadNoParticipation = previousParticipationFlags == (byte) 0b0000_0000;
-    if (hadNoParticipation
+    final BuilderPendingPayment payment =
+        BeaconStateGloas.required(state).getBuilderPendingPayments().get(builderPaymentIndex);
+    if (ParticipationFlags.hadNoParticipation(previousParticipationFlags)
         && beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
         // only add to the payment quorum if the payment is not trivial
-        && BeaconStateGloas.required(state)
-            .getBuilderPendingPayments()
-            .get(builderPaymentIndex)
-            .getWithdrawal()
-            .getAmount()
-            .isGreaterThan(UInt64.ZERO)) {
+        && payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
       return builderPaymentWeightDelta.plus(
           state.getValidators().get(attestingIndex).getEffectiveBalance());
     } else {

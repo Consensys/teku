@@ -29,6 +29,10 @@ public class ParticipationFlags {
     return checkIfAnyFlagIsSet(value, TIMELY_TARGET_FLAG);
   }
 
+  public static boolean hadNoParticipation(final byte participationFlags) {
+    return participationFlags == (byte) 0b0000_0000;
+  }
+
   public static boolean isAnyFlagSet(final int value) {
     return checkIfAnyFlagIsSet(value, ALL_FLAGS);
   }
