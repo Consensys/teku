@@ -18,6 +18,9 @@ specrefs:
       # Not implemented: heze
       - MIN_SLOTS_FOR_INCLUSION_LISTS_REQUESTS#heze
 
+      # Renamed after v1.7.0-alpha.13
+      - MAX_BYTES_PER_INCLUSION_LIST#heze
+
     constants:
       # Not defined as a constant, unnecessary
       - BASIS_POINTS#phase0
@@ -173,7 +176,6 @@ specrefs:
       # Not implemented yet: EIP-7688 progressive SSZ sizing work
       - MAX_ATTESTER_SLASHING_SIZE#gloas
       - MAX_DATA_COLUMN_SIDECAR_SIZE#gloas
-      - MAX_PARTIAL_DATA_COLUMN_SIDECAR_SIZE#gloas
       - MAX_SIGNED_AGGREGATE_AND_PROOF_SIZE#gloas
       - MAX_SIGNED_EXECUTION_PAYLOAD_BID_SIZE#gloas
       - MAX_SIGNED_EXECUTION_PAYLOAD_BID_SIZE_HEZE#heze

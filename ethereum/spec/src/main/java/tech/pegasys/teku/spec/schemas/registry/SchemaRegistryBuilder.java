@@ -44,7 +44,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_ACCESS_LIST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_GLOAS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
@@ -171,7 +170,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloasSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
@@ -374,7 +373,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
-        .addProvider(createBlockContentsGloasSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeContentsSchemaProvider())
         .addProvider(createSignedBlindedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
@@ -519,6 +517,11 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new BlockContentsSchemaFulu(
                     schemaName, SpecConfigFulu.required(specConfig), registry))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new BlockContentsSchemaGloas(
+                    schemaName, SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
@@ -541,7 +544,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SIGNED_BUILDER_BID_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig, schemaName) -> new SignedBuilderBidSchema(schemaName, registry))
+            (registry, _, schemaName) -> new SignedBuilderBidSchema(schemaName, registry))
         .build();
   }
 
@@ -1381,15 +1384,6 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new SignedBlindedExecutionPayloadEnvelopeSchema(registry))
-        .build();
-  }
-
-  private static SchemaProvider<?> createBlockContentsGloasSchemaProvider() {
-    return providerBuilder(BLOCK_CONTENTS_GLOAS_SCHEMA)
-        .withCreator(
-            GLOAS,
-            (registry, specConfig, schemaName) ->
-                new BlockContentsGloasSchema(SpecConfigFulu.required(specConfig), registry))
         .build();
   }
 
