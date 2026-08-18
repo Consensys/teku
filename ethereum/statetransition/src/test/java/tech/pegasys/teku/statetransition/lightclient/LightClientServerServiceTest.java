@@ -45,8 +45,6 @@ public class LightClientServerServiceTest {
   private final Map<Bytes32, SignedBeaconBlock> blocksByRoot = new HashMap<>();
   private final Map<Bytes32, BeaconState> statesByRoot = new HashMap<>();
 
-  private static final int MAX_RETAINED_PERIODS = 128;
-
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private LightClientUpdateStore store;
@@ -191,7 +189,7 @@ public class LightClientServerServiceTest {
 
   @TestTemplate
   public void onNewFinalizedCheckpoint_shouldKeepUpdateExactlyAtRetentionBoundary() {
-    final int boundaryPeriod = 200 - MAX_RETAINED_PERIODS;
+    final int boundaryPeriod = 200 - LightClientServerService.MAX_RETAINED_PERIODS;
     addUpdateAtPeriod(boundaryPeriod - 1);
     final LightClientUpdate atBoundary = addUpdateAtPeriod(boundaryPeriod);
 

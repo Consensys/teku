@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.lightclient;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +42,7 @@ public class LightClientServerService
   private static final Logger LOG = LogManager.getLogger();
 
   /** Sync committee periods of updates retained behind the finalized period. */
-  private static final int MAX_RETAINED_PERIODS = 128;
+  @VisibleForTesting static final int MAX_RETAINED_PERIODS = 128;
 
   private final Spec spec;
   private final LightClientUpdateStore lightClientStore;
