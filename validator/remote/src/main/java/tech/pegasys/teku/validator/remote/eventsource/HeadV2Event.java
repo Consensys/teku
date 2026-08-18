@@ -13,25 +13,24 @@
 
 package tech.pegasys.teku.validator.remote.eventsource;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
-
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 record HeadV2Event(
-        UInt64 slot,
-        Bytes32 block,
-        Bytes32 state,
-        boolean epochTransition,
-        Bytes32 previousDutyDependentRoot,
-        Bytes32 currentDutyDependentRoot,
-        Boolean executionOptimistic,
-        String payloadStatus) {
+    UInt64 slot,
+    Bytes32 block,
+    Bytes32 state,
+    boolean epochTransition,
+    Bytes32 previousDutyDependentRoot,
+    Bytes32 currentDutyDependentRoot,
+    Boolean executionOptimistic,
+    String payloadStatus) {
 
   static final DeserializableTypeDefinition<HeadV2Event> TYPE_DEFINITION =
       DeserializableTypeDefinition.object(HeadV2Event.class, Builder.class)
@@ -44,26 +43,24 @@ record HeadV2Event(
               "epoch_transition",
               BOOLEAN_TYPE,
               HeadV2Event::epochTransition,
-                  Builder::epochTransition)
+              Builder::epochTransition)
           .withField(
               "previous_duty_dependent_root",
               BYTES32_TYPE,
               HeadV2Event::previousDutyDependentRoot,
-                  Builder::previousDutyDependentRoot)
+              Builder::previousDutyDependentRoot)
           .withField(
               "current_duty_dependent_root",
               BYTES32_TYPE,
               HeadV2Event::currentDutyDependentRoot,
-                  Builder::currentDutyDependentRoot)
+              Builder::currentDutyDependentRoot)
           .withField(
               "execution_optimistic",
               BOOLEAN_TYPE,
               HeadV2Event::executionOptimistic,
-                  Builder::executionOptimistic)
-              .withField("payload_status",
-                      STRING_TYPE,
-                      HeadV2Event::payloadStatus,
-                      Builder::payloadStatus)
+              Builder::executionOptimistic)
+          .withField(
+              "payload_status", STRING_TYPE, HeadV2Event::payloadStatus, Builder::payloadStatus)
           .build();
 
   private static class Builder {
@@ -125,7 +122,7 @@ record HeadV2Event(
           previousDutyDependentRoot,
           currentDutyDependentRoot,
           executionOptimistic,
-              payloadStatus);
+          payloadStatus);
     }
   }
 }

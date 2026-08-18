@@ -123,10 +123,10 @@ class EventSourceHandler implements BackgroundEventHandler {
   private void handleHeadV2Event(final String data) throws JsonProcessingException {
     final HeadV2Event headEvent = JsonUtil.parse(data, HeadV2Event.TYPE_DEFINITION);
     validatorTimingChannel.onHeadUpdate(
-            headEvent.slot(),
-            headEvent.previousDutyDependentRoot(),
-            headEvent.currentDutyDependentRoot(),
-            headEvent.block());
+        headEvent.slot(),
+        headEvent.previousDutyDependentRoot(),
+        headEvent.currentDutyDependentRoot(),
+        headEvent.block());
     if (generateEarlyAttestations) {
       validatorTimingChannel.onAttestationCreationDue(headEvent.slot());
     }
