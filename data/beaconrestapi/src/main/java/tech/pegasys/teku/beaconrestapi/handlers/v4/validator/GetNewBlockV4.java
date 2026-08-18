@@ -100,8 +100,9 @@ public class GetNewBlockV4 extends RestApiEndpoint {
               payload later. This endpoint is specific to the post-Gloas forks and is not backwards compatible
               with previous forks.
 
-              When self-building (local execution payload), the response will include the full block contents
-              including the beacon block, execution payload envelope, blobs, and KZG proofs.
+              When self-building (local execution payload), the response includes the full block contents
+              (beacon block, execution payload envelope, blobs, and KZG proofs) if `include_payload` is
+              set to `true`, otherwise only the `BeaconBlock` is returned.
               When using an external builder bid, only the `BeaconBlock` is returned as the beacon node
               does not have access to the builder's execution payload.
 
@@ -132,18 +133,12 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
-    final Optional<Boolean> includePayload =
-        request.getOptionalQueryParameter(INCLUDE_PAYLOAD_PARAMETER);
+    final boolean includePayload = request.getQueryParameter(INCLUDE_PAYLOAD_PARAMETER);
     final Optional<UInt64> requestedBuilderBoostFactor =
         request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
 
     if (validatorDataProvider.getMilestoneAtSlot(slot).isLessThan(SpecMilestone.GLOAS)) {
       request.respondError(SC_BAD_REQUEST, "produceBlockV4 is only supported from Gloas onwards");
-      return;
-    }
-
-    if (includePayload.isEmpty()) {
-      request.respondError(SC_BAD_REQUEST, "include_payload is required");
       return;
     }
 
@@ -169,8 +164,7 @@ public class GetNewBlockV4 extends RestApiEndpoint {
                                   instanceof BlockContentsGloas;
                           // include_payload=true and self-built → include full contents
                           // include_payload=false or builder bid → return beacon block only
-                          final boolean executionPayloadIncluded =
-                              selfBuilt && includePayload.get();
+                          final boolean executionPayloadIncluded = selfBuilt && includePayload;
                           final BlockContainerAndMetaData responseMetaData =
                               executionPayloadIncluded
                                   ? blockContainerAndMetaData
