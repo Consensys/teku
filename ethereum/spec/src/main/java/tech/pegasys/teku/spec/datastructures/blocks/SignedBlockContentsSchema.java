@@ -22,12 +22,22 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public interface SignedBlockContentsWithBlobsSchema<T extends SignedBlockContainer>
+public interface SignedBlockContentsSchema<T extends SignedBlockContainer>
     extends SignedBlockContainerSchema<T> {
+
+  SszFieldName FIELD_SIGNED_BLOCK = () -> "signed_block";
   SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   SszFieldName FIELD_BLOBS = () -> "blobs";
 
-  T create(SignedBeaconBlock signedBeaconBlock, List<KZGProof> kzgProofs, List<Blob> blobs);
+  default T create(
+      final SignedBeaconBlock signedBeaconBlock,
+      final List<KZGProof> kzgProofs,
+      final List<Blob> blobs) {
+    return create(
+        signedBeaconBlock,
+        getKzgProofsSchema().createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
+        getBlobsSchema().createFromElements(blobs));
+  }
 
   T create(
       SignedBeaconBlock signedBeaconBlock, SszList<SszKZGProof> kzgProofs, SszList<Blob> blobs);

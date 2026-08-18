@@ -14,19 +14,28 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public interface BlockContentsWithBlobsSchema<T extends BlockContainer>
-    extends BlockContainerSchema<T> {
+public interface BlockContentsSchema<T extends BlockContainer> extends BlockContainerSchema<T> {
+
+  SszFieldName FIELD_BLOCK = () -> "block";
   SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   SszFieldName FIELD_BLOBS = () -> "blobs";
+  // GLOAS
+  SszFieldName FIELD_EXECUTION_PAYLOAD_ENVELOPE = () -> "execution_payload_envelope";
 
-  T create(BeaconBlock beaconBlock, List<KZGProof> kzgProofs, List<Blob> blobs);
+  T create(
+      BeaconBlock beaconBlock,
+      List<KZGProof> kzgProofs,
+      List<Blob> blobs,
+      Optional<ExecutionPayloadEnvelope> executionPayloadEnvelope);
 
   @Override
   T createFromBackingNode(TreeNode node);
