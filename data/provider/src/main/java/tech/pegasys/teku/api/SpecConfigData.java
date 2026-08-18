@@ -72,6 +72,7 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
     configAttributes.put("DOMAIN_BEACON_BUILDER", getDomainBeaconBuilder().toHexString());
     configAttributes.put("DOMAIN_PTC_ATTESTER", getDomainPtcAttester().toHexString());
+    configAttributes.put("DOMAIN_BUILDER_DEPOSIT", getDomainBuilderDeposit().toHexString());
     addDeprecatedFields(configAttributes);
 
     configAttributes.put(
@@ -211,6 +212,10 @@ public class SpecConfigData {
 
   public Bytes4 getDomainPtcAttester() {
     return Domain.PTC_ATTESTER;
+  }
+
+  public Bytes4 getDomainBuilderDeposit() {
+    return Domain.BUILDER_DEPOSIT;
   }
 
   public Bytes4 getDomainProposerPreferences() {
