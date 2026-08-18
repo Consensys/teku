@@ -243,6 +243,7 @@ public class RestApiConstants {
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
   public static final String HEADER_EXECUTION_PAYLOAD_BLINDED = "Eth-Execution-Payload-Blinded";
+  public static final String HEADER_BLOB_DATA_INCLUDED = "Eth-Blob-Data-Included";
   public static final String HEADER_EXECUTION_PAYLOAD_VALUE = "Eth-Execution-Payload-Value";
   public static final String HEADER_CONSENSUS_BLOCK_VALUE = "Eth-Consensus-Block-Value";
   public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";

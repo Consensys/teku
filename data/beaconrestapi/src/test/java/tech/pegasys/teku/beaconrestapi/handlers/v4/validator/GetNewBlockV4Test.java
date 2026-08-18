@@ -34,7 +34,9 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -42,6 +44,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -67,6 +71,7 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldReturnBadRequestForPreGloasFork() throws Exception {
     assumeThat(specMilestone).isLessThan(GLOAS);
+    request.setQueryParameter(INCLUDE_PAYLOAD, "true");
 
     handler.handleRequest(request);
 
@@ -76,7 +81,7 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldIncludeEnvelopeWhenSelfBuiltAndIncludePayloadTrue() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
-    request.setOptionalQueryParameter(INCLUDE_PAYLOAD, "true");
+    request.setQueryParameter(INCLUDE_PAYLOAD, "true");
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContentsGloasAndMetaData(ONE);
 
@@ -99,7 +104,7 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldReturnBeaconBlockOnlyWhenBuilderBidAndIncludePayloadTrue() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
-    request.setOptionalQueryParameter(INCLUDE_PAYLOAD, "true");
+    request.setQueryParameter(INCLUDE_PAYLOAD, "true");
     // Plain BeaconBlock = external builder bid (no envelope available)
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
@@ -117,7 +122,7 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldReturnBeaconBlockOnlyWhenIncludePayloadIsFalse() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
-    request.setOptionalQueryParameter(INCLUDE_PAYLOAD, "false");
+    request.setQueryParameter(INCLUDE_PAYLOAD, "false");
     // Even with a self-built block, include_payload=false strips the envelope
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContentsGloasAndMetaData(ONE);
@@ -133,18 +138,24 @@ public class GetNewBlockV4Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @TestTemplate
-  void shouldReturnBadRequestWhenIncludePayloadIsMissing() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+  void shouldDeclareIncludePayloadAsRequired() throws Exception {
+    // a missing include_payload is rejected by the rest api framework rather than by the handler,
+    // so all the handler has to guarantee is that the parameter is declared as required
+    final JsonNode metadata =
+        JsonTestUtil.parseAsJsonNode(OpenApiTestUtil.serializeEndpointMetadata(handler));
+    final JsonNode includePayloadParameter =
+        StreamSupport.stream(metadata.get("get").get("parameters").spliterator(), false)
+            .filter(parameter -> INCLUDE_PAYLOAD.equals(parameter.get("name").asText()))
+            .findFirst()
+            .orElseThrow();
 
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(includePayloadParameter.get("required").asBoolean()).isTrue();
   }
 
   @TestTemplate
   void shouldThrowExceptionWhenEmptyBlock() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
-    request.setOptionalQueryParameter(INCLUDE_PAYLOAD, "true");
+    request.setQueryParameter(INCLUDE_PAYLOAD, "true");
     doReturn(SafeFuture.completedFuture(Optional.empty()))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty(), Optional.empty());
