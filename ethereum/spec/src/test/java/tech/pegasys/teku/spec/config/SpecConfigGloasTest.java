@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -149,6 +150,9 @@ public class SpecConfigGloasTest {
         dataStructureUtil.randomPositiveInt(1_000_000),
         dataStructureUtil.randomPositiveInt(10_000_000),
         dataStructureUtil.randomPositiveInt(10_000_000),
-        dataStructureUtil.randomPositiveInt(1_000_000)) {};
+        dataStructureUtil.randomPositiveInt(1_000_000),
+        List.of(
+            new GasLimitScheduleEntry(
+                dataStructureUtil.randomUInt64(), dataStructureUtil.randomUInt64()))) {};
   }
 }
