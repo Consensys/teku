@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
-import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
@@ -35,29 +34,22 @@ public class LightClientUpdateStoreTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private LightClientUpdateStore store;
-  private UInt64 periodOneStartSlot;
-  private int supermajorityParticipants;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     store = new LightClientUpdateStore(spec);
-
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
-    periodOneStartSlot =
-        spec.computeStartSlotAtEpoch(
-            syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO));
-    final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
-    supermajorityParticipants = (config.getSyncCommitteeSize() * 2 + 2) / 3;
   }
 
   @TestTemplate
   public void addUpdate_shouldPreferSupermajority() {
     final LightClientUpdate withSupermajority =
-        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants).build();
+        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants()).build();
     final LightClientUpdate belowSupermajority =
-        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants - 1).build();
+        createLightClientUpdate()
+            .syncCommitteeParticipants(supermajorityParticipants() - 1)
+            .build();
 
     assertThat(getBestUpdateAfterAdding(withSupermajority, belowSupermajority))
         .isEqualTo(withSupermajority);
@@ -68,9 +60,13 @@ public class LightClientUpdateStoreTest {
   @TestTemplate
   public void addUpdate_shouldPreferMoreParticipantsWhenNeitherHasSupermajority() {
     final LightClientUpdate more =
-        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants - 1).build();
+        createLightClientUpdate()
+            .syncCommitteeParticipants(supermajorityParticipants() - 1)
+            .build();
     final LightClientUpdate fewer =
-        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants - 2).build();
+        createLightClientUpdate()
+            .syncCommitteeParticipants(supermajorityParticipants() - 2)
+            .build();
 
     assertThat(getBestUpdateAfterAdding(more, fewer)).isEqualTo(more);
     assertThat(getBestUpdateAfterAdding(fewer, more)).isEqualTo(more);
@@ -80,7 +76,7 @@ public class LightClientUpdateStoreTest {
   public void addUpdate_shouldNotCompareParticipationEarlyWhenBothHaveSupermajority() {
     final LightClientUpdate fewerWithSyncCommittee =
         createLightClientUpdate()
-            .syncCommitteeParticipants(supermajorityParticipants)
+            .syncCommitteeParticipants(supermajorityParticipants())
             .syncCommitteeBranch(true)
             .build();
     final LightClientUpdate moreWithoutSyncCommittee =
@@ -134,7 +130,7 @@ public class LightClientUpdateStoreTest {
     final LightClientUpdate finalizedInAttestedPeriod =
         createLightClientUpdate()
             .finalityBranch(false)
-            .syncCommitteeParticipants(supermajorityParticipants)
+            .syncCommitteeParticipants(supermajorityParticipants())
             .build();
 
     assertThat(getBestUpdateAfterAdding(moreParticipants, finalizedInAttestedPeriod))
@@ -147,7 +143,7 @@ public class LightClientUpdateStoreTest {
   public void addUpdate_shouldPreferMoreParticipantsAsTiebreak() {
     final LightClientUpdate more = createLightClientUpdate().build();
     final LightClientUpdate fewer =
-        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants).build();
+        createLightClientUpdate().syncCommitteeParticipants(supermajorityParticipants()).build();
 
     assertThat(getBestUpdateAfterAdding(more, fewer)).isEqualTo(more);
     assertThat(getBestUpdateAfterAdding(fewer, more)).isEqualTo(more);
@@ -157,7 +153,7 @@ public class LightClientUpdateStoreTest {
   public void addUpdate_shouldPreferOlderAttestedSlot() {
     final LightClientUpdate older = createLightClientUpdate().build();
     final LightClientUpdate newer =
-        createLightClientUpdate().attestedSlot(periodOneStartSlot.increment()).build();
+        createLightClientUpdate().attestedSlot(periodOneStartSlot().increment()).build();
 
     assertThat(getBestUpdateAfterAdding(older, newer)).isEqualTo(older);
     assertThat(getBestUpdateAfterAdding(newer, older)).isEqualTo(older);
@@ -167,7 +163,7 @@ public class LightClientUpdateStoreTest {
   public void addUpdate_shouldPreferOlderSignatureSlot() {
     final LightClientUpdate older = createLightClientUpdate().build();
     final LightClientUpdate newer =
-        createLightClientUpdate().signatureSlot(periodOneStartSlot.increment()).build();
+        createLightClientUpdate().signatureSlot(periodOneStartSlot().increment()).build();
 
     assertThat(getBestUpdateAfterAdding(older, newer)).isEqualTo(older);
     assertThat(getBestUpdateAfterAdding(newer, older)).isEqualTo(older);
@@ -187,7 +183,7 @@ public class LightClientUpdateStoreTest {
   @TestTemplate
   public void addUpdate_shouldRejectUpdateAttestedAndSignedInDifferentPeriods() {
     final LightClientUpdate update =
-        createLightClientUpdate().signatureSlot(periodOneStartSlot.times(2)).build();
+        createLightClientUpdate().signatureSlot(periodOneStartSlot().times(2)).build();
 
     store.addUpdate(update);
 
@@ -237,7 +233,8 @@ public class LightClientUpdateStoreTest {
   @TestTemplate
   public void addFinalityUpdate_shouldStoreFirstUpdate() {
     final LightClientFinalityUpdate update =
-        dataStructureUtil.randomLightClientFinalityUpdate(periodOneStartSlot, periodOneStartSlot);
+        dataStructureUtil.randomLightClientFinalityUpdate(
+            periodOneStartSlot(), periodOneStartSlot());
 
     store.addFinalityUpdate(update);
 
@@ -248,10 +245,10 @@ public class LightClientUpdateStoreTest {
   public void addFinalityUpdate_shouldKeepHighestAttestedSlotEvenWhenFinalizedSlotIsLower() {
     final LightClientFinalityUpdate older =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot, periodOneStartSlot.increment());
+            periodOneStartSlot(), periodOneStartSlot().increment());
     final LightClientFinalityUpdate newer =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot.increment(), periodOneStartSlot);
+            periodOneStartSlot().increment(), periodOneStartSlot());
 
     store.addFinalityUpdate(older);
     store.addFinalityUpdate(newer);
@@ -265,10 +262,10 @@ public class LightClientUpdateStoreTest {
   public void addFinalityUpdate_shouldBreakEqualAttestedSlotBySignatureSlot() {
     final LightClientFinalityUpdate older =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot, periodOneStartSlot, periodOneStartSlot);
+            periodOneStartSlot(), periodOneStartSlot(), periodOneStartSlot());
     final LightClientFinalityUpdate newer =
         dataStructureUtil.randomLightClientFinalityUpdate(
-            periodOneStartSlot, periodOneStartSlot, periodOneStartSlot.increment());
+            periodOneStartSlot(), periodOneStartSlot(), periodOneStartSlot().increment());
 
     store.addFinalityUpdate(older);
     store.addFinalityUpdate(newer);
@@ -281,7 +278,7 @@ public class LightClientUpdateStoreTest {
   @TestTemplate
   public void addOptimisticUpdate_shouldStoreFirstUpdate() {
     final LightClientOptimisticUpdate update =
-        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot);
+        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot());
 
     store.addOptimisticUpdate(update);
 
@@ -291,9 +288,9 @@ public class LightClientUpdateStoreTest {
   @TestTemplate
   public void addOptimisticUpdate_shouldKeepHighestAttestedSlot() {
     final LightClientOptimisticUpdate older =
-        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot);
+        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot());
     final LightClientOptimisticUpdate newer =
-        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot.increment());
+        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot().increment());
 
     store.addOptimisticUpdate(older);
     store.addOptimisticUpdate(newer);
@@ -306,10 +303,11 @@ public class LightClientUpdateStoreTest {
   @TestTemplate
   public void addOptimisticUpdate_shouldBreakEqualAttestedSlotBySignatureSlot() {
     final LightClientOptimisticUpdate older =
-        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot, periodOneStartSlot);
+        dataStructureUtil.randomLightClientOptimisticUpdate(
+            periodOneStartSlot(), periodOneStartSlot());
     final LightClientOptimisticUpdate newer =
         dataStructureUtil.randomLightClientOptimisticUpdate(
-            periodOneStartSlot, periodOneStartSlot.increment());
+            periodOneStartSlot(), periodOneStartSlot().increment());
 
     store.addOptimisticUpdate(older);
     store.addOptimisticUpdate(newer);
@@ -324,8 +322,12 @@ public class LightClientUpdateStoreTest {
     final LightClientUpdate periodZero = createLightClientUpdateAtPeriod(0);
     final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
+    store.addUpdate(periodZero);
+    store.addUpdate(periodOne);
+    store.addUpdate(periodTwo);
 
-    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 500)).containsExactly(periodZero, periodOne, periodOne);
+    assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 500))
+        .containsExactly(periodZero, periodOne, periodTwo);
 
     store.pruneUpdatesBefore(UInt64.ONE);
     assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 500)).containsExactly(periodOne, periodTwo);
@@ -341,11 +343,22 @@ public class LightClientUpdateStoreTest {
 
   private LightClientUpdate createLightClientUpdateAtPeriod(final long period) {
     return dataStructureUtil
-        .createRandomLightClientUpdateBuilder(periodOneStartSlot.times(period))
+        .createRandomLightClientUpdateBuilder(periodOneStartSlot().times(period))
         .build();
   }
 
   private DataStructureUtil.RandomLightClientUpdateBuilder createLightClientUpdate() {
-    return dataStructureUtil.createRandomLightClientUpdateBuilder(periodOneStartSlot);
+    return dataStructureUtil.createRandomLightClientUpdateBuilder(periodOneStartSlot());
+  }
+
+  private UInt64 periodOneStartSlot() {
+    return spec.computeStartSlotAtEpoch(
+        spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
+            .computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO));
+  }
+
+  private int supermajorityParticipants() {
+    return (SpecConfigAltair.required(spec.getGenesisSpecConfig()).getSyncCommitteeSize() * 2 + 2)
+        / 3;
   }
 }

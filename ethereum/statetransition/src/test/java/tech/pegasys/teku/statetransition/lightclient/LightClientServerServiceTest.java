@@ -14,11 +14,11 @@
 package tech.pegasys.teku.statetransition.lightclient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,28 +37,20 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
 public class LightClientServerServiceTest {
 
-  /** Mirrors LightClientServerService.MAX_RETAINED_PERIODS. */
-  private static final int MAX_RETAINED_PERIODS = 128;
-
   private final Map<Bytes32, SignedBeaconBlock> blocksByRoot = new HashMap<>();
   private final Map<Bytes32, BeaconState> statesByRoot = new HashMap<>();
-  private final AtomicInteger stateLookups = new AtomicInteger();
+
+  private static final int MAX_RETAINED_PERIODS = 128;
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private LightClientUpdateStore store;
   private LightClientServerService service;
-  private UInt64 periodOneStartSlot;
-  private int syncCommitteeSize;
-
-  private SignedBlockAndState attested;
-  private SignedBlockAndState signature;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -66,23 +58,15 @@ public class LightClientServerServiceTest {
     dataStructureUtil = specContext.getDataStructureUtil();
     store = new LightClientUpdateStore(spec);
     service = new LightClientServerService(spec, store, this::lookUpBlock, this::lookUpState);
-
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
-    periodOneStartSlot =
-        spec.computeStartSlotAtEpoch(
-            syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO));
-    syncCommitteeSize =
-        SpecConfigAltair.required(spec.getGenesisSpecConfig()).getSyncCommitteeSize();
   }
 
   @TestTemplate
   public void onBlockImported_shouldIgnoreOptimisticBlocks() {
-    generateChain();
+    final Chain chain = generateChain();
 
-    service.onBlockImported(signature.getBlock(), true);
+    serviceRejectingStateLookups().onBlockImported(chain.signature().getBlock(), true);
 
     assertNothingStored();
-    assertThat(stateLookups).hasValue(0);
   }
 
   @TestTemplate
@@ -90,85 +74,84 @@ public class LightClientServerServiceTest {
     final int belowMinimum =
         SpecConfigAltair.required(spec.getGenesisSpecConfig()).getMinSyncCommitteeParticipants()
             - 1;
-    generateChain(
-        BlockOptions.create()
-            .setSyncAggregate(
-                dataStructureUtil.randomSyncAggregate(IntStream.range(0, belowMinimum).toArray()))
-            // A sub-minimum aggregate cannot carry a valid signature, and the service must reject
-            // it before anything looks at the state anyway.
-            .setSkipStateTransition(true));
+    final Chain chain =
+        generateChain(
+            BlockOptions.create()
+                .setSyncAggregate(
+                    dataStructureUtil.randomSyncAggregate(
+                        IntStream.range(0, belowMinimum).toArray()))
+                .setSkipStateTransition(true));
 
-    service.onBlockImported(signature.getBlock(), false);
+    serviceRejectingStateLookups().onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
-    assertThat(stateLookups).hasValue(0);
   }
 
   @TestTemplate
   public void onBlockImported_shouldNotStoreUpdateWhenPostStateIsUnavailable() {
-    generateChain();
-    statesByRoot.remove(signature.getRoot());
+    final Chain chain = generateChain();
+    statesByRoot.remove(chain.signature().getRoot());
 
-    service.onBlockImported(signature.getBlock(), false);
+    service.onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
 
   @TestTemplate
   public void onBlockImported_shouldNotStoreUpdateWhenAttestedBlockIsUnavailable() {
-    generateChain();
-    blocksByRoot.remove(attested.getRoot());
+    final Chain chain = generateChain();
+    blocksByRoot.remove(chain.attested().getRoot());
 
-    service.onBlockImported(signature.getBlock(), false);
+    service.onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
 
   @TestTemplate
   public void onBlockImported_shouldNotStoreUpdateWhenAttestedStateIsUnavailable() {
-    generateChain();
-    statesByRoot.remove(attested.getRoot());
+    final Chain chain = generateChain();
+    statesByRoot.remove(chain.attested().getRoot());
 
-    service.onBlockImported(signature.getBlock(), false);
+    service.onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
 
   @TestTemplate
   public void onBlockImported_shouldNotStoreUpdateWhenFinalizedBlockIsUnavailable() {
-    generateChain();
-    // A state whose finalized checkpoint root is non-zero and points at a block we do not have.
-    statesByRoot.put(attested.getRoot(), dataStructureUtil.randomBeaconState());
+    final Chain chain = generateChain();
+    statesByRoot.put(chain.attested().getRoot(), dataStructureUtil.randomBeaconState());
 
-    service.onBlockImported(signature.getBlock(), false);
+    service.onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
 
   @TestTemplate
   public void onBlockImported_shouldNotPropagateFailureWhenLookupFails() {
-    generateChain();
+    final Chain chain = generateChain();
     final LightClientServerService failingService =
         new LightClientServerService(
             spec,
             store,
             this::lookUpBlock,
-            root -> SafeFuture.failedFuture(new IllegalStateException("store is down")));
+            __ -> SafeFuture.failedFuture(new IllegalStateException("store is down")));
 
-    failingService.onBlockImported(signature.getBlock(), false);
+    failingService.onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
 
   @TestTemplate
   public void onBlockImported_shouldStoreUpdateFinalityUpdateAndOptimisticUpdate() {
-    generateChain();
+    final Chain chain = generateChain();
 
-    service.onBlockImported(signature.getBlock(), false);
+    service.onBlockImported(chain.signature().getBlock(), false);
 
     final LightClientUpdate update = onlyUpdateAtPeriod(0);
-    assertThat(update.getAttestedHeader().getBeacon().getSlot()).isEqualTo(attested.getSlot());
-    assertThat(update.getSignatureSlot().get()).isEqualTo(signature.getSlot());
+    assertThat(update.getAttestedHeader().getBeacon().getSlot())
+        .isEqualTo(chain.attested().getSlot());
+    assertThat(update.getSignatureSlot().get()).isEqualTo(chain.signature().getSlot());
 
     assertThat(store.getLatestFinalityUpdate()).isPresent();
     assertThat(store.getLatestOptimisticUpdate()).isPresent();
@@ -176,21 +159,21 @@ public class LightClientServerServiceTest {
 
   @TestTemplate
   public void onBlockImported_shouldNotBlockWhileLookupsArePending() {
-    generateChain();
+    final Chain chain = generateChain();
     final SafeFuture<Optional<BeaconState>> pendingAttestedState = new SafeFuture<>();
     final LightClientServerService pendingService =
         new LightClientServerService(
             spec,
             store,
             this::lookUpBlock,
-            root -> root.equals(attested.getRoot()) ? pendingAttestedState : lookUpState(root));
+            root ->
+                root.equals(chain.attested().getRoot()) ? pendingAttestedState : lookUpState(root));
 
-    pendingService.onBlockImported(signature.getBlock(), false);
+    pendingService.onBlockImported(chain.signature().getBlock(), false);
 
-    // Returned without waiting on the outstanding lookup.
     assertNothingStored();
 
-    pendingAttestedState.complete(Optional.of(attested.getState()));
+    pendingAttestedState.complete(Optional.of(chain.attested().getState()));
 
     assertThat(store.getLatestOptimisticUpdate()).isPresent();
   }
@@ -227,51 +210,62 @@ public class LightClientServerServiceTest {
     assertThat(onlyUpdateAtPeriod(1)).isEqualTo(update);
   }
 
+  private record Chain(SignedBlockAndState attested, SignedBlockAndState signature) {}
+
   private SafeFuture<Optional<SignedBeaconBlock>> lookUpBlock(final Bytes32 root) {
     return SafeFuture.completedFuture(Optional.ofNullable(blocksByRoot.get(root)));
   }
 
   private SafeFuture<Optional<BeaconState>> lookUpState(final Bytes32 root) {
-    stateLookups.incrementAndGet();
     return SafeFuture.completedFuture(Optional.ofNullable(statesByRoot.get(root)));
   }
 
-  /** Two real consecutive blocks, the second signed by the whole sync committee. */
-  private void generateChain() {
-    generateChain(
-        BlockOptions.create()
-            .setSyncAggregate(dataStructureUtil.randomSyncAggregate(fullParticipation())));
+  private LightClientServerService serviceRejectingStateLookups() {
+    return new LightClientServerService(
+        spec, store, this::lookUpBlock, __ -> fail("should have returned before looking up state"));
   }
 
-  private void generateChain(final BlockOptions signatureBlockOptions) {
+  private Chain generateChain() {
+    final int syncCommitteeSize =
+        SpecConfigAltair.required(spec.getGenesisSpecConfig()).getSyncCommitteeSize();
+    return generateChain(
+        BlockOptions.create()
+            .setSyncAggregate(
+                dataStructureUtil.randomSyncAggregate(
+                    IntStream.range(0, syncCommitteeSize).toArray())));
+  }
+
+  private Chain generateChain(final BlockOptions signatureBlockOptions) {
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     chainBuilder.generateGenesis();
-    attested = chainBuilder.generateNextBlock();
-    signature = chainBuilder.generateNextBlock(signatureBlockOptions);
+    final Chain chain =
+        new Chain(
+            chainBuilder.generateNextBlock(),
+            chainBuilder.generateNextBlock(signatureBlockOptions));
 
-    blocksByRoot.put(attested.getRoot(), attested.getBlock());
-    statesByRoot.put(attested.getRoot(), attested.getState());
-    statesByRoot.put(signature.getRoot(), signature.getState());
-    stateLookups.set(0);
-  }
-
-  private int[] fullParticipation() {
-    return IntStream.range(0, syncCommitteeSize).toArray();
+    blocksByRoot.put(chain.attested().getRoot(), chain.attested().getBlock());
+    statesByRoot.put(chain.attested().getRoot(), chain.attested().getState());
+    statesByRoot.put(chain.signature().getRoot(), chain.signature().getState());
+    return chain;
   }
 
   private LightClientUpdate addUpdateAtPeriod(final long period) {
     final LightClientUpdate update =
-        dataStructureUtil
-            .createRandomLightClientUpdateBuilder(periodOneStartSlot.times(period))
-            .build();
+        dataStructureUtil.createRandomLightClientUpdateBuilder(periodStartSlot(period)).build();
     store.addUpdate(update);
     return update;
   }
 
   private Checkpoint checkpointAtPeriod(final long period) {
     return new Checkpoint(
-        spec.computeEpochAtSlot(periodOneStartSlot.times(period)),
-        dataStructureUtil.randomBytes32());
+        spec.computeEpochAtSlot(periodStartSlot(period)), dataStructureUtil.randomBytes32());
+  }
+
+  private UInt64 periodStartSlot(final long period) {
+    return spec.computeStartSlotAtEpoch(
+            spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
+                .computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO))
+        .times(period);
   }
 
   private LightClientUpdate onlyUpdateAtPeriod(final long period) {
