@@ -1125,15 +1125,31 @@ tasks.register('manifestDocker') {
 	}
 }
 
+// The compile classpaths are warmed as well as the runtime ones: a test shard re-resolves the compile
+// classpath when it checks whether the compile tasks are up to date, and compileOnly dependencies only
+// ever appear there. Missing them is what sent every shard back to Maven Central for jars such as
+// jakarta.xml.bind-api and commons-codec.
 def ciDependencyConfigurations = [
 	'jacocoAgent',
 	'jacocoAnt',
+	'annotationProcessor',
+	'compileClasspath',
 	'runtimeClasspath',
+	'testAnnotationProcessor',
+	'testCompileClasspath',
 	'testRuntimeClasspath',
+	'testFixturesCompileClasspath',
+	'testFixturesRuntimeClasspath',
+	'integrationTestCompileClasspath',
 	'integrationTestRuntimeClasspath',
+	'acceptanceTestCompileClasspath',
 	'acceptanceTestRuntimeClasspath',
+	'propertyTestCompileClasspath',
 	'propertyTestRuntimeClasspath',
+	'referenceTestCompileClasspath',
 	'referenceTestRuntimeClasspath',
+	'jmhCompileClasspath',
+	'jmhRuntimeClasspath',
 ]
 
 def resolveCiDependencyConfigurations = { targetProject ->
