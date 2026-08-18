@@ -22,9 +22,13 @@ import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -35,12 +39,14 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSidecarSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -50,18 +56,21 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 /**
  * Verifies that the DataColumnSidecar gossip schema is resolved from the fork the subscription
- * belongs to and not from the highest supported milestone. On a network with Gloas scheduled, Fulu
- * era topics must still decode sidecars using the Fulu schema.
+ * belongs to and not from the highest supported milestone. Every milestone supporting data column
+ * sidecars is scheduled at a distinct epoch, so each fork must keep using its own schema even when
+ * later forks are scheduled on the same network.
  */
 public class DataColumnSidecarSubnetSubscriptionsTest {
 
-  private static final UInt64 FULU_FORK_EPOCH = UInt64.ZERO;
-  private static final UInt64 GLOAS_FORK_EPOCH = UInt64.valueOf(2);
+  private static final SpecMilestone FIRST_DATA_COLUMN_SIDECAR_MILESTONE = SpecMilestone.FULU;
   private static final int SUBNET_ID = 1;
 
-  private final Spec spec = TestSpecFactory.createMinimalWithGloasForkEpoch(GLOAS_FORK_EPOCH);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  private static final Spec SPEC =
+      TestSpecFactory.createMinimalWithCapellaDenebElectraFuluGloasAndHezeForkEpoch(
+          UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.valueOf(2), UInt64.valueOf(4));
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(SPEC);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -70,6 +79,19 @@ public class DataColumnSidecarSubnetSubscriptionsTest {
   @SuppressWarnings("unchecked")
   private final OperationProcessor<DataColumnSidecar> processor = mock(OperationProcessor.class);
 
+  static Stream<Arguments> dataColumnSidecarForks() {
+    return SPEC.getForkSchedule().getActiveMilestones().stream()
+        .filter(
+            forkAndMilestone ->
+                forkAndMilestone
+                    .getSpecMilestone()
+                    .isGreaterThanOrEqualTo(FIRST_DATA_COLUMN_SIDECAR_MILESTONE))
+        .map(
+            forkAndMilestone ->
+                Arguments.of(
+                    forkAndMilestone.getSpecMilestone(), forkAndMilestone.getFork().getEpoch()));
+  }
+
   @BeforeEach
   void setUp() {
     storageSystem.chainUpdater().initializeGenesis();
@@ -77,31 +99,35 @@ public class DataColumnSidecarSubnetSubscriptionsTest {
   }
 
   @Test
-  void shouldUseFuluSchemaForFuluForkSubscription() {
-    assertThat(createSubnetSubscriptions(FULU_FORK_EPOCH).getDataColumnSidecarSchema())
-        .isInstanceOf(DataColumnSidecarSchemaFulu.class);
+  void shouldCoverEveryMilestoneSupportingDataColumnSidecars() {
+    assertThat(
+            SPEC.getForkSchedule().getActiveMilestones().stream()
+                .map(ForkAndSpecMilestone::getSpecMilestone)
+                .filter(
+                    milestone ->
+                        milestone.isGreaterThanOrEqualTo(FIRST_DATA_COLUMN_SIDECAR_MILESTONE)))
+        .containsExactlyElementsOf(
+            SpecMilestone.getAllMilestonesFrom(FIRST_DATA_COLUMN_SIDECAR_MILESTONE));
   }
 
-  @Test
-  void shouldUseGloasSchemaForGloasForkSubscription() {
-    assertThat(createSubnetSubscriptions(GLOAS_FORK_EPOCH).getDataColumnSidecarSchema())
-        .isInstanceOf(DataColumnSidecarSchemaGloas.class);
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("dataColumnSidecarForks")
+  void shouldUseSchemaFromTopicFork(final SpecMilestone milestone, final UInt64 forkEpoch) {
+    final DataColumnSidecarSchema<DataColumnSidecar> expectedSchema =
+        SchemaDefinitionsFulu.required(SPEC.forMilestone(milestone).getSchemaDefinitions())
+            .getDataColumnSidecarSchema();
+
+    assertThat(createSubnetSubscriptions(forkEpoch).getDataColumnSidecarSchema())
+        .isSameAs(expectedSchema);
   }
 
-  @Test
-  void shouldDecodeFuluSidecarOnFuluForkSubscription() {
-    final DataColumnSidecar sidecar = randomDataColumnSidecar(FULU_FORK_EPOCH);
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("dataColumnSidecarForks")
+  void shouldDecodeSidecarFromTopicFork(final SpecMilestone milestone, final UInt64 forkEpoch) {
+    final DataColumnSidecar sidecar = randomDataColumnSidecar(forkEpoch);
+    assertThat(SPEC.atEpoch(forkEpoch).getMilestone()).isEqualTo(milestone);
 
-    assertThat(handleMessage(createSubnetSubscriptions(FULU_FORK_EPOCH), sidecar))
-        .isCompletedWithValue(ValidationResult.Valid);
-    verify(processor).process(eq(sidecar), any());
-  }
-
-  @Test
-  void shouldDecodeGloasSidecarOnGloasForkSubscription() {
-    final DataColumnSidecar sidecar = randomDataColumnSidecar(GLOAS_FORK_EPOCH);
-
-    assertThat(handleMessage(createSubnetSubscriptions(GLOAS_FORK_EPOCH), sidecar))
+    assertThat(handleMessage(createSubnetSubscriptions(forkEpoch), sidecar))
         .isCompletedWithValue(ValidationResult.Valid);
     verify(processor).process(eq(sidecar), any());
   }
@@ -111,7 +137,7 @@ public class DataColumnSidecarSubnetSubscriptionsTest {
     final Bytes4 forkDigest = recentChainData.getForkDigest(forkEpoch);
     final DataColumnSidecarSubnetSubscriptions subnetSubscriptions =
         new DataColumnSidecarSubnetSubscriptions(
-            spec,
+            SPEC,
             asyncRunner,
             gossipNetwork,
             gossipEncoding,
@@ -126,7 +152,7 @@ public class DataColumnSidecarSubnetSubscriptionsTest {
 
   private DataColumnSidecar randomDataColumnSidecar(final UInt64 forkEpoch) {
     final SignedBeaconBlockHeader blockHeader =
-        dataStructureUtil.randomSignedBeaconBlockHeader(spec.computeStartSlotAtEpoch(forkEpoch));
+        dataStructureUtil.randomSignedBeaconBlockHeader(SPEC.computeStartSlotAtEpoch(forkEpoch));
     return dataStructureUtil.randomDataColumnSidecar(blockHeader, UInt64.valueOf(SUBNET_ID));
   }
 
