@@ -17,5 +17,6 @@
 
 ### Bug Fixes
  - Fixed `data_column_sidecar` gossip decoding to use the schema of the topic's fork instead of the highest supported milestone. Previously, on networks with Gloas scheduled, every Fulu-era column sidecar received via gossip failed deserialization.
+ - Validate `BeaconBlocksByRoot` responses against the requested block roots before accepting them.
  - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
  - Post-Electra, the `committee_index` query parameter in `GET /eth/v1/validator/attestation_data` is now ignored instead of rejected when non-zero, matching the behaviour of other consensus clients.
