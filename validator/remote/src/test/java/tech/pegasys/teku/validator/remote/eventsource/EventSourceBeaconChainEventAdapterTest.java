@@ -157,7 +157,11 @@ public class EventSourceBeaconChainEventAdapterTest {
       final HttpUrl endpoint, final boolean shutdownWhenValidatorSlashedEnabled) {
     Stream<EventType> eventTypes =
         shutdownWhenValidatorSlashedEnabled
-            ? Stream.of(EventType.head, EventType.head_v2, EventType.attester_slashing, EventType.proposer_slashing)
+            ? Stream.of(
+                EventType.head,
+                EventType.head_v2,
+                EventType.attester_slashing,
+                EventType.proposer_slashing)
             : Stream.of(EventType.head, EventType.head_v2);
     verify(endpoint)
         .resolve(
