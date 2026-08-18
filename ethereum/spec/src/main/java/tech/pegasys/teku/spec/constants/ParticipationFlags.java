@@ -18,6 +18,8 @@ public class ParticipationFlags {
   public static final int TIMELY_TARGET_FLAG_INDEX = 1;
   public static final int TIMELY_HEAD_FLAG_INDEX = 2;
 
+  public static final byte NO_PARTICIPATION_FLAGS = (byte) 0b0000_0000;
+
   public static final int TIMELY_SOURCE_FLAG = indexToFlag(TIMELY_SOURCE_FLAG_INDEX);
   public static final int TIMELY_TARGET_FLAG = indexToFlag(TIMELY_TARGET_FLAG_INDEX);
   public static final int TIMELY_HEAD_FLAG = indexToFlag(TIMELY_HEAD_FLAG_INDEX);
@@ -27,10 +29,6 @@ public class ParticipationFlags {
 
   public static boolean isTimelyTarget(final int value) {
     return checkIfAnyFlagIsSet(value, TIMELY_TARGET_FLAG);
-  }
-
-  public static boolean hadNoParticipation(final byte participationFlags) {
-    return participationFlags == (byte) 0b0000_0000;
   }
 
   public static boolean isAnyFlagSet(final int value) {

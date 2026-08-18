@@ -46,18 +46,4 @@ public class ParticipationFlagsTest {
     assertThat(ParticipationFlags.isAnyFlagSet(0)).isFalse();
     assertThat(ParticipationFlags.isAnyFlagSet(8)).isFalse();
   }
-
-  @Test
-  public void hadNoParticipation() {
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 0)).isTrue();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 1)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 2)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 3)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 4)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 5)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 6)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 7)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 8)).isFalse();
-    assertThat(ParticipationFlags.hadNoParticipation((byte) 9)).isFalse();
-  }
 }

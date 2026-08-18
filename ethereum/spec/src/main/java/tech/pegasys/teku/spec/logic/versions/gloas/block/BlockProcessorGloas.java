@@ -412,7 +412,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconState state) {
     final BuilderPendingPayment payment =
         BeaconStateGloas.required(state).getBuilderPendingPayments().get(builderPaymentIndex);
-    if (ParticipationFlags.hadNoParticipation(previousParticipationFlags)
+    if (previousParticipationFlags == ParticipationFlags.NO_PARTICIPATION_FLAGS
         && beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
         // only add to the payment quorum if the payment is not trivial
         && payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
