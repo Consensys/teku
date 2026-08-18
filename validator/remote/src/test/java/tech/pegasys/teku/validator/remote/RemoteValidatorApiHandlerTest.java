@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -515,6 +516,7 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContainerAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
+            eq(false),
             eq(Optional.empty())))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
@@ -540,7 +542,8 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContainerAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(Optional.of(ONE))))
+            eq(false),
+            eq(Optional.of(BuilderConfig.withBuilderBoostFactor(ONE)))))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
     final SafeFuture<Optional<BlockContainerAndMetaData>> future =
@@ -565,6 +568,7 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContentsAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
+            eq(false),
             eq(Optional.empty())))
         .thenReturn(Optional.of(blockContentsAndMetaData));
 
