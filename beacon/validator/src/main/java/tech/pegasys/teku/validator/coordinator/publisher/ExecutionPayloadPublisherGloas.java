@@ -153,16 +153,17 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   }
 
   /**
-   * Missing blob data only prevents publication when the block actually commits to blobs. A block
-   * with no blob KZG commitments needs no sidecars, so the envelope is published with an empty list
-   * rather than rejected. When the block cannot be found we assume blobs are needed and reject.
+   * Every {@link DataColumnSidecarCreationException} means the cached blob data cannot be used for
+   * this envelope, either because it is absent or because it belongs to a different payload. That
+   * only prevents publication when the block actually commits to blobs: a block with no blob KZG
+   * commitments needs no sidecars, so the envelope is published with an empty list rather than
+   * rejected. When the block cannot be found we assume blobs are needed and reject.
+   *
+   * <p>An envelope that is invalid in its own right is still rejected, because the broadcast
+   * validation result is checked before these sidecars are used.
    */
   private SafeFuture<DataColumnSidecarsResult> onDataColumnSidecarCreationFailure(
       final DataColumnSidecarCreationException creationException, final Bytes32 beaconBlockRoot) {
-    if (!creationException.isBlobDataNotCached()) {
-      return SafeFuture.completedFuture(
-          rejectDataColumnSidecars(creationException, beaconBlockRoot));
-    }
     return recentChainData
         .retrieveBlockByRoot(beaconBlockRoot)
         .thenApply(
@@ -176,10 +177,11 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
                 return rejectDataColumnSidecars(creationException, beaconBlockRoot);
               }
               LOG.debug(
-                  "No cached blob data for the execution payload envelope with beacon block root"
-                      + " {}, but the block commits to no blobs so no data column sidecars are"
-                      + " needed",
-                  beaconBlockRoot);
+                  "Could not use the cached blob data for the execution payload envelope with"
+                      + " beacon block root {} ({}), but the block commits to no blobs so no data"
+                      + " column sidecars are needed",
+                  beaconBlockRoot,
+                  creationException.getMessage());
               return DataColumnSidecarsResult.created(List.of());
             });
   }

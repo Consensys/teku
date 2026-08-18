@@ -166,6 +166,63 @@ class ExecutionPayloadPublisherGloasTest {
   }
 
   @Test
+  public void
+      publishSignedExecutionPayload_shouldPublishWithoutSidecarsWhenCachedPayloadDoesNotMatchAndBlockHasNoBlobs() {
+    // a mismatched cache only matters when blobs have to be attached, and a block committing to no
+    // blobs needs none: this is the failover case where the block was produced on another node
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(
+            SafeFuture.failedFuture(
+                DataColumnSidecarCreationException.cachedPayloadMismatch(
+                    signedExecutionPayload.getSlot())));
+    when(recentChainData.retrieveBlockByRoot(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments().getMessage())));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.success(
+                signedExecutionPayload.getBeaconBlockRoot()));
+
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(List.of(), RemoteOrigin.LOCAL_PROPOSAL);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldNotPublishInvalidEnvelopeWhenBlockHasNoBlobs() {
+    // publishing on a sidecar failure is only safe because broadcast validation is checked first,
+    // so an envelope that is invalid in its own right must never reach the network
+    when(executionPayloadManager.validateAndImportExecutionPayloadForBroadcast(
+            eq(signedExecutionPayload), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ExecutionPayloadManager.ValidateAndImportResult(
+                    InternalValidationResult.reject("oopsy"), Optional.empty())));
+    when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
+        .thenReturn(
+            SafeFuture.failedFuture(
+                DataColumnSidecarCreationException.cachedPayloadMismatch(
+                    signedExecutionPayload.getSlot())));
+    when(recentChainData.retrieveBlockByRoot(signedExecutionPayload.getBeaconBlockRoot()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments().getMessage())));
+
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedExecutionPayload.getBeaconBlockRoot(), "Failed broadcast validation: oopsy"));
+
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
+  }
+
+  @Test
   public void publishSignedExecutionPayload_shouldRejectWhenBlobDataIsNotCachedAndBlockIsUnknown() {
     final DataColumnSidecarCreationException error =
         DataColumnSidecarCreationException.noCachedBlobData(signedExecutionPayload.getSlot());

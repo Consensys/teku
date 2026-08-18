@@ -22,12 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  */
 public class DataColumnSidecarCreationException extends IllegalStateException {
 
-  private final boolean blobDataNotCached;
-
-  private DataColumnSidecarCreationException(
-      final String message, final boolean blobDataNotCached) {
+  private DataColumnSidecarCreationException(final String message) {
     super(message);
-    this.blobDataNotCached = blobDataNotCached;
   }
 
   /**
@@ -40,25 +36,17 @@ public class DataColumnSidecarCreationException extends IllegalStateException {
         "No cached blobs and KZG proofs to attach to the execution payload envelope for slot "
             + slot
             + ". Block production likely happened on a different beacon node, resubmit with"
-            + " Eth-Blob-Data-Included: true",
-        true);
+            + " Eth-Blob-Data-Included: true");
   }
 
-  /** The submitted envelope does not carry the execution payload this beacon node built. */
+  /**
+   * The submitted envelope does not carry the execution payload this beacon node built, so the
+   * blobs cached for the slot belong to a different payload and cannot be attached to it.
+   */
   public static DataColumnSidecarCreationException cachedPayloadMismatch(final UInt64 slot) {
     return new DataColumnSidecarCreationException(
         "Signed execution payload envelope for slot "
             + slot
-            + " does not match the execution payload built by this beacon node",
-        false);
-  }
-
-  /**
-   * Whether the failure was caused by the absence of cached blob data rather than by the submitted
-   * envelope itself. Only in that case can the envelope still be published, and only when the block
-   * commits to no blobs at all so that no sidecars are needed.
-   */
-  public boolean isBlobDataNotCached() {
-    return blobDataNotCached;
+            + " does not match the execution payload built by this beacon node");
   }
 }
