@@ -223,9 +223,10 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerHeadEvent();
-    final String event = outputStream.getString();
-    assertThat(event).doesNotContain("event: head\n");
-    assertThat(event).contains("event: head_v2\n");
+    final List<String> events = outputStream.getEvents();
+    assertThat(events.size()).isEqualTo(1);
+    assertThat(events.getFirst()).doesNotContain("event: head\n");
+    assertThat(events.getFirst()).contains("event: head_v2\n");
   }
 
   @Test
