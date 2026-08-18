@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -70,26 +69,27 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
   }
 
   @Override
-  public SafeFuture<SignedExecutionPayloadEnvelope> unblindSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload) {
-    final UInt64 slot = signedBlindedExecutionPayload.getSlot();
-    final SchemaDefinitionsGloas schemaDefinitions =
-        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
-    return getCachedGetPayloadResponseFuture(slot)
-        .thenApply(
-            getPayloadResponse ->
-                signedBlindedExecutionPayload.unblind(
-                    schemaDefinitions, getPayloadResponse.getExecutionPayload()));
-  }
-
-  @Override
   public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     final UInt64 slot = signedExecutionPayload.getMessage().getSlot();
-    return getCachedGetPayloadResponseFuture(slot)
+    return SafeFuture.<GetPayloadResponse>of(
+            () ->
+                executionLayerBlockProductionManager
+                    .getCachedPayloadResult(slot)
+                    .orElseThrow(() -> DataColumnSidecarCreationException.noCachedBlobData(slot))
+                    .getPayloadResponseFutureFromLocalFlowRequired())
         .thenApply(
             getPayloadResponse -> {
-              final BlobsBundle blobsBundle = getPayloadResponse.getBlobsBundle().orElseThrow();
+              if (!getPayloadResponse
+                  .getExecutionPayload()
+                  .hashTreeRoot()
+                  .equals(signedExecutionPayload.getMessage().getPayload().hashTreeRoot())) {
+                throw DataColumnSidecarCreationException.cachedPayloadMismatch(slot);
+              }
+              final BlobsBundle blobsBundle =
+                  getPayloadResponse
+                      .getBlobsBundle()
+                      .orElseThrow(() -> DataColumnSidecarCreationException.noCachedBlobData(slot));
               return createDataColumnSidecars(
                   signedExecutionPayload, blobsBundle.getBlobs(), blobsBundle.getProofs());
             });
