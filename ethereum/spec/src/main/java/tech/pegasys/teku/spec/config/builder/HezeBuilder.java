@@ -28,7 +28,7 @@ public class HezeBuilder extends BaseForkBuilder
 
   private Integer inclusionListDueBps;
   private Integer maxRequestInclusionList;
-  private Integer maxBytesPerInclusionList;
+  private Integer maxTransactionsBytesPerInclusionList;
 
   // heze preset
   private Integer inclusionListCommitteeSize;
@@ -43,7 +43,7 @@ public class HezeBuilder extends BaseForkBuilder
             specConfigAndParent.specConfig(),
             inclusionListDueBps,
             maxRequestInclusionList,
-            maxBytesPerInclusionList,
+            maxTransactionsBytesPerInclusionList,
             inclusionListCommitteeSize),
         specConfigAndParent);
   }
@@ -60,9 +60,10 @@ public class HezeBuilder extends BaseForkBuilder
     return this;
   }
 
-  public HezeBuilder maxBytesPerInclusionList(final Integer maxBytesPerInclusionList) {
-    checkNotNull(maxBytesPerInclusionList);
-    this.maxBytesPerInclusionList = maxBytesPerInclusionList;
+  public HezeBuilder maxTransactionsBytesPerInclusionList(
+      final Integer maxTransactionsBytesPerInclusionList) {
+    checkNotNull(maxTransactionsBytesPerInclusionList);
+    this.maxTransactionsBytesPerInclusionList = maxTransactionsBytesPerInclusionList;
     return this;
   }
 
@@ -83,7 +84,7 @@ public class HezeBuilder extends BaseForkBuilder
     final Map<String, Object> constants = new HashMap<>();
     constants.put("inclusionListDueBps", inclusionListDueBps);
     constants.put("maxRequestInclusionList", maxRequestInclusionList);
-    constants.put("maxBytesPerInclusionList", maxBytesPerInclusionList);
+    constants.put("maxTransactionsBytesPerInclusionList", maxTransactionsBytesPerInclusionList);
     constants.put("inclusionListCommitteeSize", inclusionListCommitteeSize);
     return constants;
   }
