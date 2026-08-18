@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import com.google.common.base.Throwables;
+import io.libp2p.core.SemiDuplexNoOutboundStreamException;
+import io.libp2p.pubsub.NoPeersForOutboundMessageException;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +37,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final SyncCommitteeSubnetSubscriptions subnetSubscriptions;
+  private final Runnable peerSearchRequester;
 
   private final Counter publishSuccessCounter;
   private final Counter publishFailureCounter;
@@ -45,10 +49,12 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
-      final SyncCommitteeSubnetSubscriptions subnetSubscriptions) {
+      final SyncCommitteeSubnetSubscriptions subnetSubscriptions,
+      final Runnable peerSearchRequester) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.subnetSubscriptions = subnetSubscriptions;
+    this.peerSearchRequester = peerSearchRequester;
     final LabelledMetric<Counter> publishedSyncCommitteeCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -110,8 +116,17 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
             },
             error -> {
               gossipFailureLogger.log(error, Optional.of(message.getSlot()));
+              requestPeerSearchIfRequired(error);
               publishFailureCounter.inc();
             });
+  }
+
+  private void requestPeerSearchIfRequired(final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof NoPeersForOutboundMessageException
+        || rootCause instanceof SemiDuplexNoOutboundStreamException) {
+      peerSearchRequester.run();
+    }
   }
 
   public void subscribeToSubnetId(final int subnetId) {
