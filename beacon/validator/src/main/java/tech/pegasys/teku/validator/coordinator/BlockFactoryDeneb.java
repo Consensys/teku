@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -62,6 +63,6 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final BeaconBlock block, final BlobsBundle blobsBundle) {
     return SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
         .getBlockContentsSchema()
-        .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs());
+        .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs(), Optional.empty());
   }
 }
