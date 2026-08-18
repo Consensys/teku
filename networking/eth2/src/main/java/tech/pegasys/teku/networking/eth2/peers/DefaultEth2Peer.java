@@ -324,14 +324,15 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener) {
+    final List<Bytes32> uniqueBlockRoots = blockRoots.stream().distinct().toList();
     final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema requestSchema =
         spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema();
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestStream(
         blockByRoot,
-        new BeaconBlocksByRootRequestMessage(requestSchema, blockRoots),
-        new BeaconBlocksByRootListenerValidatingProxy(this, listener, blockRoots));
+        new BeaconBlocksByRootRequestMessage(requestSchema, uniqueBlockRoots),
+        new BeaconBlocksByRootListenerValidatingProxy(this, listener, uniqueBlockRoots));
   }
 
   @Override
