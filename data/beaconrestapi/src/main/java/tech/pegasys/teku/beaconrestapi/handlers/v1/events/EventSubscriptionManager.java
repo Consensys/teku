@@ -164,16 +164,18 @@ public class EventSubscriptionManager
           notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
-    final HeadEvent headEvent =
-        new HeadEvent(
-            slot,
-            bestBlockRoot,
-            stateRoot,
-            epochTransition,
-            executionOptimistic,
-            previousDutyDependentRoot,
-            currentDutyDependentRoot);
-    notifySubscribersOfEvent(EventType.head, headEvent);
+    if(spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      final HeadEvent headEvent =
+              new HeadEvent(
+                      slot,
+                      bestBlockRoot,
+                      stateRoot,
+                      epochTransition,
+                      executionOptimistic,
+                      previousDutyDependentRoot,
+                      currentDutyDependentRoot);
+      notifySubscribersOfEvent(EventType.head, headEvent);
+    }
 
     final HeadV2Event headV2Event =
         HeadV2Event.create(

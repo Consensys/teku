@@ -218,12 +218,14 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  void shouldPropagateHeadEvent() throws IOException {
-    when(req.getQueryString()).thenReturn("&topics=head");
+  void shouldNotPropagateHeadV1Event() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head,head_v2");
     manager.registerClient(client1);
 
     triggerHeadEvent();
-    checkEvent("head", headEvent);
+    final String event = outputStream.getString();
+    assertThat(event).doesNotContain("event: head\n");
+    assertThat(event).contains("event: head_v2\n");
   }
 
   @Test
@@ -251,13 +253,14 @@ public class EventSubscriptionManagerTest {
 
   @Test
   void shouldPropagateHeadAndReorg() {
-    when(req.getQueryString()).thenReturn("&topics=chain_reorg,head");
+    when(req.getQueryString()).thenReturn("&topics=chain_reorg,head,head_v2");
     manager.registerClient(client1);
 
     triggerReorgEvent();
     final List<String> events = outputStream.getEvents();
     assertThat(events.get(0)).contains("event: chain_reorg\n");
-    assertThat(events.get(1)).contains("event: head\n");
+    assertThat(events.get(1)).doesNotContain("event: head\n");
+    assertThat(events.get(1)).contains("event: head_v2\n");
   }
 
   @Test
