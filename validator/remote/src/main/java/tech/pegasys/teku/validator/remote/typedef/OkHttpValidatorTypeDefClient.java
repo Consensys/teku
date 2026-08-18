@@ -36,10 +36,10 @@ import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscr
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -166,6 +166,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
             schemaDefinitionCache,
             slot,
             preferSszBlockEncoding);
+    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return produceBlockRequest.submitV4(randaoReveal, graffiti, requestedBuilderBoostFactor);
+    }
     return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
@@ -317,14 +321,5 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new PublishSignedExecutionPayloadRequest(spec, getBaseEndpoint(), getOkHttpClient());
     return publishSignedExecutionPayloadRequest.submit(
         signedExecutionPayloadEnvelopeContents, broadcastValidationLevel);
-  }
-
-  public PublishSignedExecutionPayloadResult publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    final PublishSignedExecutionPayloadRequest publishSignedExecutionPayloadRequest =
-        new PublishSignedExecutionPayloadRequest(spec, getBaseEndpoint(), getOkHttpClient());
-    return publishSignedExecutionPayloadRequest.submit(
-        signedBlindedExecutionPayload, broadcastValidationLevel);
   }
 }

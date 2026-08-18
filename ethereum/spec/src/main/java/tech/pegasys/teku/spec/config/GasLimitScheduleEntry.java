@@ -13,17 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
-public interface NetworkingSpecConfigGloas extends NetworkingSpecConfigDeneb {
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-  int getMaxRequestPayloads();
-
-  int getMaxSignedAggregateAndProofSize();
-
-  int getMaxAttesterSlashingSize();
-
-  int getMaxDataColumnSidecarSize();
-
-  int getMaxPartialDataColumnSidecarSize();
-
-  int getMaxSignedExecutionPayloadBidSize();
-}
+/** EIP-8261: an entry of the {@code GAS_LIMIT_SCHEDULE} configuration field. */
+public record GasLimitScheduleEntry(UInt64 epoch, UInt64 gasLimit) {}

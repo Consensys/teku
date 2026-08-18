@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,6 +33,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int maxSignedAggregateAndProofSize;
   private final int maxAttesterSlashingSize;
   private final int maxDataColumnSidecarSize;
+  private final int maxPartialDataColumnSidecarSize;
   private final int maxSignedExecutionPayloadBidSize;
   private final int minBuilderWithdrawabilityDelay;
   private final int payloadAttestationDueBps;
@@ -41,6 +43,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int churnLimitQuotientGloas;
   private final int consolidationChurnLimitQuotient;
   private final UInt64 maxPerEpochActivationChurnLimitGloas;
+  private final List<GasLimitScheduleEntry> gasLimitSchedule;
 
   public SpecConfigGloasImpl(
       final SpecConfigFulu specConfig,
@@ -65,7 +68,9 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int maxSignedAggregateAndProofSize,
       final int maxAttesterSlashingSize,
       final int maxDataColumnSidecarSize,
-      final int maxSignedExecutionPayloadBidSize) {
+      final int maxPartialDataColumnSidecarSize,
+      final int maxSignedExecutionPayloadBidSize,
+      final List<GasLimitScheduleEntry> gasLimitSchedule) {
     super(specConfig);
     this.aggregateDueBps = aggregateDueBps;
     this.attestationDueBps = attestationDueBps;
@@ -80,6 +85,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.maxSignedAggregateAndProofSize = maxSignedAggregateAndProofSize;
     this.maxAttesterSlashingSize = maxAttesterSlashingSize;
     this.maxDataColumnSidecarSize = maxDataColumnSidecarSize;
+    this.maxPartialDataColumnSidecarSize = maxPartialDataColumnSidecarSize;
     this.maxSignedExecutionPayloadBidSize = maxSignedExecutionPayloadBidSize;
     this.ptcSize = ptcSize;
     this.minBuilderWithdrawabilityDelay = minBuilderWithdrawabilityDelay;
@@ -89,6 +95,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.churnLimitQuotientGloas = churnLimitQuotientGloas;
     this.consolidationChurnLimitQuotient = consolidationChurnLimitQuotient;
     this.maxPerEpochActivationChurnLimitGloas = maxPerEpochActivationChurnLimitGloas;
+    this.gasLimitSchedule = gasLimitSchedule;
   }
 
   @Override
@@ -124,6 +131,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   @Override
   public int getMaxDataColumnSidecarSize() {
     return maxDataColumnSidecarSize;
+  }
+
+  @Override
+  public int getMaxPartialDataColumnSidecarSize() {
+    return maxPartialDataColumnSidecarSize;
   }
 
   @Override
@@ -202,6 +214,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
+  public List<GasLimitScheduleEntry> getGasLimitSchedule() {
+    return gasLimitSchedule;
+  }
+
+  @Override
   public SpecMilestone getMilestone() {
     return SpecMilestone.GLOAS;
   }
@@ -228,6 +245,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && maxSignedAggregateAndProofSize == that.maxSignedAggregateAndProofSize
         && maxAttesterSlashingSize == that.maxAttesterSlashingSize
         && maxDataColumnSidecarSize == that.maxDataColumnSidecarSize
+        && maxPartialDataColumnSidecarSize == that.maxPartialDataColumnSidecarSize
         && maxSignedExecutionPayloadBidSize == that.maxSignedExecutionPayloadBidSize
         && minBuilderWithdrawabilityDelay == that.minBuilderWithdrawabilityDelay
         && payloadAttestationDueBps == that.payloadAttestationDueBps
@@ -242,7 +260,8 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && churnLimitQuotientGloas == that.churnLimitQuotientGloas
         && consolidationChurnLimitQuotient == that.consolidationChurnLimitQuotient
         && Objects.equals(
-            maxPerEpochActivationChurnLimitGloas, that.maxPerEpochActivationChurnLimitGloas);
+            maxPerEpochActivationChurnLimitGloas, that.maxPerEpochActivationChurnLimitGloas)
+        && Objects.equals(gasLimitSchedule, that.gasLimitSchedule);
   }
 
   @Override
@@ -262,6 +281,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         maxSignedAggregateAndProofSize,
         maxAttesterSlashingSize,
         maxDataColumnSidecarSize,
+        maxPartialDataColumnSidecarSize,
         maxSignedExecutionPayloadBidSize,
         minBuilderWithdrawabilityDelay,
         payloadAttestationDueBps,
@@ -270,6 +290,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         syncMessageDueBps,
         churnLimitQuotientGloas,
         consolidationChurnLimitQuotient,
-        maxPerEpochActivationChurnLimitGloas);
+        maxPerEpochActivationChurnLimitGloas,
+        gasLimitSchedule);
   }
 }

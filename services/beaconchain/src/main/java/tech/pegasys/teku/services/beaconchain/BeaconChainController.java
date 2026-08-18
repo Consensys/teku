@@ -120,6 +120,7 @@ import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -491,7 +492,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "type");
     this.dasGossipLogger = new DasGossipBatchLogger(dasAsyncRunner, timeProvider);
     this.dasReqRespLogger = DasReqRespLogger.create(timeProvider);
-    this.ephemerySlotValidationService = new EphemerySlotValidationService();
+    final SpecConfig genesisConfig = spec.getGenesisSpec().getConfig();
+    this.ephemerySlotValidationService =
+        new EphemerySlotValidationService(
+            genesisConfig.getEphemeryResetPeriod(), genesisConfig.getSecondsPerSlot());
     this.debugDataDirectory = serviceConfig.getDataDirLayout().getDebugDataDirectory();
   }
 
@@ -1885,7 +1889,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadFactory,
               executionPayloadGossipChannel,
               dataColumnSidecarGossipChannel,
-              executionPayloadManager);
+              executionPayloadManager,
+              recentChainData);
     } else {
       executionPayloadFactory = ExecutionPayloadFactory.NOOP;
       executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;

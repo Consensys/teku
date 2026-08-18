@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
@@ -87,15 +88,15 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
                                     builderIndex,
                                     block.hashTreeRoot(),
                                     block.getParentRoot());
-                        final BlockContentsGloas blockContentsGloas =
+                        final BlockContainer blockContents =
                             schemaDefinitions
-                                .getBlockContentsGloasSchema()
+                                .getBlockContentsSchema()
                                 .create(
                                     block,
-                                    envelope,
                                     blobsBundle.getProofs(),
-                                    blobsBundle.getBlobs());
-                        return blockContainerAndMetaData.withBlockContents(blockContentsGloas);
+                                    blobsBundle.getBlobs(),
+                                    Optional.of(envelope));
+                        return blockContainerAndMetaData.withBlockContents(blockContents);
                       });
             });
   }
