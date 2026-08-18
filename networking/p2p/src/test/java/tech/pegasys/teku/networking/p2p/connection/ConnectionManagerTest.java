@@ -344,6 +344,7 @@ class ConnectionManagerTest {
     verify(discoveryService, times(1)).searchForPeers();
 
     manager.requestPeerSearch();
+    asyncRunner.executeDueActions();
     verify(discoveryService, times(2)).searchForPeers();
   }
 
@@ -356,6 +357,7 @@ class ConnectionManagerTest {
     verify(discoveryService, times(1)).searchForPeers();
 
     manager.requestPeerSearch();
+    asyncRunner.executeDueActions();
     verify(discoveryService, times(2)).searchForPeers();
 
     manager.requestPeerSearch();
@@ -363,6 +365,7 @@ class ConnectionManagerTest {
 
     timeProvider.advanceTimeBy(ConnectionManager.REQUESTED_DISCOVERY_INTERVAL);
     manager.requestPeerSearch();
+    asyncRunner.executeDueActions();
     verify(discoveryService, times(3)).searchForPeers();
   }
 
@@ -397,6 +400,7 @@ class ConnectionManagerTest {
 
     search1.complete(emptyList());
     manager.requestPeerSearch();
+    asyncRunner.executeDueActions();
     verify(discoveryService, times(2)).searchForPeers();
   }
 

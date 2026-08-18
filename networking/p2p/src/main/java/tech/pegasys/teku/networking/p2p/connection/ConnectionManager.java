@@ -146,7 +146,9 @@ public class ConnectionManager extends Service {
     if (!tryStartRequestedPeerSearch()) {
       return;
     }
-    executePeerSearch().finish(this::logSearchError);
+    asyncRunner
+        .runAsync(() -> executePeerSearch().finish(this::logSearchError))
+        .finish(this::logSearchError);
   }
 
   private synchronized boolean tryStartRequestedPeerSearch() {
