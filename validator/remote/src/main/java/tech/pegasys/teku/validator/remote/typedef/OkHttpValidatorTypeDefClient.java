@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -322,14 +321,5 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new PublishSignedExecutionPayloadRequest(spec, getBaseEndpoint(), getOkHttpClient());
     return publishSignedExecutionPayloadRequest.submit(
         signedExecutionPayloadEnvelopeContents, broadcastValidationLevel);
-  }
-
-  public PublishSignedExecutionPayloadResult publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    final PublishSignedExecutionPayloadRequest publishSignedExecutionPayloadRequest =
-        new PublishSignedExecutionPayloadRequest(spec, getBaseEndpoint(), getOkHttpClient());
-    return publishSignedExecutionPayloadRequest.submit(
-        signedBlindedExecutionPayload, broadcastValidationLevel);
   }
 }

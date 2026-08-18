@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -64,6 +65,9 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
   int getConsolidationChurnLimitQuotient();
 
   UInt64 getMaxPerEpochActivationChurnLimitGloas();
+
+  // EIP-8261: Gas limit schedule
+  List<GasLimitScheduleEntry> getGasLimitSchedule();
 
   default int getPayloadTimelyThreshold() {
     return getPtcSize() / 2;
