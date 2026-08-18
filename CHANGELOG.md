@@ -16,4 +16,5 @@
  - Improved debug/beacon/states endpoint to allow searching of the finalized state root, to assist third party products searching on roots.
 
 ### Bug Fixes
+ - Fixed `data_column_sidecar` gossip decoding to use the schema of the topic's fork instead of the highest supported milestone. Previously, on networks with Gloas scheduled, every Fulu-era column sidecar received via gossip failed deserialization.
  - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
