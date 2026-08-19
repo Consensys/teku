@@ -156,4 +156,7 @@ public class AttestationDutyBatchSchedulingStrategy
   public void onSlot(final UInt64 slot) {
     currentSlot.set(slot);
   }
+
+  @Override
+  public void onInclusionListDue(final UInt64 slot) {}
 }

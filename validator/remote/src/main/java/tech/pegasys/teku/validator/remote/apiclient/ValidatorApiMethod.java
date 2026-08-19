@@ -53,7 +53,8 @@ public enum ValidatorApiMethod {
   SEND_VALIDATOR_LIVENESS("/eth/v1/validator/liveness/:epoch"),
   BEACON_COMMITTEE_SELECTIONS("/eth/v1/validator/beacon_committee_selections"),
   SYNC_COMMITTEE_SELECTIONS("/eth/v1/validator/sync_committee_selections"),
-  SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE("eth/v1/beacon/execution_payload_envelopes");
+  SEND_SIGNED_EXECUTION_PAYLOAD_ENVELOPE("eth/v1/beacon/execution_payload_envelopes"),
+  GET_INCLUSION_LIST("/eth/v1/validator/inclusion_list");
 
   private final String path;
 

@@ -4,7 +4,13 @@
   "required" : [ "data" ],
   "properties" : {
     "data" : {
-      "$ref" : "#/components/schemas/ExecutionPayloadBid"
+      "title" : "ExecutionPayloadBid",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/ExecutionPayloadBid"
+      }, {
+        "$ref" : "#/components/schemas/ExecutionPayloadBidHeze"
+      } ]
     }
   }
 }

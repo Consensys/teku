@@ -15,9 +15,11 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -86,6 +88,17 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       return new PinnedBlockProductionPreparation(
           slot, parentBeaconBlock, forkChoiceUpdateData, executionPayloadContext);
     }
+
+    boolean hasInclusionListTransactions(final List<Bytes> inclusionListTransactions) {
+      return forkChoiceUpdateData
+          .getPayloadBuildingAttributes()
+          .map(
+              payloadBuildingAttributes ->
+                  payloadBuildingAttributes
+                      .inclusionListTransactions()
+                      .equals(inclusionListTransactions))
+          .orElse(inclusionListTransactions.isEmpty());
+    }
   }
 
   public ForkChoiceNotifierImpl(
@@ -153,7 +166,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
       final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlock, blockSlot));
+    return getPayloadId(parentBeaconBlock, blockSlot, List.of());
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
+      final ForkChoiceNode parentBeaconBlock,
+      final UInt64 blockSlot,
+      final List<Bytes> inclusionListTransactions) {
+    return eventThread.executeFuture(
+        () -> internalGetPayloadId(parentBeaconBlock, blockSlot, inclusionListTransactions));
   }
 
   @Override
@@ -171,6 +193,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   /**
    * @param parentBeaconBlock fork choice node of the beacon block the new block will be built on
    * @param blockSlot slot of the block being produced, for which the payloadId has been requested
+   * @param inclusionListTransactions inclusion list transactions of the block being produced
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the bellatrix fork and before Terminal Block arrival)
@@ -180,7 +203,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
-      final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
+      final ForkChoiceNode parentBeaconBlock,
+      final UInt64 blockSlot,
+      final List<Bytes> inclusionListTransactions) {
     eventThread.checkOnEventThread();
 
     LOG.debug(
@@ -210,41 +235,109 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                             + " at slot "
                             + blockSlot));
 
-    return preparation
-        .executionPayloadContext()
+    return ensurePinnedBlockProductionHasInclusionListTransactions(
+            preparation, inclusionListTransactions)
+        .thenCompose(
+            updatedPreparation ->
+                updatedPreparation
+                    .executionPayloadContext()
+                    .thenApply(
+                        maybeExecutionPayloadContext -> {
+                          if (maybeExecutionPayloadContext.isEmpty()) {
+                            throw new IllegalStateException(
+                                "Unable to obtain an executionPayloadContext");
+                          }
+                          final ExecutionPayloadContext executionPayloadContext =
+                              maybeExecutionPayloadContext.get();
+                          final UInt64 timestamp =
+                              spec.computeTimeAtSlot(blockSlot, recentChainData.getGenesisTime());
+                          checkState(
+                              executionPayloadContext
+                                  .getForkChoiceState()
+                                  .headBlock()
+                                  .equals(parentBeaconBlock),
+                              "Pinned block production head %s does not match requested block production parent %s",
+                              executionPayloadContext.getForkChoiceState().headBlock(),
+                              parentBeaconBlock);
+                          checkState(
+                              executionPayloadContext.getParentHash().equals(parentExecutionHash)
+                                  || isTerminalBlockPayload(
+                                      updatedPreparation,
+                                      parentExecutionHash,
+                                      executionPayloadContext),
+                              "Pinned block production parent execution hash %s does not match requested parent execution hash %s",
+                              executionPayloadContext.getParentHash(),
+                              parentExecutionHash);
+                          checkState(
+                              executionPayloadContext
+                                  .getPayloadBuildingAttributes()
+                                  .timestamp()
+                                  .equals(timestamp),
+                              "Pinned block production timestamp %s does not match requested timestamp %s",
+                              executionPayloadContext.getPayloadBuildingAttributes().timestamp(),
+                              timestamp);
+                          checkState(
+                              executionPayloadContext
+                                  .getPayloadBuildingAttributes()
+                                  .inclusionListTransactions()
+                                  .equals(inclusionListTransactions),
+                              "Pinned block production inclusion list transactions do not match requested inclusion list transactions");
+                          return maybeExecutionPayloadContext;
+                        }));
+  }
+
+  private SafeFuture<PinnedBlockProductionPreparation>
+      ensurePinnedBlockProductionHasInclusionListTransactions(
+          final PinnedBlockProductionPreparation preparation,
+          final List<Bytes> inclusionListTransactions) {
+    if (preparation.hasInclusionListTransactions(inclusionListTransactions)) {
+      return SafeFuture.completedFuture(preparation);
+    }
+    final ForkChoiceUpdateData forkChoiceUpdateDataWithoutPayloadAttributes =
+        preparation
+            .forkChoiceUpdateData()
+            .withFreshForkChoiceState(preparation.forkChoiceUpdateData().getForkChoiceState());
+    final PinnedBlockProductionPreparation updatedPreparation =
+        new PinnedBlockProductionPreparation(
+            preparation.slot(),
+            preparation.parentBeaconBlock(),
+            forkChoiceUpdateDataWithoutPayloadAttributes,
+            new SafeFuture<>());
+    pinnedBlockProductionPreparation = Optional.of(updatedPreparation);
+    forkChoiceUpdateData = forkChoiceUpdateDataWithoutPayloadAttributes;
+
+    return proposersDataManager
+        .calculatePayloadBuildingAttributes(
+            updatedPreparation.slot(),
+            inSync,
+            forkChoiceUpdateDataWithoutPayloadAttributes,
+            true,
+            inclusionListTransactions)
         .thenApply(
-            maybeExecutionPayloadContext -> {
-              if (maybeExecutionPayloadContext.isEmpty()) {
-                throw new IllegalStateException("Unable to obtain an executionPayloadContext");
+            payloadBuildingAttributes -> {
+              if (payloadBuildingAttributes.isEmpty()) {
+                if (isCurrentPinnedBlockProduction(updatedPreparation)) {
+                  updatedPreparation.executionPayloadContext().complete(Optional.empty());
+                }
+                return updatedPreparation;
               }
-              final ExecutionPayloadContext executionPayloadContext =
-                  maybeExecutionPayloadContext.get();
-              final UInt64 timestamp =
-                  spec.computeTimeAtSlot(blockSlot, recentChainData.getGenesisTime());
-              checkState(
-                  executionPayloadContext
-                      .getForkChoiceState()
-                      .headBlock()
-                      .equals(parentBeaconBlock),
-                  "Pinned block production head %s does not match requested block production parent %s",
-                  executionPayloadContext.getForkChoiceState().headBlock(),
-                  parentBeaconBlock);
-              checkState(
-                  executionPayloadContext.getParentHash().equals(parentExecutionHash)
-                      || isTerminalBlockPayload(
-                          preparation, parentExecutionHash, executionPayloadContext),
-                  "Pinned block production parent execution hash %s does not match requested parent execution hash %s",
-                  executionPayloadContext.getParentHash(),
-                  parentExecutionHash);
-              checkState(
-                  executionPayloadContext
-                      .getPayloadBuildingAttributes()
-                      .timestamp()
-                      .equals(timestamp),
-                  "Pinned block production timestamp %s does not match requested timestamp %s",
-                  executionPayloadContext.getPayloadBuildingAttributes().timestamp(),
-                  timestamp);
-              return maybeExecutionPayloadContext;
+              if (!isCurrentPinnedBlockProduction(updatedPreparation)) {
+                throw new IllegalStateException(
+                    "Pinned block production was replaced before inclusion list payload attributes were resolved");
+              }
+
+              final ForkChoiceUpdateData updatedForkChoiceUpdateData =
+                  forkChoiceUpdateDataWithoutPayloadAttributes.withPayloadBuildingAttributes(
+                      payloadBuildingAttributes);
+              forkChoiceUpdateData = updatedForkChoiceUpdateData;
+              final PinnedBlockProductionPreparation sentPreparation =
+                  updatedPreparation.withForkChoiceUpdateData(updatedForkChoiceUpdateData);
+              pinnedBlockProductionPreparation = Optional.of(sentPreparation);
+              updatedForkChoiceUpdateData
+                  .getExecutionPayloadContext()
+                  .propagateTo(sentPreparation.executionPayloadContext());
+              sendForkChoiceUpdated(updatedForkChoiceUpdateData);
+              return sentPreparation;
             });
   }
 

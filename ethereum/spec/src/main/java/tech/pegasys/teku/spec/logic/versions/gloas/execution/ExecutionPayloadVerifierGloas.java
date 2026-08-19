@@ -86,6 +86,10 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
       throw new ExecutionPayloadVerificationException(
           "Envelope slot is not consistent with the state slot");
     }
+    if (!envelope.getParentBeaconBlockRoot().equals(state.getLatestBlockHeader().getParentRoot())) {
+      throw new ExecutionPayloadVerificationException(
+          "Envelope parent beacon block root is not consistent with the latest beacon block from the state");
+    }
     final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
 
     // Verify consistency with the committed bid

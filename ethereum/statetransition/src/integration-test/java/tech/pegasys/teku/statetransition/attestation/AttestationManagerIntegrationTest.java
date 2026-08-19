@@ -267,7 +267,10 @@ class AttestationManagerIntegrationTest {
 
     final AttestationData attestationData =
         spec.getGenericAttestationData(
-            attestationSlot, targetBlockAndState.getState(), targetBlockAndState, COMMITTEE_INDEX);
+            attestationSlot,
+            targetBlockAndState.getState(),
+            targetBlockAndState.getBlock(),
+            COMMITTEE_INDEX);
 
     final ForkInfo forkInfo =
         new ForkInfo(fork, targetBlockAndState.getState().getGenesisValidatorsRoot());

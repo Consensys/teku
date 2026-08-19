@@ -52,6 +52,15 @@ public class PayloadStatus {
         Optional.empty());
   }
 
+  public static PayloadStatus invalidInclusionList(
+      final Optional<Bytes32> latestValidHash, final Optional<String> validationError) {
+    return new PayloadStatus(
+        Optional.of(ExecutionPayloadStatus.INVALID_INCLUSION_LIST),
+        latestValidHash,
+        validationError,
+        Optional.empty());
+  }
+
   public static PayloadStatus valid(
       final Optional<Bytes32> latestValidHash, final Optional<String> validationError) {
     return new PayloadStatus(
@@ -111,6 +120,10 @@ public class PayloadStatus {
 
   public boolean hasInvalidStatus() {
     return this.status.map(ExecutionPayloadStatus::isInvalid).orElse(false);
+  }
+
+  public boolean hasInvalidInclusionList() {
+    return this.status.map(ExecutionPayloadStatus::hasInvalidInclusionList).orElse(false);
   }
 
   public Optional<Bytes32> getLatestValidHash() {

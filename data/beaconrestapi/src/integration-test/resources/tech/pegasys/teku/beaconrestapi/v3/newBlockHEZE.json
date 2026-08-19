@@ -350,7 +350,8 @@
             "0x55c4ee412e17bd44aa13c0a248def3f9a4c80d4c0bc83648fab37ab5a947dcc1cfd1958de7002e7c7da271c682c8c748",
             "0x1c6100424e341f76cb4a8a20cd43b69291bf1096e86dbc197030b05c1a25b62109734371f8dd8cb2a859a8c12d719c95"
           ],
-          "execution_requests_root": "0x2f82fa41ee7ffebac08df14ba1ccca5f98c20f289e36e5d39eb1f324f4856dac"
+          "execution_requests_root": "0x2f82fa41ee7ffebac08df14ba1ccca5f98c20f289e36e5d39eb1f324f4856dac",
+          "inclusion_list_bits": "0x0000"
         },
         "signature": "0xb851b39a32955a7f05acd7707c6859df4ee2b1472996d6a805a61e14415db550a92a7eaaff14a67e858a9d3633306efb12a62ed84f76387a84deefe726afcf2fb744f616f67d144411689343e6e0dea7a88b57449b2cdecb43cf0b5a80887550"
       },

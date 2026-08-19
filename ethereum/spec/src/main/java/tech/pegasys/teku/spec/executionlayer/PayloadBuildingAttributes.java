@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -32,7 +33,8 @@ public record PayloadBuildingAttributes(
     UInt64 targetGasLimit,
     Optional<SignedValidatorRegistration> validatorRegistration,
     Optional<List<Withdrawal>> withdrawals,
-    ForkChoiceNode parentBeaconBlock) {
+    ForkChoiceNode parentBeaconBlock,
+    List<Bytes> inclusionListTransactions) {
 
   public PayloadBuildingAttributes(
       final UInt64 proposerIndex,
@@ -52,7 +54,31 @@ public record PayloadBuildingAttributes(
         UInt64.ZERO,
         validatorRegistration,
         withdrawals,
-        parentBeaconBlock);
+        parentBeaconBlock,
+        List.of());
+  }
+
+  public PayloadBuildingAttributes(
+      final UInt64 proposerIndex,
+      final UInt64 proposalSlot,
+      final UInt64 timestamp,
+      final Bytes32 prevRandao,
+      final Eth1Address feeRecipient,
+      final UInt64 targetGasLimit,
+      final Optional<SignedValidatorRegistration> validatorRegistration,
+      final Optional<List<Withdrawal>> withdrawals,
+      final ForkChoiceNode parentBeaconBlock) {
+    this(
+        proposerIndex,
+        proposalSlot,
+        timestamp,
+        prevRandao,
+        feeRecipient,
+        targetGasLimit,
+        validatorRegistration,
+        withdrawals,
+        parentBeaconBlock,
+        List.of());
   }
 
   public Optional<BLSPublicKey> getValidatorRegistrationPublicKey() {

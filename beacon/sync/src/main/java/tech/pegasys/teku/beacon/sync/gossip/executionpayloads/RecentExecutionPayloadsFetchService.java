@@ -25,6 +25,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -148,6 +150,19 @@ public class RecentExecutionPayloadsFetchService
   public void onExecutionPayloadImported(
       final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     cancelRecentExecutionPayloadRequest(executionPayload.getBeaconBlockRoot());
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .map(BeaconBlockBodyGloas::getSignedExecutionPayloadBid)
+        .ifPresent(__ -> requestRecentExecutionPayload(block.getRoot()));
   }
 
   private void setupSubscribers() {
