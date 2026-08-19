@@ -77,7 +77,8 @@ public class SimpleOperationPoolTest {
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxProposerSlashings()))
+        .isEmpty();
   }
 
   @Test
@@ -112,7 +113,8 @@ public class SimpleOperationPoolTest {
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
-    assertThat(pool.getItemsForBlock(state)).hasSize(maxVoluntaryExits);
+    // Verify the bounded schema limit is respected even when the caller requests more items
+    assertThat(pool.getItemsForBlock(state, maxVoluntaryExits + 1)).hasSize(maxVoluntaryExits);
   }
 
   @Test
@@ -133,7 +135,7 @@ public class SimpleOperationPoolTest {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
     }
     // Didn't find any applicable items but tried them all
-    assertThat(pool.getItemsForBlock(state, filter, operation -> {})).isEmpty();
+    assertThat(pool.getItemsForBlock(state, maxVoluntaryExits, filter, operation -> {})).isEmpty();
     verify(filter, times(maxVoluntaryExits + 10)).test(any());
   }
 
@@ -161,6 +163,7 @@ public class SimpleOperationPoolTest {
     final SszList<SignedVoluntaryExit> selectedItems =
         pool.getItemsForBlock(
             state,
+            spec.getGenesisSpecConfig().getMaxVoluntaryExits(),
             exitsToAccept::contains,
             exit -> {
               // Only allow the first exit to be added
@@ -186,7 +189,8 @@ public class SimpleOperationPoolTest {
             .limit(attesterSlashingsSchema.getMaxLength())
             .collect(attesterSlashingsSchema.collector());
     pool.removeAll(attesterSlashings);
-    assertThat(pool.getItemsForBlock(state)).isEmpty();
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxAttesterSlashings()))
+        .isEmpty();
   }
 
   @Test
@@ -211,7 +215,8 @@ public class SimpleOperationPoolTest {
         .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
     when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
 
-    assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxProposerSlashings()))
+        .containsOnly(slashing2);
   }
 
   @Test
@@ -238,7 +243,8 @@ public class SimpleOperationPoolTest {
         .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
     when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
 
-    assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+    assertThat(pool.getItemsForBlock(state, spec.getGenesisSpecConfig().getMaxProposerSlashings()))
+        .containsOnly(slashing2);
     assertThat(pool.getAll()).containsOnly(slashing2);
   }
 

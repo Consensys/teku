@@ -50,13 +50,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
@@ -187,11 +187,12 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final Optional<BuilderConfig> builderConfig) {
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> request =
         apiChannel ->
             apiChannel
-                .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
+                .createUnsignedBlock(slot, randaoReveal, graffiti, includePayload, builderConfig)
                 .thenPeek(
                     blockContainerAndMetaData -> {
                       if (!failoverDelegates.isEmpty()
@@ -339,7 +340,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedProposerPreferences(
+  public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedProposerPreferences(signedProposerPreferences),
@@ -474,31 +475,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel ->
             apiChannel.publishSignedExecutionPayload(
                 signedExecutionPayloadEnvelopeContents, broadcastValidationLevel),
-        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
-  }
-
-  @Override
-  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    final BlockRootAndBuilderIndex blockRootAndBuilderIndex =
-        new BlockRootAndBuilderIndex(
-            signedBlindedExecutionPayload.getBeaconBlockRoot(),
-            signedBlindedExecutionPayload.getMessage().getBuilderIndex());
-    if (executionPayloadEnvelopeCreatorCache.containsKey(blockRootAndBuilderIndex)) {
-      final ValidatorApiChannel executionPayloadCreatorApiChannel =
-          executionPayloadEnvelopeCreatorCache.remove(blockRootAndBuilderIndex);
-      LOG.info(
-          "Blinded execution payload for block root {} and builder index {} will only be sent to the beacon node which created it.",
-          blockRootAndBuilderIndex.blockRoot().toHexString(),
-          blockRootAndBuilderIndex.builderIndex());
-      return executionPayloadCreatorApiChannel.publishSignedExecutionPayload(
-          signedBlindedExecutionPayload, broadcastValidationLevel);
-    }
-    return relayRequest(
-        apiChannel ->
-            apiChannel.publishSignedExecutionPayload(
-                signedBlindedExecutionPayload, broadcastValidationLevel),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 

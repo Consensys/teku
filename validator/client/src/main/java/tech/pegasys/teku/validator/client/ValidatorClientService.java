@@ -218,7 +218,8 @@ public class ValidatorClientService extends Service {
                       Optional.of(
                           ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
                               .resolve("api-proposer-config.json"))),
-                  proposerConfigProvider));
+                  proposerConfigProvider,
+                  config.getSpec()));
 
       beaconProposerPreparer =
           Optional.of(
@@ -576,6 +577,8 @@ public class ValidatorClientService extends Service {
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      // keeps track of the current epoch to resolve the scheduled gas limit (EIP-8261)
+      proposerConfigManager.ifPresent(validatorTimingChannels::add);
       beaconProposerPreparer.ifPresent(
           preparer -> {
             preparer.initialize(Optional.of(validatorIndexProvider));

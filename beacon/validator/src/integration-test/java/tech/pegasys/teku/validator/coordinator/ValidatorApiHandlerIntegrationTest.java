@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
@@ -87,6 +88,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
@@ -231,6 +233,7 @@ public class ValidatorApiHandlerIntegrationTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             payloadAttestationPool,
+            DataAvailabilitySampler.NOOP,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
@@ -321,19 +324,48 @@ public class ValidatorApiHandlerIntegrationTest {
   }
 
   @TestTemplate
-  void sendSignedProposerPreferences_shouldDelegateToManager(final SpecContext specContext) {
+  void sendSignedProposerPreferences_shouldReturnIndexedRejections(final SpecContext specContext) {
     specContext.assumeGloasActive();
-    final SignedProposerPreferences signedProposerPreferences =
+    final SignedProposerPreferences accepted =
+        specContext.getDataStructureUtil().randomSignedProposerPreferences();
+    final SignedProposerPreferences rejected =
+        specContext.getDataStructureUtil().randomSignedProposerPreferences();
+    final String rejectionDescription = "Invalid proposer preferences signature";
+
+    when(proposerPreferencesManager.addLocal(accepted))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(proposerPreferencesManager.addLocal(rejected))
+        .thenReturn(
+            SafeFuture.completedFuture(InternalValidationResult.reject(rejectionDescription)));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        handler.sendSignedProposerPreferences(List.of(accepted, rejected));
+
+    assertThatSafeFuture(result)
+        .isCompletedWithValue(List.of(new SubmitDataError(ONE, rejectionDescription)));
+    verify(proposerPreferencesManager).addLocal(accepted);
+    verify(proposerPreferencesManager).addLocal(rejected);
+  }
+
+  @TestTemplate
+  void sendSignedProposerPreferences_shouldIgnoreNonRejects(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final SignedProposerPreferences ignored =
+        specContext.getDataStructureUtil().randomSignedProposerPreferences();
+    final SignedProposerPreferences savedForFuture =
         specContext.getDataStructureUtil().randomSignedProposerPreferences();
 
-    when(proposerPreferencesManager.addLocal(any()))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(proposerPreferencesManager.addLocal(ignored))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+    when(proposerPreferencesManager.addLocal(savedForFuture))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
-    final SafeFuture<Void> result =
-        handler.sendSignedProposerPreferences(List.of(signedProposerPreferences));
+    final SafeFuture<List<SubmitDataError>> result =
+        handler.sendSignedProposerPreferences(List.of(ignored, savedForFuture));
 
-    assertThat(result).isCompleted();
-    verify(proposerPreferencesManager).addLocal(signedProposerPreferences);
+    assertThatSafeFuture(result).isCompletedWithValue(List.of());
+    verify(proposerPreferencesManager).addLocal(ignored);
+    verify(proposerPreferencesManager).addLocal(savedForFuture);
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

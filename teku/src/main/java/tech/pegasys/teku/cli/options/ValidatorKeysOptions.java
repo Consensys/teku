@@ -31,11 +31,13 @@ public class ValidatorKeysOptions {
 
   @CommandLine.Option(
       names = {"--validator-keys"},
-      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE>",
+      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE> | <KEY_DIR>:<PASS_FILE>",
       description =
           "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
               + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
-              + "and the file containing the password for it is <PASS_FILE>.",
+              + "and the file containing the password for it is <PASS_FILE>.\n"
+              + "<KEY_DIR>:<PASS_FILE> will find <KEY_DIR>/**.json, "
+              + "and use <PASS_FILE> as the password for all keystores.",
       split = ",",
       arity = "1..*")
   private List<String> validatorKeys = new ArrayList<>();
@@ -95,11 +97,10 @@ public class ValidatorKeysOptions {
   private String validatorExternalSignerTruststorePasswordFile = null;
 
   @CommandLine.Option(
-      names = {"--Xvalidators-external-signer-concurrent-limit"},
+      names = {"--validators-external-signer-concurrent-limit"},
       paramLabel = "<INTEGER>",
       description =
-          "The maximum number of concurrent background requests to make to the signer. This only applies for aggregation slot and validator registration requests.",
-      hidden = true,
+          "The maximum number of concurrent background requests to make to the signer, must be between 1 and 1024 inclusive. This only applies for aggregation slot and validator registration requests.",
       arity = "1")
   private int validatorExternalSignerConcurrentRequestLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;

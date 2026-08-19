@@ -765,9 +765,16 @@ public class Spec {
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
   }
 
+  /**
+   * Resolved from the fork rather than the exit's epoch, to match how exits are validated (against
+   * the state's fork). From Capella onwards EIP-7044 pins this domain, so an exit naming a past
+   * epoch must still be signed under the current fork's domain to be valid. The epoch is still
+   * passed through because pre-Deneb milestones legitimately use it to choose between the fork's
+   * previous and current version.
+   */
   public Bytes32 getVoluntaryExitDomain(
       final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
-    return atEpoch(epoch)
+    return atEpoch(fork.getEpoch())
         .beaconStateAccessors()
         .getVoluntaryExitDomain(epoch, fork, genesisValidatorsRoot);
   }
@@ -780,8 +787,7 @@ public class Spec {
       final BeaconState state,
       final ProposerSlashing proposerSlashing,
       final BLSSignatureVerifier signatureVerifier) {
-    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
-    return atEpoch(epoch)
+    return atState(state)
         .operationSignatureVerifier()
         .verifyProposerSlashingSignature(
             state.getFork(), state, proposerSlashing, signatureVerifier);
@@ -791,8 +797,7 @@ public class Spec {
       final BeaconState state,
       final SignedVoluntaryExit signedExit,
       final BLSSignatureVerifier signatureVerifier) {
-    final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
+    return atState(state)
         .operationSignatureVerifier()
         .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
@@ -924,27 +929,30 @@ public class Spec {
         .validateAsync(fork, store, validatableAttestation, maybeState, asyncSignatureVerifier);
   }
 
+  /**
+   * Dispatched on the state's fork rather than an epoch taken from the slashing, so that pool and
+   * gossip validation apply the same milestone's rules that block processing later will. The slots
+   * inside a slashing are attacker controlled and unbounded, and from Gloas the attesting indices
+   * bound is enforced in the validation logic rather than by the SSZ schema - so dispatching on
+   * them would let a slashing naming a pre-Gloas epoch skip that bound.
+   */
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
-    // Attestations must both be from the same epoch or will wind up being rejected by any version
-    final UInt64 epoch = computeEpochAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateAttesterSlashing(state.getFork(), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
-    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateProposerSlashing(state.getFork(), state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
-    final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
+    return atState(state)
         .getOperationValidator()
         .validateVoluntaryExit(state.getFork(), state, signedExit);
   }
@@ -1288,6 +1296,13 @@ public class Spec {
   }
 
   // Attestation helpers
+  public BeaconState getStateForAttestationRewardCalculation(
+      final BeaconState state, final boolean parentPayloadAvailable) {
+    return atState(state)
+        .getAttestationUtil()
+        .getStateForAttestationRewardCalculation(state, parentPayloadAvailable);
+  }
+
   public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()
@@ -1468,6 +1483,17 @@ public class Spec {
     return atEpoch(epoch).miscHelpers().toVersionGloas().isPresent();
   }
 
+  /**
+   * EIP-8261: the gas limit scheduled for the given epoch, empty when the epoch is pre-Gloas or the
+   * network has no gas limit schedule defined for it.
+   */
+  public Optional<UInt64> getScheduledGasLimit(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionGloas()
+        .flatMap(miscHelpers -> miscHelpers.getScheduledGasLimit(epoch));
+  }
+
   // Deneb private helpers
   private Optional<SpecConfigDeneb> getSpecConfigDeneb() {
     final SpecMilestone highestSupportedMilestone =
@@ -1507,11 +1533,6 @@ public class Spec {
 
   private Fork getForkAtSlot(final UInt64 slot) {
     return forkSchedule.getFork(computeEpochAtSlot(slot));
-  }
-
-  private UInt64 getProposerSlashingEpoch(final ProposerSlashing proposerSlashing) {
-    // Slashable blocks must be from same slot
-    return computeEpochAtSlot(proposerSlashing.getHeader1().getMessage().getSlot());
   }
 
   @Override

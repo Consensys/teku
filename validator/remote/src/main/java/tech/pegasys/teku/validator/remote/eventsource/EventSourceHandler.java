@@ -145,7 +145,7 @@ class EventSourceHandler implements BackgroundEventHandler {
               + "Reconnecting. This is normal if the beacon node is still syncing.");
     } else {
       errorCounter.inc();
-      VALIDATOR_LOGGER.beaconNodeEventStreamConnectionError(t);
+      VALIDATOR_LOGGER.beaconNodeEventStreamConnectionError();
     }
   }
 }

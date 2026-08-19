@@ -517,6 +517,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                         block.getStateRoot(),
                         executionPayload.map(ExecutionPayload::getBlockNumber).orElse(UInt64.ZERO),
                         executionPayload.map(ExecutionPayload::getBlockHash).orElse(Bytes32.ZERO),
+                        UInt64.ZERO,
                         ProtoNodeValidationStatus.VALID,
                         blockCheckpoints.get(root),
                         UInt64.ZERO,
@@ -564,8 +565,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
     @Override
     public boolean shouldBuildOnFull(
-        final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
-      return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
+        final ReadOnlyStore store, final UInt64 slot, final ForkChoiceNode head) {
+      return shouldExtendPayload(store, new SlotAndBlockRoot(slot, head.blockRoot()));
     }
 
     @Override

@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
@@ -121,17 +122,18 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
-  public void executionProcessing(
+  public UInt64 executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlotFallback)
       throws BlockProcessingException {
     safelyProcess(
         () ->
             processParentExecutionPayload(genericState, beaconBlock, validatorExitContextSupplier));
     processWithdrawals(genericState, Optional.empty());
-    safelyProcess(
+    return safelyProcessAndReturn(
         () ->
             processExecutionPayloadBid(
                 genericState,
@@ -255,7 +257,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
   // process_execution_payload_bid
   @Override
-  public void processExecutionPayloadBid(
+  public UInt64 processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
 
@@ -347,7 +349,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Cache the execution payload bid
+    final UInt64 parentSlot = stateGloas.getLatestExecutionPayloadBid().getSlot();
     stateGloas.setLatestExecutionPayloadBid(bid);
+    return parentSlot;
   }
 
   @Override
@@ -398,10 +402,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
   }
 
-  // Add weight for same-slot attestations when any new flag is set.
-  // This ensures each validator contributes exactly once per slot.
   @Override
   protected UInt64 updateBuilderPaymentWeight(
+      final byte previousParticipationFlags,
       final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
@@ -409,7 +412,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconState state) {
     final BuilderPendingPayment payment =
         BeaconStateGloas.required(state).getBuilderPendingPayments().get(builderPaymentIndex);
-    if (beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
+    if (previousParticipationFlags == ParticipationFlags.NO_PARTICIPATION_FLAGS
+        && beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
         // only add to the payment quorum if the payment is not trivial
         && payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
       return builderPaymentWeightDelta.plus(
@@ -444,7 +448,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier,
+      final UInt64 parentSlot)
       throws BlockProcessingException {
     final BeaconBlockBodyGloas bodyGloas = BeaconBlockBodyGloas.required(body);
     safelyProcess(
@@ -473,7 +478,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         });
 
     super.processOperationsNoValidation(
-        state, body, indexedAttestationCache, validatorExitContextSupplier);
+        state, body, indexedAttestationCache, validatorExitContextSupplier, parentSlot);
 
     safelyProcess(
         () ->

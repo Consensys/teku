@@ -194,7 +194,7 @@ public class RestApiConstants {
               Controls whether the execution payload envelope and blobs are included in the response
               when self-building (using local execution payload).
 
-              When `true` (default), the response includes the full block contents: beacon block,
+              When `true`, the response includes the full block contents: beacon block,
               execution payload envelope, blobs, and KZG proofs. This enables stateless operation
               where the validator client can use multiple beacon nodes (multi-BN setups, distributed validators, failover).
 
@@ -243,6 +243,7 @@ public class RestApiConstants {
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
   public static final String HEADER_EXECUTION_PAYLOAD_BLINDED = "Eth-Execution-Payload-Blinded";
+  public static final String HEADER_BLOB_DATA_INCLUDED = "Eth-Blob-Data-Included";
   public static final String HEADER_EXECUTION_PAYLOAD_VALUE = "Eth-Execution-Payload-Value";
   public static final String HEADER_CONSENSUS_BLOCK_VALUE = "Eth-Consensus-Block-Value";
   public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";

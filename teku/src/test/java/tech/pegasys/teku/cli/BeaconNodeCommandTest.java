@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_RANDOMLY_SELECTED_PEER_COUNT_PERCENTAGE;
@@ -656,11 +657,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageMode(PRUNE)
                     .dataStorageFrequency(StorageConfiguration.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION)
-                    .maxKnownNodeCacheSize(100_000))
+                    .maxKnownNodeCacheSize(StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
-                b.targetSubnetSubscriberCount(2)
+                b.targetSubnetSubscriberCount(DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT)
                     .peerBlocksRateLimit(500)
                     .peerBlobSidecarsRateLimit(2000)
                     .peerRequestLimit(100))

@@ -31,12 +31,14 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainHead;
 
@@ -60,11 +62,11 @@ class BlockProductionContextTest {
     final UInt64 proposalSlot = parentBlock.getSlot().plus(1);
     final BeaconState blockSlotState = spec.processSlots(parentBlock.getState(), proposalSlot);
     final ChainHead parentChainHead = chainHead(parentBlock, PAYLOAD_STATUS_FULL);
-    final Optional<UInt64> requestedBuilderBoostFactor = Optional.of(UInt64.valueOf(42));
+    final Optional<BuilderConfig> builderConfig =
+        Optional.of(ApiSchemas.BUILDER_CONFIG_SCHEMA.create(UInt64.valueOf(42)));
 
     final BlockProductionContext context =
-        createBlockProductionContext(
-            proposalSlot, blockSlotState, parentChainHead, requestedBuilderBoostFactor);
+        createBlockProductionContext(proposalSlot, blockSlotState, parentChainHead, builderConfig);
 
     assertThat(context.proposalSlot()).isEqualTo(proposalSlot);
     assertThat(context.blockSlotState()).isSameAs(blockSlotState);
@@ -76,7 +78,7 @@ class BlockProductionContextTest {
     assertThat(context.parentPayloadStatus()).isEqualTo(PAYLOAD_STATUS_FULL);
     assertThat(context.parentExecutionBlockHash())
         .isEqualTo(parentChainHead.getExecutionBlockHash());
-    assertThat(context.requestedBuilderBoostFactor()).isEqualTo(requestedBuilderBoostFactor);
+    assertThat(context.builderConfig()).isEqualTo(builderConfig);
     assertThat(context.blockProductionPerformance()).isSameAs(BlockProductionPerformance.NOOP);
   }
 
@@ -130,7 +132,7 @@ class BlockProductionContextTest {
       final UInt64 proposalSlot,
       final BeaconState blockSlotState,
       final ChainHead parentChainHead,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final Optional<BuilderConfig> builderConfig) {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Optional<Bytes32> graffiti = Optional.of(dataStructureUtil.randomBytes32());
     return BlockProductionContext.create(
@@ -140,7 +142,7 @@ class BlockProductionContextTest {
         parentChainHead,
         randaoReveal,
         graffiti,
-        requestedBuilderBoostFactor,
+        builderConfig,
         BlockProductionPerformance.NOOP);
   }
 
@@ -156,6 +158,7 @@ class BlockProductionContextTest {
             blockAndState.getStateRoot(),
             blockAndState.getExecutionBlockNumber().orElse(UInt64.ZERO),
             blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+            UInt64.ZERO,
             ProtoNodeValidationStatus.VALID,
             spec.calculateBlockCheckpoints(blockAndState.getState()),
             UInt64.ZERO,

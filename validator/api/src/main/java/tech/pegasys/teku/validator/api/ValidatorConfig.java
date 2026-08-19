@@ -58,6 +58,8 @@ public class ValidatorConfig {
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS = 60_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
+  public static final int MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 1;
+  public static final int MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 1024;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
@@ -99,7 +101,7 @@ public class ValidatorConfig {
   private final boolean failoversPublishSignedDutiesEnabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
   private final boolean shutdownWhenValidatorSlashedEnabled;
-  private final UInt64 builderRegistrationDefaultGasLimit;
+  private final Optional<UInt64> builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
@@ -144,7 +146,7 @@ public class ValidatorConfig {
       final boolean failoversPublishSignedDutiesEnabled,
       final boolean exitWhenNoValidatorKeysEnabled,
       final boolean shutdownWhenValidatorSlashedEnabled,
-      final UInt64 builderRegistrationDefaultGasLimit,
+      final Optional<UInt64> builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
@@ -285,7 +287,12 @@ public class ValidatorConfig {
     return proposerConfigSource;
   }
 
-  public UInt64 getBuilderRegistrationDefaultGasLimit() {
+  /**
+   * The gas limit explicitly configured by the operator, if any. When not set, the gas limit
+   * scheduled for the current epoch (EIP-8261) is used, falling back to {@link
+   * #DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT}.
+   */
+  public Optional<UInt64> getBuilderRegistrationDefaultGasLimit() {
     return builderRegistrationDefaultGasLimit;
   }
 
@@ -418,7 +425,7 @@ public class ValidatorConfig {
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
     private boolean shutdownWhenValidatorSlashedEnabled =
         DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
-    private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
+    private Optional<UInt64> builderRegistrationDefaultGasLimit = Optional.empty();
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
@@ -475,11 +482,20 @@ public class ValidatorConfig {
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
         final int validatorExternalSignerConcurrentRequestLimit) {
-      if (validatorExternalSignerConcurrentRequestLimit < 0) {
+      if (validatorExternalSignerConcurrentRequestLimit
+          < MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
         throw new InvalidConfigurationException(
             String.format(
-                "Invalid validatorExternalSignerConcurrentRequestLimit: %s",
-                validatorExternalSignerConcurrentRequestLimit));
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be less than %s)",
+                validatorExternalSignerConcurrentRequestLimit,
+                MINIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
+      } else if (validatorExternalSignerConcurrentRequestLimit
+          > MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s (must not be greater than %s)",
+                validatorExternalSignerConcurrentRequestLimit,
+                MAXIMUM_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT));
       }
       this.validatorExternalSignerConcurrentRequestLimit =
           validatorExternalSignerConcurrentRequestLimit;
@@ -625,7 +641,7 @@ public class ValidatorConfig {
     }
 
     public Builder builderRegistrationDefaultGasLimit(
-        final UInt64 builderRegistrationDefaultGasLimit) {
+        final Optional<UInt64> builderRegistrationDefaultGasLimit) {
       this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
       return this;
     }

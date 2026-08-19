@@ -76,6 +76,7 @@ public class SpecConfigData {
 
     configAttributes.put(
         "DOMAIN_PROPOSER_PREFERENCES", getDomainProposerPreferences().toHexString());
+    configAttributes.put("DOMAIN_BUILDER_DEPOSIT", getDomainBuilderDeposit().toHexString());
     configAttributes.put(
         "DOMAIN_INCLUSION_LIST_COMMITTEE", getDomainInclusionListCommittee().toHexString());
 
@@ -215,6 +216,10 @@ public class SpecConfigData {
 
   public Bytes4 getDomainProposerPreferences() {
     return Domain.PROPOSER_PREFERENCES;
+  }
+
+  public Bytes4 getDomainBuilderDeposit() {
+    return Domain.BUILDER_DEPOSIT;
   }
 
   public Bytes4 getDomainInclusionListCommittee() {

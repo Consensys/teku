@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
+
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -388,7 +390,7 @@ public class PeerSubnetSubscriptions {
     private final SubnetSubscriptions.Builder syncCommitteeSubnetSubscriptions;
     private final SubnetSubscriptions.Builder dataColumnSidecarSubnetSubscriptions;
     private NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator;
-    private int targetSubnetSubscriberCount = 2;
+    private int targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
 
     private Builder(
         final SchemaDefinitionsSupplier currentSchemaDefinitions,

@@ -38,10 +38,12 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
@@ -162,9 +164,11 @@ public class SidecarRetrieverTest {
     final int blobCount = 1;
     final int columnsInDbCount = 1;
     final BeaconBlock block = blockResolver.addBlock(10, blobCount);
+    final Blob blob = dataStructureUtil.randomValidBlob();
     final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(
-            dataStructureUtil.signedBlock(block), List.of(dataStructureUtil.randomValidBlob()));
+        miscHelpers.constructDataColumnSidecars(
+            dataStructureUtil.signedBlock(block),
+            List.of(KzgUtil.computeBlobAndCellProofs(miscHelpers.getKzg(), blob)));
     final List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());

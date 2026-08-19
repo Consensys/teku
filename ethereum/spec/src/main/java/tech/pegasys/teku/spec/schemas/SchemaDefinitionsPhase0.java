@@ -23,7 +23,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
@@ -75,11 +74,6 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.statusMessageSchema = schemaRegistry.get(STATUS_MESSAGE_SCHEMA);
     this.beaconBlockSchema = schemaRegistry.get(BEACON_BLOCK_SCHEMA);
     this.signedBeaconBlockSchema = schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
-  }
-
-  @Override
-  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
-    return specConfig.getMaxValidatorsPerCommittee();
   }
 
   @Override

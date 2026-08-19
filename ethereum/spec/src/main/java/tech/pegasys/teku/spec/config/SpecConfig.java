@@ -132,6 +132,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getMaxValidatorsPerCommittee();
 
+  default long getMaxValidatorsPerAttestation() {
+    return getMaxValidatorsPerCommittee();
+  }
+
   int getShuffleRoundCount();
 
   UInt64 getHysteresisQuotient();
@@ -204,6 +208,11 @@ public interface SpecConfig extends NetworkingSpecConfig {
   int getReorgHeadWeightThreshold();
 
   int getReorgParentWeightThreshold();
+
+  // Ephemery
+  default Optional<UInt64> getEphemeryResetPeriod() {
+    return Optional.empty();
+  }
 
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {

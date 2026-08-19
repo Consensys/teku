@@ -133,10 +133,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider) {
+      final IndexedAttestationProvider indexedAttestationProvider,
+      final UInt64 parentSlot) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationProcessingResult result =
-        processAttestation(state, attestation, indexedAttestationProvider);
+        processAttestation(state, attestation, indexedAttestationProvider, parentSlot);
     consumeAttestationProcessingResult(attestation.getData(), result, genericState);
   }
 
@@ -147,11 +148,23 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconStateAltair state,
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
+    return processAttestation(
+        state,
+        attestation,
+        indexedAttestationProvider,
+        beaconStateAccessorsAltair.getAttestationParentSlot(state));
+  }
+
+  public AttestationProcessingResult processAttestation(
+      final MutableBeaconStateAltair state,
+      final Attestation attestation,
+      final IndexedAttestationProvider indexedAttestationProvider,
+      final UInt64 parentSlot) {
     final AttestationData data = attestation.getData();
 
     final List<Integer> participationFlagIndices =
         beaconStateAccessorsAltair.getAttestationParticipationFlagIndices(
-            state, data, state.getSlot().minus(data.getSlot()));
+            state, data, state.getSlot().minus(data.getSlot()), parentSlot);
 
     // Update epoch participation flags
     final boolean currentEpochTarget =
@@ -202,7 +215,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
         builderPaymentWeightDelta =
             updateBuilderPaymentWeight(
-                builderPaymentIndex, builderPaymentWeightDelta, data, index, state);
+                previousParticipationFlags,
+                builderPaymentIndex,
+                builderPaymentWeightDelta,
+                data,
+                index,
+                state);
       }
     }
 
@@ -228,6 +246,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   protected UInt64 updateBuilderPaymentWeight(
+      final byte previousParticipationFlags,
       final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
@@ -380,7 +399,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processExecutionPayloadBid(
+  public UInt64 processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");

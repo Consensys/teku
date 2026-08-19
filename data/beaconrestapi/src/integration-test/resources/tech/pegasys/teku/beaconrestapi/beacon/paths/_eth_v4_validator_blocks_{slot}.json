@@ -3,7 +3,7 @@
     "tags" : [ "Validator", "Validator Required Api" ],
     "operationId" : "produceBlockV4",
     "summary" : "Produce a new block, without signature.",
-    "description" : "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n\nPost-Gloas, proposers submit execution payload bids rather than full execution payloads,\nso there is no longer a concept of blinded or unblinded blocks. Builders release the\npayload later. This endpoint is specific to the post-Gloas forks and is not backwards compatible\nwith previous forks.\n\nWhen self-building (local execution payload), the response will include the full block contents\nincluding the beacon block, execution payload envelope, blobs, and KZG proofs.\nWhen using an external builder bid, only the `BeaconBlock` is returned as the beacon node\ndoes not have access to the builder's execution payload.\n\nThe `Eth-Execution-Payload-Included` header and `execution_payload_included` response field\nindicate which response type was returned.\n",
+    "description" : "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n\nPost-Gloas, proposers submit execution payload bids rather than full execution payloads,\nso there is no longer a concept of blinded or unblinded blocks. Builders release the\npayload later. This endpoint is specific to the post-Gloas forks and is not backwards compatible\nwith previous forks.\n\nWhen self-building (local execution payload), the response includes the full block contents\n(beacon block, execution payload envelope, blobs, and KZG proofs) if `include_payload` is\nset to `true`, otherwise only the `BeaconBlock` is returned.\nWhen using an external builder bid, only the `BeaconBlock` is returned as the beacon node\ndoes not have access to the builder's execution payload.\n\nThe `Eth-Execution-Payload-Included` header and `execution_payload_included` response field\nindicate which response type was returned.\n",
     "parameters" : [ {
       "name" : "slot",
       "required" : true,
@@ -23,6 +23,14 @@
         "description" : "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
         "example" : "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505",
         "format" : "byte"
+      }
+    }, {
+      "name" : "include_payload",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "boolean",
+        "description" : "Controls whether the execution payload envelope and blobs are included in the response\nwhen self-building (using local execution payload).\n\nWhen `true`, the response includes the full block contents: beacon block,\nexecution payload envelope, blobs, and KZG proofs. This enables stateless operation\nwhere the validator client can use multiple beacon nodes (multi-BN setups, distributed validators, failover).\n\nWhen `false`, only the beacon block is returned and the beacon node caches the execution\npayload envelope and blobs internally. The validator client must then fetch them separately\nvia `GET /eth/v1/validator/execution_payload_envelope/{slot}`. This saves\nbandwidth but requires the validator client to publish via the same beacon node that\nproduced the block (stateful operation).\n\nThis parameter only affects self-building scenarios. When using an external builder's bid,\nonly the beacon block is returned regardless of this parameter (the beacon node does not\nhave access to the builder's execution payload)."
       }
     }, {
       "name" : "graffiti",
@@ -52,14 +60,6 @@
         "minLength" : 0,
         "maxLength" : 0
       }
-    }, {
-      "name" : "include_payload",
-      "allowEmptyValue" : true,
-      "in" : "query",
-      "schema" : {
-        "type" : "boolean",
-        "description" : "Controls whether the execution payload envelope and blobs are included in the response\nwhen self-building (using local execution payload).\n\nWhen `true` (default), the response includes the full block contents: beacon block,\nexecution payload envelope, blobs, and KZG proofs. This enables stateless operation\nwhere the validator client can use multiple beacon nodes (multi-BN setups, distributed validators, failover).\n\nWhen `false`, only the beacon block is returned and the beacon node caches the execution\npayload envelope and blobs internally. The validator client must then fetch them separately\nvia `GET /eth/v1/validator/execution_payload_envelope/{slot}`. This saves\nbandwidth but requires the validator client to publish via the same beacon node that\nproduced the block (stateful operation).\n\nThis parameter only affects self-building scenarios. When using an external builder's bid,\nonly the beacon block is returned regardless of this parameter (the beacon node does not\nhave access to the builder's execution payload)."
-      }
     } ],
     "responses" : {
       "200" : {
@@ -82,9 +82,17 @@
               "example" : "1"
             }
           },
+          "Eth-Execution-Payload-Value" : {
+            "description" : "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.",
+            "required" : true,
+            "schema" : {
+              "type" : "string",
+              "example" : "1"
+            }
+          },
           "Eth-Execution-Payload-Included" : {
             "description" : "Indicates whether the execution payload envelope is included in the response.\nWhen `true`, the `data` field contains the full\nexecution payload envelope, blobs, and KZG proofs. When `false`, the `data`\nfield contains only a `BeaconBlock`.",
-            "required" : false,
+            "required" : true,
             "schema" : {
               "type" : "boolean"
             }
@@ -120,16 +128,6 @@
       },
       "406" : {
         "description" : "Not acceptable",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
-      },
-      "501" : {
-        "description" : "Not implemented",
         "content" : {
           "application/json" : {
             "schema" : {

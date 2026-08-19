@@ -38,11 +38,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 
 public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface {
   ValidatorApiChannel NOOP =
@@ -113,7 +114,8 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
             final UInt64 slot,
             final BLSSignature randaoReveal,
             final Optional<Bytes32> graffiti,
-            final Optional<UInt64> requestedBuilderBoostFactor) {
+            final boolean includePayload,
+            final Optional<BuilderConfig> builderConfig) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -199,9 +201,9 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Void> sendSignedProposerPreferences(
+        public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
             final List<SignedProposerPreferences> signedProposerPreferences) {
-          return SafeFuture.COMPLETE;
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
@@ -269,15 +271,6 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
               PublishSignedExecutionPayloadResult.success(
                   signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot()));
         }
-
-        @Override
-        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-            final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-          return SafeFuture.completedFuture(
-              PublishSignedExecutionPayloadResult.success(
-                  signedBlindedExecutionPayload.getBeaconBlockRoot()));
-        }
       };
 
   int UNKNOWN_VALIDATOR_ID = -1;
@@ -295,18 +288,32 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
   SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       UInt64 epoch, IntCollection validatorIndices);
 
-  SafeFuture<Optional<ProposerDuties>> getProposerDuties(
-      UInt64 epoch, final boolean isFuluCompatible);
+  SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch, boolean isFuluCompatible);
 
   SafeFuture<Optional<PtcDuties>> getPtcDuties(UInt64 epoch, IntCollection validatorIndices);
 
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
+  // used to maintain backwards compatibility with block v3
+  default SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
+    return createUnsignedBlock(
+        slot,
+        randaoReveal,
+        graffiti,
+        false,
+        requestedBuilderBoostFactor.map(ApiSchemas.BUILDER_CONFIG_SCHEMA::create));
+  }
+
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       UInt64 slot,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
-      Optional<UInt64> requestedBuilderBoostFactor);
+      boolean includePayload,
+      Optional<BuilderConfig> builderConfig);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
@@ -342,7 +349,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
   SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       List<PayloadAttestationMessage> payloadAttestationMessages);
 
-  SafeFuture<Void> sendSignedProposerPreferences(
+  SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       List<SignedProposerPreferences> signedProposerPreferences);
 
   SafeFuture<Void> prepareBeaconProposer(

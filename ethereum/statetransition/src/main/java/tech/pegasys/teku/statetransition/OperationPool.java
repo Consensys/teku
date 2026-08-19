@@ -33,10 +33,13 @@ public interface OperationPool<T extends SszData> {
 
   void subscribeOperationAdded(OperationAddedSubscriber<T> subscriber);
 
-  SszList<T> getItemsForBlock(BeaconState stateAtBlockSlot);
+  SszList<T> getItemsForBlock(BeaconState stateAtBlockSlot, int maxItemsForBlock);
 
   SszList<T> getItemsForBlock(
-      BeaconState stateAtBlockSlot, Predicate<T> filter, Consumer<T> includedItemConsumer);
+      BeaconState stateAtBlockSlot,
+      int maxItemsForBlock,
+      Predicate<T> filter,
+      Consumer<T> includedItemConsumer);
 
   SafeFuture<InternalValidationResult> addLocal(T item);
 
