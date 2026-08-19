@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -62,8 +63,7 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     this.debugDataDumper = debugDataDumper;
     this.forkInfo = forkInfo;
     this.forkDigest = forkDigest;
-    final SpecVersion specVersion =
-        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone());
+    final SpecVersion specVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     this.dataColumnSidecarSchema =
         SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
             .getDataColumnSidecarSchema();
@@ -96,5 +96,10 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
 
   private int computeSubnetForSidecar(final DataColumnSidecar sidecar) {
     return miscHelpersFulu.computeSubnetForDataColumnSidecar(sidecar.getIndex()).intValue();
+  }
+
+  @VisibleForTesting
+  DataColumnSidecarSchema<DataColumnSidecar> getDataColumnSidecarSchema() {
+    return dataColumnSidecarSchema;
   }
 }

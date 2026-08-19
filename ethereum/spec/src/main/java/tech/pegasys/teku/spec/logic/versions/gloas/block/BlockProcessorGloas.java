@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
@@ -401,10 +402,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
   }
 
-  // Add weight for same-slot attestations when any new flag is set.
-  // This ensures each validator contributes exactly once per slot.
   @Override
   protected UInt64 updateBuilderPaymentWeight(
+      final byte previousParticipationFlags,
       final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
@@ -412,7 +412,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconState state) {
     final BuilderPendingPayment payment =
         BeaconStateGloas.required(state).getBuilderPendingPayments().get(builderPaymentIndex);
-    if (beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
+    if (previousParticipationFlags == ParticipationFlags.NO_PARTICIPATION_FLAGS
+        && beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
         // only add to the payment quorum if the payment is not trivial
         && payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
       return builderPaymentWeightDelta.plus(

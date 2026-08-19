@@ -63,6 +63,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 .withNetwork(DEFAULT_NETWORK_NAME)
                 .withInteropValidators(0, VALIDATOR_COUNT)
                 .withBeaconNodes(beaconNode)
+                .withLogLevel("DEBUG")
                 .build());
     validatorClient.start();
     validatorClient.waitForLogMessageContaining(
