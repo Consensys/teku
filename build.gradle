@@ -399,6 +399,17 @@ allprojects {
 		}
 	}
 
+	tasks.named('spotlessJava') {
+		outputs.doNotCacheIf('Avoid replaying cached google-java-format lint failures') { true }
+	}
+
+	def allCleanTasks = rootProject.allprojects.collect { cleanProject ->
+		cleanProject.tasks.matching { it.name == 'clean' }
+	}
+	tasks.matching { it.name.startsWith('spotless') }.configureEach {
+		mustRunAfter allCleanTasks
+	}
+
 	tasks.withType(JavaCompile) {
 		options.compilerArgs += [
 			'-Xlint:unchecked',
