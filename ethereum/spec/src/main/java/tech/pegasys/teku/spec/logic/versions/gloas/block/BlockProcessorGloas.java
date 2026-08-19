@@ -122,23 +122,20 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
-  public UInt64 executionProcessing(
+  public void executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
-      final UInt64 parentSlotFallback)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     safelyProcess(
-        () ->
-            processParentExecutionPayload(genericState, beaconBlock, validatorExitContextSupplier));
-    processWithdrawals(genericState, Optional.empty());
-    return safelyProcessAndReturn(
-        () ->
-            processExecutionPayloadBid(
-                genericState,
-                BeaconBlockBodyGloas.required(beaconBlock.getBody())
-                    .getSignedExecutionPayloadBid()));
+        () -> {
+          processParentExecutionPayload(genericState, beaconBlock, validatorExitContextSupplier);
+          processWithdrawals(genericState, Optional.empty());
+          processExecutionPayloadBid(
+              genericState,
+              BeaconBlockBodyGloas.required(beaconBlock.getBody()).getSignedExecutionPayloadBid());
+        });
   }
 
   // process_parent_execution_payload
@@ -194,7 +191,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         "Too many builder exit requests");
 
     final ExecutionPayloadBid parentBid = state.getLatestExecutionPayloadBid();
-    final UInt64 parentSlot = parentBid.getSlot();
+    final UInt64 parentSlot = state.getLatestBlockHeader().getSlot();
     final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
 
     // Process execution requests from parent's payload. The execution requests are processed at
@@ -257,7 +254,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
   // process_execution_payload_bid
   @Override
-  public UInt64 processExecutionPayloadBid(
+  public void processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid)
       throws BlockProcessingException {
 
@@ -349,9 +346,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Cache the execution payload bid
-    final UInt64 parentSlot = stateGloas.getLatestExecutionPayloadBid().getSlot();
     stateGloas.setLatestExecutionPayloadBid(bid);
-    return parentSlot;
   }
 
   @Override

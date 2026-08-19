@@ -35,8 +35,6 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -185,42 +183,6 @@ class BlockProcessorGloasTest {
     when(tooManyPayloadAttestations.getPayloadAttestations())
         .thenReturn(sszList(config.getMaxPayloadAttestations() + 1));
     assertTooManyOperationsAreRejected(tooManyPayloadAttestations, "Too many payload attestations");
-  }
-
-  @Test
-  void processExecutionPayloadBid_shouldReturnPreviousBidSlot() throws BlockProcessingException {
-    final UInt64 currentSlot = UInt64.valueOf(8);
-    final UInt64 previousBidSlot = UInt64.valueOf(3);
-    final MutableBeaconStateGloas mutableState =
-        BeaconStateGloas.required(dataStructureUtil.randomBeaconState(currentSlot))
-            .createWritableCopy();
-    mutableState.setLatestExecutionPayloadBid(
-        dataStructureUtil.randomExecutionPayloadBid(previousBidSlot, UInt64.ZERO));
-
-    final ExecutionPayloadBid bid =
-        schemaDefinitions
-            .getExecutionPayloadBidSchema()
-            .create(
-                mutableState.getLatestBlockHash(),
-                spec.getBlockRootAtSlot(mutableState, mutableState.getSlot().minusMinZero(1)),
-                dataStructureUtil.randomBytes32(),
-                spec.getRandaoMix(mutableState, spec.getCurrentEpoch(mutableState)),
-                dataStructureUtil.randomBytes20(),
-                UInt64.ZERO,
-                SpecConfigGloas.BUILDER_INDEX_SELF_BUILD,
-                mutableState.getSlot(),
-                UInt64.ZERO,
-                UInt64.ZERO,
-                schemaDefinitions.getExecutionPayloadBidSchema().getBlobKzgCommitmentsSchema().of(),
-                dataStructureUtil.randomBytes32());
-    final SignedExecutionPayloadBid signedBid =
-        schemaDefinitions.getSignedExecutionPayloadBidSchema().create(bid, BLSSignature.infinity());
-
-    final UInt64 returnedParentSlot =
-        blockProcessor().processExecutionPayloadBid(mutableState, signedBid);
-
-    assertThat(returnedParentSlot).isEqualTo(previousBidSlot);
-    assertThat(mutableState.getLatestExecutionPayloadBid()).isEqualTo(bid);
   }
 
   @Test

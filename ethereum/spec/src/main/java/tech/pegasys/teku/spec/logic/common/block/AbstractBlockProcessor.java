@@ -877,6 +877,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  protected <T> T safelyProcessAndReturn(final BlockProcessingSupplier<T> action)
+      throws BlockProcessingException {
+    try {
+      return action.get();
+    } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
+      if (Throwables.getRootCause(e) instanceof IllegalArgumentException) {
+        LOG.warn("Failed to process block: {}", e.getMessage());
+      } else {
+        LOG.warn("Failed to process block", e);
+      }
+      throw new BlockProcessingException(e);
+    }
+  }
+
   public interface IndexedAttestationProvider {
 
     IndexedAttestationLight getIndexedAttestation(final Attestation attestation);
