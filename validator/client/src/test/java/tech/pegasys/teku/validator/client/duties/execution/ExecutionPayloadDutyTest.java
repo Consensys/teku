@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
@@ -66,14 +68,16 @@ class ExecutionPayloadDutyTest {
 
   @Test
   public void performsDuty_onSelfBuiltBidIncludedInBlock() {
-    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
-
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
+    final ExecutionPayloadEnvelope executionPayload = signedExecutionPayload.getMessage();
+    final ExecutionPayloadBid bid =
+        dataStructureUtil.randomExecutionPayloadBid(
+            executionPayload.getSlot(), executionPayload.getBuilderIndex());
 
     when(validatorApiChannel.createUnsignedExecutionPayload(bid.getSlot(), bid.getBuilderIndex()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(signedExecutionPayload.getMessage())));
-    when(signer.signExecutionPayloadEnvelope(signedExecutionPayload.getMessage(), fork))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayload)));
+    when(signer.signExecutionPayloadEnvelope(executionPayload, fork))
         .thenReturn(SafeFuture.completedFuture(signedExecutionPayload.getSignature()));
     when(validatorApiChannel.publishSignedExecutionPayload(any()))
         .thenReturn(
@@ -81,7 +85,7 @@ class ExecutionPayloadDutyTest {
                 PublishSignedExecutionPayloadResult.success(
                     signedExecutionPayload.getBeaconBlockRoot())));
 
-    duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid);
+    duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid, Optional.empty());
 
     // should execute now
     asyncRunner.executeDueActions();
@@ -96,6 +100,32 @@ class ExecutionPayloadDutyTest {
   }
 
   @Test
+  public void performsDutyWithoutFetchingWhenExecutionPayloadIsProvided() {
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
+    final ExecutionPayloadEnvelope executionPayload = signedExecutionPayload.getMessage();
+    final ExecutionPayloadBid bid =
+        dataStructureUtil.randomExecutionPayloadBid(
+            executionPayload.getSlot(), executionPayload.getBuilderIndex());
+
+    when(signer.signExecutionPayloadEnvelope(executionPayload, fork))
+        .thenReturn(SafeFuture.completedFuture(signedExecutionPayload.getSignature()));
+    when(validatorApiChannel.publishSignedExecutionPayload(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                PublishSignedExecutionPayloadResult.success(
+                    signedExecutionPayload.getBeaconBlockRoot())));
+
+    duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid, Optional.of(executionPayload));
+
+    asyncRunner.executeDueActions();
+
+    verify(validatorApiChannel, never())
+        .createUnsignedExecutionPayload(bid.getSlot(), bid.getBuilderIndex());
+    verify(validatorApiChannel).publishSignedExecutionPayload(signedExecutionPayload);
+  }
+
+  @Test
   public void dutyFailureLogsAnError() {
     final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
 
@@ -103,7 +133,7 @@ class ExecutionPayloadDutyTest {
     when(validatorApiChannel.createUnsignedExecutionPayload(bid.getSlot(), bid.getBuilderIndex()))
         .thenReturn(SafeFuture.failedFuture(exception));
 
-    duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid);
+    duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid, Optional.empty());
     asyncRunner.executeDueActions();
 
     verify(validatorLogger)

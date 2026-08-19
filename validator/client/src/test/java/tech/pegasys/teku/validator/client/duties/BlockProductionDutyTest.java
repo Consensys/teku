@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -657,7 +658,75 @@ class BlockProductionDutyTest {
     performAndReportDuty(slot);
 
     verify(executionPayloadBidEventsChannelPublisher)
-        .onSelfBuiltBidIncludedInBlock(validator, fork, bid);
+        .onSelfBuiltBidIncludedInBlock(validator, fork, bid, Optional.empty());
+  }
+
+  @Test
+  public void
+      forGloas_shouldCreateAndPublishBlockAndNotifyBidEventsSubscribersWithIncludedExecutionPayload() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
+    duty =
+        new BlockProductionDuty(
+            validator,
+            slot,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            spec,
+            validatorDutyMetrics,
+            executionPayloadBidEventsChannelPublisher);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+
+    final ExecutionPayloadBid bid =
+        dataStructureUtil.randomExecutionPayloadBid(slot, BUILDER_INDEX_SELF_BUILD);
+    final BeaconBlockBody blockBody =
+        dataStructureUtil.randomBeaconBlockBody(
+            builder ->
+                builder.signedExecutionPayloadBid(
+                    SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+                        .getSignedExecutionPayloadBidSchema()
+                        .create(bid, dataStructureUtil.randomSignature())));
+    final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(slot, blockBody);
+    final ExecutionPayloadEnvelope executionPayload =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionPayloadEnvelopeSchema()
+            .create(
+                dataStructureUtil.randomExecutionPayload(slot),
+                dataStructureUtil.randomExecutionRequests(slot),
+                bid.getBuilderIndex(),
+                unsignedBlock.hashTreeRoot(),
+                unsignedBlock.getParentRoot());
+    final BlockContainer blockContents =
+        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlockContentsSchema()
+            .create(
+                unsignedBlock,
+                List.of(dataStructureUtil.randomKZGProof()),
+                dataStructureUtil.randomBlobs(1, slot),
+                Optional.of(executionPayload));
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(blockContents, slot);
+
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(slot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(validatorApiChannel.createUnsignedBlock(
+            slot, randaoReveal, Optional.of(graffiti), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
+    final SignedBeaconBlock signedBlock =
+        dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.GOSSIP))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
+
+    performAndReportDuty(slot);
+
+    verify(executionPayloadBidEventsChannelPublisher)
+        .onSelfBuiltBidIncludedInBlock(validator, fork, bid, Optional.of(executionPayload));
   }
 
   public void assertDutyFails(final RuntimeException error) {

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -99,17 +100,15 @@ public class BlockProductionDuty implements Duty {
                     () -> createUnsignedBlock(signature), this, ValidatorDutyMetricsSteps.CREATE))
         .thenCompose(this::validateBlock)
         .thenCompose(
-            blockContainerAndMetaData ->
+            blockContainer ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, blockContainerAndMetaData),
+                    () -> signBlockContainer(forkInfo, blockContainer),
                     this,
                     ValidatorDutyMetricsSteps.SIGN))
         .thenCompose(
-            signedBlockContainer ->
+            signedBlock ->
                 validatorDutyMetrics.record(
-                    () -> sendBlock(signedBlockContainer, forkInfo),
-                    this,
-                    ValidatorDutyMetricsSteps.SEND));
+                    () -> sendBlock(signedBlock, forkInfo), this, ValidatorDutyMetricsSteps.SEND));
   }
 
   private DutyResult handleBlockProductionError(final Throwable error) {
@@ -153,13 +152,19 @@ public class BlockProductionDuty implements Duty {
     return SafeFuture.completedFuture(unsignedBlockContainer);
   }
 
-  private SafeFuture<SignedBlockContainer> signBlockContainer(
+  private SafeFuture<SignedBlockAndMaybeExecutionPayload> signBlockContainer(
       final ForkInfo forkInfo, final BlockContainer blockContainer) {
-    return blockContainerSigner.sign(blockContainer, validator, forkInfo);
+    return blockContainerSigner
+        .sign(blockContainer, validator, forkInfo)
+        .thenApply(
+            signedBlockContainer ->
+                new SignedBlockAndMaybeExecutionPayload(
+                    signedBlockContainer, blockContainer.getExecutionPayloadEnvelope()));
   }
 
   private SafeFuture<DutyResult> sendBlock(
-      final SignedBlockContainer signedBlockContainer, final ForkInfo forkInfo) {
+      final SignedBlockAndMaybeExecutionPayload signedBlock, final ForkInfo forkInfo) {
+    final SignedBlockContainer signedBlockContainer = signedBlock.signedBlockContainer();
     return validatorApiChannel
         .sendSignedBlock(signedBlockContainer, BroadcastValidationLevel.GOSSIP)
         .thenApply(
@@ -171,7 +176,8 @@ public class BlockProductionDuty implements Duty {
                     .getOptionalSignedExecutionPayloadBid()
                     .ifPresent(
                         signedBid ->
-                            notifyExecutionPayloadBidEventsSubscribers(signedBid, forkInfo));
+                            notifyExecutionPayloadBidEventsSubscribers(
+                                signedBid, forkInfo, signedBlock.maybeExecutionPayload()));
                 return DutyResult.success(
                     signedBlockContainer.getRoot(), getBlockSummary(blockBody));
               }
@@ -227,11 +233,13 @@ public class BlockProductionDuty implements Duty {
   }
 
   private void notifyExecutionPayloadBidEventsSubscribers(
-      final SignedExecutionPayloadBid signedBid, final ForkInfo forkInfo) {
+      final SignedExecutionPayloadBid signedBid,
+      final ForkInfo forkInfo,
+      final Optional<ExecutionPayloadEnvelope> maybeExecutionPayload) {
     // BUILDER_INDEX_SELF_BUILD indicates a self-built bid
     if (signedBid.getMessage().getBuilderIndex().equals(BUILDER_INDEX_SELF_BUILD)) {
       executionPayloadBidEventsChannelPublisher.onSelfBuiltBidIncludedInBlock(
-          validator, forkInfo, signedBid.getMessage());
+          validator, forkInfo, signedBid.getMessage(), maybeExecutionPayload);
     }
   }
 
@@ -246,4 +254,8 @@ public class BlockProductionDuty implements Duty {
         + forkProvider
         + '}';
   }
+
+  private record SignedBlockAndMaybeExecutionPayload(
+      SignedBlockContainer signedBlockContainer,
+      Optional<ExecutionPayloadEnvelope> maybeExecutionPayload) {}
 }
