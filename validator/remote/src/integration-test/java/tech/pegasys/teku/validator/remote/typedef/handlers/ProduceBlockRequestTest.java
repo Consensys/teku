@@ -288,7 +288,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), true, BuilderConfig.NO_OP);
+        request.submitV4(signature, Optional.empty(), true, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
     assertThat(result.get().blockContainer()).isEqualTo(blockContents);
@@ -317,7 +317,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), false, BuilderConfig.NO_OP);
+        request.submitV4(signature, Optional.empty(), false, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
     assertThat(result.get().blockContainer()).isEqualTo(beaconBlock);
@@ -357,7 +357,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), true, BuilderConfig.NO_OP);
+        request.submitV4(signature, Optional.empty(), true, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
     assertThat(result.get().blockContainer()).isEqualTo(blockContents);
@@ -388,7 +388,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), false, BuilderConfig.NO_OP);
+        request.submitV4(signature, Optional.empty(), false, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
     assertThat(result.get().blockContainer()).isEqualTo(beaconBlock);

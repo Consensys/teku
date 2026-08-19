@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_P
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_INCLUDE_PAYLOAD;
@@ -152,13 +153,16 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final boolean includePayload,
-      final BuilderConfig builderConfig) {
+      final BuilderConfig builderConfig,
+      final SpecMilestone milestone) {
+    final Map<String, String> urlParams = Map.of("slot", slot.toString());
     final Map<String, String> queryParams =
         buildQueryParamsV4(randaoReveal, graffiti, includePayload);
     final Map<String, String> headers = buildAcceptHeaders();
+    headers.put(HEADER_CONSENSUS_VERSION, milestone.lowerCaseName());
     return postJson(
             GET_UNSIGNED_BLOCK_V4,
-            Map.of("slot", slot.toString()),
+            urlParams,
             queryParams,
             headers,
             builderConfig,

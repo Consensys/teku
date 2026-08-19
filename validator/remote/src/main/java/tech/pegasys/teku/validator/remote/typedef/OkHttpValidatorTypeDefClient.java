@@ -174,8 +174,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       // BuilderConfig is required for block v4
       final BuilderConfig builderConfig =
           maybeBuilderConfig.orElseThrow(
-              () -> new NoSuchElementException("BuilderConfig is expected for block v4 request"));
-      return produceBlockRequest.submitV4(randaoReveal, graffiti, includePayload, builderConfig);
+              () ->
+                  new NoSuchElementException(
+                      "BuilderConfig is expected to have been provided for a block v4 request"));
+      return produceBlockRequest.submitV4(
+          randaoReveal, graffiti, includePayload, builderConfig, milestone);
     }
     return produceBlockRequest.submitV3(
         randaoReveal, graffiti, maybeBuilderConfig.map(BuilderConfig::getBuilderBoostFactor));
