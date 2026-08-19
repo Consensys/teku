@@ -51,6 +51,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
@@ -130,6 +131,7 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            FastConfirmationTracker.NOOP,
             true,
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,

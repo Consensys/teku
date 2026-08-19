@@ -130,6 +130,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -230,6 +231,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.lightclient.LightClientServerService;
 import tech.pegasys.teku.statetransition.lightclient.LightClientUpdateStore;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
@@ -355,6 +357,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
+  private final FastConfirmationTracker fastConfirmationTracker;
   protected final AtomicReference<DataColumnSidecarRecoveringCustody> dataColumnSidecarCustodyRef =
       new AtomicReference<>(DataColumnSidecarRecoveringCustody.NOOP);
 
@@ -474,6 +477,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // larger default size. das runner should be separate to the operation pool runner as it's a
     // bunch of tasks, not just operation pool activities
     this.dasAsyncRunner = serviceConfig.createAsyncRunner("das", 4, 20_000);
+    this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
@@ -1692,6 +1696,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
+            fastConfirmationTracker,
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             (slot, blockRoot) ->
                 beaconAsyncRunner.runAsync(
@@ -2441,7 +2446,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initForkChoiceStateProvider() {
     LOG.debug("BeaconChainController.initForkChoiceStateProvider()");
-    forkChoiceStateProvider = new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData);
+    // When fast confirmation is enabled, the FCU safe_block_hash is derived from the confirmed
+    // root (get_safe_execution_block_hash); otherwise the supplier is empty and the safe hash
+    // defaults to the justified block, as before.
+    forkChoiceStateProvider =
+        new ForkChoiceStateProvider(
+            forkChoiceExecutor,
+            recentChainData,
+            () ->
+                fastConfirmationTracker
+                    .getFastConfirmationStore()
+                    .map(FastConfirmationStore::confirmedRoot));
   }
 
   protected void initForkChoiceNotifier() {
