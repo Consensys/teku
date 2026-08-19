@@ -18,9 +18,6 @@ specrefs:
       # Not implemented: heze
       - MIN_SLOTS_FOR_INCLUSION_LISTS_REQUESTS#heze
 
-      # Renamed after v1.7.0-alpha.13
-      - MAX_BYTES_PER_INCLUSION_LIST#heze
-
     constants:
       # Not defined as a constant, unnecessary
       - BASIS_POINTS#phase0
