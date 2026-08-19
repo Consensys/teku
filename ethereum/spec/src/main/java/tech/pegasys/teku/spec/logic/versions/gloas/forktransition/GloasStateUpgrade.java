@@ -178,14 +178,14 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                   schemaDefinitions
                       .getExecutionPayloadBidSchema()
                       .create(
-                          Bytes32.ZERO,
-                          Bytes32.ZERO,
+                          preStateFulu.getLatestExecutionPayloadHeaderRequired().getParentHash(),
+                          preState.getLatestBlockHeader().getParentRoot(),
                           latestBlockHash,
-                          Bytes32.ZERO,
+                          preStateFulu.getLatestExecutionPayloadHeaderRequired().getPrevRandao(),
                           Bytes20.ZERO,
                           latestGasLimit,
-                          UInt64.ZERO,
-                          UInt64.ZERO,
+                          SpecConfigGloas.BUILDER_INDEX_SELF_BUILD,
+                          preState.getLatestBlockHeader().getSlot(),
                           UInt64.ZERO,
                           UInt64.ZERO,
                           schemaDefinitions.getBlobKzgCommitmentsSchema().of(),
