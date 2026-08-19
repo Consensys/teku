@@ -839,23 +839,30 @@ tasks.register('deploy') {}
 generateLicenseReport.enabled = false
 checkLicense.enabled = false
 tasks.register('licenseCheck', Exec) {
-	def outputFile = layout.buildDirectory.file('reports/licenseCheck/output.log')
-	def outputStream = null
+	def stdoutFile = layout.buildDirectory.file('reports/licenseCheck/stdout.log')
+	def stderrFile = layout.buildDirectory.file('reports/licenseCheck/stderr.log')
 	workingDir rootDir
 	commandLine './gradlew', 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
 	ignoreExitValue = true
 	doFirst {
-		def output = outputFile.get().asFile
-		output.parentFile.mkdirs()
-		outputStream = new FileOutputStream(output)
-		standardOutput = outputStream
-		errorOutput = outputStream
+		def stdout = stdoutFile.get().asFile
+		def stderr = stderrFile.get().asFile
+		stdout.parentFile.mkdirs()
+		stderr.parentFile.mkdirs()
+		standardOutput = new FileOutputStream(stdout)
+		errorOutput = new FileOutputStream(stderr)
 	}
 	doLast {
-		outputStream?.close()
 		def result = executionResult.get()
 		if (result.exitValue != 0) {
-			logger.error(outputFile.get().asFile.text.trim())
+			def stdout = stdoutFile.get().asFile
+			def stderr = stderrFile.get().asFile
+			if (stdout.exists() && stdout.length() > 0) {
+				logger.error(stdout.text.trim())
+			}
+			if (stderr.exists() && stderr.length() > 0) {
+				logger.error(stderr.text.trim())
+			}
 			throw new GradleException("License check failed")
 		}
 	}
