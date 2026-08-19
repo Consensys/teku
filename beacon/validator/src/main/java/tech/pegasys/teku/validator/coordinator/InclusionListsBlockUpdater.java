@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -38,16 +39,19 @@ public class InclusionListsBlockUpdater {
   private static final Logger LOG = LogManager.getLogger();
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ProposersDataManager proposersDataManager;
+  private final InclusionListStore inclusionListStore;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
 
   public InclusionListsBlockUpdater(
       final ForkChoiceNotifier forkChoiceNotifier,
       final ProposersDataManager proposersDataManager,
+      final InclusionListStore inclusionListStore,
       final CombinedChainDataClient combinedChainDataClient,
       final Spec spec) {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.proposersDataManager = proposersDataManager;
+    this.inclusionListStore = inclusionListStore;
     this.combinedChainDataClient = combinedChainDataClient;
     this.spec = spec;
   }
@@ -87,7 +91,7 @@ public class InclusionListsBlockUpdater {
       final UInt64 slot, final BeaconState state) {
     LOG.info("Updating block with inclusion lists from slot {}", slot);
     final Optional<List<InclusionList>> maybeInclusionLists =
-        combinedChainDataClient.getStore().getInclusionLists(slot);
+        inclusionListStore.getInclusionLists(slot);
     if (maybeInclusionLists.isPresent()) {
       final List<InclusionList> inclusionLists = maybeInclusionLists.get();
       final List<Bytes> transactions = getInclusionListTransactions(inclusionLists);

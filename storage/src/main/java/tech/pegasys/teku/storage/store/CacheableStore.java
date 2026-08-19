@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 /** Store extension dedicated to keep unsafe updates package-private */
@@ -43,10 +42,6 @@ public abstract class CacheableStore implements UpdatableStore {
   abstract void cacheBlockStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
 
   abstract void cacheUnsatisfiedInclusionListBlock(Bytes32 blockRoot);
-
-  abstract void cacheInclusionListEquivocator(InclusionList inclusionList);
-
-  abstract void cacheInclusionList(InclusionList inclusionList);
 
   abstract void cacheBlobSidecars(Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap);
 

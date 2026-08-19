@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -40,7 +41,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 class InclusionListsBlockUpdaterTest {
 
@@ -51,12 +51,16 @@ class InclusionListsBlockUpdaterTest {
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final UpdatableStore store = mock(UpdatableStore.class);
+  private final InclusionListStore inclusionListStore = mock(InclusionListStore.class);
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconState proposerState = mock(BeaconState.class);
   private final InclusionListsBlockUpdater inclusionListsBlockUpdater =
       new InclusionListsBlockUpdater(
-          forkChoiceNotifier, proposersDataManager, combinedChainDataClient, spec);
+          forkChoiceNotifier,
+          proposersDataManager,
+          inclusionListStore,
+          combinedChainDataClient,
+          spec);
 
   @Test
   void onUpdateBlockWithInclusionListsDue_shouldNotRequestPayloadIdWhenNoTransactions()
@@ -69,8 +73,7 @@ class InclusionListsBlockUpdaterTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     when(spec.processSlots(state, proposerSlot)).thenReturn(proposerState);
     when(proposersDataManager.isProposerForSlot(proposerSlot, proposerState)).thenReturn(true);
-    when(combinedChainDataClient.getStore()).thenReturn(store);
-    when(store.getInclusionLists(inclusionListSlot))
+    when(inclusionListStore.getInclusionLists(inclusionListSlot))
         .thenReturn(Optional.of(List.of(emptyInclusionList)));
 
     assertThatSafeFuture(
@@ -102,8 +105,7 @@ class InclusionListsBlockUpdaterTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     when(spec.processSlots(state, proposerSlot)).thenReturn(proposerState);
     when(proposersDataManager.isProposerForSlot(proposerSlot, proposerState)).thenReturn(true);
-    when(combinedChainDataClient.getStore()).thenReturn(store);
-    when(store.getInclusionLists(inclusionListSlot))
+    when(inclusionListStore.getInclusionLists(inclusionListSlot))
         .thenReturn(Optional.of(List.of(inclusionList)));
     when(spec.getBlockRootAtSlot(proposerState, inclusionListSlot)).thenReturn(parentRoot);
     when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));

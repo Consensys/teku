@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -57,6 +58,7 @@ import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ForkChoiceIntegrationTest {
@@ -171,11 +173,14 @@ public class ForkChoiceIntegrationTest {
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(SPEC, storageClient);
+    final InclusionListStore inclusionListStore =
+        new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
     ForkChoice forkChoice =
         new ForkChoice(
             SPEC,
             forkChoiceExecutor,
             storageClient,
+            inclusionListStore,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());

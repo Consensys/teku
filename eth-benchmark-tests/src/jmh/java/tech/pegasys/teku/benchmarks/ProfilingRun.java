@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -98,11 +100,14 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
+      final InclusionListStore inclusionListStore =
+          new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
               new InlineEventThread(),
               recentChainData,
+              inclusionListStore,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
               metricsSystem);
@@ -181,11 +186,14 @@ public class ProfilingRun {
       chainUpdater.initializeGenesis(false);
       final MergeTransitionBlockValidator transitionBlockValidator =
           new MergeTransitionBlockValidator(spec, recentChainData);
+      final InclusionListStore inclusionListStore =
+          new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
               new InlineEventThread(),
               recentChainData,
+              inclusionListStore,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
               metricsSystem);

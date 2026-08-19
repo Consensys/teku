@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -70,6 +71,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -90,6 +92,8 @@ public class BlockImporterTest {
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);
+  private final InclusionListStore inclusionListStore =
+      new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final ForkChoice forkChoice =
@@ -97,6 +101,7 @@ public class BlockImporterTest {
           spec,
           new InlineEventThread(),
           recentChainData,
+          inclusionListStore,
           forkChoiceNotifier,
           transitionBlockValidator,
           metricsSystem);
@@ -381,6 +386,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -426,6 +432,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -479,6 +486,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -524,6 +532,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -557,6 +566,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -611,6 +621,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
