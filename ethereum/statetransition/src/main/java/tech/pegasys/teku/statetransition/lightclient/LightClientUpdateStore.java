@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -53,41 +54,38 @@ public class LightClientUpdateStore {
       return;
     }
 
-    final StoredUpdate<LightClientUpdate> stored =
-        new StoredUpdate<>(update, signatureSlot, signatureBlockRoot);
-    if (!stored.isCanonical(isCanonical)) {
+    if (!isCanonical.test(signatureSlot, signatureBlockRoot)) {
       return;
     }
 
     bestUpdatesByPeriod.merge(
         attestedPeriod,
-        stored,
+        new StoredUpdate<>(update, signatureSlot, signatureBlockRoot),
         (existing, incoming) ->
             isBetterUpdate(incoming.update(), existing.update()) ? incoming : existing);
   }
 
   public synchronized void removeNonCanonicalUpdates(
       final UInt64 fromPeriod, final BiPredicate<UInt64, Bytes32> isCanonical) {
-    bestUpdatesByPeriod
-        .tailMap(fromPeriod)
-        .values()
-        .removeIf(stored -> !stored.isCanonical(isCanonical));
-    latestFinalityUpdate.updateAndGet(
-        current -> current.filter(stored -> stored.isCanonical(isCanonical)));
-    latestOptimisticUpdate.updateAndGet(
-        current -> current.filter(stored -> stored.isCanonical(isCanonical)));
+    final Predicate<StoredUpdate<?>> canonical =
+        stored -> isCanonical.test(stored.signatureSlot(), stored.signatureBlockRoot());
+
+    bestUpdatesByPeriod.tailMap(fromPeriod).values().removeIf(canonical.negate());
+    latestFinalityUpdate.updateAndGet(current -> current.filter(canonical));
+    latestOptimisticUpdate.updateAndGet(current -> current.filter(canonical));
   }
 
   public synchronized void addFinalityUpdate(
       final LightClientFinalityUpdate finalityUpdate,
       final Bytes32 signatureBlockRoot,
       final BiPredicate<UInt64, Bytes32> isCanonical) {
-    final StoredUpdate<LightClientFinalityUpdate> incoming =
-        new StoredUpdate<>(
-            finalityUpdate, finalityUpdate.getSignatureSlot().get(), signatureBlockRoot);
-    if (!incoming.isCanonical(isCanonical)) {
+    final UInt64 signatureSlot = finalityUpdate.getSignatureSlot().get();
+    if (!isCanonical.test(signatureSlot, signatureBlockRoot)) {
       return;
     }
+
+    final StoredUpdate<LightClientFinalityUpdate> incoming =
+        new StoredUpdate<>(finalityUpdate, signatureSlot, signatureBlockRoot);
 
     latestFinalityUpdate.updateAndGet(
         current -> {
@@ -109,12 +107,13 @@ public class LightClientUpdateStore {
       final LightClientOptimisticUpdate optimisticUpdate,
       final Bytes32 signatureBlockRoot,
       final BiPredicate<UInt64, Bytes32> isCanonical) {
-    final StoredUpdate<LightClientOptimisticUpdate> incoming =
-        new StoredUpdate<>(
-            optimisticUpdate, optimisticUpdate.getSignatureSlot().get(), signatureBlockRoot);
-    if (!incoming.isCanonical(isCanonical)) {
+    final UInt64 signatureSlot = optimisticUpdate.getSignatureSlot().get();
+    if (!isCanonical.test(signatureSlot, signatureBlockRoot)) {
       return;
     }
+
+    final StoredUpdate<LightClientOptimisticUpdate> incoming =
+        new StoredUpdate<>(optimisticUpdate, signatureSlot, signatureBlockRoot);
 
     latestOptimisticUpdate.updateAndGet(
         current -> {
@@ -165,11 +164,7 @@ public class LightClientUpdateStore {
     return latestOptimisticUpdate.get().map(StoredUpdate::update);
   }
 
-  private record StoredUpdate<T>(T update, UInt64 signatureSlot, Bytes32 signatureBlockRoot) {
-    boolean isCanonical(final BiPredicate<UInt64, Bytes32> isCanonical) {
-      return isCanonical.test(signatureSlot, signatureBlockRoot);
-    }
-  }
+  private record StoredUpdate<T>(T update, UInt64 signatureSlot, Bytes32 signatureBlockRoot) {}
 
   /** {@code is_better_update}. */
   private boolean isBetterUpdate(
