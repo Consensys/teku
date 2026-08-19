@@ -32,12 +32,15 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.inclusionlist.SignedInclusionListListener;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -62,6 +65,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubsc
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -88,10 +92,12 @@ public class NodeDataProvider {
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final PayloadAttestationPool payloadAttestationPool;
   private final ProposerPreferencesManager proposerPreferencesManager;
+  private final InclusionListManager inclusionListManager;
   private final Spec spec;
 
   public NodeDataProvider(
       final AggregatingAttestationPool attestationPool,
+      final InclusionListManager inclusionListManager,
       final OperationPool<AttesterSlashing> attesterSlashingsPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
@@ -110,6 +116,7 @@ public class NodeDataProvider {
       final ProposerPreferencesManager proposerPreferencesManager,
       final Spec spec) {
     this.attestationPool = attestationPool;
+    this.inclusionListManager = inclusionListManager;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
@@ -132,6 +139,11 @@ public class NodeDataProvider {
   public List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
+  }
+
+  public List<SignedInclusionList> getInclusionLists(
+      final UInt64 slot, final SszBitvector committeeIndices) {
+    return inclusionListManager.getInclusionLists(slot, committeeIndices);
   }
 
   public ObjectAndMetaData<List<Attestation>> getAttestationsAndMetaData(
@@ -354,6 +366,10 @@ public class NodeDataProvider {
   public void subscribeToProposerPreferences(
       final OperationAddedSubscriber<SignedProposerPreferences> listener) {
     proposerPreferencesManager.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToNewInclusionList(final SignedInclusionListListener listener) {
+    inclusionListManager.subscribeToInclusionLists(listener);
   }
 
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorLiveness(

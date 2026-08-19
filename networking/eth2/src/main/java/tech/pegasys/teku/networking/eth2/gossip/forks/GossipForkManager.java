@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -288,6 +289,14 @@ public class GossipForkManager {
         message,
         "proposer preferences",
         GossipForkSubscriptions::publishProposerPreferences);
+  }
+
+  public void publishInclusionList(final SignedInclusionList signedInclusionList) {
+    publishMessage(
+        signedInclusionList.getMessage().getSlot(),
+        signedInclusionList,
+        "attestation",
+        GossipForkSubscriptions::publishSignedInclusionList);
   }
 
   private synchronized <T> void publishMessage(

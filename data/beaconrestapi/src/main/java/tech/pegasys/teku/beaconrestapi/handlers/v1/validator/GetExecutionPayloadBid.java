@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BUILDER_INDEX;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
@@ -23,10 +24,13 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
@@ -36,6 +40,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public class GetExecutionPayloadBid extends RestApiEndpoint {
   public static final String ROUTE =
@@ -87,18 +93,46 @@ public class GetExecutionPayloadBid extends RestApiEndpoint {
 
   private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<ExecutionPayloadBid>>
+        schemaGetters = generateExecutionPayloadBidSchemaGetters(schemaDefinitionCache);
+
+    final SerializableTypeDefinition<ExecutionPayloadBid> executionPayloadBidType =
+        getMultipleSchemaDefinitionFromMilestone(
+            schemaDefinitionCache, "ExecutionPayloadBid", schemaGetters);
+
     return SerializableTypeDefinition.object(ExecutionPayloadBid.class)
         .name("ProduceExecutionPayloadBidResponse")
-        .withField(
-            "data",
-            schemaDefinitionCache
-                .getSchemaDefinition(SpecMilestone.GLOAS)
-                .toVersionGloas()
-                .orElseThrow()
-                .getExecutionPayloadBidSchema()
-                .getJsonTypeDefinition(),
-            Function.identity())
+        .withField("data", executionPayloadBidType, Function.identity())
         .build();
+  }
+
+  private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<ExecutionPayloadBid>>
+      generateExecutionPayloadBidSchemaGetters(final SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<ExecutionPayloadBid>>
+        schemaGetterList = new ArrayList<>();
+
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (executionPayloadBid, milestone) ->
+                schemaDefinitionCache
+                        .milestoneAtSlot(executionPayloadBid.getSlot())
+                        .equals(milestone)
+                    && milestone.equals(SpecMilestone.GLOAS),
+            SpecMilestone.GLOAS,
+            schemaDefinitions ->
+                SchemaDefinitionsGloas.required(schemaDefinitions).getExecutionPayloadBidSchema()));
+
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (executionPayloadBid, milestone) ->
+                schemaDefinitionCache
+                    .milestoneAtSlot(executionPayloadBid.getSlot())
+                    .equals(milestone),
+            SpecMilestone.HEZE,
+            schemaDefinitions ->
+                SchemaDefinitionsHeze.required(schemaDefinitions).getExecutionPayloadBidSchema()));
+
+    return schemaGetterList;
   }
 
   @Override

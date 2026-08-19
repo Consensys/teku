@@ -1258,7 +1258,8 @@ public class DefaultExecutionPayloadBidManagerTest {
       final UInt64 builderIndex) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
-    final ExecutionPayloadBidSchema schema = schemaDefinitions.getExecutionPayloadBidSchema();
+    final ExecutionPayloadBidSchema<? extends ExecutionPayloadBid> schema =
+        schemaDefinitions.getExecutionPayloadBidSchema();
     final ExecutionPayloadBid bid =
         schema.create(
             parentBlockHash,

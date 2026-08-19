@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -83,6 +84,13 @@ public interface ExecutionEngineClient {
       Bytes32 parentBeaconBlockRoot,
       List<Bytes> executionRequests);
 
+  SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      ExecutionPayloadV4 executionPayload,
+      List<VersionedHash> blobVersionedHashes,
+      Bytes32 parentBeaconBlockRoot,
+      List<Bytes> executionRequests,
+      List<Bytes> inclusionList);
+
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
 
@@ -95,6 +103,9 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV4(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV4> payloadAttributes);
 
+  SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV5> payloadAttributes);
+
   SafeFuture<Response<List<String>>> exchangeCapabilities(List<String> capabilities);
 
   SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(ClientVersionV1 clientVersion);
@@ -105,4 +116,6 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<List<ExecutionPayloadBodyV2>>> getPayloadBodiesByHashV2(
       List<Bytes32> blockHashes);
+
+  SafeFuture<Response<List<String>>> getInclusionListV1(Bytes32 parentHash);
 }

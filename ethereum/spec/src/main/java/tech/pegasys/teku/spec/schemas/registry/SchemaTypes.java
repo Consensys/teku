@@ -23,13 +23,16 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
@@ -54,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
@@ -99,6 +103,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
@@ -291,8 +296,8 @@ public class SchemaTypes {
       create("PAYLOAD_ATTESTATION_MESSAGE_SCHEMA");
   public static final SchemaId<IndexedPayloadAttestationSchema> INDEXED_PAYLOAD_ATTESTATION_SCHEMA =
       create("INDEXED_PAYLOAD_ATTESTATION_SCHEMA");
-  public static final SchemaId<ExecutionPayloadBidSchema> EXECUTION_PAYLOAD_BID_SCHEMA =
-      create("EXECUTION_PAYLOAD_BID_SCHEMA");
+  public static final SchemaId<ExecutionPayloadBidSchema<ExecutionPayloadBid>>
+      EXECUTION_PAYLOAD_BID_SCHEMA = create("EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadBidSchema>
       SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<ProposerPreferencesSchema> PROPOSER_PREFERENCES_SCHEMA =
@@ -338,6 +343,11 @@ public class SchemaTypes {
       create("INCLUSION_LIST_SCHEMA");
   public static final SchemaId<SignedInclusionListSchema> SIGNED_INCLUSION_LIST_SCHEMA =
       create("SIGNED_INCLUSION_LIST_SCHEMA");
+  public static final SchemaId<InclusionListByCommitteeRequestMessageSchema>
+      INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA =
+          create("INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>>
+      INCLUSION_LIST_COMMITTEE_SCHEMA = create("INCLUSION_LIST_COMMITTEE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

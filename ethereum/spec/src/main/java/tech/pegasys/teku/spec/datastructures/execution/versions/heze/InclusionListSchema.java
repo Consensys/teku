@@ -17,7 +17,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTIONS_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.TRANSACTION_SCHEMA;
 
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
@@ -56,7 +55,7 @@ public class InclusionListSchema
       final UInt64 slot,
       final UInt64 validatorIndex,
       final Bytes32 inclusionListCommitteeRoot,
-      final List<Bytes> transactions) {
+      final List<Transaction> transactions) {
     return new InclusionList(this, slot, validatorIndex, inclusionListCommitteeRoot, transactions);
   }
 

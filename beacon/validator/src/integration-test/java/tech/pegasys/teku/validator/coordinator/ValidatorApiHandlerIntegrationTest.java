@@ -92,6 +92,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 
 @TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB, SpecMilestone.GLOAS})
 public class ValidatorApiHandlerIntegrationTest {
@@ -145,7 +146,11 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(SyncCommitteeSubscriptionManager.class);
   private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
 
+  private final SignedInclusionListPublisher signedInclusionListPublisher =
+      mock(SignedInclusionListPublisher.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
+
+  private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
 
   private ValidatorApiHandler handler;
 
@@ -239,7 +244,9 @@ public class ValidatorApiHandlerIntegrationTest {
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            ExecutionProofManager.NOOP);
+            ExecutionProofManager.NOOP,
+            signedInclusionListPublisher,
+            inclusionListFactory);
   }
 
   @TestTemplate

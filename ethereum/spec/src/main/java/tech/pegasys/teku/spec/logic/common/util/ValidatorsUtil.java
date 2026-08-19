@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.heze.helpers.BeaconStateAccessorsHeze;
 
 public class ValidatorsUtil {
 
@@ -138,6 +139,35 @@ public class ValidatorsUtil {
     return Optional.empty();
   }
 
+  /**
+   * Returns the slot during the requested epoch in which the validator with index
+   * ``validator_index`` is a member of the ILC. Returns None if no assignment is found.
+   *
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validatorIndex the validator that is calling this function.
+   * @return Optional containing the slot if any, empty otherwise
+   */
+  public Optional<UInt64> getInclusionCommitteeAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    checkArgument(
+        epoch.compareTo(nextEpoch) <= 0,
+        "get_inclusion_committee_assignment: Epoch number too high");
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (UInt64 slot = startSlot;
+        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
+        slot = slot.plus(UInt64.ONE)) {
+      final IntList inclusionListCommittee =
+          BeaconStateAccessorsHeze.required(beaconStateAccessors)
+              .getInclusionListCommittee(state, slot);
+      if (inclusionListCommittee.contains(validatorIndex)) {
+        return Optional.of(slot);
+      }
+    }
+    return Optional.empty();
+  }
+
   public Optional<UInt64> getPtcAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     // NO-OP in Phase0
@@ -145,6 +175,12 @@ public class ValidatorsUtil {
   }
 
   public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    // NO-OP in Phase0
+    return new Int2ObjectOpenHashMap<>();
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToILCommitteeAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     // NO-OP in Phase0
     return new Int2ObjectOpenHashMap<>();

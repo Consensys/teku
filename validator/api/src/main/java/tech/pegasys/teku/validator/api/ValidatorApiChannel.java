@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -47,6 +48,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -105,6 +109,12 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
+        public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+            final UInt64 epoch, final IntCollection validatorIndices) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
         public SafeFuture<Optional<PeerCount>> getPeerCount() {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -136,6 +146,17 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         @Override
         public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
             final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<InclusionList>> createInclusionList(
+            final UInt64 slot, final UInt64 validatorIndex) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -203,6 +224,12 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         @Override
         public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
             final List<SignedProposerPreferences> signedProposerPreferences) {
+          return SafeFuture.completedFuture(List.of());
+        }
+
+        @Override
+        public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+            final List<SignedInclusionList> signedInclusionLists) {
           return SafeFuture.completedFuture(List.of());
         }
 
@@ -292,6 +319,13 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
   SafeFuture<Optional<PtcDuties>> getPtcDuties(UInt64 epoch, IntCollection validatorIndices);
 
+  SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      UInt64 epoch, IntCollection validatorIndices);
+
+  SafeFuture<Optional<InclusionList>> createInclusionList(UInt64 slot, UInt64 validatorIndex);
+
+  SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot);
+
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
   // used to maintain backwards compatibility with block v3
@@ -351,6 +385,9 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
   SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       List<SignedProposerPreferences> signedProposerPreferences);
+
+  SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      List<SignedInclusionList> signedInclusionLists);
 
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);

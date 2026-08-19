@@ -76,6 +76,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROO
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_COMMITTEE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
@@ -121,6 +123,7 @@ import java.util.HashSet;
 import java.util.OptionalLong;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
@@ -129,6 +132,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszListSchemaImpl;
@@ -141,6 +145,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -179,7 +184,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSc
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelopeSchema;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
@@ -191,6 +196,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContentsSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.heze.ExecutionPayloadBidSchemaHeze;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ProgressiveTransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
@@ -231,6 +237,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
@@ -255,6 +262,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.heze.BeaconStateSchemaHeze;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
@@ -383,7 +391,9 @@ public class SchemaRegistryBuilder {
 
         // HEZE
         .addProvider(createInclusionListSchemaProvider())
-        .addProvider(createSignedInclusionListSchemaProvider());
+        .addProvider(createSignedInclusionListSchemaProvider())
+        .addProvider(createInclusionListByCommitteeIndicesRequestMessageSchemaProvider())
+        .addProvider(createInclusionListCommitteeSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -649,6 +659,10 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 BeaconStateSchemaGloas.create(SpecConfigGloas.required(specConfig), registry))
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaHeze.create(SpecConfigHeze.required(specConfig), registry))
         .build();
   }
 
@@ -1321,7 +1335,15 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createExecutionPayloadBidSchemaProvider() {
     return providerBuilder(EXECUTION_PAYLOAD_BID_SCHEMA)
         .withCreator(
-            GLOAS, (registry, specConfig, schemaName) -> new ExecutionPayloadBidSchema(registry))
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadBidSchemaGloas(registry).castTypeToExecutionPayloadBidSchema())
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadBidSchemaHeze(
+                        schemaName, registry, SpecConfigHeze.required(specConfig))
+                    .castTypeToExecutionPayloadBidSchema())
         .build();
   }
 
@@ -1331,6 +1353,15 @@ public class SchemaRegistryBuilder {
             GLOAS,
             (registry, specConfig, schemaName) ->
                 new SignedExecutionPayloadBidSchema(
+                    registry,
+                    OptionalLong.of(
+                        SpecConfigGloas.required(specConfig)
+                            .getMaxSignedExecutionPayloadBidSize())))
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadBidSchema(
+                    "SignedExecutionPayloadBidHeze",
                     registry,
                     OptionalLong.of(
                         SpecConfigGloas.required(specConfig)
@@ -1455,6 +1486,28 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createSignedInclusionListSchemaProvider() {
     return providerBuilder(SIGNED_INCLUSION_LIST_SCHEMA)
         .withCreator(HEZE, (registry, _, _) -> new SignedInclusionListSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?>
+      createInclusionListByCommitteeIndicesRequestMessageSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new InclusionListByCommitteeRequestMessageSchema(
+                    SpecConfigHeze.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createInclusionListCommitteeSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_COMMITTEE_SCHEMA)
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                SszPrimitiveVectorSchema.create(
+                    SszPrimitiveSchemas.UINT64_SCHEMA,
+                    SpecConfigHeze.required(specConfig).getInclusionListCommitteeSize()))
         .build();
   }
 

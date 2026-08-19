@@ -34,8 +34,15 @@ public class SignedExecutionPayloadBidSchema
 
   public SignedExecutionPayloadBidSchema(
       final SchemaRegistry schemaRegistry, final OptionalLong networkSszLengthBytesUpperBound) {
+    this("SignedExecutionPayloadBid", schemaRegistry, networkSszLengthBytesUpperBound);
+  }
+
+  public SignedExecutionPayloadBidSchema(
+      final String schemaName,
+      final SchemaRegistry schemaRegistry,
+      final OptionalLong networkSszLengthBytesUpperBound) {
     super(
-        "SignedExecutionPayloadBid",
+        schemaName,
         namedSchema("message", schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
     this.networkSszLengthBytesUpperBound = networkSszLengthBytesUpperBound;
@@ -57,7 +64,8 @@ public class SignedExecutionPayloadBidSchema
     return new SignedExecutionPayloadBid(this, node);
   }
 
-  public ExecutionPayloadBidSchema getMessageSchema() {
-    return (ExecutionPayloadBidSchema) getChildSchema(0);
+  @SuppressWarnings("unchecked")
+  public ExecutionPayloadBidSchema<ExecutionPayloadBid> getMessageSchema() {
+    return (ExecutionPayloadBidSchema<ExecutionPayloadBid>) getChildSchema(0);
   }
 }

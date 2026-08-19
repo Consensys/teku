@@ -29,6 +29,10 @@
         "$ref" : "#/components/schemas/BlockContentsGloas"
       }, {
         "$ref" : "#/components/schemas/BeaconBlockGloas"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsHeze"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockHeze"
       } ]
     }
   }

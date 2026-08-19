@@ -147,7 +147,8 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             targetGasLimit,
             Optional.empty(),
             Optional.of(List.of()),
-            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()));
+            ForkChoiceNode.createBase(dataStructureUtil.randomBytes32()),
+            List.of());
     final PayloadAttributesV4 payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(attributes);
     assertThat(payloadAttributes.targetGasLimit).isEqualTo(targetGasLimit);

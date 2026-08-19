@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -81,6 +82,20 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
             final SchemaDefinitions schemaDefinitions) {
           return SchemaDefinitionsGloas.required(schemaDefinitions)
               .getSignedExecutionPayloadEnvelopeSchema();
+        }
+      };
+
+  ForkDigestPayloadContext<SignedInclusionList> SIGNED_INCLUSION_LIST =
+      new ForkDigestPayloadContext<>() {
+        @Override
+        public UInt64 getSlotFromPayload(final SignedInclusionList responsePayload) {
+          return responsePayload.getMessage().getSlot();
+        }
+
+        @Override
+        public SszSchema<SignedInclusionList> getSchemaFromSchemaDefinitions(
+            final SchemaDefinitions schemaDefinitions) {
+          return schemaDefinitions.toVersionHeze().orElseThrow().getSignedInclusionListSchema();
         }
       };
 

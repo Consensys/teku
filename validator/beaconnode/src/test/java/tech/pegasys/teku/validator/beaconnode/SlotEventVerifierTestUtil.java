@@ -76,6 +76,14 @@ class SlotEventVerifierTestUtil {
           () -> verify(validatorTimingChannel, times(1)).onPayloadAttestationCreationDue(slot));
     }
 
+    // HEZE: inclusion list production
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.HEZE)) {
+      addExpected(
+          expectedByOffset,
+          spec.getInclusionListDueMillis(slot).orElseThrow(),
+          () -> verify(validatorTimingChannel, times(1)).onInclusionListCreationDue(slot));
+    }
+
     // Walk through the slot, advancing to each unique offset and verifying
     long advancedMillis = 0;
     for (final Map.Entry<Integer, List<Runnable>> entry : expectedByOffset.entrySet()) {
@@ -93,6 +101,9 @@ class SlotEventVerifierTestUtil {
     }
     if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       verify(validatorTimingChannel, never()).onPayloadAttestationCreationDue(slot);
+    }
+    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.HEZE)) {
+      verify(validatorTimingChannel, never()).onInclusionListCreationDue(slot);
     }
 
     return advancedMillis;

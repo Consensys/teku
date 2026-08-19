@@ -39,6 +39,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -185,6 +186,31 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionListTransactions) {
+    return taskQueue.queueTask(
+        () ->
+            delegate.newPayloadV6(
+                executionPayload,
+                blobVersionedHashes,
+                parentBeaconBlockRoot,
+                executionRequests,
+                inclusionListTransactions));
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV5> payloadAttributes) {
+    return taskQueue.queueTask(
+        () -> delegate.forkChoiceUpdatedV5(forkChoiceState, payloadAttributes));
+  }
+
+  @Override
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
     return taskQueue.queueTask(() -> delegate.exchangeCapabilities(capabilities));
   }
@@ -211,5 +237,10 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<Response<List<ExecutionPayloadBodyV2>>> getPayloadBodiesByHashV2(
       final List<Bytes32> blockHashes) {
     return taskQueue.queueTask(() -> delegate.getPayloadBodiesByHashV2(blockHashes));
+  }
+
+  @Override
+  public SafeFuture<Response<List<String>>> getInclusionListV1(final Bytes32 parentHash) {
+    return taskQueue.queueTask(() -> delegate.getInclusionListV1(parentHash));
   }
 }

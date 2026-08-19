@@ -327,7 +327,7 @@ public abstract class AttestationUtil {
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     final Bytes32 epochBoundaryBlockRoot =
         startSlot.compareTo(slot) == 0 || state.getSlot().compareTo(startSlot) <= 0
-            ? block.getRoot()
+            ? beaconBlockRoot
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
     final Checkpoint source = state.getCurrentJustifiedCheckpoint();
     final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
