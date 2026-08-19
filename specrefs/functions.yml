@@ -1494,7 +1494,9 @@
     </spec>
 
 - name: compute_shuffling_dependent_slot#phase0
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private Optional<UInt64> getShufflingDependentSlot(
   spec: |
     <spec fn="compute_shuffling_dependent_slot" fork="phase0" hash="dcce84a1">
     def compute_shuffling_dependent_slot(epoch: Epoch) -> Slot:
@@ -5263,7 +5265,9 @@
     </spec>
 
 - name: get_proposer_head#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public ForkChoiceNode getProposerHead(
   spec: |
     <spec fn="get_proposer_head" fork="fulu" hash="b8612966">
     def get_proposer_head(store: Store, head_node: ForkChoiceNode, slot: Slot) -> ForkChoiceNode:
@@ -5525,7 +5529,9 @@
     </spec>
 
 - name: get_scheduled_gas_limit#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/MiscHelpersGloas.java
+      search: public Optional<UInt64> getScheduledGasLimit(
   spec: |
     <spec fn="get_scheduled_gas_limit" fork="gloas" hash="9f246e85">
     def get_scheduled_gas_limit(epoch: Epoch) -> Optional[Uint64]:
@@ -5555,7 +5561,9 @@
     </spec>
 
 - name: get_set_bit_count#phase0
-  sources: []
+  sources:
+    - file: infrastructure/ssz/src/main/java/tech/pegasys/teku/infrastructure/ssz/collections/SszBitvector.java
+      search: int getBitCount();
   spec: |
     <spec fn="get_set_bit_count" fork="phase0" hash="789bad21">
     def get_set_bit_count(bits: Sequence[Boolean]) -> Uint64:
@@ -6891,7 +6899,9 @@
     </spec>
 
 - name: is_current_or_next_slot#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/GossipValidationHelper.java
+      search: public boolean isSlotCurrentOrNext(
   spec: |
     <spec fn="is_current_or_next_slot" fork="gloas" hash="f9531452">
     def is_current_or_next_slot(
@@ -7495,7 +7505,9 @@
     </spec>
 
 - name: is_past_slot#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/ProposerPreferencesGossipValidator.java
+      search: proposal slot has already passed
   spec: |
     <spec fn="is_past_slot" fork="gloas" hash="4bd9aba5">
     def is_past_slot(
@@ -13673,7 +13685,9 @@
     </spec>
 
 - name: validate_beacon_aggregate_and_proof_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/AggregateAttestationValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(final ValidatableAttestation attestation) {
   spec: |
     <spec fn="validate_beacon_aggregate_and_proof_gossip" fork="gloas" hash="0b575b98">
     def validate_beacon_aggregate_and_proof_gossip(
@@ -14096,7 +14110,9 @@
     </spec>
 
 - name: validate_beacon_attestation_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/AttestationValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_attestation_gossip" fork="gloas" hash="c2dabf99">
     def validate_beacon_attestation_gossip(
@@ -14778,7 +14794,9 @@
     </spec>
 
 - name: validate_beacon_block_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/BlockGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_beacon_block_gossip" fork="gloas" hash="2404fa82">
     def validate_beacon_block_gossip(
@@ -15245,7 +15263,9 @@
     </spec>
 
 - name: validate_data_column_sidecar_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/DataColumnSidecarGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_data_column_sidecar_gossip" fork="gloas" hash="1ac8f763">
     def validate_data_column_sidecar_gossip(
@@ -15306,7 +15326,9 @@
     </spec>
 
 - name: validate_execution_payload_bid_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/ExecutionPayloadBidGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_execution_payload_bid_gossip" fork="gloas" hash="5c494718">
     def validate_execution_payload_bid_gossip(
@@ -15428,7 +15450,9 @@
     </spec>
 
 - name: validate_execution_payload_envelope_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/ExecutionPayloadGossipValidator.java
+      search: final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
   spec: |
     <spec fn="validate_execution_payload_envelope_gossip" fork="gloas" hash="946fce68">
     def validate_execution_payload_envelope_gossip(
@@ -15913,7 +15937,9 @@
     </spec>
 
 - name: validate_payload_attestation_message_gossip#gloas
-  sources: []
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/payloadattestation/PayloadAttestationMessageGossipValidator.java
+      search: public SafeFuture<InternalValidationResult> validate(
   spec: |
     <spec fn="validate_payload_attestation_message_gossip" fork="gloas" hash="fdf2e632">
     def validate_payload_attestation_message_gossip(
@@ -16396,7 +16422,9 @@
     </spec>
 
 - name: verify_attestation_payload_status#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/AttestationUtilGloas.java
+      search: public AttestationValidationResult validatePayloadStatus(
   spec: |
     <spec fn="verify_attestation_payload_status" fork="gloas" hash="7006ea07">
     def verify_attestation_payload_status(

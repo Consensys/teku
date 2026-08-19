@@ -344,7 +344,9 @@
     </spec>
 
 - name: GAS_LIMIT_SCHEDULE#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: "GAS_LIMIT_SCHEDULE:"
   spec: |
     <spec config_var="GAS_LIMIT_SCHEDULE" fork="gloas" hash="28e945d9">
     GAS_LIMIT_SCHEDULE: tuple[frozendict[str, Any], ...] = (

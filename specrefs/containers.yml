@@ -890,7 +890,9 @@
     </spec>
 
 - name: Blob#deneb
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/deneb/Blob.java
+      search: public class Blob extends SszByteVectorImpl {
   spec: |
     <spec container="Blob" fork="deneb" hash="b10cdd2e">
     class Blob(ByteVector[BYTES_PER_FIELD_ELEMENT * FIELD_ELEMENTS_PER_BLOB]):  # type: ignore
@@ -1088,7 +1090,9 @@
     </spec>
 
 - name: Cell#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/Cell.java
+      search: public class Cell extends SszByteVectorImpl {
   spec: |
     <spec container="Cell" fork="fulu" hash="fdb37a6c">
     class Cell(ByteVector[BYTES_PER_FIELD_ELEMENT * FIELD_ELEMENTS_PER_CELL]):  # type: ignore
@@ -1242,7 +1246,9 @@
     </spec>
 
 - name: DataColumn#fulu
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumn.java
+      search: public class DataColumn extends SszListImpl<Cell>
   spec: |
     <spec container="DataColumn" fork="fulu" hash="38c96fb5">
     class DataColumn(List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]):
@@ -1252,7 +1258,9 @@
     </spec>
 
 - name: DataColumn#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumn.java
+      search: public class DataColumn extends SszListImpl<Cell>
   spec: |
     <spec container="DataColumn" fork="gloas" hash="2b5f55e6">
     class DataColumn(ProgressiveList[Cell]):
@@ -2305,7 +2313,9 @@
     </spec>
 
 - name: PTCWindow#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/PtcWindowSchema.java
+      search: public class PtcWindowSchema
   spec: |
     <spec container="PTCWindow" fork="gloas" hash="b4036da3">
     class PTCWindow(Vector[PTC, (2 + MIN_SEED_LOOKAHEAD) * SLOTS_PER_EPOCH]):  # type: ignore
@@ -2896,7 +2906,9 @@
     </spec>
 
 - name: Transaction#bellatrix
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/Transaction.java
+      search: public class Transaction extends SszByteListImpl {
   spec: |
     <spec container="Transaction" fork="bellatrix" hash="9eccf41a">
     class Transaction(ByteList[MAX_BYTES_PER_TRANSACTION]):
@@ -2907,7 +2919,9 @@
     </spec>
 
 - name: Transaction#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/Transaction.java
+      search: public class Transaction extends SszByteListImpl {
   spec: |
     <spec container="Transaction" fork="gloas" hash="4478c825">
     class Transaction(ProgressiveByteList):
