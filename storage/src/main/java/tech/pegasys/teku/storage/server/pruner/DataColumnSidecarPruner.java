@@ -59,6 +59,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
   private final AtomicLong dataColumnSize = new AtomicLong(0);
   private final AtomicLong earliestDataColumnSidecarSlot = new AtomicLong(-1);
   private final AtomicLong lastDataColumnSidecarArchivePrunableSlot = new AtomicLong(-1);
+  private final AtomicLong slotsToArchive = new AtomicLong(-1);
   // Tracks which slot ranges have been submitted to archiveSidecarsProofs this session.
   // The complement within [0, tillSlot] is what still needs archiving. Chunks are always
   // taken from the highest (most recent) unarchived range first, so newly-prunable epochs
@@ -106,6 +107,9 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
       labelledGauge.labels(dataColumnSize::get, "total");
       labelledGauge.labels(earliestDataColumnSidecarSlot::get, "earliest_slot");
+      labelledGauge.labels(
+          lastDataColumnSidecarArchivePrunableSlot::get, "last_archive_prunable_slot");
+      labelledGauge.labels(slotsToArchive::get, "slots_to_archive");
     }
   }
 
@@ -185,7 +189,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     final long start = System.currentTimeMillis();
     dataColumnSize.set(database.getSidecarColumnCount());
     earliestDataColumnSidecarSlot.set(
-        database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
+        database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(0L));
     LOG.debug(
         "Data column sidecar storage counters updated in {} ms: total={}, earliestSlot={}",
         System.currentTimeMillis() - start,
@@ -203,6 +207,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
 
     final long earliestSlotLong =
         database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(0L);
+    earliestDataColumnSidecarSlot.set(earliestSlotLong);
     if (earliestSlotLong > tillSlotLong) {
       LOG.debug(
           "No data column sidecars to archive: earliest stored slot {} is after prunable till slot {}",
@@ -251,6 +256,14 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     // Range<Long> is real-valued: [9,19] and [20,30] are not connected, which would leave a
     // phantom gap (19,20) that is empty but gets picked as the highest unarchived range.
     archivedSlotRanges.add(Range.closedOpen(lower, upper + 1L));
+    final long archived =
+        archivedSlotRanges
+            .subRangeSet(Range.closedOpen(earliestSlotLong, tillSlotLong + 1L))
+            .asRanges()
+            .stream()
+            .mapToLong(r -> r.upperEndpoint() - r.lowerEndpoint())
+            .sum();
+    slotsToArchive.set(tillSlotLong - earliestSlotLong + 1 - archived);
   }
 
   @Override
