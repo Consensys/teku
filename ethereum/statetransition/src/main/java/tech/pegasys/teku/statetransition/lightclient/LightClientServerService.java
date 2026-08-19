@@ -54,6 +54,9 @@ public class LightClientServerService
   private final Function<Bytes32, SafeFuture<Optional<BeaconState>>> retrieveStateByRoot;
   private final BiPredicate<UInt64, Bytes32> isCanonicalBlock;
 
+  /** Period of the latest finalized checkpoint seen; nothing below it can be orphaned. */
+  private volatile UInt64 finalizedPeriod = UInt64.ZERO;
+
   public LightClientServerService(
       final Spec spec,
       final LightClientUpdateStore lightClientStore,
@@ -94,10 +97,6 @@ public class LightClientServerService
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean isExecutionOptimistic) {
-    // Deliberate: LightClientUpdate has no field marking the execution payload as unverified, so a
-    // light client receiving one cannot tell that it is optimistic - and light clients are exactly
-    // the consumers that cannot check for themselves. During optimistic sync this drops nearly
-    // every update, which is acceptable because a syncing node is not authoritative anyway.
     if (isExecutionOptimistic) {
       return;
     }
@@ -121,9 +120,6 @@ public class LightClientServerService
       return;
     }
 
-    // full-node.md: only blocks on the canonical chain as selected by fork choice are
-    // considered. Fork choice has already run for this block by the time this event fires.
-    // A later reorg can still orphan it; re-evaluating on head change is left to the store.
     if (!isCanonicalBlock.test(slot, block.getRoot())) {
       return;
     }
@@ -153,6 +149,8 @@ public class LightClientServerService
         spec.getSyncCommitteeUtilRequired(finalizedSlot)
             .computeSyncCommitteePeriod(checkpoint.getEpoch());
 
+    this.finalizedPeriod = finalizedPeriod;
+
     lightClientStore.pruneUpdatesBefore(finalizedPeriod.minusMinZero(MAX_RETAINED_PERIODS));
   }
 
@@ -167,14 +165,12 @@ public class LightClientServerService
       final Bytes32 currentDutyDependentRoot,
       final Optional<ForkChoicePayloadStatus> payloadStatus,
       final Optional<ReorgContext> optionalReorgContext) {
+
     if (optionalReorgContext.isEmpty()) {
       return;
     }
 
-    // full-node.md: updates referring to orphaned blocks SHOULD NOT be provided. The import-time
-    // check cannot see a reorg that happens later, so re-test what is already stored. The head has
-    // been updated by the time this fires, so isCanonicalBlock resolves against the new chain.
-    lightClientStore.removeNonCanonicalUpdates(isCanonicalBlock);
+    lightClientStore.removeNonCanonicalUpdates(finalizedPeriod, isCanonicalBlock);
   }
 
   private SafeFuture<Optional<LightClientUpdate>> createAndStoreUpdate(

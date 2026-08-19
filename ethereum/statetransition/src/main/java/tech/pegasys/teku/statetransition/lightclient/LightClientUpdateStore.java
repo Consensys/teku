@@ -57,11 +57,14 @@ public class LightClientUpdateStore {
   }
 
   /**
-   * Drops every update whose signature block is no longer on the canonical chain. {@code
-   * isCanonical} is applied to each update's signature slot and block root.
+   * Drops every update at or after {@code fromPeriod} whose signature block is no longer on the
+   * canonical chain. Periods below {@code fromPeriod} are skipped: their signature slots are
+   * finalized, so they cannot be orphaned.
    */
-  public void removeNonCanonicalUpdates(final BiPredicate<UInt64, Bytes32> isCanonical) {
+  public void removeNonCanonicalUpdates(
+      final UInt64 fromPeriod, final BiPredicate<UInt64, Bytes32> isCanonical) {
     bestUpdatesByPeriod
+        .tailMap(fromPeriod)
         .values()
         .removeIf(
             stored ->
@@ -135,7 +138,6 @@ public class LightClientUpdateStore {
     return latestOptimisticUpdate.get();
   }
 
-  /** An update plus the root of the block whose sync aggregate signed it. */
   private record StoredUpdate(LightClientUpdate update, Bytes32 signatureBlockRoot) {}
 
   /** {@code is_better_update}. */

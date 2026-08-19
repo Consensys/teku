@@ -1651,8 +1651,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initLightClientUpdateStore() {
     LOG.debug("BeaconChainController.initLightClientUpdateStore()");
-    // Always constructed: ChainDataProvider holds it unconditionally and serves an empty store
-    // when the server is disabled.
     lightClientUpdateStore = new LightClientUpdateStore(spec);
   }
 

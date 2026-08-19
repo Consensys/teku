@@ -69,7 +69,7 @@ public class LightClientServerServiceTest {
   public void onBlockImported_shouldIgnoreOptimisticBlocks() {
     final Chain chain = generateChain();
 
-    serviceRejectingStateLookups().onBlockImported(chain.signature().getBlock(), true);
+    rejectStateLookups().onBlockImported(chain.signature().getBlock(), true);
 
     assertNothingStored();
   }
@@ -87,7 +87,7 @@ public class LightClientServerServiceTest {
                         IntStream.range(0, belowMinimum).toArray()))
                 .setSkipStateTransition(true));
 
-    serviceRejectingStateLookups().onBlockImported(chain.signature().getBlock(), false);
+    rejectStateLookups().onBlockImported(chain.signature().getBlock(), false);
 
     assertNothingStored();
   }
@@ -239,7 +239,7 @@ public class LightClientServerServiceTest {
     service.onBlockImported(chain.signature().getBlock(), false);
     assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).hasSize(1);
 
-    notifyChainHeadUpdated(orphanEverythingService(), reorg());
+    notifyChainHeadUpdated(orphanEverything(), reorg());
 
     assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).isEmpty();
   }
@@ -259,15 +259,14 @@ public class LightClientServerServiceTest {
     final Chain chain = generateChain();
     service.onBlockImported(chain.signature().getBlock(), false);
 
-    // No ReorgContext: the chain advanced on the same fork, nothing can have been orphaned.
-    notifyChainHeadUpdated(orphanEverythingService(), Optional.empty());
+    notifyChainHeadUpdated(orphanEverything(), Optional.empty());
 
     assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 1)).hasSize(1);
   }
 
   private record Chain(SignedBlockAndState attested, SignedBlockAndState signature) {}
 
-  private LightClientServerService orphanEverythingService() {
+  private LightClientServerService orphanEverything() {
     return new LightClientServerService(
         spec, store, this::lookUpBlock, this::lookUpState, (slot, root) -> false);
   }
@@ -303,7 +302,7 @@ public class LightClientServerServiceTest {
     return SafeFuture.completedFuture(Optional.ofNullable(statesByRoot.get(root)));
   }
 
-  private LightClientServerService serviceRejectingStateLookups() {
+  private LightClientServerService rejectStateLookups() {
     return new LightClientServerService(
         spec,
         store,

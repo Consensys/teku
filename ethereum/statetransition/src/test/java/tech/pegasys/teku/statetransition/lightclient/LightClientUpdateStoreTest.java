@@ -343,7 +343,7 @@ public class LightClientUpdateStoreTest {
     store.addUpdate(kept, canonicalRoot);
     store.addUpdate(dropped, orphanedRoot);
 
-    store.removeNonCanonicalUpdates((slot, root) -> root.equals(canonicalRoot));
+    store.removeNonCanonicalUpdates(UInt64.ZERO, (slot, root) -> root.equals(canonicalRoot));
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(kept);
     assertThat(store.getBestUpdatesInRange(UInt64.valueOf(2), 1)).isEmpty();
@@ -356,10 +356,24 @@ public class LightClientUpdateStoreTest {
     store.addUpdate(update, root);
 
     store.removeNonCanonicalUpdates(
+        UInt64.ZERO,
         (slot, blockRoot) ->
             slot.equals(update.getSignatureSlot().get()) && blockRoot.equals(root));
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(update);
+  }
+
+  @TestTemplate
+  public void removeNonCanonicalUpdates_shouldNotTestPeriodsBelowFromPeriod() {
+    final LightClientUpdate finalized = createLightClientUpdateAtPeriod(1);
+    final LightClientUpdate unfinalized = createLightClientUpdateAtPeriod(2);
+    store.addUpdate(finalized, dataStructureUtil.randomBytes32());
+    store.addUpdate(unfinalized, dataStructureUtil.randomBytes32());
+
+    store.removeNonCanonicalUpdates(UInt64.valueOf(2), (slot, root) -> false);
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(finalized);
+    assertThat(store.getBestUpdatesInRange(UInt64.valueOf(2), 1)).isEmpty();
   }
 
   @TestTemplate
@@ -371,7 +385,7 @@ public class LightClientUpdateStoreTest {
     store.addFinalityUpdate(finalityUpdate);
     store.addOptimisticUpdate(optimisticUpdate);
 
-    store.removeNonCanonicalUpdates((slot, root) -> false);
+    store.removeNonCanonicalUpdates(UInt64.ZERO, (slot, root) -> false);
 
     assertThat(store.getLatestFinalityUpdate()).contains(finalityUpdate);
     assertThat(store.getLatestOptimisticUpdate()).contains(optimisticUpdate);
