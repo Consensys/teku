@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -120,10 +121,9 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
 
               // New in Gloas
-              final Bytes32 latestBlockHash =
-                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
-              final UInt64 latestGasLimit =
-                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getGasLimit();
+              final ExecutionPayloadHeader latestExecutionPayloadHeader =
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired();
+              final Bytes32 latestBlockHash = latestExecutionPayloadHeader.getBlockHash();
               state.setLatestBlockHash(latestBlockHash);
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
@@ -178,12 +178,12 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                   schemaDefinitions
                       .getExecutionPayloadBidSchema()
                       .create(
-                          preStateFulu.getLatestExecutionPayloadHeaderRequired().getParentHash(),
+                          latestExecutionPayloadHeader.getParentHash(),
                           preState.getLatestBlockHeader().getParentRoot(),
                           latestBlockHash,
-                          preStateFulu.getLatestExecutionPayloadHeaderRequired().getPrevRandao(),
+                          latestExecutionPayloadHeader.getPrevRandao(),
                           Bytes20.ZERO,
-                          latestGasLimit,
+                          latestExecutionPayloadHeader.getGasLimit(),
                           SpecConfigGloas.BUILDER_INDEX_SELF_BUILD,
                           preState.getLatestBlockHeader().getSlot(),
                           UInt64.ZERO,
