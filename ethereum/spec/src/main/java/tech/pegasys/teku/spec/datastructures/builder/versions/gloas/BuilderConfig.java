@@ -39,7 +39,7 @@ public class BuilderConfig
   // used primarily for testing (non-biased value comparison between local and builder bids)
   public static final BuilderConfig NO_OP = withBuilderBoostFactor(UInt64.valueOf(100));
 
-  // used primarily for backwards compatibility with block v3
+  // used primarily for backwards compatibility with milestones prior to Gloas
   public static BuilderConfig withBuilderBoostFactor(final UInt64 builderBoostFactor) {
     return ApiSchemas.BUILDER_CONFIG_SCHEMA.create(UInt64.ZERO, builderBoostFactor, List.of());
   }

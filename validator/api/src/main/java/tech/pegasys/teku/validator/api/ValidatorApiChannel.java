@@ -293,7 +293,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
-  // used to maintain backwards compatibility with block v3
+  // used to maintain backwards compatibility with milestones prior to Gloas
   default SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
