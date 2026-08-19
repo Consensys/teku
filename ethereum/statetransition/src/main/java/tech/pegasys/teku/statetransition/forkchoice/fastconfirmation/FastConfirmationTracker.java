@@ -77,14 +77,26 @@ public class FastConfirmationTracker {
       new AtomicReference<>();
 
   /**
-   * Slot of the most recently applied update. Guards against stale or duplicate async tasks
-   * clobbering a newer store: {@code update_fast_confirmation_variables} MUST run exactly once per
-   * slot and slot heads rotate in slot order, so an update is applied only when its slot is
-   * strictly greater than this value. {@code null} until the first update after (re)initialization.
+   * Slot of the most recently applied update. {@code update_fast_confirmation_variables} MUST run
+   * exactly once per slot and slot heads rotate in slot order, so an update is applied only when
+   * its slot is strictly greater than this value. Slots are chained and each commits before the
+   * next starts (see {@link #onSlot}), so this is read and written by a single in-order writer; a
+   * stale or duplicate slot is skipped in {@link #processFastConfirmationInput}. {@code null} until
+   * the first update after (re)initialization.
    */
   private final AtomicReference<UInt64> lastProcessedSlot = new AtomicReference<>();
 
   private final Optional<AsyncRunner> asyncRunner;
+
+  /**
+   * Tail of the per-slot processing chain. Each {@link #onSlot} call composes its work after the
+   * previous slot's so the rotating {@link FastConfirmationStore} is read and written in slot
+   * order, without ever blocking a thread on a state load. Confined to a single thread: {@code
+   * onSlot} is only ever invoked on the fork-choice event thread (see {@code
+   * ForkChoiceFastConfirmation}, which composes it onto the event-thread-bound {@code
+   * processHead}), so no synchronization is needed to read-and-replace this field.
+   */
+  private SafeFuture<Void> updateChain = SafeFuture.COMPLETE;
 
   private FastConfirmationTracker(
       final boolean enabled,
@@ -177,23 +189,26 @@ public class FastConfirmationTracker {
     }
 
     final FastConfirmationInput input = new FastConfirmationInput(slot, headRoot);
-    final Duration updateTimeout = updateTimeout(slot);
-    return asyncRunner
-        .orElseThrow()
-        .runAsync(() -> processFastConfirmationInput(input))
-        .orTimeout(updateTimeout)
-        .exceptionallyCompose(
-            error -> {
-              // A timeout means the side computation is lagging (e.g. slow state retrieval): log it
-              // and move on rather than failing the fork-choice tick. Real errors still propagate.
-              if (ExceptionUtil.hasCause(error, TimeoutException.class)) {
-                timeoutCounter.inc();
-                LOG.warn(
-                    "Fast confirmation update for slot {} timed out after {}", slot, updateTimeout);
-                return SafeFuture.COMPLETE;
-              }
-              return SafeFuture.failedFuture(error);
-            });
+    final AsyncRunner runner = asyncRunner.orElseThrow();
+
+    // Chain each slot after the previous one so the rotating store is read, mutated by
+    // update_fast_confirmation_variables and written back in strict slot order: the next slot never
+    // starts until this one has fully committed, which makes the commit the sole in-order writer
+    // (no cross-slot write races). The pipeline is composed rather than join()ed, so the dedicated
+    // single-thread runner is freed while the state loads are in flight instead of blocking on
+    // them.
+    // A slow/hung load is bounded inside the segment (see updateConfirmedRoot) and degrades to the
+    // finalized fallback, so the slot still commits its rotation in order rather than being
+    // abandoned (which would leave the next slot reading un-rotated FCR variables).
+    //
+    // onSlot runs exactly once per slot on the fork-choice event thread and is never re-entrant, so
+    // this read-and-replace of updateChain needs no synchronization.
+    final SafeFuture<Void> thisSlot =
+        updateChain.thenCompose(__ -> runner.runAsync(() -> processFastConfirmationInput(input)));
+    // Keep the chain alive even if this slot fails unexpectedly, so one error cannot wedge later
+    // slots; the caller still observes the failure through the returned future.
+    updateChain = thisSlot.exceptionally(error -> null);
+    return thisSlot;
   }
 
   /**
@@ -218,46 +233,44 @@ public class FastConfirmationTracker {
   }
 
   /**
-   * Upper bound for a single per-slot update: half a slot. The confirmation computation should
-   * finish well within a slot; this only guards against a hung or very slow state retrieval
-   * monopolizing the dedicated single-thread runner. Applied via the default scheduler so it fires
-   * independently of that runner thread.
+   * Upper bound for the source-state load and {@code get_latest_confirmed} of a single slot: half a
+   * slot. The computation should finish well within a slot; this only guards against a hung or very
+   * slow state retrieval stalling the per-slot chain. On timeout this slot's confirmation is
+   * abandoned (see {@link #computeConfirmedRoot} and {@link #abandonConfirmation}); its already
+   * committed rotation is kept. Applied via the default scheduler so it fires independently of the
+   * runner thread.
    */
   private Duration updateTimeout(final UInt64 slot) {
     return Duration.ofMillis(spec.getSlotDurationMillis(slot) / 2L);
   }
 
-  private void processFastConfirmationInput(final FastConfirmationInput input) {
+  private SafeFuture<Void> processFastConfirmationInput(final FastConfirmationInput input) {
     final FastConfirmationStore currentStore = fastConfirmationStore.get();
     if (currentStore == null) {
       LOG.debug("Skipping fast confirmation update because store is not initialized");
-      return;
+      return SafeFuture.COMPLETE;
     }
 
-    // Drop stale or duplicate updates. Tasks run on a dedicated single-thread runner so this
-    // read-modify-write is serialized; the guard additionally ensures that an out-of-order or
-    // repeated slot never overwrites a newer store (and enforces the spec's once-per-slot rule for
-    // update_fast_confirmation_variables).
+    // Skip a clearly stale or duplicate slot. Because slots are chained and each commits before the
+    // next starts (see onSlot), lastProcessedSlot is fully up to date here, so this single check is
+    // sufficient — no write-time guard is needed.
     final UInt64 lastSlot = lastProcessedSlot.get();
     if (lastSlot != null && input.slot().isLessThanOrEqualTo(lastSlot)) {
       LOG.debug(
           "Skipping fast confirmation update for slot {}: already processed slot {}",
           input.slot(),
           lastSlot);
-      return;
+      return SafeFuture.COMPLETE;
     }
 
     // Time the actual per-slot computation (state loading + get_latest_confirmed), which is what
     // the timeout bounds; the cheap guards above are deliberately left out of the measurement.
     final MetricsHistogram.Timer calculationTimerContext = calculationTimer.startTimer();
-    try {
-      runFastConfirmation(input, currentStore);
-    } finally {
-      calculationTimerContext.closeUnchecked().run();
-    }
+    return runFastConfirmation(input, currentStore)
+        .alwaysRun(() -> calculationTimerContext.closeUnchecked().run());
   }
 
-  private void runFastConfirmation(
+  private SafeFuture<Void> runFastConfirmation(
       final FastConfirmationInput input, final FastConfirmationStore currentStore) {
     final ReadOnlyStore store = currentStore.store();
 
@@ -273,7 +286,7 @@ public class FastConfirmationTracker {
       LOG.debug(
           "Fast confirmation update for slot {}: head is more than one epoch behind; skipping",
           input.slot());
-      return;
+      return SafeFuture.COMPLETE;
     }
 
     // Derived off the fork-choice thread. The greatest unrealized justified checkpoint is only
@@ -296,18 +309,52 @@ public class FastConfirmationTracker {
             currentSlotIsEpochStart,
             nextSlotIsEpochStart);
 
-    // on_fast_confirmation: fcr_store.confirmed_root = get_latest_confirmed(fcr_store).
-    final FastConfirmationStore updatedStore =
-        updateConfirmedRoot(withUpdatedVariables, input.slot(), currentSlotIsEpochStart);
-    fastConfirmationStore.set(updatedStore);
-    lastProcessedSlot.set(input.slot());
+    // update_fast_confirmation_variables is cheap and MUST run exactly once per slot in order.
+    // Commit the rotation up front — before the abandonable confirmation below, carrying over the
+    // previous confirmed_root — so the next slot always reads correctly rotated variables even if
+    // this slot's confirmation is abandoned on timeout. Slots are chained (see onSlot), so this and
+    // the confirmed-root fold below run as the sole writer in slot order, with no write races.
+    applyRotation(input.slot(), withUpdatedVariables);
 
-    final Bytes32 confirmedRoot = updatedStore.confirmedRoot();
-    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+    // on_fast_confirmation: fcr_store.confirmed_root = get_latest_confirmed(fcr_store). Run the
+    // (potentially slow) source-state load and get_latest_confirmed off the runner thread, bounded
+    // by updateTimeout. On success the confirmed root is folded onto the rotated store; on timeout
+    // (or load error) the computation is abandoned and confirmed_root is left unchanged — the next
+    // slot re-derives from it.
+    return computeConfirmedRoot(withUpdatedVariables, input.slot(), currentSlotIsEpochStart)
+        .thenAccept(confirmedRoot -> applyConfirmedRoot(input, withUpdatedVariables, confirmedRoot))
+        .exceptionally(error -> abandonConfirmation(error, input.slot()));
+  }
+
+  /**
+   * Commits {@code update_fast_confirmation_variables} for the slot (carrying over the previous
+   * confirmed root). Runs as the sole writer in strict slot order (slots are chained in {@link
+   * #onSlot} so a slot always commits before the next one starts), so no atomic guard is needed
+   * here; a clearly stale or duplicate slot was already skipped in {@link
+   * #processFastConfirmationInput}.
+   */
+  private void applyRotation(final UInt64 slot, final FastConfirmationStore rotatedStore) {
+    fastConfirmationStore.set(rotatedStore);
+    lastProcessedSlot.set(slot);
+  }
+
+  /**
+   * Folds the computed confirmed root onto this slot's already-committed rotated store and records
+   * the derived metrics and the {@code fast_confirmation} event. Serialized by the per-slot chain,
+   * so it is the sole writer and {@code rotatedStore} is still the current store.
+   */
+  private void applyConfirmedRoot(
+      final FastConfirmationInput input,
+      final FastConfirmationStore rotatedStore,
+      final Bytes32 confirmedRoot) {
+    fastConfirmationStore.set(rotatedStore.withConfirmedRoot(confirmedRoot));
+
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        rotatedStore.store().getForkChoiceStrategy();
     final UInt64 confirmedSlot = forkChoiceStrategy.blockSlot(confirmedRoot).orElse(UInt64.ZERO);
     latestConfirmedSlot.set(confirmedSlot.intValue());
     if (isConfirmedRootReorg(
-        input.slot(), forkChoiceStrategy, currentStore.confirmedRoot(), confirmedRoot)) {
+        input.slot(), forkChoiceStrategy, rotatedStore.confirmedRoot(), confirmedRoot)) {
       reorgsCounter.inc();
     }
 
@@ -324,17 +371,50 @@ public class FastConfirmationTracker {
   }
 
   /**
-   * Runs {@code get_latest_confirmed} against the loaded source states. The state loads are
-   * composed concurrently and joined here; in practice the required states are cache-resident (the
-   * head state and the justified checkpoint state), so the join is effectively non-blocking, and
-   * the overall task is bounded by {@link #updateTimeout}. When a required state is unavailable the
-   * confirmed root is left unchanged for this slot.
+   * Abandons this slot's confirmation computation after a timeout (or load error). The rotation was
+   * already committed by {@link #applyRotation}; {@code confirmed_root} is left unchanged for the
+   * next slot to re-derive from, so nothing is written here.
    */
-  private FastConfirmationStore updateConfirmedRoot(
+  private Void abandonConfirmation(final Throwable error, final UInt64 slot) {
+    if (ExceptionUtil.hasCause(error, TimeoutException.class)) {
+      timeoutCounter.inc();
+      LOG.warn(
+          "Fast confirmation computation for slot {} timed out after {}; abandoning (confirmed root unchanged)",
+          slot,
+          updateTimeout(slot));
+    } else {
+      LOG.warn(
+          "Fast confirmation computation for slot {} failed; abandoning (confirmed root unchanged)",
+          slot,
+          error);
+    }
+    return null;
+  }
+
+  /**
+   * Runs {@code get_latest_confirmed} against the loaded source states, returning the new confirmed
+   * root. The state load is composed (never join()ed) so the runner thread is not blocked while it
+   * is retrieved; in practice the required states are cache-resident (the head state and the
+   * justified checkpoint state), so the continuation runs inline. The load is bounded by {@link
+   * #updateTimeout}, applied before {@code get_latest_confirmed} so that a load which times out
+   * never runs the computation on a late-arriving result; on timeout (or load error) the returned
+   * future fails and the caller abandons this slot's confirmation. When the states are genuinely
+   * unavailable (loaded, but empty) the confirmed root falls back to the finalized block — a
+   * deliberate transition, distinct from a timeout.
+   */
+  private SafeFuture<Bytes32> computeConfirmedRoot(
       final FastConfirmationStore fcrStore, final UInt64 slot, final boolean atEpochStart) {
-    final Optional<FastConfirmationStates> maybeStates =
-        FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart).join();
     final Bytes32 finalizedRoot = fcrStore.store().getFinalizedCheckpoint().getRoot();
+    return FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart)
+        .orTimeout(updateTimeout(slot))
+        .thenApply(maybeStates -> resolveConfirmedRoot(fcrStore, slot, finalizedRoot, maybeStates));
+  }
+
+  private Bytes32 resolveConfirmedRoot(
+      final FastConfirmationStore fcrStore,
+      final UInt64 slot,
+      final Bytes32 finalizedRoot,
+      final Optional<FastConfirmationStates> maybeStates) {
     if (maybeStates.isEmpty()) {
       // The source states could not be loaded (e.g. the observed-justified checkpoint state has
       // been pruned, which happens for a short window after startup before that checkpoint has
@@ -346,7 +426,7 @@ public class FastConfirmationTracker {
           slot,
           finalizedRoot);
       fallbacksCounter.inc();
-      return fcrStore.withConfirmedRoot(finalizedRoot);
+      return finalizedRoot;
     }
 
     final Bytes32 confirmedRoot =
@@ -354,7 +434,7 @@ public class FastConfirmationTracker {
             .getLatestConfirmed();
     recordConfirmationOutcome(fcrStore, confirmedRoot, finalizedRoot);
 
-    return fcrStore.withConfirmedRoot(confirmedRoot);
+    return confirmedRoot;
   }
 
   void recordConfirmationOutcome(

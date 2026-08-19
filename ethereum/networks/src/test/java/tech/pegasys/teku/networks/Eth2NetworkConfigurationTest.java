@@ -22,6 +22,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
 
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,13 +37,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getDefinedNetworks")
-  @SuppressWarnings("deprecation")
   public void build_shouldBuildKnownNetworks(
       final Eth2Network network, final NetworkDefinition networkDefinition) {
     final Eth2NetworkConfiguration networkConfig =
@@ -51,34 +52,45 @@ public class Eth2NetworkConfigurationTest {
         Eth2NetworkConfiguration.builder();
     networkDefinition.configure(networkConfigBuilder);
 
-    if (!network.configName().equals(EPHEMERY.configName())) {
-      assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
-    } else {
-      assertThat(networkConfig.getConstants()).isEqualTo(EPHEMERY_CONFIG_URL);
-    }
     assertThat(networkConfigBuilder.build()).isEqualTo(networkConfig);
     assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getDefinedNetworks")
+  public void testBuilderApplyNetworkDefaultsSetsContents(
+      final Eth2Network network, final NetworkDefinition unused)
+      throws IllegalAccessException, NoSuchFieldException {
+    final Eth2NetworkConfiguration.Builder networkConfigBuilder =
+        Eth2NetworkConfiguration.builder();
+
+    networkConfigBuilder.applyNetworkDefaults(network);
+
+    Field constantsField = Eth2NetworkConfiguration.Builder.class.getDeclaredField("constants");
+    constantsField.setAccessible(true);
+    if (network == EPHEMERY) {
+      assertThat(constantsField.get(networkConfigBuilder)).isEqualTo(EPHEMERY_CONFIG_URL);
+    } else {
+      assertThat(constantsField.get(networkConfigBuilder)).isEqualTo(network.configName());
+    }
+    constantsField.setAccessible(false);
+  }
+
   @Test
-  @SuppressWarnings("deprecation")
   public void builder_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder(url.toString()).build();
-    assertThat(config.getConstants()).isEqualTo(url.toString());
     assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   public void constants_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder().constants(url.toString()).build();
-    assertThat(config.getConstants()).isEqualTo(url.toString());
     assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
   }
 
@@ -150,6 +162,9 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(EPHEMERY, (NetworkDefinition) b -> b.applyNetworkDefaults(EPHEMERY)),
         Arguments.of(
             Eth2Network.HOODI, (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.HOODI)),
+        Arguments.of(
+            Eth2Network.PLATABERGET,
+            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.PLATABERGET)),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
@@ -169,6 +184,38 @@ public class Eth2NetworkConfigurationTest {
   @FunctionalInterface
   private interface NetworkDefinition {
     Eth2NetworkConfiguration.Builder configure(Eth2NetworkConfiguration.Builder builder);
+  }
+
+  @Test
+  public void build_shouldApplyPlatabergetDefaults() {
+    final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder("plataberget").build();
+    final StateBoostrapConfig stateBoostrapConfig = config.getNetworkBoostrapConfig();
+
+    assertThat(config.getEth2Network().map(Eth2Network::configName)).contains("plataberget");
+    assertThat(config.getStartupTimeoutSeconds()).isEqualTo(120);
+    assertThat(config.getEth1DepositContractDeployBlock()).contains(UInt64.ZERO);
+    assertThat(config.getDiscoveryBootnodes()).hasSize(20);
+    assertThat(stateBoostrapConfig.getCheckpointSyncUrl())
+        .contains("https://checkpoint-sync.plataberget.ethpandaops.io");
+    assertThat(stateBoostrapConfig.getInitialState())
+        .contains(
+            "https://checkpoint-sync.plataberget.ethpandaops.io/"
+                + "eth/v2/debug/beacon/states/finalized");
+    assertThat(stateBoostrapConfig.getGenesisState())
+        .contains(
+            "https://raw.githubusercontent.com/ethpandaops/glamsterdam-devnets/"
+                + "b2e909bb60ae9c1930a869134ebbaeb0a079022a/network-configs/devnet-8/"
+                + "metadata/genesis.ssz");
+    assertThat(
+            config
+                .getSpec()
+                .getSpecConfigAndParent()
+                .specConfig()
+                .toVersionHeze()
+                .orElseThrow()
+                .getMaxTransactionsBytesPerInclusionList())
+        .isEqualTo(8192);
+    assertThat(parseBootnodes(config.getDiscoveryBootnodes())).hasSize(20);
   }
 
   @Test

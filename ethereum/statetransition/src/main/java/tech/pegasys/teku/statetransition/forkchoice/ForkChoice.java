@@ -129,6 +129,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
   private final FastConfirmationTracker fastConfirmationTracker;
+  private final ForkChoiceFastConfirmation forkChoiceFastConfirmation;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
@@ -164,6 +165,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.fastConfirmationTracker = fastConfirmationTracker;
+    this.forkChoiceFastConfirmation = new ForkChoiceFastConfirmation(spec, fastConfirmationTracker);
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
@@ -235,7 +237,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<Optional<ChainHead>> processHead() {
-    return processHead(Optional.empty(), false);
+    return processHead(Optional.empty(), true);
   }
 
   /** on_block */
@@ -415,8 +417,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       // slot-start work runs entirely off the fork-choice thread (on the fast confirmation runner)
       // with no blocking join; it never gates tick processing.
       if (fastConfirmationTracker.isEnabled()) {
-        ForkChoiceFastConfirmation.processForSlot(
-            fastConfirmationTracker, currentSlot, deferredAttestationsFuture, this::processHead);
+        forkChoiceFastConfirmation.processForSlot(
+            currentSlot,
+            deferredAttestationsFuture,
+            this::processHeadWithoutForkChoiceUpdate,
+            this::notifyForkChoiceUpdatedForFastConfirmation);
       } else {
         deferredAttestationsFuture.finishStackTrace();
       }
@@ -434,11 +439,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   SafeFuture<Optional<ChainHead>> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), true);
+  }
+
+  /**
+   * Processes the slot head for fast confirmation without sending the fcU. The confirmed root feeds
+   * {@code safe_block_hash}, so the fcU is sent afterwards (see {@link
+   * ForkChoiceFastConfirmation}), once {@code on_fast_confirmation} has updated it — otherwise the
+   * slot-start fcU would carry the previous slot's confirmed root.
+   */
+  SafeFuture<Optional<ChainHead>> processHeadWithoutForkChoiceUpdate(final UInt64 nodeSlot) {
     return processHead(Optional.of(nodeSlot), false);
   }
 
   private SafeFuture<Optional<ChainHead>> processHead(
-      final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+      final Optional<UInt64> nodeSlot, final boolean sendForkChoiceUpdated) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -474,11 +489,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                               justifiedCheckpoint);
                       nodeSlot.ifPresent(lastProcessHeadSlot::set);
 
-                      if (isPreProposal) {
-                        checkState(newHead.isPresent(), "We need a chainHead for block production");
-                        // Pre-proposal callers (prepareForBlockProduction) handle the proposer-head
-                        // override and the resulting fcU notification themselves.
-                      } else {
+                      // Callers that pass sendForkChoiceUpdated=false send the fcU themselves:
+                      // pre-proposal (prepareForBlockProduction) after the proposer-head override,
+                      // and fast confirmation after on_fast_confirmation updates the confirmed
+                      // root.
+                      if (sendForkChoiceUpdated) {
                         notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
                             Optional.empty(), Optional.empty());
                       }
@@ -589,6 +604,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
                     blockBroadcastValidator.onConsensusValidationSucceeded();
+                    // For Fulu, record timeliness at DA completion rather than block body arrival
+                    if (forkChoiceUtil.isDataAvailabilityRequiredForTimeliness()) {
+                      recentChainData.setBlockTimelinessAfterDataAvailability(
+                          block, recentChainData.getStore().getTimeInMillis());
+                    }
                   }
                 });
 
@@ -1190,6 +1210,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         result.getFailureCause());
   }
 
+  /**
+   * Sends the slot-start fcU on the fork-choice thread after {@code on_fast_confirmation} has run,
+   * so {@code safe_block_hash} reflects this slot's confirmed root (see {@link
+   * #processHeadWithoutForkChoiceUpdate}).
+   */
+  private SafeFuture<Void> notifyForkChoiceUpdatedForFastConfirmation() {
+    return onForkChoiceThread(
+        () ->
+            notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty(), Optional.empty()));
+  }
+
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
       final Optional<UInt64> proposingSlot, final Optional<ChainHead> proposingOnHead) {
     checkState(
@@ -1349,12 +1380,49 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 .thenPeek(__ -> blockProductionPerformance.prepareOnTick()),
             applyDeferredAttestations(slot)
                 .thenPeek(__ -> blockProductionPerformance.prepareApplyDeferredAttestations()))
-        .thenCompose(__ -> processHead(Optional.of(slot), true))
-        .thenApply(Optional::orElseThrow)
+        // Block production sends its own fcU (after the proposer-head override), so suppress it
+        // here; a chain head is required for block production.
+        .thenCompose(__ -> processHead(Optional.of(slot), false))
+        .thenApply(
+            maybeHead ->
+                maybeHead.orElseThrow(
+                    () -> new IllegalStateException("Missing chain head for block production")))
+        .thenPeek(canonicalHead -> updateFastConfirmationForProposalSlot(slot, canonicalHead))
         .thenCompose(
             canonicalHead ->
                 applyProposerHeadOverrideAndNotify(canonicalHead, slot, blockProductionPerformance))
         .thenPeek(__ -> blockProductionPerformance.prepareProcessHead());
+  }
+
+  /**
+   * Block production advances the store into the proposal slot itself (via {@code
+   * tickProcessor.onTick} above), so {@link #onTick} sees no slot boundary and does not run the
+   * fast confirmation update for that slot. Run it here so {@code on_fast_confirmation} and the
+   * once-per-slot rotation are not skipped on proposal slots (which would leave {@code
+   * FastConfirmationStore} stale for later slots).
+   *
+   * <p>Invoked on the fork-choice event thread — where {@link #onTick} also drives {@code onSlot} —
+   * so the tracker's per-slot chain stays single-threaded, and fire-and-forget so it never gates
+   * block production. Uses the pre-override canonical head ({@code get_head} at slot start). The
+   * tracker dedups if {@code onTick} already ran this slot, and the proposer fcU below already
+   * carries the confirmed root, so no extra fcU is sent here.
+   */
+  private void updateFastConfirmationForProposalSlot(
+      final UInt64 slot, final ChainHead canonicalHead) {
+    if (!fastConfirmationTracker.isEnabled()) {
+      return;
+    }
+    onForkChoiceThread(
+            () ->
+                fastConfirmationTracker
+                    .onSlot(slot, canonicalHead.getRoot())
+                    .finish(
+                        error ->
+                            LOG.error(
+                                "Fast confirmation update for proposal slot {} failed",
+                                slot,
+                                error)))
+        .finishError(LOG);
   }
 
   /**

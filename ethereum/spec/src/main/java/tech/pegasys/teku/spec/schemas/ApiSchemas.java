@@ -17,6 +17,8 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistrationsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfigSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderEntrySchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequestSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuthSchema;
@@ -48,4 +50,10 @@ public class ApiSchemas {
 
   public static final BuilderPreferencesRequestSchema BUILDER_PREFERENCES_REQUEST_SCHEMA =
       new BuilderPreferencesRequestSchema(BUILDER_PREFERENCES_SCHEMA, SIGNED_REQUEST_AUTH_SCHEMA);
+
+  // https://github.com/ethereum/beacon-APIs/pull/630/
+  public static final BuilderEntrySchema BUILDER_ENTRY_SCHEMA = new BuilderEntrySchema();
+
+  public static final BuilderConfigSchema BUILDER_CONFIG_SCHEMA =
+      new BuilderConfigSchema(BUILDER_ENTRY_SCHEMA);
 }

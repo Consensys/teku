@@ -140,7 +140,7 @@ public class EthereumTypes {
   public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE =
       new BooleanHeaderTypeDefinition(
           HEADER_INCLUDE_PAYLOAD,
-          Optional.of(false),
+          Optional.of(true),
           """
                           Indicates whether the execution payload envelope is included in the response.
                           When `true`, the `data` field contains the full

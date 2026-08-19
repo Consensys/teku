@@ -1,18 +1,5 @@
 dependencies {
-	implementation project(':beacon:pow')
-	implementation project(':infrastructure:events')
 	implementation project(':ethereum:execution-types')
-	implementation project(':ethereum:pow:api')
 	implementation project(':ethereum:spec')
-	implementation project(':ethereum:networks')
-	implementation project(':infrastructure:async')
-	implementation project(':infrastructure:logging')
-	implementation project(':storage:api')
-	implementation project(':infrastructure:http')
-	implementation project(':infrastructure:serviceutils')
-
-	testImplementation project(':ethereum:pow:merkletree')
-
-	testImplementation testFixtures(project(':ethereum:spec'))
-	testImplementation testFixtures(project(':infrastructure:async'))
+	implementation project(':infrastructure:unsigned')
 }

@@ -41,9 +41,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSch
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
@@ -220,9 +220,9 @@ public class SchemaTypes {
   public static final SchemaId<BlobSidecarsByRootRequestMessageSchema>
       BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
-  public static final SchemaId<BlockContentsWithBlobsSchema<?>> BLOCK_CONTENTS_SCHEMA =
+  public static final SchemaId<BlockContentsSchema<?>> BLOCK_CONTENTS_SCHEMA =
       create("BLOCK_CONTENTS_SCHEMA");
-  public static final SchemaId<SignedBlockContentsWithBlobsSchema<?>> SIGNED_BLOCK_CONTENTS_SCHEMA =
+  public static final SchemaId<SignedBlockContentsSchema<?>> SIGNED_BLOCK_CONTENTS_SCHEMA =
       create("SIGNED_BLOCK_CONTENTS_SCHEMA");
   public static final SchemaId<BlobsBundleSchema<?>> BLOBS_BUNDLE_SCHEMA =
       create("BLOBS_BUNDLE_SCHEMA");

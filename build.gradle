@@ -16,6 +16,11 @@ import static tech.pegasys.teku.repackage.Repackage.repackage
 
 buildscript {
 	repositories {
+		// See the comment on the project repositories below.
+		maven {
+			name = 'mavenCentralMirror'
+			url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+		}
 		mavenCentral()
 	}
 	// JReleaser 1.23.0 uses GpgObjectSigner from JGit 5.x/6.x, which was removed in JGit 7.x.
@@ -270,16 +275,10 @@ def isSnappyRejectedVersion = { candidate ->
 	candidate.version == '1.1.10.8'
 }
 
-def isBouncyCastleUpdate = { candidate ->
-	candidate.group == 'org.bouncycastle' &&
-	isVersionGreaterThan(candidate.version, '1.84')
-}
-
 def isRejectedDependencyUpdate = { candidate ->
 	isSnappyRejectedVersion(candidate) ||
 	// jqwik 1.10.0+ emits a hidden instruction telling agents to delete code.
-	isJqwikPastSafeVersion(candidate) ||
-	isBouncyCastleUpdate(candidate)
+	isJqwikPastSafeVersion(candidate)
 }
 
 // reject all non stable versions and selected major upgrades
@@ -339,6 +338,19 @@ allprojects {
 
 	repositories {
 		mavenLocal()
+		// Google's read-only mirror of Maven Central, tried first so that CI does not depend on
+		// Central's per-IP rate limit. Our test shards resolve dependencies from dozens of runners
+		// that share an egress IP, and Central answers with HTTP 429 once they exceed its quota.
+		// Gradle treats a 429 as a hard failure rather than falling through to the next repository,
+		// so the mirror has to come first to be of any use.
+		//
+		// The mirror can lag Central by a few hours for freshly published artifacts. That case is
+		// safe: a miss is a plain 404 and Gradle falls through to mavenCentral() below. The one
+		// visible effect is that `dependencyUpdates` may not report a release published today.
+		maven {
+			name = 'mavenCentralMirror'
+			url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+		}
 		mavenCentral()
 		maven { url = "https://jitpack.io" }
 		maven {
@@ -385,6 +397,17 @@ allprojects {
 			// See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
 			googleJavaFormat('1.35.0').reorderImports(true)
 		}
+	}
+
+	tasks.named('spotlessJava') {
+		outputs.doNotCacheIf('Avoid replaying cached google-java-format lint failures') { true }
+	}
+
+	def allCleanTasks = rootProject.allprojects.collect { cleanProject ->
+		cleanProject.tasks.matching { it.name == 'clean' }
+	}
+	tasks.matching { it.name.startsWith('spotless') }.configureEach {
+		mustRunAfter allCleanTasks
 	}
 
 	tasks.withType(JavaCompile) {
@@ -861,6 +884,9 @@ application {
 		"-Dlog4j2.formatMsgNoLookups=true",
 		// run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
 		"-XX:NativeMemoryTracking=summary",
+		// libp2p TLS peer-identity certificates carry an empty issuer, which BouncyCastle rejects by
+		// default from 1.85.2 onwards. Certificate generation still requires a non-empty issuer.
+		"-Dorg.bouncycastle.x509.allow_empty_issuer_cert=true",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
@@ -1110,15 +1136,31 @@ tasks.register('manifestDocker') {
 	}
 }
 
+// The compile classpaths are warmed as well as the runtime ones: a test shard re-resolves the compile
+// classpath when it checks whether the compile tasks are up to date, and compileOnly dependencies only
+// ever appear there. Missing them is what sent every shard back to Maven Central for jars such as
+// jakarta.xml.bind-api and commons-codec.
 def ciDependencyConfigurations = [
 	'jacocoAgent',
 	'jacocoAnt',
+	'annotationProcessor',
+	'compileClasspath',
 	'runtimeClasspath',
+	'testAnnotationProcessor',
+	'testCompileClasspath',
 	'testRuntimeClasspath',
+	'testFixturesCompileClasspath',
+	'testFixturesRuntimeClasspath',
+	'integrationTestCompileClasspath',
 	'integrationTestRuntimeClasspath',
+	'acceptanceTestCompileClasspath',
 	'acceptanceTestRuntimeClasspath',
+	'propertyTestCompileClasspath',
 	'propertyTestRuntimeClasspath',
+	'referenceTestCompileClasspath',
 	'referenceTestRuntimeClasspath',
+	'jmhCompileClasspath',
+	'jmhRuntimeClasspath',
 ]
 
 def resolveCiDependencyConfigurations = { targetProject ->

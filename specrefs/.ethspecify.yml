@@ -18,6 +18,9 @@ specrefs:
       # Not implemented: heze
       - MIN_SLOTS_FOR_INCLUSION_LISTS_REQUESTS#heze
 
+      # Renamed after v1.7.0-alpha.13
+      - MAX_BYTES_PER_INCLUSION_LIST#heze
+
     constants:
       # Not defined as a constant, unnecessary
       - BASIS_POINTS#phase0
@@ -92,17 +95,13 @@ specrefs:
 
       # No light client support
       - apply_light_client_update
-      - block_to_light_client_header
       - current_sync_committee_gindex_at_slot
       - finalized_root_gindex_at_slot
       - get_lc_execution_root
       - get_safety_threshold
       - get_subtree_index
       - initialize_light_client_store
-      - is_better_update
-      - is_finality_update
       - is_next_sync_committee_known
-      - is_sync_committee_update
       - is_valid_light_client_header
       - is_valid_normalized_merkle_branch
       - normalize_merkle_branch#electra
@@ -177,7 +176,6 @@ specrefs:
       # Not implemented yet: EIP-7688 progressive SSZ sizing work
       - MAX_ATTESTER_SLASHING_SIZE#gloas
       - MAX_DATA_COLUMN_SIDECAR_SIZE#gloas
-      - MAX_PARTIAL_DATA_COLUMN_SIDECAR_SIZE#gloas
       - MAX_SIGNED_AGGREGATE_AND_PROOF_SIZE#gloas
       - MAX_SIGNED_EXECUTION_PAYLOAD_BID_SIZE#gloas
       - MAX_SIGNED_EXECUTION_PAYLOAD_BID_SIZE_HEZE#heze

@@ -65,7 +65,11 @@ public class MilestoneDependentTypesUtil {
     for (SpecMilestone milestone : schemaDefinitionCache.getSupportedMilestones()) {
       schemaGetterList.forEach(
           schemaGetter -> {
-            if (milestone.isGreaterThanOrEqualTo(schemaGetter.earliestMilestone())) {
+            if (milestone.isGreaterThanOrEqualTo(schemaGetter.earliestMilestone())
+                && schemaGetter
+                    .latestMilestone()
+                    .map(latest -> !milestone.isGreaterThan(latest))
+                    .orElse(true)) {
               final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
                   schemaGetter
                       .schemaGetter()
@@ -149,5 +153,14 @@ public class MilestoneDependentTypesUtil {
   public record ConditionalSchemaGetter<T>(
       BiPredicate<T, SpecMilestone> schemaPredicate,
       SpecMilestone earliestMilestone,
-      Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter) {}
+      Optional<SpecMilestone> latestMilestone,
+      Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter) {
+
+    public ConditionalSchemaGetter(
+        final BiPredicate<T, SpecMilestone> schemaPredicate,
+        final SpecMilestone earliestMilestone,
+        final Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter) {
+      this(schemaPredicate, earliestMilestone, Optional.empty(), schemaGetter);
+    }
+  }
 }

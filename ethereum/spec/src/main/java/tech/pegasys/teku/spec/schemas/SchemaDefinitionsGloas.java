@@ -45,8 +45,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
@@ -160,11 +158,6 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   protected SignedBeaconBlockSchema createSignedBlindedBeaconBlockSchema(
       final SchemaRegistry schemaRegistry) {
     return schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
-  }
-
-  @Override
-  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBeaconBlockSchema().castTypeToBlockContainer();
   }
 
   @Override

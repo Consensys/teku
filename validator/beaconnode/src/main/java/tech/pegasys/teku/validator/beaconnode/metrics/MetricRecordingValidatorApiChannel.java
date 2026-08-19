@@ -47,11 +47,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
@@ -159,9 +159,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final Optional<BuilderConfig> builderConfig) {
     return countOptionalDataRequest(
-        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor),
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, includePayload, builderConfig),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 
@@ -276,9 +277,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedProposerPreferences(
+  public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
-    return countDataRequest(
+    return countSendRequest(
         delegate.sendSignedProposerPreferences(signedProposerPreferences),
         BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD);
   }
@@ -363,16 +364,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countDataRequest(
         delegate.publishSignedExecutionPayload(
             signedExecutionPayloadEnvelopeContents, broadcastValidationLevel),
-        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
-  }
-
-  @Override
-  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return countDataRequest(
-        delegate.publishSignedExecutionPayload(
-            signedBlindedExecutionPayload, broadcastValidationLevel),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 

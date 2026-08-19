@@ -871,7 +871,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createUnsignedBlock_makesExpectedRequest() throws Exception {
+  public void createUnsignedBlock_makesExpectedV3Request() throws Exception {
+    assumeThat(specMilestone).isLessThan(GLOAS);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     final UInt64 slot = dataStructureUtil.randomSlot();
@@ -892,6 +893,32 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(request.getRequestUrl().queryParameter(GRAFFITI)).isEqualTo(graffiti.toString());
     assertThat(request.getRequestUrl().queryParameter(BUILDER_BOOST_FACTOR))
         .isEqualTo(boostFactor.toString());
+  }
+
+  @TestTemplate
+  public void createUnsignedBlock_makesExpectedV4Request() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final UInt64 slot = dataStructureUtil.randomSlot();
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
+    final UInt64 boostFactor = dataStructureUtil.randomUInt64();
+
+    typeDefClient.createUnsignedBlock(
+        slot, randaoReveal, Optional.of(graffiti), Optional.of(boostFactor));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK_V4.getPath(Map.of(SLOT, slot.toString())));
+    assertThat(request.getRequestUrl().queryParameter(RANDAO_REVEAL))
+        .isEqualTo(randaoReveal.toString());
+    assertThat(request.getRequestUrl().queryParameter(GRAFFITI)).isEqualTo(graffiti.toString());
+    assertThat(request.getRequestUrl().queryParameter(BUILDER_BOOST_FACTOR))
+        .isEqualTo(boostFactor.toString());
+    assertThat(request.getRequestUrl().queryParameter("include_payload")).isEqualTo("true");
   }
 
   @TestTemplate

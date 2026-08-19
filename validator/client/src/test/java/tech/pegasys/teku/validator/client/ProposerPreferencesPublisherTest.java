@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -90,13 +92,13 @@ public class ProposerPreferencesPublisherTest {
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey))
         .thenReturn(Optional.of(feeRecipient));
-    when(proposerConfigPropertiesProvider.getGasLimit(publicKey)).thenReturn(gasLimit);
+    when(proposerConfigPropertiesProvider.getGasLimit(eq(publicKey), any())).thenReturn(gasLimit);
     when(forkProvider.getForkInfo(any()))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomForkInfo()));
     when(signer.signProposerPreferences(any(), any()))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
     when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
-        .thenReturn(SafeFuture.COMPLETE);
+        .thenReturn(SafeFuture.completedFuture(List.of()));
   }
 
   @TestTemplate
@@ -113,6 +115,8 @@ public class ProposerPreferencesPublisherTest {
             false));
 
     verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+    // duties may be for a future epoch, so the gas limit must be resolved for that epoch
+    verify(proposerConfigPropertiesProvider).getGasLimit(publicKey, epoch);
   }
 
   @TestTemplate
@@ -122,7 +126,9 @@ public class ProposerPreferencesPublisherTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
     final String rejectionDescription = "Invalid proposer preferences signature";
     when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException(rejectionDescription)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(new SubmitDataError(UInt64.ZERO, rejectionDescription))));
 
     try (LogCaptor logCaptor = LogCaptor.forClass(ValidatorLogger.class)) {
       publisher.onProposerDutiesLoaded(
@@ -193,7 +199,7 @@ public class ProposerPreferencesPublisherTest {
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(failingKey))
         .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
-    when(proposerConfigPropertiesProvider.getGasLimit(failingKey)).thenReturn(gasLimit);
+    when(proposerConfigPropertiesProvider.getGasLimit(eq(failingKey), any())).thenReturn(gasLimit);
     when(failingSigner.signProposerPreferences(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new UnsupportedOperationException("not supported")));
 

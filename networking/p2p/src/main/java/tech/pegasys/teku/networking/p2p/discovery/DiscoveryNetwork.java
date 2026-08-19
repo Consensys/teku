@@ -108,6 +108,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     connectionManager.addStaticPeer(p2pNetwork.createPeerAddress(peerAddress));
   }
 
+  public void requestPeerSearch() {
+    connectionManager.requestPeerSearch();
+  }
+
   @Override
   public Optional<String> getEnr() {
     return discoveryService.getEnr();
