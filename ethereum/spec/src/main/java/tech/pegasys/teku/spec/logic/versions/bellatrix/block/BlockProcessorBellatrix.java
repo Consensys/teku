@@ -100,9 +100,15 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
         getValidatorExitContextSupplier(state);
 
     final UInt64 parentSlot = state.getLatestBlockHeader().getSlot();
+
+    processParentExecutionPayload(state, block, validatorExitContextSupplier);
     processBlockHeader(state, block);
+
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      executionProcessing(genericState, block, payloadExecutor, validatorExitContextSupplier);
+      // Bellatrix -> process_execution_payload
+      // Capella -> process_execution_payload + process_withdrawals
+      // Gloas -> process_withdrawals + process_execution_payload_bid
+      executionProcessing(genericState, block, payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
@@ -115,8 +121,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   public void executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     processExecutionPayload(genericState, beaconBlock.getBody(), payloadExecutor);
   }

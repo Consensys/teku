@@ -388,7 +388,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BeaconBlock beaconBlock,
       final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    throw new UnsupportedOperationException("No process_parent_execution_payload until Gloas");
+    // NO-OP until Gloas
   }
 
   @Override
