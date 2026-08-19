@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.lightclient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.function.BiPredicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -31,6 +32,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
 public class LightClientUpdateStoreTest {
+
+  /** Blocks are on the canonical chain unless a test says otherwise. */
+  private static final BiPredicate<UInt64, Bytes32> CANONICAL = (slot, root) -> true;
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
@@ -175,8 +179,8 @@ public class LightClientUpdateStoreTest {
     // Every clause falls through to `signatureSlot < signatureSlot`, which must be false.
     final LightClientUpdate update = createLightClientUpdate().build();
 
-    store.addUpdate(update, dataStructureUtil.randomBytes32());
-    store.addUpdate(update, dataStructureUtil.randomBytes32());
+    store.addUpdate(update, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(update, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).containsExactly(update);
   }
@@ -186,14 +190,15 @@ public class LightClientUpdateStoreTest {
     final LightClientUpdate update =
         createLightClientUpdate().signatureSlot(periodOneStartSlot().times(2)).build();
 
-    store.addUpdate(update, dataStructureUtil.randomBytes32());
+    store.addUpdate(update, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 3)).isEmpty();
   }
 
   @TestTemplate
   public void getBestUpdatesInRange_shouldReturnEmptyListWhenCountIsZero() {
-    store.addUpdate(createLightClientUpdateAtPeriod(1), dataStructureUtil.randomBytes32());
+    store.addUpdate(
+        createLightClientUpdateAtPeriod(1), dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 0)).isEmpty();
   }
@@ -204,9 +209,9 @@ public class LightClientUpdateStoreTest {
     final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
     final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
 
-    store.addUpdate(periodThree, dataStructureUtil.randomBytes32());
-    store.addUpdate(periodOne, dataStructureUtil.randomBytes32());
-    store.addUpdate(periodTwo, dataStructureUtil.randomBytes32());
+    store.addUpdate(periodThree, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(periodOne, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(periodTwo, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 2)).containsExactly(periodOne, periodTwo);
   }
@@ -215,8 +220,8 @@ public class LightClientUpdateStoreTest {
   public void getBestUpdatesInRange_shouldStopAtFirstMissingPeriod() {
     final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
-    store.addUpdate(periodOne, dataStructureUtil.randomBytes32());
-    store.addUpdate(periodThree, dataStructureUtil.randomBytes32());
+    store.addUpdate(periodOne, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(periodThree, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 500)).containsExactly(periodOne);
   }
@@ -225,8 +230,8 @@ public class LightClientUpdateStoreTest {
   public void getBestUpdatesInRange_shouldStartAtEarliestKnownPeriodInRange() {
     final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
     final LightClientUpdate periodThree = createLightClientUpdateAtPeriod(3);
-    store.addUpdate(periodTwo, dataStructureUtil.randomBytes32());
-    store.addUpdate(periodThree, dataStructureUtil.randomBytes32());
+    store.addUpdate(periodTwo, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(periodThree, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ONE, 3)).containsExactly(periodTwo, periodThree);
   }
@@ -237,7 +242,7 @@ public class LightClientUpdateStoreTest {
         dataStructureUtil.randomLightClientFinalityUpdate(
             periodOneStartSlot(), periodOneStartSlot());
 
-    store.addFinalityUpdate(update);
+    store.addFinalityUpdate(update, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getLatestFinalityUpdate()).contains(update);
   }
@@ -251,11 +256,11 @@ public class LightClientUpdateStoreTest {
         dataStructureUtil.randomLightClientFinalityUpdate(
             periodOneStartSlot().increment(), periodOneStartSlot());
 
-    store.addFinalityUpdate(older);
-    store.addFinalityUpdate(newer);
+    store.addFinalityUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addFinalityUpdate(newer, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestFinalityUpdate()).contains(newer);
 
-    store.addFinalityUpdate(older);
+    store.addFinalityUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestFinalityUpdate()).contains(newer);
   }
 
@@ -268,11 +273,11 @@ public class LightClientUpdateStoreTest {
         dataStructureUtil.randomLightClientFinalityUpdate(
             periodOneStartSlot(), periodOneStartSlot(), periodOneStartSlot().increment());
 
-    store.addFinalityUpdate(older);
-    store.addFinalityUpdate(newer);
+    store.addFinalityUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addFinalityUpdate(newer, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestFinalityUpdate()).contains(newer);
 
-    store.addFinalityUpdate(older);
+    store.addFinalityUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestFinalityUpdate()).contains(newer);
   }
 
@@ -281,7 +286,7 @@ public class LightClientUpdateStoreTest {
     final LightClientOptimisticUpdate update =
         dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot());
 
-    store.addOptimisticUpdate(update);
+    store.addOptimisticUpdate(update, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getLatestOptimisticUpdate()).contains(update);
   }
@@ -293,11 +298,11 @@ public class LightClientUpdateStoreTest {
     final LightClientOptimisticUpdate newer =
         dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot().increment());
 
-    store.addOptimisticUpdate(older);
-    store.addOptimisticUpdate(newer);
+    store.addOptimisticUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addOptimisticUpdate(newer, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestOptimisticUpdate()).contains(newer);
 
-    store.addOptimisticUpdate(older);
+    store.addOptimisticUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestOptimisticUpdate()).contains(newer);
   }
 
@@ -310,11 +315,11 @@ public class LightClientUpdateStoreTest {
         dataStructureUtil.randomLightClientOptimisticUpdate(
             periodOneStartSlot(), periodOneStartSlot().increment());
 
-    store.addOptimisticUpdate(older);
-    store.addOptimisticUpdate(newer);
+    store.addOptimisticUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addOptimisticUpdate(newer, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestOptimisticUpdate()).contains(newer);
 
-    store.addOptimisticUpdate(older);
+    store.addOptimisticUpdate(older, dataStructureUtil.randomBytes32(), CANONICAL);
     assertThat(store.getLatestOptimisticUpdate()).contains(newer);
   }
 
@@ -323,9 +328,9 @@ public class LightClientUpdateStoreTest {
     final LightClientUpdate periodZero = createLightClientUpdateAtPeriod(0);
     final LightClientUpdate periodOne = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate periodTwo = createLightClientUpdateAtPeriod(2);
-    store.addUpdate(periodZero, dataStructureUtil.randomBytes32());
-    store.addUpdate(periodOne, dataStructureUtil.randomBytes32());
-    store.addUpdate(periodTwo, dataStructureUtil.randomBytes32());
+    store.addUpdate(periodZero, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(periodOne, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(periodTwo, dataStructureUtil.randomBytes32(), CANONICAL);
 
     assertThat(store.getBestUpdatesInRange(UInt64.ZERO, 500))
         .containsExactly(periodZero, periodOne, periodTwo);
@@ -340,8 +345,8 @@ public class LightClientUpdateStoreTest {
     final Bytes32 orphanedRoot = dataStructureUtil.randomBytes32();
     final LightClientUpdate kept = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate dropped = createLightClientUpdateAtPeriod(2);
-    store.addUpdate(kept, canonicalRoot);
-    store.addUpdate(dropped, orphanedRoot);
+    store.addUpdate(kept, canonicalRoot, CANONICAL);
+    store.addUpdate(dropped, orphanedRoot, CANONICAL);
 
     store.removeNonCanonicalUpdates(UInt64.ZERO, (slot, root) -> root.equals(canonicalRoot));
 
@@ -353,7 +358,7 @@ public class LightClientUpdateStoreTest {
   public void removeNonCanonicalUpdates_shouldTestAgainstTheSignatureSlot() {
     final LightClientUpdate update = createLightClientUpdate().build();
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    store.addUpdate(update, root);
+    store.addUpdate(update, root, CANONICAL);
 
     store.removeNonCanonicalUpdates(
         UInt64.ZERO,
@@ -367,8 +372,8 @@ public class LightClientUpdateStoreTest {
   public void removeNonCanonicalUpdates_shouldNotTestPeriodsBelowFromPeriod() {
     final LightClientUpdate finalized = createLightClientUpdateAtPeriod(1);
     final LightClientUpdate unfinalized = createLightClientUpdateAtPeriod(2);
-    store.addUpdate(finalized, dataStructureUtil.randomBytes32());
-    store.addUpdate(unfinalized, dataStructureUtil.randomBytes32());
+    store.addUpdate(finalized, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addUpdate(unfinalized, dataStructureUtil.randomBytes32(), CANONICAL);
 
     store.removeNonCanonicalUpdates(UInt64.valueOf(2), (slot, root) -> false);
 
@@ -377,25 +382,72 @@ public class LightClientUpdateStoreTest {
   }
 
   @TestTemplate
-  public void removeNonCanonicalUpdates_shouldNotAffectFinalityOrOptimisticUpdates() {
+  public void removeNonCanonicalUpdates_shouldDropOrphanedFinalityAndOptimisticUpdates() {
     final LightClientFinalityUpdate finalityUpdate =
         dataStructureUtil.randomLightClientFinalityUpdate(periodOneStartSlot());
     final LightClientOptimisticUpdate optimisticUpdate =
         dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot());
-    store.addFinalityUpdate(finalityUpdate);
-    store.addOptimisticUpdate(optimisticUpdate);
+    store.addFinalityUpdate(finalityUpdate, dataStructureUtil.randomBytes32(), CANONICAL);
+    store.addOptimisticUpdate(optimisticUpdate, dataStructureUtil.randomBytes32(), CANONICAL);
 
     store.removeNonCanonicalUpdates(UInt64.ZERO, (slot, root) -> false);
+
+    assertThat(store.getLatestFinalityUpdate()).isEmpty();
+    assertThat(store.getLatestOptimisticUpdate()).isEmpty();
+  }
+
+  @TestTemplate
+  public void removeNonCanonicalUpdates_shouldKeepFinalityAndOptimisticUpdatesStillOnTheChain() {
+    final Bytes32 canonicalRoot = dataStructureUtil.randomBytes32();
+    final LightClientFinalityUpdate finalityUpdate =
+        dataStructureUtil.randomLightClientFinalityUpdate(periodOneStartSlot());
+    final LightClientOptimisticUpdate optimisticUpdate =
+        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot());
+    store.addFinalityUpdate(finalityUpdate, canonicalRoot, CANONICAL);
+    store.addOptimisticUpdate(optimisticUpdate, canonicalRoot, CANONICAL);
+
+    store.removeNonCanonicalUpdates(UInt64.ZERO, (slot, root) -> root.equals(canonicalRoot));
 
     assertThat(store.getLatestFinalityUpdate()).contains(finalityUpdate);
     assertThat(store.getLatestOptimisticUpdate()).contains(optimisticUpdate);
   }
 
+  @TestTemplate
+  public void addUpdate_shouldRejectAnUpdateWhoseBlockIsAlreadyOrphaned() {
+    final LightClientUpdate update = createLightClientUpdateAtPeriod(1);
+
+    store.addUpdate(update, dataStructureUtil.randomBytes32(), (slot, root) -> false);
+
+    assertThat(store.getBestUpdatesInRange(UInt64.ONE, 1)).isEmpty();
+  }
+
+  @TestTemplate
+  public void addFinalityUpdate_shouldRejectAnUpdateWhoseBlockIsAlreadyOrphaned() {
+    final LightClientFinalityUpdate finalityUpdate =
+        dataStructureUtil.randomLightClientFinalityUpdate(periodOneStartSlot());
+
+    store.addFinalityUpdate(
+        finalityUpdate, dataStructureUtil.randomBytes32(), (slot, root) -> false);
+
+    assertThat(store.getLatestFinalityUpdate()).isEmpty();
+  }
+
+  @TestTemplate
+  public void addOptimisticUpdate_shouldRejectAnUpdateWhoseBlockIsAlreadyOrphaned() {
+    final LightClientOptimisticUpdate optimisticUpdate =
+        dataStructureUtil.randomLightClientOptimisticUpdate(periodOneStartSlot());
+
+    store.addOptimisticUpdate(
+        optimisticUpdate, dataStructureUtil.randomBytes32(), (slot, root) -> false);
+
+    assertThat(store.getLatestOptimisticUpdate()).isEmpty();
+  }
+
   private LightClientUpdate getBestUpdateAfterAdding(
       final LightClientUpdate first, final LightClientUpdate second) {
     final LightClientUpdateStore comparisonStore = new LightClientUpdateStore(spec);
-    comparisonStore.addUpdate(first, dataStructureUtil.randomBytes32());
-    comparisonStore.addUpdate(second, dataStructureUtil.randomBytes32());
+    comparisonStore.addUpdate(first, dataStructureUtil.randomBytes32(), CANONICAL);
+    comparisonStore.addUpdate(second, dataStructureUtil.randomBytes32(), CANONICAL);
     return comparisonStore.getBestUpdatesInRange(UInt64.ONE, 1).getFirst();
   }
 

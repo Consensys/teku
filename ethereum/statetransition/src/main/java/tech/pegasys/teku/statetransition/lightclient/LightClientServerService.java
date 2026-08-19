@@ -66,14 +66,23 @@ public class LightClientServerService
         lightClientStore,
         combinedChainDataClient::getBlockByBlockRoot,
         combinedChainDataClient::getStateByBlockRoot,
-        (slot, blockRoot) ->
-            combinedChainDataClient
-                .getChainHead()
-                .map(
-                    chainHead ->
-                        combinedChainDataClient.isCanonicalBlock(
-                            slot, blockRoot, chainHead.getRoot()))
-                .orElse(false));
+        (slot, blockRoot) -> isCanonicalBlock(combinedChainDataClient, slot, blockRoot));
+  }
+
+  private static boolean isCanonicalBlock(
+      final CombinedChainDataClient combinedChainDataClient,
+      final UInt64 slot,
+      final Bytes32 blockRoot) {
+    return combinedChainDataClient
+        .getChainHead()
+        .map(
+            chainHead ->
+                combinedChainDataClient
+                    .getRecentChainData()
+                    .getBlockRootInEffectBySlot(slot, chainHead.getRoot())
+                    .map(blockRoot::equals)
+                    .orElse(true))
+        .orElse(false);
   }
 
   public LightClientServerService(
@@ -97,10 +106,6 @@ public class LightClientServerService
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean isExecutionOptimistic) {
-    if (isExecutionOptimistic) {
-      return;
-    }
-
     final UInt64 slot = block.getSlot();
 
     if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.ALTAIR)) {
@@ -220,15 +225,18 @@ public class LightClientServerService
                         attestedState,
                         attestedBlock,
                         maybeFinalizedBlock);
-                lightClientStore.addUpdate(update, signatureBlock.getRoot());
+
+                lightClientStore.addUpdate(update, signatureBlock.getRoot(), isCanonicalBlock);
 
                 final LightClientFinalityUpdate finalityUpdate =
                     lightClientUtil.createLightClientFinalityUpdate(update);
-                lightClientStore.addFinalityUpdate(finalityUpdate);
+                lightClientStore.addFinalityUpdate(
+                    finalityUpdate, signatureBlock.getRoot(), isCanonicalBlock);
 
                 final LightClientOptimisticUpdate optimisticUpdate =
                     lightClientUtil.createLightClientOptimisticUpdate(update);
-                lightClientStore.addOptimisticUpdate(optimisticUpdate);
+                lightClientStore.addOptimisticUpdate(
+                    optimisticUpdate, signatureBlock.getRoot(), isCanonicalBlock);
 
                 return Optional.of(update);
               });
