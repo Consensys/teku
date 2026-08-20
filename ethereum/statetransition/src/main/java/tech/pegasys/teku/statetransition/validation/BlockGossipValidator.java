@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -316,12 +317,13 @@ public class BlockGossipValidator {
    */
   private Optional<InternalValidationResult> verifyBlockBodyOperationLimits(
       final SignedBeaconBlock block) {
-    final BeaconBlockBody body = block.getMessage().getBody();
-    final Optional<SszList<PayloadAttestation>> maybePayloadAttestations =
-        body.getOptionalPayloadAttestations();
-    if (maybePayloadAttestations.isEmpty()) {
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       return Optional.empty();
     }
+
+    final BeaconBlockBody body = block.getMessage().getBody();
+    final SszList<PayloadAttestation> payloadAttestations =
+        body.getOptionalPayloadAttestations().orElseThrow();
 
     final SpecConfig specConfig = spec.atSlot(block.getSlot()).getConfig();
 
@@ -378,7 +380,7 @@ public class BlockGossipValidator {
 
     final int maxPayloadAttestations =
         SpecConfigGloas.required(specConfig).getMaxPayloadAttestations();
-    final int payloadAttestationsCount = maybePayloadAttestations.get().size();
+    final int payloadAttestationsCount = payloadAttestations.size();
     if (payloadAttestationsCount > maxPayloadAttestations) {
       return Optional.of(
           reject(
