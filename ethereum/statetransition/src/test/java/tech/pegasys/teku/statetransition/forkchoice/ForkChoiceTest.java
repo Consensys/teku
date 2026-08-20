@@ -65,8 +65,10 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -82,6 +84,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -114,6 +117,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -192,6 +197,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            FastConfirmationTracker.NOOP,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
@@ -221,6 +227,106 @@ class ForkChoiceTest {
       final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
       setBlobSidecarsAvailabilityResult(DataAndValidationResult.validResult(blobSidecars));
     }
+  }
+
+  @Test
+  void shouldNotInitializeFastConfirmationStoreWhenDisabled() {
+    assertThat(forkChoice.isFastConfirmationEnabled()).isFalse();
+    assertThat(forkChoice.getFastConfirmationStore()).isEmpty();
+  }
+
+  @Test
+  void shouldInitializeFastConfirmationStoreWhenEnabled() {
+    recreateForkChoice(true, LateBlockReorgPreparationHandler.NOOP);
+
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
+    final FastConfirmationStore fastConfirmationStore =
+        forkChoice.getFastConfirmationStore().orElseThrow();
+    assertThat(forkChoice.isFastConfirmationEnabled()).isTrue();
+    assertThat(fastConfirmationStore.store()).isSameAs(recentChainData.getStore());
+    assertThat(fastConfirmationStore.confirmedRoot()).isEqualTo(finalizedCheckpoint.getRoot());
+    assertThat(fastConfirmationStore.previousEpochObservedJustifiedCheckpoint())
+        .isEqualTo(finalizedCheckpoint);
+    assertThat(fastConfirmationStore.currentEpochObservedJustifiedCheckpoint())
+        .isEqualTo(finalizedCheckpoint);
+    assertThat(fastConfirmationStore.previousEpochGreatestUnrealizedCheckpoint())
+        .isEqualTo(finalizedCheckpoint);
+    assertThat(fastConfirmationStore.previousSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(finalizedCheckpoint.getRoot());
+  }
+
+  @Test
+  void shouldScheduleFastConfirmationUpdateOnSlotTickWhenEnabled() {
+    final StubAsyncRunner fastConfirmationAsyncRunner = new StubAsyncRunner();
+    recreateForkChoice(
+        FastConfirmationTracker.create(
+            spec,
+            Optional.of(fastConfirmationAsyncRunner),
+            FastConfirmationEventChannel.NOOP,
+            metricsSystem,
+            StubTimeProvider.withTimeInMillis(0)),
+        LateBlockReorgPreparationHandler.NOOP);
+    final UInt64 nextSlot = recentChainData.getCurrentSlot().orElseThrow().plus(ONE);
+
+    forkChoice.onTick(
+        spec.computeTimeMillisAtSlot(nextSlot, recentChainData.getGenesisTimeMillis()),
+        Optional.empty());
+
+    assertThat(fastConfirmationAsyncRunner.countDelayedActions()).isOne();
+  }
+
+  @Test
+  void processHead_shouldSendForkChoiceUpdatedWhenFastConfirmationDisabled() {
+    // Default forkChoice uses FastConfirmationTracker.NOOP (FCR disabled). processHead must still
+    // send the fcU itself, exactly as before the FCR fcU-ordering change.
+    processHead(ONE);
+
+    verify(forkChoiceNotifier).onForkChoiceUpdated(any(), eq(Optional.empty()));
+  }
+
+  @Test
+  void prepareForBlockProduction_shouldRunFastConfirmationForProposalSlotWhenEnabled() {
+    final StubAsyncRunner fastConfirmationAsyncRunner = new StubAsyncRunner();
+    recreateForkChoice(
+        FastConfirmationTracker.create(
+            spec,
+            Optional.of(fastConfirmationAsyncRunner),
+            FastConfirmationEventChannel.NOOP,
+            metricsSystem,
+            StubTimeProvider.withTimeInMillis(0)),
+        LateBlockReorgPreparationHandler.NOOP);
+    // Move within tolerance of slot 1 so prepareForBlockProduction advances the store into it (as
+    // when proposing), stealing the slot boundary from ForkChoice.onTick.
+    storageSystem
+        .chainUpdater()
+        .setTimeMillis(
+            spec.computeTimeMillisAtSlot(ONE, recentChainData.getGenesisTimeMillis())
+                .minusMinZero(BLOCK_CREATION_TOLERANCE_MS - 100));
+
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
+
+    // The fast confirmation update for the proposal slot was scheduled despite onTick not seeing a
+    // boundary; run it and confirm the once-per-slot rotation happened for the proposal slot.
+    fastConfirmationAsyncRunner.executeQueuedActions();
+
+    final FastConfirmationStore fastConfirmationStore =
+        forkChoice.getFastConfirmationStore().orElseThrow();
+    assertThat(fastConfirmationStore.currentSlotHead()).isEqualTo(genesis.getRoot());
+  }
+
+  @Test
+  void onTick_shouldNotSendForkChoiceUpdatedWhenFastConfirmationDisabled() {
+    // With FCR disabled, the slot tick does not process the head or send an fcU (master behaviour);
+    // the FCR path — which sends the fcU after on_fast_confirmation — is only taken when enabled.
+    final UInt64 nextSlot = recentChainData.getCurrentSlot().orElseThrow().plus(ONE);
+
+    forkChoice.onTick(
+        spec.computeTimeMillisAtSlot(nextSlot, recentChainData.getGenesisTimeMillis()),
+        Optional.empty());
+
+    verify(forkChoiceNotifier, never()).onForkChoiceUpdated(any(), any());
   }
 
   @Test
@@ -469,6 +575,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            FastConfirmationTracker.NOOP,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
@@ -1116,6 +1223,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            FastConfirmationTracker.NOOP,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
@@ -1160,6 +1268,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            FastConfirmationTracker.NOOP,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             LateBlockReorgPreparationHandler.NOOP,
             debugDataDumper,
@@ -1888,6 +1997,27 @@ class ForkChoiceTest {
 
   private void recreateForkChoice(
       final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
+    recreateForkChoice(false, lateBlockReorgPreparationHandler);
+  }
+
+  private void recreateForkChoice(
+      final boolean fastConfirmationEnabled,
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
+    final FastConfirmationTracker fastConfirmationTracker =
+        fastConfirmationEnabled
+            ? FastConfirmationTracker.create(
+                spec,
+                Optional.empty(),
+                FastConfirmationEventChannel.NOOP,
+                metricsSystem,
+                StubTimeProvider.withTimeInMillis(0))
+            : FastConfirmationTracker.NOOP;
+    recreateForkChoice(fastConfirmationTracker, lateBlockReorgPreparationHandler);
+  }
+
+  private void recreateForkChoice(
+      final FastConfirmationTracker fastConfirmationTracker,
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
     forkChoice =
         new ForkChoice(
             spec,
@@ -1897,6 +2027,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            fastConfirmationTracker,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             lateBlockReorgPreparationHandler,
             debugDataDumper,
