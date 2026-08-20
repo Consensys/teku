@@ -19,23 +19,16 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclu
 @SuppressWarnings("ClassInitializationDeadlock")
 public interface InclusionListImportResult {
 
-  InclusionListImportResult FAILED_PAST_INCLUSION_LIST_DEADLINE =
-      new FailedInclusionListImportResult(
-          FailureReason.PAST_INCLUSION_LIST_DEADLINE, Optional.empty());
   InclusionListImportResult FAILED_PAST_ATTESTING_DEADLINE =
       new FailedInclusionListImportResult(
           FailureReason.PAST_ATTESTATION_DEADLINE, Optional.empty());
-  InclusionListImportResult FAILED_EQUIVOCATED =
-      new FailedInclusionListImportResult(FailureReason.EQUIVOCATED, Optional.empty());
 
   static InclusionListImportResult success(final SignedInclusionList signedInclusionList) {
     return new SuccessfulInclusionListImport(signedInclusionList);
   }
 
   enum FailureReason {
-    PAST_INCLUSION_LIST_DEADLINE,
     PAST_ATTESTATION_DEADLINE,
-    EQUIVOCATED,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 

@@ -63,6 +63,9 @@ public class ForkChoiceUtilHeze extends ForkChoiceUtilGloas {
     return Optional.of(
         inclusionListStore
             .getInclusionLists(slot.minusMinZero(UInt64.ONE))
-            .orElse(Collections.emptyList()));
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(entry -> entry.signedInclusionList().getMessage())
+            .toList());
   }
 }

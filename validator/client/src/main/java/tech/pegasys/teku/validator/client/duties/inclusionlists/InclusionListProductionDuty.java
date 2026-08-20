@@ -151,7 +151,7 @@ public class InclusionListProductionDuty implements Duty {
             signedInclusionList ->
                 ProductionResult.success(
                     validatorWithIndex.validator.getPublicKey(),
-                    inclusionList.getInclusionListCommitteeRoot(),
+                    inclusionList.getDependentRoot(),
                     signedInclusionList));
   }
 

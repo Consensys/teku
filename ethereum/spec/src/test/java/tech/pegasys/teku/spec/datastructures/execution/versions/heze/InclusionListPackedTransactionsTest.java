@@ -51,6 +51,8 @@ public class InclusionListPackedTransactionsTest {
     final InclusionList inclusionList =
         inclusionListSchema.create(
             UInt64.valueOf(1), UInt64.valueOf(2), Bytes32.ZERO, transactions);
+    assertThat(inclusionListSchema.getFieldIndex("dependent_root")).isEqualTo(2);
+    assertThat(inclusionList.getDependentRoot()).isEqualTo(Bytes32.ZERO);
     assertThat(inclusionList.getTransactions()).isNotEmpty();
     assertThat(inclusionList.getTransactions().getBackingNode().get(GIndexUtil.LEFT_CHILD_G_INDEX))
         .isInstanceOf(SszPackedProgressiveByteListsNode.class);

@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class InclusionListFactory {
@@ -51,8 +50,6 @@ public class InclusionListFactory {
             .toVersionHeze()
             .orElseThrow()
             .getInclusionListSchema();
-    final InclusionListUtil inclusionListUtil =
-        spec.atSlot(slot).getInclusionListUtil().orElseThrow();
     return combinedChainDataClient
         .getBestState()
         .orElseGet(
@@ -61,8 +58,7 @@ public class InclusionListFactory {
                     new IllegalStateException("Head state is not yet available")))
         .thenCompose(
             state -> {
-              final Bytes32 committeeRoot =
-                  inclusionListUtil.getInclusionListCommitteeRoot(state, slot);
+              final Bytes32 dependentRoot = spec.getInclusionListDependentRoot(state, slot);
               final Bytes32 parentHash =
                   BeaconStateGloas.required(state).getLatestExecutionPayloadBid().getBlockHash();
               return executionLayerChannel
@@ -70,7 +66,7 @@ public class InclusionListFactory {
                   .thenApply(
                       transactions ->
                           inclusionListSchema.create(
-                              slot, validatorIndex, committeeRoot, transactions))
+                              slot, validatorIndex, dependentRoot, transactions))
                   .thenApply(Optional::ofNullable);
             });
   }

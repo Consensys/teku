@@ -1,7 +1,7 @@
 {
   "title" : "InclusionList",
   "type" : "object",
-  "required" : [ "slot", "validator_index", "inclusion_list_committee_root", "transactions" ],
+  "required" : [ "slot", "validator_index", "dependent_root", "transactions" ],
   "properties" : {
     "slot" : {
       "type" : "string",
@@ -15,7 +15,7 @@
       "example" : "1",
       "format" : "uint64"
     },
-    "inclusion_list_committee_root" : {
+    "dependent_root" : {
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
       "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
