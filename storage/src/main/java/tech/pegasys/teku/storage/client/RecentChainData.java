@@ -876,6 +876,23 @@ public abstract class RecentChainData
     blockTimelinessTracker.setBlockTimelinessAfterDataAvailability(block, dataAvailableTimeMillis);
   }
 
+  /**
+   * Discards any not-yet-confirmed timeliness recording for this block, so that if it's later
+   * successfully imported via a separate attempt, that attempt isn't stuck with a stale value left
+   * behind by this one.
+   */
+  public void invalidateUnconfirmedBlockTimeliness(final SignedBeaconBlock block) {
+    blockTimelinessTracker.invalidateUnconfirmedTimeliness(block.getRoot());
+  }
+
+  /**
+   * Confirms (finalizes) the timeliness recording for a block that has just been successfully
+   * imported, refreshing it from a possibly stale/premature earlier observation if necessary.
+   */
+  public void confirmBlockTimeliness(final SignedBeaconBlock block) {
+    blockTimelinessTracker.confirmBlockTimeliness(block, store.getTimeInMillis());
+  }
+
   @Override
   public Optional<BlockTimeliness> getBlockTimeliness(final Bytes32 root) {
     return blockTimelinessTracker.getBlockTimeliness(root);
