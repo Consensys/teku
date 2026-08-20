@@ -116,6 +116,27 @@ class BatchImporterTest {
   }
 
   @Test
+  void shouldCancelActiveBlockImport() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final SafeFuture<BlockImportResult> importResult1 = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> importResult2 = new SafeFuture<>();
+    when(batch.getBlocks()).thenReturn(List.of(block1, block2));
+    when(blockImporter.importBlock(block1)).thenReturn(importResult1);
+    when(blockImporter.importBlock(block2)).thenReturn(importResult2);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(verify(blockImporter).importBlock(block1));
+    assertThat(result.cancel(true)).isTrue();
+
+    assertThat(result).isCancelled();
+    assertThat(importResult1).isCancelled();
+    verify(blockImporter, never()).importBlock(block2);
+  }
+
+  @Test
   void shouldImportBlobSidecarsAndBlocksInOrder() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
