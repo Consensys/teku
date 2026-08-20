@@ -231,6 +231,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageGossipValidator;
@@ -473,7 +474,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // larger default size. das runner should be separate to the operation pool runner as it's a
     // bunch of tasks, not just operation pool activities
     this.dasAsyncRunner = serviceConfig.createAsyncRunner("das", 4, 20_000);
-    this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
+    if (eth2NetworkConfig.isFastConfirmationEnabled()) {
+      final AsyncRunner fastConfirmationAsyncRunner =
+          serviceConfig.createAsyncRunner("fastconfirmation", 1);
+      this.fastConfirmationTracker =
+          FastConfirmationTracker.create(
+              spec,
+              Optional.of(fastConfirmationAsyncRunner),
+              serviceConfig.getEventChannels().getPublisher(FastConfirmationEventChannel.class),
+              serviceConfig.getMetricsSystem(),
+              serviceConfig.getTimeProvider());
+    } else {
+      this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
+    }
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
