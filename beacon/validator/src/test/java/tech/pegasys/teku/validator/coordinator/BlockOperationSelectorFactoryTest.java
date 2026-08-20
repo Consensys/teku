@@ -285,6 +285,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState.getLatestBlockHash(),
             randaoReveal,
             Optional.empty(),
+            false,
             Optional.empty(),
             BlockProductionPerformance.NOOP);
 
