@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v4.validator;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BUILDER_BOOST_FACTOR_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.INCLUDE_PAYLOAD_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
@@ -63,23 +62,25 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class GetNewBlockV4 extends RestApiEndpoint {
-  private static final Logger LOG = LoggerFactory.getLogger(GetNewBlockV4.class);
+public class PostNewBlockV4 extends RestApiEndpoint {
+  private static final Logger LOG = LoggerFactory.getLogger(PostNewBlockV4.class);
 
   public static final String ROUTE = "/eth/v4/validator/blocks/{slot}";
 
   protected final ValidatorDataProvider validatorDataProvider;
 
-  public GetNewBlockV4(
+  public PostNewBlockV4(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
-  public GetNewBlockV4(
+  public PostNewBlockV4(
       final ValidatorDataProvider validatorDataProvider,
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(getEndpointMetaData(schemaDefinitionCache));
@@ -88,26 +89,38 @@ public class GetNewBlockV4 extends RestApiEndpoint {
 
   private static EndpointMetadata getEndpointMetaData(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    return EndpointMetadata.get(ROUTE)
+    return EndpointMetadata.post(ROUTE)
         .operationId("produceBlockV4")
         .summary("Produce a new block, without signature.")
         .description(
             """
-              Requests a beacon node to produce a valid block, which can then be signed by a validator.
+              Requests a beacon node to produce a valid block, which the validator then signs.
 
-              Post-Gloas, proposers submit execution payload bids rather than full execution payloads,
-              so there is no longer a concept of blinded or unblinded blocks. Builders release the
-              payload later. This endpoint is specific to the post-Gloas forks and is not backwards compatible
-              with previous forks.
+              The beacon node always builds a local payload and MAY consider a p2p bid, so a block is returned
+              even when no builder bid is available. The validator client supplies a `BuilderConfig` in the
+              request body: a list of `BuilderEntry` objects in its `builders` field, one per bid request,
+              plus a top-level `min_bid` and `builder_boost_factor` that apply to p2p bids. Each entry
+              requests a bid from its `url`, and the entry applies to the bid that request returns; an empty
+              `builder_pubkeys` list accepts any builder, and a bid MUST NOT be accepted unless signed by
+              one of a non-empty list.
 
-              When self-building (local execution payload), the response includes the full block contents
-              (beacon block, execution payload envelope, blobs, and KZG proofs) if `include_payload` is
-              set to `true`, otherwise only the `BeaconBlock` is returned.
-              When using an external builder bid, only the `BeaconBlock` is returned as the beacon node
-              does not have access to the builder's execution payload.
+              A builder bid, over the builder API or p2p, is rejected if its total payment falls below the
+              `min_bid` that applies to it. Every surviving bid is then boosted by the
+              `builder_boost_factor` that applies to it, and the
+              highest boosted bid competes with the local build in Gwei. The local build wins a tie.
 
-              The `Eth-Execution-Payload-Included` header and `execution_payload_included` response field
-              indicate which response type was returned.
+              The response carries the full block contents only when the beacon node self-built the block and
+              `include_payload` is `true`; in every other case, including any builder bid win, it carries
+              only the `BeaconBlock`.
+
+              Every block is published via `POST /eth/v2/beacon/blocks`. A self-built block carries
+              `BUILDER_INDEX_SELF_BUILD` as its `builder_index`, and the validator client publishes its
+              execution payload envelope via `POST /eth/v1/beacon/execution_payload_envelopes`. When a
+              builder bid won, the winning builder releases the envelope instead, and the validator client
+              echoes `Eth-Builder-Url` if one was returned.
+
+              This endpoint is specific to the post-Gloas forks and is not backwards compatible with previous
+              forks.
               """)
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
@@ -115,7 +128,9 @@ public class GetNewBlockV4 extends RestApiEndpoint {
         .queryParam(GRAFFITI_PARAMETER)
         .queryParamAllowsEmpty(SKIP_RANDAO_VERIFICATION_PARAMETER)
         .queryParamRequired(INCLUDE_PAYLOAD_PARAMETER)
-        .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
+        .requestBodyType(
+            ApiSchemas.BUILDER_CONFIG_SCHEMA.getJsonTypeDefinition(),
+            ApiSchemas.BUILDER_CONFIG_SCHEMA::sszDeserialize)
         .response(
             SC_OK,
             "Request successful",
@@ -131,27 +146,25 @@ public class GetNewBlockV4 extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot =
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
-    final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
-    final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
-    final boolean includePayload = request.getQueryParameter(INCLUDE_PAYLOAD_PARAMETER);
-    final Optional<UInt64> requestedBuilderBoostFactor =
-        request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
-
     if (validatorDataProvider.getMilestoneAtSlot(slot).isLessThan(SpecMilestone.GLOAS)) {
       request.respondError(SC_BAD_REQUEST, "produceBlockV4 is only supported from Gloas onwards");
       return;
     }
+    final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
+    final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
+    final boolean includePayload = request.getQueryParameter(INCLUDE_PAYLOAD_PARAMETER);
+    final BuilderConfig builderConfig = request.getRequestBody();
 
     final long requestTimeMs = System.currentTimeMillis();
     LOG.debug(
-        "produceBlockV4 requested: slot={}, include_payload={}, builder_boost_factor={}, timestampMs={}",
+        "produceBlockV4 requested: slot={}, include_payload={}, builder_config={}, timestampMs={}",
         slot,
         includePayload,
-        requestedBuilderBoostFactor,
+        builderConfig,
         requestTimeMs);
 
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
-        validatorDataProvider.produceBlock(slot, randao, graffiti, requestedBuilderBoostFactor);
+        validatorDataProvider.produceBlock(slot, randao, graffiti, includePayload, builderConfig);
 
     request.respondAsync(
         result.thenApply(
@@ -159,38 +172,30 @@ public class GetNewBlockV4 extends RestApiEndpoint {
                 maybeBlock
                     .map(
                         blockContainerAndMetaData -> {
-                          final boolean selfBuilt =
+                          final long responseTimeMs = System.currentTimeMillis();
+                          final boolean executionPayloadIncluded =
                               blockContainerAndMetaData.blockContainer()
                                   instanceof BlockContentsGloas;
-                          // include_payload=true and self-built → include full contents
-                          // include_payload=false or builder bid → return beacon block only
-                          final boolean executionPayloadIncluded = selfBuilt && includePayload;
-                          final BlockContainerAndMetaData responseMetaData =
-                              executionPayloadIncluded
-                                  ? blockContainerAndMetaData
-                                  : blockContainerAndMetaData.withBlockContents(
-                                      blockContainerAndMetaData.blockContainer().getBlock());
-                          final long responseTimeMs = System.currentTimeMillis();
                           LOG.debug(
                               "produceBlockV4 response: slot={}, execution_payload_included={}, consensus_block_value={}, execution_payload_value={}, timestampMs={}, elapsedMs={}",
                               slot,
                               executionPayloadIncluded,
-                              responseMetaData.consensusBlockValue().toDecimalString(),
-                              responseMetaData.executionPayloadValue().toDecimalString(),
+                              blockContainerAndMetaData.consensusBlockValue().toDecimalString(),
+                              blockContainerAndMetaData.executionPayloadValue().toDecimalString(),
                               responseTimeMs,
                               responseTimeMs - requestTimeMs);
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              responseMetaData.specMilestone().lowerCaseName());
+                              blockContainerAndMetaData.specMilestone().lowerCaseName());
                           request.header(
                               HEADER_CONSENSUS_BLOCK_VALUE,
-                              responseMetaData.consensusBlockValue().toDecimalString());
+                              blockContainerAndMetaData.consensusBlockValue().toDecimalString());
                           request.header(
                               HEADER_EXECUTION_PAYLOAD_VALUE,
-                              responseMetaData.executionPayloadValue().toDecimalString());
+                              blockContainerAndMetaData.executionPayloadValue().toDecimalString());
                           request.header(
                               HEADER_INCLUDE_PAYLOAD, Boolean.toString(executionPayloadIncluded));
-                          return AsyncApiResponse.respondOk(responseMetaData);
+                          return AsyncApiResponse.respondOk(blockContainerAndMetaData);
                         })
                     .orElseGet(
                         () ->

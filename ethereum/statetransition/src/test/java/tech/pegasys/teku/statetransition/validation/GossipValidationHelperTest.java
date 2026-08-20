@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +51,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
@@ -725,6 +729,78 @@ public class GossipValidationHelperTest {
                 bidValue, UInt64.ZERO, modifiedState, slot))
         .isTrue();
   }
+
+  @TestTemplate
+  void validatePayloadStatus_shouldSaveForFutureWhenAttestedPayloadIsOptimistic(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final PayloadStatusFixture fixture = createPayloadStatusFixture(true);
+
+    final InternalValidationResult result =
+        fixture
+            .helper()
+            .validatePayloadStatus(
+                spec.atSlot(fixture.attestationData().getSlot()).getAttestationUtil(),
+                fixture.attestationData(),
+                Set.of());
+
+    assertThat(result).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
+  }
+
+  @TestTemplate
+  void validatePayloadStatus_shouldAcceptWhenAttestedPayloadIsValidated(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final PayloadStatusFixture fixture = createPayloadStatusFixture(false);
+
+    final InternalValidationResult result =
+        fixture
+            .helper()
+            .validatePayloadStatus(
+                spec.atSlot(fixture.attestationData().getSlot()).getAttestationUtil(),
+                fixture.attestationData(),
+                Set.of());
+
+    assertThat(result.isAccept()).isTrue();
+  }
+
+  private PayloadStatusFixture createPayloadStatusFixture(final boolean payloadOptimistic) {
+    final UInt64 attestedBlockSlot = UInt64.valueOf(10);
+    final UInt64 attestationSlot = attestedBlockSlot.plus(ONE);
+    final Bytes32 attestedBlockRoot = dataStructureUtil.randomBytes32();
+    final AttestationData attestationData =
+        new AttestationData(
+            attestationSlot,
+            ONE,
+            attestedBlockRoot,
+            dataStructureUtil.randomCheckpoint(),
+            dataStructureUtil.randomCheckpoint());
+
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+
+    final RecentChainData recentChainDataMock = mock(RecentChainData.class);
+    final UpdatableStore storeMock = mock(UpdatableStore.class);
+    final ReadOnlyForkChoiceStrategy strategyMock = mock(ReadOnlyForkChoiceStrategy.class);
+    final ProtoNodeData protoNodeDataMock = mock(ProtoNodeData.class);
+
+    when(recentChainDataMock.getSlotForBlockRoot(attestedBlockRoot))
+        .thenReturn(Optional.of(attestedBlockSlot));
+    when(recentChainDataMock.getStore()).thenReturn(storeMock);
+    when(storeMock.getExecutionPayloadIfAvailable(attestedBlockRoot))
+        .thenReturn(Optional.of(executionPayload));
+    when(recentChainDataMock.getForkChoiceStrategy()).thenReturn(Optional.of(strategyMock));
+    when(strategyMock.getBlockData(attestedBlockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL))
+        .thenReturn(Optional.of(protoNodeDataMock));
+    when(protoNodeDataMock.isOptimistic()).thenReturn(payloadOptimistic);
+
+    final GossipValidationHelper helper =
+        new GossipValidationHelper(spec, recentChainDataMock, storageSystem.getMetricsSystem());
+    return new PayloadStatusFixture(helper, attestationData);
+  }
+
+  private record PayloadStatusFixture(
+      GossipValidationHelper helper, AttestationData attestationData) {}
 
   private void assertIsSlotCurrent(
       final UInt64 slot, final UInt64 currentTime, final boolean expectedResult) {

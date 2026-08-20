@@ -258,12 +258,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         extendedMatrix);
   }
 
-  public boolean isBidBuildingOnEmptyParent(
-      final BeaconStateGloas state, final ExecutionPayloadBid bid) {
-    return bid.getParentBlockHash().equals(state.getLatestBlockHash())
-        && !bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
-  }
-
   public boolean isBidBuildingOnFullParent(
       final BeaconStateGloas state, final ExecutionPayloadBid bid) {
     return bid.getParentBlockHash().equals(state.getLatestExecutionPayloadBid().getBlockHash());
