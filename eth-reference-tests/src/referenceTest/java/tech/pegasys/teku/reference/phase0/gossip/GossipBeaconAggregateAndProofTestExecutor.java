@@ -23,11 +23,13 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -38,13 +40,17 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -67,8 +73,18 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
 
+  private final List<String> testsToSkip;
+
+  public GossipBeaconAggregateAndProofTestExecutor(final String... testsToSkip) {
+    this.testsToSkip = List.of(testsToSkip);
+  }
+
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
+    if (testsToSkip.contains(testDefinition.getTestName())) {
+      throw new TestAbortedException(
+          "Test " + testDefinition.getDisplayName() + " has been ignored");
+    }
 
     final GossipBeaconAggregateAndProofMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", GossipBeaconAggregateAndProofMetaData.class);
@@ -134,6 +150,12 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
     // validator rejects aggregates voting for one of these roots.
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
 
+    // Block roots whose execution payload envelope failed verification/DA-check, mirroring the
+    // blockRootsWithInvalidExecutionPayload set maintained in production by
+    // DefaultExecutionPayloadManager. The attestation validator rejects full-payload votes for
+    // one of these roots.
+    final Set<Bytes32> blockRootsWithInvalidExecutionPayload = new HashSet<>();
+
     for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
       final GossipBeaconAggregateAndProofMetaData.BlockEntry blockEntry =
           blockEntryAndBlock.blockEntry();
@@ -143,7 +165,9 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
         // Don't import it — a NOOP BLS verifier would accept it despite the bad signature.
         invalidBlockRoots.put(
             block.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
-      } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
+        continue;
+      }
+      if (!block.getRoot().equals(anchorPoint.getRoot())) {
         final BlockImportResult importResult =
             safeJoin(
                 forkChoice.onBlock(
@@ -152,6 +176,48 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
             .isTrue();
       }
+      // Some fixtures pair a setup block with a SignedExecutionPayloadEnvelope (Gloas ePBS) via
+      // the `payload` key in meta.yaml. Deliver it to fork choice after the block itself so a
+      // FULL node exists for the block root, matching how a real node would observe it.
+      blockEntry
+          .getPayload()
+          .ifPresent(
+              payloadName -> {
+                final SignedExecutionPayloadEnvelope envelope =
+                    loadSsz(
+                        testDefinition,
+                        payloadName + ".ssz_snappy",
+                        SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
+                            .getSignedExecutionPayloadEnvelopeSchema());
+                blockEntry
+                    .getPayloadStatus()
+                    .ifPresent(
+                        payloadStatus ->
+                            executionLayer.addPosBlock(
+                                envelope.getMessage().getPayload().getBlockHash(),
+                                payloadStatus.toPayloadStatus()));
+                final ExecutionPayloadImportResult envelopeImportResult =
+                    safeJoin(forkChoice.onExecutionPayloadEnvelope(envelope, executionLayer));
+                if (envelopeImportResult.isSuccessful()) {
+                  assertThat(blockEntry.getPayloadStatus())
+                      .describedAs(
+                          "Expected execution payload envelope %s to fail to import since"
+                              + " payload_status is INVALIDATED",
+                          payloadName)
+                      .isNotEqualTo(Optional.of(FixturePayloadStatus.INVALIDATED));
+                } else if (envelopeImportResult.getFailureReason()
+                        == FailureReason.FAILED_VERIFICATION
+                    || envelopeImportResult.getFailureReason()
+                        == FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID) {
+                  blockRootsWithInvalidExecutionPayload.add(envelope.getBeaconBlockRoot());
+                } else {
+                  throw new AssertionError(
+                      "Unexpected execution payload envelope import failure for "
+                          + payloadName
+                          + ": "
+                          + envelopeImportResult.getFailureReason());
+                }
+              });
     }
 
     Optional<Checkpoint> customFinalizedCheckpoint = Optional.empty();
@@ -176,7 +242,7 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
             createGossipValidationHelper(
                 spec, recentChainData, metricsSystem, customFinalizedCheckpoint),
             invalidBlockRoots,
-            Set.of());
+            blockRootsWithInvalidExecutionPayload);
     final AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(
             spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(blsVerifier));
@@ -300,12 +366,28 @@ public class GossipBeaconAggregateAndProofTestExecutor implements TestExecutor {
       @JsonProperty(value = "failed", required = false, defaultValue = "false")
       private boolean failed;
 
+      @JsonProperty(value = "payload_status", required = false)
+      private FixturePayloadStatus payloadStatus;
+
+      // Gloas (ePBS) fixtures may pair a setup block with a SignedExecutionPayloadEnvelope,
+      // named here, which must be delivered to fork choice alongside the block.
+      @JsonProperty(value = "payload", required = false)
+      private String payload;
+
       public String getBlock() {
         return block;
       }
 
       public boolean isFailed() {
         return failed;
+      }
+
+      public Optional<FixturePayloadStatus> getPayloadStatus() {
+        return Optional.ofNullable(payloadStatus);
+      }
+
+      public Optional<String> getPayload() {
+        return Optional.ofNullable(payload);
       }
     }
 
