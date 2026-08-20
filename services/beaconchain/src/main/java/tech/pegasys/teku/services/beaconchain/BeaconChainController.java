@@ -132,6 +132,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -372,6 +373,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   protected volatile AggregatingAttestationPool aggregatingAttestationPool;
   protected volatile InclusionListManager inclusionListManager;
+  protected volatile InclusionListStore inclusionListStore;
   protected volatile SignedInclusionListValidator signedInclusionListValidator;
   protected volatile DepositProvider depositProvider;
   protected volatile SyncService syncService;
@@ -1670,11 +1672,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
+    final StoreConfig storeConfig = beaconConfig.storeConfig();
+    inclusionListStore = new InclusionListStore(storeConfig.getInclusionListCacheSize());
     forkChoice =
         new ForkChoice(
             spec,
             forkChoiceExecutor,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -2287,7 +2292,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initInclusionListsBlockUpdater()");
     inclusionListsBlockUpdater =
         new InclusionListsBlockUpdater(
-            forkChoiceNotifier, proposersDataManager, combinedChainDataClient, spec);
+            forkChoiceNotifier,
+            proposersDataManager,
+            inclusionListStore,
+            combinedChainDataClient,
+            spec);
   }
 
   public void initRestAPI() {

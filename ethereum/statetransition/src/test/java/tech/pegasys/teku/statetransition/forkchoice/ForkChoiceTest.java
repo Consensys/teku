@@ -87,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -130,6 +131,7 @@ import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
@@ -157,6 +159,8 @@ class ForkChoiceTest {
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
   private final DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
+  private final InclusionListStore inclusionListStore =
+      new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
@@ -191,6 +195,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -468,6 +473,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1115,6 +1121,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1159,6 +1166,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1896,6 +1904,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

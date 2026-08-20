@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -826,7 +827,7 @@ public class ForkChoiceUtil {
   }
 
   public Optional<List<InclusionList>> getInclusionListsForPayloadValidation(
-      final ReadOnlyStore store, final UInt64 slot) {
+      final InclusionListStore inclusionListStore, final UInt64 slot) {
     return Optional.empty();
   }
 

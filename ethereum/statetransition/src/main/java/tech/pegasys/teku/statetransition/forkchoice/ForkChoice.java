@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionLi
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -127,6 +128,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
+  private final InclusionListStore inclusionListStore;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
@@ -147,6 +149,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
+      final InclusionListStore inclusionListStore,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -160,6 +163,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
+    this.inclusionListStore = inclusionListStore;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
     this.attestationStateSelector =
@@ -186,6 +190,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
+      final InclusionListStore inclusionListStore,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final MetricsSystem metricsSystem) {
@@ -193,6 +198,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         spec,
         forkChoiceExecutor,
         recentChainData,
+        inclusionListStore,
         forkChoiceNotifier,
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
@@ -374,29 +380,26 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
     final UInt64 validatorIndex = inclusionList.getValidatorIndex();
 
-    if (store.isInclusionListEquivocator(slotAndInclusionListCommitteeRoot, validatorIndex)) {
+    if (inclusionListStore.isInclusionListEquivocator(
+        slotAndInclusionListCommitteeRoot, validatorIndex)) {
       return SafeFuture.completedFuture(InclusionListImportResult.FAILED_EQUIVOCATED);
     } else {
       final Optional<List<InclusionList>> maybeInclusionLists =
-          store.getInclusionLists(slotAndInclusionListCommitteeRoot);
+          inclusionListStore.getInclusionLists(slotAndInclusionListCommitteeRoot);
       final List<InclusionList> inclusionLists =
           maybeInclusionLists.orElse(Collections.emptyList()).stream()
               .filter(il -> il.getValidatorIndex().equals(validatorIndex))
               .toList();
 
       if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
-        final StoreTransaction transaction = recentChainData.startStoreTransaction();
-        transaction.putEquivocatedInclusionList(inclusionList);
-        transaction.commit().join();
+        inclusionListStore.putEquivocatedInclusionList(inclusionList);
         return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
       }
 
       final boolean isBeforeInclusionListDue =
           isBeforeInclusionListDue(spec, currentSlot, signedInclusionList, timeIntoSlotMillis);
       if (isBeforeInclusionListDue) {
-        final StoreTransaction transaction = recentChainData.startStoreTransaction();
-        transaction.putInclusionList(inclusionList);
-        transaction.commit().join();
+        inclusionListStore.putInclusionList(inclusionList);
         return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
       } else {
         return SafeFuture.completedFuture(
@@ -610,9 +613,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceUtil.createAvailabilityCheckerOnBlock(block);
 
     availabilityChecker.initiateDataAvailabilityCheck();
-    final UpdatableStore store = recentChainData.getStore();
     final Optional<List<InclusionList>> inclusionLists =
-        forkChoiceUtil.getInclusionListsForPayloadValidation(store, block.getSlot());
+        forkChoiceUtil.getInclusionListsForPayloadValidation(inclusionListStore, block.getSlot());
     final BeaconState postState;
     try {
       postState =
@@ -703,7 +705,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     availabilityChecker.initiateDataAvailabilityCheck();
     final Optional<List<InclusionList>> inclusionLists =
         forkChoiceUtil.getInclusionListsForPayloadValidation(
-            recentChainData.getStore(), signedEnvelope.getSlot());
+            inclusionListStore, signedEnvelope.getSlot());
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         createPayloadExecutor(signedEnvelope, executionLayer, inclusionLists);
 

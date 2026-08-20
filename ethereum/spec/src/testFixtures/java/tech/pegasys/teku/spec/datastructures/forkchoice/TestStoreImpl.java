@@ -36,8 +36,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedEx
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
-import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -323,26 +321,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public Optional<List<InclusionList>> getInclusionLists(
-      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot) {
-    return Optional.empty();
-  }
-
-  @Override
-  public Optional<List<InclusionList>> getInclusionLists(final UInt64 slot) {
-    return Optional.empty();
-  }
-
-  @Override
   public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
     return Optional.empty();
-  }
-
-  @Override
-  public boolean isInclusionListEquivocator(
-      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
-      final UInt64 validatorIndex) {
-    return false;
   }
 
   @Override
@@ -381,17 +361,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void putInclusionList(final InclusionList inclusionList) {
-    // NO-OP
-  }
-
-  @Override
   public void putUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
-    // NO-OP
-  }
-
-  @Override
-  public void putEquivocatedInclusionList(final InclusionList equivocatedInclusionList) {
     // NO-OP
   }
 

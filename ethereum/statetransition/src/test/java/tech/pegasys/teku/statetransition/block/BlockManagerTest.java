@@ -81,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -110,6 +111,7 @@ import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -141,6 +143,8 @@ public class BlockManagerTest {
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private MergeTransitionBlockValidator transitionBlockValidator;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
+  private final InclusionListStore inclusionListStore =
+      new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
   private ForkChoice forkChoice;
 
   private ExecutionLayerChannelStub executionLayer;
@@ -187,6 +191,7 @@ public class BlockManagerTest {
             spec,
             new InlineEventThread(),
             localRecentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             transitionBlockValidator,
             metricsSystem);
