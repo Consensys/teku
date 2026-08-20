@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -74,8 +75,18 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class GossipBeaconAttestationTestExecutor implements TestExecutor {
 
+  private final List<String> testsToSkip;
+
+  public GossipBeaconAttestationTestExecutor(final String... testsToSkip) {
+    this.testsToSkip = List.of(testsToSkip);
+  }
+
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
+    if (testsToSkip.contains(testDefinition.getTestName())) {
+      throw new TestAbortedException(
+          "Test " + testDefinition.getDisplayName() + " has been ignored");
+    }
 
     final GossipBeaconAttestationMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", GossipBeaconAttestationMetaData.class);

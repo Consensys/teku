@@ -24,8 +24,14 @@ public class GossipTests {
           .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTestExecutor())
           .put(
               "networking/gossip_beacon_aggregate_and_proof",
-              new GossipBeaconAggregateAndProofTestExecutor())
-          .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
+              new GossipBeaconAggregateAndProofTestExecutor(
+                  // TODO: https://github.com/Consensys/teku/issues/11153
+                  "gossip_beacon_aggregate_and_proof__ignore_payload_pending_el_validation"))
+          .put(
+              "networking/gossip_beacon_attestation",
+              new GossipBeaconAttestationTestExecutor(
+                  // TODO: https://github.com/Consensys/teku/issues/11153
+                  "gossip_beacon_attestation__ignore_payload_pending_el_validation"))
           .put("networking/gossip_blob_sidecar", new GossipBlobSidecarTestExecutor())
           // TODO: https://github.com/Consensys/teku/issues/10578
           .put("networking/gossip_data_column_sidecar", TestExecutor.IGNORE_TESTS)
