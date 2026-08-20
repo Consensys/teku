@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
@@ -242,6 +243,25 @@ public class FastConfirmationTracker {
    */
   private Duration updateTimeout(final UInt64 slot) {
     return Duration.ofMillis(spec.getSlotDurationMillis(slot) / 2L);
+  }
+
+  /**
+   * Runs the {@code on_fast_confirmation} handler for the given slot head immediately, bypassing
+   * both the async runner and the once-per-slot guard that {@link #onSlot} applies.
+   *
+   * <p>Only for the fork choice reference test runner, which must reproduce the call sequence the
+   * vectors were generated with: the spec test harness invokes {@code on_fast_confirmation}
+   * explicitly, and a few vectors call it twice within a slot or skip a slot entirely, so the
+   * production once-per-slot schedule would produce a different number of rotations. Production
+   * scheduling (and its once-per-slot guarantee) goes through {@link #onSlot}.
+   */
+  @VisibleForTesting
+  public SafeFuture<Void> onFastConfirmation(final UInt64 slot, final Bytes32 headRoot) {
+    final FastConfirmationStore currentStore = fastConfirmationStore.get();
+    if (currentStore == null) {
+      throw new IllegalStateException("Fast confirmation store is not initialized");
+    }
+    return runFastConfirmation(new FastConfirmationInput(slot, headRoot), currentStore);
   }
 
   private SafeFuture<Void> processFastConfirmationInput(final FastConfirmationInput input) {
