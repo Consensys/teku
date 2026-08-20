@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
-import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -427,21 +426,6 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
 
       public boolean shouldRejectDescendants() {
         return payloadStatus == null || payloadStatus == FixturePayloadStatus.NOT_VALIDATED;
-      }
-    }
-
-    private enum FixturePayloadStatus {
-      VALID,
-      NOT_VALIDATED,
-      INVALIDATED;
-
-      public PayloadStatus toPayloadStatus() {
-        return switch (this) {
-          case VALID -> PayloadStatus.VALID;
-          case NOT_VALIDATED -> PayloadStatus.ACCEPTED;
-          case INVALIDATED ->
-              PayloadStatus.invalid(Optional.empty(), Optional.of("Fixture execution invalidated"));
-        };
       }
     }
 
