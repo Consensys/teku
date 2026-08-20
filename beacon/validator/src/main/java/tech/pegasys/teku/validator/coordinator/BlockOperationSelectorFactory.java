@@ -618,20 +618,10 @@ public class BlockOperationSelectorFactory {
             () -> builderPayloadOrFallbackData.getFallbackDataRequired().getExecutionPayload());
   }
 
-  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-    return executionLayerBlockProductionManager.getCachedPayloadResult(slot);
-  }
-
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
     return block -> {
       final UInt64 slot = block.getSlot();
-      final ExecutionPayloadResult executionPayloadResult =
-          executionLayerBlockProductionManager
-              .getCachedPayloadResult(slot)
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+      final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResultRequired(slot);
 
       if (executionPayloadResult.isFromLocalFlow()) {
         // we performed a non-blinded flow, so the bundle must be in
@@ -652,6 +642,15 @@ public class BlockOperationSelectorFactory {
             .thenApply(Optional::orElseThrow);
       }
     };
+  }
+
+  public ExecutionPayloadResult getCachedPayloadResultRequired(final UInt64 slot) {
+    return executionLayerBlockProductionManager
+        .getCachedPayloadResult(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "ExecutionPayloadResult hasn't been cached for slot " + slot));
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
