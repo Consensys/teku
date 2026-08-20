@@ -185,7 +185,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                           Bytes20.ZERO,
                           latestGasLimit,
                           UInt64.ZERO,
-                          UInt64.ZERO,
+                          ,
                           UInt64.ZERO,
                           UInt64.ZERO,
                           schemaDefinitions.getBlobKzgCommitmentsSchema().of(),

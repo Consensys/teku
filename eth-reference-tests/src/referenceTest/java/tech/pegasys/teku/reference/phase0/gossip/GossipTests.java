@@ -44,5 +44,16 @@ public class GossipTests {
               new GossipSyncCommitteeMessageTestExecutor())
           .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTestExecutor())
           .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTestExecutor())
+          .put(
+              "networking/gossip_payload_attestation_message",
+              new GossipPayloadAttestationMessageTestExecutor())
+          .put(
+              "networking/gossip_proposer_preferences", new GossipProposerPreferencesTestExecutor())
+          .put(
+              "networking/gossip_execution_payload_envelope",
+              new GossipExecutionPayloadEnvelopeTestExecutor())
+          .put(
+              "networking/gossip_execution_payload_bid",
+              new GossipExecutionPayloadBidTestExecutor())
           .build();
 }

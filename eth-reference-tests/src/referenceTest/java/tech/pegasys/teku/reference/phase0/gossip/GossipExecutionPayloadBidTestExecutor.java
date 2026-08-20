@@ -1,0 +1,450 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.reference.phase0.gossip;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
+import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
+import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
+import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.reference.BlsSetting;
+import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
+import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+
+public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
+
+  private static final int MIN_BID_INCREMENT_PERCENTAGE = 1;
+
+  @Override
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+    final GossipExecutionPayloadBidMetaData metaData =
+        loadYaml(testDefinition, "meta.yaml", GossipExecutionPayloadBidMetaData.class);
+    final boolean signatureVerificationDisabled = metaData.getBlsSetting() == BlsSetting.IGNORED;
+    final Spec spec = testDefinition.getSpec(!signatureVerificationDisabled);
+    final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
+
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(state.getSlot()).getSchemaDefinitions());
+    final SignedProposerPreferencesSchema proposerPreferencesSchema =
+        schemaDefinitions.getSignedProposerPreferencesSchema();
+    final SignedExecutionPayloadEnvelopeSchema envelopeSchema =
+        schemaDefinitions.getSignedExecutionPayloadEnvelopeSchema();
+    final SignedExecutionPayloadBidSchema signedBidSchema =
+        schemaDefinitions.getSignedExecutionPayloadBidSchema();
+
+    final List<BlockEntryAndBlock> blocks =
+        metaData.getBlocks().stream()
+            .map(
+                blockEntry ->
+                    new BlockEntryAndBlock(
+                        blockEntry,
+                        loadSsz(
+                            testDefinition,
+                            blockEntry.getBlock() + ".ssz_snappy",
+                            spec::deserializeSignedBeaconBlock)))
+            .toList();
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+
+    final StorageSystem storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
+            .storageMode(StateStorageMode.ARCHIVE)
+            .build();
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+
+    final AnchorPoint anchorPoint =
+        createAnchorFromStateAndMatchingBlock(
+            spec,
+            state,
+            blocks.stream()
+                .filter(b -> !b.blockEntry().isFailed())
+                .map(BlockEntryAndBlock::block)
+                .toList());
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+
+    final InlineEventThread eventThread = new InlineEventThread();
+    final MergeTransitionBlockValidator transitionBlockValidator =
+        new MergeTransitionBlockValidator(spec, recentChainData);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            new NoopForkChoiceNotifier(),
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            true,
+            LateBlockReorgPreparationHandler.NOOP,
+            DebugDataDumper.NOOP,
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));
+    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
+
+    final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
+
+    for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
+      final GossipExecutionPayloadBidMetaData.BlockEntry blockEntry =
+          blockEntryAndBlock.blockEntry();
+      final SignedBeaconBlock block = blockEntryAndBlock.block();
+      if (block.getRoot().equals(anchorPoint.getRoot())) {
+        continue;
+      }
+      // Advance the fork choice clock enough to import this block's slot. Some tests validate
+      // messages before the last block's slot has started (the disparity tests), so tick to the
+      // slot start here rather than to current_time_ms. The gossip validation time is controlled
+      // separately via the per-message helper below.
+      final UInt64 blockSlotStartMs =
+          spec.computeTimeMillisAtSlot(block.getSlot(), recentChainData.getGenesisTimeMillis());
+      forkChoice.onTick(blockSlotStartMs, Optional.empty());
+      final BlockImportResult importResult =
+          safeJoin(
+              forkChoice.onBlock(
+                  block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+      if (blockEntry.isFailed()) {
+        invalidBlockRoots.put(
+            block.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
+      } else {
+        assertThat(importResult.isSuccessful())
+            .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
+            .isTrue();
+      }
+      // Note: blockEntry.getPayload() only names the payload this block's bid commits to; it does
+      // not mean the payload has been revealed. Reveal happens solely via an explicit
+      // execution_payload_envelope message below -- fixtures that expect the bid's parent payload
+      // to be unknown list the payload name but ship no envelope file for it.
+    }
+
+    // The finalized checkpoint from meta.yaml is deliberately not committed to the store. None of
+    // the execution payload bid gossip rules consult finalization; pyspec only needs it so that
+    // get_head works. Committing it here would prune every pre-finalization block, which breaks
+    // the dependent-root lookup the proposer preferences prerequisite messages rely on, and can
+    // leave the store with a justified root it no longer holds.
+
+    // Use a mutable time reference so the gossip validators see each message's current_time_ms even
+    // when that time is earlier than the store's time (which only moves forward). This is necessary
+    // for the disparity-boundary tests, where blocks must be imported after their slot starts but
+    // messages are validated at a time before that slot starts.
+    final UInt64[] validationTimeMs = {UInt64.valueOf(metaData.getCurrentTimeMs())};
+    final GossipValidationHelper gossipValidationHelper =
+        new GossipValidationHelper(spec, recentChainData, metricsSystem) {
+          @Override
+          public UInt64 getCurrentTimeMillis() {
+            return validationTimeMs[0];
+          }
+        };
+
+    final BlockGossipValidator blockGossipValidator =
+        new BlockGossipValidator(
+            spec,
+            gossipValidationHelper,
+            new ReceivedBlockEventsChannel() {
+              @Override
+              public void onBlockValidated(final SignedBeaconBlock block) {}
+
+              @Override
+              public void onBlockImported(
+                  final SignedBeaconBlock block, final boolean executionOptimistic) {}
+            });
+
+    // acceptedPreferences tracks proposer preferences that have been accepted by the validator,
+    // so the bid validator can look them up to check bid compatibility.
+    final Map<UInt64, ProposerPreferences> acceptedPreferences = new ConcurrentHashMap<>();
+    final ProposerPreferencesManager proposerPreferencesManager =
+        new ProposerPreferencesManager() {
+          @Override
+          public SafeFuture<InternalValidationResult> addLocal(
+              final SignedProposerPreferences signedProposerPreferences) {
+            return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+          }
+
+          @Override
+          public SafeFuture<InternalValidationResult> addRemote(
+              final SignedProposerPreferences signedProposerPreferences) {
+            return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+          }
+
+          @Override
+          public Optional<ProposerPreferences> getProposerPreferences(final UInt64 slot) {
+            return Optional.ofNullable(acceptedPreferences.get(slot));
+          }
+
+          @Override
+          public void subscribeOperationAdded(
+              final OperationAddedSubscriber<SignedProposerPreferences> subscriber) {}
+        };
+
+    final ProposerPreferencesGossipValidator preferencesValidator =
+        new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, recentChainData);
+    final ExecutionPayloadGossipValidator envelopeValidator =
+        new ExecutionPayloadGossipValidator(
+            spec, gossipValidationHelper, blockGossipValidator, invalidBlockRoots);
+    final ExecutionPayloadBidGossipValidator bidValidator =
+        new ExecutionPayloadBidGossipValidator(
+            spec, gossipValidationHelper, proposerPreferencesManager, MIN_BID_INCREMENT_PERCENTAGE);
+
+    for (final GossipExecutionPayloadBidMetaData.Message message : metaData.getMessages()) {
+      validationTimeMs[0] = UInt64.valueOf(message.getCurrentTimeMs());
+      forkChoice.onTick(UInt64.valueOf(message.getCurrentTimeMs()), Optional.empty());
+
+      final String messageName = message.getMessage();
+      final InternalValidationResult result;
+      if (messageName.startsWith("proposer_preferences_")) {
+        final SignedProposerPreferences signedPreferences =
+            loadSsz(
+                testDefinition,
+                messageName + ".ssz_snappy",
+                proposerPreferencesSchema::sszDeserialize);
+        result = safeJoin(preferencesValidator.validate(signedPreferences));
+        if (result.isAccept()) {
+          acceptedPreferences.put(
+              signedPreferences.getMessage().getProposalSlot(), signedPreferences.getMessage());
+        }
+      } else if (messageName.startsWith("execution_payload_envelope_")) {
+        final SignedExecutionPayloadEnvelope signedEnvelope =
+            loadSsz(testDefinition, messageName + ".ssz_snappy", envelopeSchema::sszDeserialize);
+        result = safeJoin(envelopeValidator.validate(signedEnvelope));
+        if (result.isAccept()) {
+          final ExecutionPayloadImportResult envelopeImportResult =
+              safeJoin(forkChoice.onExecutionPayloadEnvelope(signedEnvelope, executionLayer));
+          assertThat(envelopeImportResult.isSuccessful())
+              .describedAs(
+                  "Expected accepted envelope %s to be revealed successfully but got %s (%s)",
+                  messageName,
+                  envelopeImportResult.getFailureReason(),
+                  envelopeImportResult
+                      .getFailureCause()
+                      .map(Throwable::toString)
+                      .orElse("no cause"))
+              .isTrue();
+        }
+      } else if (messageName.startsWith("execution_payload_bid_")) {
+        final SignedExecutionPayloadBid signedBid =
+            loadSsz(testDefinition, messageName + ".ssz_snappy", signedBidSchema::sszDeserialize);
+        result = safeJoin(bidValidator.validate(signedBid));
+      } else {
+        throw new AssertionError("Unknown message type for: " + messageName);
+      }
+
+      switch (message.getExpected()) {
+        case "valid" ->
+            assertThat(result.code())
+                .describedAs(
+                    "Expected message %s to be valid but got %s: %s",
+                    messageName, result.code(), result.getDescription().orElse(""))
+                .isEqualTo(ValidationResultCode.ACCEPT);
+        case "reject" ->
+            assertThat(result.code())
+                .describedAs(
+                    "Expected message %s to be rejected but got %s: %s",
+                    messageName, result.code(), result.getDescription().orElse(""))
+                .isEqualTo(ValidationResultCode.REJECT);
+        case "ignore" ->
+            assertThat(result.code())
+                .describedAs(
+                    "Expected message %s to be ignored but got %s: %s",
+                    messageName, result.code(), result.getDescription().orElse(""))
+                .isIn(ValidationResultCode.IGNORE, ValidationResultCode.SAVE_FOR_FUTURE);
+        default ->
+            throw new AssertionError(
+                "Unexpected expected value: "
+                    + message.getExpected()
+                    + " for message: "
+                    + messageName);
+      }
+    }
+  }
+
+  @SuppressWarnings("unused")
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private static class GossipExecutionPayloadBidMetaData {
+
+    @JsonProperty(value = "blocks", required = true)
+    private List<BlockEntry> blocks;
+
+    @JsonProperty(value = "messages", required = true)
+    private List<Message> messages;
+
+    @JsonProperty(value = "current_time_ms", required = true)
+    private long currentTimeMs;
+
+    @JsonProperty(value = "bls_setting", defaultValue = "0")
+    private int blsSetting;
+
+    @JsonProperty(value = "finalized_checkpoint")
+    private FinalizedCheckpoint finalizedCheckpoint;
+
+    public List<BlockEntry> getBlocks() {
+      return blocks;
+    }
+
+    public List<Message> getMessages() {
+      return messages;
+    }
+
+    public long getCurrentTimeMs() {
+      return currentTimeMs;
+    }
+
+    public BlsSetting getBlsSetting() {
+      return BlsSetting.forCode(blsSetting);
+    }
+
+    public FinalizedCheckpoint getFinalizedCheckpoint() {
+      return finalizedCheckpoint;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class BlockEntry {
+
+      @JsonProperty(value = "block", required = true)
+      private String block;
+
+      @JsonProperty(value = "failed", defaultValue = "false")
+      private boolean failed;
+
+      @JsonProperty(value = "payload")
+      private String payload;
+
+      public String getBlock() {
+        return block;
+      }
+
+      public boolean isFailed() {
+        return failed;
+      }
+
+      public String getPayload() {
+        return payload;
+      }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class Message {
+
+      @JsonProperty(value = "current_time_ms", required = true)
+      private long currentTimeMs;
+
+      @JsonProperty(value = "message", required = true)
+      private String message;
+
+      @JsonProperty(value = "expected", required = true)
+      private String expected;
+
+      @JsonProperty(value = "reason")
+      private String reason;
+
+      public long getCurrentTimeMs() {
+        return currentTimeMs;
+      }
+
+      public String getMessage() {
+        return message;
+      }
+
+      public String getExpected() {
+        return expected;
+      }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class FinalizedCheckpoint {
+
+      @JsonProperty(value = "epoch", required = true)
+      private long epoch;
+
+      @JsonProperty(value = "root")
+      private String root;
+
+      @JsonProperty(value = "block")
+      private String block;
+
+      public String getBlock() {
+        return block;
+      }
+
+      public Checkpoint toCheckpoint(final TestDefinition testDefinition, final Spec spec) {
+        final Bytes32 checkpointRoot;
+        if (root != null) {
+          checkpointRoot = Bytes32.fromHexString(root);
+        } else if (block != null) {
+          final SignedBeaconBlock signedBlock =
+              loadSsz(testDefinition, block + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
+          checkpointRoot = signedBlock.getRoot();
+        } else {
+          throw new IllegalStateException(
+              "finalized_checkpoint must specify either 'root' or 'block'");
+        }
+        return new Checkpoint(UInt64.valueOf(epoch), checkpointRoot);
+      }
+    }
+  }
+
+  private record BlockEntryAndBlock(
+      GossipExecutionPayloadBidMetaData.BlockEntry blockEntry, SignedBeaconBlock block) {}
+}

@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -74,11 +75,24 @@ public class GossipValidationHelper {
   }
 
   public boolean isSlotFromFuture(final UInt64 slot) {
-    final ReadOnlyStore store = recentChainData.getStore();
-    final UInt64 maxTime = store.getTimeInMillis().plus(maxOffsetTimeInMillis);
+    final UInt64 maxTime = getCurrentTimeMillis().plus(maxOffsetTimeInMillis);
     final UInt64 maxCurrSlot =
-        spec.getCurrentSlotFromTimeMillis(maxTime, store.getGenesisTimeMillis());
+        spec.getCurrentSlotFromTimeMillis(maxTime, recentChainData.getGenesisTimeMillis());
     return slot.isGreaterThan(maxCurrSlot);
+  }
+
+  /**
+   * Returns true when {@code slot} has already started, allowing for MAXIMUM_GOSSIP_CLOCK_DISPARITY
+   * -- i.e. spec {@code is_past_slot}.
+   *
+   * <p>Unlike {@link #isSlotFromFuture(UInt64)} this compares against the slot start time with
+   * millisecond precision rather than at slot granularity, so it can distinguish a message that
+   * arrives just inside the disparity allowance from one that arrives just outside it.
+   */
+  public boolean hasSlotStarted(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    return getCurrentTimeMillis().isGreaterThan(slotStartTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
   public boolean isSlotCurrent(final UInt64 slot) {
@@ -269,17 +283,37 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
-  public boolean isSlotInCurrentEpochWithMinSeedLookaheadTolerance(final UInt64 slot) {
-    return recentChainData
-        .getCurrentEpoch()
-        .map(
-            currentEpoch -> {
-              final UInt64 slotEpoch = spec.computeEpochAtSlot(slot);
-              return slotEpoch.isGreaterThanOrEqualTo(currentEpoch)
-                  && slotEpoch.isLessThanOrEqualTo(
-                      currentEpoch.plus(spec.atSlot(slot).getConfig().getMinSeedLookahead()));
-            })
-        .orElse(false);
+  /**
+   * Returns true when the block with the given {@code root} is a possible dependent block for the
+   * epoch starting at {@code epochStartSlot} -- i.e. spec {@code is_valid_dependent_root}. That
+   * holds when, on some branch, the block is or could become the latest block prior to the start of
+   * the epoch.
+   */
+  public boolean isPossibleDependentRoot(final Bytes32 root, final UInt64 epochStartSlot) {
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+    final UInt64 lastSlotBeforeEpoch = epochStartSlot.minusMinZero(ONE);
+    // The root already is the latest block before the epoch on any branch where it has a child at
+    // or after epochStartSlot. Rather than scanning every block in the store for such a child, walk
+    // back from each chain head to the last slot before the epoch: that ancestor is the root
+    // exactly when the root's next block on that branch sits at or after epochStartSlot. Heads
+    // equal to the root are skipped, as reaching the root without traversing a child proves
+    // nothing.
+    final boolean hasChildAtOrAfterEpochStart =
+        forkChoiceStrategy.getChainHeads(true).stream()
+            .map(ProtoNodeData::getRoot)
+            .filter(headRoot -> !headRoot.equals(root))
+            .anyMatch(
+                headRoot ->
+                    forkChoiceStrategy
+                        .getAncestor(headRoot, lastSlotBeforeEpoch)
+                        .filter(root::equals)
+                        .isPresent());
+    if (hasChildAtOrAfterEpochStart) {
+      return true;
+    }
+    // Otherwise the root could still become the latest block before the epoch if it is the head,
+    // because the next block to extend it would be at or after epochStartSlot.
+    return recentChainData.getBestBlockRoot().filter(root::equals).isPresent();
   }
 
   public boolean builderHasEnoughBalanceForBid(
