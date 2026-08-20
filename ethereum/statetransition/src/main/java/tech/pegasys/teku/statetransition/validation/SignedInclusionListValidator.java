@@ -98,15 +98,17 @@ public class SignedInclusionListValidator {
               }
               final BeaconState state = maybeState.get();
               /*
-               * [IGNORE] The inclusion_list_committee for slot message.slot on the current branch corresponds to message.inclusion_list_committee_root, as determined by hash_tree_root(inclusion_list_committee) == message.inclusion_list_committee_root.
+               * [IGNORE] The dependent root for the inclusion-list epoch on the current branch
+               * corresponds to message.dependent_root.
                */
-              if (!inclusionListUtil.hasCorrectCommitteeRoot(
-                  state, slot, inclusionList.getInclusionListCommitteeRoot())) {
+              if (!spec.getInclusionListDependentRoot(state, slot)
+                  .equals(inclusionList.getDependentRoot())) {
                 return SafeFuture.completedFuture(
-                    InternalValidationResult.ignore("Inclusion List committee mismatch."));
+                    InternalValidationResult.ignore("Inclusion List dependent root mismatch."));
               }
               /*
-               * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
+               * [REJECT] The validator index message.validator_index is within the inclusion list
+               * committee corresponding to message.dependent_root.
                */
               if (!inclusionListUtil.validatorIndexWithinCommittee(
                   state, slot, inclusionList.getValidatorIndex())) {
@@ -116,7 +118,7 @@ public class SignedInclusionListValidator {
               }
 
               /*
-               * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
+               * [REJECT] The signature is valid with respect to the validator's public key.
                */
               return inclusionListUtil
                   .isValidInclusionListSignature(

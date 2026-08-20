@@ -84,7 +84,7 @@ class SignedInclusionListValidatorTest {
             .create(
                 slot,
                 UInt64.valueOf(validatorIndex),
-                inclusionListUtil.getInclusionListCommitteeRoot(state, slot),
+                spec.getInclusionListDependentRoot(state, slot),
                 List.of());
     final ForkInfo forkInfo =
         new ForkInfo(spec.fork(spec.computeEpochAtSlot(slot)), state.getGenesisValidatorsRoot());

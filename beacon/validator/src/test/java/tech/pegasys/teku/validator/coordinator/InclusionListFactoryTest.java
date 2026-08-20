@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,8 +46,9 @@ class InclusionListFactoryTest {
       new InclusionListFactory(executionLayerChannel, combinedChainDataClient, spec);
 
   @Test
-  void getInclusionListShouldUseLatestExecutionPayloadBidBlockHash() {
+  void createInclusionListShouldUseLatestExecutionPayloadBidAndDependentRoot() {
     final UInt64 slot = UInt64.valueOf(12);
+    final UInt64 validatorIndex = UInt64.valueOf(3);
     final Bytes32 blockHash = dataStructureUtil.randomBytes32();
     final ExecutionPayloadBid latestExecutionPayloadBid =
         dataStructureUtil.randomExecutionPayloadBid(
@@ -65,8 +67,15 @@ class InclusionListFactoryTest {
     when(executionLayerChannel.engineGetInclusionList(blockHash, slot))
         .thenReturn(SafeFuture.completedFuture(transactions));
 
-    assertThatSafeFuture(inclusionListFactory.getInclusionList(slot))
-        .isCompletedWithValue(Optional.of(transactions));
+    final InclusionList expectedInclusionList =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionHeze()
+            .orElseThrow()
+            .getInclusionListSchema()
+            .create(slot, validatorIndex, spec.getPreviousDutyDependentRoot(state), transactions);
+    assertThatSafeFuture(inclusionListFactory.createInclusionList(slot, validatorIndex))
+        .isCompletedWithValue(Optional.of(expectedInclusionList));
 
     verify(executionLayerChannel).engineGetInclusionList(blockHash, slot);
   }

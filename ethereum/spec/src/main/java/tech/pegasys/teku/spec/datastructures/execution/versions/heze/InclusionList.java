@@ -30,13 +30,13 @@ public class InclusionList
       final InclusionListSchema schema,
       final UInt64 slot,
       final UInt64 validatorIndex,
-      final Bytes32 inclusionListCommitteeRoot,
+      final Bytes32 dependentRoot,
       final List<Transaction> transactions) {
     super(
         schema,
         SszUInt64.of(slot),
         SszUInt64.of(validatorIndex),
-        SszBytes32.of(inclusionListCommitteeRoot),
+        SszBytes32.of(dependentRoot),
         schema.getTransactionsSchema().createFromElements(transactions));
   }
 
@@ -52,7 +52,7 @@ public class InclusionList
     return getField1().get();
   }
 
-  public Bytes32 getInclusionListCommitteeRoot() {
+  public Bytes32 getDependentRoot() {
     return getField2().get();
   }
 

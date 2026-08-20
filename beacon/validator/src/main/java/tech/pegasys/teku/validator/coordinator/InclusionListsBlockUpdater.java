@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListEntry;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -90,10 +91,13 @@ public class InclusionListsBlockUpdater {
   private SafeFuture<Optional<Bytes8>> updateBlockWithInclusionLists(
       final UInt64 slot, final BeaconState state) {
     LOG.info("Updating block with inclusion lists from slot {}", slot);
-    final Optional<List<InclusionList>> maybeInclusionLists =
+    final Optional<List<InclusionListEntry>> maybeInclusionLists =
         inclusionListStore.getInclusionLists(slot);
     if (maybeInclusionLists.isPresent()) {
-      final List<InclusionList> inclusionLists = maybeInclusionLists.get();
+      final List<InclusionList> inclusionLists =
+          maybeInclusionLists.get().stream()
+              .map(entry -> entry.signedInclusionList().getMessage())
+              .toList();
       final List<Bytes> transactions = getInclusionListTransactions(inclusionLists);
       if (transactions.isEmpty()) {
         LOG.debug("No inclusion list transactions found for slot {}", slot);
