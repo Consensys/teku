@@ -750,7 +750,7 @@ tasks.register('expandRefTests') {
 	dependsOn expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal, expandRefTestsBls, expandRefTestsSlashingProtectionInterchange, expandRefTestsForkChoiceCompliance
 }
 tasks.register('cleanRefTests') {
-	dependsOn cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange
+	dependsOn cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange, cleanRefTestsForkChoiceCompliance
 }
 
 tasks.register('deploy') {}
