@@ -22,6 +22,7 @@ public record BlockContainerAndMetaData(
     SpecMilestone specMilestone,
     UInt256 executionPayloadValue,
     UInt256 consensusBlockValue) {
+
   public BlockContainerAndMetaData withBlockContents(final BlockContainer blockContents) {
     return new BlockContainerAndMetaData(
         blockContents, specMilestone, executionPayloadValue, consensusBlockValue);

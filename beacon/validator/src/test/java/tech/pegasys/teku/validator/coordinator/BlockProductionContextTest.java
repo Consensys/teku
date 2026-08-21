@@ -141,6 +141,7 @@ class BlockProductionContextTest {
         parentChainHead,
         randaoReveal,
         graffiti,
+        false,
         builderConfig,
         BlockProductionPerformance.NOOP);
   }
