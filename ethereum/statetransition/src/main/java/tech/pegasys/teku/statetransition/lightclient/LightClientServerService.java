@@ -81,7 +81,7 @@ public class LightClientServerService
                     .getRecentChainData()
                     .getBlockRootInEffectBySlot(slot, chainHead.getRoot())
                     .map(blockRoot::equals)
-                    .orElse(true))
+                    .orElseGet(() -> combinedChainDataClient.isFinalized(slot)))
         .orElse(false);
   }
 
@@ -207,10 +207,6 @@ public class LightClientServerService
 
           return finalizedBlockFuture.thenApply(
               maybeFinalizedBlock -> {
-                if (!finalizedRoot.isZero() && maybeFinalizedBlock.isEmpty()) {
-                  return Optional.empty();
-                }
-
                 final Optional<LightClientUtil> maybeLightClientUtil =
                     spec.getLightClientUtil(attestedBlock.getSlot());
                 if (maybeLightClientUtil.isEmpty()) {
@@ -228,10 +224,12 @@ public class LightClientServerService
 
                 lightClientStore.addUpdate(update, signatureBlock.getRoot(), isCanonicalBlock);
 
-                final LightClientFinalityUpdate finalityUpdate =
-                    lightClientUtil.createLightClientFinalityUpdate(update);
-                lightClientStore.addFinalityUpdate(
-                    finalityUpdate, signatureBlock.getRoot(), isCanonicalBlock);
+                if (LightClientUpdateStore.isFinalityUpdate(update)) {
+                  final LightClientFinalityUpdate finalityUpdate =
+                      lightClientUtil.createLightClientFinalityUpdate(update);
+                  lightClientStore.addFinalityUpdate(
+                      finalityUpdate, signatureBlock.getRoot(), isCanonicalBlock);
+                }
 
                 final LightClientOptimisticUpdate optimisticUpdate =
                     lightClientUtil.createLightClientOptimisticUpdate(update);

@@ -243,7 +243,7 @@ public class LightClientUpdateStore {
   }
 
   /** {@code is_finality_update}. */
-  private boolean isFinalityUpdate(final LightClientUpdate update) {
+  public static boolean isFinalityUpdate(final LightClientUpdate update) {
     return !update.getFinalityBranch().isDefault();
   }
 
