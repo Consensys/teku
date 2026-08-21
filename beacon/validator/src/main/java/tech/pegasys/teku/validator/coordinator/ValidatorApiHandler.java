@@ -450,7 +450,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final Optional<BuilderConfig> builderConfig) {
     return blockProductionBySlotCache
         .computeIfAbsent(
-            slot, __ -> createUnsignedBlockInternal(slot, randaoReveal, graffiti, builderConfig))
+            slot,
+            __ ->
+                createUnsignedBlockInternal(
+                    slot, randaoReveal, graffiti, includePayload, builderConfig))
         .whenException(
             __ -> {
               // allow further block production attempts for this slot
@@ -491,6 +494,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
+      final boolean includePayload,
       final Optional<BuilderConfig> builderConfig) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
@@ -504,7 +508,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     blockProductionPreparationContext.blockProductionPerformance.validatorBlockRequested();
 
     return blockProductionPreparationContext
-        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, builderConfig)
+        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, includePayload, builderConfig)
         .thenCompose(this::createBlock)
         .thenPeek(
             maybeBlock ->
@@ -1219,6 +1223,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final UInt64 proposalSlot,
         final BLSSignature randaoReveal,
         final Optional<Bytes32> graffiti,
+        final boolean includePayload,
         final Optional<BuilderConfig> builderConfig) {
       return stateFuture.thenCombine(
           chainHeadFuture,
@@ -1230,6 +1235,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   chainHead,
                   randaoReveal,
                   graffiti,
+                  includePayload,
                   builderConfig,
                   blockProductionPerformance));
     }
