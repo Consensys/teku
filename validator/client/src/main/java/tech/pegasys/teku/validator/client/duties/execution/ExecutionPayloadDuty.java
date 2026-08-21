@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties.execution;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -56,13 +57,20 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
 
   @Override
   public void onSelfBuiltBidIncludedInBlock(
-      final Validator validator, final ForkInfo forkInfo, final ExecutionPayloadBid bid) {
+      final Validator validator,
+      final ForkInfo forkInfo,
+      final ExecutionPayloadBid bid,
+      final Optional<ExecutionPayloadEnvelope> maybeExecutionPayload) {
     // execution payload is produced and broadcast
     asyncRunner
         .runAsync(
             () ->
                 performExecutionPayloadDuty(
-                    validator, forkInfo, bid.getSlot(), bid.getBuilderIndex()))
+                    validator,
+                    forkInfo,
+                    bid.getSlot(),
+                    bid.getBuilderIndex(),
+                    maybeExecutionPayload))
         .finishStackTrace();
   }
 
@@ -70,9 +78,9 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
       final Validator validator,
       final ForkInfo forkInfo,
       final UInt64 slot,
-      final UInt64 builderIndex) {
-    validatorApiChannel
-        .createUnsignedExecutionPayload(slot, builderIndex)
+      final UInt64 builderIndex,
+      final Optional<ExecutionPayloadEnvelope> maybeExecutionPayload) {
+    getExecutionPayload(slot, builderIndex, maybeExecutionPayload)
         .thenApply(
             executionPayload ->
                 executionPayload.orElseThrow(
@@ -83,6 +91,15 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
             executionPayload -> signExecutionPayload(validator, executionPayload, forkInfo))
         .thenCompose(this::publishSignedExecutionPayload)
         .finish(error -> validatorLogger.executionPayloadDutyFailed(slot, builderIndex, error));
+  }
+
+  private SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayload(
+      final UInt64 slot,
+      final UInt64 builderIndex,
+      final Optional<ExecutionPayloadEnvelope> maybeExecutionPayload) {
+    return maybeExecutionPayload
+        .map(executionPayload -> SafeFuture.completedFuture(Optional.of(executionPayload)))
+        .orElseGet(() -> validatorApiChannel.createUnsignedExecutionPayload(slot, builderIndex));
   }
 
   private SafeFuture<SignedExecutionPayloadEnvelope> signExecutionPayload(

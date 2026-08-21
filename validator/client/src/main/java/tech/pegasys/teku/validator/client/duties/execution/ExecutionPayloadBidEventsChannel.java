@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.validator.client.duties.execution;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -23,5 +25,8 @@ public interface ExecutionPayloadBidEventsChannel extends VoidReturningChannelIn
 
   /** Block proposed by {@code validator} is using a self-built bid */
   void onSelfBuiltBidIncludedInBlock(
-      Validator validator, ForkInfo forkInfo, ExecutionPayloadBid bid);
+      Validator validator,
+      ForkInfo forkInfo,
+      ExecutionPayloadBid bid,
+      Optional<ExecutionPayloadEnvelope> maybeExecutionPayload);
 }
