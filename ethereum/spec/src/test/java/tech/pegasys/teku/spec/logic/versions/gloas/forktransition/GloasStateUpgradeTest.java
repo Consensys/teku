@@ -17,11 +17,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,18 +36,23 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.ValidatorIndexCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -140,6 +152,61 @@ class GloasStateUpgradeTest {
         .isEqualTo(preState.getHistoricalSummaries().sszSerialize());
     assertThat(postState.getHistoricalSummaries().getSchema().getMaxLength())
         .isEqualTo(preState.getHistoricalSummaries().getSchema().getMaxLength());
+  }
+
+  @Test
+  void shouldDropRepeatedBuilderDepositsWithInvalidSignaturesAndKeepEth1Deposits() {
+    final BLSPublicKey repeatedPubkey = dataStructureUtil.randomPublicKey();
+    final List<PendingDeposit> pendingDeposits = new ArrayList<>();
+    // Many builder-credential deposits sharing one pubkey with invalid signatures: the pathological
+    // case that made onboarding quadratic. None can be onboarded, so all are dropped.
+    for (int i = 0; i < 256; i++) {
+      pendingDeposits.add(builderPendingDepositWithInvalidSignature(repeatedPubkey));
+    }
+    // Eth1-credentialed deposits are always retained regardless of signature validity.
+    final List<PendingDeposit> eth1Deposits =
+        List.of(
+            dataStructureUtil.randomPendingDeposit(),
+            dataStructureUtil.randomPendingDeposit(),
+            dataStructureUtil.randomPendingDeposit());
+    pendingDeposits.addAll(eth1Deposits);
+
+    final BeaconStateFulu baseState =
+        BeaconStateFulu.required(
+            dataStructureUtil
+                .stateBuilder(SpecMilestone.FULU, 64, 0)
+                .setSlotToStartOfEpoch(GLOAS_EPOCH)
+                .build()
+                .updated(this::activateAllValidators));
+    final SszList<PendingDeposit> pendingDepositsList =
+        baseState.getPendingDeposits().getSchema().createFromElements(pendingDeposits);
+    final BeaconStateFulu preState =
+        BeaconStateFulu.required(
+            baseState.updated(
+                state ->
+                    ((MutableBeaconStateElectra) state).setPendingDeposits(pendingDepositsList)));
+
+    final BeaconStateGloas postState =
+        BeaconStateGloas.required(createStateUpgrade().upgrade(preState));
+
+    assertThat(postState.getBuilders().asList()).isEmpty();
+    assertThat(postState.getPendingDeposits().asList()).isEqualTo(eth1Deposits);
+  }
+
+  private PendingDeposit builderPendingDepositWithInvalidSignature(final BLSPublicKey pubkey) {
+    final Bytes32 builderCredentials =
+        Bytes32.wrap(
+            Bytes.concatenate(
+                Bytes.of(WithdrawalPrefixes.BUILDER_WITHDRAWAL_BYTE),
+                dataStructureUtil.randomBytes32().slice(1)));
+    return SchemaDefinitionsElectra.required(spec.atEpoch(GLOAS_EPOCH).getSchemaDefinitions())
+        .getPendingDepositSchema()
+        .create(
+            new SszPublicKey(pubkey),
+            SszBytes32.of(builderCredentials),
+            SszUInt64.of(dataStructureUtil.randomUInt64()),
+            dataStructureUtil.randomSszSignature(),
+            SszUInt64.of(UInt64.ZERO));
   }
 
   private GloasStateUpgrade createStateUpgrade() {
