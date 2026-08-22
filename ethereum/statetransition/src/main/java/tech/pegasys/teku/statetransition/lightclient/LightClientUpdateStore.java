@@ -152,7 +152,7 @@ public class LightClientUpdateStore {
     return consecutiveUpdates;
   }
 
-  public void pruneUpdatesBefore(final UInt64 period) {
+  public synchronized void pruneUpdatesBefore(final UInt64 period) {
     bestUpdatesByPeriod.headMap(period).clear();
   }
 
