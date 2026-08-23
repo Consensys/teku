@@ -15,12 +15,12 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOCK_ROOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
@@ -56,20 +56,19 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getLightClientBootstrap")
-            .summary("Get light client bootstrap data for the requested block root.")
+            .summary("Get `LightClientBootstrap` structure for a requested block root.")
             .description(
                 "Requests the LightClientBootstrap structure corresponding to a given post-Altair beacon block root. Depending on the `Accept` header it can be returned either as JSON or SSZ-serialized bytes.")
-            .tags(TAG_BEACON, TAG_EXPERIMENTAL)
+            .tags(TAG_BEACON)
             .pathParam(BLOCK_ROOT_PARAMETER)
             .response(
                 SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                sszResponseType())
+                sszResponseType(),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .withNotAcceptableResponse()
-            .withNotImplementedResponse()
-            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
