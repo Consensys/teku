@@ -144,7 +144,7 @@ class BlockTimelinessTrackerTest {
 
     // The retried attempt records a fresh, timely observation instead of being stuck with the
     // stale, late-looking premature one.
-    tracker.setBlockTimelinessIfAbsent(signedBlockAndState.getBlock(), computeTime(slot, 500));
+    tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computeTime(slot, 500));
     tracker.confirmBlockTimeliness(signedBlockAndState.getBlock(), computeTime(slot, 500));
 
     assertThat(tracker.getBlockTimeliness(signedBlockAndState.getRoot()))
@@ -157,7 +157,7 @@ class BlockTimelinessTrackerTest {
     tracker.setBlockTimelinessFromArrivalTime(
         signedBlockAndState.getBlock(), computeTime(slot, 500));
 
-    tracker.setBlockTimelinessIfAbsent(signedBlockAndState.getBlock(), computeTime(slot, 3000));
+    tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computeTime(slot, 3000));
 
     assertThat(tracker.getBlockTimeliness(signedBlockAndState.getRoot()))
         .isPresent()
