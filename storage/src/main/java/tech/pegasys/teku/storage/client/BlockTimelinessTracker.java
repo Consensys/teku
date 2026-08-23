@@ -117,11 +117,11 @@ class BlockTimelinessTracker {
     final TimelinessRecord existing = blockTimeliness.get(root);
     if (existing == null) {
       blockTimeliness.put(
-              root,
-              new TimelinessRecord(
-                      computeBlockTimelinessFromArrivalTime(block, fallbackTimeMillis), true));
+          root,
+          new TimelinessRecord(
+              computeBlockTimelinessFromArrivalTime(block, fallbackTimeMillis), true));
     } else if (!existing.confirmed()) {
-        blockTimeliness.put(root, new TimelinessRecord(existing.timeliness(), true));
+      blockTimeliness.put(root, new TimelinessRecord(existing.timeliness(), true));
     }
   }
 
