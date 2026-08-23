@@ -39,7 +39,8 @@ public enum EventType {
   execution_payload_available,
   execution_payload_bid,
   payload_attestation_message,
-  proposer_preferences;
+  proposer_preferences,
+  fast_confirmation;
 
   public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

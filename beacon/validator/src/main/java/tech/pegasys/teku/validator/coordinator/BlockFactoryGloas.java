@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -39,9 +39,10 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
 
   /**
    * Extends the base block production with Gloas-specific logic: when the proposer is self-building
-   * (local EL payload, indicated by a G2-point-at-infinity signature on the bid), the block is
-   * wrapped in a {@link BlockContentsGloas} containing the execution payload envelope, KZG proofs,
-   * and blobs so they can be returned together in the V4 block-production response.
+   * (local EL payload, indicated by a G2-point-at-infinity signature on the bid) and
+   * `includePayload` is true, the block is wrapped in a {@link BlockContentsGloas} containing the
+   * execution payload envelope, KZG proofs, and blobs so they can be returned together in the V4
+   * block-production response.
    *
    * <p>When an external builder's gossip bid is selected the signature is real, and there is no
    * locally-held execution payload to include, so the plain {@link BeaconBlock} is returned as-is.
@@ -53,30 +54,24 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
         .thenCompose(
             blockContainerAndMetaData -> {
               final BeaconBlock block = (BeaconBlock) blockContainerAndMetaData.blockContainer();
-              final BeaconBlockBodyGloas blockBodyGloas =
-                  block.getBody().toVersionGloas().orElseThrow();
-
+              final SignedExecutionPayloadBid bid =
+                  BeaconBlockBodyGloas.required(block.getBody()).getSignedExecutionPayloadBid();
               // G2-point-at-infinity signature means we self-built the payload
-              if (!blockBodyGloas.getSignedExecutionPayloadBid().getSignature().isInfinity()) {
+              final boolean selfBuilt = bid.getSignature().isInfinity();
+              // include_payload=false or builder bid → return beacon block only
+              if (!blockProductionContext.includePayload() || !selfBuilt) {
                 return SafeFuture.completedFuture(blockContainerAndMetaData);
               }
-
+              // include_payload=true and self-built → include full contents
               final UInt64 slot = block.getSlot();
-              final UInt64 builderIndex =
-                  blockBodyGloas.getSignedExecutionPayloadBid().getMessage().getBuilderIndex();
-              final SchemaDefinitionsGloas schemaDefinitions =
-                  SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
-
               return operationSelector
-                  .getCachedPayloadResult(slot)
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "ExecutionPayloadResult not cached for self-built block at slot "
-                                  + slot))
+                  .getCachedPayloadResultRequired(slot)
                   .getPayloadResponseFutureFromLocalFlowRequired()
                   .thenApply(
-                      (GetPayloadResponse getPayloadResponse) -> {
+                      getPayloadResponse -> {
+                        final SchemaDefinitionsGloas schemaDefinitions =
+                            SchemaDefinitionsGloas.required(
+                                spec.atSlot(slot).getSchemaDefinitions());
                         final BlobsBundle blobsBundle =
                             getPayloadResponse.getBlobsBundle().orElseThrow();
                         final ExecutionPayloadEnvelope envelope =
@@ -85,7 +80,7 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
                                 .create(
                                     getPayloadResponse.getExecutionPayload(),
                                     getPayloadResponse.getExecutionRequests().orElseThrow(),
-                                    builderIndex,
+                                    bid.getMessage().getBuilderIndex(),
                                     block.hashTreeRoot(),
                                     block.getParentRoot());
                         final BlockContainer blockContents =

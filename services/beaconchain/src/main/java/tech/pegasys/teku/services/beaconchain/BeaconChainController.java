@@ -232,6 +232,8 @@ import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
+import tech.pegasys.teku.statetransition.lightclient.LightClientServerService;
+import tech.pegasys.teku.statetransition.lightclient.LightClientUpdateStore;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageGossipValidator;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
@@ -402,6 +404,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile GossipValidationHelper gossipValidationHelper;
   protected volatile DasGossipLogger dasGossipLogger;
   protected volatile DasReqRespLogger dasReqRespLogger;
+  protected volatile LightClientUpdateStore lightClientUpdateStore;
+  protected volatile LightClientServerService lightClientServerService;
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
@@ -739,6 +743,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlockImporter();
     initCombinedChainDataClient();
     initBlobKzgCommitmentsProvider();
+    initLightClientUpdateStore();
+    initLightClientServerService();
+
     initAggregatingAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -1595,6 +1602,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .rewardCalculator(rewardCalculator)
             .blobSidecarReconstructionProvider(blobSidecarReconstructionProvider)
             .blobReconstructionProvider(blobReconstructionProvider)
+            .lightClientUpdateStore(lightClientUpdateStore)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)
             .validatorApiChannel(
@@ -1647,6 +1655,25 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(ReceivedBlockEventsChannel.class, blobKzgCommitmentsProvider)
         .subscribe(FinalizedCheckpointChannel.class, blobKzgCommitmentsProvider);
+  }
+
+  protected void initLightClientUpdateStore() {
+    LOG.debug("BeaconChainController.initLightClientUpdateStore()");
+    lightClientUpdateStore = new LightClientUpdateStore(spec);
+  }
+
+  protected void initLightClientServerService() {
+    if (!beaconConfig.eth2NetworkConfig().isLightClientServerEnabled()) {
+      LOG.debug("BeaconChainController.initLightClientServerService() - disabled");
+      return;
+    }
+    LOG.debug("BeaconChainController.initLightClientServerService()");
+    lightClientServerService =
+        new LightClientServerService(spec, lightClientUpdateStore, combinedChainDataClient);
+    eventChannels
+        .subscribe(ReceivedBlockEventsChannel.class, lightClientServerService)
+        .subscribe(FinalizedCheckpointChannel.class, lightClientServerService)
+        .subscribe(ChainHeadChannel.class, lightClientServerService);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
