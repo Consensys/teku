@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,6 +39,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class GetLightClientBootstrap extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/light_client/bootstrap/{block_root}";
@@ -93,14 +94,30 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  static SerializableTypeDefinition<ObjectAndMetaData<LightClientBootstrap>> getResponseType(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-
-    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>>
-        schemaGetters = generateLightClientBootstrapSchemaGetters(schemaDefinitionCache);
+  private static SerializableTypeDefinition<ObjectAndMetaData<LightClientBootstrap>>
+      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<LightClientBootstrap> lightClientBootstrapType =
         getMultipleSchemaDefinitionFromMilestone(
-            schemaDefinitionCache, "LightClientBootstrap", schemaGetters);
+            schemaDefinitionCache,
+            "LightClientBootstrap",
+            List.of(
+                new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+                    (bootstrap, milestone) ->
+                        milestoneAtBootstrapSlot(schemaDefinitionCache, bootstrap).equals(milestone)
+                            && milestone.isGreaterThan(SpecMilestone.PHASE0)
+                            && milestone.isLessThan(SpecMilestone.ELECTRA),
+                    SpecMilestone.ALTAIR,
+                    schemaDefinitions ->
+                        SchemaDefinitionsAltair.required(schemaDefinitions)
+                            .getLightClientBootstrapSchema()),
+                new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+                    (bootstrap, milestone) ->
+                        milestoneAtBootstrapSlot(schemaDefinitionCache, bootstrap).equals(milestone)
+                            && milestone.isGreaterThan(SpecMilestone.DENEB),
+                    SpecMilestone.ELECTRA,
+                    schemaDefinitions ->
+                        SchemaDefinitionsElectra.required(schemaDefinitions)
+                            .getLightClientBootstrapSchema())));
 
     return SerializableTypeDefinition.<ObjectAndMetaData<LightClientBootstrap>>object()
         .name("GetLightClientBootstrapResponse")
@@ -109,36 +126,9 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
         .build();
   }
 
-  private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>>
-      generateLightClientBootstrapSchemaGetters(final SchemaDefinitionCache schemaDefinitionCache) {
-    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>>
-        schemaGetterList = new ArrayList<>();
-
-    schemaGetterList.add(
-        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>(
-            (bootstrap, milestone) ->
-                schemaDefinitionCache
-                        .milestoneAtSlot(bootstrap.getLightClientHeader().getBeacon().getSlot())
-                        .equals(milestone)
-                    && milestone.isGreaterThan(SpecMilestone.PHASE0)
-                    && milestone.isLessThan(SpecMilestone.ELECTRA),
-            SpecMilestone.ALTAIR,
-            schemaDefinitions ->
-                schemaDefinitions.toVersionAltair().orElseThrow().getLightClientBootstrapSchema()));
-    schemaGetterList.add(
-        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
-            (bootstrap, milestone) ->
-                schemaDefinitionCache
-                        .milestoneAtSlot(bootstrap.getLightClientHeader().getBeacon().getSlot())
-                        .equals(milestone)
-                    && milestone.isGreaterThan(SpecMilestone.DENEB),
-            SpecMilestone.ELECTRA,
-            schemaDefinitions ->
-                schemaDefinitions
-                    .toVersionElectra()
-                    .orElseThrow()
-                    .getLightClientBootstrapSchema()));
-
-    return schemaGetterList;
+  private static SpecMilestone milestoneAtBootstrapSlot(
+      final SchemaDefinitionCache schemaDefinitionCache, final LightClientBootstrap bootstrap) {
+    return schemaDefinitionCache.milestoneAtSlot(
+        bootstrap.getLightClientHeader().getBeacon().getSlot());
   }
 }
