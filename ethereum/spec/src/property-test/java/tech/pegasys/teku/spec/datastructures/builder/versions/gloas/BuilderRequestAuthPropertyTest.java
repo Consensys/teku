@@ -19,19 +19,21 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas.RequestAuthSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas.BuilderRequestAuthSupplier;
 
 public class BuilderRequestAuthPropertyTest {
   @Property
   void roundTrip(
-      @ForAll(supplier = RequestAuthSupplier.class) final BuilderRequestAuth builderRequestAuth)
+      @ForAll(supplier = BuilderRequestAuthSupplier.class)
+          final BuilderRequestAuth builderRequestAuth)
       throws JsonProcessingException {
     assertRoundTrip(builderRequestAuth);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = RequestAuthSupplier.class) final BuilderRequestAuth builderRequestAuth,
+      @ForAll(supplier = BuilderRequestAuthSupplier.class)
+          final BuilderRequestAuth builderRequestAuth,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(builderRequestAuth, seed);
   }

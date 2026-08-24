@@ -2124,13 +2124,13 @@ public final class DataStructureUtil {
         IntStream.range(0, size).mapToObj(__ -> randomSignedValidatorRegistration()).toList());
   }
 
-  public BuilderRequestAuth randomRequestAuth() {
+  public BuilderRequestAuth randomBuilderRequestAuth() {
     return BUILDER_REQUEST_AUTH_SCHEMA.create(
         randomBytes(randomPositiveInt((int) SpecConfigGloas.MAX_DATA_SIZE)), randomSlot());
   }
 
-  public SignedBuilderRequestAuth randomSignedRequestAuth() {
-    return SIGNED_BUILDER_REQUEST_AUTH_SCHEMA.create(randomRequestAuth(), randomSignature());
+  public SignedBuilderRequestAuth randomSignedBuilderRequestAuth() {
+    return SIGNED_BUILDER_REQUEST_AUTH_SCHEMA.create(randomBuilderRequestAuth(), randomSignature());
   }
 
   public BuilderPreferences randomBuilderPreferences() {
@@ -2139,7 +2139,7 @@ public final class DataStructureUtil {
 
   public BuilderPreferencesRequest randomBuilderPreferencesRequest() {
     return BUILDER_PREFERENCES_REQUEST_SCHEMA.create(
-        randomBuilderPreferences(), randomSignedRequestAuth());
+        randomBuilderPreferences(), randomSignedBuilderRequestAuth());
   }
 
   public BuilderConfig randomBuilderConfig(final int numberOfBuilderEntries) {
