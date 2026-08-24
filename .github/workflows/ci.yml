@@ -370,6 +370,7 @@ jobs:
           folder: .openapidoc/dist
           branch: gh-pages
           commit-message: "[skip ci] OpenAPI Publish"
+          clean: false
 
   ## Tests
   unitTests:

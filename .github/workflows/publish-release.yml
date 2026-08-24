@@ -35,6 +35,15 @@ jobs:
           sudo apt update
           sudo apt install python3 python3-pip python3-venv
 
+      - name: Validate signing key
+        env:
+          SIGNING_KEY: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "ERROR: JRELEASER_GPG_SECRET_KEY is not set. Cannot stage unsigned artifacts for Maven Central."
+            exit 1
+          fi
+
       - name: Stage Maven artifacts
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
