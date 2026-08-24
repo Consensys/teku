@@ -34,11 +34,19 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionRequestsGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -116,6 +124,26 @@ public class BlockGossipValidator {
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
       LOG.trace("BlockValidator: Block is from the future. Saving for future processing.");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    /*
+     * [New in Gloas:EIP7688]
+     * [REJECT] The block body operation counts are within their limits.
+     */
+    final Optional<InternalValidationResult> operationLimitsValidationResult =
+        verifyBlockBodyOperationLimits(block);
+    if (operationLimitsValidationResult.isPresent()) {
+      return completedFuture(operationLimitsValidationResult.get());
+    }
+
+    /*
+     * [New in Gloas:EIP7688]
+     * [REJECT] The parent execution request counts are within their limits.
+     */
+    final Optional<InternalValidationResult> executionRequestsLimitsValidationResult =
+        verifyExecutionRequestsLimits(block);
+    if (executionRequestsLimitsValidationResult.isPresent()) {
+      return completedFuture(executionRequestsLimitsValidationResult.get());
     }
 
     if (gossipValidationHelper.isBlockAvailable(block.getRoot())) {
@@ -291,49 +319,184 @@ public class BlockGossipValidator {
     };
   }
 
+  /**
+   * Verifies that each Gloas block body operation count is within its limit and that the block
+   * contains no deposits. This rule is Gloas-only: EIP-7688 turned these operation lists into
+   * unbounded progressive lists, so SSZ no longer enforces the limits and this must be checked
+   * during gossip validation instead. Pre-Gloas blocks are unaffected, since their operation lists
+   * are still bounded at the SSZ level.
+   */
+  private Optional<InternalValidationResult> verifyBlockBodyOperationLimits(
+      final SignedBeaconBlock block) {
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return Optional.empty();
+    }
+
+    final BeaconBlockBody body = block.getMessage().getBody();
+    final SszList<PayloadAttestation> payloadAttestations =
+        body.getOptionalPayloadAttestations().orElseThrow();
+
+    final SpecConfig specConfig = spec.atSlot(block.getSlot()).getConfig();
+
+    final int maxProposerSlashings = specConfig.getMaxProposerSlashings();
+    final int proposerSlashingsCount = body.getProposerSlashings().size();
+    if (proposerSlashingsCount > maxProposerSlashings) {
+      return Optional.of(
+          reject(
+              "Block has %d proposer slashings, max allowed %d",
+              proposerSlashingsCount, maxProposerSlashings));
+    }
+
+    final int maxAttesterSlashings =
+        SpecConfigElectra.required(specConfig).getMaxAttesterSlashingsElectra();
+    final int attesterSlashingsCount = body.getAttesterSlashings().size();
+    if (attesterSlashingsCount > maxAttesterSlashings) {
+      return Optional.of(
+          reject(
+              "Block has %d attester slashings, max allowed %d",
+              attesterSlashingsCount, maxAttesterSlashings));
+    }
+
+    final int maxAttestations = SpecConfigElectra.required(specConfig).getMaxAttestationsElectra();
+    final int attestationsCount = body.getAttestations().size();
+    if (attestationsCount > maxAttestations) {
+      return Optional.of(
+          reject("Block has %d attestations, max allowed %d", attestationsCount, maxAttestations));
+    }
+
+    final int depositsCount = body.getDeposits().size();
+    if (depositsCount != 0) {
+      return Optional.of(reject("Block must not contain deposits, found %d", depositsCount));
+    }
+
+    final int maxVoluntaryExits = specConfig.getMaxVoluntaryExits();
+    final int voluntaryExitsCount = body.getVoluntaryExits().size();
+    if (voluntaryExitsCount > maxVoluntaryExits) {
+      return Optional.of(
+          reject(
+              "Block has %d voluntary exits, max allowed %d",
+              voluntaryExitsCount, maxVoluntaryExits));
+    }
+
+    final int maxBlsToExecutionChanges =
+        SpecConfigCapella.required(specConfig).getMaxBlsToExecutionChanges();
+    final int blsToExecutionChangesCount =
+        body.getOptionalBlsToExecutionChanges().orElseThrow().size();
+    if (blsToExecutionChangesCount > maxBlsToExecutionChanges) {
+      return Optional.of(
+          reject(
+              "Block has %d bls to execution changes, max allowed %d",
+              blsToExecutionChangesCount, maxBlsToExecutionChanges));
+    }
+
+    final int maxPayloadAttestations =
+        SpecConfigGloas.required(specConfig).getMaxPayloadAttestations();
+    final int payloadAttestationsCount = payloadAttestations.size();
+    if (payloadAttestationsCount > maxPayloadAttestations) {
+      return Optional.of(
+          reject(
+              "Block has %d payload attestations, max allowed %d",
+              payloadAttestationsCount, maxPayloadAttestations));
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Verifies that each Gloas parent execution request count is within its limit. This rule is
+   * Gloas-only: EIP-7688 turned these request lists into unbounded progressive lists, so SSZ no
+   * longer enforces the limits and this must be checked during gossip validation instead. Pre-Gloas
+   * blocks are unaffected, since they don't carry parent execution requests at all.
+   */
+  private Optional<InternalValidationResult> verifyExecutionRequestsLimits(
+      final SignedBeaconBlock block) {
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return Optional.empty();
+    }
+
+    final BeaconBlockBody body = block.getMessage().getBody();
+    final ExecutionRequests parentExecutionRequests =
+        body.getOptionalParentExecutionRequests().orElseThrow();
+    final ExecutionRequestsGloas parentExecutionRequestsGloas =
+        ExecutionRequestsGloas.required(parentExecutionRequests);
+
+    final SpecConfig specConfig = spec.atSlot(block.getSlot()).getConfig();
+
+    final int maxWithdrawalRequests =
+        SpecConfigElectra.required(specConfig).getMaxWithdrawalRequestsPerPayload();
+    final int withdrawalRequestsCount = parentExecutionRequests.getWithdrawals().size();
+    if (withdrawalRequestsCount > maxWithdrawalRequests) {
+      return Optional.of(
+          reject(
+              "Parent execution requests has %d withdrawal requests, max allowed %d",
+              withdrawalRequestsCount, maxWithdrawalRequests));
+    }
+
+    final int maxConsolidationRequests =
+        SpecConfigElectra.required(specConfig).getMaxConsolidationRequestsPerPayload();
+    final int consolidationRequestsCount = parentExecutionRequests.getConsolidations().size();
+    if (consolidationRequestsCount > maxConsolidationRequests) {
+      return Optional.of(
+          reject(
+              "Parent execution requests has %d consolidation requests, max allowed %d",
+              consolidationRequestsCount, maxConsolidationRequests));
+    }
+
+    final int maxBuilderDepositRequests =
+        SpecConfigGloas.required(specConfig).getMaxBuilderDepositRequestsPerPayload();
+    final int builderDepositRequestsCount =
+        parentExecutionRequestsGloas.getBuilderDeposits().size();
+    if (builderDepositRequestsCount > maxBuilderDepositRequests) {
+      return Optional.of(
+          reject(
+              "Parent execution requests has %d builder deposit requests, max allowed %d",
+              builderDepositRequestsCount, maxBuilderDepositRequests));
+    }
+
+    final int maxBuilderExitRequests =
+        SpecConfigGloas.required(specConfig).getMaxBuilderExitRequestsPerPayload();
+    final int builderExitRequestsCount = parentExecutionRequestsGloas.getBuilderExits().size();
+    if (builderExitRequestsCount > maxBuilderExitRequests) {
+      return Optional.of(
+          reject(
+              "Parent execution requests has %d builder exit requests, max allowed %d",
+              builderExitRequestsCount, maxBuilderExitRequests));
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Validates the execution payload bid's parent (defined by {@code bid.parent_block_hash}) against
+   * the parent's state and payload status.
+   *
+   * <p>[New in Gloas:EIP7732] If the parent block is full, the parent payload must be verified (MAY
+   * be queued until the parent payload is verified, i.e. SAVE_FOR_FUTURE).
+   *
+   * <p>[New in Gloas:EIP7732] If the parent is not full, the bid must build on the parent's
+   * execution head, i.e. {@code bid.parent_block_hash == parent_state.latest_block_hash}.
+   */
   private Optional<InternalValidationResult> validateExecutionPayloadBidParent(
       final SignedBeaconBlock block,
       final BeaconStateGloas parentState,
       final ExecutionPayloadBid executionPayloadBid) {
     final MiscHelpersGloas miscHelpersGloas =
         MiscHelpersGloas.required(spec.atSlot(block.getSlot()).miscHelpers());
-    final Optional<ExecutionRequests> maybeParentExecutionRequests =
-        block.getMessage().getBody().getOptionalParentExecutionRequests();
-    if (maybeParentExecutionRequests.isEmpty()) {
-      return Optional.of(reject("Missing parent execution requests"));
-    }
 
-    final ExecutionRequests parentExecutionRequests = maybeParentExecutionRequests.get();
-    // Gloas process_parent_execution_payload treats a parent as FULL when the child bid references
-    // the latest committed FULL parent bid. Check this before EMPTY because the FULL bid hash can
-    // equal latest_block_hash at Gloas genesis or fork transition.
     if (miscHelpersGloas.isBidBuildingOnFullParent(parentState, executionPayloadBid)) {
-      if (!miscHelpersGloas.isExecutionRequestsRootMatchingLatestBid(
-          parentState, parentExecutionRequests)) {
-        return Optional.of(
-            reject(
-                "The execution requests root in the latest committed bid does not match the parent execution requests in the block"));
-      }
-      final boolean parentExecutionPayloadKnown =
+      final boolean parentExecutionPayloadVerified =
           gossipValidationHelper.isBlockHashKnown(
               executionPayloadBid.getParentBlockHash(), block.getParentRoot());
-      if (!parentExecutionPayloadKnown) {
+      if (!parentExecutionPayloadVerified) {
         return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
       }
       return Optional.empty();
     }
 
-    if (miscHelpersGloas.isBidBuildingOnEmptyParent(parentState, executionPayloadBid)) {
-      if (!parentExecutionRequests.isDefault()) {
-        return Optional.of(reject("No execution requests were expected for an EMPTY parent"));
-      }
-      return Optional.empty();
+    if (!executionPayloadBid.getParentBlockHash().equals(parentState.getLatestBlockHash())) {
+      return Optional.of(reject("Bid does not build on the parent's execution head"));
     }
-
-    return Optional.of(
-        reject(
-            "The parent block hash %s from the bid is not present or hasn't been passed validation",
-            executionPayloadBid.getParentBlockHash()));
+    return Optional.empty();
   }
 
   synchronized EquivocationCheckResult performBlockEquivocationCheck(
