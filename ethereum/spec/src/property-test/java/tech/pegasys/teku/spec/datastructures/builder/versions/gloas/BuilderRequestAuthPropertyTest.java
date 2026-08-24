@@ -21,17 +21,18 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas.RequestAuthSupplier;
 
-public class RequestAuthPropertyTest {
+public class BuilderRequestAuthPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = RequestAuthSupplier.class) final RequestAuth requestAuth)
+  void roundTrip(
+      @ForAll(supplier = RequestAuthSupplier.class) final BuilderRequestAuth builderRequestAuth)
       throws JsonProcessingException {
-    assertRoundTrip(requestAuth);
+    assertRoundTrip(builderRequestAuth);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = RequestAuthSupplier.class) final RequestAuth requestAuth,
+      @ForAll(supplier = RequestAuthSupplier.class) final BuilderRequestAuth builderRequestAuth,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(requestAuth, seed);
+    assertDeserializeMutatedThrowsExpected(builderRequestAuth, seed);
   }
 }

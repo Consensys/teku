@@ -21,18 +21,20 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas.SignedRequestAuthSupplier;
 
-public class SignedRequestAuthPropertyTest {
+public class SignedBuilderRequestAuthPropertyTest {
   @Property
   void roundTrip(
-      @ForAll(supplier = SignedRequestAuthSupplier.class) final SignedRequestAuth signedRequestAuth)
+      @ForAll(supplier = SignedRequestAuthSupplier.class)
+          final SignedBuilderRequestAuth signedBuilderRequestAuth)
       throws JsonProcessingException {
-    assertRoundTrip(signedRequestAuth);
+    assertRoundTrip(signedBuilderRequestAuth);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SignedRequestAuthSupplier.class) final SignedRequestAuth signedRequestAuth,
+      @ForAll(supplier = SignedRequestAuthSupplier.class)
+          final SignedBuilderRequestAuth signedBuilderRequestAuth,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(signedRequestAuth, seed);
+    assertDeserializeMutatedThrowsExpected(signedBuilderRequestAuth, seed);
   }
 }

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.BuilderConfigProvider;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadBidEventsChannel;
@@ -57,6 +59,7 @@ public class BlockProductionDuty implements Duty {
   private final Spec spec;
   private final ValidatorDutyMetrics validatorDutyMetrics;
   private final ExecutionPayloadBidEventsChannel executionPayloadBidEventsChannelPublisher;
+  private final BuilderConfigProvider builderConfigProvider;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -66,7 +69,8 @@ public class BlockProductionDuty implements Duty {
       final BlockContainerSigner blockContainerSigner,
       final Spec spec,
       final ValidatorDutyMetrics validatorDutyMetrics,
-      final ExecutionPayloadBidEventsChannel executionPayloadBidEventsChannelPublisher) {
+      final ExecutionPayloadBidEventsChannel executionPayloadBidEventsChannelPublisher,
+      final BuilderConfigProvider builderConfigProvider) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
@@ -75,6 +79,7 @@ public class BlockProductionDuty implements Duty {
     this.spec = spec;
     this.validatorDutyMetrics = validatorDutyMetrics;
     this.executionPayloadBidEventsChannelPublisher = executionPayloadBidEventsChannelPublisher;
+    this.builderConfigProvider = builderConfigProvider;
   }
 
   @Override
@@ -93,15 +98,18 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
-        .thenCompose(
-            signature ->
+        .thenComposeCombined(
+            builderConfigProvider.getBuilderConfig(validator, slot),
+            (randaoReveal, builderConfig) ->
                 validatorDutyMetrics.record(
-                    () -> createUnsignedBlock(signature), this, ValidatorDutyMetricsSteps.CREATE))
+                    () -> createUnsignedBlock(randaoReveal, builderConfig),
+                    this,
+                    ValidatorDutyMetricsSteps.CREATE))
         .thenCompose(this::validateBlock)
         .thenCompose(
-            blockContainerAndMetaData ->
+            blockContainer ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, blockContainerAndMetaData),
+                    () -> signBlockContainer(forkInfo, blockContainer),
                     this,
                     ValidatorDutyMetricsSteps.SIGN))
         .thenCompose(
@@ -126,9 +134,9 @@ public class BlockProductionDuty implements Duty {
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
-      final BLSSignature randaoReveal) {
+      final BLSSignature randaoReveal, final Optional<BuilderConfig> builderConfig) {
     return validatorApiChannel.createUnsignedBlock(
-        slot, randaoReveal, validator.getGraffiti(), Optional.empty());
+        slot, randaoReveal, validator.getGraffiti(), false, builderConfig);
   }
 
   private SafeFuture<BlockContainer> validateBlock(
