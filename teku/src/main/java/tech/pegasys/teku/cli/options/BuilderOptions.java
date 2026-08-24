@@ -62,7 +62,8 @@ public class BuilderOptions {
       paramLabel = "<url>",
       description = "Comma separated list of urls of builders to use when proposing",
       split = ",",
-      arity = "0..*")
+      arity = "0..*",
+      hidden = true)
   private final List<String> builderUrls = new ArrayList<>();
 
   public void configure(final TekuConfiguration.Builder builder) {

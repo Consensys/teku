@@ -74,6 +74,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_ATTESTATIONS_V2_APIS_ENABLED = false;
   // Builder default options
   public static final UInt64 DEFAULT_BUILDER_MIN_BID = UInt64.ZERO;
+  // using same value as DEFAULT_BUILDER_BID_COMPARE_FACTOR
   public static final UInt64 DEFAULT_BUILDER_BOOST_FACTOR = UInt64.valueOf(90);
 
   private final List<String> validatorKeys;
