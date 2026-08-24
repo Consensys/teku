@@ -7121,7 +7121,7 @@
 - name: is_finality_update#altair
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/lightclient/LightClientUpdateStore.java
-      search: private boolean isFinalityUpdate(
+      search: public static boolean isFinalityUpdate(
   spec: |
     <spec fn="is_finality_update" fork="altair" hash="4d0080ac">
     def is_finality_update(update: LightClientUpdate) -> bool:
