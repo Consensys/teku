@@ -1326,13 +1326,13 @@ subprojects {
 		}
 
 		signing {
-			required { gradle.taskGraph.allTasks.any { it.name.contains("publish") } }
 			def signingKey = findProperty("signingKey")
 			def signingPassword = findProperty("signingPassword") ?: ""
 			if (signingKey) {
+				required { gradle.taskGraph.allTasks.any { it.name.contains("ToStagingRepository") } }
 				useInMemoryPgpKeys(signingKey, signingPassword)
+				sign publishing.publications.mavenJava
 			}
-			sign publishing.publications.mavenJava
 		}
 	}
 
