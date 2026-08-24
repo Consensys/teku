@@ -1,10 +1,10 @@
 {
-  "title" : "SignedBlindedExecutionPayloadEnvelope",
+  "title" : "SignedRequestAuthV1",
   "type" : "object",
   "required" : [ "message", "signature" ],
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/BlindedExecutionPayloadEnvelope"
+      "$ref" : "#/components/schemas/RequestAuthV1"
     },
     "signature" : {
       "type" : "string",

@@ -135,7 +135,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -2905,7 +2904,13 @@ public final class DataStructureUtil {
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
-        .create(beaconBlock, kzgProofs, blobs);
+        .create(
+            beaconBlock,
+            kzgProofs,
+            blobs,
+            spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+                ? Optional.of(randomExecutionPayloadEnvelope(slot))
+                : Optional.empty());
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
@@ -3691,25 +3696,6 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             randomBytes32());
-  }
-
-  public BlockContentsGloas randomBlockContentsGloas(final UInt64 slot) {
-    final BlobsBundle blobsBundle = randomBlobsBundle(1);
-    return getGloasSchemaDefinitions(slot)
-        .getBlockContentsGloasSchema()
-        .create(
-            randomBeaconBlock(slot),
-            randomExecutionPayloadEnvelope(slot),
-            blobsBundle.getProofs(),
-            blobsBundle.getBlobs());
-  }
-
-  public BlockContainerAndMetaData randomBlockContentsGloasAndMetaData(final UInt64 slot) {
-    return new BlockContainerAndMetaData(
-        randomBlockContentsGloas(slot),
-        spec.atSlot(slot).getMilestone(),
-        randomUInt256(),
-        randomUInt256());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {

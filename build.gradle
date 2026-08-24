@@ -392,6 +392,17 @@ allprojects {
 		}
 	}
 
+	tasks.named('spotlessJava') {
+		outputs.doNotCacheIf('Avoid replaying cached google-java-format lint failures') { true }
+	}
+
+	def allCleanTasks = rootProject.allprojects.collect { cleanProject ->
+		cleanProject.tasks.matching { it.name == 'clean' }
+	}
+	tasks.matching { it.name.startsWith('spotless') }.configureEach {
+		mustRunAfter allCleanTasks
+	}
+
 	tasks.withType(JavaCompile) {
 		options.compilerArgs += [
 			'-Xlint:unchecked',
@@ -520,7 +531,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.13"
+def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.14"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-specs/releases/download'

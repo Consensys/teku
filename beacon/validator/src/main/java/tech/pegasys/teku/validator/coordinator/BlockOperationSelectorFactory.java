@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -618,20 +618,10 @@ public class BlockOperationSelectorFactory {
             () -> builderPayloadOrFallbackData.getFallbackDataRequired().getExecutionPayload());
   }
 
-  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-    return executionLayerBlockProductionManager.getCachedPayloadResult(slot);
-  }
-
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
     return block -> {
       final UInt64 slot = block.getSlot();
-      final ExecutionPayloadResult executionPayloadResult =
-          executionLayerBlockProductionManager
-              .getCachedPayloadResult(slot)
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+      final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResultRequired(slot);
 
       if (executionPayloadResult.isFromLocalFlow()) {
         // we performed a non-blinded flow, so the bundle must be in
@@ -652,6 +642,15 @@ public class BlockOperationSelectorFactory {
             .thenApply(Optional::orElseThrow);
       }
     };
+  }
+
+  public ExecutionPayloadResult getCachedPayloadResultRequired(final UInt64 slot) {
+    return executionLayerBlockProductionManager
+        .getCachedPayloadResult(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "ExecutionPayloadResult hasn't been cached for slot " + slot));
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
@@ -772,7 +771,7 @@ public class BlockOperationSelectorFactory {
         // from the local fallback
         final BlobsBundle blobsBundle =
             builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
-        final BlockContentsWithBlobsSchema<?> blockContentsSchema =
+        final BlockContentsSchema<?> blockContentsSchema =
             SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
                 .getBlockContentsSchema();
         blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());
