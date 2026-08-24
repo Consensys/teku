@@ -154,9 +154,10 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
-  void setBlockTimelinessIfAbsentShouldNotOverwriteExistingObservation() {
+  void setBlockTimelinessIfAbsentShouldNotOverwriteExistingConfirmedObservation() {
     tracker.setBlockTimelinessFromArrivalTime(
         signedBlockAndState.getBlock(), computeTime(slot, 500));
+    tracker.confirmBlockTimeliness(signedBlockAndState.getBlock(), computeTime(slot, 500));
 
     tracker.setBlockTimelinessFromArrivalTime(
         signedBlockAndState.getBlock(), computeTime(slot, 3000));
