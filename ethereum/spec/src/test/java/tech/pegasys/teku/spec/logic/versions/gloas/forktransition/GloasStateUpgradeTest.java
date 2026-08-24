@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
@@ -155,21 +156,25 @@ class GloasStateUpgradeTest {
   }
 
   @Test
-  void shouldDropRepeatedBuilderDepositsWithInvalidSignaturesAndKeepEth1Deposits() {
+  void shouldDropRepeatedBuilderDepositsWithoutRescanningQueuedInvalidEth1Deposits() {
     final BLSPublicKey repeatedPubkey = dataStructureUtil.randomPublicKey();
+    final int samePubkeyEth1DepositCount = 32;
+    final int repeatedBuilderDepositCount = 64;
     final List<PendingDeposit> pendingDeposits = new ArrayList<>();
-    // Many builder-credential deposits sharing one pubkey with invalid signatures: the pathological
-    // case that made onboarding quadratic. None can be onboarded, so all are dropped.
-    for (int i = 0; i < 256; i++) {
+
+    // Retained invalid ETH1 deposits for the same pubkey are the queue prefix the old
+    // implementation rescanned for every repeated builder deposit below.
+    final List<PendingDeposit> samePubkeyEth1Deposits = new ArrayList<>();
+    for (int i = 0; i < samePubkeyEth1DepositCount; i++) {
+      samePubkeyEth1Deposits.add(eth1PendingDepositWithInvalidSignature(repeatedPubkey));
+    }
+    pendingDeposits.addAll(samePubkeyEth1Deposits);
+
+    // Repeated invalid builder deposits for the same pubkey are dropped, but should not trigger a
+    // full rescan and re-verification of the retained ETH1 deposits each time.
+    for (int i = 0; i < repeatedBuilderDepositCount; i++) {
       pendingDeposits.add(builderPendingDepositWithInvalidSignature(repeatedPubkey));
     }
-    // Eth1-credentialed deposits are always retained regardless of signature validity.
-    final List<PendingDeposit> eth1Deposits =
-        List.of(
-            dataStructureUtil.randomPendingDeposit(),
-            dataStructureUtil.randomPendingDeposit(),
-            dataStructureUtil.randomPendingDeposit());
-    pendingDeposits.addAll(eth1Deposits);
 
     final BeaconStateFulu baseState =
         BeaconStateFulu.required(
@@ -186,11 +191,20 @@ class GloasStateUpgradeTest {
                 state ->
                     ((MutableBeaconStateElectra) state).setPendingDeposits(pendingDepositsList)));
 
+    final CountingInvalidSignatureMiscHelpers miscHelpers =
+        createCountingInvalidSignatureMiscHelpers();
     final BeaconStateGloas postState =
-        BeaconStateGloas.required(createStateUpgrade().upgrade(preState));
+        BeaconStateGloas.required(createStateUpgrade(miscHelpers).upgrade(preState));
 
     assertThat(postState.getBuilders().asList()).isEmpty();
-    assertThat(postState.getPendingDeposits().asList()).isEqualTo(eth1Deposits);
+    assertThat(postState.getPendingDeposits().asList()).isEqualTo(samePubkeyEth1Deposits);
+    assertThat(miscHelpers.getSignatureVerificationCount())
+        .isLessThanOrEqualTo(samePubkeyEth1DepositCount + repeatedBuilderDepositCount);
+  }
+
+  private PendingDeposit eth1PendingDepositWithInvalidSignature(final BLSPublicKey pubkey) {
+    return pendingDepositWithInvalidSignature(
+        pubkey, dataStructureUtil.randomEth1WithdrawalCredentials());
   }
 
   private PendingDeposit builderPendingDepositWithInvalidSignature(final BLSPublicKey pubkey) {
@@ -199,11 +213,16 @@ class GloasStateUpgradeTest {
             Bytes.concatenate(
                 Bytes.of(WithdrawalPrefixes.BUILDER_WITHDRAWAL_BYTE),
                 dataStructureUtil.randomBytes32().slice(1)));
+    return pendingDepositWithInvalidSignature(pubkey, builderCredentials);
+  }
+
+  private PendingDeposit pendingDepositWithInvalidSignature(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
     return SchemaDefinitionsElectra.required(spec.atEpoch(GLOAS_EPOCH).getSchemaDefinitions())
         .getPendingDepositSchema()
         .create(
             new SszPublicKey(pubkey),
-            SszBytes32.of(builderCredentials),
+            SszBytes32.of(withdrawalCredentials),
             SszUInt64.of(dataStructureUtil.randomUInt64()),
             dataStructureUtil.randomSszSignature(),
             SszUInt64.of(UInt64.ZERO));
@@ -211,14 +230,27 @@ class GloasStateUpgradeTest {
 
   private GloasStateUpgrade createStateUpgrade() {
     final SpecVersion gloasSpecVersion = spec.atEpoch(GLOAS_EPOCH);
+    return createStateUpgrade(MiscHelpersGloas.required(gloasSpecVersion.miscHelpers()));
+  }
+
+  private GloasStateUpgrade createStateUpgrade(final MiscHelpersGloas miscHelpers) {
+    final SpecVersion gloasSpecVersion = spec.atEpoch(GLOAS_EPOCH);
     return new GloasStateUpgrade(
         SpecConfigGloas.required(gloasSpecVersion.getConfig()),
         SchemaDefinitionsGloas.required(gloasSpecVersion.getSchemaDefinitions()),
         BeaconStateAccessorsGloas.required(gloasSpecVersion.beaconStateAccessors()),
         PredicatesGloas.required(gloasSpecVersion.predicates()),
         BeaconStateMutatorsGloas.required(gloasSpecVersion.beaconStateMutators()),
-        MiscHelpersGloas.required(gloasSpecVersion.miscHelpers()),
+        miscHelpers,
         gloasSpecVersion.getValidatorsUtil());
+  }
+
+  private CountingInvalidSignatureMiscHelpers createCountingInvalidSignatureMiscHelpers() {
+    final SpecVersion gloasSpecVersion = spec.atEpoch(GLOAS_EPOCH);
+    return new CountingInvalidSignatureMiscHelpers(
+        SpecConfigGloas.required(gloasSpecVersion.getConfig()),
+        PredicatesGloas.required(gloasSpecVersion.predicates()),
+        SchemaDefinitionsGloas.required(gloasSpecVersion.getSchemaDefinitions()));
   }
 
   private void activateAllValidators(final MutableBeaconState state) {
@@ -232,6 +264,31 @@ class GloasStateUpgradeTest {
                   .withActivationEpoch(UInt64.ZERO)
                   .withExitEpoch(FAR_FUTURE_EPOCH)
                   .withWithdrawableEpoch(FAR_FUTURE_EPOCH));
+    }
+  }
+
+  private static class CountingInvalidSignatureMiscHelpers extends MiscHelpersGloas {
+    private int signatureVerificationCount = 0;
+
+    private CountingInvalidSignatureMiscHelpers(
+        final SpecConfigGloas specConfig,
+        final PredicatesGloas predicates,
+        final SchemaDefinitionsGloas schemaDefinitions) {
+      super(specConfig, predicates, schemaDefinitions);
+    }
+
+    @Override
+    public boolean isValidDepositSignature(
+        final BLSPublicKey pubkey,
+        final Bytes32 withdrawalCredentials,
+        final UInt64 amount,
+        final BLSSignature signature) {
+      signatureVerificationCount++;
+      return false;
+    }
+
+    private int getSignatureVerificationCount() {
+      return signatureVerificationCount;
     }
   }
 }
