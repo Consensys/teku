@@ -140,6 +140,10 @@ public class SimpleSidecarRetriever
   }
 
   private boolean activateMatchedRequest(final RequestMatch match) {
+    // The request may have completed after it was matched to a peer.
+    if (isStaleRequest(match.request)) {
+      return false;
+    }
     if (!match.request.activeRpcRequestSet.compareAndSet(false, true)) {
       // already activated
       return false;
@@ -169,8 +173,18 @@ public class SimpleSidecarRetriever
     // log all the info to fix the bug
     activeRpcRequest.ignoreCancelException().finishStackTrace();
 
-    match.request.activeRpcRequest = new ActiveRequest(activeRpcRequest, match.peer);
+    match.request.activeRpcRequest = new ActiveRequest(reqRespPromise, match.peer);
+    // The request may complete while its RPC is being set up.
+    if (isStaleRequest(match.request)) {
+      reqRespPromise.cancel(true);
+      return false;
+    }
     return true;
+  }
+
+  @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
+  private boolean isStaleRequest(final RetrieveRequest request) {
+    return pendingRequests.get(request.columnId) != request;
   }
 
   private Optional<ConnectedPeer> findBestMatchingPeer(
@@ -237,8 +251,14 @@ public class SimpleSidecarRetriever
 
   private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
-    if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
+    if (maybeResult != null && pendingRequests.remove(request.columnId, request)) {
+      request.activeRpcRequest = null;
+      request.activeRpcRequestSet.set(false);
       request.result.completeAsync(maybeResult, asyncRunner);
+      final ActiveRequest activeRequest = request.activeRpcRequest;
+      if (activeRequest != null) {
+        activeRequest.promise().cancel(true);
+      }
       retrieveCounter.incrementAndGet();
     } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
       request.activeRpcRequest = null;
@@ -300,7 +320,7 @@ public class SimpleSidecarRetriever
     return connectedPeers;
   }
 
-  private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
+  private record ActiveRequest(SafeFuture<?> promise, ConnectedPeer peer) {}
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;

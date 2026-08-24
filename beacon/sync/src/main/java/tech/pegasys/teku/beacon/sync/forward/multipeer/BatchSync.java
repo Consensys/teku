@@ -448,7 +448,11 @@ public class BatchSync implements Sync {
     } else if (result == BatchImportResult.EXECUTION_CLIENT_OFFLINE
         || result == BatchImportResult.DATA_NOT_AVAILABLE) {
       if (!scheduledProgressSync) {
-        LOG.warn("Unable to import blocks: {}", result);
+        LOG.warn(
+            "Unable to import blocks ({} - {}): {}",
+            importedBatch.getFirstSlot(),
+            importedBatch.getLastSlot(),
+            result);
         asyncRunner
             .runAfterDelay(
                 () ->

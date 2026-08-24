@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.spec.util.KzgUtil;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
 @SuppressWarnings({"JavaCase"})
@@ -309,6 +310,26 @@ public class SimpleSidecarRetrieverTest {
     assertThat(custodyPeer.getRequests()).hasSize(2);
     advanceTimeGradually(retrieverRound);
     assertThat(custodyPeer.getRequests()).hasSize(2);
+  }
+
+  @Test
+  void sidecarReceivedFromGossipShouldCancelActiveRequest() {
+    final TestPeer custodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1));
+    testPeerManager.connectPeer(custodyPeer);
+    final DataColumnSidecar sidecar = createSidecarAndAddToAllPeers(1);
+    final SafeFuture<DataColumnSidecar> result =
+        simpleSidecarRetriever.retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(custodyPeer.getRequests()).hasSize(1);
+    assertThat(custodyPeer.getRequests().getFirst().response()).isNotDone();
+
+    simpleSidecarRetriever.onNewValidatedSidecar(sidecar, RemoteOrigin.GOSSIP);
+    advanceTimeGradually(Duration.ofMillis(1));
+
+    assertThat(result).isCompletedWithValue(sidecar);
+    assertThat(custodyPeer.getRequests().getFirst().response()).isCancelled();
   }
 
   @Test

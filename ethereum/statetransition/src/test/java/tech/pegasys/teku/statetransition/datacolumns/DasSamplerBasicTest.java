@@ -569,6 +569,7 @@ public class DasSamplerBasicTest {
 
     assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
         .containsKey(blockWithBlobs.getRoot());
+    assertThat(gloasSampler.getBlock(blockWithBlobs.getRoot())).isEmpty();
 
     gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
 
@@ -691,6 +692,8 @@ public class DasSamplerBasicTest {
         .put(oldestCompleted.blockRoot(), oldestCompleted);
     smallSampler.getRecentlySampledColumnsByRoot().put(newerCompleted.blockRoot(), newerCompleted);
     smallSampler.getRecentlySampledColumnsByRoot().put(incomplete.blockRoot(), incomplete);
+    when(recentChainData.containsBlock(oldestCompleted.blockRoot())).thenReturn(true);
+    when(recentChainData.containsBlock(newerCompleted.blockRoot())).thenReturn(true);
 
     // Trigger insertion of a new tracker, which calls makeRoomForNewTracker
     final DataColumnSidecar sidecar =
@@ -721,6 +724,8 @@ public class DasSamplerBasicTest {
         .getRecentlySampledColumnsByRoot()
         .put(oldestCompleted.blockRoot(), oldestCompleted);
     smallSampler.getRecentlySampledColumnsByRoot().put(newerCompleted.blockRoot(), newerCompleted);
+    when(recentChainData.containsBlock(oldestCompleted.blockRoot())).thenReturn(true);
+    when(recentChainData.containsBlock(newerCompleted.blockRoot())).thenReturn(true);
 
     final DataColumnSidecar sidecar =
         dataStructureUtil.randomDataColumnSidecar(
@@ -733,6 +738,27 @@ public class DasSamplerBasicTest {
     assertThat(smallSampler.getRecentlySampledColumnsByRoot())
         .doesNotContainKey(oldestCompleted.blockRoot())
         .containsKey(newerCompleted.blockRoot())
+        .containsKey(sidecar.getBeaconBlockRoot());
+  }
+
+  @Test
+  void getOrCreateTracker_shouldRetainCompletedTrackerAwaitingImportAtSoftLimit() {
+    final DasSamplerBasicImpl smallSampler = createSampler(2, new StubMetricsSystem());
+    final DataColumnSamplingTracker completedPendingImport =
+        completedMockTracker(dataStructureUtil.randomBytes32(), 100L);
+    smallSampler
+        .getRecentlySampledColumnsByRoot()
+        .put(completedPendingImport.blockRoot(), completedPendingImport);
+
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
+
+    smallSampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
+
+    assertThat(smallSampler.getRecentlySampledColumnsByRoot())
+        .containsKey(completedPendingImport.blockRoot())
         .containsKey(sidecar.getBeaconBlockRoot());
   }
 
