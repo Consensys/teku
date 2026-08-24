@@ -81,7 +81,8 @@ public class SimpleSidecarRetriever
    * Fraction of the currently pending requests that may have a redundant ("hedged") second
    * in-flight attempt at any time. Hedging lets a column stuck on a slow/unresponsive peer be
    * re-dispatched to an alternate custody peer without waiting for the original RPC to time out.
-   * {@code 0} disables hedging entirely.
+   * {@code 0} disables hedging entirely; any positive value always permits at least one hedged
+   * request, however few are pending.
    */
   private final double overlapFraction;
 
@@ -210,7 +211,7 @@ public class SimpleSidecarRetriever
                     .ifPresent(
                         peer -> {
                           ongoingRequestsTracker.decreaseAvailableRequests(peer.nodeId);
-                          matches.add(new RequestMatch(peer, entry.getValue()));
+                          matches.add(new RequestMatch(peer, entry.getValue(), false));
                         }));
 
     addHedgeMatches(ongoingRequestsTracker, matches);
@@ -220,22 +221,31 @@ public class SimpleSidecarRetriever
   /**
    * Adds redundant attempts for requests that have been in-flight for too long, re-dispatching them
    * to an alternate custody peer. Bounded by the overlap budget so at most {@code overlapFraction}
-   * of the pending requests carry a duplicate attempt at once.
+   * of the pending requests carry a duplicate attempt at once - or one request, if that fraction
+   * rounds down to zero (see the budget computation below).
    *
-   * <p>A request carries at most two concurrent attempts; escalation past that is implicit, driven
-   * by the RPC first-chunk timeout ({@code
-   * Eth2OutgoingRequestHandler.RESPONSE_CHUNK_ARRIVAL_TIMEOUT}, ~10s) freeing a slot to re-hedge a
-   * still-stuck request to a fresh peer. Example (hedgeDelay=3s, RPC timeout=10s):
+   * <p>A request typically carries at most two concurrent attempts; concurrent rounds may
+   * transiently produce a third (see the best-effort note in {@link #nextRound()}: two overlapping
+   * rounds can both observe the same request as hedge-eligible, or both as having no attempt at
+   * all, and dispatch to different peers). Escalation past two is otherwise implicit, driven by the
+   * RPC first-chunk timeout ({@code Eth2OutgoingRequestHandler.RESPONSE_CHUNK_ARRIVAL_TIMEOUT},
+   * ~10s) freeing a slot to re-hedge a still-stuck request to a fresh peer. Example, in the
+   * non-overlapping case (hedgeDelay=3s, RPC timeout=10s):
    *
    * <ul>
    *   <li>t=0 — primary attempt → peer A. attemptingPeers={A}.
    *   <li>t=3s (hedgeDelay) — size==1 → hedge → peer B. {A,B}.
    *   <li>t=6s — size==2, not eligible; both attempts still outstanding (nothing new).
    *   <li>t≈10s (RPC timeout) — A times out → removed, {B}; B has by now been in flight longer than
-   *       hedgeDelay, so the request is hedge-eligible again → hedge to fresh peer C. {B,C}.
-   *   <li>t=13s — B times out → hedge to D. {C,D} … rotating a dead peer out ~every RPC timeout
-   *       until the column arrives or all attempts drain (then primary re-dispatches).
+   *       hedgeDelay, so the request is hedge-eligible again → hedge to peer C. {B,C}.
+   *   <li>t=13s — B times out → hedge to D. {C,D} … rotating a peer out ~every RPC timeout until
+   *       the column arrives or all attempts drain (then primary re-dispatches).
    * </ul>
+   *
+   * <p>"Peer C" above is not necessarily a peer that has not been tried: a failed attempt releases
+   * its peer immediately (unless the peer disconnected), so A remains selectable and can win
+   * re-selection until enough failures have decayed its {@link ConnectedPeer#getResponseScore()}.
+   * Rotation is driven by that score, not by any exclusion of previously-failed peers.
    */
   private void addHedgeMatches(
       final RequestTracker ongoingRequestsTracker, final List<RequestMatch> matches) {
@@ -249,20 +259,24 @@ public class SimpleSidecarRetriever
     // reasons over the whole pending set. This keeps overlap proportional and self-scaling (5% of
     // in-flight work) rather than coupling it to per-peer rate limiting, which is a separate
     // concern.
-    final int maxOverlap = (int) Math.floor(overlapFraction * pendingRequests.size());
-    if (maxOverlap <= 0) {
-      return;
-    }
-    // A request is hedged at most once: it only becomes eligible below while it has exactly one
-    // attempt (size() == 1), and a hedge takes it to two. So a request never has more than two
-    // concurrent attempts, and counting requests with size() > 1 counts each hedged request exactly
-    // once against the budget (there are no extra attempts to miss).
+    //
+    // Floored at one whenever hedging is enabled at all: with the default fraction of 0.05,
+    // floor(0.05 * N) is 0 for every N < 20, which would switch hedging off precisely in the case
+    // it exists for - the tail of a block's columns, where one straggler stuck on a slow peer gates
+    // data availability. One redundant request is negligible traffic, and the proportional cap
+    // still governs once there is enough outstanding work for it to bind.
+    final int maxOverlap = Math.max(1, (int) Math.floor(overlapFraction * pendingRequests.size()));
+    // Within a single round a request is hedged at most once: it only becomes eligible below while
+    // it has exactly one attempt (size() == 1), and a hedge takes it to two. Counting requests with
+    // size() > 1 therefore counts each hedged request once against the budget.
     //
     // This accounting is best-effort and approximate: rounds are not synchronized and completion
     // callbacks run concurrently, so attemptingPeers can change while we compute the budget and
-    // scan for eligible requests. A request may be counted with a stale size or picked while
-    // transitioning 2 -> 1 attempts; the only effect is slightly over- or under-eager hedging that
-    // self-corrects next round. Correctness never depends on an exact count.
+    // scan for eligible requests. A request may be counted with a stale size, picked while
+    // transitioning 2 -> 1 attempts, or picked by two overlapping rounds at once - in which case it
+    // briefly carries a third attempt while still costing the budget only one. The effect is
+    // slightly over- or under-eager hedging that self-corrects next round; correctness never
+    // depends on an exact count.
     final long currentOverlap =
         pendingRequests.values().stream().filter(r -> r.attemptingPeers.size() > 1).count();
     int budget = maxOverlap - (int) currentOverlap;
@@ -288,8 +302,10 @@ public class SimpleSidecarRetriever
           findBestMatchingPeer(request, ongoingRequestsTracker, request.attemptingPeers);
       if (alternatePeer.isPresent()) {
         ongoingRequestsTracker.decreaseAvailableRequests(alternatePeer.get().nodeId);
-        matches.add(new RequestMatch(alternatePeer.get(), request));
-        hedgeCounter.incrementAndGet();
+        matches.add(new RequestMatch(alternatePeer.get(), request, true));
+        // hedgeCounter is bumped by activateMatchedRequest once the attempt is actually dispatched
+        // - a match here is only a proposal and may still be dropped. The budget is spent either
+        // way: it is a per-round, best-effort allowance (see above), not a count of live hedges.
         budget--;
       }
     }
@@ -297,8 +313,14 @@ public class SimpleSidecarRetriever
 
   private boolean activateMatchedRequest(final RequestMatch match) {
     if (!match.request.attemptingPeers.add(match.peer.nodeId)) {
-      // already attempting this column via this peer
+      // already attempting this column via this peer - a concurrent round can have claimed this
+      // peer between the match being proposed and now, in which case no RPC fires here
       return false;
+    }
+    if (match.hedge()) {
+      // Counted here rather than where the match is proposed: only attempts that get past the
+      // claim above actually put a redundant request on the wire.
+      hedgeCounter.incrementAndGet();
     }
     // Timestamp for this attempt, used to decide hedging eligibility (see inFlightForAtLeast).
     final long dispatchedAtMillis = timeProvider.getTimeInMillis().longValue();
@@ -327,16 +349,29 @@ public class SimpleSidecarRetriever
     // log all the info to fix the bug
     activeRpcRequest.ignoreCancelException().finishStackTrace();
 
-    // Safe to install after firing: reqResp buffers the request and only completes it on flush(),
-    // which happens at the end of this round, so the RPC handle callback above cannot run before
-    // this assignment.
-    match.request.activeRequests.put(
-        match.peer.nodeId, new ActiveRequest(activeRpcRequest, match.peer, dispatchedAtMillis));
-    // The gossip completion path (reqRespSucceeded -> cancelActiveRequests) is NOT gated on flush,
-    // so it could have removed this request between claiming the peer slot above and registering
-    // the future here, leaving it un-cancelled. If the request is no longer pending, cancel now and
-    // don't count this as an activation.
-    if (!pendingRequests.containsKey(match.request.columnId)) {
+    final ActiveRequest activeRequest =
+        new ActiveRequest(activeRpcRequest, match.peer, dispatchedAtMillis);
+    match.request.activeRequests.put(match.peer.nodeId, activeRequest);
+
+    // This attempt can already be finished by the time we get here, so the registration above may
+    // be resurrecting an entry a completion path has just cleaned up. Two ways in:
+    //  - reqResp buffers the request until flush(), but the buffer is shared and rounds are not
+    //    synchronized, so a concurrent round's flush() can dispatch and complete (typically fail)
+    //    this promise before this assignment;
+    //  - the gossip completion path (reqRespSucceeded -> cancelActiveRequests) is not gated on
+    //    flush at all.
+    // Both completion paths do their cleanup before this point, so re-check them and undo the
+    // registration if this attempt is already dead. Leaving a completed ActiveRequest behind would
+    // keep consuming this peer's request budget in createFromCurrentPendingRequests for as long as
+    // the column stays pending, with no later timeout to clear it - and with a small per-peer
+    // limit that can lock the peer out of serving the request that would have replaced the entry.
+    if (!pendingRequests.containsKey(match.request.columnId)
+        // reqRespCompleted removes from attemptingPeers *before* activeRequests, so observing the
+        // peer gone here means our put came after (or raced with) that cleanup.
+        || !match.request.attemptingPeers.contains(match.peer.nodeId)) {
+      // Remove by identity, so a re-dispatch that has already installed a newer attempt for this
+      // peer is left untouched.
+      match.request.activeRequests.remove(match.peer.nodeId, activeRequest);
       activeRpcRequest.cancel(true);
       return false;
     }
@@ -439,6 +474,10 @@ public class SimpleSidecarRetriever
     // next round if still pending. Removing the activeRequests entry also drops this attempt's
     // dispatch timestamp, so the in-flight clock (see inFlightForAtLeast) tracks only live attempts
     // with no field to reset.
+    //
+    // Order matters: attemptingPeers is cleared first so that an activateMatchedRequest racing this
+    // callback (completion can happen before it registers the attempt) reliably sees the peer gone
+    // and drops the entry it just installed.
     request.attemptingPeers.remove(peer.nodeId);
     request.activeRequests.remove(peer.nodeId);
     errorCounter.incrementAndGet();
@@ -630,7 +669,12 @@ public class SimpleSidecarRetriever
     }
   }
 
-  private record RequestMatch(ConnectedPeer peer, RetrieveRequest request) {}
+  /**
+   * A proposed (peer, request) pairing for this round. {@code hedge} distinguishes a redundant
+   * second attempt from a primary one; a match is only a proposal, and activation may still drop
+   * it.
+   */
+  private record RequestMatch(ConnectedPeer peer, RetrieveRequest request, boolean hedge) {}
 
   private RequestTracker createFromCurrentPendingRequests() {
     final Map<UInt256, Integer> pendingRequestsCount = new HashMap<>();

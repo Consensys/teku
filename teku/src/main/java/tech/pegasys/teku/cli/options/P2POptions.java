@@ -444,7 +444,7 @@ public class P2POptions {
       description =
           "Fraction of pending data column sidecar retrievals that may be hedged with a redundant "
               + "request to an alternate custody peer when the original peer is slow to respond. "
-              + "Set to 0 to disable.",
+              + "Any positive value permits at least one hedged retrieval. Set to 0 to disable.",
       arity = "1",
       hidden = true)
   private Double sidecarRetrievalOverlapFraction = DEFAULT_SIDECAR_RETRIEVAL_OVERLAP_FRACTION;

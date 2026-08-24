@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -50,6 +51,19 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+/**
+ * Known coverage gap: these tests drive the retriever through {@link StubAsyncRunner}, which runs
+ * every scheduled action on the calling thread. Rounds are therefore strictly serialized, while
+ * production runs {@link SimpleSidecarRetriever#nextRound()} on a multi-threaded das runner from
+ * both the fixed-delay schedule and {@link SimpleSidecarRetriever#flush()}. Nothing here exercises
+ * two rounds overlapping, so the interleavings the implementation is explicitly written to tolerate
+ * are untested: a completion callback racing the registration of the attempt it belongs to, an
+ * attempt being claimed by another round between being matched and being activated, and a request
+ * transiently carrying more than two attempts. Those paths are unreachable single-threaded (within
+ * a round the primary and hedge passes select disjoint requests, and hedges exclude peers already
+ * in attemptingPeers), so reaching them would need a threaded stress test with no deterministic
+ * failure condition.
+ */
 @SuppressWarnings({"JavaCase"})
 public class SimpleSidecarRetrieverTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -378,6 +392,81 @@ public class SimpleSidecarRetrieverTest {
     assertThat(resp).isNotDone();
     assertThat(fastAlternatePeer.getRequests()).isEmpty();
     assertThat(slowPeer.getRequests()).hasSize(1);
+    assertThat(simpleSidecarRetriever.getHedgeCount()).isZero();
+  }
+
+  @Test
+  void zeroOverlapFractionShouldDisableHedgingAtEveryPendingCount() {
+    // The budget floors at one when hedging is enabled, so guard the off switch explicitly: at
+    // overlapFraction 0 no request is ever hedged, whether the pending set is below the point where
+    // the proportional cap would round down to zero or well above it.
+    final TestPeer slowPeer = createSupernodePeer(Duration.ofDays(1));
+    final TestPeer alternatePeer = createSupernodePeer(Duration.ofMillis(100));
+
+    // 40 pending requests: floor(fraction * N) would be non-zero for any fraction >= 0.025.
+    final List<DataColumnSlotAndIdentifier> ids =
+        IntStream.range(0, 40)
+            .mapToObj(
+                i -> new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, UInt64.valueOf(i)))
+            .toList();
+
+    testPeerManager.connectPeer(slowPeer);
+    // simpleSidecarRetriever is built with overlapFraction == 0
+    ids.forEach(id -> simpleSidecarRetriever.retrieve(id).finish(err -> LOG.debug("err", err)));
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(slowPeer.getRequests()).hasSize(40);
+
+    // An idle alternate is available and every primary attempt is long past the hedge delay, yet
+    // nothing is ever re-dispatched.
+    testPeerManager.connectPeer(alternatePeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(6));
+
+    assertThat(alternatePeer.getRequests()).isEmpty();
+    assertThat(simpleSidecarRetriever.getHedgeCount()).isZero();
+    assertThat(slowPeer.getRequests()).hasSize(40);
+  }
+
+  @Test
+  void hedgingShouldApplyToASingleStuckRequestAtTheDefaultOverlapFraction() {
+    // floor(0.05 * N) is 0 for every N < 20, so a naive budget would disable hedging exactly in the
+    // scenario it exists for: a lone column stuck on a slow peer. The budget floors at one whenever
+    // hedging is enabled. 0.05 mirrors P2PConfig.DEFAULT_SIDECAR_RETRIEVAL_OVERLAP_FRACTION, which
+    // this module cannot reference (networking sits above ethereum in the module layering).
+    final double defaultOverlapFraction = 0.05;
+    final SimpleSidecarRetriever retriever =
+        new SimpleSidecarRetriever(
+            spec,
+            testPeerManager,
+            custodyCountSupplier,
+            testPeerManager,
+            stubAsyncRunner,
+            stubTimeProvider,
+            retrieverRound,
+            defaultOverlapFraction,
+            hedgeDelay);
+
+    final TestPeer slowPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
+    final TestPeer fastAlternatePeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, fastAlternatePeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    testPeerManager.connectPeer(slowPeer);
+    final SafeFuture<DataColumnSidecar> resp = retriever.retrieve(id0);
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(resp).isNotDone();
+
+    testPeerManager.connectPeer(fastAlternatePeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(3));
+
+    assertThat(resp).isCompletedWithValue(sidecar0);
+    assertThat(retriever.getHedgeCount()).isEqualTo(1);
   }
 
   @Test
@@ -422,12 +511,24 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
-  void shouldReHedgeToThirdPeerWhenPrimaryFailsWhileHedgeInFlight() {
-    // Primary attempt (highest score) stays in-flight past hedgeDelay, then fails; the first hedge
-    // peer keeps hanging; a freed slot must be re-hedged to a third (data-holding) peer.
+  void shouldReHedgeToThirdPeerWhenPrimaryDropsWhileHedgeInFlight() {
+    // Primary attempt (highest score) stays in-flight past hedgeDelay and picks up a hedge; the
+    // hedge peer keeps hanging; the primary then disconnects, and the slot it frees must be
+    // re-hedged to a third (data-holding) peer.
+    //
+    // The primary is removed by disconnecting it rather than by exhausting a request limit: a
+    // TestPeer's limit is a monotonic lifetime quota, whereas the production limit
+    // (DataColumnPeerManagerImpl -> RateTracker) is a decaying time window whose charge is adjusted
+    // down to the number of objects actually returned, so a failed or empty response frees the
+    // peer's budget almost immediately and never retires it. Driving the exclusion off that quota
+    // would test a stub-only mechanism.
+    //
+    // Note this makes the test slightly optimistic about peer freshness: with no disconnect,
+    // nothing stops a merely-failing peer from winning re-selection until its response score has
+    // decayed (see the caveat on the re-hedge example in addHedgeMatches).
     final TestPeer primaryPeer =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), retrieverRound.multipliedBy(3))
-            .currentRequestLimit(1); // one attempt, then no budget -> excluded from re-selection
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
     final TestPeer hangingHedgePeer =
         new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
             .currentRequestLimit(1000);
@@ -447,10 +548,22 @@ public class SimpleSidecarRetrieverTest {
     setRequestScore(hedgingRetriever, thirdPeer, 1);
 
     final SafeFuture<DataColumnSidecar> resp = hedgingRetriever.retrieve(id0);
-    advanceTimeGradually(retrieverRound.multipliedBy(7));
+
+    // Primary attempt, then one hedge to the hanging peer once hedgeDelay has passed. The overlap
+    // budget is now spent (the request carries two attempts), so nothing else is dispatched.
+    advanceTimeGradually(retrieverRound.multipliedBy(4));
+    assertThat(resp).isNotDone();
+    assertThat(hedgingRetriever.getHedgeCount()).isEqualTo(1);
+    assertThat(primaryPeer.getRequests()).hasSize(1);
+    assertThat(hangingHedgePeer.getRequests()).hasSize(1);
+    assertThat(thirdPeer.getRequests()).isEmpty();
+
+    // The primary drops: its in-flight attempt fails and it leaves the custody peer set, so the
+    // request is back to a single (still hanging) attempt and becomes hedge-eligible again.
+    testPeerManager.disconnectPeer(primaryPeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(3));
 
     assertThat(resp).isCompletedWithValue(sidecar0);
-    // Two hedges: the hanging peer, then the third peer after the primary attempt freed its slot.
     assertThat(hedgingRetriever.getHedgeCount()).isEqualTo(2);
     assertThat(primaryPeer.getRequests()).hasSize(1);
     assertThat(hangingHedgePeer.getRequests()).hasSize(1);
@@ -491,6 +604,79 @@ public class SimpleSidecarRetrieverTest {
     advanceTimeGradually(retrieverRound.multipliedBy(10));
     assertThat(resp).isCompletedWithValue(sidecar0);
     assertThat(hedgingRetriever.getPendingRequestCount()).isZero();
+  }
+
+  @Test
+  void attemptFailingBeforeRegistrationShouldNotLeakPeerRequestBudget() {
+    // An attempt can complete before activateMatchedRequest registers it: the reqResp buffer is
+    // shared across rounds, so a concurrent round's flush() may dispatch and fail this request
+    // first. Modelled here by a reqResp that fails the peer's request synchronously. The failed
+    // attempt must not leave a completed entry behind in activeRequests - such an entry would
+    // permanently consume the peer's request budget and, with a limit of 1, lock the only custody
+    // peer out of ever retrying the still-pending column.
+    final TestPeer custodyPeer = createCustodyPeer(1);
+    final SynchronouslyFailingReqResp failingReqResp =
+        new SynchronouslyFailingReqResp(testPeerManager, custodyPeer.getNodeId());
+    final SimpleSidecarRetriever retriever =
+        new SimpleSidecarRetriever(
+            spec,
+            testPeerManager,
+            custodyCountSupplier,
+            failingReqResp,
+            stubAsyncRunner,
+            stubTimeProvider,
+            retrieverRound,
+            0.0,
+            hedgeDelay);
+
+    testPeerManager.connectPeer(custodyPeer);
+    final DataColumnSlotAndIdentifier id0 =
+        new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnIndex);
+    retriever.retrieve(id0).finish(err -> LOG.debug("Error retrieving sidecar", err));
+
+    advanceTimeGradually(retrieverRound.multipliedBy(3));
+
+    // The request is still pending and the peer is retried every round rather than being reserved
+    // by a stale in-flight entry.
+    assertThat(retriever.getPendingRequestCount()).isEqualTo(1);
+    assertThat(failingReqResp.getRequestCount()).isEqualTo(3);
+  }
+
+  /** Fails requests to a given peer synchronously, i.e. before the caller sees the promise. */
+  private static class SynchronouslyFailingReqResp implements DataColumnReqResp {
+    private final DataColumnReqResp delegate;
+    private final UInt256 failingNodeId;
+    private final AtomicInteger requestCount = new AtomicInteger();
+
+    private SynchronouslyFailingReqResp(
+        final DataColumnReqResp delegate, final UInt256 failingNodeId) {
+      this.delegate = delegate;
+      this.failingNodeId = failingNodeId;
+    }
+
+    int getRequestCount() {
+      return requestCount.get();
+    }
+
+    @Override
+    public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
+        final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
+      if (!nodeId.equals(failingNodeId)) {
+        return delegate.requestDataColumnSidecar(nodeId, columnIdentifier);
+      }
+      requestCount.incrementAndGet();
+      return SafeFuture.failedFuture(new DataColumnReqRespException());
+    }
+
+    @Override
+    public void flush() {
+      delegate.flush();
+    }
+
+    @Override
+    public int getCurrentRequestLimit(final UInt256 nodeId) {
+      return delegate.getCurrentRequestLimit(nodeId);
+    }
   }
 
   @Test
