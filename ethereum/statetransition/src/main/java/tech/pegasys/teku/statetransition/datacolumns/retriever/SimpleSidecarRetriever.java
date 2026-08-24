@@ -350,7 +350,7 @@ public class SimpleSidecarRetriever
     activeRpcRequest.ignoreCancelException().finishStackTrace();
 
     final ActiveRequest activeRequest =
-        new ActiveRequest(activeRpcRequest, match.peer, dispatchedAtMillis);
+        new ActiveRequest(activeRpcRequest, reqRespPromise, match.peer, dispatchedAtMillis);
     match.request.activeRequests.put(match.peer.nodeId, activeRequest);
 
     // This attempt can already be finished by the time we get here, so the registration above may
@@ -372,7 +372,12 @@ public class SimpleSidecarRetriever
       // Remove by identity, so a re-dispatch that has already installed a newer attempt for this
       // peer is left untouched.
       match.request.activeRequests.remove(match.peer.nodeId, activeRequest);
-      activeRpcRequest.cancel(true);
+      if (activeRequest.cancel()) {
+        // The RPC was still buffered, so flush() will drop it and it never reaches the network.
+        // Give the peer back the request we charged it above: scoring it down for a request we
+        // withdrew ourselves would push a healthy peer down the selection order.
+        match.peer.uncountSidecarRequest();
+      }
       return false;
     }
     return true;
@@ -547,8 +552,33 @@ public class SimpleSidecarRetriever
     return pendingRequests.size();
   }
 
+  /**
+   * A dispatched attempt. {@code promise} is the completion-handling stage; {@code rpcPromise} is
+   * the underlying {@link DataColumnReqResp} promise, kept so cancellation can reach the request
+   * while it is still buffered.
+   */
   private record ActiveRequest(
-      SafeFuture<Void> promise, ConnectedPeer peer, long dispatchedAtMillis) {}
+      SafeFuture<Void> promise,
+      SafeFuture<DataColumnSidecar> rpcPromise,
+      ConnectedPeer peer,
+      long dispatchedAtMillis) {
+
+    /**
+     * Abandons this attempt, returning {@code true} if the RPC had not completed yet - i.e. it was
+     * still sitting in the reqResp buffer and {@link DataColumnReqResp#flush()} will now drop it
+     * instead of putting it on the wire.
+     *
+     * <p>Cancelling {@code promise} alone is not enough: it is a dependent stage, so cancelling it
+     * leaves {@code rpcPromise} pending and still queued for the next flush, and the request goes
+     * out regardless - with its response discarded, since the cancelled stage never runs. The
+     * handling stage is cancelled first so that cancelling the source below does not fire the
+     * completion callback and book this as a failed attempt.
+     */
+    boolean cancel() {
+      promise().cancel(true);
+      return rpcPromise().cancel(true);
+    }
+  }
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;
@@ -582,7 +612,11 @@ public class SimpleSidecarRetriever
       // is discarded right after. We therefore only cancel the in-flight futures and deliberately
       // do NOT clear the two collections: clearing them in sequence is not atomic and could briefly
       // expose an inconsistent (attemptingPeers, activeRequests) view to a concurrent round.
-      activeRequests.values().forEach(activeRequest -> activeRequest.promise().cancel(true));
+      //
+      // ActiveRequest.cancel also cancels the underlying reqResp promise, so an attempt dispatched
+      // this round but not yet flushed is dropped from the buffer rather than sent for a column we
+      // already have.
+      activeRequests.values().forEach(ActiveRequest::cancel);
     }
   }
 
@@ -644,6 +678,15 @@ public class SimpleSidecarRetriever
       if (current == Integer.MAX_VALUE) {
         resetCounters();
       }
+    }
+
+    /**
+     * Rolls back a {@link #countSidecarRequest()} for an attempt that was withdrawn before reaching
+     * the network, so the peer is not scored down for it. Floored at the counter's initial value of
+     * 1 to keep {@link #getResponseScore()} from dividing by zero.
+     */
+    public void uncountSidecarRequest() {
+      sidecarsRequested.updateAndGet(current -> Math.max(1, current - 1));
     }
 
     private void resetCounters() {

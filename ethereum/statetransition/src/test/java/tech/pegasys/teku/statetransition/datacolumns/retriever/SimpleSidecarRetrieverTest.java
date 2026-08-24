@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 /**
  * Known coverage gap: these tests drive the retriever through {@link StubAsyncRunner}, which runs
@@ -640,6 +641,86 @@ public class SimpleSidecarRetrieverTest {
     // by a stale in-flight entry.
     assertThat(retriever.getPendingRequestCount()).isEqualTo(1);
     assertThat(failingReqResp.getRequestCount()).isEqualTo(3);
+  }
+
+  @Test
+  void gossipWinningMidDispatchShouldWithdrawTheBufferedRequest() {
+    // Gossip can deliver the column while activateMatchedRequest is between claiming the peer and
+    // registering the attempt. The attempt is then abandoned, and the reqResp promise must be
+    // cancelled so the still-buffered request is dropped at flush instead of going to the network
+    // for a column we already have - and the peer must not be scored down for it.
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    // Delivers the sidecar by gossip from inside the dispatch call itself, reproducing the race
+    // deterministically, and hands back a promise that stays pending the way a buffered request
+    // does.
+    final GossipRacingReqResp racingReqResp = new GossipRacingReqResp();
+    final SimpleSidecarRetriever retriever =
+        new SimpleSidecarRetriever(
+            spec,
+            testPeerManager,
+            custodyCountSupplier,
+            racingReqResp,
+            stubAsyncRunner,
+            stubTimeProvider,
+            retrieverRound,
+            0.0,
+            hedgeDelay);
+    racingReqResp.deliverByGossipOnRequest(retriever, sidecar0);
+
+    // Connect only now: peerConnected is delivered to listeners at connect time.
+    final TestPeer custodyPeer = createCustodyPeer();
+    testPeerManager.connectPeer(custodyPeer);
+
+    final int requestedBefore =
+        retriever.getConnectedPeers().get(custodyPeer.getNodeId()).getSidecarsRequested().get();
+
+    final SafeFuture<DataColumnSidecar> resp = retriever.retrieve(id0);
+    advanceTimeGradually(retrieverRound);
+
+    assertThat(resp).isCompletedWithValue(sidecar0);
+    // The buffered request was withdrawn rather than left pending for flush to send.
+    assertThat(racingReqResp.getIssuedPromise()).isCancelled();
+    // ... and the peer is not charged for a request that never reached the wire.
+    assertThat(retriever.getConnectedPeers().get(custodyPeer.getNodeId()).getSidecarsRequested())
+        .hasValue(requestedBefore);
+    assertThat(retriever.getPendingRequestCount()).isZero();
+  }
+
+  /**
+   * Delivers a sidecar via the retriever's gossip entry point from within {@code
+   * requestDataColumnSidecar}, i.e. while the caller is still mid-dispatch, and returns a promise
+   * that never completes on its own - as a request buffered until the next flush would.
+   */
+  private static class GossipRacingReqResp implements DataColumnReqResp {
+    private final SafeFuture<DataColumnSidecar> issuedPromise = new SafeFuture<>();
+    private Optional<Runnable> onRequest = Optional.empty();
+
+    void deliverByGossipOnRequest(
+        final SimpleSidecarRetriever retriever, final DataColumnSidecar sidecar) {
+      this.onRequest =
+          Optional.of(() -> retriever.onNewValidatedSidecar(sidecar, RemoteOrigin.GOSSIP));
+    }
+
+    SafeFuture<DataColumnSidecar> getIssuedPromise() {
+      return issuedPromise;
+    }
+
+    @Override
+    public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
+        final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
+      onRequest.ifPresent(Runnable::run);
+      return issuedPromise;
+    }
+
+    @Override
+    public void flush() {}
+
+    @Override
+    public int getCurrentRequestLimit(final UInt256 nodeId) {
+      return 1000;
+    }
   }
 
   /** Fails requests to a given peer synchronously, i.e. before the caller sees the promise. */
