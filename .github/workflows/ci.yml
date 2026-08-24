@@ -365,7 +365,7 @@ jobs:
           npm ci
           node publish.js
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # 4.9.0
+        uses: JamesIves/github-pages-deploy-action@9d877eea73427180ae43cf98e8914934fe157a1a # 4.7.6
         with:
           folder: .openapidoc/dist
           branch: gh-pages
