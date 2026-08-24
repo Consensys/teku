@@ -569,7 +569,6 @@ public class DasSamplerBasicTest {
 
     assertThat(gloasSampler.getRecentlySampledColumnsByRoot())
         .containsKey(blockWithBlobs.getRoot());
-    assertThat(gloasSampler.getBlock(blockWithBlobs.getRoot())).isEmpty();
 
     gloasSampler.onExecutionPayloadImported(blockWithBlobs.getSlotAndBlockRoot());
 

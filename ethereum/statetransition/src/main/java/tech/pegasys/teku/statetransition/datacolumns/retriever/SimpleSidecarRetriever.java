@@ -252,10 +252,10 @@ public class SimpleSidecarRetriever
   private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null && pendingRequests.remove(request.columnId, request)) {
+      final ActiveRequest activeRequest = request.activeRpcRequest;
       request.activeRpcRequest = null;
       request.activeRpcRequestSet.set(false);
       request.result.completeAsync(maybeResult, asyncRunner);
-      final ActiveRequest activeRequest = request.activeRpcRequest;
       if (activeRequest != null) {
         activeRequest.promise().cancel(true);
       }
