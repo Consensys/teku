@@ -2033,6 +2033,8 @@ class ForkChoiceTest {
             debugDataDumper,
             metricsSystem,
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+    // Started as BeaconChainController does, so the per-slot fast confirmation pipeline runs.
+    assertThat(forkChoice.getFastConfirmationService().start()).isCompleted();
   }
 
   private IntSet ptcPositions(final int count) {

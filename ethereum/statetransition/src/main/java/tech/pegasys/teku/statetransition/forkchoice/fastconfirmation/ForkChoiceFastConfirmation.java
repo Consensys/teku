@@ -22,11 +22,18 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.client.ChainHead;
 
-/** Glue between {@code ForkChoice.onTick} and the fast confirmation side runner. */
-public final class ForkChoiceFastConfirmation {
+/**
+ * Glue between {@code ForkChoice.onTick} and the fast confirmation side runner.
+ *
+ * <p>A {@link Service} so its per-slot pipeline has an explicit lifecycle: it is started and
+ * stopped by the beacon chain controller, and must be stopped before the fork-choice event thread
+ * is (see {@link #doStop}).
+ */
+public final class ForkChoiceFastConfirmation extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -95,6 +102,9 @@ public final class ForkChoiceFastConfirmation {
       final SafeFuture<Void> deferredAttestationsFuture,
       final Function<UInt64, SafeFuture<Optional<ChainHead>>> processHead,
       final Supplier<SafeFuture<Void>> sendForkChoiceUpdated) {
+    if (!isRunning()) {
+      return;
+    }
     final SafeFuture<Void> segment =
         slotChain
             .thenCompose(__ -> deferredAttestationsFuture)
@@ -115,9 +125,32 @@ public final class ForkChoiceFastConfirmation {
             // cannot wedge later slots.
             .exceptionally(
                 error -> {
-                  LOG.error("Fast confirmation update for slot {} failed", currentSlot, error);
+                  if (isRunning()) {
+                    LOG.error("Fast confirmation update for slot {} failed", currentSlot, error);
+                  } else {
+                    LOG.debug(
+                        "Fast confirmation update for slot {} abandoned during shutdown",
+                        currentSlot,
+                        error);
+                  }
                   return null;
                 });
+  }
+
+  @Override
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.COMPLETE;
+  }
+
+  /**
+   * Stops scheduling new per-slot work; any segment still in flight is left to fail or time out
+   * quietly. Must be called before the fork-choice event thread is stopped, otherwise the in-flight
+   * segment's work is rejected with "EventThread not started" and logged as an FCR error on every
+   * clean shutdown.
+   */
+  @Override
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.COMPLETE;
   }
 
   private SafeFuture<Void> withSegmentTimeout(final SafeFuture<Void> segment, final UInt64 slot) {

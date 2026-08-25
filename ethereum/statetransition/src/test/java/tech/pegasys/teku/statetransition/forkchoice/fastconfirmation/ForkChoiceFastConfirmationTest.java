@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -57,6 +58,7 @@ class ForkChoiceFastConfirmationTest {
       };
 
   ForkChoiceFastConfirmationTest() {
+    assertThat(forkChoiceFastConfirmation.start()).isCompleted();
     when(tracker.onSlot(any(), any()))
         .thenAnswer(
             invocation -> {
@@ -148,6 +150,52 @@ class ForkChoiceFastConfirmationTest {
     // No head, so neither onSlot nor the fcU runs for this slot.
     assertThat(onSlotInvocations).isEmpty();
     assertThat(events).isEmpty();
+  }
+
+  @Test
+  void shouldNotScheduleNewSlotWorkAfterStop() {
+    final Function<UInt64, SafeFuture<Optional<ChainHead>>> processHead =
+        slot -> SafeFuture.completedFuture(Optional.of(chainHead(Bytes32.random())));
+
+    assertThat(forkChoiceFastConfirmation.stop()).isCompleted();
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, processHead, sendForkChoiceUpdated);
+
+    assertThat(onSlotInvocations).isEmpty();
+    assertThat(events).isEmpty();
+  }
+
+  @Test
+  void shouldNotLogErrorWhenAnInFlightSegmentFailsAfterStop() {
+    // The fork-choice event thread is stopped while a segment is in flight, so its work fails with
+    // "EventThread not started". That is expected shutdown noise, not an FCR failure.
+    final SafeFuture<Optional<ChainHead>> pendingHead = new SafeFuture<>();
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceFastConfirmation.class)) {
+      forkChoiceFastConfirmation.processForSlot(
+          UInt64.ONE, SafeFuture.COMPLETE, slot -> pendingHead, sendForkChoiceUpdated);
+
+      assertThat(forkChoiceFastConfirmation.stop()).isCompleted();
+      pendingHead.completeExceptionally(new IllegalStateException("EventThread not started"));
+
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+      assertThat(logCaptor.getDebugLogs())
+          .anyMatch(log -> log.contains("Fast confirmation update for slot 1 abandoned"));
+    }
+  }
+
+  @Test
+  void shouldLogErrorWhenASegmentFailsWhileRunning() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceFastConfirmation.class)) {
+      forkChoiceFastConfirmation.processForSlot(
+          UInt64.ONE,
+          SafeFuture.COMPLETE,
+          slot -> SafeFuture.failedFuture(new IllegalStateException("processHead failed")),
+          sendForkChoiceUpdated);
+
+      assertThat(logCaptor.getErrorLogs())
+          .anyMatch(log -> log.contains("Fast confirmation update for slot 1 failed"));
+    }
   }
 
   private ChainHead chainHead(final Bytes32 root) {

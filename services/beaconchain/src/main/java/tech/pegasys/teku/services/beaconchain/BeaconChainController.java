@@ -579,6 +579,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       eventChannels.subscribe(SlotEventsChannel.class, ephemerySlotValidationService);
     }
     SafeFuture.allOfFailFast(
+            forkChoice.getFastConfirmationService().start(),
             attestationManager.start(),
             p2pNetwork.start(),
             blockManager.start(),
@@ -615,6 +616,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
+            // Stopped before the fork-choice executor below, so no in-flight fast confirmation
+            // work is submitted to a stopped event thread and logged as an error.
+            forkChoice.getFastConfirmationService().stop(),
             beaconRestAPI.map(BeaconRestApi::stop).orElse(SafeFuture.completedFuture(null)),
             syncService.stop(),
             blockManager.stop(),
