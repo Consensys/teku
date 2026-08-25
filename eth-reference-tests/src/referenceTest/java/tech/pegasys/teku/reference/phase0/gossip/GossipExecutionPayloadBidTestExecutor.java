@@ -22,6 +22,8 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -75,6 +78,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
 
@@ -174,10 +178,24 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
             .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
             .isTrue();
       }
-      // Note: blockEntry.getPayload() only names the payload this block's bid commits to; it does
-      // not mean the payload has been revealed. Reveal happens solely via an explicit
-      // execution_payload_envelope message below -- fixtures that expect the bid's parent payload
-      // to be unknown list the payload name but ship no envelope file for it.
+      // blockEntry.getPayload() names the payload already revealed for this block in the setup
+      // store, which is what makes the fork choice node FULL. It is distinct from the gossip level
+      // seen cache below: a fixture that expects the bid's parent payload to be unknown still names
+      // the payload here but ships no envelope file, so the file's presence is what decides.
+      if (blockEntry.getPayload() != null) {
+        final Path envelopeFile =
+            testDefinition.getTestDirectory().resolve(blockEntry.getPayload() + ".ssz_snappy");
+        if (Files.exists(envelopeFile)) {
+          applyExecutionPayloadToStore(
+              spec,
+              recentChainData,
+              forkChoice,
+              loadSsz(
+                  testDefinition,
+                  blockEntry.getPayload() + ".ssz_snappy",
+                  envelopeSchema::sszDeserialize));
+        }
+      }
     }
 
     // The finalized checkpoint from meta.yaml is deliberately not committed to the store. None of
@@ -321,10 +339,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
         if (result.isAccept()) {
           final ExecutionPayload payload = signedEnvelope.getMessage().getPayload();
           seenExecutionPayloadGasLimits.put(payload.getBlockHash(), payload.getGasLimit());
-          // Also reveal into fork choice so the payload status is reflected there. This is best
-          // effort: a fixture may pair a payload with a block whose committed bid it does not
-          // match, which fails envelope verification even though the payload is gossip valid.
-          safeJoin(forkChoice.onExecutionPayloadEnvelope(signedEnvelope, executionLayer));
+          applyExecutionPayloadToStore(spec, recentChainData, forkChoice, signedEnvelope);
         }
       } else if (messageName.startsWith("execution_payload_bid_")) {
         final SignedExecutionPayloadBid signedBid =
@@ -361,6 +376,36 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
                     + messageName);
       }
     }
+  }
+
+  /**
+   * Reveals an execution payload in the store without running full envelope verification, marking
+   * its fork choice node FULL.
+   *
+   * <p>These fixtures reuse a single beacon block across the suite while varying the payload
+   * revealed for it -- the gas limit tests exist precisely to vary the parent payload's gas limit
+   * -- so the payload frequently does not match the gas limit the block's bid committed to. pyspec
+   * builds that store state directly and never verifies it, whereas {@code
+   * ForkChoice#onExecutionPayloadEnvelope} rightly refuses it. Verification is the subject of the
+   * execution payload envelope tests, not these, so the store state is set up directly here.
+   */
+  private static void applyExecutionPayloadToStore(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
+      final SignedExecutionPayloadEnvelope signedEnvelope) {
+    final UpdatableStore.StoreTransaction transaction = recentChainData.startStoreTransaction();
+    spec.atSlot(signedEnvelope.getSlot())
+        .getForkChoiceUtil()
+        .applyExecutionPayloadToStore(transaction, signedEnvelope, false);
+    safeJoin(transaction.commit());
+    recentChainData
+        .getStore()
+        .getForkChoiceStrategy()
+        .onExecutionPayloadResult(signedEnvelope.getBeaconBlockRoot(), PayloadStatus.VALID, false);
+    // Recompute the head so it reflects the newly revealed payload; the full envelope import path
+    // does this itself, and without it the chain head keeps the payload status it had before.
+    safeJoin(forkChoice.processHead());
   }
 
   @SuppressWarnings("unused")
