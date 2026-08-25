@@ -193,12 +193,19 @@ public class BesuNode extends Node {
    */
   public JsonNode getExecutionBlock(final String blockLabel) throws Exception {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
-    final String body =
-        String.format(
-            "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getBlockByNumber\",\"params\":[\"%s\",false],\"id\":1}",
-            blockLabel);
-    final String response = httpClient.post(baseUri, "", body);
-    return OBJECT_MAPPER.readTree(response).get("result");
+    final String response =
+        httpClient.post(
+            baseUri,
+            "",
+            OBJECT_MAPPER.writeValueAsString(
+                new Request("eth_getBlockByNumber", blockLabel, false)));
+    final JsonNode responseNode = OBJECT_MAPPER.readTree(response);
+    final JsonNode error = responseNode.get("error");
+    if (error != null && !error.isNull()) {
+      throw new IllegalStateException(
+          "eth_getBlockByNumber(" + blockLabel + ") failed with error: " + error);
+    }
+    return responseNode.get("result");
   }
 
   public String getRichBenefactorAddress() {
@@ -281,11 +288,11 @@ public class BesuNode extends Node {
 
     public final String jsonrpc = "2.0";
     public final String method;
-    public final String[] params;
+    public final Object[] params;
     private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
     public final int id;
 
-    public Request(final String method, final String... params) {
+    public Request(final String method, final Object... params) {
       this.method = method;
       this.params = params;
       this.id = ID_COUNTER.incrementAndGet();

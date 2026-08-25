@@ -183,12 +183,23 @@ public class TekuBeaconNode extends TekuNode {
     if (maybeMessage.isEmpty()) {
       return Optional.empty();
     }
-    final JsonNode data = OBJECT_MAPPER.readTree(maybeMessage.get().getMessageEvent().getData());
+    final String rawData = maybeMessage.get().getMessageEvent().getData();
+    final JsonNode data = OBJECT_MAPPER.readTree(rawData);
     return Optional.of(
         new FastConfirmationEventData(
-            Bytes32.fromHexString(data.get("block").asText()),
-            UInt64.valueOf(data.get("slot").asText()),
-            UInt64.valueOf(data.get("current_slot").asText())));
+            Bytes32.fromHexString(getRequiredTextField(data, "block", rawData)),
+            UInt64.valueOf(getRequiredTextField(data, "slot", rawData)),
+            UInt64.valueOf(getRequiredTextField(data, "current_slot", rawData))));
+  }
+
+  private static String getRequiredTextField(
+      final JsonNode data, final String fieldName, final String rawData) {
+    final JsonNode field = data.get(fieldName);
+    if (field == null || field.isNull() || field.asText().isEmpty()) {
+      throw new IllegalStateException(
+          "fast_confirmation event is missing field '" + fieldName + "': " + rawData);
+    }
+    return field.asText();
   }
 
   public record FastConfirmationEventData(Bytes32 block, UInt64 slot, UInt64 currentSlot) {}
