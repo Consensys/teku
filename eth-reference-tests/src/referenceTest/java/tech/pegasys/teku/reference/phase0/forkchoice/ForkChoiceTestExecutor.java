@@ -47,8 +47,10 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -65,13 +67,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -81,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
@@ -97,6 +104,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.payloadattestation.ValidatablePayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
@@ -147,9 +156,30 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice_compliance/shuffling_test", new ForkChoiceTestExecutor())
           .build();
 
+  public static final ImmutableMap<String, TestExecutor> FAST_CONFIRMATION_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .put("fast_confirmation/basic", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/current_epoch", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/empty_slots", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/ffg", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/is_one_confirmed", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/previous_epoch", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/reconfirmation", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/restart_gu", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/revert_finality", new ForkChoiceTestExecutor(true))
+          .put("fast_confirmation/variables", new ForkChoiceTestExecutor(true))
+          .build();
+
   private final List<?> testsToSkip;
+  private final boolean fastConfirmationEnabled;
 
   public ForkChoiceTestExecutor(final String... testsToSkip) {
+    this(false, testsToSkip);
+  }
+
+  public ForkChoiceTestExecutor(
+      final boolean fastConfirmationEnabled, final String... testsToSkip) {
+    this.fastConfirmationEnabled = fastConfirmationEnabled;
     this.testsToSkip = List.of(testsToSkip);
   }
 
@@ -175,10 +205,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final StorageSystem storageSystem =
         InMemoryStorageSystemBuilder.create().specProvider(spec).build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
-    recentChainData.initializeFromAnchorPoint(
+    final AnchorPoint anchorPoint =
         AnchorPoint.fromInitialBlockAndState(
-            spec, new SignedBlockAndState(anchorBlock, anchorState)),
-        spec.computeTimeAtSlot(anchorBlock.getSlot(), anchorState.getGenesisTime()));
+            spec, new SignedBlockAndState(anchorBlock, anchorState));
+    recentChainData.initializeFromAnchorPoint(
+        anchorPoint, spec.computeTimeAtSlot(anchorBlock.getSlot(), anchorState.getGenesisTime()));
+    final AnchorInfo anchorInfo =
+        new AnchorInfo(
+            anchorBlock.getRoot(), anchorPoint.getExecutionBlockHash().orElse(Bytes32.ZERO));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
@@ -209,15 +243,49 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final AsyncBLSSignatureVerifier signatureVerifier =
         AsyncBLSSignatureVerifier.wrap(
             blsDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE);
+    // Run the fast confirmation work synchronously so the confirmation store is up to date by the
+    // time the checks step reads it.
+    //
+    // The tracker is driven explicitly from the checks steps (see runSteps) rather than by
+    // ForkChoice.onTick, so the runner reproduces the call sequence the vectors were generated
+    // with: the spec test harness calls on_fast_confirmation itself, and while it almost always
+    // does so exactly once per slot right after the tick, a few vectors call it twice within a slot
+    // or skip a slot entirely. Driving it from onTick would then apply a different number of
+    // rotations. ForkChoice therefore gets the NOOP tracker here; its once-per-slot production
+    // scheduling is covered by ForkChoiceFastConfirmationTest and FastConfirmationTrackerTest.
+    final FastConfirmationTracker fastConfirmationTracker =
+        fastConfirmationEnabled
+            ? FastConfirmationTracker.create(
+                spec,
+                Optional.of(SyncAsyncRunner.SYNC_RUNNER),
+                FastConfirmationEventChannel.NOOP,
+                new StubMetricsSystem(),
+                StubTimeProvider.withTimeInMillis(0))
+            : FastConfirmationTracker.NOOP;
+    fastConfirmationTracker.initialize(recentChainData.getStore());
+    // Mirrors BeaconChainController#initForkChoiceStateProvider: with fast confirmation enabled the
+    // FCU safe_block_hash comes from the confirmed root (get_safe_execution_block_hash), otherwise
+    // the supplier is empty and the safe hash defaults to the justified block.
+    final ForkChoiceStateProvider forkChoiceStateProvider =
+        new ForkChoiceStateProvider(
+            eventThread,
+            recentChainData,
+            () ->
+                fastConfirmationTracker
+                    .getFastConfirmationStore()
+                    .map(FastConfirmationStore::confirmedRoot));
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
             new NoopForkChoiceNotifier(),
-            new ForkChoiceStateProvider(eventThread, recentChainData),
+            forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            // NOOP so onTick does not also run the update once per slot: the checks steps are the
+            // single driver, and a double rotation per slot would desync the FCR variables.
+            FastConfirmationTracker.NOOP,
             // forkChoiceLateBlockReorgEnabled is true here always because this is the reference
             // test executor
             true,
@@ -249,6 +317,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           blobSidecarManager,
           dataColumnSidecarManager,
           forkChoice,
+          fastConfirmationTracker,
+          forkChoiceStateProvider,
+          anchorInfo,
           executionLayer,
           maybeAttestationValidator,
           gossipValidationHelper,
@@ -295,6 +366,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final StubBlobSidecarManager blobSidecarManager,
       final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
+      final FastConfirmationTracker fastConfirmationTracker,
+      final ForkChoiceStateProvider forkChoiceStateProvider,
+      final AnchorInfo anchorInfo,
       final ExecutionLayerChannelStub executionLayer,
       final Optional<AttestationValidator> maybeAttestationValidator,
       final GossipValidationHelper gossipValidationHelper,
@@ -305,7 +379,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     for (Map<String, Object> step : steps) {
       LOG.info("Executing step {}", step);
       if (step.containsKey("checks")) {
-        applyChecks(recentChainData, forkChoice, step);
+        applyChecks(
+            recentChainData,
+            forkChoice,
+            fastConfirmationTracker,
+            forkChoiceStateProvider,
+            anchorInfo,
+            step);
 
       } else if (step.containsKey("tick")) {
         forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")), Optional.empty());
@@ -455,8 +535,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SafeFuture<AttestationProcessingResult> result =
         forkChoice.onAttestation(validatableAttestation);
     assertThat(result).isCompleted();
-    AttestationProcessingResult processingResult = safeJoin(result);
-    assertThat(processingResult.isSuccessful())
+    final AttestationProcessingResult processingResult = safeJoin(result);
+    // A current-slot attestation is valid but deferred by fork choice (stored and applied on the
+    // next tick). The fast confirmation vectors apply such attestations, so treat deferral as an
+    // accepted outcome.
+    final boolean acceptedByForkChoice =
+        processingResult.isSuccessful()
+            || processingResult.getStatus()
+                == AttestationProcessingResult.Status.DEFER_FORK_CHOICE_PROCESSING;
+    assertThat(acceptedByForkChoice)
         .withFailMessage(processingResult.getInvalidReason())
         .isEqualTo(valid);
   }
@@ -666,10 +753,23 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private void applyChecks(
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
+      final FastConfirmationTracker fastConfirmationTracker,
+      final ForkChoiceStateProvider forkChoiceStateProvider,
+      final AnchorInfo anchorInfo,
       final Map<String, Object> step) {
     assertThat(forkChoice.processHead()).isCompleted();
     final UpdatableStore store = recentChainData.getStore();
     final Map<String, Object> checks = get(step, "checks");
+    // Every checks step carrying fast confirmation state was emitted by the spec test harness
+    // directly after an on_fast_confirmation call, so run the handler here against the head that
+    // processHead just selected.
+    if (fastConfirmationTracker.isEnabled() && checks.containsKey("confirmed_root")) {
+      final SafeFuture<Void> fastConfirmation =
+          fastConfirmationTracker.onFastConfirmation(
+              recentChainData.getCurrentSlot().orElseThrow(),
+              recentChainData.getBestBlockRoot().orElseThrow());
+      assertThat(fastConfirmation).isCompleted();
+    }
     final List<AssertionError> failures = new ArrayList<>();
     for (String checkType : checks.keySet()) {
       try {
@@ -794,6 +894,51 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                   get(checks, checkType),
                   ReadOnlyForkChoiceStrategy::getPayloadDataAvailabilityVote);
 
+          case "previous_epoch_observed_justified_checkpoint" ->
+              assertCheckpoint(
+                  checkType,
+                  fastConfirmationStore(fastConfirmationTracker)
+                      .previousEpochObservedJustifiedCheckpoint(),
+                  get(checks, checkType));
+
+          case "current_epoch_observed_justified_checkpoint" ->
+              assertCheckpoint(
+                  checkType,
+                  fastConfirmationStore(fastConfirmationTracker)
+                      .currentEpochObservedJustifiedCheckpoint(),
+                  get(checks, checkType));
+
+          case "previous_epoch_greatest_unrealized_checkpoint" ->
+              assertCheckpoint(
+                  checkType,
+                  fastConfirmationStore(fastConfirmationTracker)
+                      .previousEpochGreatestUnrealizedCheckpoint(),
+                  get(checks, checkType));
+
+          case "previous_slot_head" ->
+              assertThat(fastConfirmationStore(fastConfirmationTracker).previousSlotHead())
+                  .describedAs(checkType)
+                  .isEqualTo(getBytes32(checks, checkType));
+
+          case "current_slot_head" ->
+              assertThat(fastConfirmationStore(fastConfirmationTracker).currentSlotHead())
+                  .describedAs(checkType)
+                  .isEqualTo(getBytes32(checks, checkType));
+
+          case "confirmed_root" ->
+              assertThat(fastConfirmationStore(fastConfirmationTracker).confirmedRoot())
+                  .describedAs(checkType)
+                  .isEqualTo(getBytes32(checks, checkType));
+
+          case "safe_execution_block_hash" ->
+              assertSafeExecutionBlockHash(
+                  checkType,
+                  store,
+                  fastConfirmationStore(fastConfirmationTracker).confirmedRoot(),
+                  anchorInfo,
+                  forkChoiceStateProvider,
+                  getBytes32(checks, checkType));
+
           default ->
               throw new UnsupportedOperationException("Unsupported check type: " + checkType);
         }
@@ -809,6 +954,94 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       }
       throw firstError;
     }
+  }
+
+  /**
+   * Asserts {@code get_safe_execution_block_hash(fcr_store)}, which the spec defines purely in
+   * terms of the confirmed block's body, and then ties that value to the {@code safe_block_hash}
+   * Teku actually puts in the fcU.
+   *
+   * <p>The two are read from different places: the spec reads the block body, while Teku's fcU
+   * value comes from the confirmed block's BASE node in protoarray. For every imported block those
+   * agree, because the node's execution hash is taken from the block body. They diverge only for a
+   * pre-Gloas anchor, whose body holds a default, all-zero payload while its node is seeded from
+   * the anchor <em>state</em>'s {@code latest_execution_payload_header} (see {@code
+   * StateAndBlockSummary#getExecutionBlockHash}) and so carries the real EL genesis hash. Teku's
+   * choice there is deliberate and load-bearing: protoarray uses a zero execution hash as the
+   * "pre-merge" marker (see {@code ProtoArray#findOptimisticallySyncedMergeTransitionBlock}), so
+   * zeroing the genesis node on a merged-at-genesis network would make the first block after
+   * genesis look like the merge transition block.
+   *
+   * <p>So the spec value is always asserted against the vector, and the fcU value is always
+   * asserted too — against the spec value in the general case, and against the anchor's seed in
+   * that one divergent case. No check is skipped and no value is left unasserted.
+   */
+  private void assertSafeExecutionBlockHash(
+      final String checkType,
+      final ReadOnlyStore store,
+      final Bytes32 confirmedRoot,
+      final AnchorInfo anchorInfo,
+      final ForkChoiceStateProvider forkChoiceStateProvider,
+      final Bytes32 expected) {
+    final Bytes32 specValue = confirmedBlockExecutionBlockHash(store, confirmedRoot);
+    assertThat(specValue).describedAs(checkType).isEqualTo(expected);
+
+    // Teku's fcU value is read from the confirmed block's fork choice node, which for an imported
+    // block carries the same hash the spec reads out of the body. The one case where there is no
+    // body payload to carry is the pre-Gloas anchor, whose block body holds a default, all-zero
+    // payload while its node is seeded from the anchor state; there the fcU value is pinned to that
+    // seed. Under Gloas the anchor's body does carry a bid, so it takes the normal branch. Both
+    // branches assert, so a change to either source fails here rather than going unnoticed.
+    final boolean isAnchorWithoutPayloadInBody =
+        confirmedRoot.equals(anchorInfo.blockRoot()) && specValue.isZero();
+    final Bytes32 expectedSafeBlockHash =
+        isAnchorWithoutPayloadInBody ? anchorInfo.executionBlockHash() : specValue;
+    assertThat(safeExecutionBlockHash(forkChoiceStateProvider))
+        .describedAs(checkType + " (fcU safe_block_hash)")
+        .isEqualTo(expectedSafeBlockHash);
+  }
+
+  /**
+   * The anchor's block root and the execution block hash Teku seeds its fork choice node with,
+   * taken from the anchor state rather than the anchor block body.
+   */
+  private record AnchorInfo(Bytes32 blockRoot, Bytes32 executionBlockHash) {}
+
+  /**
+   * Implements {@code get_safe_execution_block_hash} as specified: the block hash of the payload
+   * carried by the confirmed block's body, which under Gloas becomes the parent block hash from its
+   * execution payload bid.
+   */
+  private Bytes32 confirmedBlockExecutionBlockHash(
+      final ReadOnlyStore store, final Bytes32 confirmedRoot) {
+    final SafeFuture<Optional<BeaconBlock>> block = store.retrieveBlock(confirmedRoot);
+    assertThat(block).isCompleted();
+    final BeaconBlockBody body =
+        safeJoin(block)
+            .orElseThrow(
+                () -> new IllegalStateException("Confirmed block " + confirmedRoot + " not found"))
+            .getBody();
+    return body.getOptionalExecutionPayload()
+        .map(ExecutionPayload::getBlockHash)
+        // >= Gloas
+        .or(
+            () ->
+                body.getOptionalSignedExecutionPayloadBid()
+                    .map(bid -> bid.getMessage().getParentBlockHash()))
+        .orElse(Bytes32.ZERO);
+  }
+
+  private Bytes32 safeExecutionBlockHash(final ForkChoiceStateProvider forkChoiceStateProvider) {
+    final SafeFuture<ForkChoiceState> forkChoiceState =
+        forkChoiceStateProvider.getForkChoiceStateAsync();
+    assertThat(forkChoiceState).isCompleted();
+    return safeJoin(forkChoiceState).safeExecutionBlockHash();
+  }
+
+  private FastConfirmationStore fastConfirmationStore(final FastConfirmationTracker tracker) {
+    return tracker
+        .getFastConfirmationStore()
+        .orElseThrow(() -> new IllegalStateException("Fast confirmation store is not available"));
   }
 
   private void assertCheckpoint(

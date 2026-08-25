@@ -60,6 +60,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
+  public static final boolean DEFAULT_LIGHT_CLIENT_SERVER_ENABLED = false;
 
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
@@ -145,6 +146,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean lightClientServerEnabled;
   private final boolean prepareBlockProductionEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
@@ -185,6 +187,7 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean lightClientServerEnabled,
       final boolean prepareBlockProductionEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
@@ -226,6 +229,7 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.lightClientServerEnabled = lightClientServerEnabled;
     this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
@@ -354,6 +358,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isLightClientServerEnabled() {
+    return lightClientServerEnabled;
+  }
+
   public boolean isPrepareBlockProductionEnabled() {
     return prepareBlockProductionEnabled;
   }
@@ -414,6 +422,7 @@ public class Eth2NetworkConfiguration {
         && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && lightClientServerEnabled == that.lightClientServerEnabled
         && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
@@ -476,6 +485,7 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
+        lightClientServerEnabled,
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled,
@@ -516,6 +526,7 @@ public class Eth2NetworkConfiguration {
     private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean lightClientServerEnabled = DEFAULT_LIGHT_CLIENT_SERVER_ENABLED;
     private boolean prepareBlockProductionEnabled = DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
@@ -624,6 +635,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
+          lightClientServerEnabled,
           resolvePrepareBlockProductionAbility(prepareBlockProductionEnabled),
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
@@ -1296,6 +1308,11 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
       return Optional.of(epochsStoreBlobsInt);
+    }
+
+    public Builder lightClientServerEnabled(final boolean lightClientServerEnabled) {
+      this.lightClientServerEnabled = lightClientServerEnabled;
+      return this;
     }
 
     public Builder forkChoiceLateBlockReorgEnabled(final boolean forkChoiceLateBlockReorgEnabled) {

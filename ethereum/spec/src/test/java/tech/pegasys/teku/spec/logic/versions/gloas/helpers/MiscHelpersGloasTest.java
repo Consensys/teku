@@ -130,7 +130,7 @@ public class MiscHelpersGloasTest {
   }
 
   @Test
-  public void isBidBuildingOnEmptyParent_shouldBeFalseWhenBidIsBuildingOnFullParent() {
+  public void isBidBuildingOnFullParent_shouldBeTrueWhenBidReferencesLatestCommittedBid() {
     final Bytes32 fullParentBlockHash = data.randomBytes32();
     final ExecutionPayloadBid latestExecutionPayloadBid =
         data.randomExecutionPayloadBid(
@@ -157,6 +157,5 @@ public class MiscHelpersGloasTest {
             UInt64.ZERO);
 
     assertThat(miscHelpers.isBidBuildingOnFullParent(state, childBid)).isTrue();
-    assertThat(miscHelpers.isBidBuildingOnEmptyParent(state, childBid)).isFalse();
   }
 }
