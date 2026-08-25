@@ -255,10 +255,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(
         () ->
             typeDefClient.createUnsignedBlock(
-                slot,
-                randaoReveal,
-                graffiti,
-                builderConfig.map(BuilderConfig::getBuilderBoostFactor)));
+                slot, randaoReveal, graffiti, includePayload, builderConfig));
   }
 
   @Override
