@@ -17,6 +17,7 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
  * <p>The test case is disabled as the tests run via the generated classes in CI, but it still runs
  * without removing the @Disabled in IntelliJ.
  */
+@Disabled
 public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
 
   /**
@@ -40,14 +42,14 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>May be overridden by the ENV_TEST_TYPE environment variable.
    */
-  private static final String TEST_TYPE = "networking/gossip_execution_payload_bid";
+  private static final String TEST_TYPE = "";
 
   /**
    * Filter test to run to those from the specified spec. One of general, minimal or mainnet
    *
    * <p>May be overridden by the ENV_SPEC environment variable.
    */
-  private static final String SPEC = "minimal";
+  private static final String SPEC = "";
 
   /**
    * Filter test to run only those for a specific milestone. Use values from TestFork.
