@@ -219,6 +219,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
       final UInt64 epoch, final boolean isFuluCompatible) {
+    if (isFuluCompatible) {
+      return sendRequest(() -> typeDefClient.getProposerDutiesV2(epoch));
+    }
     return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 

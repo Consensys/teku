@@ -457,6 +457,40 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
+  public void getProposerDuties_WhenFuluCompatible_WhenFound_ReturnsDuties() {
+    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
+    final int validatorIndex = 472;
+    final ProposerDuty schemaValidatorDuties =
+        new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
+    final ProposerDuty expectedValidatorDuties =
+        new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
+    final ProposerDuties response =
+        new ProposerDuties(Bytes32.fromHexString("0x5678"), List.of(schemaValidatorDuties), false);
+
+    when(typeDefClient.getProposerDutiesV2(ONE)).thenReturn(Optional.of(response));
+
+    final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, true);
+
+    final ProposerDuties validatorDuties = unwrapToValue(future);
+
+    assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
+    assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.getDependentRoot());
+  }
+
+  @Test
+  public void getProposerDuties_WhenFuluCompatible_WhenNoneFound_ReturnsEmpty() {
+    when(typeDefClient.getProposerDutiesV2(any()))
+        .thenReturn(
+            Optional.of(
+                new ProposerDuties(
+                    Bytes32.fromHexString("0x5678"), Collections.emptyList(), false)));
+
+    final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, true);
+
+    assertThat(unwrapToValue(future).getDuties()).isEmpty();
+  }
+
+  @Test
   public void getPeerCount_WhenAvailable_ReturnPeerCount() {
     final PeerCount response =
         new PeerCountBuilder()
