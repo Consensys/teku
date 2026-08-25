@@ -41,6 +41,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
 
   private final Counter publishSuccessCounter;
   private final Counter publishFailureCounter;
+  private final Counter peerSearchRequestedCounter;
 
   private final GossipFailureLogger gossipFailureLogger =
       GossipFailureLogger.createSuppressing("sync_committee_message");
@@ -63,6 +64,11 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
             "result");
     publishSuccessCounter = publishedSyncCommitteeCounter.labels("success");
     publishFailureCounter = publishedSyncCommitteeCounter.labels("failure");
+    peerSearchRequestedCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "sync_committee_message_peer_search_requested_total",
+            "Total number of peer searches requested because a sync committee message could not be published");
   }
 
   public void publish(final ValidatableSyncCommitteeMessage message) {
@@ -125,6 +131,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof NoPeersForOutboundMessageException
         || rootCause instanceof SemiDuplexNoOutboundStreamException) {
+      peerSearchRequestedCounter.inc();
       peerSearchRequester.run();
     }
   }
