@@ -225,7 +225,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PtcDuties>> getPtcDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(() -> typeDefClient.postPtcDuties(epoch, validatorIndices));
   }
 
   @Override
@@ -255,10 +255,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(
         () ->
             typeDefClient.createUnsignedBlock(
-                slot,
-                randaoReveal,
-                graffiti,
-                builderConfig.map(BuilderConfig::getBuilderBoostFactor)));
+                slot, randaoReveal, graffiti, includePayload, builderConfig));
   }
 
   @Override
@@ -284,7 +281,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       final List<PayloadAttestationMessage> payloadAttestationMessages) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(
+        () -> typeDefClient.sendPayloadAttestationMessages(payloadAttestationMessages));
   }
 
   @Override
@@ -389,7 +387,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
-      final UInt64 slot, final UInt64 builderIndex) {
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
