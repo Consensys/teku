@@ -32,6 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -213,9 +215,24 @@ public class GossipValidationHelper {
       if (getRecentlyImportedExecutionPayload(blockRoot).isEmpty()) {
         return InternalValidationResult.SAVE_FOR_FUTURE;
       }
+      // [IGNORE] The attested execution payload is optimistic.
+      if (isExecutionPayloadOptimistic(blockRoot)) {
+        return InternalValidationResult.SAVE_FOR_FUTURE;
+      }
     }
 
     return InternalValidationResult.ACCEPT;
+  }
+
+  private boolean isExecutionPayloadOptimistic(final Bytes32 blockRoot) {
+    return recentChainData
+        .getForkChoiceStrategy()
+        .flatMap(
+            forkChoiceStrategy ->
+                forkChoiceStrategy.getBlockData(
+                    blockRoot, ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL))
+        .map(ProtoNodeData::isOptimistic)
+        .orElse(true);
   }
 
   public boolean isBlockAvailable(final Bytes32 blockRoot) {

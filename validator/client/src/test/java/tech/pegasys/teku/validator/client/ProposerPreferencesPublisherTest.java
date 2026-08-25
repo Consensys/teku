@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -91,7 +92,7 @@ public class ProposerPreferencesPublisherTest {
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey))
         .thenReturn(Optional.of(feeRecipient));
-    when(proposerConfigPropertiesProvider.getGasLimit(publicKey)).thenReturn(gasLimit);
+    when(proposerConfigPropertiesProvider.getGasLimit(eq(publicKey), any())).thenReturn(gasLimit);
     when(forkProvider.getForkInfo(any()))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomForkInfo()));
     when(signer.signProposerPreferences(any(), any()))
@@ -114,6 +115,8 @@ public class ProposerPreferencesPublisherTest {
             false));
 
     verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+    // duties may be for a future epoch, so the gas limit must be resolved for that epoch
+    verify(proposerConfigPropertiesProvider).getGasLimit(publicKey, epoch);
   }
 
   @TestTemplate
@@ -196,7 +199,7 @@ public class ProposerPreferencesPublisherTest {
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(failingKey))
         .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
-    when(proposerConfigPropertiesProvider.getGasLimit(failingKey)).thenReturn(gasLimit);
+    when(proposerConfigPropertiesProvider.getGasLimit(eq(failingKey), any())).thenReturn(gasLimit);
     when(failingSigner.signProposerPreferences(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new UnsupportedOperationException("not supported")));
 
