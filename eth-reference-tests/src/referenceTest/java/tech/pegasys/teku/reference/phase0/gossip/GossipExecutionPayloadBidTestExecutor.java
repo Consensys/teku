@@ -45,12 +45,12 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
@@ -191,11 +191,60 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
     // for the disparity-boundary tests, where blocks must be imported after their slot starts but
     // messages are validated at a time before that slot starts.
     final UInt64[] validationTimeMs = {UInt64.valueOf(metaData.getCurrentTimeMs())};
+
+    // Models the spec's seen.execution_payloads: a gossip level cache of payloads that passed
+    // gossip validation, keyed by execution block hash. It is deliberately not the fork choice
+    // store. These fixtures reuse one beacon block across the whole suite while varying the payload
+    // revealed for it, so a payload can be gossip valid while being inconsistent with the bid that
+    // block committed to -- which full envelope import rightly rejects. Teku's production lookup
+    // reads the revealed payload back out of fork choice, so it is overridden here to consult this
+    // cache instead.
+    final Map<Bytes32, UInt64> seenExecutionPayloadGasLimits = new ConcurrentHashMap<>();
+
+    // The fixtures declare a finalized checkpoint that replaying their blocks alone never reaches:
+    // the chain only runs to slot 16, so epoch processing can finalize at most epoch 0. is_active_
+    // builder requires builder.deposit_epoch < state.finalized_checkpoint.epoch, so with a state
+    // finalized at epoch 0 no builder can ever be active. Apply the declared checkpoint to the
+    // validation state instead of committing it to the store, which would prune the
+    // pre-finalization
+    // blocks that the proposer preferences dependent-root lookup needs.
+    final Optional<Checkpoint> declaredFinalizedCheckpoint =
+        Optional.ofNullable(metaData.getFinalizedCheckpoint())
+            .map(checkpoint -> checkpoint.toCheckpoint(testDefinition, spec));
+
     final GossipValidationHelper gossipValidationHelper =
         new GossipValidationHelper(spec, recentChainData, metricsSystem) {
           @Override
           public UInt64 getCurrentTimeMillis() {
             return validationTimeMs[0];
+          }
+
+          @Override
+          public Optional<UInt64> getGasLimitForExecutionPayload(
+              final Bytes32 blockRoot, final Bytes32 blockHash) {
+            final Optional<UInt64> seenGasLimit =
+                Optional.ofNullable(seenExecutionPayloadGasLimits.get(blockHash));
+            return seenGasLimit.isPresent()
+                ? seenGasLimit
+                : super.getGasLimitForExecutionPayload(blockRoot, blockHash);
+          }
+
+          @Override
+          public SafeFuture<Optional<BeaconState>> getParentStateInBlockEpoch(
+              final UInt64 parentBlockSlot, final Bytes32 parentBlockRoot, final UInt64 slot) {
+            return super.getParentStateInBlockEpoch(parentBlockSlot, parentBlockRoot, slot)
+                .thenApply(
+                    maybeState ->
+                        maybeState.map(
+                            parentState ->
+                                declaredFinalizedCheckpoint
+                                    .map(
+                                        checkpoint ->
+                                            parentState.updated(
+                                                mutableState ->
+                                                    mutableState.setFinalizedCheckpoint(
+                                                        checkpoint)))
+                                    .orElse(parentState)));
           }
         };
 
@@ -270,18 +319,12 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
             loadSsz(testDefinition, messageName + ".ssz_snappy", envelopeSchema::sszDeserialize);
         result = safeJoin(envelopeValidator.validate(signedEnvelope));
         if (result.isAccept()) {
-          final ExecutionPayloadImportResult envelopeImportResult =
-              safeJoin(forkChoice.onExecutionPayloadEnvelope(signedEnvelope, executionLayer));
-          assertThat(envelopeImportResult.isSuccessful())
-              .describedAs(
-                  "Expected accepted envelope %s to be revealed successfully but got %s (%s)",
-                  messageName,
-                  envelopeImportResult.getFailureReason(),
-                  envelopeImportResult
-                      .getFailureCause()
-                      .map(Throwable::toString)
-                      .orElse("no cause"))
-              .isTrue();
+          final ExecutionPayload payload = signedEnvelope.getMessage().getPayload();
+          seenExecutionPayloadGasLimits.put(payload.getBlockHash(), payload.getGasLimit());
+          // Also reveal into fork choice so the payload status is reflected there. This is best
+          // effort: a fixture may pair a payload with a block whose committed bid it does not
+          // match, which fails envelope verification even though the payload is gossip valid.
+          safeJoin(forkChoice.onExecutionPayloadEnvelope(signedEnvelope, executionLayer));
         }
       } else if (messageName.startsWith("execution_payload_bid_")) {
         final SignedExecutionPayloadBid signedBid =

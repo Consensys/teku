@@ -276,11 +276,13 @@ public class GossipValidationHelper {
     return beaconStateAccessors.getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state));
   }
 
+  /**
+   * Returns true when {@code slot} is the current or the next slot, allowing for
+   * MAXIMUM_GOSSIP_CLOCK_DISPARITY -- i.e. spec {@code is_current_or_next_slot}, which is defined
+   * as {@code is_current_slot(slot) or is_current_slot(slot - 1)}.
+   */
   public boolean isSlotCurrentOrNext(final UInt64 slot) {
-    return recentChainData
-        .getCurrentSlot()
-        .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
-        .orElse(false);
+    return isSlotCurrent(slot) || (!slot.isZero() && isSlotCurrent(slot.decrement()));
   }
 
   /**

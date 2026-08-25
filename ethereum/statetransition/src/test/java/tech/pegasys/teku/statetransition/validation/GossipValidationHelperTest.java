@@ -586,11 +586,33 @@ public class GossipValidationHelperTest {
   @TestTemplate
   void isCurrentOrNextSlot() {
     final UInt64 currentSlot = UInt64.valueOf(10);
-    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+    // Sit well inside the slot: at a slot boundary the disparity allowance legitimately makes the
+    // adjacent slot current too, which is covered separately below.
+    storageSystem
+        .chainUpdater()
+        .setTimeMillis(
+            getSlotStartTimeMillis(currentSlot).plus(spec.getSlotDurationMillis(currentSlot) / 2));
+
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot)).isTrue();
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(ONE))).isTrue();
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.minus(ONE))).isFalse();
     assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(2))).isFalse();
+  }
+
+  @TestTemplate
+  void isCurrentOrNextSlot_shouldAllowTheDisparityAllowanceBeforeTheSlotStarts() {
+    final UInt64 slot = UInt64.valueOf(10);
+    // The slot after next becomes acceptable once we are within the disparity allowance of the next
+    // slot starting, because by then the next slot may already be current
+    final UInt64 justBeforeNextSlot =
+        getSlotStartTimeMillis(slot.plus(ONE))
+            .minus(gossipValidationHelper.getMaxOffsetTimeInMillis());
+
+    storageSystem.chainUpdater().setTimeMillis(justBeforeNextSlot.minus(ONE));
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(slot.plus(2))).isFalse();
+
+    storageSystem.chainUpdater().setTimeMillis(justBeforeNextSlot);
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(slot.plus(2))).isTrue();
   }
 
   @TestTemplate
