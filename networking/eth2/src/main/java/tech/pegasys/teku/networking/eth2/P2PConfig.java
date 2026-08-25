@@ -357,11 +357,11 @@ public class P2PConfig {
     public P2PConfig build() {
       validate();
 
-      if (gossipSnappyAircompressorEnabled) {
-        LOG.info("Experimental aircompressor Snappy encoding is enabled for gossip");
+      if (!gossipSnappyAircompressorEnabled) {
+        LOG.warn("Gossip snappy encoding is using snappy-java; aircompressor is disabled");
       }
-      if (rpcSnappyAircompressorEnabled) {
-        LOG.info("Experimental aircompressor Snappy encoding is enabled for RPC");
+      if (!rpcSnappyAircompressorEnabled) {
+        LOG.warn("RPC snappy encoding is using snappy-java; aircompressor is disabled");
       }
 
       final GossipConfigurator gossipConfigurator =
