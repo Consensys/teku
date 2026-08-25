@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
@@ -179,7 +180,8 @@ public class BlockProductionDuty implements Duty {
                     .getOptionalSignedExecutionPayloadBid()
                     .ifPresent(
                         signedBid ->
-                            notifyExecutionPayloadBidEventsSubscribers(signedBid, forkInfo));
+                            notifyExecutionPayloadBidEventsSubscribers(
+                                signedBid, forkInfo, signedBlockContainer.getRoot()));
                 return DutyResult.success(
                     signedBlockContainer.getRoot(), getBlockSummary(blockBody));
               }
@@ -235,11 +237,13 @@ public class BlockProductionDuty implements Duty {
   }
 
   private void notifyExecutionPayloadBidEventsSubscribers(
-      final SignedExecutionPayloadBid signedBid, final ForkInfo forkInfo) {
+      final SignedExecutionPayloadBid signedBid,
+      final ForkInfo forkInfo,
+      final Bytes32 beaconBlockRoot) {
     // BUILDER_INDEX_SELF_BUILD indicates a self-built bid
     if (signedBid.getMessage().getBuilderIndex().equals(BUILDER_INDEX_SELF_BUILD)) {
       executionPayloadBidEventsChannelPublisher.onSelfBuiltBidIncludedInBlock(
-          validator, forkInfo, signedBid.getMessage());
+          validator, forkInfo, signedBid.getMessage(), beaconBlockRoot);
     }
   }
 

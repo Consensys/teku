@@ -3695,12 +3695,16 @@ public final class DataStructureUtil {
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelopeForBlock(
       final SignedBeaconBlock block) {
+    return randomExecutionPayloadEnvelopeForBlock(block.getMessage());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelopeForBlock(final BeaconBlock block) {
     return getGloasSchemaDefinitions(block.getSlot())
         .getExecutionPayloadEnvelopeSchema()
         .create(
             randomExecutionPayload(block.getSlot()),
             randomExecutionRequests(block.getSlot()),
-            BeaconBlockBodyGloas.required(block.getMessage().getBody())
+            BeaconBlockBodyGloas.required(block.getBody())
                 .getSignedExecutionPayloadBid()
                 .getMessage()
                 .getBuilderIndex(),

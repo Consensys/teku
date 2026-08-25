@@ -249,7 +249,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
         @Override
         public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
-            final UInt64 slot, final UInt64 builderIndex) {
+            final UInt64 slot, final Bytes32 beaconBlockRoot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 

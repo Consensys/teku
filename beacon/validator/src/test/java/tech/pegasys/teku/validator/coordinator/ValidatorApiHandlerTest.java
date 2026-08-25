@@ -1336,8 +1336,7 @@ class ValidatorApiHandlerTest {
   public void createUnsignedExecutionPayload_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<ExecutionPayloadEnvelope>> result =
-        validatorApiHandler.createUnsignedExecutionPayload(
-            ONE, dataStructureUtil.randomBuilderIndex());
+        validatorApiHandler.createUnsignedExecutionPayload(ONE, dataStructureUtil.randomBytes32());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -1353,7 +1352,7 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<ExecutionPayloadEnvelope>> result =
         validatorApiHandler.createUnsignedExecutionPayload(
-            newSlot, dataStructureUtil.randomBuilderIndex());
+            newSlot, dataStructureUtil.randomBytes32());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -1364,17 +1363,16 @@ class ValidatorApiHandlerTest {
   public void createUnsignedExecutionPayload_shouldCreateExecutionPayload() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(newSlot);
-    final UInt64 builderIndex = UInt64.valueOf(42);
     final ExecutionPayloadEnvelope executionPayload =
         dataStructureUtil.randomExecutionPayloadEnvelope(newSlot);
 
     when(chainDataClient.getBlockAndStateInEffectAtSlot(eq(newSlot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
-    when(executionPayloadFactory.createUnsignedExecutionPayload(builderIndex, blockAndState))
+    when(executionPayloadFactory.createUnsignedExecutionPayload(blockAndState))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
     SafeFuture<Optional<ExecutionPayloadEnvelope>> result =
-        validatorApiHandler.createUnsignedExecutionPayload(newSlot, builderIndex);
+        validatorApiHandler.createUnsignedExecutionPayload(newSlot, blockAndState.getRoot());
 
     assertThat(result).isCompletedWithValue(Optional.of(executionPayload));
   }
