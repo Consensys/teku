@@ -1351,11 +1351,25 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.isOptimisticBlock(blockAndState.getParentRoot())).thenReturn(true);
 
     final SafeFuture<Optional<ExecutionPayloadEnvelope>> result =
-        validatorApiHandler.createUnsignedExecutionPayload(
-            newSlot, dataStructureUtil.randomBytes32());
+        validatorApiHandler.createUnsignedExecutionPayload(newSlot, blockAndState.getRoot());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+    verifyNoInteractions(blockFactory);
+  }
+
+  @Test
+  public void createUnsignedExecutionPayload_shouldReturnEmptyWhenThereIsBeaconBlockRootMismatch() {
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(newSlot);
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(eq(newSlot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
+
+    final SafeFuture<Optional<ExecutionPayloadEnvelope>> result =
+        validatorApiHandler.createUnsignedExecutionPayload(
+            newSlot, dataStructureUtil.randomBytes32());
+
+    assertThat(result).isCompletedWithValue(Optional.empty());
     verifyNoInteractions(blockFactory);
   }
 
