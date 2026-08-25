@@ -59,6 +59,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -71,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -82,6 +85,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
@@ -395,6 +399,23 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
+  public void getPtcDuties_WhenFound_ReturnsDuties() {
+    final UInt64 validatorIndex = UInt64.valueOf(472);
+    final PtcDuty expectedValidatorDuties =
+        new PtcDuty(dataStructureUtil.randomPublicKey(), validatorIndex, UInt64.ZERO);
+    final PtcDuties response =
+        new PtcDuties(false, dataStructureUtil.randomBytes32(), List.of(expectedValidatorDuties));
+
+    when(typeDefClient.postPtcDuties(ONE, IntList.of(validatorIndex.intValue())))
+        .thenReturn(Optional.of(response));
+
+    final SafeFuture<Optional<PtcDuties>> future =
+        apiHandler.getPtcDuties(ONE, IntList.of(validatorIndex.intValue()));
+
+    assertThat(unwrapToValue(future)).isEqualTo(response);
+  }
+
+  @Test
   public void getProposerDuties_WithEmptyPublicKeys_ReturnsEmpty() {
     final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
@@ -491,6 +512,27 @@ class RemoteValidatorApiHandlerTest {
         apiHandler.createPayloadAttestationData(ONE);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(payloadAttestationData);
+  }
+
+  @Test
+  public void sendPayloadAttestationMessages_InvokeApiWithCorrectRequest() {
+    final PayloadAttestationMessage payloadAttestationMessage =
+        new DataStructureUtil(TestSpecFactory.createMinimalGloas())
+            .randomPayloadAttestationMessage();
+    final List<PayloadAttestationMessage> payloadAttestationMessages =
+        List.of(payloadAttestationMessage);
+    final List<SubmitDataError> expectedErrors =
+        List.of(new SubmitDataError(UInt64.valueOf(3), "invalid payload attestation"));
+
+    when(typeDefClient.sendPayloadAttestationMessages(payloadAttestationMessages))
+        .thenReturn(expectedErrors);
+
+    final SafeFuture<List<SubmitDataError>> result =
+        apiHandler.sendPayloadAttestationMessages(payloadAttestationMessages);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompletedWithValue(expectedErrors);
+    verify(typeDefClient).sendPayloadAttestationMessages(payloadAttestationMessages);
   }
 
   @Test

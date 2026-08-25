@@ -93,9 +93,18 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @TestTemplate
+  void shouldReturnBadRequestForGloasAndBeyond() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+    when(validatorDataProvider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(specMilestone);
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  @TestTemplate
   void shouldHandleUnBlindedBeaconBlocks() throws Exception {
-    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
-        .isTrue();
+    assumeThat(specMilestone).isLessThan(DENEB);
     BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))

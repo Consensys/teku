@@ -20,17 +20,19 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.KzgUtil;
 
 public class SidecarBenchmarkConfig {
   final KzgInstances kzgBenchmark;
@@ -62,7 +64,11 @@ public class SidecarBenchmarkConfig {
             .map(SszKZGCommitment::new)
             .toList();
     miscHelpersFulu.setKzg(getKzg(useRustLibrary));
-    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs);
+    List<BlobAndCellProofs> blobsAndCellProofs =
+        blobs.stream()
+            .map((b) -> KzgUtil.computeBlobAndCellProofs(miscHelpersFulu.getKzg(), b))
+            .toList();
+    extendedMatrix = miscHelpersFulu.computeExtendedMatrix(blobsAndCellProofs);
     signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromElements(kzgCommitments));

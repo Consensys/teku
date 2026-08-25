@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -69,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -79,6 +82,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
@@ -87,6 +92,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.Propos
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
@@ -184,25 +190,29 @@ class BlockOperationSelectorFactoryTest {
   private final GraffitiBuilder graffitiBuilder =
       new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED);
 
-  private final BlockOperationSelectorFactory factory =
-      new BlockOperationSelectorFactory(
-          spec,
-          attestationPool,
-          attesterSlashingPool,
-          proposerSlashingPool,
-          voluntaryExitPool,
-          blsToExecutionChangePool,
-          contributionPool,
-          payloadAttestationPool,
-          depositProvider,
-          eth1DataCache,
-          graffitiBuilder,
-          forkChoiceNotifier,
-          executionLayer,
-          executionPayloadBidManager,
-          executionPayloadManager,
-          metricsSystem,
-          timeProvider);
+  private final BlockOperationSelectorFactory factory = createFactory(spec);
+
+  private BlockOperationSelectorFactory createFactory(final Spec factorySpec) {
+    return new BlockOperationSelectorFactory(
+        factorySpec,
+        attestationPool,
+        attesterSlashingPool,
+        proposerSlashingPool,
+        voluntaryExitPool,
+        blsToExecutionChangePool,
+        contributionPool,
+        payloadAttestationPool,
+        depositProvider,
+        eth1DataCache,
+        graffitiBuilder,
+        forkChoiceNotifier,
+        executionLayer,
+        executionPayloadBidManager,
+        executionPayloadManager,
+        metricsSystem,
+        timeProvider);
+  }
+
   private ExecutionPayloadContext executionPayloadContext;
 
   @BeforeEach
@@ -222,6 +232,73 @@ class BlockOperationSelectorFactoryTest {
     this.executionPayloadContext = dataStructureUtil.randomPayloadExecutionContext(false);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+  }
+
+  @Test
+  void shouldApplyFullParentAvailabilityWhenSelectingGloasAttestations() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasData = new DataStructureUtil(gloasSpec);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(gloasSpec.getGenesisSchemaDefinitions());
+    final UInt64 parentSlot = UInt64.valueOf(8);
+    final UInt64 blockSlot = parentSlot.plus(2);
+    final int parentSlotIndex =
+        parentSlot.mod(gloasSpec.getSlotsPerHistoricalRoot(parentSlot)).intValue();
+    final BeaconStateGloas blockSlotState =
+        BeaconStateGloas.required(
+            gloasData
+                .randomBeaconState(blockSlot)
+                .updated(
+                    mutableState -> {
+                      final MutableBeaconStateGloas stateGloas =
+                          MutableBeaconStateGloas.required(mutableState);
+                      stateGloas.setLatestExecutionPayloadBid(
+                          gloasData.randomExecutionPayloadBid(parentSlot, UInt64.ZERO));
+                      stateGloas.setExecutionPayloadAvailability(
+                          schemaDefinitions.getExecutionPayloadAvailabilitySchema().getDefault());
+                    }));
+    when(attestationPool.getAttestationsForBlock(any(), any()))
+        .thenReturn(
+            schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema().getDefault());
+    final CapturingBeaconBlockBodyBuilder gloasBodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(false) {
+          @Override
+          public Boolean supportsSyncAggregate() {
+            return false;
+          }
+
+          @Override
+          public Boolean supportsExecutionPayload() {
+            return false;
+          }
+
+          @Override
+          public Boolean supportsBlsToExecutionChanges() {
+            return false;
+          }
+        };
+    final BlockProductionContext context =
+        new BlockProductionContext(
+            blockSlot,
+            blockSlotState,
+            ForkChoiceNode.createFull(parentRoot),
+            blockSlotState.getLatestBlockHash(),
+            randaoReveal,
+            Optional.empty(),
+            false,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
+
+    safeJoin(createFactory(gloasSpec).createSelector(context).apply(gloasBodyBuilder));
+
+    final ArgumentCaptor<BeaconState> stateCaptor = ArgumentCaptor.forClass(BeaconState.class);
+    verify(attestationPool).getAttestationsForBlock(stateCaptor.capture(), any());
+    final BeaconStateGloas attestationRewardState =
+        BeaconStateGloas.required(stateCaptor.getValue());
+    assertThat(attestationRewardState).isNotSameAs(blockSlotState);
+    assertThat(attestationRewardState.getExecutionPayloadAvailability().getBit(parentSlotIndex))
+        .isTrue();
+    assertThat(blockSlotState.getExecutionPayloadAvailability().getBit(parentSlotIndex)).isFalse();
   }
 
   @Test

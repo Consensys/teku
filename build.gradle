@@ -16,6 +16,11 @@ import static tech.pegasys.teku.repackage.Repackage.repackage
 
 buildscript {
 	repositories {
+		// See the comment on the project repositories below.
+		maven {
+			name = 'mavenCentralMirror'
+			url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+		}
 		mavenCentral()
 	}
 	dependencies {
@@ -30,7 +35,6 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
-	id 'org.jreleaser' version '1.23.0'
 }
 
 class ConfiguredLicenseBundleNormalizer extends LicenseBundleNormalizer {
@@ -231,14 +235,6 @@ def isNonStable = { String version ->
 	return !stableKeyword && !(version ==~ regex)
 }
 
-def isWeb3jMajorUpgrade = { candidate ->
-	if (candidate.group != 'org.web3j') {
-		return false
-	}
-	def majorVersion = candidate.version.tokenize('.')[0]
-	return majorVersion.isInteger() && majorVersion.toInteger() >= 5
-}
-
 def versionComponents = { String version ->
 	version.tokenize('.-').collect { part -> part.isInteger() ? part.toInteger() : 0 }
 }
@@ -282,7 +278,6 @@ def isRejectedDependencyUpdate = { candidate ->
 tasks.named("dependencyUpdates").configure {
 	rejectVersionIf {
 		isNonStable(it.candidate.version) ||
-		isWeb3jMajorUpgrade(it.candidate) ||
 		isRejectedDependencyUpdate(it.candidate)
 	}
 }
@@ -336,6 +331,19 @@ allprojects {
 
 	repositories {
 		mavenLocal()
+		// Google's read-only mirror of Maven Central, tried first so that CI does not depend on
+		// Central's per-IP rate limit. Our test shards resolve dependencies from dozens of runners
+		// that share an egress IP, and Central answers with HTTP 429 once they exceed its quota.
+		// Gradle treats a 429 as a hard failure rather than falling through to the next repository,
+		// so the mirror has to come first to be of any use.
+		//
+		// The mirror can lag Central by a few hours for freshly published artifacts. That case is
+		// safe: a miss is a plain 404 and Gradle falls through to mavenCentral() below. The one
+		// visible effect is that `dependencyUpdates` may not report a release published today.
+		maven {
+			name = 'mavenCentralMirror'
+			url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+		}
 		mavenCentral()
 		maven { url = "https://jitpack.io" }
 		maven {
@@ -382,6 +390,17 @@ allprojects {
 			// See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
 			googleJavaFormat('1.35.0').reorderImports(true)
 		}
+	}
+
+	tasks.named('spotlessJava') {
+		outputs.doNotCacheIf('Avoid replaying cached google-java-format lint failures') { true }
+	}
+
+	def allCleanTasks = rootProject.allprojects.collect { cleanProject ->
+		cleanProject.tasks.matching { it.name == 'clean' }
+	}
+	tasks.matching { it.name.startsWith('spotless') }.configureEach {
+		mustRunAfter allCleanTasks
 	}
 
 	tasks.withType(JavaCompile) {
@@ -512,7 +531,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.11"
+def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.14"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-specs/releases/download'
@@ -858,6 +877,9 @@ application {
 		"-Dlog4j2.formatMsgNoLookups=true",
 		// run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
 		"-XX:NativeMemoryTracking=summary",
+		// libp2p TLS peer-identity certificates carry an empty issuer, which BouncyCastle rejects by
+		// default from 1.85.2 onwards. Certificate generation still requires a non-empty issuer.
+		"-Dorg.bouncycastle.x509.allow_empty_issuer_cert=true",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
@@ -1107,13 +1129,35 @@ tasks.register('manifestDocker') {
 	}
 }
 
-def ciJacocoConfigurations = [
+// The compile classpaths are warmed as well as the runtime ones: a test shard re-resolves the compile
+// classpath when it checks whether the compile tasks are up to date, and compileOnly dependencies only
+// ever appear there. Missing them is what sent every shard back to Maven Central for jars such as
+// jakarta.xml.bind-api and commons-codec.
+def ciDependencyConfigurations = [
 	'jacocoAgent',
 	'jacocoAnt',
+	'annotationProcessor',
+	'compileClasspath',
+	'runtimeClasspath',
+	'testAnnotationProcessor',
+	'testCompileClasspath',
+	'testRuntimeClasspath',
+	'testFixturesCompileClasspath',
+	'testFixturesRuntimeClasspath',
+	'integrationTestCompileClasspath',
+	'integrationTestRuntimeClasspath',
+	'acceptanceTestCompileClasspath',
+	'acceptanceTestRuntimeClasspath',
+	'propertyTestCompileClasspath',
+	'propertyTestRuntimeClasspath',
+	'referenceTestCompileClasspath',
+	'referenceTestRuntimeClasspath',
+	'jmhCompileClasspath',
+	'jmhRuntimeClasspath',
 ]
 
-def resolveCiJacocoConfigurations = { targetProject ->
-	ciJacocoConfigurations.each { configurationName ->
+def resolveCiDependencyConfigurations = { targetProject ->
+	ciDependencyConfigurations.each { configurationName ->
 		def configuration = targetProject.configurations.findByName(configurationName)
 		if (configuration != null && configuration.canBeResolved) {
 			logger.info("Resolving ${targetProject.path}:${configurationName}")
@@ -1221,6 +1265,7 @@ subprojects {
 
 	if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testFixtures")) {
 		apply plugin: 'maven-publish'
+		apply plugin: 'signing'
 
 		publishing {
 			repositories {
@@ -1255,11 +1300,20 @@ subprojects {
 					suppressPomMetadataWarningsFor('testFixturesRuntimeElements')
 					pom {
 						name = "Teku - ${project.name}"
+						description = "Teku Ethereum consensus client - ${project.name}"
 						url = 'https://github.com/Consensys/teku'
 						licenses {
 							license {
 								name = 'The Apache License, Version 2.0'
 								url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+							}
+						}
+						developers {
+							developer {
+								name = 'Consensys'
+								email = 'protocols@consensys.net'
+								organization = 'Consensys'
+								organizationUrl = 'https://consensys.net'
 							}
 						}
 						scm {
@@ -1279,6 +1333,16 @@ subprojects {
 						}
 					}
 				}
+			}
+		}
+
+		signing {
+			def signingKey = findProperty("signingKey")
+			def signingPassword = findProperty("signingPassword") ?: ""
+			if (signingKey) {
+				required { gradle.taskGraph.allTasks.any { it.name.contains("ToStagingRepository") } }
+				useInMemoryPgpKeys(signingKey, signingPassword)
+				sign publishing.publications.mavenJava
 			}
 		}
 	}
@@ -1429,23 +1493,23 @@ subprojects {
 		jvmArgs '--enable-native-access=ALL-UNNAMED'
 	}
 
-	tasks.register('resolveCiJacocoDependencies') {
+	tasks.register('resolveCiDependencies') {
 		group = 'build setup'
-		description = 'Resolves Jacoco configurations used by CI shards to warm the Gradle cache.'
+		description = 'Resolves test runtime configurations used by CI shards to warm the Gradle cache.'
 
 		doLast {
-			resolveCiJacocoConfigurations(project)
+			resolveCiDependencyConfigurations(project)
 		}
 	}
 }
 
-tasks.register('resolveCiJacocoDependencies') {
+tasks.register('resolveCiDependencies') {
 	group = 'build setup'
-	description = 'Resolves Jacoco configurations used by CI shards to warm the Gradle cache.'
-	dependsOn subprojects.collect { it.tasks.named('resolveCiJacocoDependencies') }
+	description = 'Resolves test runtime configurations used by CI shards to warm the Gradle cache.'
+	dependsOn subprojects.collect { it.tasks.named('resolveCiDependencies') }
 
 	doLast {
-		resolveCiJacocoConfigurations(project)
+		resolveCiDependencyConfigurations(project)
 	}
 }
 
@@ -1650,38 +1714,6 @@ tasks.register('cloudsmithUpload') {
 		system.executor.exec {
 			executable project.file("scripts/cloudsmith-upload.sh")
 			args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
-		}
-	}
-}
-
-jreleaser {
-	project {
-		java {
-			groupId = 'tech.pegasys.teku'
-		}
-	}
-	release {
-		github {
-			skipRelease = true
-			skipTag = true
-			token = "foobar"
-		}
-	}
-	signing {
-		active = 'ALWAYS'
-		armored = true
-	}
-	deploy {
-		maven {
-			mavenCentral {
-				sonatype {
-					active = 'ALWAYS'
-					url = 'https://central.sonatype.com/api/v1/publisher'
-					stagingRepository('build/staging-deploy')
-					retryDelay = 15
-					maxRetries = 100
-				}
-			}
 		}
 	}
 }

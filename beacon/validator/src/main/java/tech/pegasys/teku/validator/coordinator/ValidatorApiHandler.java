@@ -82,12 +82,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -107,6 +109,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -169,6 +172,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
   private final PayloadAttestationPool payloadAttestationPool;
+  private final DataAvailabilitySampler dataAvailabilitySampler;
   private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
@@ -201,6 +205,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
       final PayloadAttestationPool payloadAttestationPool,
+      final DataAvailabilitySampler dataAvailabilitySampler,
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
@@ -229,6 +234,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
     this.payloadAttestationPool = payloadAttestationPool;
+    this.dataAvailabilitySampler = dataAvailabilitySampler;
     this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
@@ -440,13 +446,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final Optional<BuilderConfig> builderConfig) {
     return blockProductionBySlotCache
         .computeIfAbsent(
             slot,
             __ ->
                 createUnsignedBlockInternal(
-                    slot, randaoReveal, graffiti, requestedBuilderBoostFactor))
+                    slot, randaoReveal, graffiti, includePayload, builderConfig))
         .whenException(
             __ -> {
               // allow further block production attempts for this slot
@@ -487,7 +494,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final boolean includePayload,
+      final Optional<BuilderConfig> builderConfig) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -500,7 +508,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     blockProductionPreparationContext.blockProductionPerformance.validatorBlockRequested();
 
     return blockProductionPreparationContext
-        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
+        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, includePayload, builderConfig)
         .thenCompose(this::createBlock)
         .thenPeek(
             maybeBlock ->
@@ -671,12 +679,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final SignedBeaconBlock block = maybeBlock.get();
               final boolean payloadPresent =
                   executionPayloadManager.isExecutionPayloadSeenBeforeDeadline(block.getRoot());
-              // if execution payload is in the store, blob data is available
-              final boolean blobDataAvailable =
-                  combinedChainDataClient
-                      .getStore()
-                      .getExecutionPayloadIfAvailable(block.getRoot())
-                      .isPresent();
+              final boolean blobDataAvailable = dataAvailabilitySampler.isDataAvailable(block);
               final PayloadAttestationData payloadAttestationData =
                   SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getPayloadAttestationDataSchema()
@@ -744,7 +747,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertInternalValidationResults);
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
@@ -786,7 +789,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             });
   }
 
-  private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
+  private List<SubmitDataError> convertInternalValidationResults(
       final List<InternalValidationResult> results) {
     final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < results.size(); index++) {
@@ -804,7 +807,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return SafeFuture.collectAll(aggregateAndProofs.stream().map(this::processAggregateAndProof))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertInternalValidationResults);
   }
 
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
@@ -920,27 +923,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final List<PayloadAttestationMessage> payloadAttestationMessages) {
     return SafeFuture.collectAll(
             payloadAttestationMessages.stream().map(payloadAttestationPool::addLocal))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertInternalValidationResults);
   }
 
   @Override
-  public SafeFuture<Void> sendSignedProposerPreferences(
+  public SafeFuture<List<SubmitDataError>> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return SafeFuture.collectAll(
             signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
-        .thenAccept(
-            results -> {
-              final List<String> errorMessages =
-                  results.stream()
-                      .filter(InternalValidationResult::isReject)
-                      .flatMap(result -> result.getDescription().stream())
-                      .toList();
-              if (!errorMessages.isEmpty()) {
-                LOG.warn(
-                    "Some proposer preferences were rejected: {}",
-                    String.join("; ", errorMessages));
-              }
-            });
+        .thenApply(this::convertInternalValidationResults);
   }
 
   @Override
@@ -1032,14 +1023,30 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return executionPayloadPublisher
-        .publishSignedExecutionPayload(signedExecutionPayload)
+        .publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel)
         .exceptionally(
             ex -> {
               final String reason = getRootCauseMessage(ex);
               return PublishSignedExecutionPayloadResult.rejected(
                   signedExecutionPayload.getBeaconBlockRoot(), reason);
+            });
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return executionPayloadPublisher
+        .publishSignedExecutionPayload(
+            signedExecutionPayloadEnvelopeContents, broadcastValidationLevel)
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return PublishSignedExecutionPayloadResult.rejected(
+                  signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot(), reason);
             });
   }
 
@@ -1216,7 +1223,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final UInt64 proposalSlot,
         final BLSSignature randaoReveal,
         final Optional<Bytes32> graffiti,
-        final Optional<UInt64> requestedBuilderBoostFactor) {
+        final boolean includePayload,
+        final Optional<BuilderConfig> builderConfig) {
       return stateFuture.thenCombine(
           chainHeadFuture,
           (state, chainHead) ->
@@ -1227,7 +1235,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   chainHead,
                   randaoReveal,
                   graffiti,
-                  requestedBuilderBoostFactor,
+                  includePayload,
+                  builderConfig,
                   blockProductionPerformance));
     }
   }

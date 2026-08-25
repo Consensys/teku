@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPrefere
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -72,7 +74,7 @@ public class ProposerPreferencesPublisher {
       return;
     }
 
-    // Gloas's get_proposer_dependent_root(state, e) returns the block root at
+    // Gloas's get_shuffling_dependent_root(store, head, e) returns the block root at
     // start_of_(e-MIN_SEED_LOOKAHEAD) - 1. As far as MIN_SEED_LOOKAHEAD == 1,
     // for next-epoch duties, BlockProposalUtilFulu's
     // getBlockProposalDependentRoot returns the same value, so we reuse it here.
@@ -95,7 +97,7 @@ public class ProposerPreferencesPublisher {
                             .map(
                                 duty ->
                                     createSignedProposerPreferences(
-                                        duty, dependentRoot, forkInfo, preferencesUtil)))
+                                        duty, epoch, dependentRoot, forkInfo, preferencesUtil)))
                     .thenCompose(
                         signedPreferences -> {
                           final List<SignedProposerPreferences> preferencesList =
@@ -106,17 +108,25 @@ public class ProposerPreferencesPublisher {
                           LOG.debug("Publishing {} proposer preferences", preferencesList.size());
                           return validatorApiChannel
                               .sendSignedProposerPreferences(preferencesList)
-                              .thenPeek(
-                                  __ ->
-                                      LOG.debug(
-                                          "Proposer preferences published successfully for {} validators",
-                                          preferencesList.size()));
+                              .thenAccept(
+                                  errors -> {
+                                    if (!errors.isEmpty()) {
+                                      throw new IllegalArgumentException(
+                                          errors.stream()
+                                              .map(SubmitDataError::message)
+                                              .collect(Collectors.joining("; ")));
+                                    }
+                                    LOG.debug(
+                                        "Proposer preferences published successfully for {} validators",
+                                        preferencesList.size());
+                                  });
                         }))
         .finish(error -> VALIDATOR_LOGGER.proposerPreferencesPublicationFailed(epoch, error));
   }
 
   private SafeFuture<Optional<SignedProposerPreferences>> createSignedProposerPreferences(
       final ProposerDuty duty,
+      final UInt64 epoch,
       final Bytes32 dependentRoot,
       final ForkInfo forkInfo,
       final ProposerPreferencesUtil preferencesUtil) {
@@ -131,7 +141,10 @@ public class ProposerPreferencesPublisher {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final UInt64 targetGasLimit = proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey());
+    // duties are loaded ahead of time, so the gas limit must be the one scheduled for the duty
+    // epoch
+    final UInt64 targetGasLimit =
+        proposerConfigPropertiesProvider.getGasLimit(duty.getPublicKey(), epoch);
     final Optional<ProposerPreferences> maybePreferences =
         preferencesUtil.createProposerPreferences(
             dependentRoot,

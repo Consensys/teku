@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -42,6 +43,31 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   @Override
   public int getMaxRequestPayloads() {
     return delegate.getMaxRequestPayloads();
+  }
+
+  @Override
+  public int getMaxSignedAggregateAndProofSize() {
+    return delegate.getMaxSignedAggregateAndProofSize();
+  }
+
+  @Override
+  public int getMaxAttesterSlashingSize() {
+    return delegate.getMaxAttesterSlashingSize();
+  }
+
+  @Override
+  public int getMaxDataColumnSidecarSize() {
+    return delegate.getMaxDataColumnSidecarSize();
+  }
+
+  @Override
+  public int getMaxPartialDataColumnSidecarSize() {
+    return delegate.getMaxPartialDataColumnSidecarSize();
+  }
+
+  @Override
+  public int getMaxSignedExecutionPayloadBidSize() {
+    return delegate.getMaxSignedExecutionPayloadBidSize();
   }
 
   @Override
@@ -107,6 +133,11 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   @Override
   public UInt64 getMaxPerEpochActivationChurnLimitGloas() {
     return delegate.getMaxPerEpochActivationChurnLimitGloas();
+  }
+
+  @Override
+  public List<GasLimitScheduleEntry> getGasLimitSchedule() {
+    return delegate.getGasLimitSchedule();
   }
 
   @Override

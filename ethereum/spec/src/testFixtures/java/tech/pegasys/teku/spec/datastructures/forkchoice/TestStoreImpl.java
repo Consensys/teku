@@ -420,6 +420,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public VoteSnapshot getVoteSnapshot() {
+    final UInt64 highestVotedValidatorIndex = getHighestVotedValidatorIndex();
+    final VoteTracker[] voteArray = new VoteTracker[highestVotedValidatorIndex.intValue() + 1];
+    votes.forEach((validatorIndex, vote) -> voteArray[validatorIndex.intValue()] = vote);
+    return VoteSnapshot.create(highestVotedValidatorIndex, voteArray);
+  }
+
+  @Override
   public void putVote(final UInt64 validatorIndex, final VoteTracker vote) {
     votes.put(validatorIndex, vote);
   }
@@ -509,6 +517,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                         block.getStateRoot(),
                         executionPayload.map(ExecutionPayload::getBlockNumber).orElse(UInt64.ZERO),
                         executionPayload.map(ExecutionPayload::getBlockHash).orElse(Bytes32.ZERO),
+                        UInt64.ZERO,
                         ProtoNodeValidationStatus.VALID,
                         blockCheckpoints.get(root),
                         UInt64.ZERO,
@@ -556,8 +565,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
     @Override
     public boolean shouldBuildOnFull(
-        final ReadOnlyStore store, final UInt64 currentSlot, final ForkChoiceNode head) {
-      return shouldExtendPayload(store, new SlotAndBlockRoot(currentSlot, head.blockRoot()));
+        final ReadOnlyStore store, final UInt64 slot, final ForkChoiceNode head) {
+      return shouldExtendPayload(store, new SlotAndBlockRoot(slot, head.blockRoot()));
     }
 
     @Override

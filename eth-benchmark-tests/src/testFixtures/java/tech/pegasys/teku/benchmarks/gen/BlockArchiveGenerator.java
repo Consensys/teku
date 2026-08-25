@@ -23,14 +23,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.EpochAttestationSchedule;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -43,9 +45,8 @@ public class BlockArchiveGenerator {
   private final List<BLSKeyPair> validatorKeys;
   private final RecentChainData localStorage;
   private final AttestationGenerator attestationGenerator;
-
-  @SuppressWarnings("deprecation")
-  private final BeaconChainUtil localChain;
+  private final ChainBuilder chainBuilder;
+  private final ChainUpdater chainUpdater;
 
   private final int slotsPerEpoch;
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
@@ -91,7 +92,7 @@ public class BlockArchiveGenerator {
     generator.generateBlocks();
   }
 
-  @SuppressWarnings({"StaticAssignmentInConstructor", "deprecation"})
+  @SuppressWarnings({"StaticAssignmentInConstructor"})
   private BlockArchiveGenerator(final int validatorCount, final int epochCount) {
     this.validatorCount = validatorCount;
     this.epochCount = epochCount;
@@ -102,14 +103,10 @@ public class BlockArchiveGenerator {
     this.localStorage = MemoryOnlyRecentChainData.create(spec);
     this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     this.slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
-    this.localChain =
-        BeaconChainUtil.builder()
-            .specProvider(spec)
-            .recentChainData(localStorage)
-            .validatorKeys(validatorKeys)
-            .signDeposits(false)
-            .build();
-    localChain.initializeStorage();
+
+    chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    chainUpdater = new ChainUpdater(localStorage, chainBuilder, spec);
+    chainUpdater.initializeGenesis(false);
   }
 
   private static void dieUsage(final Optional<String> maybeContext) {
@@ -145,8 +142,11 @@ public class BlockArchiveGenerator {
           final List<Attestation> aggregates =
               getAggregatesForSlot(previousSlot, attestationCommitteeAssignments);
 
-          final SignedBeaconBlock block =
-              localChain.createAndImportBlockAtSlotWithAttestations(currentSlot, aggregates);
+          ChainBuilder.BlockOptions options =
+              ChainBuilder.BlockOptions.create().setAttestations(aggregates);
+          SignedBlockAndState blockAndState = chainUpdater.advanceChain(currentSlot, options);
+          chainUpdater.updateBestBlock(blockAndState);
+          final SignedBeaconBlock block = blockAndState.getSignedBeaconBlock().orElseThrow();
           writer.accept(block);
 
           System.out.println(

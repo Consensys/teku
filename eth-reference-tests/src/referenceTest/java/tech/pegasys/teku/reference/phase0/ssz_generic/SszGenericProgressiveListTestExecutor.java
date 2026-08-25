@@ -25,8 +25,8 @@ import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.reference.TestDataUtils;
 
@@ -46,7 +46,7 @@ public class SszGenericProgressiveListTestExecutor extends AbstractSszGenericTes
   @Override
   protected SszSchema<?> getSchema(final TestDefinition testDefinition) {
     final SszSchema<?> elementSchema = getElementSchema(testDefinition);
-    return SszProgressiveListSchema.create(elementSchema);
+    return SszListSchema.createProgressive(elementSchema);
   }
 
   @Override

@@ -148,7 +148,7 @@ public class DatabaseTest {
   private final List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
   }
 
@@ -669,7 +669,8 @@ public class DatabaseTest {
             new GloasForkChoiceRebuildData(
                 bid.getParentBlockHash(),
                 bid.getBlockHash(),
-                Optional.of(executionPayload.getMessage().getPayload().getBlockNumber())));
+                Optional.of(executionPayload.getMessage().getPayload().getBlockNumber()),
+                Optional.of(executionPayload.getMessage().getPayload().getGasLimit())));
   }
 
   @TestTemplate

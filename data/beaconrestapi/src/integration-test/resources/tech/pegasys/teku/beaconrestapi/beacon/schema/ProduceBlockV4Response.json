@@ -1,0 +1,35 @@
+{
+  "title" : "ProduceBlockV4Response",
+  "type" : "object",
+  "required" : [ "version", "consensus_block_value", "execution_payload_value", "execution_payload_included", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
+    },
+    "consensus_block_value" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
+    },
+    "execution_payload_value" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
+    },
+    "execution_payload_included" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "title" : "Block",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BlockContentsGloas"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockGloas"
+      } ]
+    }
+  }
+}

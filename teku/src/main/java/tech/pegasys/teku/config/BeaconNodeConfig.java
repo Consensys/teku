@@ -15,7 +15,7 @@ package tech.pegasys.teku.config;
 
 public record BeaconNodeConfig(boolean eventChannelVirtualThreadsEnabled) {
 
-  public static final boolean DEFAULT_EVENT_CHANNEL_VIRTUAL_THREADS_ENABLED = false;
+  public static final boolean DEFAULT_EVENT_CHANNEL_VIRTUAL_THREADS_ENABLED = true;
 
   public static Builder builder() {
     return new Builder();

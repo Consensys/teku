@@ -37,7 +37,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.VoluntaryExitGenerator;
@@ -72,13 +72,13 @@ public class VoluntaryExitGossipIntegrationTest {
     // Setup network 1
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
     NodeManager node1 = createNodeManager(networkBuilder);
-    node1.chainUtil().setSlot(blockSlot);
+    node1.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Setup network 2
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> b.gossipEncoding(gossipEncoding).gossipedVoluntaryExitProcessor(operationProcessor);
     NodeManager node2 = createNodeManager(networkBuilder2);
-    node2.chainUtil().setSlot(blockSlot);
+    node2.getChainUpdater().setCurrentSlot(blockSlot);
 
     // Connect networks 1 -> 2
     waitFor(node1.connect(node2));
@@ -92,13 +92,15 @@ public class VoluntaryExitGossipIntegrationTest {
     Thread.sleep(2000);
 
     // Create voluntary exit
-    final SignedBeaconBlock block = node1.chainUtil().createAndImportBlockAtSlot(blockSlot);
+    final SignedBlockAndState blockAndState =
+        node1.getChainBuilder().generateBlockAtSlot(blockSlot);
+    node1.getChainUpdater().updateBestBlock(blockAndState);
     final SafeFuture<Optional<BeaconState>> stateFuture =
-        node1.storageClient().getStore().retrieveBlockState(block.getRoot());
+        node1.storageClient().getStore().retrieveBlockState(blockAndState.getRoot());
     assertThat(stateFuture).isCompleted();
     final BeaconState state = safeJoin(stateFuture).orElseThrow();
     final VoluntaryExitGenerator exitGenerator =
-        new VoluntaryExitGenerator(spec, node1.chainUtil().getValidatorKeys());
+        new VoluntaryExitGenerator(spec, node1.getChainBuilder().getValidatorKeys());
     final SignedVoluntaryExit voluntaryExit = exitGenerator.valid(state, 0);
 
     // Publish voluntary exit

@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 
 public interface ExecutionPayloadFactory {
 
@@ -36,6 +37,12 @@ public interface ExecutionPayloadFactory {
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
           return SafeFuture.completedFuture(List.of());
         }
+
+        @Override
+        public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
+            final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents) {
+          return SafeFuture.completedFuture(List.of());
+        }
       };
 
   SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
@@ -43,4 +50,7 @@ public interface ExecutionPayloadFactory {
 
   SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
+
+  SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
+      SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents);
 }

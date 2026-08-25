@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
@@ -66,7 +65,6 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Optional<BlobSidecarPruner> blobsPruner = Optional.empty();
   private volatile Optional<StatePruner> statePruner = Optional.empty();
   private volatile Optional<DataColumnSidecarPruner> dataColumnSidecarPruner = Optional.empty();
-  private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private final boolean dataColumnSidecarsStorageCountersEnabled;
   private static final Logger LOG = LogManager.getLogger();
@@ -75,13 +73,11 @@ public class StorageService extends Service implements StorageServiceFacade {
   public StorageService(
       final ServiceConfig serviceConfig,
       final StorageConfiguration storageConfiguration,
-      final boolean depositSnapshotStorageEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
       final boolean dataColumnSidecarsStorageCountersEnabled,
       final Optional<Eth2Network> eth2Network) {
     this.serviceConfig = serviceConfig;
     this.config = storageConfiguration;
-    this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
     this.dataColumnSidecarsStorageCountersEnabled = dataColumnSidecarsStorageCountersEnabled;
     this.maybeNetwork = eth2Network;
@@ -224,11 +220,7 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               final EventChannels eventChannels = serviceConfig.getEventChannels();
 
-              final DepositStorage depositStorage =
-                  DepositStorage.create(
-                      eventChannels.getPublisher(Eth1EventsChannel.class),
-                      database,
-                      depositSnapshotStorageEnabled);
+              final DepositStorage depositStorage = DepositStorage.create(database);
 
               batchingVoteUpdateChannel =
                   new BatchingVoteUpdateChannel(
@@ -247,7 +239,6 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               eventChannels
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
-                  .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
                   .subscribe(SidecarUpdateChannel.class, chainStorage);
             })
@@ -279,9 +270,9 @@ public class StorageService extends Service implements StorageServiceFacade {
       final Duration pruningInterval,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
-    if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE) {
-      throw new InvalidConfigurationException(
-          "State pruning is not supported with leveldb_tree database.");
+    if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE
+        || config.getDataStorageCreateDbVersion() == DatabaseVersion.ROCKSDB_TREE) {
+      throw new InvalidConfigurationException("State pruning is not supported with tree database.");
     }
 
     LOG.info(

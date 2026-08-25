@@ -168,8 +168,8 @@ public class StorageSystem implements AutoCloseable {
     return blobSidecarManager;
   }
 
-  public DepositStorage createDepositStorage(final boolean depositSnapshotStorageEnabled) {
-    return DepositStorage.create(eth1EventsChannel, database, depositSnapshotStorageEnabled);
+  public DepositStorage createDepositStorage() {
+    return DepositStorage.create(database);
   }
 
   public Database database() {

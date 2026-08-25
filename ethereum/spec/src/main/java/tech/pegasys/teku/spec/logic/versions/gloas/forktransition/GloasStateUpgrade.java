@@ -31,9 +31,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateListFieldMigration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
@@ -90,7 +92,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         .createEmptyWithTransitionCachesFrom(preState)
         .updatedGloas(
             state -> {
-              BeaconStateFields.copyCommonFieldsFromSource(state, preState);
+              BeaconStateFields.copyCommonFieldsFromSourceUsingTargetSchemas(state, preState);
 
               state.setFork(
                   new Fork(
@@ -98,17 +100,30 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
-              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
-              state.setInactivityScores(preStateFulu.getInactivityScores());
+              // These source lists are bounded in Fulu but progressive in Gloas, so rebuild them
+              // through the target (progressive) field schemas.
+              state.setPreviousEpochParticipation(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
+                      preStateFulu.getPreviousEpochParticipation()));
+              state.setCurrentEpochParticipation(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
+                      preStateFulu.getCurrentEpochParticipation()));
+              state.setInactivityScores(
+                  BeaconStateListFieldMigration.rematerializeUInt64(
+                      targetStateSchema,
+                      BeaconStateFields.INACTIVITY_SCORES,
+                      preStateFulu.getInactivityScores()));
               state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
               state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
 
               // New in Gloas
-              final Bytes32 latestBlockHash =
-                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
-              final UInt64 latestGasLimit =
-                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getGasLimit();
+              final ExecutionPayloadHeader latestExecutionPayloadHeader =
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired();
+              final Bytes32 latestBlockHash = latestExecutionPayloadHeader.getBlockHash();
               state.setLatestBlockHash(latestBlockHash);
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
@@ -121,9 +136,21 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setConsolidationBalanceToConsume(
                   preStateFulu.getConsolidationBalanceToConsume());
               state.setEarliestConsolidationEpoch(preStateFulu.getEarliestConsolidationEpoch());
-              state.setPendingDeposits(preStateFulu.getPendingDeposits());
-              state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
-              state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
+              state.setPendingDeposits(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PENDING_DEPOSITS,
+                      preStateFulu.getPendingDeposits()));
+              state.setPendingPartialWithdrawals(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
+                      preStateFulu.getPendingPartialWithdrawals()));
+              state.setPendingConsolidations(
+                  BeaconStateListFieldMigration.rematerialize(
+                      targetStateSchema,
+                      BeaconStateFields.PENDING_CONSOLIDATIONS,
+                      preStateFulu.getPendingConsolidations()));
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
 
               // New in Gloas
@@ -151,14 +178,14 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                   schemaDefinitions
                       .getExecutionPayloadBidSchema()
                       .create(
-                          Bytes32.ZERO,
-                          Bytes32.ZERO,
+                          latestExecutionPayloadHeader.getParentHash(),
+                          preState.getLatestBlockHeader().getParentRoot(),
                           latestBlockHash,
-                          Bytes32.ZERO,
+                          latestExecutionPayloadHeader.getPrevRandao(),
                           Bytes20.ZERO,
-                          latestGasLimit,
-                          UInt64.ZERO,
-                          UInt64.ZERO,
+                          latestExecutionPayloadHeader.getGasLimit(),
+                          SpecConfigGloas.BUILDER_INDEX_SELF_BUILD,
+                          preState.getLatestBlockHeader().getSlot(),
                           UInt64.ZERO,
                           UInt64.ZERO,
                           schemaDefinitions.getBlobKzgCommitmentsSchema().of(),
@@ -188,8 +215,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         "Starting onboarding builders at fork from {} pending deposits",
         state.getPendingDeposits().size());
     final List<PendingDeposit> pendingDeposits = new ArrayList<>();
-    // Avoids re-scanning pending deposits and re-verifying signatures for repeated pubkeys
-    final Set<BLSPublicKey> verifiedPendingValidatorPubkeys = new HashSet<>();
+    // Pubkeys with at least one already-queued pending deposit carrying a valid signature, i.e. the
+    // pubkeys for which isPendingValidator(pendingDeposits, pubkey) would return true. Maintained
+    // incrementally so the query is an O(1) lookup instead of an O(queue) rescan-and-verify, which
+    // is quadratic when a pubkey is repeated across many deposits.
+    final Set<BLSPublicKey> pendingValidatorPubkeys = new HashSet<>();
 
     for (final PendingDeposit deposit : state.getPendingDeposits()) {
       final BLSPublicKey pubkey = deposit.getPublicKey();
@@ -212,19 +242,21 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               // deposit for a new validator with this pubkey, keep this deposit in the pending
               // queue to be applied to that validator later.
               () -> {
-                // Deposits without builder credentials stay in the pending queue
+                // Deposits without builder credentials stay in the pending queue. Such a deposit is
+                // the only kind that can newly make its pubkey a pending validator, so verify its
+                // signature once here and record the pubkey rather than rescanning the queue later.
                 if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
                   pendingDeposits.add(deposit);
+                  if (miscHelpers.isValidDepositSignature(
+                      pubkey,
+                      deposit.getWithdrawalCredentials(),
+                      deposit.getAmount(),
+                      deposit.getSignature())) {
+                    pendingValidatorPubkeys.add(pubkey);
+                  }
                   return;
                 }
-                boolean isPendingValidator;
-                if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
-                  isPendingValidator = true;
-                } else {
-                  isPendingValidator = miscHelpers.isPendingValidator(pendingDeposits, pubkey);
-                }
-                if (isPendingValidator) {
-                  verifiedPendingValidatorPubkeys.add(pubkey);
+                if (pendingValidatorPubkeys.contains(pubkey)) {
                   pendingDeposits.add(deposit);
                   return;
                 }

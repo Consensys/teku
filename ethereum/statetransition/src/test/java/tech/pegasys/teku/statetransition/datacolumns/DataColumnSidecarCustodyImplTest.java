@@ -218,7 +218,7 @@ public class DataColumnSidecarCustodyImplTest {
         .isCompletedWithValue(
             Optional.of(
                 Bytes32.fromHexString(
-                    "0xae7c83ad2413e42c4de0ca0b59ef642cee15332ad401b8a3c800fd66d008a706")));
+                    "0xbc318a68f27e96039ac5ac807b79b55532a88c7beddf4f7dff083e3c0b7d7718")));
   }
 
   @Test

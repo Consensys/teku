@@ -36,13 +36,16 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -50,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -60,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -146,6 +151,7 @@ public class BlockOperationSelectorFactory {
 
     final BeaconState blockSlotState = blockProductionContext.blockSlotState();
     final Bytes32 parentRoot = blockProductionContext.parentRoot();
+    final SpecConfig specConfig = spec.atSlot(blockSlotState.getSlot()).getConfig();
 
     return bodyBuilder -> {
       blockProductionContext.blockProductionPerformance().beaconBlockBodyPreparationStarted();
@@ -197,9 +203,14 @@ public class BlockOperationSelectorFactory {
 
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      final BeaconState attestationRewardState =
+          spec.getStateForAttestationRewardCalculation(
+              blockSlotState,
+              blockProductionContext.parentPayloadStatus()
+                  == ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
-              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+              attestationRewardState, new AttestationForkChecker(spec, blockSlotState));
       blockProductionContext.blockProductionPerformance().getAttestationsForBlock();
 
       // Collect slashings to include
@@ -207,12 +218,14 @@ public class BlockOperationSelectorFactory {
       final SszList<AttesterSlashing> attesterSlashings =
           attesterSlashingPool.getItemsForBlock(
               blockSlotState,
+              getMaxAttesterSlashings(specConfig),
               slashing -> !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
               slashing -> exitedValidators.addAll(slashing.getIntersectingValidatorIndices()));
 
       final SszList<ProposerSlashing> proposerSlashings =
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
+              specConfig.getMaxProposerSlashings(),
               slashing ->
                   !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex()),
               slashing ->
@@ -244,6 +257,7 @@ public class BlockOperationSelectorFactory {
                       final SszList<SignedVoluntaryExit> voluntaryExits =
                           getVoluntaryExitsForBlock(
                               blockSlotState,
+                              specConfig.getMaxVoluntaryExits(),
                               exitedValidators,
                               validatorsWithParentWithdrawalRequests);
                       bodyBuilder.voluntaryExits(voluntaryExits);
@@ -252,7 +266,11 @@ public class BlockOperationSelectorFactory {
                     });
       } else {
         final SszList<SignedVoluntaryExit> voluntaryExits =
-            getVoluntaryExitsForBlock(blockSlotState, exitedValidators, new HashSet<>());
+            getVoluntaryExitsForBlock(
+                blockSlotState,
+                specConfig.getMaxVoluntaryExits(),
+                exitedValidators,
+                new HashSet<>());
         bodyBuilder.voluntaryExits(voluntaryExits);
         setVoluntaryExitsAndParentExecutionRequests = COMPLETE;
       }
@@ -277,7 +295,9 @@ public class BlockOperationSelectorFactory {
       // Post-Capella: BLS to Execution changes
       if (bodyBuilder.supportsBlsToExecutionChanges()) {
         bodyBuilder.blsToExecutionChanges(
-            blsToExecutionChangePool.getItemsForBlock(blockSlotState));
+            blsToExecutionChangePool.getItemsForBlock(
+                blockSlotState,
+                SpecConfigCapella.required(specConfig).getMaxBlsToExecutionChanges()));
       }
 
       // Post-Gloas: Payload Attestations
@@ -295,14 +315,23 @@ public class BlockOperationSelectorFactory {
 
   private SszList<SignedVoluntaryExit> getVoluntaryExitsForBlock(
       final BeaconState blockSlotState,
+      final int maxVoluntaryExits,
       final Set<UInt64> exitedValidators,
       final Set<UInt64> validatorsWithParentWithdrawalRequests) {
     return voluntaryExitPool.getItemsForBlock(
         blockSlotState,
+        maxVoluntaryExits,
         exit ->
             voluntaryExitPredicate(
                 blockSlotState, exitedValidators, exit, validatorsWithParentWithdrawalRequests),
         exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
+  }
+
+  private static int getMaxAttesterSlashings(final SpecConfig specConfig) {
+    return specConfig
+        .toVersionElectra()
+        .map(SpecConfigElectra::getMaxAttesterSlashingsElectra)
+        .orElseGet(specConfig::getMaxAttesterSlashings);
   }
 
   private boolean voluntaryExitPredicate(
@@ -361,7 +390,7 @@ public class BlockOperationSelectorFactory {
             executionPayloadContext.orElseThrow(),
             blockSlotState,
             shouldTryBuilderFlow,
-            blockProductionContext.requestedBuilderBoostFactor(),
+            blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
             blockProductionContext.blockProductionPerformance());
 
     return SafeFuture.allOf(
@@ -528,6 +557,7 @@ public class BlockOperationSelectorFactory {
                 blockProductionContext.parentExecutionBlockHash(),
                 blockSlotState,
                 executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
+                blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
                 blockProductionContext.blockProductionPerformance())
             .thenAccept(bodyBuilder::signedExecutionPayloadBid);
     return SafeFuture.allOf(
@@ -591,13 +621,7 @@ public class BlockOperationSelectorFactory {
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
     return block -> {
       final UInt64 slot = block.getSlot();
-      final ExecutionPayloadResult executionPayloadResult =
-          executionLayerBlockProductionManager
-              .getCachedPayloadResult(slot)
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+      final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResultRequired(slot);
 
       if (executionPayloadResult.isFromLocalFlow()) {
         // we performed a non-blinded flow, so the bundle must be in
@@ -618,6 +642,15 @@ public class BlockOperationSelectorFactory {
             .thenApply(Optional::orElseThrow);
       }
     };
+  }
+
+  public ExecutionPayloadResult getCachedPayloadResultRequired(final UInt64 slot) {
+    return executionLayerBlockProductionManager
+        .getCachedPayloadResult(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "ExecutionPayloadResult hasn't been cached for slot " + slot));
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
@@ -738,7 +771,7 @@ public class BlockOperationSelectorFactory {
         // from the local fallback
         final BlobsBundle blobsBundle =
             builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
-        final BlockContentsWithBlobsSchema<?> blockContentsSchema =
+        final BlockContentsSchema<?> blockContentsSchema =
             SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
                 .getBlockContentsSchema();
         blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());

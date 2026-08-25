@@ -542,6 +542,44 @@ public class VoluntaryExitCommandTest {
     System.setIn(inputStream);
   }
 
+  /**
+   * A past --epoch must not drag the signing fork back with it. The beacon node validates exits
+   * against the state's fork, so an exit signed under the fork at the requested epoch would be
+   * rejected by the very node that generated it.
+   */
+  @Test
+  void shouldUseCapellaForkDomainForSignatureWithPastEpoch() throws JsonProcessingException {
+    // Capella at 1, Deneb at 2, Electra at 3 - so epoch 0 resolves to a pre-Capella milestone.
+    final Spec staggeredSpec =
+        TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(100_000));
+    setUserInput("yes");
+    configureSuccessfulSpecResponse(staggeredSpec);
+    configureSuccessfulGenesisResponse();
+
+    final Supplier<List<SignedVoluntaryExit>> exitsCapture =
+        configureSuccessfulVoluntaryExitResponseWithCapture();
+
+    final List<String> args =
+        getCommandArguments(
+            false, true, List.of("--validator-public-keys", validatorPubKey1, "--epoch", "0"));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(0);
+    assertValidatorsExited(validatorPubKey1);
+
+    final SignedVoluntaryExit signedVoluntaryExit = exitsCapture.get().get(0);
+    assertThat(signedVoluntaryExit.getMessage().getEpoch()).isEqualTo(UInt64.ZERO);
+    assertThat(staggeredSpec.atEpoch(UInt64.ZERO).getMilestone())
+        .isNotEqualTo(SpecMilestone.CAPELLA);
+    // EIP-7044 pins the exit domain to the Capella fork version regardless of the exit's epoch
+    verifyVoluntaryExitSignature(
+        signedVoluntaryExit,
+        BLSPublicKey.fromHexString(validatorPubKey1),
+        staggeredSpec,
+        SpecMilestone.CAPELLA);
+  }
+
   private List<String> getCommandArguments(
       final boolean includeKeyManagerKeys,
       final boolean confirmationEnabled,

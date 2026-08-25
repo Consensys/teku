@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -52,16 +53,18 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final SpecConfigGloas config;
   private final LabelledMetric<Counter> requestCounter;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRangeMessageHandler(
+      final Spec spec,
       final SpecConfigGloas config,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
-    ;
+    this.spec = spec;
     this.config = config;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
@@ -87,14 +90,14 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
           new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
     }
 
-    if (request.getCount().isGreaterThan(config.getMaxRequestBlocksDeneb())) {
+    if (request.getCount().isGreaterThan(config.getMaxRequestPayloads())) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
                   "Only a maximum of %s execution payload envelopes can be requested per request",
-                  config.getMaxRequestBlocksDeneb())));
+                  config.getMaxRequestPayloads())));
     }
     return Optional.empty();
   }
@@ -123,13 +126,23 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     requestCounter.labels("ok").inc();
     totalExecutionPayloadEnvelopesRequestedCounter.inc(count.longValue());
 
+    // Trim the requested range down to the slots we are required to serve. Retrieving an envelope
+    // for a finalized block requires reading the blinded envelope from the database and unblinding
+    // it with an execution layer round trip, so slots outside the servable range are dropped before
+    // any of that work is done. The count is reduced along with the start slot so that we never
+    // respond with envelopes from outside the range the peer asked for.
+    final UInt64 minServableSlot = getMinServableSlot();
+    final UInt64 adjustedStartSlot = startSlot.max(minServableSlot);
+    final UInt64 adjustedCount = count.minusMinZero(adjustedStartSlot.minusMinZero(startSlot));
+
     final NavigableMap<UInt64, Bytes32> hotRoots;
 
     if (combinedChainDataClient.isFinalized(message.getMaxSlot())) {
       // All execution payloads are finalized so skip scanning the protoarray
       hotRoots = new TreeMap<>();
     } else {
-      hotRoots = combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, count);
+      hotRoots =
+          combinedChainDataClient.getAncestorRoots(adjustedStartSlot, UInt64.ONE, adjustedCount);
     }
 
     final UInt64 headSlot =
@@ -141,11 +154,15 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
             : hotRoots.lastKey();
 
     final RequestState initialState =
-        new RequestState(callback, startSlot, count, headSlot, hotRoots);
+        new RequestState(callback, adjustedStartSlot, adjustedCount, headSlot, hotRoots);
 
     final SafeFuture<RequestState> response;
 
-    if (initialState.isComplete()) {
+    // Only short-circuit when there is genuinely nothing to send: an empty range or a start slot
+    // strictly beyond our head. When the start slot equals the head slot we must still return the
+    // envelope at that slot, which is also the range a request trimmed down to its last servable
+    // slot ends up with.
+    if (adjustedCount.isZero() || adjustedStartSlot.isGreaterThan(headSlot)) {
       response = SafeFuture.completedFuture(initialState);
     } else {
       response = sendNextExecutionPayloadEnvelope(initialState);
@@ -160,6 +177,20 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
           callback.completeSuccessfully();
         },
         err -> handleError(err, callback, "execution payload envelopes by range"));
+  }
+
+  /**
+   * The first slot we are required to serve envelopes for: the start of the earliest epoch within
+   * {@code MIN_EPOCHS_FOR_BLOCK_REQUESTS} of the current epoch, never earlier than the Gloas fork.
+   */
+  private UInt64 getMinServableSlot() {
+    final UInt64 currentEpoch =
+        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(ZERO);
+    final UInt64 minServableEpoch =
+        currentEpoch
+            .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests())
+            .max(spec.getSpecConfig(currentEpoch).getGloasForkEpoch());
+    return spec.computeStartSlotAtEpoch(minServableEpoch);
   }
 
   private SafeFuture<RequestState> sendNextExecutionPayloadEnvelope(

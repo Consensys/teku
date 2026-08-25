@@ -30,15 +30,20 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -52,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
@@ -65,12 +71,15 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequ
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostPtcDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PrepareBeaconProposersRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PublishSignedExecutionPayloadRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendAggregateAndProofsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendContributionAndProofsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendPayloadAttestationMessagesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedAttestationsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSubscribeToSyncCommitteeSubnetsRequest;
@@ -140,6 +149,13 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return postAttesterDutiesRequest.submit(epoch, validatorIndices);
   }
 
+  public Optional<PtcDuties> postPtcDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    final PostPtcDutiesRequest postPtcDutiesRequest =
+        new PostPtcDutiesRequest(getBaseEndpoint(), getOkHttpClient());
+    return postPtcDutiesRequest.submit(epoch, validatorIndices);
+  }
+
   public SendSignedBlockResult sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
@@ -161,6 +177,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
             schemaDefinitionCache,
             slot,
             preferSszBlockEncoding);
+    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return produceBlockRequest.submitV4(randaoReveal, graffiti, requestedBuilderBoostFactor);
+    }
     return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
@@ -294,5 +314,30 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SendSignedAttestationsRequest(
             getBaseEndpoint(), getOkHttpClient(), attestationsV2ApisEnabled, spec);
     return sendSignedAttestationsRequest.submit(attestations);
+  }
+
+  public List<SubmitDataError> sendPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {
+    final SendPayloadAttestationMessagesRequest sendPayloadAttestationMessagesRequest =
+        new SendPayloadAttestationMessagesRequest(getBaseEndpoint(), getOkHttpClient());
+    return sendPayloadAttestationMessagesRequest.submit(payloadAttestationMessages);
+  }
+
+  public PublishSignedExecutionPayloadResult publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    final PublishSignedExecutionPayloadRequest publishSignedExecutionPayloadRequest =
+        new PublishSignedExecutionPayloadRequest(spec, getBaseEndpoint(), getOkHttpClient());
+    return publishSignedExecutionPayloadRequest.submit(
+        signedExecutionPayload, broadcastValidationLevel);
+  }
+
+  public PublishSignedExecutionPayloadResult publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelopeContents signedExecutionPayloadEnvelopeContents,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    final PublishSignedExecutionPayloadRequest publishSignedExecutionPayloadRequest =
+        new PublishSignedExecutionPayloadRequest(spec, getBaseEndpoint(), getOkHttpClient());
+    return publishSignedExecutionPayloadRequest.submit(
+        signedExecutionPayloadEnvelopeContents, broadcastValidationLevel);
   }
 }

@@ -36,6 +36,7 @@ import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidCircuitBreakerFactory;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -97,6 +98,8 @@ public class TekuConfiguration {
             syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
+            createExecutionPayloadBidCircuitBreakerFactory(spec, executionLayerConfiguration),
+            executionLayerConfiguration,
             storeConfig,
             spec,
             beaconChainControllerFactory,
@@ -113,6 +116,19 @@ public class TekuConfiguration {
 
   public static Builder builder() {
     return new Builder();
+  }
+
+  private static ExecutionPayloadBidCircuitBreakerFactory
+      createExecutionPayloadBidCircuitBreakerFactory(
+          final Spec spec, final ExecutionLayerConfiguration executionLayerConfiguration) {
+    if (!executionLayerConfiguration.isBuilderCircuitBreakerEnabled()) {
+      return ExecutionPayloadBidCircuitBreakerFactory.NOOP;
+    }
+    return ExecutionPayloadBidCircuitBreakerFactory.create(
+        spec,
+        executionLayerConfiguration.getBuilderCircuitBreakerWindow(),
+        executionLayerConfiguration.getBuilderCircuitBreakerAllowedFaults(),
+        executionLayerConfiguration.getBuilderCircuitBreakerAllowedConsecutiveFaults());
   }
 
   public Eth2NetworkConfiguration eth2NetworkConfiguration() {
@@ -238,12 +254,6 @@ public class TekuConfiguration {
       storageConfigurationBuilder.dataConfig(dataConfig);
       powchainConfigBuilder.depositContractDefault(depositContractAddress);
       powchainConfigBuilder.depositContractDeployBlockDefault(depositContractDeployBlock);
-      powchainConfigBuilder.setDepositSnapshotPathForNetwork(
-          eth2NetworkConfiguration.getEth2Network());
-      eth2NetworkConfiguration
-          .getNetworkBoostrapConfig()
-          .getCheckpointSyncUrl()
-          .ifPresent(powchainConfigBuilder::checkpointSyncDepositSnapshotUrl);
       p2pConfigBuilder.discovery(
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.subcommand.debug;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -63,7 +62,6 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -85,32 +83,6 @@ public class DebugDbCommand implements Runnable {
   @Override
   public void run() {
     CommandLine.usage(this, System.out);
-  }
-
-  @Command(
-      name = "get-deposits",
-      description = "List the ETH1 deposit information stored in the database",
-      mixinStandardHelpOptions = true,
-      showDefaultValues = true,
-      abbreviateSynopsis = true,
-      versionProvider = PicoCliVersionProvider.class,
-      synopsisHeading = "%n",
-      descriptionHeading = "%nDescription:%n%n",
-      optionListHeading = "%nOptions:%n",
-      footerHeading = "%n",
-      footer = "Teku is licensed under the Apache License 2.0")
-  public int getDeposits(
-      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
-      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
-      throws Exception {
-    final PrintStream printStream = System.out;
-    try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(printStream);
-        final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
-      final DepositStorage depositStorage =
-          DepositStorage.create(eth1EventsChannel, database, false);
-      depositStorage.replayDepositEvents().join();
-    }
-    return 0;
   }
 
   @Command(
@@ -219,6 +191,53 @@ public class DebugDbCommand implements Runnable {
                 + (endTime - startTime)
                 + "ms");
       }
+      return 0;
+    }
+  }
+
+  @Command(
+      name = "get-state-summary",
+      description = "Report count, first slot, and last slot of stored finalized states.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getStateSummary(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      final long[] count = {0};
+      final UInt64[] firstSlot = {null};
+      final UInt64[] lastSlot = {null};
+      try (Stream<UInt64> stream =
+          database.streamFinalizedStateSlots(UInt64.ZERO, UInt64.valueOf(Long.MAX_VALUE))) {
+        stream.forEach(
+            slot -> {
+              count[0]++;
+              if (firstSlot[0] == null) {
+                firstSlot[0] = slot;
+              }
+              lastSlot[0] = slot;
+            });
+      }
+      if (count[0] == 0) {
+        System.out.println("No finalized states found.");
+      } else {
+        System.out.printf("Finalized states: %d%n", count[0]);
+        System.out.printf("First slot:       %s%n", firstSlot[0]);
+        System.out.printf("Last slot:        %s%n", lastSlot[0]);
+      }
+      final long hotStateCount =
+          database.getColumnCounts(Optional.of("HOT_STATES_BY_ROOT")).values().stream()
+              .mapToLong(Long::longValue)
+              .sum();
+      System.out.printf("Hot states:       %d%n", hotStateCount);
       return 0;
     }
   }

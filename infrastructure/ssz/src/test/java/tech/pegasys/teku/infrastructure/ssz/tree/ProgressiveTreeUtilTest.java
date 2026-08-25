@@ -238,6 +238,42 @@ class ProgressiveTreeUtilTest {
   }
 
   @Test
+  void storeAndLoadSpine_singleAllZeroChunk_roundtripsWithNavigableTree() {
+    // Regression: when chunk is all-zero, progressiveDataTree.hashTreeRoot() equals
+    // ZERO_TREES[1].hashTreeRoot(). The old code returned LeafNode.EMPTY_LEAF instead of
+    // a proper BranchNode, causing navigation errors (e.g. "Invalid root index: 2").
+    final LeafNode zeroChunk = LeafNode.create(Bytes32.ZERO);
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of(zeroChunk));
+
+    // Sanity check: the tree's hash collides with ZERO_TREES[1]
+    assertThat(tree.hashTreeRoot()).isEqualTo(TreeUtil.ZERO_TREES[1].hashTreeRoot());
+
+    // The tree must still be navigable after store/load (not a LeafNode)
+    final InMemoryStoringTreeNodeStore nodeStore = new InMemoryStoringTreeNodeStore();
+    final long dataRootGIndex = GIndexUtil.LEFT_CHILD_G_INDEX;
+    final Map<Bytes32, TreeNode> subtreeByHash = new HashMap<>();
+    ProgressiveTreeUtil.storeProgressiveSpine(
+        nodeStore,
+        dataRootGIndex,
+        tree,
+        1,
+        (levelGIndex, levelSubtree, chunksInLevel, depth) ->
+            subtreeByHash.put(levelSubtree.hashTreeRoot(), levelSubtree));
+
+    final TreeNode result =
+        ProgressiveTreeUtil.loadProgressiveSpine(
+            nodeStore,
+            tree.hashTreeRoot(),
+            dataRootGIndex,
+            1,
+            (levelHash, levelGIndex, chunksInLevel, depth) -> subtreeByHash.get(levelHash));
+
+    assertThat(result.hashTreeRoot()).isEqualTo(tree.hashTreeRoot());
+    // Must be a BranchNode, not a LeafNode, so navigation (e.g. get(2)) works
+    assertThat(result).isInstanceOf(BranchNode.class);
+  }
+
+  @Test
   void storeAndLoadSpine_multipleChunks_roundtrips() {
     final List<LeafNode> chunks = new ArrayList<>();
     for (int i = 0; i < 6; i++) {

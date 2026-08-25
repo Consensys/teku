@@ -24,7 +24,6 @@ import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -286,12 +285,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
   public DatabaseVersion parseDatabaseVersion() {
     if (createDbVersion == null) {
-      if (dataStorageFrequency == 1 && !DatabaseVersion.tryLoadLeveldbNativeLibrary()) {
-        throw new InvalidConfigurationException(
-            "Native LevelDB support is required for archive frequency 1");
-      }
       return dataStorageFrequency == 1
-          ? DatabaseVersion.LEVELDB_TREE
+          ? DatabaseVersion.ROCKSDB_TREE
           : DatabaseVersion.DEFAULT_VERSION;
     }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);

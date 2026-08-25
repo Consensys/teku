@@ -22,16 +22,12 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
-import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_NEW_ENGINE_API;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
 public class ExecutionLayerOptions {
-
-  @Mixin private final DepositOptions depositOptions = new DepositOptions();
 
   @Option(
       names = {"--ee-endpoint"},
@@ -147,16 +143,6 @@ public class ExecutionLayerOptions {
   private boolean exchangeCapabilitiesMonitoringEnabled =
       DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 
-  @Option(
-      names = {"--Xnew-engine-api-client-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enables the new Engine API client.",
-      arity = "0..1",
-      showDefaultValue = Visibility.ALWAYS,
-      fallbackValue = "true",
-      hidden = true)
-  private boolean useNewEngineApiClient = DEFAULT_USE_NEW_ENGINE_API;
-
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -172,8 +158,6 @@ public class ExecutionLayerOptions {
                 .builderBidCompareFactor(builderBidCompareFactor)
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
                 .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag)
-                .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled)
-                .useNewEngineApiClient(useNewEngineApiClient));
-    depositOptions.configure(builder);
+                .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled));
   }
 }

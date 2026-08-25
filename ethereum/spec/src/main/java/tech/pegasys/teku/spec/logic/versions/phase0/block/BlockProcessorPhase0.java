@@ -78,7 +78,8 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider) {
+      final IndexedAttestationProvider indexedAttestationProvider,
+      final UInt64 parentSlot) {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
     final AttestationData data = attestation.getData();
 
@@ -173,7 +174,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processExecutionPayloadBid(
+  public UInt64 processExecutionPayloadBid(
       final MutableBeaconState state, final SignedExecutionPayloadBid signedBid) {
     throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
   }

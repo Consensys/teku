@@ -18,7 +18,8 @@ import static tech.pegasys.teku.ethereum.executionclient.IpcSocketExecutionEngin
 import static tech.pegasys.teku.ethereum.executionclient.IpcSocketExecutionEngineClient.IPC_READER_MAX_THREADS;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
+import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.PREVIOUS_STUB_ENDPOINT_PREFIX;
+import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import com.google.common.base.Splitter;
 import java.nio.file.Path;
@@ -37,8 +38,6 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClientFactory;
 import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
-import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
-import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
@@ -51,6 +50,7 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
 import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedEngineJsonRpcMethodsResolver;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -62,7 +62,6 @@ public class ExecutionLayerService extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
-  private final ExecutionWeb3jClientProvider engineWeb3jClientProvider;
   private final ExecutionLayerManager executionLayerManager;
 
   public static ExecutionLayerService create(
@@ -76,19 +75,12 @@ public class ExecutionLayerService extends Service {
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
 
-    // TODO-lucas This is eventually used on PowchainService. However this is likely legacy and can
-    // be removed as we
-    // don't care about fetching deposits from chain anymore.
-    final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
-        ExecutionWeb3jClientProvider.create(
-            config.getEngineEndpoint(),
-            EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
-            true,
-            config.getEngineJwtSecretFile(),
-            config.getEngineJwtClaimId(),
-            beaconDataDirectory,
-            timeProvider,
-            executionClientEventsPublisher);
+    final String engineEndpoint = config.getEngineEndpoint();
+    if (engineEndpoint.startsWith(PREVIOUS_STUB_ENDPOINT_PREFIX)) {
+      throw new InvalidConfigurationException(
+          "Using the stub execution engine is unsafe. This is only designed for testing. Please use a real execution client.");
+    }
+    final boolean engineIsStub = engineEndpoint.startsWith(STUB_ENDPOINT_PREFIX);
 
     final Optional<RestClientProvider> builderRestClientProvider =
         config
@@ -108,11 +100,10 @@ public class ExecutionLayerService extends Service {
         builderRestClientProvider.map(RestClientProvider::isStub).orElse(false);
 
     checkState(
-        engineWeb3jClientProvider.isStub() == builderIsStub || builderRestClientProvider.isEmpty(),
+        engineIsStub == builderIsStub || builderRestClientProvider.isEmpty(),
         "mixed configuration with stubbed and non-stubbed execution layer endpoints is not supported");
 
-    final String endpoint = engineWeb3jClientProvider.getEndpoint();
-    LOG.info("Using execution engine at {}", endpoint);
+    LOG.info("Using execution engine at {}", engineEndpoint);
 
     final BuilderCircuitBreaker builderCircuitBreaker;
     if (config.isBuilderCircuitBreakerEnabled()) {
@@ -128,52 +119,39 @@ public class ExecutionLayerService extends Service {
     }
 
     final ExecutionLayerManager executionLayerManager;
-    if (engineWeb3jClientProvider.isStub()) {
+    if (engineIsStub) {
       executionLayerManager =
           createStubExecutionLayerManager(serviceConfig, config, builderCircuitBreaker);
     } else {
-      if (!config.isUseNewEngineApiClient()) {
-        executionLayerManager =
-            createRealExecutionLayerManager(
-                serviceConfig,
-                config,
-                spec,
-                new Web3JExecutionEngineClient(engineWeb3jClientProvider.getWeb3JClient()),
-                builderRestClientProvider,
-                builderCircuitBreaker);
-      } else {
-        LOG.info("Using new experimental Engine API client");
-        final Optional<JwtConfig> jwtConfig =
-            JwtConfig.createIfNeeded(
-                true,
-                config.getEngineJwtSecretFile(),
-                config.getEngineJwtClaimId(),
-                beaconDataDirectory);
-        final Supplier<OkHttpClient> okHttpClientSupplier =
-            () -> OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
-        final ExecutionEngineClient newEngineApiClient =
-            ExecutionEngineClientFactory.create(
-                config.getEngineEndpoint(),
-                timeProvider,
-                EVENT_LOG,
-                executionClientEventsPublisher,
-                okHttpClientSupplier,
-                () ->
-                    serviceConfig.createAsyncRunner(
-                        IPC_READER_ASYNC_RUNNER_NAME, IPC_READER_MAX_THREADS));
-        executionLayerManager =
-            createRealExecutionLayerManager(
-                serviceConfig,
-                config,
-                spec,
-                newEngineApiClient,
-                builderRestClientProvider,
-                builderCircuitBreaker);
-      }
+      final Optional<JwtConfig> jwtConfig =
+          JwtConfig.createIfNeeded(
+              true,
+              config.getEngineJwtSecretFile(),
+              config.getEngineJwtClaimId(),
+              beaconDataDirectory);
+      final Supplier<OkHttpClient> okHttpClientSupplier =
+          () -> OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
+      final ExecutionEngineClient engineApiClient =
+          ExecutionEngineClientFactory.create(
+              engineEndpoint,
+              timeProvider,
+              EVENT_LOG,
+              executionClientEventsPublisher,
+              okHttpClientSupplier,
+              () ->
+                  serviceConfig.createAsyncRunner(
+                      IPC_READER_ASYNC_RUNNER_NAME, IPC_READER_MAX_THREADS));
+      executionLayerManager =
+          createRealExecutionLayerManager(
+              serviceConfig,
+              config,
+              spec,
+              engineApiClient,
+              builderRestClientProvider,
+              builderCircuitBreaker);
     }
 
-    return new ExecutionLayerService(
-        serviceConfig.getEventChannels(), engineWeb3jClientProvider, executionLayerManager);
+    return new ExecutionLayerService(serviceConfig.getEventChannels(), executionLayerManager);
   }
 
   private static ExecutionLayerManager createStubExecutionLayerManager(
@@ -247,11 +225,8 @@ public class ExecutionLayerService extends Service {
   }
 
   ExecutionLayerService(
-      final EventChannels eventChannels,
-      final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
-      final ExecutionLayerManager executionLayerManager) {
+      final EventChannels eventChannels, final ExecutionLayerManager executionLayerManager) {
     this.eventChannels = eventChannels;
-    this.engineWeb3jClientProvider = engineWeb3jClientProvider;
     this.executionLayerManager = executionLayerManager;
   }
 
@@ -266,11 +241,5 @@ public class ExecutionLayerService extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.COMPLETE;
-  }
-
-  public Optional<ExecutionWeb3jClientProvider> getEngineWeb3jClientProvider() {
-    return engineWeb3jClientProvider.isStub()
-        ? Optional.empty()
-        : Optional.of(engineWeb3jClientProvider);
   }
 }

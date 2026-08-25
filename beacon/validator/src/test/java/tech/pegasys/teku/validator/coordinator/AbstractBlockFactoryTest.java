@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -47,8 +48,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -62,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -168,6 +173,16 @@ public abstract class AbstractBlockFactoryTest {
       final boolean postMerge,
       final Consumer<BeaconState> executionPayloadBuilder,
       final boolean blinded) {
+    return assertBlockCreated(blockSlot, spec, postMerge, executionPayloadBuilder, blinded, false);
+  }
+
+  protected BlockContainerAndMetaData assertBlockCreated(
+      final int blockSlot,
+      final Spec spec,
+      final boolean postMerge,
+      final Consumer<BeaconState> executionPayloadBuilder,
+      final boolean blinded,
+      final boolean includePayload) {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
@@ -204,10 +219,14 @@ public abstract class AbstractBlockFactoryTest {
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
-    when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
-    when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
-    when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
-    when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
+    when(attesterSlashingPool.getItemsForBlock(any(), anyInt(), any(), any()))
+        .thenReturn(attesterSlashings);
+    when(proposerSlashingPool.getItemsForBlock(any(), anyInt(), any(), any()))
+        .thenReturn(proposerSlashings);
+    when(voluntaryExitPool.getItemsForBlock(any(), anyInt(), any(), any()))
+        .thenReturn(voluntaryExits);
+    when(blsToExecutionChangePool.getItemsForBlock(any(), anyInt()))
+        .thenReturn(blsToExecutionChanges);
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
     when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any(), any()))
@@ -251,8 +270,13 @@ public abstract class AbstractBlockFactoryTest {
       blockProposerRewards = UInt64.ZERO;
     }
 
+    final Optional<UInt64> requestedBuilderBoostFactor = Optional.of(UInt64.valueOf(42));
     setupExecutionLayerBlockAndBlobsProduction(
-        UInt64.valueOf(blockSlot), spec, dataStructureUtil, blockExecutionValue);
+        UInt64.valueOf(blockSlot),
+        spec,
+        dataStructureUtil,
+        blockExecutionValue,
+        requestedBuilderBoostFactor);
 
     executionPayloadBuilder.accept(blockSlotState);
 
@@ -265,10 +289,31 @@ public abstract class AbstractBlockFactoryTest {
                     blockSlotState,
                     randaoReveal,
                     Optional.empty(),
-                    Optional.empty(),
+                    includePayload,
+                    requestedBuilderBoostFactor.map(BuilderConfig::withBuilderBoostFactor),
                     BlockProductionPerformance.NOOP)));
 
     final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
+    final SpecConfig specConfig = spec.atSlot(newSlot).getConfig();
+    final int maxAttesterSlashings =
+        specConfig
+            .toVersionElectra()
+            .map(SpecConfigElectra::getMaxAttesterSlashingsElectra)
+            .orElseGet(specConfig::getMaxAttesterSlashings);
+
+    verify(attesterSlashingPool)
+        .getItemsForBlock(eq(blockSlotState), eq(maxAttesterSlashings), any(), any());
+    verify(proposerSlashingPool)
+        .getItemsForBlock(
+            eq(blockSlotState), eq(specConfig.getMaxProposerSlashings()), any(), any());
+    verify(voluntaryExitPool)
+        .getItemsForBlock(eq(blockSlotState), eq(specConfig.getMaxVoluntaryExits()), any(), any());
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      verify(blsToExecutionChangePool)
+          .getItemsForBlock(
+              eq(blockSlotState),
+              eq(SpecConfigCapella.required(specConfig).getMaxBlsToExecutionChanges()));
+    }
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
@@ -528,7 +573,8 @@ public abstract class AbstractBlockFactoryTest {
       final UInt64 blockSlot,
       final Spec spec,
       final DataStructureUtil dataStructureUtil,
-      final UInt256 value) {
+      final UInt256 value,
+      final Optional<UInt64> expectedRequestedBuilderBoostFactor) {
     // non-blinded
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
@@ -584,17 +630,20 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // simulate a bid
-    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any(), any()))
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any(), any(), any(), any()))
         .thenAnswer(
             args -> {
               final Bytes32 parentRoot = args.getArgument(0);
               final Bytes32 parentBlockHash = args.getArgument(1);
               final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(2));
               final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(3);
+              final Optional<UInt64> requestedBuilderBoostFactor = args.getArgument(4);
               // verify we pass the correct future to the bid manager
               assertThat(getPayloadResponseFuture)
                   .isEqualTo(
                       cachedExecutionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired());
+              assertThat(requestedBuilderBoostFactor)
+                  .isEqualTo(expectedRequestedBuilderBoostFactor);
               assertThat(parentBlockHash).isEqualTo(executionPayload.getParentHash());
               final UInt64 slot = state.getSlot();
               final SchemaDefinitionsGloas schemaDefinitions =

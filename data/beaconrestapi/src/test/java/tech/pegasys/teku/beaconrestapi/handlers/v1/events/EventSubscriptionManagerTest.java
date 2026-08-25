@@ -121,6 +121,9 @@ public class EventSubscriptionManagerTest {
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, false);
 
+  private final FastConfirmationEvent sampleFastConfirmationEvent =
+      new FastConfirmationEvent(data.randomBytes32(), data.randomUInt64(), data.randomUInt64());
+
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock = data.randomSignedBeaconBlock(0);
   private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
@@ -147,7 +150,7 @@ public class EventSubscriptionManagerTest {
           new Data(
               samplePayloadAttributes.proposalSlot(),
               samplePayloadAttributes.parentBeaconBlock().blockRoot(),
-              data.randomUInt64(),
+              Optional.empty(),
               data.randomBytes32(),
               samplePayloadAttributes.proposerIndex(),
               new PayloadAttributes(
@@ -161,7 +164,7 @@ public class EventSubscriptionManagerTest {
           new ForkChoiceState(
               ForkChoiceNode.createBase(data.randomBytes32()),
               data.randomSlot(),
-              samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+              data.randomUInt64(),
               samplePayloadAttributesData.data().parentExecutionBlockHash(),
               data.randomBytes32(),
               data.randomBytes32(),
@@ -282,6 +285,15 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateFastConfirmationMessages() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=fast_confirmation");
+    manager.registerClient(client1);
+
+    triggerFastConfirmationEvent();
+    checkEvent("fast_confirmation", sampleFastConfirmationEvent);
+  }
+
+  @Test
   void shouldPropagateSyncState() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=sync_state");
     manager.registerClient(client1);
@@ -339,6 +351,60 @@ public class EventSubscriptionManagerTest {
             samplePayloadAttributesData.milestone(),
             samplePayloadAttributes,
             forkChoiceUpdatedResultNotification.forkChoiceState()));
+  }
+
+  @Test
+  void shouldIncludeParentBlockNumberInPayloadAttributesEventForDeneb()
+      throws JsonProcessingException {
+    final UInt64 denebHeadExecutionBlockNumber = UInt64.valueOf(123_456L);
+    final ForkChoiceState denebForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(data.randomBytes32()),
+            data.randomSlot(),
+            denebHeadExecutionBlockNumber,
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            data.randomBytes32(),
+            data.randomBytes32(),
+            false);
+
+    final PayloadAttributesEvent denebPayloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            SpecMilestone.DENEB, samplePayloadAttributes, denebForkChoiceState);
+
+    final String result =
+        JsonUtil.serialize(
+            denebPayloadAttributesEvent.getData(),
+            denebPayloadAttributesEvent.getJsonTypeDefinition());
+
+    assertThat(result)
+        .contains(String.format("\"parent_block_number\":\"%s\"", denebHeadExecutionBlockNumber));
+  }
+
+  @Test
+  void shouldNotIncludeParentBlockNumberInPayloadAttributesEventForGloas()
+      throws JsonProcessingException {
+    final UInt64 headExecutionBlockNumber = UInt64.valueOf(123_456L);
+    final ForkChoiceState gloasForkChoiceState =
+        new ForkChoiceState(
+            ForkChoiceNode.createBase(data.randomBytes32()),
+            data.randomSlot(),
+            headExecutionBlockNumber,
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            data.randomBytes32(),
+            data.randomBytes32(),
+            false);
+
+    final PayloadAttributesEvent gloasPayloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            SpecMilestone.GLOAS, samplePayloadAttributes, gloasForkChoiceState);
+
+    final String result =
+        JsonUtil.serialize(
+            gloasPayloadAttributesEvent.getData(),
+            gloasPayloadAttributesEvent.getJsonTypeDefinition());
+
+    assertThat(result)
+        .doesNotContain(String.format("\"parent_block_number\":\"%s\"", headExecutionBlockNumber));
   }
 
   @Test
@@ -610,6 +676,14 @@ public class EventSubscriptionManagerTest {
         new Checkpoint(
             sampleCheckpointEvent.getData().epoch, sampleCheckpointEvent.getData().block),
         false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerFastConfirmationEvent() {
+    manager.onFastConfirmation(
+        sampleFastConfirmationEvent.getData().block,
+        sampleFastConfirmationEvent.getData().slot,
+        sampleFastConfirmationEvent.getData().currentSlot);
     asyncRunner.executeQueuedActions();
   }
 

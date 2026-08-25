@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_INCLUDE_PAYLOAD;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
@@ -49,8 +50,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(allMilestones = true)
@@ -79,11 +82,8 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetUnblindedBeaconBlockAsJson() throws JsonProcessingException {
-    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
-        .isTrue();
+    assumeThat(specMilestone.isLessThan(DENEB)).isTrue();
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
-        new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
 
     LOG.debug(
         "Expected block in JSON: {}",
@@ -107,8 +107,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BeaconBlock actualBlock =
         maybeBlockContainerAndMetaData.get().blockContainer().getBlock();
-    final BeaconBlock expectedBlock = blockResponse.getData().getBlock();
-    assertThat(actualBlock).isEqualTo(expectedBlock);
+    assertThat(actualBlock).isEqualTo(beaconBlock.getBlock());
 
     assertThat(maybeBlockContainerAndMetaData.get().consensusBlockValue())
         .isEqualTo(UInt256.valueOf(123000000000L));
@@ -118,11 +117,8 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetUnblindedBeaconBlockAsSsz() {
-    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
-        .isTrue();
+    assumeThat(specMilestone.isLessThan(DENEB)).isTrue();
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
-        new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
 
     responseBodyBuffer.write(
         spec.getGenesisSchemaDefinitions()
@@ -160,8 +156,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
-        .isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer()).isEqualTo(beaconBlock);
 
     assertThat(maybeBlockContainerAndMetaData.get().consensusBlockValue())
         .isEqualTo(expectedConsensusBlockValue);
@@ -173,8 +168,6 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetBlindedBeaconBlockAsJson() {
     assumeThat(specMilestone).isBetween(BELLATRIX, FULU);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
-        new ProduceBlockRequest.ProduceBlockResponse(blindedBeaconBlock);
 
     final String mockResponse = readExpectedJsonResource(specMilestone, true, false);
 
@@ -190,14 +183,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
         request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
-        .hasValue(blockResponse.getData());
+        .hasValue(blindedBeaconBlock);
   }
 
   @TestTemplate
   public void shouldGetBlindedBeaconBlockAsSsz() {
+    assumeThat(specMilestone).isBetween(BELLATRIX, FULU);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
-        new ProduceBlockRequest.ProduceBlockResponse(blindedBeaconBlock);
 
     responseBodyBuffer.write(
         spec.getGenesisSchemaDefinitions()
@@ -221,16 +213,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
-        .isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer()).isEqualTo(blindedBeaconBlock);
   }
 
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsJson() {
     assumeThat(specMilestone).isBetween(DENEB, FULU);
     final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
-    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
-        new ProduceBlockRequest.ProduceBlockResponse(blockContents);
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, true);
 
@@ -247,16 +236,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
-        .isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer()).isEqualTo(blockContents);
   }
 
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsSsz() {
     assumeThat(specMilestone).isBetween(DENEB, FULU);
     final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
-    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
-        new ProduceBlockRequest.ProduceBlockResponse(blockContents);
 
     responseBodyBuffer.write(
         spec.getGenesisSchemaDefinitions()
@@ -277,8 +263,134 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
-        .isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer()).isEqualTo(blockContents);
+  }
+
+  @TestTemplate
+  public void shouldGetBlockContentsAsSszV4() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+
+    final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
+    assertThat(blockContents).isInstanceOf(BlockContentsGloas.class);
+
+    responseBodyBuffer.write(blockContents.sszSerialize().toArrayUnsafe());
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setHeader("Content-Type", MediaType.OCTET_STREAM)
+            .setHeader(HEADER_INCLUDE_PAYLOAD, "true")
+            .setHeader(HEADER_CONSENSUS_BLOCK_VALUE, "123000000000")
+            .setHeader(HEADER_EXECUTION_PAYLOAD_VALUE, "12345")
+            .setBody(responseBodyBuffer));
+
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainerAndMetaData> result =
+        request.submitV4(signature, Optional.empty(), Optional.empty());
+
+    assertThat(result).isPresent();
+    assertThat(result.get().blockContainer()).isEqualTo(blockContents);
+    assertThat(result.get().executionPayloadValue()).isEqualTo(UInt256.valueOf(12345));
+    assertThat(result.get().consensusBlockValue()).isEqualTo(UInt256.valueOf(123000000000L));
+  }
+
+  @TestTemplate
+  public void shouldGetBeaconBlockAsSszV4WhenPayloadNotIncluded() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+
+    responseBodyBuffer.write(
+        schemaDefinitions.getBeaconBlockSchema().sszSerialize(beaconBlock).toArrayUnsafe());
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setHeader("Content-Type", MediaType.OCTET_STREAM)
+            .setHeader(HEADER_INCLUDE_PAYLOAD, "false")
+            .setHeader(HEADER_CONSENSUS_BLOCK_VALUE, "123000000000")
+            .setHeader(HEADER_EXECUTION_PAYLOAD_VALUE, "12345")
+            .setBody(responseBodyBuffer));
+
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainerAndMetaData> result =
+        request.submitV4(signature, Optional.empty(), Optional.empty());
+
+    assertThat(result).isPresent();
+    assertThat(result.get().blockContainer()).isEqualTo(beaconBlock);
+    assertThat(result.get().executionPayloadValue()).isEqualTo(UInt256.valueOf(12345));
+    assertThat(result.get().consensusBlockValue()).isEqualTo(UInt256.valueOf(123000000000L));
+  }
+
+  @TestTemplate
+  public void shouldGetBlockContentsAsJsonV4() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(schemaDefinitions);
+    final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
+    assertThat(blockContents).isInstanceOf(BlockContentsGloas.class);
+
+    final String dataJson =
+        JsonUtil.serialize(
+            blockContents,
+            schemaDefinitionsGloas
+                .getBlockContentsSchema()
+                .castTypeToBlockContainer()
+                .getJsonTypeDefinition());
+    final String mockResponse =
+        String.format(
+            "{\"version\":\"gloas\",\"execution_payload_included\":true,"
+                + "\"execution_payload_value\":\"12345\",\"consensus_block_value\":\"123000000000\","
+                + "\"data\":%s}",
+            dataJson);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_INCLUDE_PAYLOAD, "true"));
+
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainerAndMetaData> result =
+        request.submitV4(signature, Optional.empty(), Optional.empty());
+
+    assertThat(result).isPresent();
+    assertThat(result.get().blockContainer()).isEqualTo(blockContents);
+  }
+
+  @TestTemplate
+  public void shouldGetBeaconBlockAsJsonV4WhenPayloadNotIncluded() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
+
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+
+    final String dataJson =
+        JsonUtil.serialize(
+            beaconBlock, schemaDefinitions.getBeaconBlockSchema().getJsonTypeDefinition());
+    final String mockResponse =
+        String.format(
+            "{\"version\":\"gloas\",\"execution_payload_included\":false,"
+                + "\"execution_payload_value\":\"12345\",\"consensus_block_value\":\"123000000000\","
+                + "\"data\":%s}",
+            dataJson);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_INCLUDE_PAYLOAD, "false"));
+
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainerAndMetaData> result =
+        request.submitV4(signature, Optional.empty(), Optional.empty());
+
+    assertThat(result).isPresent();
+    assertThat(result.get().blockContainer()).isEqualTo(beaconBlock);
   }
 
   @TestTemplate

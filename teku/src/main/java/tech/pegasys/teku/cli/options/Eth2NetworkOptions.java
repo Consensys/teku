@@ -99,17 +99,6 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
-      names = {"--Xquartz-scheduler-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Use Quartz scheduler instead of ScheduledExecutorService for slot timing.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean quartzSchedulerEnabled =
-      Eth2NetworkConfiguration.DEFAULT_QUARTZ_SCHEDULER_ENABLED;
-
-  @Option(
       names = {"--Xrust-kzg-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
@@ -142,6 +131,17 @@ public class Eth2NetworkOptions {
       converter = OptionalLongConverter.class,
       hidden = true)
   private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
+
+  @Option(
+      names = {"--Xlight-client-server-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Generate and serve light client updates",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean lightClientServerEnabled =
+      Eth2NetworkConfiguration.DEFAULT_LIGHT_CLIENT_SERVER_ENABLED;
 
   @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
@@ -572,6 +572,7 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .lightClientServerEnabled(lightClientServerEnabled)
         .prepareBlockProductionEnabled(prepareBlockProductionEnabled)
         .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
         .aggregatingAttestationPoolV2BlockAggregationTimeLimit(
@@ -582,8 +583,7 @@ public class Eth2NetworkOptions {
         .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled)
-        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs)
-        .quartzSchedulerEnabled(quartzSchedulerEnabled);
+        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs);
     kzgPrecompute.ifPresent(builder::kzgPrecompute);
     dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
         builder::dataColumnSidecarRecoveryMaxDelayMillis);

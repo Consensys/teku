@@ -21,6 +21,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -33,7 +34,8 @@ public record BlockProductionContext(
     Bytes32 parentExecutionBlockHash,
     BLSSignature randaoReveal,
     Optional<Bytes32> graffiti,
-    Optional<UInt64> requestedBuilderBoostFactor,
+    boolean includePayload,
+    Optional<BuilderConfig> builderConfig,
     BlockProductionPerformance blockProductionPerformance) {
 
   public static BlockProductionContext create(
@@ -43,7 +45,8 @@ public record BlockProductionContext(
       final ChainHead parentChainHead,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<UInt64> requestedBuilderBoostFactor,
+      final boolean includePayload,
+      final Optional<BuilderConfig> builderConfig,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(proposalSlot),
@@ -63,7 +66,8 @@ public record BlockProductionContext(
         parentChainHead.getExecutionBlockHash(),
         randaoReveal,
         graffiti,
-        requestedBuilderBoostFactor,
+        includePayload,
+        builderConfig,
         blockProductionPerformance);
   }
 

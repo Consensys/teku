@@ -48,13 +48,12 @@ import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -365,16 +364,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         beaconBlockBody.getBackingNode(), getBlockBodyKzgCommitmentsGeneralizedIndex());
   }
 
-  @VisibleForTesting
-  @Deprecated
-  public List<DataColumnSidecar> constructDataColumnSidecarsOld(
-      final SignedBeaconBlock signedBeaconBlock, final List<Blob> blobs) {
-    return constructDataColumnSidecars(
-        signedBeaconBlock.getMessage(),
-        signedBeaconBlock.asHeader(),
-        computeExtendedMatrixAndProofs(blobs));
-  }
-
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlock signedBeaconBlock,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
@@ -398,40 +387,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                 .signedBlockHeader(maybeSignedBeaconBlockHeader.orElseThrow())
                 .kzgCommitmentsInclusionProof(maybeKzgCommitmentsInclusionProof.orElseThrow()),
         extendedMatrix);
-  }
-
-  /**
-   * Return the full ``ExtendedMatrix``.
-   *
-   * <p>This helper demonstrates the relationship between blobs and ``ExtendedMatrix``.
-   *
-   * <p>The data structure for storing cells is implementation-dependent.
-   *
-   * <p>This method uses heavy calculation, use it only when needed
-   */
-  @VisibleForTesting
-  @Deprecated
-  public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(final List<Blob> blobs) {
-    return IntStream.range(0, blobs.size())
-        .parallel()
-        .mapToObj(
-            blobIndex -> {
-              final List<KZGCellAndProof> kzgCellAndProofs =
-                  getKzg().computeCellsAndProofs(blobs.get(blobIndex).getBytes());
-              final List<MatrixEntry> row = new ArrayList<>();
-              for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
-                row.add(
-                    schemaDefinitionsFulu
-                        .getMatrixEntrySchema()
-                        .create(
-                            kzgCellAndProofs.get(cellIndex).cell(),
-                            kzgCellAndProofs.get(cellIndex).proof(),
-                            cellIndex,
-                            blobIndex));
-              }
-              return row;
-            })
-        .toList();
   }
 
   public List<List<MatrixEntry>> computeExtendedMatrix(

@@ -70,6 +70,7 @@ public class RpcHandler<
 
   private final AsyncRunner asyncRunner;
   private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private final InboundRpcStreamLimiter inboundRpcStreamLimiter;
 
   final Counter rpcRequestsTotalCounter;
   final Counter rpcRequestsFailedCounter;
@@ -78,9 +79,11 @@ public class RpcHandler<
   public RpcHandler(
       final AsyncRunner asyncRunner,
       final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final InboundRpcStreamLimiter inboundRpcStreamLimiter) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
+    this.inboundRpcStreamLimiter = inboundRpcStreamLimiter;
 
     rpcRequestsTotalCounter =
         metricsSystem.createCounter(
@@ -206,13 +209,37 @@ public class RpcHandler<
     final Connection connection = streamChannel.getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
 
-    final Controller<TOutgoingHandler> controller = new Controller<>(nodeId, streamChannel);
-    if (!channel.isInitiator()) {
-      controller.setIncomingRequestHandler(
-          rpcMethod.createIncomingRequestHandler(selectedProtocol));
+    final boolean isIncomingStream = !channel.isInitiator();
+    if (isIncomingStream && !inboundRpcStreamLimiter.tryAcquire()) {
+      LOG.debug(
+          "Rejecting inbound RPC stream for protocol {} from {} because the global active stream limit of {} has been reached",
+          selectedProtocol,
+          nodeId,
+          inboundRpcStreamLimiter.getMaximumActiveStreams());
+      ignoreFuture(streamChannel.close());
+      return SafeFuture.failedFuture(
+          new IllegalStateException("Maximum active inbound RPC streams reached"));
     }
-    channel.pushHandler(controller);
-    return controller.activeFuture;
+
+    try {
+      final Controller<TOutgoingHandler> controller =
+          new Controller<>(
+              nodeId,
+              streamChannel,
+              isIncomingStream ? inboundRpcStreamLimiter::release : () -> {});
+      if (isIncomingStream) {
+        controller.setIncomingRequestHandler(
+            rpcMethod.createIncomingRequestHandler(selectedProtocol));
+      }
+      channel.pushHandler(controller);
+      return controller.activeFuture;
+    } catch (final Throwable t) {
+      if (isIncomingStream) {
+        inboundRpcStreamLimiter.release();
+      }
+      ignoreFuture(streamChannel.close());
+      return SafeFuture.failedFuture(t);
+    }
   }
 
   static class Controller<TOutgoingHandler extends RpcRequestHandler>
@@ -221,6 +248,7 @@ public class RpcHandler<
 
     private final NodeId nodeId;
     private final Stream p2pStream;
+    private final Runnable releaseStreamPermit;
     private Optional<TOutgoingHandler> outgoingRequestHandler = Optional.empty();
     private Optional<RpcRequestHandler> rpcRequestHandler = Optional.empty();
     private RpcStream rpcStream;
@@ -228,9 +256,11 @@ public class RpcHandler<
 
     protected final SafeFuture<Controller<TOutgoingHandler>> activeFuture = new SafeFuture<>();
 
-    private Controller(final NodeId nodeId, final Stream p2pStream) {
+    private Controller(
+        final NodeId nodeId, final Stream p2pStream, final Runnable releaseStreamPermit) {
       this.nodeId = nodeId;
       this.p2pStream = p2pStream;
+      this.releaseStreamPermit = releaseStreamPermit;
     }
 
     @Override
@@ -321,6 +351,7 @@ public class RpcHandler<
         runHandler(h -> h.closed(nodeId, rpcStream));
       } finally {
         rpcRequestHandler = Optional.empty();
+        releaseStreamPermit.run();
       }
     }
 

@@ -113,19 +113,10 @@ public class ForkChoiceUtil {
    * <p>Returns whether {@code ancestor} is an ancestor of {@code node}, i.e. {@code ancestor} lies
    * on the chain from {@code node} at {@code ancestor}'s block slot.
    *
-   * <p>This base (phase0) form is the {@code is_ancestor#phase0} spec anchor and the default that
-   * {@code ForkChoiceUtilGloas#isAncestor} overrides. It has no pre-Gloas caller by design: in the
-   * spec, {@code is_ancestor} is consumed only by {@code get_weight}, to add proposer boost when a
-   * node is an ancestor of the proposer-boost node. Teku instead computes {@code get_weight} inside
-   * protoarray, folding the proposer-boost delta into each node's stored weight during {@code
-   * ProtoArray#applyScoreChanges}. That back-propagation realizes the ancestry condition
-   * implicitly, so the weight path needs no explicit {@code is_ancestor} call. The only explicit
-   * caller is the Gloas override, which runs the check in reverse to recover the attestation-only
-   * weight (via {@code ForkChoiceUtilGloas#getNodeAttestationWeight}); pre-Gloas {@code
-   * isHeadWeak}/{@code isParentStrong} read the already-boosted protoarray weight directly and
-   * never query ancestry. Since {@code ForkChoiceUtilGloas} overrides this method, even that
-   * reverse path dispatches to the override rather than here — so this base form is retained for
-   * spec fidelity and exercised only by its unit test.
+   * <p>This base (phase0) form is the {@code is_ancestor#phase0} spec anchor and the default
+   * overridden by {@code ForkChoiceUtilGloas#isAncestor}. Fast confirmation calls it explicitly
+   * when computing attestation support. Protoarray fork-choice scoring instead realizes the same
+   * ancestry relationship by propagating node weights to parents.
    */
   public boolean isAncestor(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
@@ -181,11 +172,11 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * is_not_epoch_boundary
+   * is_shuffling_stable
    *
    * @return {@code true} when {@code slot} is NOT at an epoch boundary.
    */
-  public boolean isNotEpochBoundary(final UInt64 slot) {
+  public boolean isShufflingStable(final UInt64 slot) {
     return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
   }
 
@@ -245,12 +236,14 @@ public class ForkChoiceUtil {
     final SignedBeaconBlock head = maybeHead.orElseThrow();
     final boolean isFfgCompetitive =
         isFfgCompetitive(store, headNode.blockRoot(), head.getParentRoot());
-    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, slot);
-    if (!isFfgCompetitive || !isSingleSlotReorg) {
+    final boolean isParentSlotOk = isParentSlotOk(store, head);
+    final boolean isCurrentSlotOk = isCurrentSlotOk(head, slot);
+    if (!isFfgCompetitive || !isParentSlotOk || !isCurrentSlotOk) {
       LOG.debug(
-          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isParentSlotOk {}, isCurrentSlotOk {}",
           isFfgCompetitive,
-          isSingleSlotReorg);
+          isParentSlotOk,
+          isCurrentSlotOk);
       return headNode;
     }
 
@@ -321,11 +314,11 @@ public class ForkChoiceUtil {
     final boolean isCurrentTimeOk =
         head.getSlot().equals(currentSlot)
             || (currentSlot.equals(proposalSlot) && isProposingOnTime);
-    final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, proposalSlot);
-    if (!isSingleSlotReorg || !isCurrentTimeOk) {
+    final boolean isParentSlotOk = isParentSlotOk(store, head);
+    if (!isParentSlotOk || !isCurrentTimeOk) {
       LOG.debug(
-          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isCurrentTimeOk {}",
-          isSingleSlotReorg,
+          "shouldOverrideForkChoiceUpdate isParentSlotOk {}, isCurrentTimeOk {}",
+          isParentSlotOk,
           isCurrentTimeOk);
       return false;
     }
@@ -369,20 +362,20 @@ public class ForkChoiceUtil {
     }
   }
 
-  boolean isSingleSlotReorg(
-      final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 proposalSlot) {
+  boolean isParentSlotOk(final ReadOnlyStore store, final SignedBeaconBlock head) {
     final Optional<UInt64> maybeParentSlot =
         store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
     return maybeParentSlot
-        .map(
-            parentSlot ->
-                parentSlot.increment().equals(head.getSlot())
-                    && proposalSlot.equals(head.getSlot().increment()))
+        .map(parentSlot -> parentSlot.increment().equals(head.getSlot()))
         .orElse(false);
   }
 
+  boolean isCurrentSlotOk(final SignedBeaconBlock head, final UInt64 proposalSlot) {
+    return proposalSlot.equals(head.getSlot().increment());
+  }
+
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
-    return isNotEpochBoundary(slot) && isFinalizationOk(store, slot);
+    return isShufflingStable(slot) && isFinalizationOk(store, slot);
   }
 
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {
@@ -806,6 +799,16 @@ public class ForkChoiceUtil {
   // get_payload_due_ms
   public Optional<Integer> getPayloadDueMillis() {
     return Optional.empty();
+  }
+
+  /**
+   * Returns true if data availability must complete before recording block timeliness.
+   *
+   * <p>For Fulu, the spec records timeliness post-DA (PeerDAS). For all other forks, timeliness is
+   * recorded at block body arrival.
+   */
+  public boolean isDataAvailabilityRequiredForTimeliness() {
+    return false;
   }
 
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {

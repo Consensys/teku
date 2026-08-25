@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.ProgressiveTreeUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.SszPackedProgressiveByteListsNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 /**
@@ -69,7 +70,10 @@ public class SszMutableProgressiveListImpl<
       return PackedChunkUpdateUtil.updateSize(originalBackingTree, size());
     }
 
-    final TreeNode dataTree = originalBackingTree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    TreeNode dataTree = originalBackingTree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    if (dataTree instanceof SszPackedProgressiveByteListsNode packedNode) {
+      dataTree = packedNode.materialize();
+    }
     final int elementsPerChunk = getSchema().getElementsPerChunk();
     final int previousSize = backingImmutableData.size();
 

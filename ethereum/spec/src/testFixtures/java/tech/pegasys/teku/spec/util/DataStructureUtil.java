@@ -81,6 +81,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
@@ -95,22 +96,23 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -128,6 +130,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
@@ -146,6 +149,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuth;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
@@ -168,7 +172,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
@@ -184,17 +187,25 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientFinalityUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientOptimisticUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.capella.LightClientHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.lightclient.versions.gloas.LightClientHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -486,13 +497,17 @@ public final class DataStructureUtil {
   }
 
   public SszBitlist randomBitlist(final UInt64 slot) {
-    return randomBitlist(getMaxValidatorsPerCommittee(slot));
+    return randomBitlist(getMaxValidatorsPerAttestation(slot));
   }
 
   public SszBitlist randomBitlist(final int n) {
+    return randomBitlist(SszBitlistSchema.create(n), n);
+  }
+
+  public SszBitlist randomBitlist(final SszBitlistSchema<?> schema, final int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
-    return SszBitlistSchema.create(n).ofBits(n, bits);
+    return schema.ofBits(n, bits);
   }
 
   public SszBitvector randomCommitteeBitvector() {
@@ -733,15 +748,23 @@ public final class DataStructureUtil {
 
   public BuilderBid randomBuilderBid(final Consumer<BuilderBidBuilder> builderModifier) {
     final UInt64 slot = randomSlot();
+    return randomBuilderBid(slot, builderModifier);
+  }
+
+  private BuilderBid randomBuilderBid(
+      final UInt64 slot, final Consumer<BuilderBidBuilder> builderModifier) {
     final SchemaDefinitionsBellatrix schemaDefinitions = getBellatrixSchemaDefinitions(slot);
     return schemaDefinitions
         .getBuilderBidSchema()
         .createBuilderBid(
             builder -> {
-              builder.header(randomExecutionPayloadHeader());
+              builder.header(randomExecutionPayloadHeader(spec.atSlot(slot)));
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+                  .ifPresent(
+                      deneb ->
+                          builder.blobKzgCommitments(
+                              randomBlobKzgCommitments(deneb.getBlobKzgCommitmentsSchema())));
               schemaDefinitions
                   .toVersionElectra()
                   .ifPresent(__ -> builder.executionRequests(randomExecutionRequests(slot)));
@@ -761,9 +784,10 @@ public final class DataStructureUtil {
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {
-    return getBellatrixSchemaDefinitions(randomSlot())
+    final UInt64 slot = randomSlot();
+    return getBellatrixSchemaDefinitions(slot)
         .getSignedBuilderBidSchema()
-        .create(randomBuilderBid(), randomSignature());
+        .create(randomBuilderBid(slot, __ -> {}), randomSignature());
   }
 
   public SignedBuilderBid randomSignedBuilderBid(final Bytes32 withdrawalsRoot) {
@@ -814,7 +838,7 @@ public final class DataStructureUtil {
   }
 
   public Transaction randomExecutionPayloadTransaction() {
-    final TransactionSchema schema =
+    final SszByteListSchema<Transaction> schema =
         getBellatrixSchemaDefinitions(randomSlot())
             .getExecutionPayloadSchema()
             .getTransactionSchema();
@@ -864,10 +888,11 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadAndBlobsBundle randomExecutionPayloadAndBlobsBundle() {
-    final SchemaDefinitionsDeneb schemaDefinitionsDeneb = getDenebSchemaDefinitions(randomSlot());
-    final ExecutionPayload executionPayload = randomExecutionPayload();
+    final UInt64 slot = randomSlot();
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb = getDenebSchemaDefinitions(slot);
+    final ExecutionPayload executionPayload = randomExecutionPayload(slot);
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-        randomBuilderBlobsBundle();
+        randomBuilderBlobsBundle(slot);
 
     final ExecutionPayloadAndBlobsBundleSchema schema =
         schemaDefinitionsDeneb.getExecutionPayloadAndBlobsBundleSchema();
@@ -935,13 +960,15 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation() {
-    return spec.getGenesisSchemaDefinitions()
-        .getAttestationSchema()
-        .create(
-            randomBitlist(),
-            randomAttestationData(),
-            randomSignature(),
-            this::randomCommitteeBitvector);
+    final AttestationSchema<?> attestationSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    final UInt64 slot = randomSlot();
+    return attestationSchema.create(
+        randomBitlist(
+            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerAttestation(slot)),
+        randomAttestationData(),
+        randomSignature(),
+        this::randomCommitteeBitvector);
   }
 
   public SingleAttestation randomSingleAttestation() {
@@ -974,21 +1001,26 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final UInt64 slot) {
-    return spec.atSlot(slot)
-        .getSchemaDefinitions()
-        .getAttestationSchema()
-        .create(
-            randomBitlist(slot),
-            randomAttestationData(slot),
-            randomSignature(),
-            this::randomCommitteeBitvector);
+    final AttestationSchema<?> attestationSchema =
+        spec.atSlot(slot).getSchemaDefinitions().getAttestationSchema();
+    return attestationSchema.create(
+        randomBitlist(
+            attestationSchema.getAggregationBitsSchema(), getMaxValidatorsPerAttestation(slot)),
+        randomAttestationData(slot),
+        randomSignature(),
+        this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
-    return spec.getGenesisSchemaDefinitions()
-        .getAttestationSchema()
-        .create(
-            randomBitlist(), attestationData, randomSignature(), this::randomCommitteeBitvector);
+    final AttestationSchema<?> attestationSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    return attestationSchema.create(
+        randomBitlist(
+            attestationSchema.getAggregationBitsSchema(),
+            getMaxValidatorsPerAttestation(randomSlot())),
+        attestationData,
+        randomSignature(),
+        this::randomCommitteeBitvector);
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -1505,7 +1537,9 @@ public final class DataStructureUtil {
                 builder.executionPayloadHeader(randomExecutionPayloadHeader(spec.atSlot(slot)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
-                builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
+                builder.blsToExecutionChanges(
+                    randomSignedBlsToExecutionChangesList(
+                        slot, getBlsToExecutionChangesSchema(schema)));
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
@@ -1583,19 +1617,36 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(final int count) {
-    return randomBeaconBlockBodyWithCommitments(randomBlobKzgCommitments(count));
+    final UInt64 slot = randomSlot();
+    final BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
+    return randomBeaconBlockBodyWithCommitments(
+        slot,
+        randomBlobKzgCommitments(
+            BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(), count));
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
+    return randomBeaconBlockBodyWithCommitments(randomSlot(), commitments);
+  }
+
+  private BeaconBlockBody randomBeaconBlockBodyWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
+    final BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
+    final SszList<SszKZGCommitment> bodyCommitments =
+        rematerializeBlobKzgCommitments(
+            BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(), commitments);
     return randomBeaconBlockBody(
+        slot,
         builder -> {
           if (builder.supportsKzgCommitments()) {
-            builder.blobKzgCommitments(commitments);
+            builder.blobKzgCommitments(bodyCommitments);
           }
           if (builder.supportsSignedExecutionPayloadBid()) {
             builder.signedExecutionPayloadBid(
-                randomSignedExecutionPayloadBidWithCommitments(commitments));
+                randomSignedExecutionPayloadBidWithCommitments(bodyCommitments));
           }
         });
   }
@@ -1639,10 +1690,16 @@ public final class DataStructureUtil {
                 builder.executionPayload(randomExecutionPayload(slot));
               }
               if (builder.supportsBlsToExecutionChanges()) {
-                builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
+                builder.blsToExecutionChanges(
+                    randomSignedBlsToExecutionChangesList(
+                        slot,
+                        BeaconBlockBodySchemaCapella.required(schema)
+                            .getBlsToExecutionChangesSchema()));
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(randomBlobKzgCommitments());
+                builder.blobKzgCommitments(
+                    randomBlobKzgCommitments(
+                        BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema()));
               }
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests(slot));
@@ -2376,33 +2433,96 @@ public final class DataStructureUtil {
             randomSignature());
   }
 
+  public LightClientHeader randomLightClientHeader(final UInt64 slot) {
+    final LightClientHeaderSchema<?> headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      final LightClientHeaderSchemaGloas gloasSchema = headerSchema.toVersionGloasRequired();
+      return gloasSchema.create(
+          randomBeaconBlockHeader(),
+          SszBytes32.of(randomBytes32()),
+          randomSszBytes32Vector(gloasSchema.getExecutionBranchSchema(), this::randomBytes32));
+    }
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      final LightClientHeaderSchemaCapella capellaSchema = headerSchema.toVersionCapellaRequired();
+      return capellaSchema.create(
+          randomBeaconBlockHeader(),
+          randomExecutionPayloadHeader(spec.atSlot(slot)),
+          randomSszBytes32Vector(capellaSchema.getExecutionBranchSchema(), this::randomBytes32));
+    }
+    return headerSchema.create(randomBeaconBlockHeader());
+  }
+
   public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
     final LightClientBootstrapSchema bootstrapSchema =
         getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
-    final LightClientHeaderSchema headerSchema =
-        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return bootstrapSchema.create(
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
         randomSyncCommittee(),
         randomSszBytes32Vector(
             bootstrapSchema.getSyncCommitteeBranchSchema(), this::randomBytes32));
   }
 
+  public RandomLightClientUpdateBuilder createRandomLightClientUpdateBuilder(final UInt64 slot) {
+    return new RandomLightClientUpdateBuilder(slot);
+  }
+
   public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
     final LightClientUpdateSchema schema =
         getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
-    final LightClientHeaderSchema headerSchema =
-        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
         randomSyncCommittee(),
         randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32),
-        headerSchema.create(randomBeaconBlockHeader()),
+        randomLightClientHeader(slot),
         randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(final UInt64 slot) {
+    return randomLightClientFinalityUpdate(slot, slot);
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(
+      final UInt64 attestedSlot, final UInt64 finalizedSlot) {
+    return randomLightClientFinalityUpdate(attestedSlot, finalizedSlot, randomUInt64());
+  }
+
+  public LightClientFinalityUpdate randomLightClientFinalityUpdate(
+      final UInt64 attestedSlot, final UInt64 finalizedSlot, final UInt64 signatureSlot) {
+    final LightClientFinalityUpdateSchema schema =
+        getAltairSchemaDefinitions(attestedSlot).getLightClientFinalityUpdateSchema();
+
+    return schema.create(
+        lightClientHeaderAtSlot(attestedSlot),
+        lightClientHeaderAtSlot(finalizedSlot),
+        randomSszBytes32Vector(schema.getFinalizedBranchSchema(), this::randomBytes32),
+        randomSyncAggregate(),
+        SszUInt64.of(signatureSlot));
+  }
+
+  public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(final UInt64 slot) {
+    return randomLightClientOptimisticUpdate(slot, randomUInt64());
+  }
+
+  public LightClientOptimisticUpdate randomLightClientOptimisticUpdate(
+      final UInt64 slot, final UInt64 signatureSlot) {
+    final LightClientOptimisticUpdateSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientOptimisticUpdateSchema();
+
+    return schema.create(
+        lightClientHeaderAtSlot(slot), randomSyncAggregate(), SszUInt64.of(signatureSlot));
+  }
+
+  private LightClientHeader lightClientHeaderAtSlot(final UInt64 slot) {
+    return getAltairSchemaDefinitions(slot)
+        .getLightClientHeaderSchema()
+        .create(randomBeaconBlockHeader(slot, UInt64.ZERO));
   }
 
   public LightClientUpdateResponse randomLightClientUpdateResponse(final UInt64 slot) {
@@ -2490,12 +2610,15 @@ public final class DataStructureUtil {
 
   public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
     final UInt64 slot = randomSlot();
-    final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
-        getCapellaSchemaDefinitions(slot)
-            .getBeaconBlockBodySchema()
-            .toVersionCapella()
-            .orElseThrow()
-            .getBlsToExecutionChangesSchema();
+    final BeaconBlockBodySchema<?> schema =
+        getCapellaSchemaDefinitions(slot).getBeaconBlockBodySchema();
+    return randomSignedBlsToExecutionChangesList(
+        slot, BeaconBlockBodySchemaCapella.required(schema).getBlsToExecutionChangesSchema());
+  }
+
+  private SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList(
+      final UInt64 slot,
+      final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema) {
     final int maxBlsToExecutionChanges =
         SpecConfigCapella.required(spec.atSlot(slot).getConfig()).getMaxBlsToExecutionChanges();
 
@@ -2503,6 +2626,14 @@ public final class DataStructureUtil {
         signedBlsToExecutionChangeSchema,
         maxBlsToExecutionChanges,
         this::randomSignedBlsToExecutionChange);
+  }
+
+  private SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema(
+      final BeaconBlockBodySchema<?> schema) {
+    if (schema instanceof BlindedBeaconBlockBodySchemaCapella<?> blindedSchema) {
+      return blindedSchema.getBlsToExecutionChanges();
+    }
+    return BeaconBlockBodySchemaCapella.required(schema).getBlsToExecutionChangesSchema();
   }
 
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
@@ -2645,22 +2776,49 @@ public final class DataStructureUtil {
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
-    return randomBuilderBlobsBundle(randomNumberOfBlobsPerBlock());
+    return randomBuilderBlobsBundle(randomSlot(), randomNumberOfBlobsPerBlock());
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
       final int count) {
-    return randomBuilderBlobsBundle(randomBlobKzgCommitments(count));
+    return randomBuilderBlobsBundle(randomSlot(), count);
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
       final SszList<SszKZGCommitment> commitments) {
-    final UInt64 slot = randomSlot();
+    return randomBuilderBlobsBundle(randomSlot(), commitments);
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot) {
+    return randomBuilderBlobsBundle(slot, randomNumberOfBlobsPerBlock());
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot, final int count) {
     final BlobsBundleSchema<?> schema = getDenebSchemaDefinitions(slot).getBlobsBundleSchema();
+    return randomBuilderBlobsBundle(
+        slot, schema, randomBlobKzgCommitments(schema.getCommitmentsSchema(), count));
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
+    final BlobsBundleSchema<?> schema = getDenebSchemaDefinitions(slot).getBlobsBundleSchema();
+    return randomBuilderBlobsBundle(
+        slot, schema, rematerializeBlobKzgCommitments(schema.getCommitmentsSchema(), commitments));
+  }
+
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final UInt64 slot,
+      final BlobsBundleSchema<?> schema,
+      final SszList<SszKZGCommitment> commitments) {
     return schema.create(
         commitments,
-        randomSszKZGProofs(getNumberOfRequiredProofs(slot, commitments.size())),
-        randomSszBlobs(commitments.size()));
+        randomSszList(
+            schema.getProofsSchema(),
+            this::randomSszKZGProof,
+            getNumberOfRequiredProofs(slot, commitments.size())),
+        randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
   }
 
   public BlobsBundle randomBlobsBundle() {
@@ -2746,7 +2904,13 @@ public final class DataStructureUtil {
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
-        .create(beaconBlock, kzgProofs, blobs);
+        .create(
+            beaconBlock,
+            kzgProofs,
+            blobs,
+            spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+                ? Optional.of(randomExecutionPayloadEnvelope(slot))
+                : Optional.empty());
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
@@ -2774,6 +2938,83 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
+  }
+
+  public class RandomLightClientUpdateBuilder {
+
+    private final SchemaDefinitionsAltair schemaDefinitions;
+
+    private UInt64 attestedSlot;
+    private UInt64 signatureSlot;
+    private UInt64 finalizedSlot;
+    private int syncCommitteeParticipants;
+    private boolean syncCommitteeBranch = true;
+    private boolean finalityBranch = true;
+
+    private RandomLightClientUpdateBuilder(final UInt64 slot) {
+      this.schemaDefinitions = getAltairSchemaDefinitions(slot);
+      this.attestedSlot = slot;
+      this.signatureSlot = slot;
+      this.finalizedSlot = slot;
+      this.syncCommitteeParticipants =
+          SpecConfigAltair.required(spec.atSlot(slot).getConfig()).getSyncCommitteeSize();
+    }
+
+    public RandomLightClientUpdateBuilder attestedSlot(final UInt64 attestedSlot) {
+      this.attestedSlot = attestedSlot;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder signatureSlot(final UInt64 signatureSlot) {
+      this.signatureSlot = signatureSlot;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder finalizedSlot(final UInt64 finalizedSlot) {
+      this.finalizedSlot = finalizedSlot;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder syncCommitteeParticipants(final int participants) {
+      this.syncCommitteeParticipants = participants;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder syncCommitteeBranch(final boolean present) {
+      this.syncCommitteeBranch = present;
+      return this;
+    }
+
+    public RandomLightClientUpdateBuilder finalityBranch(final boolean present) {
+      this.finalityBranch = present;
+      return this;
+    }
+
+    public LightClientUpdate build() {
+      final LightClientUpdateSchema schema = schemaDefinitions.getLightClientUpdateSchema();
+      return schema.create(
+          lightClientHeaderAtSlot(attestedSlot),
+          randomSyncCommittee(),
+          branch(schema.getSyncCommitteeBranchSchema(), syncCommitteeBranch),
+          lightClientHeaderAtSlot(finalizedSlot),
+          branch(schema.getFinalityBranchSchema(), finalityBranch),
+          syncAggregate(),
+          SszUInt64.of(signatureSlot));
+    }
+
+    private SyncAggregate syncAggregate() {
+      return randomSyncAggregate(IntStream.range(0, syncCommitteeParticipants).toArray());
+    }
+
+    private SszBytes32Vector branch(
+        final SszBytes32VectorSchema<SszBytes32Vector> schema, final boolean present) {
+      if (!present) {
+        return schema.getDefault();
+      }
+      return Stream.generate(DataStructureUtil.this::randomBytes32)
+          .limit(schema.getLength())
+          .collect(schema.collectorUnboxed());
+    }
   }
 
   public class RandomBlobSidecarBuilder {
@@ -3091,6 +3332,22 @@ public final class DataStructureUtil {
     return randomSszList(getBlobKzgCommitmentsSchema(), count, this::randomSszKZGCommitment);
   }
 
+  private SszList<SszKZGCommitment> randomBlobKzgCommitments(
+      final SszListSchema<SszKZGCommitment, ?> schema) {
+    return randomBlobKzgCommitments(schema, randomNumberOfBlobsPerBlock());
+  }
+
+  private SszList<SszKZGCommitment> randomBlobKzgCommitments(
+      final SszListSchema<SszKZGCommitment, ?> schema, final int count) {
+    return randomSszList(schema, count, this::randomSszKZGCommitment);
+  }
+
+  private SszList<SszKZGCommitment> rematerializeBlobKzgCommitments(
+      final SszListSchema<SszKZGCommitment, ?> targetSchema,
+      final SszList<SszKZGCommitment> source) {
+    return targetSchema.sszDeserialize(source.sszSerialize());
+  }
+
   public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
     return getBlobKzgCommitmentsSchema().of();
   }
@@ -3306,21 +3563,21 @@ public final class DataStructureUtil {
       final UInt64 builderIndex,
       final Bytes32 blockHash,
       final Bytes32 executionRequestsRoot) {
-    return getGloasSchemaDefinitions(slot)
-        .getExecutionPayloadBidSchema()
-        .create(
-            randomBytes32(),
-            randomBytes32(),
-            blockHash,
-            randomBytes32(),
-            randomEth1Address(),
-            randomUInt64(),
-            builderIndex,
-            slot,
-            randomUInt64(),
-            randomUInt64(),
-            randomBlobKzgCommitments(),
-            executionRequestsRoot);
+    final ExecutionPayloadBidSchema schema =
+        getGloasSchemaDefinitions(slot).getExecutionPayloadBidSchema();
+    return schema.create(
+        randomBytes32(),
+        randomBytes32(),
+        blockHash,
+        randomBytes32(),
+        randomEth1Address(),
+        randomUInt64(),
+        builderIndex,
+        slot,
+        randomUInt64(),
+        randomUInt64(),
+        randomBlobKzgCommitments(schema.getBlobKzgCommitmentsSchema()),
+        executionRequestsRoot);
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(
@@ -3335,21 +3592,21 @@ public final class DataStructureUtil {
       final UInt64 builderIndex,
       final UInt64 value,
       final UInt64 executionPayment) {
-    return getGloasSchemaDefinitions(slot)
-        .getExecutionPayloadBidSchema()
-        .create(
-            parentBlockHash,
-            randomBytes32(),
-            randomBytes32(),
-            randomBytes32(),
-            randomEth1Address(),
-            randomUInt64(),
-            builderIndex,
-            slot,
-            value,
-            executionPayment,
-            randomBlobKzgCommitments(),
-            randomBytes32());
+    final ExecutionPayloadBidSchema schema =
+        getGloasSchemaDefinitions(slot).getExecutionPayloadBidSchema();
+    return schema.create(
+        parentBlockHash,
+        randomBytes32(),
+        randomBytes32(),
+        randomBytes32(),
+        randomEth1Address(),
+        randomUInt64(),
+        builderIndex,
+        slot,
+        value,
+        executionPayment,
+        randomBlobKzgCommitments(schema.getBlobKzgCommitmentsSchema()),
+        randomBytes32());
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid() {
@@ -3373,6 +3630,10 @@ public final class DataStructureUtil {
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsGloas schemaDefinitions = getGloasSchemaDefinitions(slot);
+    final SszList<SszKZGCommitment> bidCommitments =
+        rematerializeBlobKzgCommitments(
+            schemaDefinitions.getExecutionPayloadBidSchema().getBlobKzgCommitmentsSchema(),
+            blobKzgCommitments);
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(
@@ -3389,7 +3650,7 @@ public final class DataStructureUtil {
                     slot,
                     randomUInt64(),
                     randomUInt64(),
-                    blobKzgCommitments,
+                    bidCommitments,
                     randomBytes32()),
             randomSignature());
   }
@@ -3553,12 +3814,8 @@ public final class DataStructureUtil {
     return getConstant(SpecConfig::getJustificationBitsLength);
   }
 
-  private int getMaxValidatorsPerCommittee(final UInt64 slot) {
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
-          * getConstant(SpecConfig::getMaxCommitteesPerSlot);
-    }
-    return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
+  private int getMaxValidatorsPerAttestation(final UInt64 slot) {
+    return Math.toIntExact(spec.atSlot(slot).getConfig().getMaxValidatorsPerAttestation());
   }
 
   private int getMaxCommitteesPerSlot() {

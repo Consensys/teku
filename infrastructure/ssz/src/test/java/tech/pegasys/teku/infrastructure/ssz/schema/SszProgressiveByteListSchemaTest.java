@@ -145,6 +145,7 @@ class SszProgressiveByteListSchemaTest {
     final SszByteList updated = (SszByteList) mutable.commitChanges();
 
     assertThat(updated.getBytes()).isEqualTo(Bytes.fromHexString("0x01FF03"));
+    assertThat(updated.get(1).getSchema()).isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA);
     assertThat(UINT8_SCHEMA.sszDeserialize(updated.sszSerialize()).get(1).getSchema())
         .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA);
   }
