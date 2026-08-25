@@ -94,7 +94,7 @@ public class GetExecutionPayloadEnvelope extends RestApiEndpoint {
             .withNotFoundResponse()
             .withNotAcceptableResponse()
             .withInternalErrorResponse()
-            .withChainDataResponses()
+            .withServiceUnavailableResponse()
             .build());
     this.validatorDataProvider = validatorDataProvider;
     this.schemaDefinitionCache = schemaDefinitionCache;
