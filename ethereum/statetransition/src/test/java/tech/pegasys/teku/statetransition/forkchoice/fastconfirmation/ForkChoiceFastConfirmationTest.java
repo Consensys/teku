@@ -123,6 +123,43 @@ class ForkChoiceFastConfirmationTest {
   }
 
   @Test
+  void shouldAllowALongerSegmentWhileWarmingUp() {
+    // The update that ends the warm-up advances the confirmed root across every block accumulated
+    // while it was pinned to finality, which can outrun a one-slot budget.
+    when(tracker.isWarmingUp()).thenReturn(true);
+    final SafeFuture<Optional<ChainHead>> slowHead = new SafeFuture<>();
+
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, slot -> slowHead, sendForkChoiceUpdated);
+
+    // Past the normal one-slot bound: still running rather than abandoned.
+    timeProvider.advanceTimeBy(slotDuration.plusMillis(1));
+    asyncRunner.executeDueActionsRepeatedly();
+    slowHead.complete(Optional.of(chainHead(Bytes32.random())));
+
+    assertThat(onSlotInvocations).containsExactly(UInt64.ONE);
+  }
+
+  @Test
+  void shouldTimeoutTheRelaxedWarmUpSegmentEventually() {
+    when(tracker.isWarmingUp()).thenReturn(true);
+
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.ONE, SafeFuture.COMPLETE, slot -> new SafeFuture<>(), sendForkChoiceUpdated);
+    forkChoiceFastConfirmation.processForSlot(
+        UInt64.valueOf(2),
+        SafeFuture.COMPLETE,
+        slot -> SafeFuture.completedFuture(Optional.of(chainHead(Bytes32.random()))),
+        sendForkChoiceUpdated);
+
+    // Four slots is the warm-up bound, so slot 1 is abandoned there and slot 2 proceeds.
+    timeProvider.advanceTimeBy(slotDuration.multipliedBy(4).plusMillis(1));
+    asyncRunner.executeDueActionsRepeatedly();
+
+    assertThat(onSlotInvocations).containsExactly(UInt64.valueOf(2));
+  }
+
+  @Test
   void shouldContinueProcessingLaterSlotsAfterAnEarlierSlotFails() {
     final Function<UInt64, SafeFuture<Optional<ChainHead>>> processHead =
         slot ->

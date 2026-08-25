@@ -181,6 +181,14 @@ public class FastConfirmationTracker {
     return enabled;
   }
 
+  /**
+   * Whether the rule is still warming up, i.e. has yet to confirm beyond the finalized block since
+   * (re)initialization. See {@link #warmedUp}.
+   */
+  public boolean isWarmingUp() {
+    return enabled && !warmedUp.get();
+  }
+
   public void initialize(final ReadOnlyStore store) {
     if (!enabled) {
       return;
