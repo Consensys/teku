@@ -502,7 +502,7 @@ class BlockProductionDutyTest {
     performAndReportDuty(slot);
 
     verify(executionPayloadBidEventsChannelPublisher)
-        .onSelfBuiltBidIncludedInBlock(validator, fork, bid);
+        .onSelfBuiltBidIncludedInBlock(validator, fork, bid, signedBlock.getRoot());
   }
 
   @Test
