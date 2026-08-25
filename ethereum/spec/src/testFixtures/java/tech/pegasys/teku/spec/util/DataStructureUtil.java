@@ -20,6 +20,8 @@ import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRA
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_CONFIG_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.REQUEST_AUTH_SCHEMA;
@@ -143,6 +145,8 @@ import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBun
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderEntry;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferences;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuth;
@@ -2136,6 +2140,23 @@ public final class DataStructureUtil {
   public BuilderPreferencesRequest randomBuilderPreferencesRequest() {
     return BUILDER_PREFERENCES_REQUEST_SCHEMA.create(
         randomBuilderPreferences(), randomSignedRequestAuth());
+  }
+
+  public BuilderConfig randomBuilderConfig(final int numberOfBuilderEntries) {
+    return BUILDER_CONFIG_SCHEMA.create(
+        randomUInt64(),
+        randomUInt64(100),
+        IntStream.range(0, numberOfBuilderEntries).mapToObj(__ -> randomBuilderEntry()).toList());
+  }
+
+  public BuilderEntry randomBuilderEntry() {
+    return BUILDER_ENTRY_SCHEMA.create(
+        "https://" + randomString(6) + ".com",
+        randomSignedRequestAuth(),
+        List.of(),
+        randomUInt64(),
+        randomUInt64(),
+        randomUInt64(100));
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

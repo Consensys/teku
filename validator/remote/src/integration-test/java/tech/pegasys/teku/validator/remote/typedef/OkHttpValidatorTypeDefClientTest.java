@@ -909,7 +909,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final UInt64 slot = dataStructureUtil.randomSlot();
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
-    final BuilderConfig builderConfig = BuilderConfig.NO_OP;
+    final BuilderConfig builderConfig = dataStructureUtil.randomBuilderConfig(3);
 
     typeDefClient.createUnsignedBlock(
         slot, randaoReveal, Optional.of(graffiti), true, Optional.of(builderConfig));
@@ -918,7 +918,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK_V4.getPath(Map.of(SLOT, slot.toString())));
+        .contains(ValidatorApiMethod.POST_UNSIGNED_BLOCK_V4.getPath(Map.of(SLOT, slot.toString())));
     assertThat(request.getRequestUrl().queryParameter(RANDAO_REVEAL))
         .isEqualTo(randaoReveal.toString());
     assertThat(request.getRequestUrl().queryParameter(GRAFFITI)).isEqualTo(graffiti.toString());

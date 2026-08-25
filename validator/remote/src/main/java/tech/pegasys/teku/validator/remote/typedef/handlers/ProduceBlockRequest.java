@@ -31,7 +31,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V3;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V4;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.POST_UNSIGNED_BLOCK_V4;
 
 import com.google.common.net.MediaType;
 import java.io.IOException;
@@ -161,7 +161,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     final Map<String, String> headers = buildAcceptHeaders();
     headers.put(HEADER_CONSENSUS_VERSION, milestone.lowerCaseName());
     return postJson(
-            GET_UNSIGNED_BLOCK_V4,
+            POST_UNSIGNED_BLOCK_V4,
             urlParams,
             queryParams,
             headers,
