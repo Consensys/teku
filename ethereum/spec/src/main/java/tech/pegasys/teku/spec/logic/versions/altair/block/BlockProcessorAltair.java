@@ -215,7 +215,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
         builderPaymentWeightDelta =
             updateBuilderPaymentWeight(
-                builderPaymentIndex, builderPaymentWeightDelta, data, index, state);
+                previousParticipationFlags,
+                builderPaymentIndex,
+                builderPaymentWeightDelta,
+                data,
+                index,
+                state);
       }
     }
 
@@ -241,6 +246,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   protected UInt64 updateBuilderPaymentWeight(
+      final byte previousParticipationFlags,
       final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,

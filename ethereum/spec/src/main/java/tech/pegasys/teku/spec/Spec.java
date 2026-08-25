@@ -1017,7 +1017,6 @@ public class Spec {
   // Execution Payload Proposal
   public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
       final UInt64 proposalSlot,
-      final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
       final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {
     return atSlot(proposalSlot)
@@ -1026,8 +1025,7 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
-        .createNewUnsignedExecutionPayload(
-            builderIndex, blockAndState, executionPayloadProposalDataFuture);
+        .createNewUnsignedExecutionPayload(blockAndState, executionPayloadProposalDataFuture);
   }
 
   // Blind Block Utils
@@ -1481,6 +1479,17 @@ public class Spec {
   // Gloas Utils
   public boolean isProposerPreferencesAvailableAtEpoch(final UInt64 epoch) {
     return atEpoch(epoch).miscHelpers().toVersionGloas().isPresent();
+  }
+
+  /**
+   * EIP-8261: the gas limit scheduled for the given epoch, empty when the epoch is pre-Gloas or the
+   * network has no gas limit schedule defined for it.
+   */
+  public Optional<UInt64> getScheduledGasLimit(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionGloas()
+        .flatMap(miscHelpers -> miscHelpers.getScheduledGasLimit(epoch));
   }
 
   // Deneb private helpers

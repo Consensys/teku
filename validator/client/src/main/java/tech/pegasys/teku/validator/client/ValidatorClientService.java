@@ -218,7 +218,8 @@ public class ValidatorClientService extends Service {
                       Optional.of(
                           ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
                               .resolve("api-proposer-config.json"))),
-                  proposerConfigProvider));
+                  proposerConfigProvider,
+                  config.getSpec()));
 
       beaconProposerPreparer =
           Optional.of(
@@ -473,6 +474,8 @@ public class ValidatorClientService extends Service {
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
     final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
+    final BuilderConfigProvider builderConfigProvider =
+        new BuilderConfigProvider(spec, config.getValidatorConfig());
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider,
@@ -480,7 +483,8 @@ public class ValidatorClientService extends Service {
             blockContainerSigner,
             spec,
             validatorDutyMetrics,
-            eventChannels.getPublisher(ExecutionPayloadBidEventsChannel.class));
+            eventChannels.getPublisher(ExecutionPayloadBidEventsChannel.class),
+            builderConfigProvider);
     final boolean dvtSelectionsEndpointEnabled =
         config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final AttestationDutyFactory attestationDutyFactory =
@@ -576,6 +580,8 @@ public class ValidatorClientService extends Service {
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      // keeps track of the current epoch to resolve the scheduled gas limit (EIP-8261)
+      proposerConfigManager.ifPresent(validatorTimingChannels::add);
       beaconProposerPreparer.ifPresent(
           preparer -> {
             preparer.initialize(Optional.of(validatorIndexProvider));

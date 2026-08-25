@@ -11,15 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas;
+package tech.pegasys.teku.spec.config;
 
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuth;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class RequestAuthSupplier extends DataStructureUtilSupplier<RequestAuth> {
-  public RequestAuthSupplier() {
-    super(DataStructureUtil::randomRequestAuth, SpecMilestone.GLOAS);
-  }
-}
+/** EIP-8261: an entry of the {@code GAS_LIMIT_SCHEDULE} configuration field. */
+public record GasLimitScheduleEntry(UInt64 epoch, UInt64 gasLimit) {}

@@ -72,6 +72,9 @@ public class ValidatorConfig {
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(60_000_000);
   public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
   public static final boolean DEFAULT_ATTESTATIONS_V2_APIS_ENABLED = false;
+  // Builder default options
+  public static final UInt64 DEFAULT_BUILDER_MIN_BID = UInt64.ZERO;
+  public static final UInt64 DEFAULT_BUILDER_BOOST_FACTOR = UInt64.valueOf(90);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -101,7 +104,7 @@ public class ValidatorConfig {
   private final boolean failoversPublishSignedDutiesEnabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
   private final boolean shutdownWhenValidatorSlashedEnabled;
-  private final UInt64 builderRegistrationDefaultGasLimit;
+  private final Optional<UInt64> builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
@@ -116,6 +119,11 @@ public class ValidatorConfig {
   private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
   private final boolean dvtSelectionsEndpointEnabled;
   private final boolean attestationsV2ApisEnabled;
+
+  // Builder options
+  private final UInt64 builderMinBid;
+  private final UInt64 builderBoostFactor;
+  private final List<URL> builderUrls;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -146,7 +154,7 @@ public class ValidatorConfig {
       final boolean failoversPublishSignedDutiesEnabled,
       final boolean exitWhenNoValidatorKeysEnabled,
       final boolean shutdownWhenValidatorSlashedEnabled,
-      final UInt64 builderRegistrationDefaultGasLimit,
+      final Optional<UInt64> builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
@@ -157,7 +165,10 @@ public class ValidatorConfig {
       final Optional<String> sentryNodeConfigurationFile,
       final boolean isLocalSlashingProtectionSynchronizedModeEnabled,
       final boolean dvtSelectionsEndpointEnabled,
-      final boolean attestationsV2ApisEnabled) {
+      final boolean attestationsV2ApisEnabled,
+      final UInt64 builderMinBid,
+      final UInt64 builderBoostFactor,
+      final List<URL> builderUrls) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -203,6 +214,9 @@ public class ValidatorConfig {
         isLocalSlashingProtectionSynchronizedModeEnabled;
     this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
     this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
+    this.builderMinBid = builderMinBid;
+    this.builderBoostFactor = builderBoostFactor;
+    this.builderUrls = builderUrls;
 
     LOG.debug(
         "Executor queue - {} threads, max queue size {} ", executorThreads, executorMaxQueueSize);
@@ -287,7 +301,12 @@ public class ValidatorConfig {
     return proposerConfigSource;
   }
 
-  public UInt64 getBuilderRegistrationDefaultGasLimit() {
+  /**
+   * The gas limit explicitly configured by the operator, if any. When not set, the gas limit
+   * scheduled for the current epoch (EIP-8261) is used, falling back to {@link
+   * #DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT}.
+   */
+  public Optional<UInt64> getBuilderRegistrationDefaultGasLimit() {
     return builderRegistrationDefaultGasLimit;
   }
 
@@ -380,6 +399,18 @@ public class ValidatorConfig {
     return attestationsV2ApisEnabled;
   }
 
+  public UInt64 getBuilderMinBid() {
+    return builderMinBid;
+  }
+
+  public UInt64 getBuilderBoostFactor() {
+    return builderBoostFactor;
+  }
+
+  public List<URL> getBuilderUrls() {
+    return builderUrls;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -420,7 +451,7 @@ public class ValidatorConfig {
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
     private boolean shutdownWhenValidatorSlashedEnabled =
         DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
-    private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
+    private Optional<UInt64> builderRegistrationDefaultGasLimit = Optional.empty();
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
@@ -434,6 +465,9 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
     private boolean dvtSelectionsEndpointEnabled = DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
     private boolean attestationsV2ApisEnabled = DEFAULT_ATTESTATIONS_V2_APIS_ENABLED;
+    private UInt64 builderMinBid = DEFAULT_BUILDER_MIN_BID;
+    private UInt64 builderBoostFactor = DEFAULT_BUILDER_BOOST_FACTOR;
+    private List<URL> builderUrls = new ArrayList<>();
 
     private Builder() {}
 
@@ -636,7 +670,7 @@ public class ValidatorConfig {
     }
 
     public Builder builderRegistrationDefaultGasLimit(
-        final UInt64 builderRegistrationDefaultGasLimit) {
+        final Optional<UInt64> builderRegistrationDefaultGasLimit) {
       this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
       return this;
     }
@@ -707,6 +741,21 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder builderMinBid(final UInt64 builderMinBid) {
+      this.builderMinBid = builderMinBid;
+      return this;
+    }
+
+    public Builder builderBoostFactor(final UInt64 builderBoostFactor) {
+      this.builderBoostFactor = builderBoostFactor;
+      return this;
+    }
+
+    public Builder builderUrls(final List<URL> builderUrls) {
+      this.builderUrls = builderUrls;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -752,7 +801,10 @@ public class ValidatorConfig {
           sentryNodeConfigurationFile,
           isLocalSlashingProtectionSynchronizedModeEnabled,
           dvtSelectionsEndpointEnabled,
-          attestationsV2ApisEnabled);
+          attestationsV2ApisEnabled,
+          builderMinBid,
+          builderBoostFactor,
+          builderUrls);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

@@ -19,13 +19,14 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class RequestAuth extends Container2<RequestAuth, SszByteList, SszUInt64> {
+public class BuilderRequestAuth extends Container2<BuilderRequestAuth, SszByteList, SszUInt64> {
 
-  protected RequestAuth(final RequestAuthSchema schema, final SszByteList data, final UInt64 slot) {
+  protected BuilderRequestAuth(
+      final BuilderRequestAuthSchema schema, final SszByteList data, final UInt64 slot) {
     super(schema, data, SszUInt64.of(slot));
   }
 
-  protected RequestAuth(final RequestAuthSchema schema, final TreeNode backingTree) {
+  protected BuilderRequestAuth(final BuilderRequestAuthSchema schema, final TreeNode backingTree) {
     super(schema, backingTree);
   }
 
@@ -38,7 +39,7 @@ public class RequestAuth extends Container2<RequestAuth, SszByteList, SszUInt64>
   }
 
   @Override
-  public RequestAuthSchema getSchema() {
-    return (RequestAuthSchema) super.getSchema();
+  public BuilderRequestAuthSchema getSchema() {
+    return (BuilderRequestAuthSchema) super.getSchema();
   }
 }

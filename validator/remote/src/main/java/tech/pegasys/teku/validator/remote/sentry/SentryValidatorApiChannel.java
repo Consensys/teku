@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
@@ -302,10 +301,10 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
-      final UInt64 slot, final UInt64 builderIndex) {
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .createUnsignedExecutionPayload(slot, builderIndex);
+        .createUnsignedExecutionPayload(slot, beaconBlockRoot);
   }
 
   @Override
@@ -325,14 +324,5 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
         .orElse(dutiesProviderChannel)
         .publishSignedExecutionPayload(
             signedExecutionPayloadEnvelopeContents, broadcastValidationLevel);
-  }
-
-  @Override
-  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return blockHandlerChannel
-        .orElse(dutiesProviderChannel)
-        .publishSignedExecutionPayload(signedBlindedExecutionPayload, broadcastValidationLevel);
   }
 }

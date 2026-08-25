@@ -49,7 +49,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
 
@@ -61,6 +60,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
+  public static final boolean DEFAULT_LIGHT_CLIENT_SERVER_ENABLED = false;
 
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
@@ -121,7 +121,6 @@ public class Eth2NetworkConfiguration {
   private static final String MINIMAL_TRUSTED_SETUP_FILENAME = "minimal-trusted-setup.txt";
 
   private final Spec spec;
-  private final String constants;
   private final StateBoostrapConfig stateBoostrapConfig;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
@@ -147,6 +146,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean lightClientServerEnabled;
   private final boolean prepareBlockProductionEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
@@ -162,7 +162,6 @@ public class Eth2NetworkConfiguration {
 
   private Eth2NetworkConfiguration(
       final Spec spec,
-      final String constants,
       final StateBoostrapConfig stateBoostrapConfig,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
@@ -188,6 +187,7 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean lightClientServerEnabled,
       final boolean prepareBlockProductionEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
@@ -201,7 +201,6 @@ public class Eth2NetworkConfiguration {
       final int dataColumnSidecarExtensionRetentionEpochs,
       final int pendingPayloadAttestationsMaxQueue) {
     this.spec = spec;
-    this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -230,6 +229,7 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.lightClientServerEnabled = lightClientServerEnabled;
     this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
@@ -270,15 +270,6 @@ public class Eth2NetworkConfiguration {
 
   public Spec getSpec() {
     return spec;
-  }
-
-  /**
-   * @return The constants resource name or url
-   * @deprecated Constants should be accessed via {@link SpecVersion}
-   */
-  @Deprecated
-  public String getConstants() {
-    return constants;
   }
 
   public StateBoostrapConfig getNetworkBoostrapConfig() {
@@ -367,6 +358,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isLightClientServerEnabled() {
+    return lightClientServerEnabled;
+  }
+
   public boolean isPrepareBlockProductionEnabled() {
     return prepareBlockProductionEnabled;
   }
@@ -412,11 +407,6 @@ public class Eth2NetworkConfiguration {
   }
 
   @Override
-  public String toString() {
-    return constants;
-  }
-
-  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -432,6 +422,7 @@ public class Eth2NetworkConfiguration {
         && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && lightClientServerEnabled == that.lightClientServerEnabled
         && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
@@ -445,7 +436,6 @@ public class Eth2NetworkConfiguration {
             == that.dataColumnSidecarExtensionRetentionEpochs
         && rustKzgEnabled == that.rustKzgEnabled
         && Objects.equals(spec, that.spec)
-        && Objects.equals(constants, that.constants)
         && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
         && Objects.equals(discoveryBootnodes, that.discoveryBootnodes)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch)
@@ -470,7 +460,6 @@ public class Eth2NetworkConfiguration {
   public int hashCode() {
     return Objects.hash(
         spec,
-        constants,
         stateBoostrapConfig,
         startupTargetPeerCount,
         startupTimeoutSeconds,
@@ -496,6 +485,7 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
+        lightClientServerEnabled,
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled,
@@ -536,6 +526,7 @@ public class Eth2NetworkConfiguration {
     private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean lightClientServerEnabled = DEFAULT_LIGHT_CLIENT_SERVER_ENABLED;
     private boolean prepareBlockProductionEnabled = DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
@@ -614,7 +605,6 @@ public class Eth2NetworkConfiguration {
       final Optional<Eth2Network> eth2Network = Eth2Network.fromStringLenient(constants);
       return new Eth2NetworkConfiguration(
           spec,
-          constants,
           new StateBoostrapConfig(
               genesisState,
               initialState,
@@ -645,6 +635,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
+          lightClientServerEnabled,
           resolvePrepareBlockProductionAbility(prepareBlockProductionEnabled),
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
@@ -1317,6 +1308,11 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
       return Optional.of(epochsStoreBlobsInt);
+    }
+
+    public Builder lightClientServerEnabled(final boolean lightClientServerEnabled) {
+      this.lightClientServerEnabled = lightClientServerEnabled;
+      return this;
     }
 
     public Builder forkChoiceLateBlockReorgEnabled(final boolean forkChoiceLateBlockReorgEnabled) {

@@ -87,7 +87,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeContents;
@@ -451,7 +450,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final Optional<BuilderConfig> builderConfig) {
     return blockProductionBySlotCache
         .computeIfAbsent(
-            slot, __ -> createUnsignedBlockInternal(slot, randaoReveal, graffiti, builderConfig))
+            slot,
+            __ ->
+                createUnsignedBlockInternal(
+                    slot, randaoReveal, graffiti, includePayload, builderConfig))
         .whenException(
             __ -> {
               // allow further block production attempts for this slot
@@ -492,6 +494,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
+      final boolean includePayload,
       final Optional<BuilderConfig> builderConfig) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
@@ -505,7 +508,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     blockProductionPreparationContext.blockProductionPerformance.validatorBlockRequested();
 
     return blockProductionPreparationContext
-        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, builderConfig)
+        .toBlockProductionContext(spec, slot, randaoReveal, graffiti, includePayload, builderConfig)
         .thenCompose(this::createBlock)
         .thenPeek(
             maybeBlock ->
@@ -989,7 +992,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
-      final UInt64 slot, final UInt64 builderIndex) {
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -1001,10 +1004,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                 return CompletableFuture.completedFuture(Optional.empty());
               }
               final BeaconBlockAndState blockAndState = maybeBlockAndState.get();
+              if (!blockAndState.getRoot().equals(beaconBlockRoot)) {
+                LOG.warn(
+                    "Unable to produce execution payload for slot {} and block {} because the block for this slot according to the BN is {}",
+                    slot,
+                    beaconBlockRoot,
+                    blockAndState.getRoot());
+                return CompletableFuture.completedFuture(Optional.empty());
+              }
               LOG.info(
                   "Producing unsigned execution payload for slot {} and block {}",
                   slot,
-                  blockAndState.getRoot());
+                  beaconBlockRoot);
               if (combinedChainDataClient.isOptimisticBlock(blockAndState.getParentRoot())) {
                 LOG.warn(
                     "Unable to produce execution payload for slot {} and block {} because parent has optimistically validated payload",
@@ -1013,7 +1024,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                 return NodeSyncingException.failedFuture();
               }
               return executionPayloadFactory
-                  .createUnsignedExecutionPayload(builderIndex, blockAndState)
+                  .createUnsignedExecutionPayload(blockAndState)
                   .thenApply(Optional::of);
             });
   }
@@ -1044,20 +1055,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final String reason = getRootCauseMessage(ex);
               return PublishSignedExecutionPayloadResult.rejected(
                   signedExecutionPayloadEnvelopeContents.getBeaconBlockRoot(), reason);
-            });
-  }
-
-  @Override
-  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayload,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    return executionPayloadPublisher
-        .publishSignedExecutionPayload(signedBlindedExecutionPayload, broadcastValidationLevel)
-        .exceptionally(
-            ex -> {
-              final String reason = getRootCauseMessage(ex);
-              return PublishSignedExecutionPayloadResult.rejected(
-                  signedBlindedExecutionPayload.getBeaconBlockRoot(), reason);
             });
   }
 
@@ -1234,6 +1231,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         final UInt64 proposalSlot,
         final BLSSignature randaoReveal,
         final Optional<Bytes32> graffiti,
+        final boolean includePayload,
         final Optional<BuilderConfig> builderConfig) {
       return stateFuture.thenCombine(
           chainHeadFuture,
@@ -1245,6 +1243,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   chainHead,
                   randaoReveal,
                   graffiti,
+                  includePayload,
                   builderConfig,
                   blockProductionPerformance));
     }

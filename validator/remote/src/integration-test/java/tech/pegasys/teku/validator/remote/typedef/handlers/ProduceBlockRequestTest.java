@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.gloas.BlockContentsGloas;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -101,7 +102,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.submit(signature, Optional.empty(), Optional.empty());
+        request.submitV3(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -152,7 +153,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.submit(signature, Optional.empty(), Optional.empty());
+        request.submitV3(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -180,7 +181,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.submit(signature, Optional.empty(), Optional.empty());
+        request.submitV3(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
         .hasValue(blindedBeaconBlock);
@@ -209,7 +210,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.submit(signature, Optional.empty(), Optional.empty());
+        request.submitV3(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -232,7 +233,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.submit(signature, Optional.empty(), Optional.empty());
+        request.submitV3(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -259,7 +260,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.submit(signature, Optional.empty(), Optional.empty());
+        request.submitV3(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -267,17 +268,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void shouldGetBlockContentsGloasAsSszV4() {
+  public void shouldGetBlockContentsAsSszV4() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
 
-    final SchemaDefinitionsGloas gloasSchemas = SchemaDefinitionsGloas.required(schemaDefinitions);
-    final BlockContentsGloas blockContentsGloas = dataStructureUtil.randomBlockContentsGloas(ONE);
+    final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
+    assertThat(blockContents).isInstanceOf(BlockContentsGloas.class);
 
-    responseBodyBuffer.write(
-        gloasSchemas
-            .getBlockContentsGloasSchema()
-            .sszSerialize(blockContentsGloas)
-            .toArrayUnsafe());
+    responseBodyBuffer.write(blockContents.sszSerialize().toArrayUnsafe());
 
     mockWebServer.enqueue(
         new MockResponse()
@@ -288,13 +285,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
             .setHeader(HEADER_EXECUTION_PAYLOAD_VALUE, "12345")
             .setBody(responseBodyBuffer));
 
-    final BLSSignature signature = blockContentsGloas.getBlock().getBody().getRandaoReveal();
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), Optional.empty());
+        request.submitV4(signature, Optional.empty(), true, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
-    assertThat(result.get().blockContainer()).isEqualTo(blockContentsGloas);
+    assertThat(result.get().blockContainer()).isEqualTo(blockContents);
     assertThat(result.get().executionPayloadValue()).isEqualTo(UInt256.valueOf(12345));
     assertThat(result.get().consensusBlockValue()).isEqualTo(UInt256.valueOf(123000000000L));
   }
@@ -320,7 +317,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), Optional.empty());
+        request.submitV4(signature, Optional.empty(), false, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
     assertThat(result.get().blockContainer()).isEqualTo(beaconBlock);
@@ -329,15 +326,21 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void shouldGetBlockContentsGloasAsJsonV4() throws Exception {
+  public void shouldGetBlockContentsAsJsonV4() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(GLOAS);
 
-    final SchemaDefinitionsGloas gloasSchemas = SchemaDefinitionsGloas.required(schemaDefinitions);
-    final BlockContentsGloas blockContentsGloas = dataStructureUtil.randomBlockContentsGloas(ONE);
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(schemaDefinitions);
+    final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
+    assertThat(blockContents).isInstanceOf(BlockContentsGloas.class);
 
     final String dataJson =
         JsonUtil.serialize(
-            blockContentsGloas, gloasSchemas.getBlockContentsGloasSchema().getJsonTypeDefinition());
+            blockContents,
+            schemaDefinitionsGloas
+                .getBlockContentsSchema()
+                .castTypeToBlockContainer()
+                .getJsonTypeDefinition());
     final String mockResponse =
         String.format(
             "{\"version\":\"gloas\",\"execution_payload_included\":true,"
@@ -351,13 +354,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
             .setBody(mockResponse)
             .setHeader(HEADER_INCLUDE_PAYLOAD, "true"));
 
-    final BLSSignature signature = blockContentsGloas.getBlock().getBody().getRandaoReveal();
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), Optional.empty());
+        request.submitV4(signature, Optional.empty(), true, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
-    assertThat(result.get().blockContainer()).isEqualTo(blockContentsGloas);
+    assertThat(result.get().blockContainer()).isEqualTo(blockContents);
   }
 
   @TestTemplate
@@ -385,7 +388,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> result =
-        request.submitV4(signature, Optional.empty(), Optional.empty());
+        request.submitV4(signature, Optional.empty(), false, BuilderConfig.NO_OP, specMilestone);
 
     assertThat(result).isPresent();
     assertThat(result.get().blockContainer()).isEqualTo(beaconBlock);
@@ -402,7 +405,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
     // no optional parameters
-    assertThat(request.submit(signature, Optional.empty(), Optional.empty())).isEmpty();
+    assertThat(request.submitV3(signature, Optional.empty(), Optional.empty())).isEmpty();
 
     recordedRequest = mockWebServer.takeRequest();
 
@@ -416,7 +419,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     // with all parameters
     assertThat(
-            request.submit(signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))))
+            request.submitV3(signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))))
         .isEmpty();
 
     recordedRequest = mockWebServer.takeRequest();
@@ -435,7 +438,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
     assertThatThrownBy(
             () ->
-                request.submit(
+                request.submitV3(
                     BLSSignature.empty(),
                     Optional.of(Bytes32.ZERO),
                     Optional.of(UInt64.valueOf(48))))

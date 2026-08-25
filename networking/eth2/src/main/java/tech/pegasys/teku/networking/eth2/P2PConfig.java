@@ -44,12 +44,12 @@ public class P2PConfig {
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 100;
 
   public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = true;
-  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
+  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 3;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
-  public static final boolean DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED = false;
-  public static final boolean DEFAULT_RPC_SNAPPY_AIRCOMPRESSOR_ENABLED = false;
+  public static final boolean DEFAULT_GOSSIP_SNAPPY_AIRCOMPRESSOR_ENABLED = true;
+  public static final boolean DEFAULT_RPC_SNAPPY_AIRCOMPRESSOR_ENABLED = true;
   public static final boolean DEFAULT_DAS_DISABLE_EL_RECOVERY = false;
   public static final boolean DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED = true;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
@@ -357,11 +357,11 @@ public class P2PConfig {
     public P2PConfig build() {
       validate();
 
-      if (gossipSnappyAircompressorEnabled) {
-        LOG.info("Experimental aircompressor Snappy encoding is enabled for gossip");
+      if (!gossipSnappyAircompressorEnabled) {
+        LOG.warn("Gossip snappy encoding is using snappy-java; aircompressor is disabled");
       }
-      if (rpcSnappyAircompressorEnabled) {
-        LOG.info("Experimental aircompressor Snappy encoding is enabled for RPC");
+      if (!rpcSnappyAircompressorEnabled) {
+        LOG.warn("RPC snappy encoding is using snappy-java; aircompressor is disabled");
       }
 
       final GossipConfigurator gossipConfigurator =
