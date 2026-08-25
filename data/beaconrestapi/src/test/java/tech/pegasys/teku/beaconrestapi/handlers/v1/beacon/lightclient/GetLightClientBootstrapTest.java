@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -67,6 +68,8 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(responseData);
+    assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
   }
 
   @Test
