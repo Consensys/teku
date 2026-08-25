@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.PtcDuties.PTC_DUTIES_TYPE_DEFINITION;
 import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -68,6 +69,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -83,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -566,6 +570,36 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  public void postPtcDuties_whenSuccess_returnsResponse()
+      throws JsonProcessingException, InterruptedException {
+    assumeThat(specMilestone).isEqualTo(GLOAS);
+    final List<PtcDuty> duties =
+        List.of(
+            new PtcDuty(
+                dataStructureUtil.randomPublicKey(),
+                dataStructureUtil.randomValidatorIndex(),
+                dataStructureUtil.randomSlot()));
+    final PtcDuties response = new PtcDuties(true, dataStructureUtil.randomBytes32(), duties);
+
+    final String body = serialize(response, PTC_DUTIES_TYPE_DEFINITION);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
+
+    final UInt64 epoch = ONE;
+    final IntList validatorIndices = IntList.of(1, 2);
+    final Optional<PtcDuties> result = typeDefClient.postPtcDuties(epoch, validatorIndices);
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/ptc/" + epoch);
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
+    assertThat(recordedRequest.getBody().readByteArray())
+        .isEqualTo("[\"1\",\"2\"]".getBytes(UTF_8));
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).isEqualTo(response);
+  }
+
+  @TestTemplate
   public void postSubscribeToSyncCommitteeSubnets_makesExpectedRequest()
       throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
@@ -849,6 +883,32 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             syncCommitteeMessages,
             SerializableTypeDefinition.listOf(
                 SyncCommitteeMessageSchema.INSTANCE.getJsonTypeDefinition()));
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(expectedRequestPayloadBody);
+  }
+
+  @TestTemplate
+  public void sendPayloadAttestationMessages_makesExpectedRequest() throws Exception {
+    assumeThat(specMilestone).isEqualTo(GLOAS);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    final List<PayloadAttestationMessage> payloadAttestationMessages =
+        List.of(
+            dataStructureUtil.randomPayloadAttestationMessage(),
+            dataStructureUtil.randomPayloadAttestationMessage());
+
+    typeDefClient.sendPayloadAttestationMessages(payloadAttestationMessages);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_PAYLOAD_ATTESTATION_MESSAGES.getPath(emptyMap()));
+
+    final String expectedRequestPayloadBody =
+        serialize(
+            payloadAttestationMessages,
+            SerializableTypeDefinition.listOf(
+                payloadAttestationMessages.getFirst().getSchema().getJsonTypeDefinition()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(expectedRequestPayloadBody);
   }
