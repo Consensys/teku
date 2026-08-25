@@ -123,6 +123,80 @@ class BlockProductionDutyTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
+  @Test
+  public void shouldFailWhenCreateRandaoFails() {
+    final RuntimeException error = new RuntimeException("Sorry!");
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
+        .thenReturn(failedFuture(error));
+
+    assertDutyFails(error);
+    verifyNoInteractions(validatorDutyMetrics);
+  }
+
+  @Test
+  public void shouldFailWhenCreateUnsignedBlockFails() {
+    final RuntimeException error = new RuntimeException("Sorry!");
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false, Optional.empty()))
+        .thenReturn(failedFuture(error));
+
+    assertDutyFails(error);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verifyNoMoreInteractions(validatorDutyMetrics);
+  }
+
+  @Test
+  public void shouldFailWhenCreateUnsignedBlockReturnsEmpty() {
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false, Optional.empty()))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    performAndReportDuty();
+
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(TYPE),
+            eq(CAPELLA_SLOT),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
+            any(IllegalStateException.class));
+    verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verifyNoMoreInteractions(validatorDutyMetrics);
+  }
+
+  @Test
+  public void shouldFailWhenSigningBlockFails() {
+    final RuntimeException error = new RuntimeException("Sorry!");
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(CAPELLA_SLOT);
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false, Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(signer.signBlock(blockContainerAndMetaData.blockContainer().getBlock(), fork))
+        .thenReturn(failedFuture(error));
+
+    assertDutyFails(error);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verifyNoMoreInteractions(validatorDutyMetrics);
+  }
+
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void shouldCreateAndPublishBlock(final boolean isBlindedBlocksEnabled) {
@@ -376,105 +450,6 @@ class BlockProductionDutyTest {
   }
 
   @Test
-  public void shouldFailWhenCreateRandaoFails() {
-    final RuntimeException error = new RuntimeException("Sorry!");
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
-        .thenReturn(failedFuture(error));
-
-    assertDutyFails(error);
-    verifyNoInteractions(validatorDutyMetrics);
-  }
-
-  @Test
-  public void bellatrixBlockSummary() {
-    final BeaconBlockBody block = mock(BeaconBlockBody.class);
-    when(block.getOptionalExecutionPayloadSummary())
-        .thenReturn(
-            Optional.of(
-                new PayloadSummary(
-                    UInt64.valueOf(1024000),
-                    UInt64.valueOf(102400),
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomUInt64())));
-    assertThat(duty.getBlockSummary(block))
-        .containsExactly(
-            "102400 (10%) gas, EL block: 499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
-  }
-
-  @Test
-  public void denebBlockSummary() {
-    final BeaconBlockBody block = dataStructureUtil.randomBeaconBlockBody(denebSlot);
-    assertThat(duty.getBlockSummary(block))
-        .containsExactly(
-            "Blobs: 1",
-            "4491510546443434056 (0%) gas, EL block: 58913d3ec8a62b95e52fb1ee60ebddf392af6e1db902dd5bc3f1eea7003130ff (4488205580010065800)");
-  }
-
-  @Test
-  public void shouldFailWhenCreateUnsignedBlockFails() {
-    final RuntimeException error = new RuntimeException("Sorry!");
-    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
-        .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false, Optional.empty()))
-        .thenReturn(failedFuture(error));
-
-    assertDutyFails(error);
-
-    verify(validatorDutyMetrics)
-        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
-    verifyNoMoreInteractions(validatorDutyMetrics);
-  }
-
-  @Test
-  public void shouldFailWhenCreateUnsignedBlockReturnsEmpty() {
-    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
-        .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false, Optional.empty()))
-        .thenReturn(completedFuture(Optional.empty()));
-
-    performAndReportDuty();
-
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(TYPE),
-            eq(CAPELLA_SLOT),
-            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
-            any(IllegalStateException.class));
-    verifyNoMoreInteractions(validatorLogger);
-
-    verify(validatorDutyMetrics)
-        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
-    verifyNoMoreInteractions(validatorDutyMetrics);
-  }
-
-  @Test
-  public void shouldFailWhenSigningBlockFails() {
-    final RuntimeException error = new RuntimeException("Sorry!");
-    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final BlockContainerAndMetaData blockContainerAndMetaData =
-        dataStructureUtil.randomBlockContainerAndMetaData(CAPELLA_SLOT);
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
-        .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false, Optional.empty()))
-        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
-    when(signer.signBlock(blockContainerAndMetaData.blockContainer().getBlock(), fork))
-        .thenReturn(failedFuture(error));
-
-    assertDutyFails(error);
-
-    verify(validatorDutyMetrics)
-        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
-    verify(validatorDutyMetrics)
-        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
-    verifyNoMoreInteractions(validatorDutyMetrics);
-  }
-
-  @Test
   public void forGloas_shouldCreateAndPublishBlockAndNotifyBidEventsSubscribersWhenSelfBuiltBid() {
     final UInt64 slot = UInt64.valueOf(42);
     final Spec spec = TestSpecFactory.createMinimalGloas();
@@ -528,6 +503,42 @@ class BlockProductionDutyTest {
 
     verify(executionPayloadBidEventsChannelPublisher)
         .onSelfBuiltBidIncludedInBlock(validator, fork, bid);
+  }
+
+  @Test
+  public void bellatrixBlockSummary() {
+    final BeaconBlockBody block = mock(BeaconBlockBody.class);
+    when(block.getOptionalExecutionPayloadSummary())
+        .thenReturn(
+            Optional.of(
+                new PayloadSummary(
+                    UInt64.valueOf(1024000),
+                    UInt64.valueOf(102400),
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomUInt64())));
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "102400 (10%) gas, EL block: 499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
+  }
+
+  @Test
+  public void denebBlockSummary() {
+    final BeaconBlockBody block = dataStructureUtil.randomBeaconBlockBody(denebSlot);
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "Blobs: 1",
+            "4491510546443434056 (0%) gas, EL block: 58913d3ec8a62b95e52fb1ee60ebddf392af6e1db902dd5bc3f1eea7003130ff (4488205580010065800)");
+  }
+
+  @Test
+  public void gloasBlockSummary() {
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final BeaconBlockBody block = dataStructureUtil.randomBeaconBlockBody();
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "Blobs: 7",
+            "Builder: 1125033, Bid gas limit: 4759212943510379790, Bid EL block: 5999d9..3515");
   }
 
   public void assertDutyFails(final RuntimeException error) {
