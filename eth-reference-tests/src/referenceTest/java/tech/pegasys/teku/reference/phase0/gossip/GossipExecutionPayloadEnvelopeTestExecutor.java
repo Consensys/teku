@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -147,8 +148,22 @@ public class GossipExecutionPayloadEnvelopeTestExecutor implements TestExecutor 
       }
     }
 
+    // The declared finalized checkpoint drives the "envelope is from a slot at or after the
+    // finalized slot" rule. It is applied by overriding the helper rather than committing it to the
+    // store: these fixtures identify it by raw root, which need not be a block the store holds, and
+    // committing it would prune the setup blocks the remaining rules rely on.
+    final Optional<Checkpoint> declaredFinalizedCheckpoint =
+        Optional.ofNullable(metaData.getFinalizedCheckpoint())
+            .map(checkpoint -> checkpoint.toCheckpoint(testDefinition, spec));
     final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, metricsSystem);
+        new GossipValidationHelper(spec, recentChainData, metricsSystem) {
+          @Override
+          public boolean isBeforeFinalizedSlot(final UInt64 slot) {
+            return declaredFinalizedCheckpoint
+                .map(checkpoint -> slot.isLessThan(checkpoint.getEpochStartSlot(spec)))
+                .orElseGet(() -> super.isBeforeFinalizedSlot(slot));
+          }
+        };
     final BlockGossipValidator blockGossipValidator =
         new BlockGossipValidator(
             spec,
@@ -220,6 +235,13 @@ public class GossipExecutionPayloadEnvelopeTestExecutor implements TestExecutor 
     @JsonProperty(value = "bls_setting", defaultValue = "0")
     private int blsSetting;
 
+    @JsonProperty(value = "finalized_checkpoint")
+    private FinalizedCheckpoint finalizedCheckpoint;
+
+    public FinalizedCheckpoint getFinalizedCheckpoint() {
+      return finalizedCheckpoint;
+    }
+
     public List<BlockEntry> getBlocks() {
       return blocks;
     }
@@ -234,6 +256,34 @@ public class GossipExecutionPayloadEnvelopeTestExecutor implements TestExecutor 
 
     public BlsSetting getBlsSetting() {
       return BlsSetting.forCode(blsSetting);
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class FinalizedCheckpoint {
+
+      @JsonProperty(value = "epoch", required = true)
+      private long epoch;
+
+      @JsonProperty(value = "root")
+      private String root;
+
+      @JsonProperty(value = "block")
+      private String block;
+
+      public Checkpoint toCheckpoint(final TestDefinition testDefinition, final Spec spec) {
+        final Bytes32 checkpointRoot;
+        if (root != null) {
+          checkpointRoot = Bytes32.fromHexString(root);
+        } else if (block != null) {
+          final SignedBeaconBlock signedBlock =
+              loadSsz(testDefinition, block + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
+          checkpointRoot = signedBlock.getRoot();
+        } else {
+          throw new IllegalStateException(
+              "finalized_checkpoint must specify either 'root' or 'block'");
+        }
+        return new Checkpoint(UInt64.valueOf(epoch), checkpointRoot);
+      }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
