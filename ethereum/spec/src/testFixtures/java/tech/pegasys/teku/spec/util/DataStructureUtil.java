@@ -24,8 +24,8 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_CONFIG_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_PREFERENCES_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.ApiSchemas.REQUEST_AUTH_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_REQUEST_AUTH_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.BUILDER_REQUEST_AUTH_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_BUILDER_REQUEST_AUTH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
@@ -149,8 +149,8 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfi
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderEntry;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferences;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.RequestAuth;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderRequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedBuilderRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
@@ -2124,13 +2124,13 @@ public final class DataStructureUtil {
         IntStream.range(0, size).mapToObj(__ -> randomSignedValidatorRegistration()).toList());
   }
 
-  public RequestAuth randomRequestAuth() {
-    return REQUEST_AUTH_SCHEMA.create(
+  public BuilderRequestAuth randomBuilderRequestAuth() {
+    return BUILDER_REQUEST_AUTH_SCHEMA.create(
         randomBytes(randomPositiveInt((int) SpecConfigGloas.MAX_DATA_SIZE)), randomSlot());
   }
 
-  public SignedRequestAuth randomSignedRequestAuth() {
-    return SIGNED_REQUEST_AUTH_SCHEMA.create(randomRequestAuth(), randomSignature());
+  public SignedBuilderRequestAuth randomSignedBuilderRequestAuth() {
+    return SIGNED_BUILDER_REQUEST_AUTH_SCHEMA.create(randomBuilderRequestAuth(), randomSignature());
   }
 
   public BuilderPreferences randomBuilderPreferences() {
@@ -2139,7 +2139,7 @@ public final class DataStructureUtil {
 
   public BuilderPreferencesRequest randomBuilderPreferencesRequest() {
     return BUILDER_PREFERENCES_REQUEST_SCHEMA.create(
-        randomBuilderPreferences(), randomSignedRequestAuth());
+        randomBuilderPreferences(), randomSignedBuilderRequestAuth());
   }
 
   public BuilderConfig randomBuilderConfig(final int numberOfBuilderEntries) {
@@ -2152,7 +2152,7 @@ public final class DataStructureUtil {
   public BuilderEntry randomBuilderEntry() {
     return BUILDER_ENTRY_SCHEMA.create(
         "https://" + randomString(6) + ".com",
-        randomSignedRequestAuth(),
+        randomSignedBuilderRequestAuth(),
         List.of(),
         randomUInt64(),
         randomUInt64(),
