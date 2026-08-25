@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -419,15 +418,19 @@ public class BlockOperationSelectorFactory {
       final ExecutionPayloadResult executionPayloadResult,
       final ExecutionPayloadBid bid,
       final BeaconState blockSlotState) {
+    final SafeFuture<UInt256> executionPayloadValueInWei;
     if (bid.getBuilderIndex().equals(SpecConfigGloas.BUILDER_INDEX_SELF_BUILD)) {
       // when self-building use the value of the local execution payload
-      return cacheExecutionPayloadValue(executionPayloadResult, blockSlotState);
+      executionPayloadValueInWei =
+          executionPayloadResult.getExecutionPayloadValueFutureFromLocalFlowRequired();
+    } else {
+      // total value of the builder bid when committing to one
+      executionPayloadValueInWei =
+          SafeFuture.completedFuture(
+              UInt256.valueOf(bid.getValue().bigIntegerValue()).multiply(GWEI_TO_WEI));
     }
-    // total value of the builder bid when committing to one
-    final UInt256 bidValueInWei =
-        UInt256.valueOf(bid.getValue().bigIntegerValue()).multiply(GWEI_TO_WEI);
-    BeaconStateCache.getSlotCaches(blockSlotState).setBlockExecutionValue(bidValueInWei);
-    return SafeFuture.COMPLETE;
+    return executionPayloadValueInWei.thenAccept(
+        BeaconStateCache.getSlotCaches(blockSlotState)::setBlockExecutionValue);
   }
 
   private SafeFuture<Void> setPayloadOrPayloadHeader(
