@@ -225,7 +225,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PtcDuties>> getPtcDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(() -> typeDefClient.postPtcDuties(epoch, validatorIndices));
   }
 
   @Override
@@ -284,7 +284,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       final List<PayloadAttestationMessage> payloadAttestationMessages) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return sendRequest(
+        () -> typeDefClient.sendPayloadAttestationMessages(payloadAttestationMessages));
   }
 
   @Override
