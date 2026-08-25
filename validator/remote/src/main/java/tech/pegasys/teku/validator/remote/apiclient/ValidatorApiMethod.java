@@ -29,7 +29,7 @@ public enum ValidatorApiMethod {
   GET_ATTESTATION_DATA("eth/v1/validator/attestation_data"),
   GET_PAYLOAD_ATTESTATION_DATA("eth/v1/validator/payload_attestation_data"),
   GET_EXECUTION_PAYLOAD_ENVELOPE(
-      "eth/v1/validator/execution_payload_envelope/:slot/:beacon_block_root"),
+      "eth/v1/validator/execution_payload_envelopes/:slot/:beacon_block_root"),
   SEND_SIGNED_ATTESTATION("eth/v1/beacon/pool/attestations"),
   SEND_SIGNED_ATTESTATION_V2("eth/v2/beacon/pool/attestations"),
   SEND_PAYLOAD_ATTESTATION_MESSAGES("eth/v1/beacon/pool/payload_attestations"),

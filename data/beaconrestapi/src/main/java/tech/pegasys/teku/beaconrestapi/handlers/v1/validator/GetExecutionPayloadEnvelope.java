@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetExecutionPayloadEnvelope extends RestApiEndpoint {
   public static final String ROUTE =
-      "/eth/v1/validator/execution_payload_envelope/{slot}/{beacon_block_root}";
+      "/eth/v1/validator/execution_payload_envelopes/{slot}/{beacon_block_root}";
 
   private final ValidatorDataProvider validatorDataProvider;
   private final SchemaDefinitionCache schemaDefinitionCache;

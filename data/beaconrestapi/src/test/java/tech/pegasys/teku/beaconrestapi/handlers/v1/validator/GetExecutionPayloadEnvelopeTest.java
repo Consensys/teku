@@ -56,7 +56,7 @@ class GetExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHandlerTest 
   @Test
   void metadata_shouldUseExecutionPayloadEnvelopeRoute() {
     assertThat(handler.getMetadata().getPath())
-        .isEqualTo("/eth/v1/validator/execution_payload_envelope/{slot}/{beacon_block_root}");
+        .isEqualTo("/eth/v1/validator/execution_payload_envelopes/{slot}/{beacon_block_root}");
   }
 
   @Test
