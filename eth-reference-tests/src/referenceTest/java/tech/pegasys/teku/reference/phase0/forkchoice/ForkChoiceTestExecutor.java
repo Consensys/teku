@@ -542,15 +542,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         forkChoice.onAttestation(validatableAttestation);
     assertThat(result).isCompleted();
     final AttestationProcessingResult processingResult = safeJoin(result);
-    // A current-slot attestation is valid but deferred by fork choice (stored and applied on the
-    // next tick). The fast confirmation vectors apply such attestations, so treat deferral as an
-    // accepted outcome.
-    final boolean acceptedByForkChoice =
-        processingResult.isSuccessful()
-            || processingResult.getStatus()
-                == AttestationProcessingResult.Status.DEFER_FORK_CHOICE_PROCESSING;
-    assertThat(acceptedByForkChoice)
-        .withFailMessage(processingResult.getInvalidReason())
+    // If a current-slot attestation is valid but deferred by fork choice (stored and applied on the
+    // next tick), reference tests seem to expect it to be considered invalid, so we will not consider
+    // it a successful attestation
+    assertThat(processingResult.isSuccessful())
+        .withFailMessage("%s failed with processing result: %s", attestationName, processingResult)
         .isEqualTo(valid);
   }
 
