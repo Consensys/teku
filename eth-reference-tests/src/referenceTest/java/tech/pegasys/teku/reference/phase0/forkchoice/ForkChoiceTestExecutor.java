@@ -879,8 +879,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                                 && headRootAndWeight.weight.equals(chainHeadRootAndWeight.weight)) {
                               // an unset payload status means we don't need to check if payload
                               // status is correct
-                              if (headRootAndWeight.payloadStatus.isPresent()
-                                  && chainHeadRootAndWeight.payloadStatus.isPresent()) {
+                              if (headRootAndWeight.payloadStatus.isPresent()) {
                                 return headRootAndWeight.payloadStatus.equals(
                                     chainHeadRootAndWeight.payloadStatus);
                               } else {
