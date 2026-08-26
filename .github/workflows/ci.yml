@@ -332,8 +332,6 @@ jobs:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: extractAPISpec
     runs-on: ubuntu-24.04
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       actions: read
       contents: write
@@ -358,20 +356,21 @@ jobs:
           node-version: 22
           cache-dependency-path: .openapidoc/package-lock.json
           cache: 'npm'
-      - name: Setup Git identity
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-      - name: Install npm dependencies
+      - name: Prepare OpenAPI spec for publishing
         working-directory: .openapidoc
+        env:
+          OA_GIT_URL: https://github.com/${{ github.repository }}.git
+          OA_GH_PAGES_BRANCH: gh-pages
         run: |
           npm ci
-          OA_GIT_USERNAME="${{ github.actor }}" \
-          OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" \
-          OA_GIT_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
-          OA_GH_PAGES_BRANCH="gh-pages" \
           node publish.js
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@9d877eea73427180ae43cf98e8914934fe157a1a # 4.7.6
+        with:
+          folder: .openapidoc/dist
+          branch: gh-pages
+          commit-message: "[skip ci] OpenAPI Publish"
+          clean: false
 
   ## Tests
   unitTests:

@@ -215,8 +215,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
         "Starting onboarding builders at fork from {} pending deposits",
         state.getPendingDeposits().size());
     final List<PendingDeposit> pendingDeposits = new ArrayList<>();
-    // Avoids re-scanning pending deposits and re-verifying signatures for repeated pubkeys
-    final Set<BLSPublicKey> verifiedPendingValidatorPubkeys = new HashSet<>();
+    // Pubkeys with at least one already-queued pending deposit carrying a valid signature, i.e. the
+    // pubkeys for which isPendingValidator(pendingDeposits, pubkey) would return true. Maintained
+    // incrementally so the query is an O(1) lookup instead of an O(queue) rescan-and-verify, which
+    // is quadratic when a pubkey is repeated across many deposits.
+    final Set<BLSPublicKey> pendingValidatorPubkeys = new HashSet<>();
 
     for (final PendingDeposit deposit : state.getPendingDeposits()) {
       final BLSPublicKey pubkey = deposit.getPublicKey();
@@ -239,19 +242,21 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               // deposit for a new validator with this pubkey, keep this deposit in the pending
               // queue to be applied to that validator later.
               () -> {
-                // Deposits without builder credentials stay in the pending queue
+                // Deposits without builder credentials stay in the pending queue. Such a deposit is
+                // the only kind that can newly make its pubkey a pending validator, so verify its
+                // signature once here and record the pubkey rather than rescanning the queue later.
                 if (!predicates.isBuilderWithdrawalCredential(deposit.getWithdrawalCredentials())) {
                   pendingDeposits.add(deposit);
+                  if (miscHelpers.isValidDepositSignature(
+                      pubkey,
+                      deposit.getWithdrawalCredentials(),
+                      deposit.getAmount(),
+                      deposit.getSignature())) {
+                    pendingValidatorPubkeys.add(pubkey);
+                  }
                   return;
                 }
-                boolean isPendingValidator;
-                if (verifiedPendingValidatorPubkeys.contains(pubkey)) {
-                  isPendingValidator = true;
-                } else {
-                  isPendingValidator = miscHelpers.isPendingValidator(pendingDeposits, pubkey);
-                }
-                if (isPendingValidator) {
-                  verifiedPendingValidatorPubkeys.add(pubkey);
+                if (pendingValidatorPubkeys.contains(pubkey)) {
                   pendingDeposits.add(deposit);
                   return;
                 }

@@ -1,5 +1,5 @@
 {
-  "title" : "RequestAuthV1",
+  "title" : "BuilderRequestAuth",
   "type" : "object",
   "required" : [ "data", "slot" ],
   "properties" : {

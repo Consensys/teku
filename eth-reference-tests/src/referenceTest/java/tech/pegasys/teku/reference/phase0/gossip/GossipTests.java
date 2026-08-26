@@ -50,13 +50,16 @@ public class GossipTests {
               new GossipSyncCommitteeMessageTestExecutor())
           .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTestExecutor())
           .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTestExecutor())
-          // TODO: will be implemented as part of https://github.com/Consensys/teku/issues/10910
-          .put("networking/gossip_execution_payload_bid", TestExecutor.IGNORE_TESTS)
-          // TODO: will be implemented as part of https://github.com/Consensys/teku/issues/10910
-          .put("networking/gossip_proposer_preferences", TestExecutor.IGNORE_TESTS)
-          // TODO: will be implemented as part of https://github.com/Consensys/teku/issues/10910
-          .put("networking/gossip_payload_attestation_message", TestExecutor.IGNORE_TESTS)
-          // TODO: will be implemented as part of https://github.com/Consensys/teku/issues/10910
-          .put("networking/gossip_execution_payload_envelope", TestExecutor.IGNORE_TESTS)
+          .put(
+              "networking/gossip_payload_attestation_message",
+              new GossipPayloadAttestationMessageTestExecutor())
+          .put(
+              "networking/gossip_proposer_preferences", new GossipProposerPreferencesTestExecutor())
+          .put(
+              "networking/gossip_execution_payload_envelope",
+              new GossipExecutionPayloadEnvelopeTestExecutor())
+          .put(
+              "networking/gossip_execution_payload_bid",
+              new GossipExecutionPayloadBidTestExecutor())
           .build();
 }

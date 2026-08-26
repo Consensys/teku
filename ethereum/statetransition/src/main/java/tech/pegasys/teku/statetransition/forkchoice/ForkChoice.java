@@ -669,11 +669,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
 
-    // Verify the execution payload envelope
+    // Verify the execution payload envelope. Use the spec-configured verifier (SIMPLE in
+    // production) rather than hardcoding it, so reference tests with bls_setting: 2 can disable
+    // signature verification the same way every other verification path does.
+    final BLSSignatureVerifier envelopeSignatureVerifier =
+        spec.atSlot(signedEnvelope.getSlot()).getConfig().getBLSSignatureVerifier();
     try {
       spec.getExecutionPayloadVerifier(signedEnvelope.getSlot())
           .verifyExecutionPayloadEnvelope(
-              signedEnvelope, state, BLSSignatureVerifier.SIMPLE, Optional.of(payloadExecutor));
+              signedEnvelope, state, envelopeSignatureVerifier, Optional.of(payloadExecutor));
     } catch (final ExecutionPayloadVerificationException ex) {
       final ExecutionPayloadImportResult result =
           ExecutionPayloadImportResult.failedVerification(ex);
