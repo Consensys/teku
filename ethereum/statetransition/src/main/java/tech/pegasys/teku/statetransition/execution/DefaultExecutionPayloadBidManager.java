@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -82,7 +83,6 @@ public class DefaultExecutionPayloadBidManager
   private final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids;
   private final Subscribers<OperationAddedSubscriber<SignedExecutionPayloadBid>> subscribers =
       Subscribers.create(true);
-  private final UInt64 builderBidCompareFactor;
   private final boolean useShouldOverrideBuilderFlag;
 
   // bids are valid for the current and next slot, so they're indexed by bid.slot for pruning;
@@ -97,7 +97,6 @@ public class DefaultExecutionPayloadBidManager
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher,
       final PendingPool<SignedExecutionPayloadBid> pendingExecutionPayloadBids,
-      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
@@ -105,7 +104,6 @@ public class DefaultExecutionPayloadBidManager
     this.receivedExecutionPayloadBidEventsChannelPublisher =
         receivedExecutionPayloadBidEventsChannelPublisher;
     this.pendingExecutionPayloadBids = pendingExecutionPayloadBids;
-    this.builderBidCompareFactor = builderBidCompareFactor;
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
@@ -207,7 +205,7 @@ public class DefaultExecutionPayloadBidManager
       final Bytes32 parentBlockHash,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
-      final Optional<UInt64> requestedBuilderBoostFactor,
+      final BuilderConfig builderConfig,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
     if (executionPayloadBidCircuitBreaker.isEngaged(parentRoot, state)) {
@@ -226,7 +224,7 @@ public class DefaultExecutionPayloadBidManager
         parentBlockHash,
         slot,
         getPayloadResponseFuture,
-        requestedBuilderBoostFactor,
+        builderConfig,
         blockProductionPerformance);
   }
 
@@ -280,10 +278,8 @@ public class DefaultExecutionPayloadBidManager
    * <ol>
    *   <li>If {@code useShouldOverrideBuilderFlag} is enabled and the EL returns {@code
    *       shouldOverrideBuilder}, the local payload wins.
-   *   <li>Otherwise, {@code requestedBuilderBoostFactor}, supplied by the validator client through
-   *       the Produce Block API, is used when present.
-   *   <li>If the validator client does not supply a factor, {@code builderBidCompareFactor} from
-   *       the beacon node's {@code --builder-bid-compare-factor} configuration is used.
+   *   <li>Otherwise, {@code builderConfig.getBuilderBoostFactor()} from the {@link BuilderConfig}
+   *       supplied by the validator client is used.
    * </ol>
    *
    * <p>A factor of {@code 0} always prefers a viable local payload, {@code UInt64.MAX_VALUE} always
@@ -296,7 +292,7 @@ public class DefaultExecutionPayloadBidManager
       final Bytes32 parentBlockHash,
       final UInt64 slot,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture,
-      final Optional<UInt64> requestedBuilderBoostFactor,
+      final BuilderConfig builderConfig,
       final BlockProductionPerformance blockProductionPerformance) {
     final SafeFuture<Optional<LocalBidCandidate>> viableLocalBid =
         getPayloadResponseFuture
@@ -334,15 +330,14 @@ public class DefaultExecutionPayloadBidManager
           final UInt256 remoteValueInWei =
               UInt256.valueOf(remoteBid.getMessage().getValue().bigIntegerValue())
                   .multiply(GWEI_TO_WEI);
-          final UInt64 builderBoostFactor =
-              requestedBuilderBoostFactor.orElse(builderBidCompareFactor);
+          final UInt64 builderBoostFactor = builderConfig.getBuilderBoostFactor();
           final boolean localValueWins =
               BuilderBoostFactorEvaluator.isLocalValueWinning(
                   localResponse.getExecutionPayloadValue(), remoteValueInWei, builderBoostFactor);
           logValueComparison(
               localValueWins,
               builderBoostFactor,
-              requestedBuilderBoostFactor.isPresent(),
+              true,
               localResponse.getExecutionPayloadValue(),
               remoteBid.getMessage(),
               slot);

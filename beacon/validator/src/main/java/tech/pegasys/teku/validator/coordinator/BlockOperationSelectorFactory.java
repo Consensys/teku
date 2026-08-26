@@ -573,13 +573,21 @@ public class BlockOperationSelectorFactory {
             false,
             Optional.empty(),
             blockProductionContext.blockProductionPerformance());
+    final BuilderConfig builderConfig =
+        blockProductionContext
+            .builderConfig()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "BuilderConfig is missing for production of block at slot "
+                            + blockSlotState.getSlot()));
     return executionPayloadBidManager
         .getBidForBlock(
             parentRoot,
             blockProductionContext.parentExecutionBlockHash(),
             blockSlotState,
             executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
-            blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
+            builderConfig,
             blockProductionContext.blockProductionPerformance())
         .thenCompose(
             bid -> {

@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
@@ -96,7 +97,6 @@ public class DefaultExecutionPayloadBidManagerTest {
           executionPayloadBidCircuitBreaker,
           receivedExecutionPayloadBidEventsChannelPublisher,
           pendingExecutionPayloadBids,
-          UInt64.valueOf(90),
           true);
 
   @BeforeEach
@@ -138,7 +138,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 state,
                 SafeFuture.completedFuture(getPayloadResponse),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -218,7 +218,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                     parentBlockHash,
                     state,
                     SafeFuture.completedFuture(getPayloadResponse),
-                    Optional.empty(),
+                    BuilderConfig.NO_OP,
                     blockProductionPerformance))
             .getMessage();
 
@@ -251,7 +251,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 state,
                 SafeFuture.completedFuture(
                     randomGetPayloadResponse(state.getSlot(), payloadParentBlockHash)),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance))
         .isCompletedExceptionallyWith(IllegalStateException.class)
         .hasMessageContaining("does not match selected production parent execution hash");
@@ -283,7 +283,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 state,
                 SafeFuture.failedFuture(new RuntimeException("engine unavailable")),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(higherBid);
@@ -314,7 +314,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 state,
                 SafeFuture.completedFuture(
                     getPayloadResponse(slot, parentBlockHash, UInt256.ONE, false)),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(allowedLowerBid);
@@ -346,7 +346,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 state,
                 SafeFuture.completedFuture(randomGetPayloadResponse(slot, parentBlockHash)),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -372,7 +372,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 state,
                 SafeFuture.completedFuture(randomGetPayloadResponse(slot, parentBlockHash)),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -397,7 +397,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 SafeFuture.completedFuture(
                     getPayloadResponse(
                         slot, parentBlockHash, UInt256.valueOf(80_000_000_000L), false)),
-                Optional.of(UInt64.valueOf(80)),
+                BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(80)),
                 blockProductionPerformance));
 
     assertThat(selectedBid.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -421,7 +421,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.valueOf(89_000_000_000L),
             false,
-            Optional.empty());
+            BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(90)));
 
     assertThat(selectedBid).isEqualTo(remoteBid);
     verify(blockProductionPerformance, times(1)).builderBidValidated();
@@ -444,7 +444,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.valueOf(90_000_000_000L),
             false,
-            Optional.empty());
+            BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(90)));
 
     assertThat(selectedBid.getSignature()).isEqualTo(BLSSignature.infinity());
   }
@@ -466,7 +466,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.ZERO,
             false,
-            Optional.of(UInt64.ZERO));
+            BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION));
 
     assertThat(selectedBid.getSignature()).isEqualTo(BLSSignature.infinity());
   }
@@ -488,7 +488,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.MAX_VALUE,
             false,
-            Optional.of(UInt64.MAX_VALUE));
+            BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_BUILDER));
 
     assertThat(selectedBid).isEqualTo(remoteBid);
   }
@@ -510,7 +510,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.valueOf(899_999_999),
             false,
-            Optional.empty());
+            BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(90)));
     final SignedExecutionPayloadBid atThreshold =
         selectBid(
             executionPayloadBidManager,
@@ -519,7 +519,7 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.valueOf(900_000_000),
             false,
-            Optional.empty());
+            BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(90)));
 
     assertThat(belowThreshold).isEqualTo(remoteBid);
     assertThat(atThreshold.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -542,14 +542,21 @@ public class DefaultExecutionPayloadBidManagerTest {
             parentBlockHash,
             UInt256.ONE,
             true,
-            Optional.empty());
+            BuilderConfig.NO_OP);
 
     assertThat(selectedBid.getSignature()).isEqualTo(BLSSignature.infinity());
   }
 
   @Test
   void disabledShouldOverrideBuilderIgnoresOverrideFlag() {
-    final DefaultExecutionPayloadBidManager manager = createManager(UInt64.valueOf(90), false);
+    final DefaultExecutionPayloadBidManager manager =
+        new DefaultExecutionPayloadBidManager(
+            spec,
+            executionPayloadBidGossipValidator,
+            executionPayloadBidCircuitBreaker,
+            receivedExecutionPayloadBidEventsChannelPublisher,
+            pendingExecutionPayloadBids,
+            false);
     final UInt64 slot = UInt64.valueOf(10);
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
@@ -559,7 +566,13 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final SignedExecutionPayloadBid selectedBid =
         selectBid(
-            manager, remoteBid, parentRoot, parentBlockHash, UInt256.ONE, true, Optional.empty());
+            manager,
+            remoteBid,
+            parentRoot,
+            parentBlockHash,
+            UInt256.ONE,
+            true,
+            BuilderConfig.NO_OP);
 
     assertThat(selectedBid).isEqualTo(remoteBid);
   }
@@ -580,7 +593,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 stateAtSlot(slot),
                 SafeFuture.failedFuture(new RuntimeException("engine unavailable")),
-                Optional.of(UInt64.ZERO),
+                BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION),
                 blockProductionPerformance));
 
     assertThat(selectedBid).isEqualTo(remoteBid);
@@ -603,7 +616,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 stateAtSlot(slot),
                 SafeFuture.completedFuture(
                     randomGetPayloadResponse(slot, dataStructureUtil.randomBytes32())),
-                Optional.of(UInt64.ZERO),
+                BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION),
                 blockProductionPerformance));
 
     assertThat(selectedBid).isEqualTo(remoteBid);
@@ -643,7 +656,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 stateAtSlot(slot),
                 SafeFuture.completedFuture(new GetPayloadResponse(payload, UInt256.MAX_VALUE)),
-                Optional.of(UInt64.ZERO),
+                BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION),
                 blockProductionPerformance));
     final SignedExecutionPayloadBid missingRequests =
         SafeFutureAssert.safeJoin(
@@ -654,7 +667,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 SafeFuture.completedFuture(
                     new GetPayloadResponse(
                         payload, UInt256.MAX_VALUE, dataStructureUtil.randomBlobsBundle(3), true)),
-                Optional.of(UInt64.ZERO),
+                BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION),
                 blockProductionPerformance));
     final SignedExecutionPayloadBid onlyMissingBlobs =
         SafeFutureAssert.safeJoin(
@@ -663,7 +676,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 stateAtSlot(slot),
                 SafeFuture.completedFuture(missingBlobs),
-                Optional.of(UInt64.ZERO),
+                BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION),
                 blockProductionPerformance));
     final SignedExecutionPayloadBid malformedBlobsBundle =
         SafeFutureAssert.safeJoin(
@@ -672,7 +685,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 stateAtSlot(slot),
                 SafeFuture.completedFuture(malformedBlobs),
-                Optional.of(UInt64.ZERO),
+                BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION),
                 blockProductionPerformance));
 
     assertThat(missingBoth).isEqualTo(remoteBid);
@@ -698,7 +711,7 @@ public class DefaultExecutionPayloadBidManagerTest {
           parentBlockHash,
           UInt256.valueOf(80_000_000_000_000_000L),
           false,
-          Optional.of(UInt64.valueOf(80)));
+          BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(80)));
       selectBid(
           executionPayloadBidManager,
           remoteBid,
@@ -706,7 +719,7 @@ public class DefaultExecutionPayloadBidManagerTest {
           parentBlockHash,
           UInt256.valueOf(89_000_000_000_000_000L),
           false,
-          Optional.empty());
+          BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(90)));
 
       assertThat(logCaptor.getInfoLogs())
           .anyMatch(
@@ -718,7 +731,7 @@ public class DefaultExecutionPayloadBidManagerTest {
               log ->
                   log.contains(
                       "Remote bid (0.100000 ETH) is chosen over local execution payload (0.089000 ETH)"))
-          .anyMatch(log -> log.contains("builder compare factor: 90%, source: BN."));
+          .anyMatch(log -> log.contains("builder compare factor: 90%, source: VC."));
     }
   }
 
@@ -739,7 +752,7 @@ public class DefaultExecutionPayloadBidManagerTest {
           parentBlockHash,
           UInt256.valueOf(100_000_000_000_000_000L),
           false,
-          Optional.of(BUILDER_BOOST_FACTOR_MAX_PROFIT));
+          BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_MAX_PROFIT));
       selectBid(
           executionPayloadBidManager,
           remoteBid,
@@ -747,7 +760,7 @@ public class DefaultExecutionPayloadBidManagerTest {
           parentBlockHash,
           UInt256.ONE,
           false,
-          Optional.of(BUILDER_BOOST_FACTOR_PREFER_EXECUTION));
+          BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_EXECUTION));
       selectBid(
           executionPayloadBidManager,
           remoteBid,
@@ -755,7 +768,7 @@ public class DefaultExecutionPayloadBidManagerTest {
           parentBlockHash,
           UInt256.ONE,
           false,
-          Optional.of(BUILDER_BOOST_FACTOR_PREFER_BUILDER));
+          BuilderConfig.withBuilderBoostFactor(BUILDER_BOOST_FACTOR_PREFER_BUILDER));
       selectBid(
           executionPayloadBidManager,
           remoteBid,
@@ -763,7 +776,7 @@ public class DefaultExecutionPayloadBidManagerTest {
           parentBlockHash,
           UInt256.valueOf(80_000_000_000_000_000L),
           false,
-          Optional.of(UInt64.valueOf(80)));
+          BuilderConfig.withBuilderBoostFactor(UInt64.valueOf(80)));
 
       assertThat(logCaptor.getInfoLogs())
           .contains(
@@ -803,7 +816,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 state,
                 SafeFuture.failedFuture(new RuntimeException("engine unavailable")),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(bidForOurParent);
@@ -833,7 +846,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 state,
                 SafeFuture.failedFuture(new RuntimeException("engine unavailable")),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(bidForOurParentHash);
@@ -863,7 +876,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 state,
                 SafeFuture.completedFuture(
                     randomGetPayloadResponse(state.getSlot(), parentBlockHash)),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
 
     assertThat(signedBid.getSignature()).isEqualTo(BLSSignature.infinity());
@@ -1181,7 +1194,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 parentBlockHash,
                 stateAtSlot(staleSlot),
                 SafeFuture.completedFuture(randomGetPayloadResponse(staleSlot, parentBlockHash)),
-                Optional.empty(),
+                BuilderConfig.NO_OP,
                 blockProductionPerformance));
     assertThat(staleLookup.getSignature()).isEqualTo(BLSSignature.infinity());
 
@@ -1193,7 +1206,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                     parentBlockHash,
                     stateAtSlot(currentSlot),
                     SafeFuture.failedFuture(new RuntimeException("engine unavailable")),
-                    Optional.empty(),
+                    BuilderConfig.NO_OP,
                     blockProductionPerformance)))
         .isEqualTo(currentSlotBid);
     assertThat(
@@ -1203,7 +1216,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                     parentBlockHash,
                     stateAtSlot(currentSlot.plus(1)),
                     SafeFuture.failedFuture(new RuntimeException("engine unavailable")),
-                    Optional.empty(),
+                    BuilderConfig.NO_OP,
                     blockProductionPerformance)))
         .isEqualTo(nextSlotBid);
   }
@@ -1298,7 +1311,7 @@ public class DefaultExecutionPayloadBidManagerTest {
       final Bytes32 parentBlockHash,
       final UInt256 localValue,
       final boolean shouldOverrideBuilder,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
+      final BuilderConfig builderConfig) {
     return SafeFutureAssert.safeJoin(
         manager.getBidForBlock(
             parentRoot,
@@ -1310,19 +1323,18 @@ public class DefaultExecutionPayloadBidManagerTest {
                     parentBlockHash,
                     localValue,
                     shouldOverrideBuilder)),
-            requestedBuilderBoostFactor,
+            builderConfig,
             blockProductionPerformance));
   }
 
   private DefaultExecutionPayloadBidManager createManager(
-      final UInt64 builderBidCompareFactor, final boolean useShouldOverrideBuilderFlag) {
+      final boolean useShouldOverrideBuilderFlag) {
     return new DefaultExecutionPayloadBidManager(
         spec,
         executionPayloadBidGossipValidator,
         executionPayloadBidCircuitBreaker,
         receivedExecutionPayloadBidEventsChannelPublisher,
         pendingExecutionPayloadBids,
-        builderBidCompareFactor,
         useShouldOverrideBuilderFlag);
   }
 
