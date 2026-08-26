@@ -474,6 +474,8 @@ public class ValidatorClientService extends Service {
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
     final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
+    final BuilderConfigProvider builderConfigProvider =
+        new BuilderConfigProvider(spec, config.getValidatorConfig());
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider,
@@ -481,7 +483,8 @@ public class ValidatorClientService extends Service {
             blockContainerSigner,
             spec,
             validatorDutyMetrics,
-            eventChannels.getPublisher(ExecutionPayloadBidEventsChannel.class));
+            eventChannels.getPublisher(ExecutionPayloadBidEventsChannel.class),
+            builderConfigProvider);
     final boolean dvtSelectionsEndpointEnabled =
         config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final AttestationDutyFactory attestationDutyFactory =
