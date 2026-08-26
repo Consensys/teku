@@ -23,11 +23,11 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCou
 public class MetadataDasPeerCustodyTracker
     implements DasPeerCustodyCountSupplier, PeerConnectedSubscriber<Eth2Peer> {
 
-  private final int numberOfCustodyGroups;
-  private final Map<UInt256, Integer> connectedPeerSubnetCount = new ConcurrentHashMap<>();
+  private final int maximumCustodyGroupCount;
+  private final Map<UInt256, Integer> connectedPeerCustodyGroupCount = new ConcurrentHashMap<>();
 
-  public MetadataDasPeerCustodyTracker(final int numberOfCustodyGroups) {
-    this.numberOfCustodyGroups = numberOfCustodyGroups;
+  public MetadataDasPeerCustodyTracker(final int maximumCustodyGroupCount) {
+    this.maximumCustodyGroupCount = maximumCustodyGroupCount;
   }
 
   @Override
@@ -37,7 +37,7 @@ public class MetadataDasPeerCustodyTracker
   }
 
   private void peerDisconnected(final Eth2Peer peer) {
-    peer.getDiscoveryNodeId().ifPresent(connectedPeerSubnetCount::remove);
+    peer.getDiscoveryNodeId().ifPresent(connectedPeerCustodyGroupCount::remove);
   }
 
   private void onPeerMetadataUpdate(final Eth2Peer peer, final MetadataMessage metadata) {
@@ -48,12 +48,12 @@ public class MetadataDasPeerCustodyTracker
     final UInt256 nodeId = peer.getDiscoveryNodeId().get();
     metadata
         .getOptionalCustodyGroupCount()
-        .filter(subnetCount -> subnetCount.isLessThanOrEqualTo(numberOfCustodyGroups))
-        .ifPresent(subnetCount -> connectedPeerSubnetCount.put(nodeId, subnetCount.intValue()));
+        .filter(cgc -> cgc.isLessThanOrEqualTo(maximumCustodyGroupCount))
+        .ifPresent(cgc -> connectedPeerCustodyGroupCount.put(nodeId, cgc.intValue()));
   }
 
   @Override
   public int getCustodyGroupCountForPeer(final UInt256 nodeId) {
-    return connectedPeerSubnetCount.getOrDefault(nodeId, 0);
+    return connectedPeerCustodyGroupCount.getOrDefault(nodeId, 0);
   }
 }
