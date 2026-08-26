@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -159,6 +160,13 @@ public class SimpleSidecarRetriever
               reqRespCompleted(match.request, sidecar);
               if (err == null) {
                 match.peer.countSidecarReceived();
+              } else if (ExceptionUtil.hasCause(err, CancellationException.class)) {
+                // the request was cancelled by us because the sidecar was no longer needed (for
+                // example it arrived via gossip), so the peer must not be penalised for it
+                match.peer.discardSidecarRequest();
+                LOG.trace(
+                    "SimpleSidecarRetriever.Request cancelled for {}",
+                    () -> match.request.columnId);
               } else {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
@@ -391,6 +399,15 @@ public class SimpleSidecarRetriever
       if (current == Integer.MAX_VALUE) {
         resetCounters();
       }
+    }
+
+    /**
+     * Reverts a {@link #countSidecarRequest()} for a request which was cancelled on our side, so
+     * that the peer's response score is not affected by a response we stopped waiting for.
+     */
+    public void discardSidecarRequest() {
+      // counters could have been reset in between, so never go below the initial value
+      sidecarsRequested.updateAndGet(current -> Math.max(1, current - 1));
     }
 
     private void resetCounters() {

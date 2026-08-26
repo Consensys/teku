@@ -333,6 +333,59 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  void requestCancelledOnOurSideShouldNotAffectPeerScore() {
+    final TestPeer custodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1));
+    testPeerManager.connectPeer(custodyPeer);
+    final DataColumnSidecar sidecar = createSidecarAndAddToAllPeers(1, custodyPeer);
+    final SafeFuture<DataColumnSidecar> result =
+        simpleSidecarRetriever.retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+
+    advanceTimeGradually(retrieverRound);
+    final SimpleSidecarRetriever.ConnectedPeer connectedPeer =
+        simpleSidecarRetriever.getConnectedPeers().get(custodyPeer.getNodeId());
+    assertThat(custodyPeer.getRequests()).hasSize(1);
+    assertThat(connectedPeer.getSidecarsRequested()).hasValue(2);
+
+    // the sidecar arrives via gossip while the request is still in flight
+    simpleSidecarRetriever.onNewValidatedSidecar(sidecar, RemoteOrigin.GOSSIP);
+    advanceTimeGradually(Duration.ofMillis(1));
+
+    assertThat(result).isCompletedWithValue(sidecar);
+    assertThat(custodyPeer.getRequests().getFirst().response()).isCancelled();
+    // we cancelled the request, so the peer shouldn't be penalised for not responding
+    assertThat(connectedPeer.getSidecarsRequested()).hasValue(1);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(10);
+  }
+
+  @Test
+  void failedRequestShouldAffectPeerScore() {
+    final TestPeer custodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1));
+    testPeerManager.connectPeer(custodyPeer);
+    final DataColumnSidecar sidecar = createSidecarAndAddToAllPeers(1, custodyPeer);
+    simpleSidecarRetriever
+        .retrieve(DataColumnSlotAndIdentifier.fromDataColumn(sidecar))
+        .finish(err -> LOG.trace("Error retrieving sidecar", err));
+
+    advanceTimeGradually(retrieverRound);
+    final SimpleSidecarRetriever.ConnectedPeer connectedPeer =
+        simpleSidecarRetriever.getConnectedPeers().get(custodyPeer.getNodeId());
+    assertThat(custodyPeer.getRequests()).hasSize(1);
+
+    custodyPeer
+        .getRequests()
+        .getFirst()
+        .response()
+        .completeExceptionally(new RuntimeException("Peer error"));
+    advanceTimeGradually(Duration.ofMillis(1));
+
+    // the peer failed to respond, so the request must still count against its score
+    assertThat(connectedPeer.getSidecarsRequested()).hasValue(2);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(5);
+  }
+
+  @Test
   @SuppressWarnings("unused")
   void performanceTest() {
     final List<TestPeer> testNodes =
