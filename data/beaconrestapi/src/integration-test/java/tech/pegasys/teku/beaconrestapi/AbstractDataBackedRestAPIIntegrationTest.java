@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -89,6 +90,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
@@ -102,16 +104,19 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
+import tech.pegasys.teku.validator.coordinator.InclusionListFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
@@ -147,6 +152,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
+  protected final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   protected final AttestationManager attestationManager = mock(AttestationManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
@@ -185,6 +191,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
   protected final ProposerPreferencesManager proposerPreferencesManager =
       mock(ProposerPreferencesManager.class);
+  protected final SignedInclusionListPublisher signedInclusionListPublisher =
+      mock(SignedInclusionListPublisher.class);
+  protected final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
@@ -249,6 +258,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 spec,
                 new InlineEventThread(),
                 recentChainData,
+                new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE),
                 new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(spec, recentChainData),
                 storageSystem.getMetricsSystem());
@@ -283,6 +293,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .attestationManager(attestationManager)
             .activeValidatorChannel(activeValidatorChannel)
             .attestationPool(attestationPool)
+            .inclusionListPool(inclusionListManager)
             .attesterSlashingPool(attesterSlashingPool)
             .proposerSlashingPool(proposerSlashingPool)
             .voluntaryExitPool(voluntaryExitPool)
@@ -351,7 +362,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            executionProofManager);
+            executionProofManager,
+            signedInclusionListPublisher,
+            inclusionListFactory);
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();
     setupAndStartRestAPI();

@@ -45,6 +45,7 @@ class StoreTransactionUpdates {
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
+  private final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
@@ -65,6 +66,7 @@ class StoreTransactionUpdates {
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
+      final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
@@ -83,6 +85,8 @@ class StoreTransactionUpdates {
     checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
+    checkNotNull(
+        maybeUnsatisfiedInclusionListBlockRoot, "Unsatisfied inclusion lists are required");
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
@@ -98,6 +102,7 @@ class StoreTransactionUpdates {
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
+    this.maybeUnsatisfiedInclusionListBlockRoot = maybeUnsatisfiedInclusionListBlockRoot;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
@@ -141,6 +146,7 @@ class StoreTransactionUpdates {
     store.cacheBlocks(hotBlocks.values());
     store.cacheBlockStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     store.cacheBlobSidecars(blobSidecars);
+    maybeUnsatisfiedInclusionListBlockRoot.ifPresent(store::cacheUnsatisfiedInclusionListBlock);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(
           updateResult.getFinalizedOptimisticTransitionPayload());

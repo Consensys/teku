@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
@@ -224,6 +225,16 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       final boolean inSync,
       final ForkChoiceUpdateData forkChoiceUpdateData,
       final boolean mandatory) {
+    return calculatePayloadBuildingAttributes(
+        blockSlot, inSync, forkChoiceUpdateData, mandatory, List.of());
+  }
+
+  public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
+      final UInt64 blockSlot,
+      final boolean inSync,
+      final ForkChoiceUpdateData forkChoiceUpdateData,
+      final boolean mandatory,
+      final List<Bytes> inclusionListTransactions) {
     eventThread.checkOnEventThread();
     if (!inSync) {
       // We don't produce blocks while syncing so don't bother preparing the payload
@@ -245,7 +256,12 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
         .thenComposeAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
-                    currentHeadBlock, blockSlot, epoch, maybeState, mandatory),
+                    currentHeadBlock,
+                    blockSlot,
+                    epoch,
+                    maybeState,
+                    mandatory,
+                    inclusionListTransactions),
             eventThread);
   }
 
@@ -262,7 +278,8 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       final UInt64 blockSlot,
       final UInt64 epoch,
       final Optional<BeaconState> maybeState,
-      final boolean mandatory) {
+      final boolean mandatory,
+      final List<Bytes> inclusionListTransactions) {
     eventThread.checkOnEventThread();
     if (maybeState.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
@@ -300,7 +317,8 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
                         targetGasLimit,
                         validatorRegistration,
                         withdrawals,
-                        currentHeadBlock)),
+                        currentHeadBlock,
+                        inclusionListTransactions)),
             eventThread);
   }
 
@@ -399,5 +417,10 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
 
   public boolean isProposerDefaultFeeRecipientDefined() {
     return proposerDefaultFeeRecipient.isPresent();
+  }
+
+  public boolean isProposerForSlot(final UInt64 slot, final BeaconState state) {
+    final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, slot));
+    return preparedProposerInfoByValidatorIndex.containsKey(proposerIndex);
   }
 }

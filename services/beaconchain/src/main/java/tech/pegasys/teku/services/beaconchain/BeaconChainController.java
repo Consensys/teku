@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EX
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -98,6 +99,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.SignedInclusionListGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -131,6 +133,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -233,6 +236,7 @@ import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.lightclient.LightClientServerService;
 import tech.pegasys.teku.statetransition.lightclient.LightClientUpdateStore;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
@@ -267,6 +271,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
+import tech.pegasys.teku.statetransition.validation.SignedInclusionListValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -309,6 +314,8 @@ import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactoryGloas;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
+import tech.pegasys.teku.validator.coordinator.InclusionListFactory;
+import tech.pegasys.teku.validator.coordinator.InclusionListPayloadAttributesUpdater;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
@@ -321,6 +328,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisherGloas;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -370,6 +378,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Eth2P2PNetwork p2pNetwork;
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   protected volatile AggregatingAttestationPool aggregatingAttestationPool;
+  protected volatile InclusionListManager inclusionListManager;
+  protected volatile InclusionListStore inclusionListStore;
+  protected volatile SignedInclusionListValidator signedInclusionListValidator;
   protected volatile DepositProvider depositProvider;
   protected volatile SyncService syncService;
   protected volatile AttestationManager attestationManager;
@@ -400,6 +411,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
+  protected volatile InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater;
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
@@ -570,6 +582,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         parentExecutionPayloadDependency ->
             recentExecutionPayloadsFetcher.requestRecentExecutionPayload(
                 parentExecutionPayloadDependency.parentBeaconBlockRoot()));
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentExecutionPayloadsFetcher);
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
 
@@ -762,8 +775,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlobKzgCommitmentsProvider();
     initLightClientUpdateStore();
     initLightClientServerService();
-
     initAggregatingAttestationPool();
+    initInclusionListManager();
+    initInclusionListPayloadAttributesUpdater();
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
@@ -1626,6 +1640,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(aggregatingAttestationPool)
+            .inclusionListPool(inclusionListManager)
             .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
@@ -1705,11 +1720,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
+    final StoreConfig storeConfig = beaconConfig.storeConfig();
+    inclusionListStore = new InclusionListStore(storeConfig.getInclusionListCacheSize());
     forkChoice =
         new ForkChoice(
             spec,
             forkChoiceExecutor,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -1892,6 +1910,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
 
+    final SignedInclusionListGossipChannel signedInclusionListGossipChannel;
+    if (spec.isMilestoneSupported(SpecMilestone.HEZE)) {
+      signedInclusionListGossipChannel =
+          eventChannels.getPublisher(SignedInclusionListGossipChannel.class);
+    } else {
+      signedInclusionListGossipChannel = SignedInclusionListGossipChannel.NOOP;
+    }
+
     final Optional<BlockProductionMetrics> blockProductionMetrics =
         beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
             ? Optional.of(BlockProductionMetrics.create(metricsSystem))
@@ -1925,6 +1951,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManager,
             beaconConfig.p2pConfig().getDasPublishWithholdColumnsEverySlots(),
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
+
+    final InclusionListFactory inclusionListFactory =
+        new InclusionListFactory(executionLayer, combinedChainDataClient, spec);
+
+    final SignedInclusionListPublisher signedInclusionListPublisher =
+        new SignedInclusionListPublisher(
+            inclusionListManager, signedInclusionListGossipChannel, SYSTEM_TIME_PROVIDER);
 
     final ExecutionPayloadFactory executionPayloadFactory;
     final ExecutionPayloadPublisher executionPayloadPublisher;
@@ -1974,7 +2007,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionPayloadPublisher,
             executionPayloadBidManager,
             proposerPreferencesManager,
-            executionProofManager);
+            executionProofManager,
+            signedInclusionListPublisher,
+            inclusionListFactory);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
@@ -2151,6 +2186,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
+            .inclusionListManager(inclusionListManager)
             .blobKzgCommitmentsProvider(blobKzgCommitmentsProvider)
             .custodyGroupCountManagerSupplier(() -> custodyGroupCountManager)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
@@ -2176,9 +2212,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedProposerPreferencesProcessor(
                 (signedProposerPreferences, arrivalTimestamp) ->
                     proposerPreferencesManager.addRemote(signedProposerPreferences))
+            .gossipedInclusionListProcessor(
+                (signedInclusionList, arrivalTimestamp) ->
+                    SafeFuture.completedFuture(InternalValidationResult.ACCEPT))
             .gossipDasLogger(dasGossipLogger)
             .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
+            .gossipedInclusionListProcessor(inclusionListManager::addSignedInclusionList)
             .isSuperNodeSupplier(isSuperNodeSupplier)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
@@ -2258,6 +2298,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceTrigger,
             futureBlockProductionPreparationTrigger,
             forkChoiceNotifier,
+            inclusionListPayloadAttributesUpdater,
             p2pNetwork,
             slotEventsChannelPublisher,
             new EpochCachePrimer(spec, recentChainData, beaconAsyncRunner));
@@ -2286,6 +2327,25 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, aggregatingAttestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         aggregatingAttestationPool::onAttestationsIncludedInBlock);
+  }
+
+  protected void initInclusionListManager() {
+    LOG.debug("BeaconChainController.initInclusionListPool()");
+    final SignedInclusionListValidator signedInclusionListValidator =
+        new SignedInclusionListValidator(spec, recentChainData, signatureVerificationService);
+    inclusionListManager = new InclusionListManager(signedInclusionListValidator, forkChoice);
+    eventChannels.subscribe(SlotEventsChannel.class, inclusionListManager);
+  }
+
+  protected void initInclusionListPayloadAttributesUpdater() {
+    LOG.debug("BeaconChainController.initInclusionListPayloadAttributesUpdater()");
+    inclusionListPayloadAttributesUpdater =
+        new InclusionListPayloadAttributesUpdater(
+            forkChoiceNotifier,
+            proposersDataManager,
+            inclusionListStore,
+            combinedChainDataClient,
+            spec);
   }
 
   public void initRestAPI() {

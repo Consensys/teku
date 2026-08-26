@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.heze;
 
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
@@ -31,16 +30,14 @@ public class InclusionList
       final InclusionListSchema schema,
       final UInt64 slot,
       final UInt64 validatorIndex,
-      final Bytes32 inclusionListCommitteeRoot,
-      final List<Bytes> transactions) {
+      final Bytes32 dependentRoot,
+      final List<Transaction> transactions) {
     super(
         schema,
         SszUInt64.of(slot),
         SszUInt64.of(validatorIndex),
-        SszBytes32.of(inclusionListCommitteeRoot),
-        transactions.stream()
-            .map(schema.getTransactionSchema()::fromBytes)
-            .collect(schema.getTransactionsSchema().collector()));
+        SszBytes32.of(dependentRoot),
+        schema.getTransactionsSchema().createFromElements(transactions));
   }
 
   InclusionList(final InclusionListSchema type, final TreeNode backingNode) {
@@ -55,7 +52,7 @@ public class InclusionList
     return getField1().get();
   }
 
-  public Bytes32 getInclusionListCommitteeRoot() {
+  public Bytes32 getDependentRoot() {
     return getField2().get();
   }
 

@@ -54,6 +54,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
+  private final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot;
   private final Optional<Bytes32> maybeLatestCanonicalBlockRoot;
   private final Optional<UInt64> maybeCustodyGroupCount;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
@@ -83,6 +84,7 @@ class StoreTransactionUpdatesFactory {
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
     hotExecutionPayloads = new ConcurrentHashMap<>(tx.executionPayloadData);
+    maybeUnsatisfiedInclusionListBlockRoot = tx.maybeUnsatisfiedInclusionListBlockRoot;
   }
 
   public static StoreTransactionUpdates create(
@@ -281,6 +283,7 @@ class StoreTransactionUpdatesFactory {
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
         stateRoots,
+        maybeUnsatisfiedInclusionListBlockRoot,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,

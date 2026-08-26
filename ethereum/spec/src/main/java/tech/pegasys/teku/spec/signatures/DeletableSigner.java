@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -143,6 +144,12 @@ public class DeletableSigner implements Signer {
   public SafeFuture<BLSSignature> signBuilderRequestAuth(
       final BuilderRequestAuth builderRequestAuth) {
     return sign(() -> delegate.signBuilderRequestAuth(builderRequestAuth));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionList(
+      final InclusionList inclusionList, final ForkInfo forkInfo) {
+    return sign(() -> delegate.signInclusionList(inclusionList, forkInfo));
   }
 
   @Override

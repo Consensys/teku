@@ -90,8 +90,12 @@ public class BeaconStateSchemaGloas
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    super(
-        "BeaconStateGloas", ACTIVE_FIELDS, getUniqueFields(specConfig, schemaRegistry), specConfig);
+    this("BeaconStateGloas", specConfig, schemaRegistry);
+  }
+
+  protected BeaconStateSchemaGloas(
+      final String schemaName, final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super(schemaName, ACTIVE_FIELDS, getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
   private static SszField toProgressiveListFieldIfListed(final SszField field) {

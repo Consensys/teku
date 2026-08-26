@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderDepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.BuilderExitRequest;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -84,6 +85,7 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 
 @TestSpecContext(
     milestone = {
@@ -123,11 +125,14 @@ public class BlockGossipValidatorTest {
       return;
     }
     final InlineEventThread eventThread = new InlineEventThread();
+    final InclusionListStore inclusionListStore =
+        new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

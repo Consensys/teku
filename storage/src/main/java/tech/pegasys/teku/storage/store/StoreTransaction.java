@@ -77,6 +77,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
+  Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot = Optional.empty();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
@@ -119,6 +120,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     executionPayloadData.put(
         executionPayload.getBeaconBlockRoot(),
         new ExecutionPayloadUpdate(executionPayload, executionOptimistic));
+  }
+
+  @Override
+  public void putUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    this.maybeUnsatisfiedInclusionListBlockRoot = Optional.of(blockRoot);
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -533,6 +539,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return store.isFfgCompetitive(headRoot, parentRoot);
+  }
+
+  @Override
+  public boolean satisfiesInclusionList(final Bytes32 blockRoot) {
+    return store.satisfiesInclusionList(blockRoot);
+  }
+
+  @Override
+  public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
+    return store.getInclusionListAttesterHead(headRoot);
   }
 
   @Override

@@ -76,6 +76,8 @@ public interface MutableStore extends ReadOnlyStore {
   void putExecutionPayload(
       SignedExecutionPayloadEnvelope executionPayload, boolean executionOptimistic);
 
+  void putUnsatisfiedInclusionListBlock(Bytes32 blockRoot);
+
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
   void pullUpBlockCheckpoints(Bytes32 blockRoot);

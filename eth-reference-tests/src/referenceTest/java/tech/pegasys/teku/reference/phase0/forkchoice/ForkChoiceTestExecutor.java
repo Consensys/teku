@@ -75,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -119,6 +120,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ForkChoiceTestExecutor implements TestExecutor {
@@ -274,11 +276,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 fastConfirmationTracker
                     .getFastConfirmationStore()
                     .map(FastConfirmationStore::confirmedRoot));
+    final InclusionListStore inclusionListStore =
+        new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             new NoopForkChoiceNotifier(),
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),

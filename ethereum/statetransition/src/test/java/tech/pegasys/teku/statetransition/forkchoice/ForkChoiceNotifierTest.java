@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -195,7 +196,7 @@ class ForkChoiceNotifierTest {
     final PayloadBuildingAttributes payloadBuildingAttributes =
         withProposerForSlot(forkChoiceState, headState, blockSlot);
 
-    notifyForkChoiceUpdated(forkChoiceState);
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
   }
@@ -790,6 +791,48 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  void getPayloadId_shouldRefreshPayloadAttributesWithInclusionLists() {
+    final Bytes8 initialPayloadId = dataStructureUtil.randomBytes8();
+    final Bytes8 updatedPayloadId = dataStructureUtil.randomBytes8();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes initialPayloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+    final List<Bytes> inclusionListTransactions =
+        List.of(Bytes.fromHexString("0x01"), Bytes.fromHexString("0x02"));
+    final PayloadBuildingAttributes updatedPayloadBuildingAttributes =
+        withInclusionListTransactions(initialPayloadBuildingAttributes, inclusionListTransactions);
+
+    final SafeFuture<ForkChoiceUpdatedResult> initialResponseFuture = new SafeFuture<>();
+    final SafeFuture<ForkChoiceUpdatedResult> updatedResponseFuture = new SafeFuture<>();
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(initialPayloadBuildingAttributes)))
+        .thenReturn(initialResponseFuture);
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(updatedPayloadBuildingAttributes)))
+        .thenReturn(updatedResponseFuture);
+
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+    initialResponseFuture.complete(
+        createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(initialPayloadId)));
+
+    final SafeFuture<Optional<ExecutionPayloadContext>> updatedExecutionPayloadContext =
+        notifier.getPayloadId(
+            ForkChoiceNode.createBase(blockRoot), blockSlot, inclusionListTransactions);
+    assertThatSafeFuture(updatedExecutionPayloadContext).isNotCompleted();
+
+    updatedResponseFuture.complete(
+        createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(updatedPayloadId)));
+
+    assertThatSafeFuture(updatedExecutionPayloadContext)
+        .isCompletedWithOptionalContaining(
+            new ExecutionPayloadContext(
+                updatedPayloadId, forkChoiceState, updatedPayloadBuildingAttributes));
+  }
+
+  @Test
   void getPayloadId_shouldReturnLatestPayloadIdWithValidatorRegistration() {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
@@ -1261,7 +1304,24 @@ class ForkChoiceNotifierTest {
             .orElse(UInt64.ZERO),
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
-        forkChoiceState.headBlock());
+        forkChoiceState.headBlock(),
+        List.of());
+  }
+
+  private PayloadBuildingAttributes withInclusionListTransactions(
+      final PayloadBuildingAttributes payloadBuildingAttributes,
+      final List<Bytes> inclusionListTransactions) {
+    return new PayloadBuildingAttributes(
+        payloadBuildingAttributes.proposerIndex(),
+        payloadBuildingAttributes.proposalSlot(),
+        payloadBuildingAttributes.timestamp(),
+        payloadBuildingAttributes.prevRandao(),
+        payloadBuildingAttributes.feeRecipient(),
+        payloadBuildingAttributes.targetGasLimit(),
+        payloadBuildingAttributes.validatorRegistration(),
+        payloadBuildingAttributes.withdrawals(),
+        payloadBuildingAttributes.parentBeaconBlock(),
+        inclusionListTransactions);
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {

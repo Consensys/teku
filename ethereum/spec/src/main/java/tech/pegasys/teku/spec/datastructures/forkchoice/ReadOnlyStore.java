@@ -163,4 +163,8 @@ public interface ReadOnlyStore extends TimeProvider {
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
+
+  boolean satisfiesInclusionList(Bytes32 blockRoot);
+
+  Optional<Bytes32> getInclusionListAttesterHead(Bytes32 headRoot);
 }

@@ -29,6 +29,8 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
+import tech.pegasys.teku.validator.coordinator.InclusionListPayloadAttributesUpdater;
 
 public class SlotProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -49,6 +52,7 @@ public class SlotProcessor {
   private final ForkChoiceTrigger forkChoiceTrigger;
   private final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
+  private final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
@@ -69,6 +73,7 @@ public class SlotProcessor {
       final ForkChoiceTrigger forkChoiceTrigger,
       final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EpochCachePrimer epochCachePrimer,
@@ -79,6 +84,7 @@ public class SlotProcessor {
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.futureBlockProductionPreparationTrigger = futureBlockProductionPreparationTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
+    this.inclusionListPayloadAttributesUpdater = inclusionListPayloadAttributesUpdater;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.epochCachePrimer = epochCachePrimer;
@@ -92,6 +98,7 @@ public class SlotProcessor {
       final ForkChoiceTrigger forkChoiceTrigger,
       final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EpochCachePrimer epochCachePrimer) {
@@ -102,6 +109,7 @@ public class SlotProcessor {
         forkChoiceTrigger,
         futureBlockProductionPreparationTrigger,
         forkChoiceNotifier,
+        inclusionListPayloadAttributesUpdater,
         p2pNetwork,
         slotEventsChannelPublisher,
         epochCachePrimer,
@@ -117,6 +125,9 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
+  // onInclusionListDue refreshes payload attributes with inclusion lists and returns the updated
+  // payload id, but the caller does not need it
+  @SuppressWarnings({"FutureReturnValueIgnored"})
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
 
@@ -151,10 +162,16 @@ public class SlotProcessor {
 
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       processSlotAttestation(performanceRecord);
-      if (miscHelpers.shouldIncrementNodeSlotWhenAttestationsAreDue()) {
+      if (miscHelpers.shouldIncrementNodeSlotWhenAttestationsAreDue()
+          && spec.atSlot(calculatedSlot).getMilestone().isLessThan(SpecMilestone.HEZE)) {
         nodeSlot.inc();
       }
       performanceRecord.ifPresent(TickProcessingPerformance::attestationsDueComplete);
+    }
+
+    if (isSlotInclusionListDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
+      inclusionListPayloadAttributesUpdater.onInclusionListDue(calculatedSlot);
+      nodeSlot.inc();
     }
 
     if (isSlotPayloadAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
@@ -245,7 +262,22 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
-  // Attestations are due 1/3 (1/4 in Gloas) of the way through the slots time period
+  // Inclusion list payload attribute refreshes are due at the inclusion list deadline.
+  boolean isSlotInclusionListDue(
+      final UInt64 calculatedSlot,
+      final UInt64 currentTimeMillis,
+      final UInt64 nodeSlotStartTimeMillis) {
+    final SpecVersion specVersion = spec.atSlot(calculatedSlot);
+    if (spec.getForkSchedule().getHighestSupportedMilestone().isLessThan(SpecMilestone.HEZE)
+        || specVersion.getMilestone().isLessThan(SpecMilestone.HEZE)) {
+      return false;
+    }
+    final UInt64 earliestTimeInMillis =
+        nodeSlotStartTimeMillis.plus(spec.getInclusionListDueMillis(calculatedSlot).orElseThrow());
+    return spec.isTimeReached(currentTimeMillis, earliestTimeInMillis);
+  }
+
+  // Attestations are due 1/3 of the way through the slots time period
   boolean isSlotAttestationDue(
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,
@@ -334,7 +366,7 @@ public class SlotProcessor {
         .getChainHead()
         .ifPresent(
             (head) ->
-                eventLog.slotEvent(
+                eventLog.slotBlockEvent(
                     nodeSlot.getValue(),
                     head.getSlot(),
                     head.getRoot(),

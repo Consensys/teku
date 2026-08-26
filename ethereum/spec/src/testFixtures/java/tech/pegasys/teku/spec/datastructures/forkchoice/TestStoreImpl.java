@@ -316,6 +316,16 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public boolean satisfiesInclusionList(final Bytes32 blockRoot) {
+    return false;
+  }
+
+  @Override
+  public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
@@ -348,6 +358,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public void putExecutionPayload(
       final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     executionPayloads.put(executionPayload.getBeaconBlockRoot(), executionPayload);
+  }
+
+  @Override
+  public void putUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    // NO-OP
   }
 
   @Override

@@ -24,10 +24,12 @@ public class PayloadStatus {
           Optional.of(ExecutionPayloadStatus.VALID),
           Optional.empty(),
           Optional.empty(),
+          Optional.empty(),
           Optional.empty());
   public static final PayloadStatus SYNCING =
       new PayloadStatus(
           Optional.of(ExecutionPayloadStatus.SYNCING),
+          Optional.empty(),
           Optional.empty(),
           Optional.empty(),
           Optional.empty());
@@ -36,11 +38,12 @@ public class PayloadStatus {
           Optional.of(ExecutionPayloadStatus.ACCEPTED),
           Optional.empty(),
           Optional.empty(),
+          Optional.empty(),
           Optional.empty());
 
   public static PayloadStatus failedExecution(final Throwable cause) {
     return new PayloadStatus(
-        Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(cause));
+        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(cause));
   }
 
   public static PayloadStatus invalid(
@@ -49,6 +52,7 @@ public class PayloadStatus {
         Optional.of(ExecutionPayloadStatus.INVALID),
         latestValidHash,
         validationError,
+        Optional.empty(),
         Optional.empty());
   }
 
@@ -58,6 +62,19 @@ public class PayloadStatus {
         Optional.of(ExecutionPayloadStatus.VALID),
         latestValidHash,
         validationError,
+        Optional.empty(),
+        Optional.empty());
+  }
+
+  public static PayloadStatus valid(
+      final Optional<Bytes32> latestValidHash,
+      final Optional<String> validationError,
+      final Optional<Boolean> inclusionListSatisfied) {
+    return new PayloadStatus(
+        Optional.of(ExecutionPayloadStatus.VALID),
+        latestValidHash,
+        validationError,
+        inclusionListSatisfied,
         Optional.empty());
   }
 
@@ -65,23 +82,38 @@ public class PayloadStatus {
       final ExecutionPayloadStatus status,
       final Optional<Bytes32> latestValidHash,
       final Optional<String> validationError) {
+    return create(status, latestValidHash, validationError, Optional.empty());
+  }
+
+  public static PayloadStatus create(
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash,
+      final Optional<String> validationError,
+      final Optional<Boolean> inclusionListSatisfied) {
     return new PayloadStatus(
-        Optional.of(status), latestValidHash, validationError, Optional.empty());
+        Optional.of(status),
+        latestValidHash,
+        validationError,
+        inclusionListSatisfied,
+        Optional.empty());
   }
 
   private final Optional<ExecutionPayloadStatus> status;
   private final Optional<Bytes32> latestValidHash;
   private final Optional<String> validationError;
+  private final Optional<Boolean> inclusionListSatisfied;
   private final Optional<Throwable> failureCause;
 
   private PayloadStatus(
       final Optional<ExecutionPayloadStatus> status,
       final Optional<Bytes32> latestValidHash,
       final Optional<String> validationError,
+      final Optional<Boolean> inclusionListSatisfied,
       final Optional<Throwable> failureCause) {
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.validationError = validationError;
+    this.inclusionListSatisfied = inclusionListSatisfied;
     this.failureCause = failureCause;
   }
 
@@ -121,6 +153,10 @@ public class PayloadStatus {
     return validationError;
   }
 
+  public Optional<Boolean> getInclusionListSatisfied() {
+    return inclusionListSatisfied;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -133,12 +169,14 @@ public class PayloadStatus {
     return Objects.equals(status, that.status)
         && Objects.equals(latestValidHash, that.latestValidHash)
         && Objects.equals(validationError, that.validationError)
+        && Objects.equals(inclusionListSatisfied, that.inclusionListSatisfied)
         && Objects.equals(failureCause, that.failureCause);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, latestValidHash, validationError, failureCause);
+    return Objects.hash(
+        status, latestValidHash, validationError, inclusionListSatisfied, failureCause);
   }
 
   @Override
@@ -147,6 +185,7 @@ public class PayloadStatus {
         .add("status", status)
         .add("latestValidHash", latestValidHash)
         .add("validationError", validationError)
+        .add("inclusionListSatisfied", inclusionListSatisfied)
         .add("failureCause", failureCause)
         .toString();
   }

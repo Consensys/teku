@@ -41,6 +41,8 @@ public abstract class CacheableStore implements UpdatableStore {
 
   abstract void cacheBlockStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
 
+  abstract void cacheUnsatisfiedInclusionListBlock(Bytes32 blockRoot);
+
   abstract void cacheBlobSidecars(Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap);
 
   abstract void cacheFinalizedOptimisticTransitionPayload(

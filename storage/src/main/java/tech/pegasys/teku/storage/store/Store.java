@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -116,6 +118,8 @@ class Store extends CacheableStore {
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  private final Set<Bytes32> unsatisfiedInclusionListBlocks;
+
   private UInt64 timeMillis;
   private UInt64 genesisTime;
   private AnchorPoint finalizedAnchor;
@@ -155,7 +159,8 @@ class Store extends CacheableStore {
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> custodyGroupCount,
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
+      final Set<Bytes32> unsatisfiedInclusionListBlocks) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -180,6 +185,7 @@ class Store extends CacheableStore {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.blobSidecars = blobSidecars;
+    this.unsatisfiedInclusionListBlocks = unsatisfiedInclusionListBlocks;
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -309,6 +315,9 @@ class Store extends CacheableStore {
     final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
+    final Set<Bytes32> unsatisfiedInclusionListBlocks =
+        LimitedSet.createSynchronizedNatural(config.getInclusionListCacheSize());
+
     return new Store(
         metricsSystem,
         spec,
@@ -333,7 +342,8 @@ class Store extends CacheableStore {
         maybeEpochStates,
         blobSidecars,
         custodyGroupCount,
-        executionPayloads);
+        executionPayloads,
+        unsatisfiedInclusionListBlocks);
   }
 
   static UpdatableStore create(
@@ -743,6 +753,20 @@ class Store extends CacheableStore {
         headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
   }
 
+  @Override
+  public boolean satisfiesInclusionList(final Bytes32 blockRoot) {
+    return !unsatisfiedInclusionListBlocks.contains(blockRoot);
+  }
+
+  @Override
+  public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
+    if (!satisfiesInclusionList(headRoot)) {
+      return getBlockIfAvailable(headRoot).map(SignedBeaconBlock::getParentRoot);
+    } else {
+      return Optional.of(headRoot);
+    }
+  }
+
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
     readLock.lock();
     try {
@@ -868,6 +892,12 @@ class Store extends CacheableStore {
         .map(BlockAndCheckpoints::getBlock)
         .forEach(block -> blocks.put(block.getRoot(), block));
     blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    unsatisfiedInclusionListBlocks.add(blockRoot);
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

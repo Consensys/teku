@@ -40,6 +40,8 @@ class SignedExecutionPayloadEnvelopeTest {
         .isEqualTo(originalSignedExecutionPayloadEnvelope.hashTreeRoot());
     assertThat(signedBlindedExecutionPayloadEnvelope.getMessage().getPayloadHeader().hashTreeRoot())
         .isEqualTo(originalSignedExecutionPayloadEnvelope.getMessage().getPayload().hashTreeRoot());
+    assertThat(signedBlindedExecutionPayloadEnvelope.getParentBeaconBlockRoot())
+        .isEqualTo(originalSignedExecutionPayloadEnvelope.getParentBeaconBlockRoot());
     assertThatNoException().isThrownBy(signedBlindedExecutionPayloadEnvelope::sszSerialize);
     assertThatNoException()
         .isThrownBy(

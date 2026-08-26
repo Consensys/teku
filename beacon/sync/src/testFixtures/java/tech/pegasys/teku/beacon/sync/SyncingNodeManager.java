@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -85,6 +86,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 public class SyncingNodeManager {
@@ -140,6 +142,7 @@ public class SyncingNodeManager {
             spec,
             new InlineEventThread(),
             recentChainData,
+            new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE),
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             metricsSystem);

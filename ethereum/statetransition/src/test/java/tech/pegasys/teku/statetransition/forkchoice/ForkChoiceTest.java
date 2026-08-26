@@ -87,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -132,6 +133,7 @@ import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
@@ -159,6 +161,8 @@ class ForkChoiceTest {
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
   private final DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
+  private final InclusionListStore inclusionListStore =
+      new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
@@ -193,6 +197,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -458,7 +463,7 @@ class ForkChoiceTest {
     final BlockProcessor blockProcessor = mock(BlockProcessor.class);
     when(spec.getBlockProcessor(blockAndState.getSlot())).thenReturn(blockProcessor);
     final Exception blockException = new StateTransitionException("error!");
-    when(blockProcessor.processAndValidateBlock(any(), any(), any(), any()))
+    when(blockProcessor.processAndValidateBlock(any(), any(), any(), any(), any()))
         .thenThrow(blockException);
 
     importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
@@ -571,6 +576,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1219,6 +1225,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1264,6 +1271,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1791,6 +1799,56 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onExecutionPayloadEnvelope_shouldRecordUnsatisfiedInclusionListWithoutRejectingPayload() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalHeze(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+    executionLayer.setPayloadStatus(
+        PayloadStatus.valid(Optional.empty(), Optional.empty(), Optional.of(false)));
+
+    importPayload(targetBlock);
+
+    assertThat(recentChainData.getStore().satisfiesInclusionList(targetBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void onForkChoiceUpdatedResult_shouldRecordDelayedUnsatisfiedInclusionListResult() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalHeze(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+    executionLayer.setPayloadStatus(PayloadStatus.ACCEPTED);
+    importPayload(targetBlock);
+
+    final ForkChoiceNode fullNode = ForkChoiceNode.createFull(targetBlock.getRoot());
+    final PayloadStatus validButUnsatisfied =
+        PayloadStatus.valid(Optional.empty(), Optional.empty(), Optional.of(false));
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                fullNode,
+                targetBlock.getSlot(),
+                UInt64.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(validButUnsatisfied, Optional.empty()))));
+
+    assertThat(recentChainData.getStore().satisfiesInclusionList(targetBlock.getRoot())).isFalse();
+  }
+
+  @Test
   void applyIndexedAttestations_gloasFullVoteShouldNotApplyWhenExecutionPayloadMissing() {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
@@ -2023,6 +2081,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            inclusionListStore,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

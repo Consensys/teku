@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.heze.util.InclusionListUtil;
 
 public interface SpecLogic {
   Optional<StateUpgrade<?>> getStateUpgrade();
@@ -96,4 +97,6 @@ public interface SpecLogic {
   Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil();
 
   ProposerPreferencesUtil getProposerPreferencesUtil();
+
+  Optional<InclusionListUtil> getInclusionListUtil();
 }

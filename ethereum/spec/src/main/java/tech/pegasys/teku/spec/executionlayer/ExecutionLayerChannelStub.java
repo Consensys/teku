@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -69,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -407,6 +410,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
+  public SafeFuture<List<Transaction>> engineGetInclusionList(
+      final Bytes32 parentHash, final UInt64 slot) {
+    return SafeFuture.completedFuture(generateInclusionListTransactions(slot));
+  }
+
+  @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     offlineCheck();
@@ -626,6 +635,33 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .orElseThrow(
             () ->
                 new RuntimeException(String.format("payloadId %s not found in cache", payloadId)));
+  }
+
+  public List<Transaction> generateInclusionListTransactions(final UInt64 slot) {
+    final SpecConfigHeze specConfigHeze =
+        spec.atSlot(slot).getConfig().toVersionHeze().orElseThrow();
+    final SszByteListSchema<Transaction> transactionSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionHeze()
+            .orElseThrow()
+            .getExecutionPayloadSchema()
+            .getTransactionSchema();
+    final int maxTransactionsSize = specConfigHeze.getMaxTransactionsBytesPerInclusionList();
+    final List<Transaction> transactions = new ArrayList<>();
+    int currentTransactionsSize = 0;
+    while (transactions.size() < specConfigHeze.getMaxTransactionsPerPayload()
+        && currentTransactionsSize < maxTransactionsSize) {
+      final Bytes transaction = Bytes.random(random.nextInt(10, maxTransactionsSize + 1));
+      final int remainingSize = maxTransactionsSize - currentTransactionsSize;
+      if (transaction.size() <= remainingSize) {
+        transactions.add(transactionSchema.fromBytes(transaction));
+        currentTransactionsSize += transaction.size();
+      } else if (!transactions.isEmpty()) {
+        break;
+      }
+    }
+    return transactions;
   }
 
   private List<Bytes> generateTransactions(
