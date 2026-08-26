@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import fetch from "node-fetch";
 import config from "./config.js";
 
@@ -10,6 +11,8 @@ async function main() {
     const {distDir, specs, versions} = cfg;
 
     prepareDistDir(distDir);
+
+    copyIndexHtml(distDir);
 
     specs.forEach(function (spec) {
       copySpecFileToDist(spec);
@@ -40,6 +43,10 @@ function prepareDistDir(dirPath) {
     fs.rmdirSync(dirPath, {recursive: true});
   }
   fs.mkdirSync(dirPath, {recursive: true});
+}
+
+function copyIndexHtml(distDir) {
+  fs.copyFileSync(new URL("./index.html", import.meta.url).pathname, path.join(distDir, "index.html"));
 }
 
 function copySpecFileToDist(spec) {
