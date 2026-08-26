@@ -102,6 +102,8 @@ public class ExecutionPayloadGossipValidatorTest {
     final Bytes32 signingRoot = Bytes32.random();
     when(miscHelpers.computeSigningRoot(eq(envelope), any())).thenReturn(signingRoot);
     when(specVersion.miscHelpers()).thenReturn(miscHelpers);
+    // Real config so the execution request and withdrawal limit rules see actual limits
+    when(specVersion.getConfig()).thenReturn(specContext.getSpec().atSlot(slot).getConfig());
     when(spec.atSlot(slot)).thenReturn(specVersion);
     when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
             any(), any(), any(), any()))
