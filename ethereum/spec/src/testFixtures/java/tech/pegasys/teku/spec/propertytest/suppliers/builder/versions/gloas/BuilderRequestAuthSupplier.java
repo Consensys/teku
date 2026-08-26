@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderRequestAuth;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedRequestAuthSupplier extends DataStructureUtilSupplier<SignedRequestAuth> {
-  public SignedRequestAuthSupplier() {
-    super(DataStructureUtil::randomSignedRequestAuth, SpecMilestone.GLOAS);
+public class BuilderRequestAuthSupplier extends DataStructureUtilSupplier<BuilderRequestAuth> {
+  public BuilderRequestAuthSupplier() {
+    super(DataStructureUtil::randomBuilderRequestAuth, SpecMilestone.GLOAS);
   }
 }

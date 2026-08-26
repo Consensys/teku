@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -85,6 +87,26 @@ public class FastConfirmationTracker {
    * the first update after (re)initialization.
    */
   private final AtomicReference<UInt64> lastProcessedSlot = new AtomicReference<>();
+
+  /**
+   * Whether a confirmation has landed beyond the finalized block since (re)initialization, i.e. the
+   * rule has produced a real result rather than falling back to finality.
+   *
+   * <p>Used to mark a slot as still warming up. {@link FastConfirmationStore#create} seeds {@code
+   * confirmed_root} and every checkpoint from the finalized checkpoint, and the store only sheds
+   * those seeded values through an epoch-boundary pipeline: {@code
+   * previousEpochGreatestUnrealizedCheckpoint} is written on the last slot of an epoch and folded
+   * into {@code currentEpochObservedJustifiedCheckpoint} at the next epoch start. Meanwhile a
+   * seeded {@code confirmed_root} that is more than one epoch old cannot be advanced at all ({@code
+   * get_latest_confirmed} reverts it to finalized and skips {@code findLatestConfirmedDescendant}),
+   * so it stays pinned to finality until an epoch start restarts it from an observed justified
+   * checkpoint. In practice that takes up to two epoch boundaries.
+   *
+   * <p>Deliberately keyed on that observable outcome rather than on the rotation of the underlying
+   * variables: the variables can be refreshed a full epoch before {@code confirmed_root} is able to
+   * move, which would clear the marker while the node still reports a stale confirmed root.
+   */
+  private final AtomicBoolean warmedUp = new AtomicBoolean(false);
 
   private final Optional<AsyncRunner> asyncRunner;
 
@@ -159,11 +181,20 @@ public class FastConfirmationTracker {
     return enabled;
   }
 
+  /**
+   * Whether the rule is still warming up, i.e. has yet to confirm beyond the finalized block since
+   * (re)initialization. See {@link #warmedUp}.
+   */
+  public boolean isWarmingUp() {
+    return enabled && !warmedUp.get();
+  }
+
   public void initialize(final ReadOnlyStore store) {
     if (!enabled) {
       return;
     }
     lastProcessedSlot.set(null);
+    warmedUp.set(false);
     fastConfirmationStore.set(FastConfirmationStore.create(store));
   }
 
@@ -242,6 +273,25 @@ public class FastConfirmationTracker {
    */
   private Duration updateTimeout(final UInt64 slot) {
     return Duration.ofMillis(spec.getSlotDurationMillis(slot) / 2L);
+  }
+
+  /**
+   * Runs the {@code on_fast_confirmation} handler for the given slot head immediately, bypassing
+   * both the async runner and the once-per-slot guard that {@link #onSlot} applies.
+   *
+   * <p>Only for the fork choice reference test runner, which must reproduce the call sequence the
+   * vectors were generated with: the spec test harness invokes {@code on_fast_confirmation}
+   * explicitly, and a few vectors call it twice within a slot or skip a slot entirely, so the
+   * production once-per-slot schedule would produce a different number of rotations. Production
+   * scheduling (and its once-per-slot guarantee) goes through {@link #onSlot}.
+   */
+  @VisibleForTesting
+  public SafeFuture<Void> onFastConfirmation(final UInt64 slot, final Bytes32 headRoot) {
+    final FastConfirmationStore currentStore = fastConfirmationStore.get();
+    if (currentStore == null) {
+      throw new IllegalStateException("Fast confirmation store is not initialized");
+    }
+    return runFastConfirmation(new FastConfirmationInput(slot, headRoot), currentStore);
   }
 
   private SafeFuture<Void> processFastConfirmationInput(final FastConfirmationInput input) {
@@ -359,11 +409,12 @@ public class FastConfirmationTracker {
     }
 
     LOG.info(
-        "Fast confirmation update for slot {}: head={}, confirmed_root={}, confirmed_slot={}",
+        "Fast confirmation update for slot {}: head={}, confirmed_root={}, confirmed_slot={}{}",
         input.slot(),
         input.headRoot(),
         confirmedRoot,
-        confirmedSlot);
+        confirmedSlot,
+        warmedUp.get() ? "" : " (warmup stage)");
 
     // The fast_confirmation event is emitted every time the algorithm runs, regardless of whether
     // the confirmed block changed (per the Beacon API event stream spec).
@@ -443,7 +494,12 @@ public class FastConfirmationTracker {
       final Bytes32 finalizedRoot) {
     if (confirmedRoot.equals(finalizedRoot)) {
       fallbacksCounter.inc();
-    } else if (confirmedRoot.equals(fcrStore.currentEpochObservedJustifiedCheckpoint().getRoot())) {
+      return;
+    }
+    // Confirmed beyond finality, so the rule is no longer running on the values seeded at
+    // (re)initialization. Set once and never cleared for the rest of this initialization.
+    warmedUp.set(true);
+    if (confirmedRoot.equals(fcrStore.currentEpochObservedJustifiedCheckpoint().getRoot())) {
       restartsCounter.inc();
     }
   }

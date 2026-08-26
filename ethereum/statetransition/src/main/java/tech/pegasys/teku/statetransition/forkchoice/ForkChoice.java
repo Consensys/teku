@@ -669,11 +669,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
 
-    // Verify the execution payload envelope
+    // Verify the execution payload envelope. Use the spec-configured verifier (SIMPLE in
+    // production) rather than hardcoding it, so reference tests with bls_setting: 2 can disable
+    // signature verification the same way every other verification path does.
+    final BLSSignatureVerifier envelopeSignatureVerifier =
+        spec.atSlot(signedEnvelope.getSlot()).getConfig().getBLSSignatureVerifier();
     try {
       spec.getExecutionPayloadVerifier(signedEnvelope.getSlot())
           .verifyExecutionPayloadEnvelope(
-              signedEnvelope, state, BLSSignatureVerifier.SIMPLE, Optional.of(payloadExecutor));
+              signedEnvelope, state, envelopeSignatureVerifier, Optional.of(payloadExecutor));
     } catch (final ExecutionPayloadVerificationException ex) {
       final ExecutionPayloadImportResult result =
           ExecutionPayloadImportResult.failedVerification(ex);
@@ -1409,20 +1413,32 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
    */
   private void updateFastConfirmationForProposalSlot(
       final UInt64 slot, final ChainHead canonicalHead) {
-    if (!fastConfirmationTracker.isEnabled()) {
+    if (!fastConfirmationTracker.isEnabled() || !forkChoiceFastConfirmation.isRunning()) {
       return;
     }
     onForkChoiceThread(
             () ->
                 fastConfirmationTracker
                     .onSlot(slot, canonicalHead.getRoot())
-                    .finish(
-                        error ->
-                            LOG.error(
-                                "Fast confirmation update for proposal slot {} failed",
-                                slot,
-                                error)))
-        .finishError(LOG);
+                    .finish(error -> logFastConfirmationProposalSlotFailure(slot, error)))
+        .finish(error -> logFastConfirmationProposalSlotFailure(slot, error));
+  }
+
+  private void logFastConfirmationProposalSlotFailure(final UInt64 slot, final Throwable error) {
+    if (forkChoiceFastConfirmation.isRunning()) {
+      LOG.error("Fast confirmation update for proposal slot {} failed", slot, error);
+    } else {
+      LOG.debug(
+          "Fast confirmation update for proposal slot {} abandoned during shutdown", slot, error);
+    }
+  }
+
+  /**
+   * The fast confirmation pipeline driven by {@link #onTick}. Its lifecycle is owned by the beacon
+   * chain controller, which must stop it before stopping the fork-choice event thread.
+   */
+  public ForkChoiceFastConfirmation getFastConfirmationService() {
+    return forkChoiceFastConfirmation;
   }
 
   /**

@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -231,7 +232,10 @@ public class BatchImporter {
    * next batch may be built on top of empty slots - so the envelope is fetched by root, imported,
    * and the block import is retried once. If the envelope cannot be fetched or imported, the
    * original failure is returned unless the recovered envelope import fails execution or reports
-   * data unavailable, in which case that failure is forwarded to the batch result.
+   * data unavailable, in which case that failure is forwarded to the batch result. Failures of the
+   * envelope import itself or of the retried block import are not swallowed - they complete the
+   * batch import exceptionally, as does a cancellation of the batch while the envelope is being
+   * fetched.
    */
   private SafeFuture<BlockImportResult> importBlockWithParentExecutionPayloadRecovery(
       final SignedBeaconBlock block,
@@ -266,11 +270,11 @@ public class BatchImporter {
       final CancellableBatchImportFuture batchImportFuture) {
     return trackActiveTask(
             source.requestExecutionPayloadEnvelopeByRoot(block.getParentRoot()), batchImportFuture)
+        .exceptionallyCompose(error -> handleParentExecutionPayloadRequestError(block, error))
         .thenCompose(
             maybeExecutionPayload ->
                 handleParentExecutionPayloadResponse(
-                    block, result, batchImportFuture, maybeExecutionPayload))
-        .exceptionally(error -> handleParentExecutionPayloadRecoveryError(block, result, error));
+                    block, result, batchImportFuture, maybeExecutionPayload));
   }
 
   private SafeFuture<BlockImportResult> handleParentExecutionPayloadResponse(
@@ -286,17 +290,24 @@ public class BatchImporter {
         "Failed to recover parent execution payload by root {} for block at slot {}: no envelope returned",
         block.getParentRoot(),
         block.getSlot());
+    // recovery is only attempted for UNKNOWN_PARENT_EXECUTION_PAYLOAD, so that is the only failure
+    // reason this can report back to the batch
     return SafeFuture.completedFuture(result);
   }
 
-  private BlockImportResult handleParentExecutionPayloadRecoveryError(
-      final SignedBeaconBlock block, final BlockImportResult result, final Throwable error) {
+  private SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      handleParentExecutionPayloadRequestError(
+          final SignedBeaconBlock block, final Throwable error) {
+    if (ExceptionUtil.hasCause(error, CancellationException.class)) {
+      // the batch import was cancelled, propagate it rather than reporting an import failure
+      return SafeFuture.failedFuture(error);
+    }
     LOG.debug(
         "Failed to recover parent execution payload by root {} for block at slot {}",
         block.getParentRoot(),
         block.getSlot(),
         error);
-    return result;
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   private SafeFuture<BlockImportResult> importRecoveredParentExecutionPayload(
