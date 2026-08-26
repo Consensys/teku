@@ -35,7 +35,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public class InclusionListsBlockUpdater {
+public class InclusionListPayloadAttributesUpdater {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ForkChoiceNotifier forkChoiceNotifier;
@@ -44,7 +44,7 @@ public class InclusionListsBlockUpdater {
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
 
-  public InclusionListsBlockUpdater(
+  public InclusionListPayloadAttributesUpdater(
       final ForkChoiceNotifier forkChoiceNotifier,
       final ProposersDataManager proposersDataManager,
       final InclusionListStore inclusionListStore,
@@ -58,7 +58,7 @@ public class InclusionListsBlockUpdater {
   }
 
   @SuppressWarnings({"FutureReturnValueIgnored", "UnusedReturnValue"})
-  public SafeFuture<Optional<Bytes8>> onUpdateBlockWithInclusionListsDue(final UInt64 slot) {
+  public SafeFuture<Optional<Bytes8>> onInclusionListDue(final UInt64 slot) {
     final UInt64 proposerSlot = slot.increment();
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -66,17 +66,17 @@ public class InclusionListsBlockUpdater {
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.warn(
-                    "Ignoring block update with inclusion lists because state at slot {} is not available",
+                    "Ignoring payload attributes refresh with inclusion lists because state at slot {} is not available",
                     slot);
                 return SafeFuture.failedFuture(
                     new IllegalStateException("Head state is not yet available"));
               }
               final BeaconState proposerState = spec.processSlots(maybeState.get(), proposerSlot);
               if (proposersDataManager.isProposerForSlot(proposerSlot, proposerState)) {
-                return updateBlockWithInclusionLists(slot, proposerState);
+                return updatePayloadAttributes(slot, proposerState);
               } else {
                 LOG.trace(
-                    "Not a proposer for slot {}, no block creation to update with inclusion lists",
+                    "Not a proposer for slot {}, no payload attributes to refresh with inclusion lists",
                     proposerSlot);
                 return SafeFuture.completedFuture(Optional.empty());
               }
@@ -88,9 +88,9 @@ public class InclusionListsBlockUpdater {
             });
   }
 
-  private SafeFuture<Optional<Bytes8>> updateBlockWithInclusionLists(
+  private SafeFuture<Optional<Bytes8>> updatePayloadAttributes(
       final UInt64 slot, final BeaconState state) {
-    LOG.info("Updating block with inclusion lists from slot {}", slot);
+    LOG.info("Refreshing payload attributes with inclusion lists from slot {}", slot);
     final Optional<List<InclusionListEntry>> maybeInclusionLists =
         inclusionListStore.getInclusionLists(slot);
     if (maybeInclusionLists.isPresent()) {
@@ -104,7 +104,7 @@ public class InclusionListsBlockUpdater {
         return SafeFuture.completedFuture(Optional.empty());
       }
       LOG.trace(
-          "Updating block with inclusion lists. Found {} ILs with {} txs from slot {}",
+          "Refreshing payload attributes with inclusion lists. Found {} ILs with {} txs from slot {}",
           inclusionLists.size(),
           transactions.size(),
           slot);
@@ -114,7 +114,7 @@ public class InclusionListsBlockUpdater {
           getParentForkChoiceNode(parentRoot);
       if (maybeParentForkChoiceNode.isEmpty()) {
         LOG.warn(
-            "Unable to update block with inclusion lists because parent root {} is not the chain head",
+            "Unable to refresh payload attributes with inclusion lists because parent root {} is not the chain head",
             parentRoot);
         return SafeFuture.completedFuture(Optional.empty());
       }
@@ -127,7 +127,7 @@ public class InclusionListsBlockUpdater {
           .exceptionally(
               error -> {
                 LOG.error(
-                    "Unable to get payloadId to update block with inclusion lists (parentRoot: {}, slot {})",
+                    "Unable to get payloadId while refreshing payload attributes with inclusion lists (parentRoot: {}, slot {})",
                     parentRoot,
                     proposerSlot,
                     error);
@@ -146,7 +146,7 @@ public class InclusionListsBlockUpdater {
       final Bytes32 parentRoot) {
     if (maybeExecutionPayloadContext.isEmpty()) {
       LOG.warn(
-          "Unable to update block with inclusion lists. No execution payload context present for slot {} and parent root {}",
+          "Unable to refresh payload attributes with inclusion lists. No execution payload context present for slot {} and parent root {}",
           proposerSlot,
           parentRoot);
       return Optional.empty();
@@ -154,7 +154,7 @@ public class InclusionListsBlockUpdater {
       final Optional<Bytes8> maybePayloadId =
           Optional.of(maybeExecutionPayloadContext.get().getPayloadId());
       LOG.info(
-          "Updated block with Inclusion Lists from slot {}. PayloadId: {}",
+          "Refreshed payload attributes with inclusion lists from slot {}. PayloadId: {}",
           inclusionListsSlot,
           maybePayloadId);
       return maybePayloadId;

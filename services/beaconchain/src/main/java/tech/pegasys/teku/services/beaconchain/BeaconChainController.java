@@ -310,7 +310,7 @@ import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactoryGloas;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.InclusionListFactory;
-import tech.pegasys.teku.validator.coordinator.InclusionListsBlockUpdater;
+import tech.pegasys.teku.validator.coordinator.InclusionListPayloadAttributesUpdater;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
@@ -405,7 +405,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
-  protected volatile InclusionListsBlockUpdater inclusionListsBlockUpdater;
+  protected volatile InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater;
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
@@ -750,7 +750,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlobKzgCommitmentsProvider();
     initAggregatingAttestationPool();
     initInclusionListManager();
-    initInclusionListsBlockUpdater();
+    initInclusionListPayloadAttributesUpdater();
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
@@ -2249,7 +2249,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceTrigger,
             futureBlockProductionPreparationTrigger,
             forkChoiceNotifier,
-            inclusionListsBlockUpdater,
+            inclusionListPayloadAttributesUpdater,
             p2pNetwork,
             slotEventsChannelPublisher,
             new EpochCachePrimer(spec, recentChainData, beaconAsyncRunner));
@@ -2288,10 +2288,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, inclusionListManager);
   }
 
-  protected void initInclusionListsBlockUpdater() {
-    LOG.debug("BeaconChainController.initInclusionListsBlockUpdater()");
-    inclusionListsBlockUpdater =
-        new InclusionListsBlockUpdater(
+  protected void initInclusionListPayloadAttributesUpdater() {
+    LOG.debug("BeaconChainController.initInclusionListPayloadAttributesUpdater()");
+    inclusionListPayloadAttributesUpdater =
+        new InclusionListPayloadAttributesUpdater(
             forkChoiceNotifier,
             proposersDataManager,
             inclusionListStore,

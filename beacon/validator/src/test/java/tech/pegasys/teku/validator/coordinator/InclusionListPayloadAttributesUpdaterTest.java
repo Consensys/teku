@@ -45,7 +45,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-class InclusionListsBlockUpdaterTest {
+class InclusionListPayloadAttributesUpdaterTest {
 
   private final Spec spec = mock(Spec.class);
   private final Spec hezeSpec = TestSpecFactory.createMinimalHeze();
@@ -57,8 +57,8 @@ class InclusionListsBlockUpdaterTest {
   private final InclusionListStore inclusionListStore = mock(InclusionListStore.class);
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconState proposerState = mock(BeaconState.class);
-  private final InclusionListsBlockUpdater inclusionListsBlockUpdater =
-      new InclusionListsBlockUpdater(
+  private final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater =
+      new InclusionListPayloadAttributesUpdater(
           forkChoiceNotifier,
           proposersDataManager,
           inclusionListStore,
@@ -66,8 +66,7 @@ class InclusionListsBlockUpdaterTest {
           spec);
 
   @Test
-  void onUpdateBlockWithInclusionListsDue_shouldNotRequestPayloadIdWhenNoTransactions()
-      throws Exception {
+  void onInclusionListDue_shouldNotRequestPayloadIdWhenNoTransactions() throws Exception {
     final UInt64 inclusionListSlot = UInt64.valueOf(10);
     final UInt64 proposerSlot = inclusionListSlot.increment();
     final InclusionList emptyInclusionList = dataStructureUtil.randomInclusionList(0);
@@ -80,15 +79,14 @@ class InclusionListsBlockUpdaterTest {
         .thenReturn(Optional.of(List.of(createEntry(emptyInclusionList))));
 
     assertThatSafeFuture(
-            inclusionListsBlockUpdater.onUpdateBlockWithInclusionListsDue(inclusionListSlot))
+            inclusionListPayloadAttributesUpdater.onInclusionListDue(inclusionListSlot))
         .isCompletedWithEmptyOptional();
 
     verifyNoInteractions(forkChoiceNotifier);
   }
 
   @Test
-  void onUpdateBlockWithInclusionListsDue_shouldRefreshPayloadIdWithInclusionListTransactions()
-      throws Exception {
+  void onInclusionListDue_shouldRefreshPayloadIdWithInclusionListTransactions() throws Exception {
     final UInt64 inclusionListSlot = UInt64.valueOf(10);
     final UInt64 proposerSlot = inclusionListSlot.increment();
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
@@ -118,7 +116,7 @@ class InclusionListsBlockUpdaterTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
     assertThatSafeFuture(
-            inclusionListsBlockUpdater.onUpdateBlockWithInclusionListsDue(inclusionListSlot))
+            inclusionListPayloadAttributesUpdater.onInclusionListDue(inclusionListSlot))
         .isCompletedWithOptionalContaining(payloadId);
 
     verify(forkChoiceNotifier).getPayloadId(parentForkChoiceNode, proposerSlot, transactions);
