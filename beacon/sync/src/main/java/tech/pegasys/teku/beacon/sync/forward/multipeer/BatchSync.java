@@ -59,6 +59,7 @@ public class BatchSync implements Sync {
   private final BatchChain activeBatches;
 
   private Optional<Batch> importingBatch = Optional.empty();
+  private Optional<SafeFuture<BatchImportResult>> importingBatchFuture = Optional.empty();
   private boolean switchingBranches = false;
 
   private SafeFuture<UInt64> commonAncestorSlot;
@@ -387,8 +388,9 @@ public class BatchSync implements Sync {
             batch -> {
               lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
               importingBatch = Optional.of(batch);
-              batchImporter
-                  .importBatch(batch)
+              final SafeFuture<BatchImportResult> importFuture = batchImporter.importBatch(batch);
+              importingBatchFuture = Optional.of(importFuture);
+              importFuture
                   .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
                   .propagateExceptionTo(syncResult);
             });
@@ -421,6 +423,7 @@ public class BatchSync implements Sync {
         isCurrentlyImportingBatch(importedBatch),
         "Received import complete for batch that shouldn't have been importing");
     importingBatch = Optional.empty();
+    importingBatchFuture = Optional.empty();
     if (switchingBranches) {
       // We switched to a different chain while this was importing. Can't infer anything about other
       // batches from this result but should still penalise the peer that sent it to us.
@@ -558,12 +561,15 @@ public class BatchSync implements Sync {
   public void abort() {
     eventThread.checkOnEventThread();
     LOG.warn("Aborting sync {}", this::describeState);
+    final Optional<SafeFuture<BatchImportResult>> importToCancel = importingBatchFuture;
     importingBatch = Optional.empty();
+    importingBatchFuture = Optional.empty();
     activeBatches.removeAll();
     switchingBranches = false;
     commonAncestorSlot = null;
     targetChain = null;
     syncResult.complete(SyncResult.FAILED);
+    importToCancel.ifPresent(importFuture -> importFuture.cancel(true));
   }
 
   private String describeState() {

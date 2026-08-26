@@ -22,10 +22,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -400,6 +402,91 @@ class FastConfirmationTrackerTest {
             tracker.isConfirmedRootReorg(
                 UInt64.valueOf(6), forkChoice, previousConfirmedRoot, confirmedRoot))
         .isTrue();
+  }
+
+  @Test
+  void shouldMarkEverySlotAsWarmingUpWhileConfirmationFallsBackToFinality() {
+    // Minimal SLOTS_PER_EPOCH == 8: slot 15 is the last slot of epoch 1 and 16 starts epoch 2, so
+    // the store's variables rotate — but confirmation still falls back to the finalized block
+    // (source states are unavailable here), so every slot is still warming up.
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(FastConfirmationTracker.class)) {
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), Bytes32.random());
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(15), Bytes32.random());
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(16), Bytes32.random());
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(17), Bytes32.random());
+
+      assertThat(perSlotUpdateLogs(logCaptor))
+          .hasSize(4)
+          .allMatch(log -> log.contains("(warmup stage)"));
+    }
+  }
+
+  @Test
+  void shouldStopMarkingSlotsOnceAConfirmationLandsBeyondFinality() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(FastConfirmationTracker.class)) {
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), Bytes32.random());
+      assertThat(perSlotUpdateLogs(logCaptor))
+          .hasSize(1)
+          .allMatch(log -> log.contains("(warmup stage)"));
+      logCaptor.clearLogs();
+
+      // A confirmation beyond the finalized block ends the warm-up, and it never comes back — even
+      // though the following slots fall back to finality again.
+      tracker.recordConfirmationOutcome(
+          tracker.getFastConfirmationStore().orElseThrow(),
+          Bytes32.random(),
+          finalizedCheckpoint.getRoot());
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(14), Bytes32.random());
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(16), Bytes32.random());
+
+      assertThat(perSlotUpdateLogs(logCaptor))
+          .hasSize(2)
+          .noneMatch(log -> log.contains("(warmup stage)"));
+    }
+  }
+
+  @Test
+  void shouldReEnterWarmUpStageWhenTheStoreIsReinitialized() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    when(store.getFinalizedCheckpoint()).thenReturn(finalizedCheckpoint);
+    final FastConfirmationTracker tracker =
+        FastConfirmationTracker.create(
+            spec, Optional.of(asyncRunner), eventChannel, metricsSystem, timeProvider);
+    tracker.initialize(store);
+    tracker.recordConfirmationOutcome(
+        tracker.getFastConfirmationStore().orElseThrow(),
+        Bytes32.random(),
+        finalizedCheckpoint.getRoot());
+
+    tracker.initialize(store);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(FastConfirmationTracker.class)) {
+      applyUpdate(tracker, asyncRunner, UInt64.valueOf(13), Bytes32.random());
+
+      assertThat(perSlotUpdateLogs(logCaptor))
+          .hasSize(1)
+          .allMatch(log -> log.contains("(warmup stage)"));
+    }
+  }
+
+  private List<String> perSlotUpdateLogs(final LogCaptor logCaptor) {
+    return logCaptor.getInfoLogs().stream()
+        .filter(log -> log.startsWith("Fast confirmation update for slot"))
+        .toList();
   }
 
   private void applyUpdate(

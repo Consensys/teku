@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -68,6 +69,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttest
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreatePayloadAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetExecutionPayloadEnvelopeRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
@@ -214,6 +216,12 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final CreatePayloadAttestationDataRequest createPayloadAttestationDataRequest =
         new CreatePayloadAttestationDataRequest(getBaseEndpoint(), getOkHttpClient(), spec);
     return createPayloadAttestationDataRequest.submit(slot);
+  }
+
+  public Optional<ExecutionPayloadEnvelope> getExecutionPayloadEnvelope(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
+    return new GetExecutionPayloadEnvelopeRequest(getBaseEndpoint(), getOkHttpClient(), spec)
+        .submit(slot, beaconBlockRoot);
   }
 
   public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(

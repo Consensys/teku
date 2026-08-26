@@ -189,7 +189,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     final long start = System.currentTimeMillis();
     dataColumnSize.set(database.getSidecarColumnCount());
     earliestDataColumnSidecarSlot.set(
-        database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(0L));
+        database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
     LOG.debug(
         "Data column sidecar storage counters updated in {} ms: total={}, earliestSlot={}",
         System.currentTimeMillis() - start,
