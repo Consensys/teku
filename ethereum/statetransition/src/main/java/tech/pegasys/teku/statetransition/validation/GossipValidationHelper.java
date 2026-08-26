@@ -89,9 +89,8 @@ public class GossipValidationHelper {
     }
 
     final UInt64 slotStartTimeMillis =
-            spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
-    return getCurrentTimeMillis().isGreaterThan(
-            slotStartTimeMillis.plus(maxOffsetTimeInMillis));
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    return getCurrentTimeMillis().isGreaterThan(slotStartTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
   public boolean isSlotCurrent(final UInt64 slot) {
@@ -101,14 +100,13 @@ public class GossipValidationHelper {
     }
 
     final UInt64 slotStartTimeMillis =
-            spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
     final UInt64 currentTimeMillis = getCurrentTimeMillis();
 
     return currentTimeMillis.isGreaterThanOrEqualTo(
             slotStartTimeMillis.minusMinZero(maxOffsetTimeInMillis))
-            && currentTimeMillis.isLessThanOrEqualTo(
-            slotEndTimeMillis.plus(maxOffsetTimeInMillis));
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
   public boolean isSignatureValidWithRespectToBuilderIndex(
