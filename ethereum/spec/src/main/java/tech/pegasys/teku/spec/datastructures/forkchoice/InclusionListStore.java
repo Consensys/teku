@@ -52,17 +52,24 @@ public class InclusionListStore {
       final SlotAndBlockRoot key = keyFor(inclusionList);
       final Map<UInt64, InclusionListEntry> inclusionLists =
           inclusionListsByKey.computeIfAbsent(key, __ -> new LinkedHashMap<>());
-      final InclusionListEntry storedEntry = inclusionLists.get(inclusionList.getValidatorIndex());
-      if (storedEntry != null) {
-        if (!storedEntry.signedInclusionList().getMessage().equals(inclusionList)) {
-          equivocatedValidatorIndicesByKey
-              .computeIfAbsent(key, __ -> new HashSet<>())
-              .add(inclusionList.getValidatorIndex());
-        }
+      final UInt64 validatorIndex = inclusionList.getValidatorIndex();
+      if (!inclusionLists.containsKey(validatorIndex)) {
+        inclusionLists.put(validatorIndex, new InclusionListEntry(signedInclusionList, timely));
         return;
       }
-      inclusionLists.put(
-          inclusionList.getValidatorIndex(), new InclusionListEntry(signedInclusionList, timely));
+
+      final InclusionListEntry storedEntry = inclusionLists.get(validatorIndex);
+      // Retain the first message, but let an identical timely duplicate upgrade its timeliness.
+      if (storedEntry.signedInclusionList().getMessage().equals(inclusionList)) {
+        if (timely && !storedEntry.timely()) {
+          inclusionLists.put(
+              validatorIndex, new InclusionListEntry(storedEntry.signedInclusionList(), true));
+        }
+      } else {
+        equivocatedValidatorIndicesByKey
+            .computeIfAbsent(key, __ -> new HashSet<>())
+            .add(validatorIndex);
+      }
     } finally {
       writeLock.unlock();
     }

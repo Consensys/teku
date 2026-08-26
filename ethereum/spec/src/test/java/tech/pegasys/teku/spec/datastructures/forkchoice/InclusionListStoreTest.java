@@ -113,6 +113,22 @@ class InclusionListStoreTest {
   }
 
   @Test
+  void shouldUpgradeTimelinessWhenDuplicateArrivesTimely() {
+    final InclusionListStore inclusionListStore = new InclusionListStore(4);
+    final SignedInclusionList inclusionList =
+        createSignedInclusionList(SLOT, VALIDATOR_INDEX, DEPENDENT_ROOT_1);
+
+    inclusionListStore.processInclusionList(inclusionList, false);
+    inclusionListStore.processInclusionList(inclusionList, true);
+
+    assertThat(inclusionListStore.getInclusionLists(keyFor(inclusionList)))
+        .hasValue(Map.of(VALIDATOR_INDEX, new InclusionListEntry(inclusionList, true)));
+    assertThat(
+            inclusionListStore.isInclusionListEquivocator(keyFor(inclusionList), VALIDATOR_INDEX))
+        .isFalse();
+  }
+
+  @Test
   void shouldMarkConflictingListAsEquivocationAndRetainFirstEntry() {
     final InclusionListStore inclusionListStore = new InclusionListStore(4);
     final SignedInclusionList inclusionList =
