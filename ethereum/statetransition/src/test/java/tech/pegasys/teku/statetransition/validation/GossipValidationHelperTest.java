@@ -824,6 +824,21 @@ public class GossipValidationHelperTest {
     assertThat(result.isAccept()).isTrue();
   }
 
+  @TestTemplate
+  void isSlotCurrent_shouldRejectMaximumSlotWithoutOverflow() {
+    assertThat(gossipValidationHelper.isSlotCurrent(UInt64.MAX_VALUE)).isFalse();
+  }
+
+  @TestTemplate
+  void isSlotCurrentOrNext_shouldRejectMaximumSlotWithoutOverflow() {
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(UInt64.MAX_VALUE)).isFalse();
+  }
+
+  @TestTemplate
+  void hasSlotStarted_shouldRejectMaximumSlotWithoutOverflow() {
+    assertThat(gossipValidationHelper.hasSlotStarted(UInt64.MAX_VALUE)).isFalse();
+  }
+
   private PayloadStatusFixture createPayloadStatusFixture(final boolean payloadOptimistic) {
     final UInt64 attestedBlockSlot = UInt64.valueOf(10);
     final UInt64 attestationSlot = attestedBlockSlot.plus(ONE);

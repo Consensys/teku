@@ -82,28 +82,33 @@ public class GossipValidationHelper {
     return slot.isGreaterThan(maxCurrSlot);
   }
 
-  /**
-   * Returns true when {@code slot} has already started, allowing for MAXIMUM_GOSSIP_CLOCK_DISPARITY
-   * -- i.e. spec {@code is_past_slot}.
-   *
-   * <p>Unlike {@link #isSlotFromFuture(UInt64)} this compares against the slot start time with
-   * millisecond precision rather than at slot granularity, so it can distinguish a message that
-   * arrives just inside the disparity allowance from one that arrives just outside it.
-   */
   public boolean hasSlotStarted(final UInt64 slot) {
+    // Also prevents overflow when converting an extreme future slot to milliseconds.
+    if (isSlotFromFuture(slot)) {
+      return false;
+    }
+
     final UInt64 slotStartTimeMillis =
-        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
-    return getCurrentTimeMillis().isGreaterThan(slotStartTimeMillis.plus(maxOffsetTimeInMillis));
+            spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    return getCurrentTimeMillis().isGreaterThan(
+            slotStartTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
   public boolean isSlotCurrent(final UInt64 slot) {
+    // Also prevents overflow when converting an extreme future slot to milliseconds.
+    if (isSlotFromFuture(slot)) {
+      return false;
+    }
+
     final UInt64 slotStartTimeMillis =
-        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+            spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
     final UInt64 currentTimeMillis = getCurrentTimeMillis();
+
     return currentTimeMillis.isGreaterThanOrEqualTo(
             slotStartTimeMillis.minusMinZero(maxOffsetTimeInMillis))
-        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
+            && currentTimeMillis.isLessThanOrEqualTo(
+            slotEndTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
   public boolean isSignatureValidWithRespectToBuilderIndex(
