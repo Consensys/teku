@@ -19,15 +19,15 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResultV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class EngineForkChoiceUpdatedV5
-    extends AbstractEngineJsonRpcMethod<
-        tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> {
+    extends AbstractEngineJsonRpcMethod<ForkChoiceUpdatedResult> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -46,8 +46,7 @@ public class EngineForkChoiceUpdatedV5
   }
 
   @Override
-  public SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> execute(
-      final JsonRpcRequestParams params) {
+  public SafeFuture<ForkChoiceUpdatedResult> execute(final JsonRpcRequestParams params) {
     final ForkChoiceState forkChoiceState = params.getRequiredParameter(0, ForkChoiceState.class);
     final Optional<PayloadBuildingAttributes> payloadBuildingAttributes =
         params.getOptionalParameter(1, PayloadBuildingAttributes.class);
@@ -65,7 +64,7 @@ public class EngineForkChoiceUpdatedV5
         .forkChoiceUpdatedV5(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState), maybePayloadAttributes)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
+        .thenApply(ForkChoiceUpdatedResultV2::asInternalExecutionPayload)
         .thenPeek(
             forkChoiceUpdatedResult ->
                 LOG.trace(

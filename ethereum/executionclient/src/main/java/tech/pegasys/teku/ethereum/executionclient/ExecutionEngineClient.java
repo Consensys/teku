@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResultV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -84,7 +86,7 @@ public interface ExecutionEngineClient {
       Bytes32 parentBeaconBlockRoot,
       List<Bytes> executionRequests);
 
-  SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+  SafeFuture<Response<PayloadStatusV2>> newPayloadV6(
       ExecutionPayloadV4 executionPayload,
       List<VersionedHash> blobVersionedHashes,
       Bytes32 parentBeaconBlockRoot,
@@ -103,7 +105,7 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV4(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV4> payloadAttributes);
 
-  SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+  SafeFuture<Response<ForkChoiceUpdatedResultV2>> forkChoiceUpdatedV5(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV5> payloadAttributes);
 
   SafeFuture<Response<List<String>>> exchangeCapabilities(List<String> capabilities);

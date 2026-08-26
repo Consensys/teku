@@ -37,9 +37,11 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResultV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV2;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
@@ -330,6 +332,47 @@ public class SchemaSerializationTests {
 
     assertThat(payloadStatusV1Deserialized).isEqualTo(payloadStatusV1Expected);
     assertThat(internalPayloadStatus).isEqualTo(internalPayloadStatusExpected);
+  }
+
+  @TestTemplate
+  void shouldDeserializePayloadStatusV2WithInclusionListSatisfaction() throws IOException {
+    final String json =
+        """
+        {
+          "status": "VALID",
+          "latestValidHash": null,
+          "validationError": null,
+          "inclusionListSatisfied": false
+        }
+        """;
+
+    final PayloadStatus payloadStatus =
+        objectMapper.readValue(json, PayloadStatusV2.class).asInternalExecutionPayload();
+
+    assertThat(payloadStatus.hasValidStatus()).isTrue();
+    assertThat(payloadStatus.getInclusionListSatisfied()).contains(false);
+  }
+
+  @TestTemplate
+  void shouldDeserializeForkChoiceUpdatedResultV2WithInclusionListSatisfaction()
+      throws IOException {
+    final String json =
+        """
+        {
+          "payloadStatus": {
+            "status": "VALID",
+            "latestValidHash": null,
+            "validationError": null,
+            "inclusionListSatisfied": false
+          },
+          "payloadId": null
+        }
+        """;
+
+    final tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult result =
+        objectMapper.readValue(json, ForkChoiceUpdatedResultV2.class).asInternalExecutionPayload();
+
+    assertThat(result.getPayloadStatus().getInclusionListSatisfied()).contains(false);
   }
 
   @TestTemplate
