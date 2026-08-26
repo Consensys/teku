@@ -172,30 +172,28 @@ class BatchSyncTest {
   }
 
   @Test
-  void shouldReleaseImportingBatchWhenImportCompletesExceptionally() {
+  void shouldHandleImportCompletingExceptionallyAsFailedImport() {
     final SignedBlockAndState block5 = chainBuilder.generateBlockAtSlot(5);
     final SignedBlockAndState block26 = chainBuilder.generateBlockAtSlot(26);
     final SafeFuture<SyncResult> syncResult = sync.syncToChain(targetChain);
 
-    final Batch batch1 = batches.get(0);
-    batches.receiveBlocks(batch1, block5.getBlock());
-    batches.receiveBlocks(batches.get(1), block26.getBlock());
-    final SafeFuture<BatchImportResult> importResult = batches.getImportResult(batch1);
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(batch0, block5.getBlock());
+    batches.receiveBlocks(batch1, block26.getBlock());
+    final SafeFuture<BatchImportResult> importResult = batches.getImportResult(batch0);
 
-    final RuntimeException importError = new RuntimeException("Import blew up");
-    importResult.completeExceptionally(importError);
+    importResult.completeExceptionally(new RuntimeException("Import blew up"));
 
-    SafeFutureAssert.assertThatSafeFuture(syncResult).isCompletedExceptionallyWith(importError);
+    // Treated as a failed import: batches forming a chain with it are invalid and get re-requested
+    batches.assertMarkedInvalid(batch0);
+    batches.assertMarkedInvalid(batch1);
+    assertThat(syncResult).isNotDone();
 
-    // The failed import must not block the next sync
-    final int batchCountBeforeRestart = batches.size();
-    assertThat(sync.syncToChain(targetChain)).isNotDone();
-
-    // The failed batch is dropped and downloading restarts from the common ancestor
-    verify(commonAncestor, times(2)).findCommonAncestor(any());
-    assertBatchNotActive(batch1);
-    assertThat(batches.size()).isGreaterThan(batchCountBeforeRestart);
-    assertThatBatch(batches.get(batchCountBeforeRestart)).hasFirstSlot(ONE);
+    // And the importing state was released so the re-requested batch can be imported again
+    batches.receiveBlocks(batch0, block5.getBlock());
+    batches.receiveBlocks(batch1, block26.getBlock());
+    verify(batchImporter, times(2)).importBatch(batches.getEventThreadOnlyBatch(batch0));
   }
 
   @Test
@@ -969,6 +967,44 @@ class BatchSyncTest {
     batches.getImportResult(batch0).complete(IMPORT_FAILED);
 
     // Now we should start downloading from the latest finalized checkpoint
+    assertThat(batches.get(0).getFirstSlot()).isEqualTo(finalizedBlock.getSlot());
+  }
+
+  @Test
+  void shouldSwitchToNewChainWhenDelayedImportCompletesExceptionally() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(batch0, chainBuilder.generateBlockAtSlot(1).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+
+    final Batch batch4 = batches.get(4);
+
+    // Switch to a new chain while batch0 is still importing
+    targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot(), syncSource);
+    final SafeFuture<SyncResult> newSyncResult = sync.syncToChain(targetChain);
+    assertThat(newSyncResult).isNotDone();
+
+    // And return blocks so the new chain doesn't match up.
+    batches.receiveBlocks(
+        batch4, chainBuilder.generateBlockAtSlot(batch4.getLastSlot()).getBlock());
+    final Batch batch5 = batches.get(5);
+    batches.receiveBlocks(batch5, dataStructureUtil.randomSignedBeaconBlock(batch5.getFirstSlot()));
+
+    // All batches should have been dropped and none started until the import completes
+    batches.forEach(this::assertBatchNotActive);
+    batches.clearBatchList();
+
+    final SignedBlockAndState finalizedBlock = storageSystem.chainUpdater().finalizeEpoch(1);
+    batches.getImportResult(batch0).completeExceptionally(new RuntimeException("Import blew up"));
+
+    // The failure belongs to the chain we already left, so the new sync continues downloading
+    // from the latest finalized checkpoint instead of failing or stalling
+    assertThat(newSyncResult).isNotDone();
     assertThat(batches.get(0).getFirstSlot()).isEqualTo(finalizedBlock.getSlot());
   }
 
