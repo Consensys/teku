@@ -41,18 +41,18 @@ import tech.pegasys.teku.spec.datastructures.metadata.ExecutionPayloadAndMetaDat
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-public class GetExecutionPayloadEnvelope extends RestApiEndpoint {
+public class GetSignedExecutionPayloadEnvelope extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/beacon/execution_payload_envelopes/{block_id}";
 
   private final ChainDataProvider chainDataProvider;
 
-  public GetExecutionPayloadEnvelope(
+  public GetSignedExecutionPayloadEnvelope(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  public GetExecutionPayloadEnvelope(
+  public GetSignedExecutionPayloadEnvelope(
       final ChainDataProvider chainDataProvider,
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(
@@ -110,7 +110,7 @@ public class GetExecutionPayloadEnvelope extends RestApiEndpoint {
                             .getSignedExecutionPayloadEnvelopeSchema())));
 
     return SerializableTypeDefinition.<ExecutionPayloadAndMetaData>object()
-        .name("GetExecutionPayloadEnvelopeResponse")
+        .name("GetSignedExecutionPayloadEnvelopeResponse")
         .withField("version", MILESTONE_TYPE, ExecutionPayloadAndMetaData::milestone)
         .withField(
             EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ExecutionPayloadAndMetaData::executionOptimistic)

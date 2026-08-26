@@ -73,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -513,6 +514,33 @@ class RemoteValidatorApiHandlerTest {
         apiHandler.createPayloadAttestationData(ONE);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(payloadAttestationData);
+  }
+
+  @Test
+  public void createUnsignedExecutionPayload_WhenNone_ReturnsEmpty() {
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    when(typeDefClient.getExecutionPayloadEnvelope(ONE, beaconBlockRoot))
+        .thenReturn(Optional.empty());
+
+    final SafeFuture<Optional<ExecutionPayloadEnvelope>> future =
+        apiHandler.createUnsignedExecutionPayload(ONE, beaconBlockRoot);
+
+    assertThat(unwrapToOptional(future)).isEmpty();
+  }
+
+  @Test
+  public void createUnsignedExecutionPayload_WhenFound_ReturnsEnvelope() {
+    final ExecutionPayloadEnvelope envelope =
+        new DataStructureUtil(TestSpecFactory.createMinimalGloas())
+            .randomExecutionPayloadEnvelope(ONE);
+    final Bytes32 beaconBlockRoot = envelope.getBeaconBlockRoot();
+    when(typeDefClient.getExecutionPayloadEnvelope(ONE, beaconBlockRoot))
+        .thenReturn(Optional.of(envelope));
+
+    final SafeFuture<Optional<ExecutionPayloadEnvelope>> future =
+        apiHandler.createUnsignedExecutionPayload(ONE, beaconBlockRoot);
+
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(envelope);
   }
 
   @Test
