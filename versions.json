@@ -4,95 +4,19 @@
   "source": "master"
  },
  "stable": {
-  "spec": "v26.8.1-dev24",
-  "source": "v26.8.1-dev24"
- },
- "v26.3.0": {
-  "spec": "v26.3.0",
-  "source": "v26.3.0"
- },
- "v26.2.0": {
-  "spec": "v26.2.0",
-  "source": "v26.2.0"
- },
- "v25.12.0": {
-  "spec": "v25.12.0",
-  "source": "v25.12.0"
- },
- "v25.11.1": {
-  "spec": "v25.11.1",
-  "source": "v25.11.1"
- },
- "v26.6.0": {
-  "spec": "v26.6.0",
-  "source": "v26.6.0"
- },
- "v26.6.1": {
-  "spec": "v26.6.1",
-  "source": "v26.6.1"
- },
- "v26.7.0": {
-  "spec": "v26.7.0",
-  "source": "v26.7.0"
- },
- "v26.7.1": {
-  "spec": "v26.7.1",
-  "source": "v26.7.1"
+  "spec": "v26.8.0",
+  "source": "v26.8.0"
  },
  "v26.8.0": {
   "spec": "v26.8.0",
   "source": "v26.8.0"
  },
- "v26.8.1-SNAPSHOT": {
-  "spec": "v26.8.1-SNAPSHOT",
-  "source": "v26.8.1-SNAPSHOT"
+ "v26.7.1": {
+  "spec": "v26.7.1",
+  "source": "v26.7.1"
  },
- "v26.8.1-dev1": {
-  "spec": "v26.8.1-dev1",
-  "source": "v26.8.1-dev1"
- },
- "v26.8.1-dev2": {
-  "spec": "v26.8.1-dev2",
-  "source": "v26.8.1-dev2"
- },
- "v26.8.1-dev3": {
-  "spec": "v26.8.1-dev3",
-  "source": "v26.8.1-dev3"
- },
- "v26.8.1-dev4": {
-  "spec": "v26.8.1-dev4",
-  "source": "v26.8.1-dev4"
- },
- "v26.8.1-dev5": {
-  "spec": "v26.8.1-dev5",
-  "source": "v26.8.1-dev5"
- },
- "v28.6.1-dev0": {
-  "spec": "v28.6.1-dev0",
-  "source": "v28.6.1-dev0"
- },
- "v26.8.1-dev13": {
-  "spec": "v26.8.1-dev13",
-  "source": "v26.8.1-dev13"
- },
- "v26.8.1-dev14": {
-  "spec": "v26.8.1-dev14",
-  "source": "v26.8.1-dev14"
- },
- "v26.8.1-dev15": {
-  "spec": "v26.8.1-dev15",
-  "source": "v26.8.1-dev15"
- },
- "v26.8.1-dev21": {
-  "spec": "v26.8.1-dev21",
-  "source": "v26.8.1-dev21"
- },
- "v26.8.1-dev22": {
-  "spec": "v26.8.1-dev22",
-  "source": "v26.8.1-dev22"
- },
- "v26.8.1-dev24": {
-  "spec": "v26.8.1-dev24",
-  "source": "v26.8.1-dev24"
+ "v26.7.0": {
+  "spec": "v26.7.0",
+  "source": "v26.7.0"
  }
 }
