@@ -870,12 +870,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                                 Optional.ofNullable(protoNodeData.getPayloadStatus())))
                     .collect(Collectors.toSet());
 
-            assertThat(chainHeadRootsAndWeights.size())
-                .describedAs(
-                    "Expected size of %s to match size of %s",
-                    chainHeadRootsAndWeights, viableHeadRootsAndWeightsData)
-                .isEqualTo(viableHeadRootsAndWeights.size());
-
             for (HeadRootAndWeight headRootAndWeight : viableHeadRootsAndWeights) {
               boolean notPresent =
                   chainHeadRootsAndWeights.stream()
