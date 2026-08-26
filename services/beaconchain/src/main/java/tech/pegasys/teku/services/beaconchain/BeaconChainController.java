@@ -1131,7 +1131,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema(),
             spec);
 
-    final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
+    final MetadataDasPeerCustodyTracker peerCustodyTracker =
+        new MetadataDasPeerCustodyTracker(maxGroups);
     p2pNetwork.subscribeConnect(peerCustodyTracker);
     final DasPeerCustodyCountSupplier custodyCountSupplier =
         DasPeerCustodyCountSupplier.capped(
