@@ -390,9 +390,22 @@ public class BatchSync implements Sync {
               importingBatch = Optional.of(batch);
               final SafeFuture<BatchImportResult> importFuture = batchImporter.importBatch(batch);
               importingBatchFuture = Optional.of(importFuture);
+              final SafeFuture<SyncResult> currentSyncResult = syncResult;
               importFuture
-                  .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
-                  .propagateExceptionTo(syncResult);
+                  .handleAsync(
+                      (result, error) -> {
+                        if (error != null) {
+                          // clear the importing state before failing the sync, otherwise a
+                          // restarted sync would wait forever for an import that already finished
+                          onImportFailed(batch, error);
+                          currentSyncResult.completeExceptionally(error);
+                        } else {
+                          onImportComplete(result, batch);
+                        }
+                        return null;
+                      },
+                      eventThread)
+                  .propagateExceptionTo(currentSyncResult);
             });
   }
 
@@ -414,6 +427,23 @@ public class BatchSync implements Sync {
 
   private void markBatchesAsContested(final NavigableSet<Batch> contestedBatches) {
     contestedBatches.forEach(Batch::markAsContested);
+  }
+
+  /**
+   * Handles an import which completed exceptionally (for example the import was cancelled or failed
+   * unexpectedly). Nothing can be inferred about the batch itself, but the importing state has to
+   * be released so that a later sync isn't blocked waiting for this import to complete.
+   */
+  private void onImportFailed(final Batch importedBatch, final Throwable error) {
+    eventThread.checkOnEventThread();
+    if (!isCurrentlyImportingBatch(importedBatch)) {
+      // already released, e.g. the sync was aborted which cancelled the import
+      return;
+    }
+    LOG.debug("Import of batch {} failed", importedBatch, error);
+    importingBatch = Optional.empty();
+    importingBatchFuture = Optional.empty();
+    switchingBranches = false;
   }
 
   private void onImportComplete(

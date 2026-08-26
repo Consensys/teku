@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -168,6 +169,33 @@ class BatchSyncTest {
 
     assertThat(syncResult).isCompletedWithValue(SyncResult.FAILED);
     assertThat(importResult).isCancelled();
+  }
+
+  @Test
+  void shouldReleaseImportingBatchWhenImportCompletesExceptionally() {
+    final SignedBlockAndState block5 = chainBuilder.generateBlockAtSlot(5);
+    final SignedBlockAndState block26 = chainBuilder.generateBlockAtSlot(26);
+    final SafeFuture<SyncResult> syncResult = sync.syncToChain(targetChain);
+
+    final Batch batch1 = batches.get(0);
+    batches.receiveBlocks(batch1, block5.getBlock());
+    batches.receiveBlocks(batches.get(1), block26.getBlock());
+    final SafeFuture<BatchImportResult> importResult = batches.getImportResult(batch1);
+
+    final RuntimeException importError = new RuntimeException("Import blew up");
+    importResult.completeExceptionally(importError);
+
+    SafeFutureAssert.assertThatSafeFuture(syncResult).isCompletedExceptionallyWith(importError);
+
+    // The failed import must not block the next sync
+    final int batchCountBeforeRestart = batches.size();
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    // The failed batch is dropped and downloading restarts from the common ancestor
+    verify(commonAncestor, times(2)).findCommonAncestor(any());
+    assertBatchNotActive(batch1);
+    assertThat(batches.size()).isGreaterThan(batchCountBeforeRestart);
+    assertThatBatch(batches.get(batchCountBeforeRestart)).hasFirstSlot(ONE);
   }
 
   @Test
