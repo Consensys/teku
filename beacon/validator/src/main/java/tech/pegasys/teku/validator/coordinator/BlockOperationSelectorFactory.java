@@ -573,6 +573,7 @@ public class BlockOperationSelectorFactory {
             false,
             Optional.empty(),
             blockProductionContext.blockProductionPerformance());
+    // BuilderConfig is expected post-Gloas and is passed from the VC
     final BuilderConfig builderConfig =
         blockProductionContext
             .builderConfig()
