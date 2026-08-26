@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -378,6 +379,15 @@ public class RespondingEth2Peer implements Eth2Peer {
                 () -> findExecutionPayloadByRoot(beaconBlockRoot));
 
     return createPendingExecutionPayloadEnvelopeRequest(handler);
+  }
+
+  @Override
+  public SafeFuture<Void> requestInclusionListsByCommitteeIndices(
+      final UInt64 slot,
+      final Bytes32 dependentRoot,
+      final SszBitvector committeeIndices,
+      final RpcResponseListener<SignedInclusionList> listener) {
+    return SafeFuture.COMPLETE;
   }
 
   private <T> SafeFuture<T> createPendingBlockRequest(

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.RateTracker;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -213,6 +215,16 @@ public class ThrottlingSyncSource implements SyncSource {
     // Intentionally bypass throttling: this rare single lookup unblocks sync recovery when a
     // parent execution payload envelope was deferred, and delaying it would stall the batch.
     return delegate.requestExecutionPayloadEnvelopeByRoot(beaconBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Void> requestInclusionListsByCommitteeIndices(
+      final UInt64 slot,
+      final Bytes32 dependentRoot,
+      final SszBitvector committeeIndices,
+      final RpcResponseListener<SignedInclusionList> listener) {
+    return delegate.requestInclusionListsByCommitteeIndices(
+        slot, dependentRoot, committeeIndices, listener);
   }
 
   @Override

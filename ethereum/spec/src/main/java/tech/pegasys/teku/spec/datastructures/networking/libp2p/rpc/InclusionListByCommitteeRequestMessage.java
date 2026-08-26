@@ -13,46 +13,50 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
 
 public class InclusionListByCommitteeRequestMessage
-    extends Container2<InclusionListByCommitteeRequestMessage, SszUInt64, SszBitvector>
+    extends Container3<InclusionListByCommitteeRequestMessage, SszUInt64, SszBytes32, SszBitvector>
     implements RpcRequest {
 
-  private final Optional<Integer> maxRequestInclusionList;
-
   public InclusionListByCommitteeRequestMessage(
-      final UInt64 slot, final SszBitvector committeeIndices, final SpecConfigHeze specConfigHeze) {
+      final UInt64 slot,
+      final Bytes32 dependentRoot,
+      final SszBitvector committeeIndices,
+      final SpecConfigHeze specConfigHeze) {
     super(
         new InclusionListByCommitteeRequestMessageSchema(specConfigHeze),
         SszUInt64.of(slot),
+        SszBytes32.of(dependentRoot),
         committeeIndices);
-    this.maxRequestInclusionList = Optional.of(specConfigHeze.getMaxRequestInclusionList());
   }
 
   InclusionListByCommitteeRequestMessage(
       final InclusionListByCommitteeRequestMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
-    this.maxRequestInclusionList = Optional.empty();
   }
 
   public UInt64 getSlot() {
     return getField0().get();
   }
 
+  public Bytes32 getDependentRoot() {
+    return getField1().get();
+  }
+
   public SszBitvector getCommitteeIndices() {
-    return getField1();
+    return getField2();
   }
 
   @Override
   public int getMaximumResponseChunks() {
-    return maxRequestInclusionList.orElseThrow(
-        () -> new IllegalStateException("Unexpected method usage"));
+    return getCommitteeIndices().getAllSetBits().size();
   }
 }
