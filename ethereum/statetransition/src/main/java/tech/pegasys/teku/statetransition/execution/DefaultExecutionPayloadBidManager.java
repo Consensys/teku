@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -210,11 +211,20 @@ public class DefaultExecutionPayloadBidManager
 
     final SafeFuture<LocalBid> localBidFuture =
         getPayloadResponseFuture.thenApply(
-            getPayloadResponse ->
-                new LocalBid(
-                    createLocalSelfBuiltSignedBid(getPayloadResponse, slot, parentRoot),
-                    getPayloadResponse.getExecutionPayloadValue(),
-                    getPayloadResponse.getShouldOverrideBuilder()));
+            getPayloadResponse -> {
+              final Bytes32 localParentBlockHash =
+                  getPayloadResponse.getExecutionPayload().getParentHash();
+              Preconditions.checkState(
+                  localParentBlockHash.equals(parentBlockHash),
+                  "Local execution payload parent hash %s does not match selected production parent execution hash %s for block at slot %s",
+                  localParentBlockHash,
+                  parentBlockHash,
+                  slot);
+              return new LocalBid(
+                  createLocalSelfBuiltSignedBid(getPayloadResponse, slot, parentRoot),
+                  getPayloadResponse.getExecutionPayloadValue(),
+                  getPayloadResponse.getShouldOverrideBuilder());
+            });
 
     return localBidFuture
         .thenApply(Optional::of)
