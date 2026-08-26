@@ -891,7 +891,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               Assertions.assertFalse(
                   notPresent,
                   String.format(
-                      "Unable to fine %s in %s", headRootAndWeight, chainHeadRootsAndWeights));
+                      "Unable to find %s in %s", headRootAndWeight, chainHeadRootsAndWeights));
             }
           }
 
