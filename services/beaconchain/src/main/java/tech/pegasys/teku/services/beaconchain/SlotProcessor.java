@@ -41,7 +41,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
-import tech.pegasys.teku.validator.coordinator.InclusionListsBlockUpdater;
+import tech.pegasys.teku.validator.coordinator.InclusionListPayloadAttributesUpdater;
 
 public class SlotProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,7 +52,7 @@ public class SlotProcessor {
   private final ForkChoiceTrigger forkChoiceTrigger;
   private final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final InclusionListsBlockUpdater inclusionListsBlockUpdater;
+  private final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
@@ -73,7 +73,7 @@ public class SlotProcessor {
       final ForkChoiceTrigger forkChoiceTrigger,
       final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final InclusionListsBlockUpdater inclusionListsBlockUpdater,
+      final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EpochCachePrimer epochCachePrimer,
@@ -84,7 +84,7 @@ public class SlotProcessor {
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.futureBlockProductionPreparationTrigger = futureBlockProductionPreparationTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
-    this.inclusionListsBlockUpdater = inclusionListsBlockUpdater;
+    this.inclusionListPayloadAttributesUpdater = inclusionListPayloadAttributesUpdater;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.epochCachePrimer = epochCachePrimer;
@@ -98,7 +98,7 @@ public class SlotProcessor {
       final ForkChoiceTrigger forkChoiceTrigger,
       final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final InclusionListsBlockUpdater inclusionListsBlockUpdater,
+      final InclusionListPayloadAttributesUpdater inclusionListPayloadAttributesUpdater,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EpochCachePrimer epochCachePrimer) {
@@ -109,7 +109,7 @@ public class SlotProcessor {
         forkChoiceTrigger,
         futureBlockProductionPreparationTrigger,
         forkChoiceNotifier,
-        inclusionListsBlockUpdater,
+        inclusionListPayloadAttributesUpdater,
         p2pNetwork,
         slotEventsChannelPublisher,
         epochCachePrimer,
@@ -125,8 +125,8 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
-  // onUpdateBlockWithInclusionListsDue refreshes payload attributes with inclusion lists and
-  // returns the updated payload id, but the caller does not need it
+  // onInclusionListDue refreshes payload attributes with inclusion lists and returns the updated
+  // payload id, but the caller does not need it
   @SuppressWarnings({"FutureReturnValueIgnored"})
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
@@ -169,9 +169,8 @@ public class SlotProcessor {
       performanceRecord.ifPresent(TickProcessingPerformance::attestationsDueComplete);
     }
 
-    if (isSlotUpdateBlockWithInclusionListsDue(
-        calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
-      inclusionListsBlockUpdater.onUpdateBlockWithInclusionListsDue(calculatedSlot);
+    if (isSlotInclusionListDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
+      inclusionListPayloadAttributesUpdater.onInclusionListDue(calculatedSlot);
       nodeSlot.inc();
     }
 
@@ -263,8 +262,8 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
-  // Inclusion list block updates are due at the inclusion list deadline.
-  boolean isSlotUpdateBlockWithInclusionListsDue(
+  // Inclusion list payload attribute refreshes are due at the inclusion list deadline.
+  boolean isSlotInclusionListDue(
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,
       final UInt64 nodeSlotStartTimeMillis) {

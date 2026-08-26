@@ -35,14 +35,12 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -84,7 +82,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
@@ -1693,6 +1690,56 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onExecutionPayloadEnvelope_shouldRecordUnsatisfiedInclusionListWithoutRejectingPayload() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalHeze(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+    executionLayer.setPayloadStatus(
+        PayloadStatus.valid(Optional.empty(), Optional.empty(), Optional.of(false)));
+
+    importPayload(targetBlock);
+
+    assertThat(recentChainData.getStore().satisfiesInclusionList(targetBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void onForkChoiceUpdatedResult_shouldRecordDelayedUnsatisfiedInclusionListResult() {
+    setupWithSpec(
+        TestSpecFactory.createMinimalHeze(
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
+    assertThat(forkChoice.applyGenesisExecutionPayloadForGloas()).isCompleted();
+
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(targetBlock);
+    executionLayer.setPayloadStatus(PayloadStatus.ACCEPTED);
+    importPayload(targetBlock);
+
+    final ForkChoiceNode fullNode = ForkChoiceNode.createFull(targetBlock.getRoot());
+    final PayloadStatus validButUnsatisfied =
+        PayloadStatus.valid(Optional.empty(), Optional.empty(), Optional.of(false));
+    forkChoice.onForkChoiceUpdatedResult(
+        new ForkChoiceUpdatedResultNotification(
+            new ForkChoiceState(
+                fullNode,
+                targetBlock.getSlot(),
+                UInt64.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                false),
+            Optional.empty(),
+            false,
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(validButUnsatisfied, Optional.empty()))));
+
+    assertThat(recentChainData.getStore().satisfiesInclusionList(targetBlock.getRoot())).isFalse();
+  }
+
+  @Test
   void applyIndexedAttestations_gloasFullVoteShouldNotApplyWhenExecutionPayloadMissing() {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
@@ -1961,40 +2008,5 @@ class ForkChoiceTest {
                       SafeFuture.completedFuture(forkChoiceUpdatedResult))));
       return null;
     };
-  }
-
-  @Test
-  void
-      validateInclusionListReturnsFailureIfNotAllInclusionListsTransactionAreInTheExecutionPayload() {
-    setupWithSpec(TestSpecFactory.createMinimalHeze());
-
-    final List<Transaction> inclusionListTransactions = new ArrayList<>();
-
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-
-    inclusionListTransactions.add(dataStructureUtil.randomExecutionPayloadTransaction());
-    inclusionListTransactions.add(dataStructureUtil.randomExecutionPayloadTransaction());
-
-    Optional<BlockImportResult> blockImportResult =
-        forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload);
-
-    assertThat(blockImportResult).isPresent();
-    assertThat(blockImportResult.get().getFailureReason())
-        .isEqualTo(FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD.getFailureReason());
-  }
-
-  @Test
-  void validateInclusionListsProceedsIfAllILsTransactionsAreInExecutionPayload() {
-    setupWithSpec(TestSpecFactory.createMinimalHeze());
-
-    final List<Transaction> inclusionListTransactions = new ArrayList<>();
-
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-
-    inclusionListTransactions.add(executionPayload.getTransactions().get(0));
-    Optional<BlockImportResult> blockImportResult =
-        forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload);
-
-    assertThat(blockImportResult).isEmpty();
   }
 }

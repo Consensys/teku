@@ -49,6 +49,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResultV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV5;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -256,7 +258,7 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   }
 
   @Override
-  public SafeFuture<Response<PayloadStatusV1>> newPayloadV6(
+  public SafeFuture<Response<PayloadStatusV2>> newPayloadV6(
       final ExecutionPayloadV4 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
       final Bytes32 parentBeaconBlockRoot,
@@ -276,7 +278,7 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
             parentBeaconBlockRoot.toHexString(),
             executionRequestHexes,
             inclusionListTransactionHexes),
-        PayloadStatusV1.class,
+        PayloadStatusV2.class,
         EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
   }
 
@@ -334,13 +336,13 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   }
 
   @Override
-  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV5(
+  public SafeFuture<Response<ForkChoiceUpdatedResultV2>> forkChoiceUpdatedV5(
       final ForkChoiceStateV1 forkChoiceState,
       final Optional<PayloadAttributesV5> payloadAttributes) {
     return doRequest(
         "engine_forkchoiceUpdatedV5",
         list(forkChoiceState, payloadAttributes.orElse(null)),
-        ForkChoiceUpdatedResult.class,
+        ForkChoiceUpdatedResultV2.class,
         EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
   }
 

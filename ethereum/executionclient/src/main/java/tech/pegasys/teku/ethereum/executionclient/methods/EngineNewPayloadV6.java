@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -75,7 +75,7 @@ public class EngineNewPayloadV6 extends AbstractEngineJsonRpcMethod<PayloadStatu
             executionRequests,
             inclusionListTransactions)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
+        .thenApply(PayloadStatusV2::asInternalExecutionPayload)
         .thenPeek(
             payloadStatus ->
                 LOG.trace(

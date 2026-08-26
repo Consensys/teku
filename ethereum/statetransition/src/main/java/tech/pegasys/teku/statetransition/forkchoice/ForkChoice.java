@@ -47,7 +47,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
@@ -757,14 +755,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    // TODO EIP7808 check the fork choice logic
-    if (payloadResult.hasInvalidInclusionList()) {
-      final StoreTransaction transaction = recentChainData.startStoreTransaction();
-      transaction.putUnsatisfiedInclusionListBlock(block.getRoot());
-      transaction.commit().join();
-      return BlockImportResult.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD;
-    }
-
     switch (dataAndValidationResult.validationResult()) {
       case NOT_AVAILABLE -> {
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
@@ -893,6 +883,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    recordPayloadInclusionListSatisfaction(
+        transaction, signedEnvelope.getBeaconBlockRoot(), payloadStatus);
 
     final ExecutionPayloadImportResult result;
     if (payloadStatus.hasValidStatus()) {
@@ -1106,57 +1098,98 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       transitionValidatedStatus =
           SafeFuture.completedFuture(new PayloadValidationResult(payloadResult));
     }
-    transitionValidatedStatus.finishAsync(
-        result -> {
-          final PayloadStatus resultStatus = result.getStatus();
-          final Optional<Bytes32> maybeInvalidTransitionBlockRoot =
-              result.getInvalidTransitionBlockRoot();
-          final Bytes32 invalidBlockRoot = maybeInvalidTransitionBlockRoot.orElse(node.blockRoot());
+    transitionValidatedStatus
+        .thenCompose(
+            result ->
+                recordPayloadInclusionListSatisfaction(node.blockRoot(), payloadResult, result)
+                    .thenApply(__ -> result))
+        .finishAsync(
+            result -> {
+              final PayloadStatus resultStatus = result.getStatus();
+              final Optional<Bytes32> maybeInvalidTransitionBlockRoot =
+                  result.getInvalidTransitionBlockRoot();
+              final Bytes32 invalidBlockRoot =
+                  maybeInvalidTransitionBlockRoot.orElse(node.blockRoot());
 
-          if (resultStatus.hasValidStatus()) {
-            // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
-            // Gloas, EMPTY and FULL nodes can share a block root, so keep node identity instead of
-            // collapsing to block root.
-            getForkChoiceStrategy()
-                .onForkChoiceUpdatedResult(
-                    new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
-                    resultStatus,
-                    false);
-          } else {
-            // invalidTransitionBlockRoot is only populated when merge-transition validation found a
-            // specific Bellatrix transition block to invalidate. Otherwise the EL verdict applies
-            // to the exact fork-choice node we sent in forkchoiceUpdated.
-            maybeInvalidTransitionBlockRoot.ifPresentOrElse(
-                invalidTransitionBlockRoot ->
-                    getForkChoiceStrategy()
-                        .onExecutionPayloadResult(invalidTransitionBlockRoot, resultStatus, true),
-                () ->
-                    getForkChoiceStrategy()
-                        .onForkChoiceUpdatedResult(
-                            new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
-                            resultStatus,
-                            true));
-          }
+              if (resultStatus.hasValidStatus()) {
+                // A valid forkchoiceUpdated response validates the exact node sent to the EL. In
+                // Gloas, EMPTY and FULL nodes can share a block root, so keep node identity instead
+                // of
+                // collapsing to block root.
+                getForkChoiceStrategy()
+                    .onForkChoiceUpdatedResult(
+                        new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
+                        resultStatus,
+                        false);
+              } else {
+                // invalidTransitionBlockRoot is only populated when merge-transition validation
+                // found a
+                // specific Bellatrix transition block to invalidate. Otherwise the EL verdict
+                // applies
+                // to the exact fork-choice node we sent in forkchoiceUpdated.
+                maybeInvalidTransitionBlockRoot.ifPresentOrElse(
+                    invalidTransitionBlockRoot ->
+                        getForkChoiceStrategy()
+                            .onExecutionPayloadResult(
+                                invalidTransitionBlockRoot, resultStatus, true),
+                    () ->
+                        getForkChoiceStrategy()
+                            .onForkChoiceUpdatedResult(
+                                new SlotAndForkChoiceNode(forkChoiceState.headBlockSlot(), node),
+                                resultStatus,
+                                true));
+              }
 
-          if (resultStatus.hasInvalidStatus()) {
-            LOG.warn("Will run fork choice because head block {} was invalid", invalidBlockRoot);
-            processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
-          }
-        },
-        error -> {
-          // Pass FatalServiceFailureException up to the uncaught exception handler.
-          // This will cause Teku to exit because the error is unrecoverable.
-          // We specifically do this here because a FatalServiceFailureException will be thrown if
-          // a justified or finalized block is found to be invalid.
-          if (ExceptionUtil.hasCause(error, FatalServiceFailureException.class)) {
-            Thread.currentThread()
-                .getUncaughtExceptionHandler()
-                .uncaughtException(Thread.currentThread(), error);
-          } else {
-            LOG.error("Failed to apply payload result for node {}", node, error);
-          }
-        },
-        forkChoiceExecutor);
+              if (resultStatus.hasInvalidStatus()) {
+                LOG.warn(
+                    "Will run fork choice because head block {} was invalid", invalidBlockRoot);
+                processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
+              }
+            },
+            error -> {
+              // Pass FatalServiceFailureException up to the uncaught exception handler.
+              // This will cause Teku to exit because the error is unrecoverable.
+              // We specifically do this here because a FatalServiceFailureException will be thrown
+              // if
+              // a justified or finalized block is found to be invalid.
+              if (ExceptionUtil.hasCause(error, FatalServiceFailureException.class)) {
+                Thread.currentThread()
+                    .getUncaughtExceptionHandler()
+                    .uncaughtException(Thread.currentThread(), error);
+              } else {
+                LOG.error("Failed to apply payload result for node {}", node, error);
+              }
+            },
+            forkChoiceExecutor);
+  }
+
+  private SafeFuture<Void> recordPayloadInclusionListSatisfaction(
+      final Bytes32 blockRoot,
+      final PayloadStatus payloadStatus,
+      final PayloadValidationResult validationResult) {
+    if (!validationResult.getStatus().hasValidStatus()
+        || !isPayloadInclusionListUnsatisfied(payloadStatus)) {
+      return SafeFuture.COMPLETE;
+    }
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    recordPayloadInclusionListSatisfaction(transaction, blockRoot, payloadStatus);
+    return transaction.commit();
+  }
+
+  private void recordPayloadInclusionListSatisfaction(
+      final StoreTransaction transaction,
+      final Bytes32 blockRoot,
+      final PayloadStatus payloadStatus) {
+    // The store represents the spec's satisfaction map as a set containing only unsatisfied roots.
+    if (isPayloadInclusionListUnsatisfied(payloadStatus)) {
+      transaction.putUnsatisfiedInclusionListBlock(blockRoot);
+    }
+  }
+
+  private boolean isPayloadInclusionListUnsatisfied(final PayloadStatus payloadStatus) {
+    return payloadStatus.hasValidStatus()
+        && payloadStatus.getInclusionListSatisfied().filter(satisfied -> !satisfied).isPresent();
   }
 
   private void updateForkChoiceForImportedBlock(
@@ -1583,19 +1616,5 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public interface OptimisticHeadSubscriber {
     void onOptimisticHeadChanged(boolean isHeadOptimistic);
-  }
-
-  // Implements `validate_inclusion_lists` added in EIP-7805 - consensus/fork-choice
-  public Optional<BlockImportResult> validateInclusionLists(
-      final List<Transaction> inclusionListTransactions, final ExecutionPayload executionPayload) {
-    final SszList<Transaction> executionPayloadTransactions = executionPayload.getTransactions();
-    if (!executionPayloadTransactions.asList().containsAll(inclusionListTransactions)) {
-      return Optional.of(
-          BlockImportResult.failedToIncludeInclusionListInExecutionPayload(
-              new IllegalStateException(
-                  "Inclusion list contains transactions not in the execution payload")));
-    }
-
-    return Optional.empty();
   }
 }
