@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -107,7 +108,8 @@ public class DefaultExecutionPayloadBidManagerTest {
         createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(100));
 
     when(executionPayloadBidCircuitBreaker.isEngaged(parentRoot, state)).thenReturn(true);
-    when(bidSelector.selectBestBid(eq(Optional.empty()), any(), any(), eq(slot)))
+    when(bidSelector.selectBestBid(
+            eq(Optional.empty()), argThat(Optional::isPresent), any(), eq(slot)))
         .thenReturn(localBid);
 
     final SignedExecutionPayloadBid signedBid =
@@ -139,7 +141,8 @@ public class DefaultExecutionPayloadBidManagerTest {
     when(bidSelector.selectBestRemoteBid(
             eq(Set.of(remoteBid)), eq(parentRoot), eq(parentBlockHash), any()))
         .thenReturn(Optional.empty());
-    when(bidSelector.selectBestBid(eq(Optional.empty()), any(), any(), eq(state.getSlot())))
+    when(bidSelector.selectBestBid(
+            eq(Optional.empty()), argThat(Optional::isPresent), any(), eq(state.getSlot())))
         .thenReturn(localBid);
 
     final SignedExecutionPayloadBid signedBid =
@@ -154,6 +157,36 @@ public class DefaultExecutionPayloadBidManagerTest {
                 blockProductionPerformance));
 
     assertThat(signedBid).isEqualTo(localBid);
+  }
+
+  @Test
+  public void selectsRemoteBidWhenLocalPayloadHasWrongParentHash() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
+    final SignedExecutionPayloadBid remoteBid =
+        createBid(slot, parentRoot, parentBlockHash, UInt64.valueOf(100));
+    addAcceptedBid(remoteBid);
+
+    when(bidSelector.selectBestRemoteBid(
+            eq(Set.of(remoteBid)), eq(parentRoot), eq(parentBlockHash), any()))
+        .thenReturn(Optional.of(remoteBid));
+    when(bidSelector.selectBestBid(
+            eq(Optional.of(remoteBid)), eq(Optional.empty()), any(), eq(slot)))
+        .thenReturn(remoteBid);
+
+    final SignedExecutionPayloadBid selectedBid =
+        SafeFutureAssert.safeJoin(
+            executionPayloadBidManager.getBidForBlock(
+                parentRoot,
+                parentBlockHash,
+                stateAtSlot(slot),
+                SafeFuture.completedFuture(
+                    randomGetPayloadResponse(slot, dataStructureUtil.randomBytes32())),
+                BuilderConfig.NO_OP,
+                blockProductionPerformance));
+
+    assertThat(selectedBid).isEqualTo(remoteBid);
   }
 
   @Test
