@@ -386,6 +386,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 inclusionListSlot = signedInclusionList.getMessage().getSlot();
     final int inclusionListDueMillis =
         spec.getInclusionListDueMillis(inclusionListSlot).orElseThrow();
+    // The inclusion list deadline is an exclusive upper bound
     return currentSlot.equals(inclusionListSlot)
         && timeIntoSlotMillis.isLessThan(inclusionListDueMillis);
   }

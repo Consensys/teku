@@ -75,6 +75,7 @@ public class InclusionListStore {
     }
   }
 
+  /** Returns an unfiltered snapshot, including untimely entries and entries from equivocators. */
   public Optional<Map<UInt64, InclusionListEntry>> getInclusionLists(final SlotAndBlockRoot key) {
     readLock.lock();
     try {
@@ -84,6 +85,7 @@ public class InclusionListStore {
     }
   }
 
+  /** Returns timely entries from non-equivocating validators for the given slot. */
   public Optional<List<InclusionListEntry>> getInclusionLists(final UInt64 slot) {
     readLock.lock();
     try {
