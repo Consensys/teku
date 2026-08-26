@@ -1175,29 +1175,5 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   }
 
   private record HeadRootAndWeight(
-      Bytes32 root, UInt64 weight, Optional<ForkChoicePayloadStatus> payloadStatus) {
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-
-      if (o
-          instanceof
-          HeadRootAndWeight(
-              Bytes32 otherRoot,
-              UInt64 otherWeight,
-              Optional<ForkChoicePayloadStatus> otherStatus)) {
-        if (root.equals(otherRoot) && weight.equals(otherWeight)) {
-          // an unset payload status means we don't need to check if payload status is correct
-          if (payloadStatus.isPresent() && otherStatus.isPresent()) {
-            return payloadStatus.equals(otherStatus);
-          } else {
-            return false;
-          }
-        }
-      }
-      return false;
-    }
-  }
+      Bytes32 root, UInt64 weight, Optional<ForkChoicePayloadStatus> payloadStatus) {}
 }
