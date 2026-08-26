@@ -95,6 +95,18 @@ public class PayloadAttestationMessageGossipValidator {
     }
 
     /*
+     * [REJECT] The message's block data.beacon_block_root passes validation.
+     * Check this before the availability check so that a known-invalid block root is rejected
+     * immediately rather than treated as an unseen block and queued for future processing.
+     */
+    if (invalidBlockRoots.containsKey(data.getBeaconBlockRoot())) {
+      LOG.trace("Payload attestations's block with root {} is invalid", data.getBeaconBlockRoot());
+      return completedFuture(
+          reject(
+              "Payload attestations's block with root %s is invalid", data.getBeaconBlockRoot()));
+    }
+
+    /*
      * [IGNORE] The message's block data.beacon_block_root has been seen (via gossip or non-gossip sources)
      * (a client MAY queue attestation for processing once the block is retrieved.
      * Note a client might want to request payload after).
@@ -129,16 +141,6 @@ public class PayloadAttestationMessageGossipValidator {
           ignore(
               "Payload attestations's block with root %s is at slot %s but attestation is for slot %s",
               data.getBeaconBlockRoot(), blockSlot, data.getSlot()));
-    }
-
-    /*
-     * [REJECT] The message's block data.beacon_block_root passes validation.
-     */
-    if (invalidBlockRoots.containsKey(data.getBeaconBlockRoot())) {
-      LOG.trace("Payload attestations's block with root {} is invalid", data.getBeaconBlockRoot());
-      return completedFuture(
-          reject(
-              "Payload attestations's block with root %s is invalid", data.getBeaconBlockRoot()));
     }
 
     return gossipValidationHelper
