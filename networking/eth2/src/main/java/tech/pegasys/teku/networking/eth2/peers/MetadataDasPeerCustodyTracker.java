@@ -23,7 +23,12 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCou
 public class MetadataDasPeerCustodyTracker
     implements DasPeerCustodyCountSupplier, PeerConnectedSubscriber<Eth2Peer> {
 
+  private final int numberOfCustodyGroups;
   private final Map<UInt256, Integer> connectedPeerSubnetCount = new ConcurrentHashMap<>();
+
+  public MetadataDasPeerCustodyTracker(final int numberOfCustodyGroups) {
+    this.numberOfCustodyGroups = numberOfCustodyGroups;
+  }
 
   @Override
   public void onConnected(final Eth2Peer peer) {
@@ -43,6 +48,7 @@ public class MetadataDasPeerCustodyTracker
     final UInt256 nodeId = peer.getDiscoveryNodeId().get();
     metadata
         .getOptionalCustodyGroupCount()
+        .filter(subnetCount -> subnetCount.isLessThanOrEqualTo(numberOfCustodyGroups))
         .ifPresent(subnetCount -> connectedPeerSubnetCount.put(nodeId, subnetCount.intValue()));
   }
 
